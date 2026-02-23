@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi User Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#ff6a00",
+        "slate": {
+          50: "#f8fafc",
+          100: "#f1f5f9",
+          200: "#e2e8f0",
+          300: "#cbd5e1",
+          400: "#94a3b8",
+          500: "#64748b",
+          600: "#475569",
+          700: "#334155",
+          800: "#1e293b",
+          900: "#0f172a",
+        }
+      },
+      fontSize: {
+        "xs": ["0.75rem", { "lineHeight": "1rem" }],
+        "sm": ["0.875rem", { "lineHeight": "1.25rem" }],
+        "base": ["1rem", { "lineHeight": "1.5rem" }],
+        "lg": ["1.125rem", { "lineHeight": "1.75rem" }],
+        "xl": ["1.25rem", { "lineHeight": "1.75rem" }],
+        "2xl": ["1.5rem", { "lineHeight": "2rem" }],
+        "3xl": ["1.875rem", { "lineHeight": "2.25rem" }],
+      },
+      spacing: {
+        "1": "0.25rem",
+        "2": "0.5rem",
+        "3": "0.75rem",
+        "4": "1rem",
+        "5": "1.25rem",
+        "6": "1.5rem",
+      },
+      borderRadius: {
+        "none": "0",
+        "sm": "0.125rem",
+        "DEFAULT": "0.25rem",
+        "md": "0.375rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "2xl": "1rem",
+        "full": "9999px",
+      },
+    },
+  },
+}</script>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: 100dvh;
+      background-color: #f8fafc;
+    }
+    .screen-container {
+      max-width: 440px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background-color: #ffffff;
+    }
+    .section-spacing {
+      padding: 1rem;
+    }
+    .card-radius {
+      border-radius: 0.75rem;
+    }
+  </style>
+</head>
+<body class="dark:bg-background-dark min-h-screen text-[#1d130c] dark:text-white bg-slate-50">
+<div class="screen-container shadow-xl">
+<!-- Header Profile Section -->
+<header class="section-spacing flex flex-col items-center pt-8 bg-white border-b border-slate-100">
+<div class="relative">
+<div class="size-32 rounded-full border-4 border-primary/10 bg-center bg-cover" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCkLfkBGRT_XTpNY1ShWZpM2P0MI8EeNjD-HySVKuxHVT7oK4mTITok1pp54xGUQHxHRYXDPg4_d1l7uaC3Wu1Dqwmb3b4ntJaKy-TjmWe1CJSKsa0Huan7EBr6u7OOqevfPc4D_OE9SlelHPtJr4ygXGnHXdqkPbfO1BL08pabEFCSZyf4IzTWorIlCyjHYRZLBWuluGOFZ_OhoIRzLbcnX1WOZapQUJhywP4tjuLiJu86qha5qOGVFixZY_yD5sNBpnUzSHD1fm9e');"></div>
+<div class="absolute bottom-1 right-1 bg-primary text-white rounded-full p-1.5 border-4 border-white shadow-sm">
+<span class="material-symbols-outlined text-xs block">workspace_premium</span>
+</div>
+</div>
+<div class="mt-4 text-center">
+<h1 class="text-3xl font-bold text-slate-900">Alex Rivera</h1>
+<p class="text-primary font-semibold text-base mt-1">Level 15 • 7 Day Streak 🔥</p>
+<p class="text-slate-500 text-xs mt-1">Member since April 2023</p>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 px-4 py-6 space-y-6 pb-24">
+<!-- Recent Activity -->
+<section class="section-spacing">
+<div class="flex justify-between items-center mb-3">
+<h3 class="text-xl font-bold text-slate-900">Activity History</h3>
+<button class="text-primary text-xs font-bold uppercase">View All</button>
+</div>
+<div class="space-y-3">
+<div class="flex items-center gap-3 p-3 bg-slate-50 card-radius">
+<div class="size-12 rounded-full bg-orange-100 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl">fitness_center</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<p class="text-base font-bold text-slate-800">Yoga Flow</p>
+<span class="text-xs text-slate-400 font-medium uppercase">2h ago</span>
+</div>
+<p class="text-sm text-slate-500">45 min • 240 kcal burned</p>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-slate-50 card-radius">
+<div class="size-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+<span class="material-symbols-outlined text-2xl">group_add</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<p class="text-base font-bold text-slate-800">Marathon Group</p>
+<span class="text-xs text-slate-400 font-medium uppercase">Yesterday</span>
+</div>
+<p class="text-sm text-slate-500">Joined local runners community</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Support Tiizi Hero Card -->
+<section class="section-spacing">
+<div class="bg-primary card-radius p-5 text-white shadow-lg relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-2xl font-bold">Support Tiizi</h3>
+<p class="text-white/80 text-xs">Fuel our community growth goal</p>
+</div>
+<span class="material-symbols-outlined text-3xl opacity-60">volunteer_activism</span>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-end">
+<div>
+<span class="text-3xl font-bold">$7,500</span>
+<span class="text-xs opacity-80 uppercase ml-1">of $10,000 goal</span>
+</div>
+<span class="text-sm font-bold bg-white/20 px-2 py-1 rounded-md">75%</span>
+</div>
+<div class="w-full bg-white/20 rounded-full h-2">
+<div class="bg-white h-full rounded-full" style="width: 75%"></div>
+</div>
+<div class="flex justify-between text-xs font-medium pt-1 uppercase tracking-wider">
+<span class="opacity-80">Progress</span>
+<span class="opacity-80">24 Days Left</span>
+</div>
+</div>
+<button class="mt-5 w-full bg-white text-primary font-bold py-3.5 rounded-xl text-base shadow-sm active:opacity-90 transition-opacity">
+        Donate Now
+      </button>
+</div>
+</div>
+</section>
+<!-- Quick Link Tiles -->
+<section class="section-spacing grid grid-cols-2 gap-3">
+<div class="bg-slate-50 p-4 card-radius border border-slate-100">
+<div class="flex items-center gap-3 mb-2">
+<div class="size-8 rounded-lg bg-red-100 flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined text-xl material-symbols-fill">favorite</span>
+</div>
+<span class="text-2xl font-bold text-slate-900">12</span>
+</div>
+<p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Saved Exercises</p>
+</div>
+<div class="bg-slate-50 p-4 card-radius border border-slate-100">
+<div class="flex items-center gap-3 mb-2">
+<div class="size-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-500">
+<span class="material-symbols-outlined text-xl">groups</span>
+</div>
+<span class="text-2xl font-bold text-slate-900">3</span>
+</div>
+<p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Active Groups</p>
+</div>
+</section>
+<!-- Utility List -->
+<section class="section-spacing">
+<div class="bg-slate-50 card-radius overflow-hidden border border-slate-100">
+<button class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition-colors border-b border-slate-200">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 text-2xl">settings</span>
+<span class="text-base font-semibold text-slate-700">Account Settings</span>
+</div>
+<span class="material-symbols-outlined text-slate-300">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-slate-100 transition-colors border-b border-slate-200">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 text-2xl">help</span>
+<span class="text-base font-semibold text-slate-700">Help &amp; Feedback</span>
+</div>
+<span class="material-symbols-outlined text-slate-300">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-red-50 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-red-500 text-2xl">logout</span>
+<span class="text-base font-semibold text-red-500">Logout</span>
+</div>
+<span class="material-symbols-outlined text-red-200">chevron_right</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation with Center FAB -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-[440px] mx-auto bg-white border-t border-slate-200 h-20 flex items-center justify-around px-2 z-50">
+<a class="flex flex-col items-center gap-1 text-slate-400 flex-1" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-xs font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 flex-1" href="#">
+<span class="material-symbols-outlined text-2xl">groups</span>
+<span class="text-xs font-medium">Groups</span>
+</a>
+<div class="flex-1 flex justify-center -mt-8">
+<button class="size-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-white active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-slate-400 flex-1" href="#">
+<span class="material-symbols-outlined text-2xl">emoji_events</span>
+<span class="text-xs font-medium">Challenges</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary flex-1" href="#">
+<span class="material-symbols-outlined text-2xl material-symbols-fill">person</span>
+<span class="text-xs font-bold">Profile</span>
+</a>
+</nav>
+</div>
+</body></html>

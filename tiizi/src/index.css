@@ -1,0 +1,135 @@
+@import './styles/tokens.css';
+@import './styles/stitchOnboarding.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  font-family: 'Lexend', sans-serif;
+  background: var(--slate-50);
+  color: var(--slate-900);
+}
+
+#root {
+  width: min(100%, var(--container-max));
+  max-width: var(--container-max);
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.st-page {
+  width: min(100%, var(--container-max));
+  max-width: var(--container-max);
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+}
+
+/* Keep app screens constrained to the mobile canvas unless explicitly in admin desktop mode. */
+.st-page > * {
+  width: 100%;
+}
+
+.st-page-title {
+  font-size: 17px;
+  line-height: 21px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.st-section-title {
+  font-size: 15px;
+  line-height: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.st-section-label {
+  font-size: 11px;
+  line-height: 15px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.st-body {
+  font-size: 14px;
+  line-height: 20px;
+  color: #475569;
+}
+
+.st-caption {
+  font-size: 12px;
+  line-height: 16px;
+  color: #64748b;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  #root {
+    width: var(--container-max);
+    max-width: var(--container-max);
+    margin: 0 auto;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+    min-height: 100vh;
+    background: #fff;
+  }
+
+  body {
+    background: var(--slate-100);
+  }
+
+  body.admin-desktop #root {
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  body.admin-desktop {
+    background: #f1f5f9;
+  }
+
+  body.admin-desktop.admin-density-compact .admin-header {
+    height: 3.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  body.admin-desktop.admin-density-compact .admin-shell table th,
+  body.admin-desktop.admin-density-compact .admin-shell table td {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    font-size: 0.8125rem;
+  }
+
+  body.admin-desktop.admin-density-compact .admin-shell .rounded-xl,
+  body.admin-desktop.admin-density-compact .admin-shell .rounded-lg {
+    border-radius: 0.5rem;
+  }
+}

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#ff6b00",
+                "background-light": "#f8f7f5",
+                "background-dark": "#23170f",
+                "slate": {
+                  50: '#f8fafc',
+                  100: '#f1f5f9',
+                  200: '#e2e8f0',
+                  300: '#cbd5e1',
+                  400: '#94a3b8',
+                  500: '#64748b',
+                  600: '#475569',
+                  700: '#334155',
+                  800: '#1e293b',
+                  900: '#0f172a',
+                  950: '#020617',
+                }
+              },
+              spacing: {
+                '1': '4px',
+                '2': '8px',
+                '3': '12px',
+                '4': '16px',
+                '5': '20px',
+                '6': '24px',
+              },
+              fontSize: {
+                'xs': '10px',
+                'sm': '12px',
+                'base': '14px',
+                'lg': '16px',
+                'xl': '18px',
+                '2xl': '20px',
+                '3xl': '24px',
+              },
+              fontFamily: {
+                "display": ["Lexend", "sans-serif"]
+              },
+              borderRadius: {
+                "sm": "8px",
+                "md": "12px",
+                "lg": "16px",
+                "xl": "12px",
+                "full": "9999px"
+              },
+            },
+          },
+        }
+      </script>
+<title>Tiizi Fitness - Join the Community</title>
+<style>
+    :root {
+      --primary: #ff6b00;
+      --background: #f8f7f5;
+      --foreground: #1d130c;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      min-height: 100dvh;
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#1d130c] min-h-screen flex flex-col items-center">
+<div class="relative flex h-full min-h-screen w-full max-w-[480px] flex-col bg-background-light dark:bg-background-dark overflow-x-hidden shadow-2xl shadow-primary/5">
+<!-- Header Section -->
+<div class="flex items-center pb-2 justify-between">
+<div class="text-[#1d130c] dark:text-white flex size-12 shrink-0 items-center justify-center cursor-pointer rounded-full hover:bg-primary/10 transition-colors" data-icon="ArrowBack">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</div>
+<h2 class="text-[#1d130c] dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-12">Sign Up</h2>
+</div>
+<!-- Toggle Tabs -->
+<div class="pb-3 pt-4">
+<div class="flex border-b border-primary/10 px-6 gap-8 justify-center">
+<a class="flex flex-col items-center justify-center border-b-[3px] border-primary text-primary pb-[13px] transition-all" href="#">
+<p class="text-sm font-bold leading-normal tracking-wide">Sign Up</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-[#a16b45] dark:text-[#a16b45]/70 pb-[13px] hover:text-primary transition-all" href="#">
+<p class="text-sm font-bold leading-normal tracking-wide">Login</p>
+</a>
+</div>
+</div>
+<!-- Main Content -->
+<div class="px-6 pt-8 pb-4 p-4">
+<h1 class="text-[#1d130c] dark:text-white tracking-tight font-bold leading-tight text-left text-3xl">Join the Community</h1>
+<p class="text-[#a16b45] dark:text-[#a16b45]/80 text-base font-normal leading-normal pt-2">Start your fitness journey with Tiizi today.</p>
+</div>
+<!-- Form Section -->
+<div class="flex flex-col px-6 py-4">
+<!-- Full Name -->
+<label class="flex flex-col w-full">
+<p class="text-[#1d130c] dark:text-white font-semibold leading-normal pb-2 ml-1 text-xs">Full Name</p>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-[#a16b45] text-xl">person</span>
+<input class="form-input flex w-full rounded-md text-[#1d130c] focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-primary/20 bg-white dark:bg-[#2d1e14] focus:border-primary h-12 placeholder:text-[#a16b45]/50 pl-12 pr-4 text-base font-normal transition-all shadow-sm" placeholder="Enter your full name" type="text" value=""/>
+</div>
+</label>
+<!-- Email Address -->
+<label class="flex flex-col w-full">
+<p class="text-[#1d130c] dark:text-white font-semibold leading-normal pb-2 ml-1 text-xs">Email Address</p>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-[#a16b45] text-xl">mail</span>
+<input class="form-input flex w-full rounded-md text-[#1d130c] focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-primary/20 bg-white dark:bg-[#2d1e14] focus:border-primary h-12 placeholder:text-[#a16b45]/50 pl-12 pr-4 text-base font-normal transition-all shadow-sm" placeholder="name@example.com" type="email" value=""/>
+</div>
+</label>
+<!-- Phone Number -->
+<label class="flex flex-col w-full">
+<p class="text-[#1d130c] dark:text-white font-semibold leading-normal pb-2 ml-1 text-xs">Phone Number</p>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-[#a16b45] text-xl">phone_iphone</span>
+<input class="form-input flex w-full rounded-md text-[#1d130c] focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-primary/20 bg-white dark:bg-[#2d1e14] focus:border-primary h-12 placeholder:text-[#a16b45]/50 pl-12 pr-4 text-base font-normal transition-all shadow-sm" placeholder="+1 (555) 000-0000" type="tel" value=""/>
+</div>
+</label>
+<!-- Action Button -->
+<button class="mt-4 flex w-full items-center justify-center rounded-xl bg-primary px-4 py-4 text-white text-base font-bold shadow-lg shadow-primary/20 hover:bg-opacity-90 active:scale-[0.98] transition-all">
+                Create Account
+            </button>
+</div>
+<!-- Divider -->
+<div class="flex items-center px-6 py-6 gap-4">
+<div class="h-px flex-1 bg-primary/10"></div>
+<p class="text-[#a16b45] text-xs font-medium uppercase tracking-widest">Or continue with</p>
+<div class="h-px flex-1 bg-primary/10"></div>
+</div>
+<!-- Social Auth -->
+<div class="flex gap-4 px-6 pb-12">
+<button class="flex h-12 flex-1 items-center justify-center rounded-md border border-primary/20 bg-white dark:bg-[#2d1e14] hover:bg-primary/5 transition-all shadow-sm">
+<img alt="" class="size-6 mr-3" data-alt="Google logo icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmGpK92VRmG9EmMMBWMPB_D5-GXcp_NDICPQmPVcQAZxlGwzQsWvukC4jfDODkaolEqHV6OYVb784AiKy_hx_2NzmgTtkufhE7zFK8BAHER4ybR6TIsBJOCKx8e-TtW9XBG3LDmhxxH2hnCqsArx4o2yek_QEPiuSdihNs9GzYoA-qI7eycfqVoU00E0roh2GAPFCynArW0epdnmwSs3bY5sIYDSPYvig6JZAaYfB77DQ96bRh6TuhoMcY__IfEtc4HES3zzFwFyvZ"/>
+<span class="text-sm font-bold text-[#1d130c] dark:text-white">Google</span>
+</button>
+<button class="flex h-12 flex-1 items-center justify-center rounded-md border border-primary/20 bg-white dark:bg-[#2d1e14] hover:bg-primary/5 transition-all shadow-sm">
+<span class="material-symbols-outlined text-2xl mr-2 dark:text-white">ios</span>
+<span class="text-sm font-bold text-[#1d130c] dark:text-white">Apple</span>
+</button>
+</div>
+<!-- Footer -->
+<div class="mt-auto px-6 pb-8 text-center">
+<p class="text-sm text-[#a16b45]">
+                Already have an account? 
+                <a class="text-primary font-bold hover:underline" href="#">Log in</a>
+</p>
+</div>
+<!-- Decoration Element -->
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+<div class="absolute -bottom-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+</div>
+</body></html>

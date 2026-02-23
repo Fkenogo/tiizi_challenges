@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#ff6b00",
+              "background-light": "#f8f7f5",
+              "background-dark": "#23170f",
+              "slate": {
+                50: "#f8fafc",
+                100: "#f1f5f9",
+                200: "#e2e8f0",
+                300: "#cbd5e1",
+                400: "#94a3b8",
+                500: "#64748b",
+                600: "#475569",
+                700: "#334155",
+                800: "#1e293b",
+                900: "#0f172a",
+                950: "#020617",
+              }
+            },
+            fontSize: {
+              "xs": "10px",
+              "sm": "12px",
+              "base": "14px",
+              "lg": "16px",
+              "xl": "18px",
+              "2xl": "20px",
+              "3xl": "24px",
+            },
+            spacing: {
+              "1": "4px",
+              "2": "8px",
+              "3": "12px",
+              "4": "16px",
+              "5": "20px",
+              "6": "24px",
+            },
+            fontFamily: {
+              "display": ["Lexend", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "0.5rem",
+              "lg": "1rem",
+              "xl": "12px",
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+    :root {
+        --primary: #ff6b00;
+        --background-light: #f8f7f5;
+        --background-dark: #23170f;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+    body {
+        min-height: 100dvh;
+    }
+</style>
+
+<title>Tiizi - Your Interests</title>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#1d130c] dark:text-[#f8f7f5] min-h-screen flex flex-col">
+<!-- Header Section -->
+<header class="sticky top-0 bg-background-light dark:bg-background-dark z-10 p-4 border-b border-primary/10">
+<div class="flex items-center justify-between max-w-2xl mx-auto w-full">
+<button class="size-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[#1d130c] dark:text-[#f8f7f5]">arrow_back</span>
+</button>
+<h2 class="text-lg font-bold leading-tight tracking-[-0.015em]">Your Interests</h2>
+<div class="size-10"></div> <!-- Spacer for balance -->
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-2xl mx-auto p-4 md:p-6 pb-32 space-y-6">
+<!-- Progress Bar -->
+<div class="mb-6">
+<div class="flex justify-between items-center mb-2">
+<p class="text-xs font-medium opacity-70">Onboarding Progress</p>
+<p class="text-xs font-bold text-primary">Step 2 of 3</p>
+</div>
+<div class="h-2 w-full bg-primary/20 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 66%;"></div>
+</div>
+</div>
+<!-- Hero Text -->
+<div class="mb-8">
+<h1 class="text-3xl font-bold mb-3">What moves you?</h1>
+<p class="text-base opacity-80">Select your exercise interests and wellness goals to personalize your Tiizi experience.</p>
+</div>
+<!-- Exercise Interests Section -->
+<section class="mb-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">fitness_center</span>
+<h3 class="text-2xl font-bold">Exercise Interests</h3>
+</div>
+<div class="flex flex-wrap gap-3">
+<!-- Selected Chip -->
+<button class="px-5 py-2.5 rounded-full bg-primary text-white font-medium flex items-center gap-2 transition-all shadow-md shadow-primary/20 border-2 border-primary">
+<span>Running</span>
+<span class="material-symbols-outlined text-sm">check_circle</span>
+</button>
+<!-- Unselected Chips -->
+<button class="px-5 py-2.5 rounded-full bg-white dark:bg-white/5 border-2 border-primary/20 hover:border-primary/50 font-medium transition-all">Weightlifting</button>
+<button class="px-5 py-2.5 rounded-full bg-primary text-white font-medium flex items-center gap-2 transition-all shadow-md shadow-primary/20 border-2 border-primary">
+<span>Yoga</span>
+<span class="material-symbols-outlined text-sm">check_circle</span>
+</button>
+<button class="px-5 py-2.5 rounded-full bg-white dark:bg-white/5 border-2 border-primary/20 hover:border-primary/50 font-medium transition-all">HIIT</button>
+<button class="px-5 py-2.5 rounded-full bg-white dark:bg-white/5 border-2 border-primary/20 hover:border-primary/50 font-medium transition-all">Cycling</button>
+<button class="px-5 py-2.5 rounded-full bg-white dark:bg-white/5 border-2 border-primary/20 hover:border-primary/50 font-medium transition-all">Swimming</button>
+<button class="px-5 py-2.5 rounded-full bg-white dark:bg-white/5 border-2 border-primary/20 hover:border-primary/50 font-medium transition-all">Pilates</button>
+<button class="px-5 py-2.5 rounded-full bg-white dark:bg-white/5 border-2 border-primary/20 hover:border-primary/50 font-medium transition-all">Hiking</button>
+</div>
+</section>
+<!-- Wellness Goals Section -->
+<section class="mb-6">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">emoji_events</span>
+<h3 class="text-2xl font-bold">Wellness Goals</h3>
+</div>
+<div class="flex flex-wrap gap-3">
+<!-- Goal Card 1 - Selected -->
+<div class="relative group cursor-pointer p-4 rounded-xl border-2 border-primary bg-primary/5 transition-all">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-lg bg-primary flex items-center justify-center text-white shrink-0">
+<span class="material-symbols-outlined">monitor_weight</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold">Weight Loss</h4>
+<p class="text-sm opacity-70">Focus on calorie deficit and fat burning</p>
+</div>
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</div>
+</div>
+<!-- Goal Card 2 - Unselected -->
+<div class="relative group cursor-pointer p-4 rounded-xl border-2 border-primary bg-primary/5 transition-all">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">exercise</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold">Build Muscle</h4>
+<p class="text-sm opacity-70">Hypertrophy and strength training focus</p>
+</div>
+<div class="size-6 rounded-full border-2 border-primary/20"></div>
+</div>
+</div>
+<!-- Goal Card 3 - Unselected -->
+<div class="relative group cursor-pointer p-4 rounded-xl border-2 border-primary bg-primary/5 transition-all">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined">self_improvement</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold">Improve Flexibility</h4>
+<p class="text-sm opacity-70">Stretching and mobility routine</p>
+</div>
+<div class="size-6 rounded-full border-2 border-primary/20"></div>
+</div>
+</div>
+<!-- Goal Card 4 - Selected -->
+<div class="relative group cursor-pointer p-4 rounded-xl border-2 border-primary bg-primary/5 transition-all">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-lg bg-primary flex items-center justify-center text-white shrink-0">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold">Mental Health &amp; Stress Relief</h4>
+<p class="text-sm opacity-70">Mindful movement and regular activity</p>
+</div>
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</div>
+</div>
+<!-- Goal Card 5 - Unselected -->
+<div class="relative group cursor-pointer p-4 rounded-xl border-2 border-primary bg-primary/5 transition-all">
+<div class="flex items-center gap-4">
+<div class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined">group</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold">Accountability &amp; Routine</h4>
+<p class="text-sm opacity-70">Build consistent daily habits</p>
+</div>
+<div class="size-6 rounded-full border-2 border-primary/20"></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Actions -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-background-dark/95 backdrop-blur-md p-4 border-t border-primary/10">
+<div class="max-w-2xl mx-auto flex items-center gap-3">
+<button class="flex-1 py-4 px-6 rounded-xl border-2 border-primary/20 font-bold text-primary hover:bg-primary/5 transition-colors">
+                Back
+            </button>
+<button class="flex-[2] py-4 px-6 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2">
+                Next Step
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</footer>
+</body></html>

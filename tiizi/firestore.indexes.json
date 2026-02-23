@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "catalogExercises",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tier_1", "order": "ASCENDING" },
+        { "fieldPath": "difficulty", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

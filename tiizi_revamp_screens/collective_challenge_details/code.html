@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Squat Squad - Collective Challenge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23170f",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.75rem", // 12px as requested
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Header Navigation -->
+<header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400">arrow_back</span>
+</button>
+<div>
+<h1 class="text-lg font-bold leading-none">Squat Squad</h1>
+<span class="text-xs font-medium text-primary uppercase tracking-wider">Collective Challenge</span>
+</div>
+</div>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-400">share</span>
+</button>
+</header>
+<main class="flex-1 overflow-y-auto pb-32">
+<!-- Hero Section -->
+<div class="p-4">
+<div class="relative w-full h-48 rounded-xl overflow-hidden mb-4 group">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10"></div>
+<img alt="Group of people exercising" class="w-full h-full object-cover" data-alt="Group of diverse people performing squats together in gym" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDq5Uo5E9uXYDj2ieGXfhvt5W99-Fb2YelCm0oDC6Rj0UhzgOdeVrjj3WLK7brxTmDQXK3zJLjUcUS0LHZND5WZO-p0ykF_hCZcbXbTomJlbrImpUb9OJhU2K96_thKViwUJ1lI8pLttgENi0vQRk5NBycwaGzIKHe-kY-uWBSUTYOh6o8FwGAgoBQXb19Vry_gUQ2XAfBuNMR1kAdM44-NxMRikVA9KTrcH10OV_0f4IwCNc5wVPNg2IoC2CS5hACFpRHKhVEbVrSU"/>
+<div class="absolute bottom-4 left-4 z-20">
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Active</span>
+<span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border border-white/30">Collective Goal</span>
+</div>
+<h2 class="text-2xl font-bold text-white tracking-tight">3,000 Reps Challenge</h2>
+</div>
+</div>
+<!-- Main Progress Card -->
+<div class="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="flex justify-between items-end mb-4">
+<div>
+<p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Group Progress</p>
+<h3 class="text-3xl font-bold text-slate-900 dark:text-slate-100">1,950 <span class="text-lg font-normal text-slate-400">/ 3,000</span></h3>
+</div>
+<div class="text-right">
+<span class="text-primary text-2xl font-bold">65%</span>
+</div>
+</div>
+<div class="w-full h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-4">
+<div class="h-full bg-primary rounded-full relative" style="width: 65%;">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 border-t border-slate-50 dark:border-slate-800 pt-4 mt-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span>Oct 1 - Oct 30</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">group</span>
+<span>12 Members</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Challenge Info -->
+<section class="px-4 py-2">
+<h3 class="text-base font-bold mb-2">Challenge Info</h3>
+<div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+<p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                    Working together to hit the target! Join forces with the squad to complete 3,000 total bodyweight squats this month. Consistency is key—every rep counts toward our collective glory!
+                </p>
+</div>
+</section>
+<!-- Your Contribution -->
+<section class="px-4 py-4">
+<div class="bg-primary/10 dark:bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined active-icon">person</span>
+</div>
+<div>
+<p class="text-xs font-semibold text-primary uppercase tracking-tight">Your Contribution</p>
+<p class="text-lg font-bold text-slate-900 dark:text-slate-100">210 reps contributed</p>
+</div>
+</div>
+<div class="text-primary font-bold text-sm">
+                    Top 15%
+                </div>
+</div>
+</section>
+<!-- Top Contributors -->
+<section class="px-4 py-2">
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-base font-bold">Top Contributors</h3>
+<button class="text-primary text-xs font-bold uppercase hover:underline">View All</button>
+</div>
+<div class="space-y-3">
+<!-- Contributor 1 -->
+<div class="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Sarah J." class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a woman smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgqxBkdaP_qPaHq-YzV12-ioMfGKmPCuoDTEZeh577F-9s1HALa6VoELNvraHVajie5JnFcKs8Qlv_osmfUq74k7d_n85NWmSoCmSjUGT6iLsb-xDzpvFquNihHx3d9pCUAxwyu-7TV8xUqbAdWzy_UiWXNuczy-Qp2F5zLyt5dbG6S5gamhZcSQUSAn8oFE-JEeeuo05QqDaIJOMDdH0I5sOTbdjwzLGBGcBArYNg0z8x5iwB04BKMj43j20n_rm3wB0YnINjSxcS"/>
+<div class="absolute -top-1 -right-1 bg-yellow-400 text-[10px] w-4 h-4 rounded-full flex items-center justify-center text-white border border-white">1</div>
+</div>
+<div>
+<p class="font-bold text-sm">Sarah J.</p>
+<p class="text-xs text-slate-500">Master Squatter</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-primary">450</p>
+<p class="text-[10px] text-slate-400 uppercase font-medium">Reps</p>
+</div>
+</div>
+<!-- Contributor 2 -->
+<div class="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Alex R." class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a man with athletic build" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqaAf6CeVvvOERPcqyu_JGshB789LHL9cVkmeEsM0hpFaD249O3KH8gytSugziRu_lLd1hikcdhf9q19gOjtU_Q4wrjCGGN4URWdUBpJGcTX9YmoegbOsmcXKLDymzDu3XS_O1nG5HnKjoH5wOa-m-uuOZb1DfIA5VaMBbT8_0FzcIqLEjNFIjZ4YWgVVYVeHRj064Yx0ZcTUUf9qEOED5S7K0bJYGVJFPByHOApudhdACjvAHSoRpyrRVgGxSqatIlid1OYCBLT32"/>
+<div class="absolute -top-1 -right-1 bg-slate-300 text-[10px] w-4 h-4 rounded-full flex items-center justify-center text-slate-600 border border-white">2</div>
+</div>
+<div>
+<p class="font-bold text-sm">Alex R.</p>
+<p class="text-xs text-slate-500">Powerhouse</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-slate-700 dark:text-slate-300">380</p>
+<p class="text-[10px] text-slate-400 uppercase font-medium">Reps</p>
+</div>
+</div>
+<!-- Contributor 3 -->
+<div class="flex items-center justify-between bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Mike D." class="w-10 h-10 rounded-full object-cover" data-alt="Close up portrait of a smiling man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC71VQaAvEsK8_DHluTu7HKX2LKe7uiDlKfyvo7yYrah5pPQsSErzFXahANnXQCdana8L64k3BP7ta2A9IcU-0yF-waiNalsOz_kQH2ypcwFIvXqddZwT8LFSqDlAXn4yNJeQz-RYPChZjK5XZKGxhHlwKV1kpvE8Q0qTndydRI6zZVWfyYW6piHG3kjfMfpNXW8xiyQXo8uIk0B9fkEKvDHBV1xZECHSnRcRVSYsy2mcw3zc7DdAVHBkYJICijBt402g_FmV1vb-MH"/>
+</div>
+<div>
+<p class="font-bold text-sm">Mike D.</p>
+<p class="text-xs text-slate-500">Steady Pace</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-slate-700 dark:text-slate-300">310</p>
+<p class="text-[10px] text-slate-400 uppercase font-medium">Reps</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button Area -->
+<div class="fixed bottom-24 left-0 right-0 px-6 z-20 pointer-events-none">
+<button class="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg shadow-primary/30 flex items-center justify-center gap-2 pointer-events-auto transform active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add_circle</span>
+            LOG SQUATS
+        </button>
+</div>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-2 pb-6 pt-2 z-30">
+<div class="max-w-md mx-auto flex justify-around items-center">
+<a class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-[10px] font-medium">Groups</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800 w-12 h-12 rounded-full text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-2xl">add</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-primary" href="#">
+<span class="material-symbols-outlined active-icon">trophy</span>
+<span class="text-[10px] font-bold">Challenges</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

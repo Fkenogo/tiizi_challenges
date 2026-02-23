@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi - Group Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#ff6a00',
+                        'background': '#f8f7f5',
+                        'surface': '#ffffff',
+                        'slate': {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 
+                            500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a'
+                        }
+                    },
+                    spacing: {
+                        '1': '4px', '2': '8px', '3': '12px', '4': '16px', '5': '20px', '6': '24px', '8': '32px', '10': '40px', '12': '48px', '16': '64px'
+                    },
+                    borderRadius: {
+                        'none': '0', 'sm': '2px', 'DEFAULT': '4px', 'md': '6px', 'lg': '8px', 'xl': '12px', '2xl': '16px', 'full': '9999px'
+                    },
+                    fontFamily: {
+                        'sans': ['Lexend', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+            background-color: #f8f7f5;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-slate-900 font-sans">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+<div class="flex items-center justify-between px-4 py-3">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Group Detail</h1>
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-primary">more_vert</span>
+</button>
+</div>
+</header>
+<main class="pb-24">
+<!-- Hero Section -->
+<div class="relative w-full h-56 bg-slate-200 overflow-hidden">
+<img alt="Fitness group training outdoors" class="w-full h-full object-cover" data-alt="Fitness group training outdoors in a sunny park" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiznAAyfPCr4Jz-cC6wVhwPuyYYceo4ctwyJoynX5fkPg1LFheMEEaKJhRReUIksZf58rX3dmNdSNIy9YgyDufpon2Ope7gQJ0ck0qta4_LxI3xhXbFYYnuCdsirwaCekDh7Vim_xm-Uz32mjDjYeh5KHmUhkGsSGO1Upk_mjVDTVLczBP6RGpphlJvV7WNrb4zaqv12G9ZRWZXXWxslQCMirkMb-EOd_aq5E3XCorRh5D0VULukkyH9KIWbMvgJa-Rw_70B_yeLxW"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-4 left-4 flex items-center gap-2">
+<span class="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Admin View</span>
+</div>
+</div>
+<!-- Group Info Section -->
+<section class="px-4 -mt-10 relative z-10">
+<div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+<div class="flex items-start justify-between mb-4">
+<div class="w-20 h-20 rounded-xl border-4 border-white overflow-hidden shadow-md bg-white">
+<img alt="Tiizi Community Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAO7r9pLgQA45Qlb0aLi1SN2-G1D3aRUjSvYY9PHnWVo14xt-LA5i8NjKAeRzHZJmOHQ7yZlUxduIKwtPmoSAX0h7DK7o41oZDZ6Pkp4TRgB0KccSX5BG6zyev0WgUj4mJCQSfVts2MrtiypB5RmeGqpGHqQxK9DqolFayPnnQEVkP2FKwOrz2MrVZnKa_-F-hTt5V1UZPTaR2MMGYO8FCk6vWhyU8lbT5POVs3vdsFRFTXwo0jGovVtoL14qxQ153aHNufuGJJQD27"/>
+</div>
+<button class="bg-primary text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">person_add</span>
+<span>Invite</span>
+</button>
+</div>
+<h2 class="text-2xl font-bold text-slate-900 mb-1">Tiizi Fitness Community</h2>
+<div class="flex items-center gap-2 text-primary font-medium">
+<span class="material-symbols-outlined text-[18px]">groups</span>
+<span class="text-sm">1,240 Members</span>
+</div>
+</div>
+</section>
+<!-- Tabbed Interface -->
+<nav class="mt-6 border-b border-slate-100 overflow-x-auto hide-scrollbar bg-white sticky top-[64px] z-40">
+<div class="flex px-4 min-w-max">
+<a class="py-4 px-6 text-sm font-semibold text-slate-500 border-b-2 border-transparent" href="#">Feed</a>
+<a class="py-4 px-6 text-sm font-bold text-primary border-b-2 border-primary relative" href="#">
+                    Challenges
+                    <span class="absolute top-3 right-2 w-2 h-2 bg-primary rounded-full"></span>
+</a>
+<a class="py-4 px-6 text-sm font-semibold text-slate-500 border-b-2 border-transparent" href="#">Members</a>
+<a class="py-4 px-6 text-sm font-semibold text-slate-500 border-b-2 border-transparent" href="#">Leaderboard</a>
+</div>
+</nav><div class="pt-6"></div>
+<!-- Challenges Content -->
+
+</main>
+<!-- Standardized Bottom NavBar -->
+<footer class="fixed bottom-0 w-full bg-white border-t border-slate-100 px-4 pb-6 pt-3 z-50">
+<div class="flex justify-between items-center max-w-md mx-auto">
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">groups</span>
+<span class="text-[10px] font-bold">Groups</span>
+</a>
+<div class="-mt-10">
+<button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg shadow-primary/30 flex items-center justify-center border-4 border-white">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">trophy</span>
+<span class="text-[10px] font-medium">Challenges</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</a>
+</div>
+</footer>
+</body></html>

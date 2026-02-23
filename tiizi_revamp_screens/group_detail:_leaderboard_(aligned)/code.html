@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi Group Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "slate": {
+                            50: "#f8fafc",
+                            100: "#f1f5f9",
+                            200: "#e2e8f0",
+                            300: "#cbd5e1",
+                            400: "#94a3b8",
+                            500: "#64748b",
+                            600: "#475569",
+                            700: "#334155",
+                            800: "#1e293b",
+                            900: "#0f172a",
+                        },
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23170f",
+                    },
+                    spacing: {
+                        '1': '4px',
+                        '2': '8px',
+                        '3': '12px',
+                        '4': '16px',
+                        '5': '20px',
+                        '6': '24px',
+                        '8': '32px',
+                        '10': '40px',
+                        '12': '48px',
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab {
+            border-bottom: 3px solid #ff6a00;
+            color: #1d130c;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-background-dark text-slate-900 font-display">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-24">
+<!-- Header -->
+<header class="sticky top-0 z-50 flex items-center bg-white/80 backdrop-blur-md px-4 py-3 justify-between border-b border-slate-100">
+<div class="flex items-center gap-3">
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[#1d130c]">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Tiizi Group</h1>
+</div>
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[#1d130c]">more_vert</span>
+</button>
+</header>
+<!-- Hero Section -->
+<div class="relative w-full aspect-[16/9] md:aspect-[21/9] overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
+<img alt="Adventure Group" class="h-full w-full object-cover" data-alt="Outdoor adventure group hiking in nature" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKzNwLpXVbp49haaH_nl3oivVjJefLNLb3O5L27OxmawE7H2038UOR-2_JJ999QCrTfXIITfkKO1DdvuNiPmxg8ICxuQ_QUkiOA6b7qdWLexznx3UrhzEblT2bnu4ktLHL9ECkfk3tYrKhLvOHxtOAm3oiK7naKxIDdlRzQphmMQSEZzQe7biDBP2023hIx9ZzDlESB_4_HsN7fH7L38UB0WybAZ5FkUlnaB8o5gpyW9Z1hvMTph4GdI8XAUJH5FqJyTewdCgbGRrD"/>
+<div class="absolute bottom-4 left-4 z-20">
+<h2 class="text-2xl font-bold text-white mb-1">Adventure Seekers</h2>
+<div class="flex items-center gap-2 text-white/90 text-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">group</span> 1.2k Members</span>
+<span>•</span>
+<span>Active since 2022</span>
+</div>
+</div>
+<button class="absolute bottom-4 right-4 z-20 flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-bold rounded-lg shadow-lg shadow-primary/30 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-sm">person_add</span>
+<span>Join Group</span>
+</button>
+</div>
+<!-- Tabs Navigation -->
+<div class="sticky top-[64px] z-40 bg-white border-b border-slate-100">
+<div class="flex justify-between px-4">
+<button class="flex-1 py-4 text-sm font-medium hover:text-primary transition-colors text-slate-500">Feed</button>
+<button class="flex-1 py-4 text-sm font-medium hover:text-primary transition-colors text-slate-500">Challenges</button>
+<button class="flex-1 py-4 text-sm font-medium hover:text-primary transition-colors text-slate-500">Members</button>
+<button class="flex-1 py-4 text-sm font-bold active-tab text-slate-900">Leaderboard</button>
+</div>
+</div>
+<!-- Content Area: Leaderboard -->
+<main class="flex-1 p-4 space-y-6">
+<!-- Filters & Header -->
+<div class="flex items-center justify-between">
+<div>
+<h3 class="text-xl font-bold">Top Performers</h3>
+<p class="text-sm text-slate-500">Global rankings for April</p>
+</div>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700">
+<span>This Month</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+<!-- Top 3 Podium Visual -->
+<div class="flex items-end justify-center gap-4 py-8 bg-white rounded-xl border border-slate-100 shadow-sm">
+<!-- Rank 2 -->
+<div class="flex flex-col items-center">
+<div class="relative">
+<img alt="Rank 2" class="size-16 rounded-full border-2 border-primary/40 object-cover" data-alt="Portrait of rank 2 user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAungaAKJtjlkKhVD5kbeWJBuy_ncPi0G--unv663KBx6T4joTwdGaBFBtZ9h5mBXhhKagEwaCkjm32xOSD_TKvChnRwktenQqipukOYxYQl7kKMfCDVo4Gbvfm7C_kdVggSlFqE0Ac7d-A1e69h851joo2ycSSlVKK-szcYBoO7NIl2GeWf5HGL9AfMEe6y4MHQ2gS-ug1AaQ4SYz4YNiSdLtg-bzDqyc_yltT81bt6Tm9TcBg9pyLvNeqijvyFovzxafc4-78kabx"/>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">2ND</div>
+</div>
+<p class="mt-4 font-bold text-sm">Sarah J.</p>
+<p class="text-primary font-bold text-xs">2,450 pts</p>
+</div>
+<!-- Rank 1 -->
+<div class="flex flex-col items-center">
+<div class="relative -top-4">
+<img alt="Rank 1" class="size-24 rounded-full border-4 border-primary object-cover shadow-xl shadow-primary/20" data-alt="Portrait of rank 1 user with crown" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCI5CpcuFYOq9ieS3A1z-c8B1glk53vsIu5tyHT0MX5nWKkgVPUFVcmJIkoq4bXwBtZcG4ICOmn72oe3AB83P_gB5Z7TyzuE5r3HZLG4Vba1oYZWuv0VTYsrh0fs5rFTW0tG8Q6lfsCOtZlTs-44_rYNFezF_mtpUO89t0fxyOko9uwzlwVdGoAqUDtarTBYJzrFl_9Wf-aJRplwcPyk40uJ6WK6sOWaEkZlCyANGpr3qvvfdR65p1el6ye81QjUhAZhWlO5N_ddIOe"/>
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 text-primary">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1">emoji_events</span>
+</div>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full">WINNER</div>
+</div>
+<p class="font-bold text-lg -mt-2">Alex River</p>
+<p class="text-primary font-black text-sm">3,120 pts</p>
+</div>
+<!-- Rank 3 -->
+<div class="flex flex-col items-center">
+<div class="relative">
+<img alt="Rank 3" class="size-16 rounded-full border-2 border-primary/30 object-cover" data-alt="Portrait of rank 3 user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBCJur5CUFvbXSOXf8Kowh_vnRjmb9YwKldrieDfGFfDy6iH24AywhcOmDFS8y9eK3-MX-BcbP5M5j4-g2wvZmxfgp5GZinennPiBGSMnv8cYDPHP8GPHM765tKWLKJYhwRi0gfDVcPr5YxuBcpyCm-zb3RTjm5bU8j9sbwussGTpt0XRsER61l4VoQAb9MYObVxTn-ZxidXbHhByoRd_B7TwkB2YbWNyG7ju9_jYVqC1EroQxUvTfywafaUvWwSX1aBpvhFtk07_C"/>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#cd7f32] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3RD</div>
+</div>
+<p class="mt-4 font-bold text-sm">Marcus L.</p>
+<p class="text-primary font-bold text-xs">2,100 pts</p>
+</div>
+</div>
+<!-- List of other performers -->
+<div class="space-y-2">
+<!-- ListItem Pattern 4 -->
+<div class="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-100 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="text-slate-400 font-bold w-4 text-center">4</span>
+<img alt="User 4" class="size-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFnrK5OwJ8ZQH2-lmkVTvPq7g88rRoL2JL-CMxUW2zsNAH7BccI02OTp9JphpPcvRWN6RjnHjAxxt1HcTpvv_Xf9EHfXnWb5ucZLWLhrNpgdrKzT2fN6vVq1Kjz9OkByWEKeBXBVDh5J5_iwTbPi5wfv4jLqP_eax6Y-fMg0FFgfSvXvwZzfD2y4Ulc_DjK4G5IiAmuUDE3b1o9j9f0wn5FTw0WlALRVNn_wcH0y2-pVoBh6NWb8bg0l5sCH2G6wNCPfk5sMa2LwnV"/>
+<div>
+<p class="font-bold text-sm text-slate-900">Daniel Chen</p>
+<div class="flex items-center gap-1 text-[10px] text-green-600 font-medium">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>
+<span>+2 spots</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-primary font-bold">1,890</p>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Points</p>
+</div>
+</div>
+<!-- ListItem Pattern 5 -->
+<div class="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-100 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="text-slate-400 font-bold w-4 text-center">5</span>
+<img alt="User 5" class="size-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyjl5Z1BwS_zFRslSCkNazyQ3STIPT-xme_WORQXwiqi9MdGMaaN9Lm-hUHWKcAIg-X7MVbkuKg528Z3Vigs72JLFA378WZHFZWUw3aigKNFPVe558YoeCdlhcsoh9OJZosXpiocJ-qmTzOYHnf3T6UoEZLKLUAH4XmkdmXKawBwCVZmVUEB3WJOAAGUMqZzEE6R7Svyeac-jZFfWnfvIcUZUAJAJ8nkYlFuv-S-1x_b8_Z4gUrk9fMFSGygQyeILG2FWa9S47HpD9"/>
+<div>
+<p class="font-bold text-sm text-slate-900">Elena Rodriguez</p>
+<div class="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+<span class="material-symbols-outlined text-[12px]">remove</span>
+<span>No change</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-primary font-bold">1,750</p>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Points</p>
+</div>
+</div>
+<!-- ListItem Pattern 6 -->
+<div class="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-100 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="text-slate-400 font-bold w-4 text-center">6</span>
+<img alt="User 6" class="size-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWU8xGHkTMRfYEuW_S3N4aCvjTU71juHR7LKquQmhlSXavIGQ1GX0zGVw4LaDD2KEGPcZonVwfKbBpqiffS5Jt2zkv2itB40l3MY-3DjxW2A2EFqJVNdNEeHEeq3uGaKdRg-Qiq4MDDOs0BGrieZop_59gkdrg9v02WNCcnCYjAXMB49hr1db63nz3uRVU0SkTvzdWgefrxlfbUQ9rqFklpRtL1D9-ZTnsoSdbZBaBWr83YyQ3T1ZtdWA6wGsQCOjMf6GFYdYZgFpd"/>
+<div>
+<p class="font-bold text-sm text-slate-900">Sophie Turner</p>
+<div class="flex items-center gap-1 text-[10px] text-red-500 font-medium">
+<span class="material-symbols-outlined text-[12px]">trending_down</span>
+<span>-1 spot</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-primary font-bold">1,620</p>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Points</p>
+</div>
+</div>
+<!-- ListItem Pattern 7 -->
+<div class="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-100 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="text-slate-400 font-bold w-4 text-center">7</span>
+<img alt="User 7" class="size-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtXrqn02Exe2Drov4g30d6QZLWAEk-HE_IEscIhpbPMNchdVJ-fH-cIrfj_XmOuZwDUW4-MWCtpdfPUaIWmv2eahna3APngXGihwZWtQzwYMJaWQko4i2e1PfDo-TXIDxP4XErP8_lAn07GPeZozs9n_OWwn_8bDvlHwxn93Wl1WdeLQVA-8UPYd3DoQWbHUDWANKFNZUueKxVdX2IC9vISC6p5q2vWo-po4syMOnCC4CUpzD8wM9azbi8HNNjJ5sUX-P3ne4NppxO"/>
+<div>
+<p class="font-bold text-sm text-slate-900">Kevin Hart</p>
+<div class="flex items-center gap-1 text-[10px] text-green-600 font-medium">
+<span class="material-symbols-outlined text-[12px]">trending_up</span>
+<span>+5 spots</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-primary font-bold">1,410</p>
+<p class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Points</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 flex h-20 items-center justify-around border-t border-slate-200 bg-white/95 backdrop-blur-md px-2 pb-2">
+<!-- Home -->
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] font-medium uppercase tracking-wider">Home</span>
+</a>
+<!-- Groups (Active) -->
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1">group</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Groups</span>
+</a>
+<!-- (+) Add Button -->
+<div class="relative -top-6">
+<button class="flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/40 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<!-- Challenges -->
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">emoji_events</span>
+<span class="text-[10px] font-medium uppercase tracking-wider">Challenges</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">account_circle</span>
+<span class="text-[10px] font-medium uppercase tracking-wider">Profile</span>
+</a>
+</nav>
+</div>
+</body></html>

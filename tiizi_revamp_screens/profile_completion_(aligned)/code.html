@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi - Initial Profile Setup</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6b00",
+                        "background-light": "#fcfaf8",
+                        "background-dark": "#23170f",
+                        "neutral-soft": "#ead9cd",
+                        "text-main": "#1d130c",
+                        "text-sub": "#a16b45"
+                    },
+                    fontSize: {
+                        'xs': '10px',
+                        'sm': '12px',
+                        'base': '14px',
+                        'lg': '16px',
+                        'xl': '18px',
+                        '2xl': '20px',
+                        '3xl': '24px',
+                    },
+                    spacing: {
+                        '1': '4px',
+                        '2': '8px',
+                        '3': '12px',
+                        '4': '16px',
+                        '5': '20px',
+                        '6': '24px',
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "12px",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        :root {
+            --primary: #ff6b00;
+            --background: #fcfaf8;
+            --text-main: #1d130c;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Lexend', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main antialiased transition-colors duration-300">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto overflow-x-hidden shadow-2xl bg-white dark:bg-background-dark">
+<!-- Top App Bar -->
+<header class="flex items-center p-4 justify-between">
+<button class="text-text-main dark:text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-neutral-soft/20 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h2 class="text-text-main dark:text-white text-lg font-bold flex-1 text-center pr-10">Profile Setup</h2>
+</header>
+<main class="flex flex-col flex-1 p-6">
+<!-- Headline -->
+<section class="mb-6">
+<h1 class="text-text-main dark:text-white text-3xl font-bold text-center">
+                Let's get you set up.
+            </h1>
+</section>
+<!-- Profile Photo Section -->
+<section class="flex flex-col items-center mb-6">
+<div class="relative">
+<div class="flex items-center justify-center bg-neutral-soft/30 dark:bg-primary/10 border-2 border-dashed border-neutral-soft dark:border-primary/30 rounded-full h-32 w-32 overflow-hidden transition-all hover:border-primary">
+<span class="material-symbols-outlined text-text-sub dark:text-primary/60 text-5xl">person</span>
+</div>
+<!-- FAB Plus Icon -->
+<button class="absolute bottom-0 right-0 bg-primary text-white size-10 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-lg">add_a_photo</span>
+</button>
+</div>
+<button class="text-primary text-base font-semibold mt-3">Add Photo</button>
+</section>
+<!-- Input Area (Card Style) -->
+<section class="space-y-4 flex-1">
+<div class="flex flex-col w-full bg-background-light dark:bg-white/5 p-4 rounded-xl border border-neutral-soft dark:border-white/10">
+<label class="text-text-main dark:text-white text-xs font-semibold pb-2 uppercase tracking-wider">Display Name</label>
+<div class="relative">
+<input class="form-input flex w-full rounded-lg text-text-main dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/40 border border-neutral-soft dark:border-white/10 bg-white dark:bg-background-dark h-12 placeholder:text-text-sub/50 p-3 text-base font-normal transition-all" placeholder="Enter your name" type="text" value=""/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-text-sub/40 text-lg">edit</span>
+</div>
+<p class="text-text-sub dark:text-text-sub/70 text-sm mt-3">
+                    This is how your group members will see you.
+                </p>
+</div>
+</section>
+<!-- Footer Action Button -->
+<footer class="mt-auto pt-6">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg h-14 rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
+<span>Finish Setup</span>
+<span class="material-symbols-outlined">check_circle</span>
+</button>
+<div class="mt-4 text-center">
+<button class="text-text-sub/60 dark:text-text-sub/40 text-base font-medium hover:text-primary transition-colors">
+                    Skip for now
+                </button>
+</div>
+</footer>
+</main>
+<!-- Decorative background elements -->
+<div class="absolute top-0 right-0 -z-10 w-48 h-48 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+<div class="absolute bottom-0 left-0 -z-10 w-64 h-64 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
+</div>
+</body></html>

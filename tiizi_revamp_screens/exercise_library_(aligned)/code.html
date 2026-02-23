@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi - Exercise Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    fontSize: {
+                        "xs": "10px",
+                        "sm": "12px",
+                        "base": "14px",
+                        "lg": "16px",
+                        "xl": "18px",
+                        "2xl": "20px",
+                        "3xl": "24px"
+                    },
+                    spacing: {
+                        "1": "4px",
+                        "2": "8px",
+                        "3": "12px",
+                        "4": "16px",
+                        "6": "24px"
+                    },
+                    borderRadius: {
+                        "sm": "8px",
+                        "md": "12px",
+                        "lg": "16px",
+                        "xl": "12px",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    :root {
+      --app-background: #f8fafc;
+      --section-gap: 16px;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+      scroll-behavior: smooth;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 font-display text-slate-900 dark:text-slate-100 antialiased">
+<!-- Main Container -->
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-slate-50 dark:bg-slate-950 max-w-md mx-auto shadow-2xl overflow-x-hidden">
+<!-- Header Section -->
+<header class="sticky top-0 z-20 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md px-4 pt-6 pb-2">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<button class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-base font-medium text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-2xl text-slate-700 dark:text-slate-200">arrow_back</span>
+</button>
+<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Exercise Library</h1>
+</div>
+<button class="flex items-center justify-center size-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700">
+<span class="material-symbols-outlined text-2xl text-slate-700 dark:text-slate-200">tune</span>
+</button>
+</div>
+<!-- Search Bar -->
+<div class="relative mb-4">
+<label class="flex flex-col w-full">
+<div class="flex w-full items-center rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 h-12 px-4 focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+<span class="material-symbols-outlined text-2xl text-slate-700 dark:text-slate-200">search</span>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500" placeholder="Search exercises from catalog..." type="text"/>
+</div>
+</label>
+</div>
+<!-- Category Chips -->
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+<button class="flex h-9 shrink-0 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-white shadow-md shadow-primary/20">
+                    All
+                </button>
+<button class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-base font-medium text-slate-600 dark:text-slate-300">
+                    Core &amp; Planks
+                </button>
+<button class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-base font-medium text-slate-600 dark:text-slate-300">
+                    Upper Body
+                </button>
+<button class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-base font-medium text-slate-600 dark:text-slate-300">
+                    Lower Body
+                </button>
+<button class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-base font-medium text-slate-600 dark:text-slate-300">
+                    Cardio
+                </button>
+<button class="flex h-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 text-base font-medium text-slate-600 dark:text-slate-300">
+                    Mobility
+                </button>
+</div>
+</header>
+<!-- Exercise List -->
+<section class="flex-1 px-4 py-4 space-y-4 mb-24">
+<!-- Card 1 -->
+<div class="group flex items-center gap-3 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
+<div class="relative shrink-0">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-md size-20 bg-slate-100 dark:bg-slate-700" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDPQ_i0ZtQzkhrRHKNOIFYGtdEDiKe0rvIbbY34aQ3QRLOxSVggeEOW-IEGkiU0qe5BXKZ2ZvCN7ZsIZiz9-UxgBVY8iJxMbdJ-hpnbsmvUnllXqjuhF82EIplMYW9NtrfxC5MTT19Sl0NevrQOe-cdSuJA_KVOHxzkaXSfqdy6IYa_4CVCSD1PzEKXqk2_Xvqs8rhKY-02Qhls-BMPq40KiziBXZf96QGqK4m6vX37EvWFd6YozHBhxIcbhgwTF-8TMQgZqQmnwHhJ");'></div>
+</div>
+<div class="flex flex-1 flex-col justify-between min-h-[80px]">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Pushups</h3>
+<p class="text-primary text-sm font-semibold uppercase mt-1">Upper Body</p>
+</div>
+<button class="text-slate-300 dark:text-slate-600 hover:text-red-500">
+<span class="material-symbols-outlined text-2xl">favorite</span>
+</button>
+</div>
+<div class="flex items-center mt-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">REPS</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group flex items-center gap-3 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
+<div class="relative shrink-0">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-md size-20 bg-slate-100 dark:bg-slate-700" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC9LjEDhLme8c7aR32LOXSyJws_iNWBjrUsyPRxvxCLvuY3r70HM_5DhuyuhChmXakY8yjHOh6MV3zVBOTVZ4G1VKuVxTqcsugbk5SaqIyBNumL4XqKJrfJH3GyJ7IB6V6N7jePUqz5GtwFfTzS5Dc19dlvWu_6Jswxsh5dh5GoyvyGdZ6mKzHLVZejbEiGcY3tSOyGH1yyQ4wsLvEYMzZVS06-IdtZwVEE4PTkqoGAqimpqrfPRydSGYgPO32XYs_usxDm8lVtnq5R");'></div>
+</div>
+<div class="flex flex-1 flex-col justify-between min-h-[80px]">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Forearm Plank</h3>
+<p class="text-primary text-sm font-semibold uppercase mt-1">Core &amp; Planks</p>
+</div>
+<button class="text-red-500">
+<span class="material-symbols-outlined text-2xl fill-1" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+</div>
+<div class="flex items-center mt-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">SECS</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group flex items-center gap-3 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
+<div class="relative shrink-0">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-md size-20 bg-slate-100 dark:bg-slate-700" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBQZ6AXFkaMebS3sLKqIAkhSZUBsmcjXXPBkiLaC7DmiPf-y7VuWV6y3zF5heJ1jYZh9jo0UGWo34FuYxbgX3fHry-vBpQWU-W8WK0OGRl5phoKfvrWOqB1AZmklBwp2Hr_aNRlkv8tpI-1V2oW2zExWYtoDDpbod10s8aBLaJ3ne8BI20FIAWbAdNTiHS6GqT0p2BLQBFGIcRSjWKQEf8kGGR4tt_rwHUoJ2L_gAyoBGhpuZTANoBIBMoyxjkhlHOkuoO3ti6hO1b6");'></div>
+</div>
+<div class="flex flex-1 flex-col justify-between min-h-[80px]">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Jump Squats</h3>
+<p class="text-primary text-sm font-semibold uppercase mt-1">Lower Body</p>
+</div>
+<button class="text-slate-300 dark:text-slate-600 hover:text-red-500">
+<span class="material-symbols-outlined text-2xl">favorite</span>
+</button>
+</div>
+<div class="flex items-center mt-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">REPS</span>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group flex items-center gap-3 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
+<div class="relative shrink-0">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-md size-20 bg-slate-100 dark:bg-slate-700" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuACWuX_VjvHqXtHXYHhdVs-EJr1gN_dHzypwi-LZIYrrQ_0Kgxxj9-p8KfRmEc77GBHpOINGIUQyCFEAVFI36GRs-YiNWKmPVO8_GO_2tPTrFgWIcOLZRGes4caWFd4ZBTfWPl7WdFZmT1ytmAjPAgzBONBIhTFRz31YCN-dvSNxU-VCWlmEbKGDVrOZ1tR6bFYvNhFXDs8XTOibNN7Hbh5waPES2ghciGcTr7SCqKC89V05MM_3Een113Q9FfkH74cficzYlzwg0wJ");'></div>
+</div>
+<div class="flex flex-1 flex-col justify-between min-h-[80px]">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Jump Rope</h3>
+<p class="text-primary text-sm font-semibold uppercase mt-1">Cardio</p>
+</div>
+<button class="text-slate-300 dark:text-slate-600 hover:text-red-500">
+<span class="material-symbols-outlined text-2xl">favorite</span>
+</button>
+</div>
+<div class="flex items-center mt-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">MINS</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-6 py-3 z-30 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">groups</span>
+</a>
+<!-- FAB Center -->
+<div class="relative -top-8">
+<button class="flex items-center justify-center size-14 rounded-full bg-primary text-white shadow-lg shadow-primary/40 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">emoji_events</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined text-2xl fill-1" style="font-variation-settings: 'FILL' 1;">person</span>
+</a>
+</nav>
+</div>
+</body></html>

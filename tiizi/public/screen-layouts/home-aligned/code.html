@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi Home Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                        "slate": {
+                            50: "#f8fafc",
+                            100: "#f1f5f9",
+                            200: "#e2e8f0",
+                            300: "#cbd5e1",
+                            400: "#94a3b8",
+                            500: "#64748b",
+                            600: "#475569",
+                            700: "#334155",
+                            800: "#1e293b",
+                            900: "#0f172a",
+                        }
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"],
+                        "body": ["Lexend", "sans-serif"]
+                    },
+                    fontSize: {
+                        'xs': '0.75rem',
+                        'sm': '0.875rem',
+                        'base': '1rem',
+                        'lg': '1.125rem',
+                        'xl': '1.25rem',
+                        '2xl': '1.5rem',
+                        '3xl': '1.875rem',
+                    },
+                    spacing: {
+                        '3': '0.75rem',
+                        '4': '1rem',
+                    },
+                    borderRadius: {
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-body">
+<!-- Header -->
+<header class="sticky top-0 z-20 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800/60">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
+<img class="w-full h-full object-cover" data-alt="User profile avatar of Alex" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzWnvHj2DQS2nDwwCxrslSW2RVy7jrM56zZ-1avlGguEmmrl3eiOjugoIWPdO_nWj9x47NBQvea3mZ70xHJ7NQQyIX5sk0AJY4BiKpZecFsdfgWsZtcl3xbPWhSotFXP4QT9zDEAMJWKLEOP9bUMX0GO1l1aGSJytEKwk92BgUSAI_ztsjmGc0uYonZWGSzOlbLLWGrzwIuHaVte7HnnWbJVnksAUDo692JxAPiAV_jaKn2yMWvhcGXOK_oYFc5njXumxmh5t9T3hw"/>
+</div>
+<div>
+<p class="text-xs text-slate-500 font-medium uppercase tracking-tight">Good Morning</p>
+<h1 class="text-3xl font-bold text-slate-900 dark:text-white leading-none">Hello, Alex!</h1>
+</div>
+</div>
+<button class="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-2xl text-slate-700 dark:text-slate-300">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-primary border-2 border-slate-50 dark:border-slate-900 rounded-full"></span>
+</button>
+</header>
+<main class="flex-1 pb-24 overflow-y-auto">
+<!-- Active Challenge Section -->
+<section class="px-6 pt-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-xl font-bold text-slate-900 dark:text-white">Active Challenge</h3>
+<span class="text-sm font-semibold text-primary">75% Done</span>
+</div>
+<div class="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="flex items-start justify-between gap-3 mb-4">
+<div class="flex-1">
+<h4 class="text-lg font-bold text-slate-900 dark:text-white">30 Days of Strength</h4>
+<p class="text-sm text-slate-500">Day 22 of 30 • Advanced Program</p>
+</div>
+<div class="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl">fitness_center</span>
+</div>
+</div>
+<div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full mb-6 overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500" style="width: 75%;"></div>
+</div>
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
+<span class="material-symbols-outlined text-2xl">add_circle</span>
+                    Log Workout
+                </button>
+</div>
+</section>
+<!-- Today's Goals Section -->
+<section class="px-6 mt-8">
+<h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Today's Goals</h3>
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+<!-- Goal Item 1 -->
+<div class="flex items-center p-4 gap-3 bg-slate-50/50 dark:bg-slate-800/30">
+<div class="size-6 bg-primary text-white rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<p class="flex-1 text-base text-slate-400 line-through">Drink 2L Water</p>
+<span class="material-symbols-outlined text-2xl text-slate-400">water_drop</span>
+</div>
+<!-- Goal Item 2 -->
+<div class="flex items-center p-4 gap-3 bg-slate-50/50 dark:bg-slate-800/30">
+<div class="size-6 bg-primary text-white rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+</div>
+<p class="flex-1 text-base text-slate-400 line-through">15 Min Morning Yoga</p>
+<span class="material-symbols-outlined text-2xl text-slate-400">self_improvement</span>
+</div>
+<!-- Goal Item 3 -->
+<div class="flex items-center p-4 gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
+<div class="size-6 border-2 border-slate-300 dark:border-slate-600 rounded-full group-hover:border-primary transition-colors"></div>
+<p class="flex-1 text-base font-medium text-slate-900 dark:text-slate-100">Log Healthy Meal</p>
+<span class="material-symbols-outlined text-2xl text-slate-400 group-hover:text-primary transition-colors">restaurant</span>
+</div>
+</div>
+</section>
+<!-- Trending Challenges Section -->
+<section class="mt-8 mb-6">
+<div class="px-6 flex items-center justify-between mb-4">
+<h3 class="text-xl font-bold text-slate-900 dark:text-white">Trending Challenges</h3>
+<a class="text-primary text-sm font-bold" href="#">See All</a>
+</div>
+<div class="flex overflow-x-auto gap-4 px-6 pb-4 hide-scrollbar">
+<!-- Challenge Card 1 -->
+<div class="min-w-[260px] bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
+<div class="h-36 w-full relative">
+<img class="w-full h-full object-cover" data-alt="People running in a city marathon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwtJnnjr4zkJgsEQ6sv22xL6KybHtlyEf4WBDTDHs6QIaktiDJDaRC0gvwBq2xgPUIwjOZlCUGSkUq4sNaQ9CynL3CxzeSrwlkgLh4osO6fdNa7hOjraA5gQ_DFzgYG5QL3VMPcil9vHopn3OPgs9CvREwBnCKbi1rLVrRNaI8bWJ2l5FRwVppTMFjIKOTPY6cqaS2t-9C_5bEeK_cDK28LDBBV4GGte4I07Z4PgrfnULY_HeJgV-e2LwOevopHomMQ4_3qJFrgn3X"/>
+<div class="absolute top-3 left-3">
+<span class="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Popular</span>
+</div>
+</div>
+<div class="p-4">
+<h5 class="text-lg font-bold text-slate-900 dark:text-white mb-1">10k Step Club</h5>
+<p class="text-xs text-slate-500 mb-4">2.4k members active now</p>
+<button class="w-full border-2 border-primary/20 text-primary hover:bg-primary/5 font-bold py-2 rounded-xl transition-colors text-sm">Join Challenge</button>
+</div>
+</div>
+<!-- Challenge Card 2 -->
+<div class="min-w-[260px] bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
+<div class="h-36 w-full relative">
+<img class="w-full h-full object-cover" data-alt="Glass of water with fresh lemon slices" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdUkwKJwm_DRAate7EGRQgUiCJmteCgHFdZVrfLC6UZbp3_BJCwXzkwj9UgaTrokNLfctApO4B2rRcYeXb1tVwFF_niYnUix1ZXUP8xHwfWR7JJe9v_DakHKG3QoxefX3t7ZNbR94Zm_B72t_dHJ2zHrIVJPUbJ4uFFQysUrrd2YAK3316Ary6bdF3M8a0VeJf7tgzQo1aPo8-HVrwH57F5NH-q4iqA20q2CmWlyosFTnMOMjvOfJvC_yjyh7c50S83NQzHAW-zqXp"/>
+<div class="absolute top-3 left-3">
+<span class="bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Healthy</span>
+</div>
+</div>
+<div class="p-4">
+<h5 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Hydration Hero</h5>
+<p class="text-xs text-slate-500 mb-4">Drink 3L daily for 7 days</p>
+<button class="w-full border-2 border-primary/20 text-primary hover:bg-primary/5 font-bold py-2 rounded-xl transition-colors text-sm">Join Challenge</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/60 dark:border-slate-800/60 px-4 pb-6 pt-3 z-30">
+<div class="max-w-md mx-auto flex items-end justify-between">
+<a class="flex flex-col items-center gap-1 min-w-[64px] text-primary" href="#">
+<span class="material-symbols-outlined text-2xl fill-1">home</span>
+<span class="text-xs font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 min-w-[64px] text-slate-400 dark:text-slate-500 hover:text-slate-600" href="#">
+<span class="material-symbols-outlined text-2xl">group</span>
+<span class="text-xs font-medium">Groups</span>
+</a>
+<div class="relative -top-5">
+<button class="bg-primary size-14 rounded-full flex items-center justify-center text-white shadow-xl shadow-primary/30 border-4 border-slate-50 dark:border-slate-900 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl font-bold">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 min-w-[64px] text-slate-400 dark:text-slate-500 hover:text-slate-600" href="#">
+<span class="material-symbols-outlined text-2xl">trophy</span>
+<span class="text-xs font-medium">Challenges</span>
+</a>
+<a class="flex flex-col items-center gap-1 min-w-[64px] text-slate-400 dark:text-slate-500 hover:text-slate-600" href="#">
+<span class="material-symbols-outlined text-2xl">account_circle</span>
+<span class="text-xs font-medium">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

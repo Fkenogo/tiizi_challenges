@@ -1,0 +1,198 @@
+[
+  {
+    "slug": "admin-challenge-approved-aligned",
+    "title": "admin challenge approved (aligned)",
+    "source": "admin:_challenge_approved_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "admin-pending-challenge-aligned",
+    "title": "admin pending challenge (aligned)",
+    "source": "admin:_pending_challenge_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "challenge-preview-aligned",
+    "title": "challenge preview (aligned)",
+    "source": "challenge_preview_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "challenges-aligned",
+    "title": "challenges (aligned)",
+    "source": "challenges_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "collective-challenge-details",
+    "title": "collective challenge details",
+    "source": "collective_challenge_details",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "competitive-challenge-view",
+    "title": "competitive challenge view",
+    "source": "competitive_challenge_view",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "create-challenge-aligned",
+    "title": "create challenge (aligned)",
+    "source": "create_challenge_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "create-group-aligned",
+    "title": "create group (aligned)",
+    "source": "create_group_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "exercise-detail-aligned",
+    "title": "exercise detail (aligned)",
+    "source": "exercise_detail_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "exercise-library-aligned",
+    "title": "exercise library (aligned)",
+    "source": "exercise_library_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "group-detail-challenges-aligned",
+    "title": "group detail challenges (aligned)",
+    "source": "group_detail:_challenges_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "group-detail-challenges-highlighted",
+    "title": "group detail challenges highlighted",
+    "source": "group_detail_-_challenges_highlighted",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "group-detail-feed-highlighted",
+    "title": "group detail feed highlighted",
+    "source": "group_detail_-_feed_highlighted",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "group-detail-leaderboard-aligned",
+    "title": "group detail leaderboard (aligned)",
+    "source": "group_detail:_leaderboard_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "group-detail-members-highlighted",
+    "title": "group detail members highlighted",
+    "source": "group_detail_-_members_highlighted",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "groups-aligned",
+    "title": "groups (aligned)",
+    "source": "groups_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "home-aligned",
+    "title": "home (aligned)",
+    "source": "home_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "join-group-aligned",
+    "title": "join group (aligned)",
+    "source": "join_group_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "profile-aligned",
+    "title": "profile (aligned)",
+    "source": "profile_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "profile-completion-aligned",
+    "title": "profile completion (aligned)",
+    "source": "profile_completion_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "profile-interests-aligned",
+    "title": "profile interests (aligned)",
+    "source": "profile:_interests_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "profile-personal-info-aligned",
+    "title": "profile personal info (aligned)",
+    "source": "profile:_personal_info_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "profile-privacy-settings-aligned",
+    "title": "profile privacy settings (aligned)",
+    "source": "profile:_privacy_settings_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "quick-actions-aligned",
+    "title": "quick actions (aligned)",
+    "source": "quick_actions_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "sign-up-login-aligned",
+    "title": "sign up / login (aligned)",
+    "source": "sign_up_/_login_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "streak-challenge-view",
+    "title": "streak challenge view",
+    "source": "streak_challenge_view",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "suggested-challenges-aligned",
+    "title": "suggested challenges (aligned)",
+    "source": "suggested_challenges_(aligned)",
+    "hasPreview": true,
+    "hasHtml": true
+  },
+  {
+    "slug": "welcome-full-brand",
+    "title": "welcome full brand",
+    "source": "welcome_-_full_brand",
+    "hasPreview": true,
+    "hasHtml": true
+  }
+]

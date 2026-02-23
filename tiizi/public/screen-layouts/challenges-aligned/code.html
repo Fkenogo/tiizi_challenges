@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi - Featured Challenges</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "slate": {
+                            50: "#f8fafc",
+                            100: "#f1f5f9",
+                            200: "#e2e8f0",
+                            300: "#cbd5e1",
+                            400: "#94a3b8",
+                            500: "#64748b",
+                            600: "#475569",
+                            700: "#334155",
+                            800: "#1e293b",
+                            900: "#0f172a",
+                        }
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"],
+                        "body": ["Lexend", "sans-serif"]
+                    },
+                    fontSize: {
+                        "xs": "0.75rem",
+                        "sm": "0.875rem",
+                        "base": "1rem",
+                        "lg": "1.125rem",
+                        "xl": "1.25rem",
+                        "2xl": "1.5rem",
+                        "3xl": "1.875rem",
+                    },
+                    spacing: {
+                        "1": "0.25rem",
+                        "2": "0.5rem",
+                        "3": "0.75rem",
+                        "4": "1rem",
+                        "5": "1.25rem",
+                        "6": "1.5rem",
+                    },
+                    borderRadius: {
+                        "none": "0",
+                        "sm": "0.125rem",
+                        "DEFAULT": "0.25rem",
+                        "md": "0.375rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px",
+                    },
+                },
+            },
+        }</script>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+        font-family: 'Lexend', sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+        font-size: 16px;
+    }
+    h1, h2, h3, h4 {
+        font-weight: 700;
+        color: #0f172a;
+    }
+</style></head>
+<body class="bg-background-light dark:bg-background-dark text-[#1d130c] dark:text-[#fcfaf8] min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl">leaderboard</span>
+<h1 class="text-xl font-bold text-slate-900">Challenges</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full text-slate-600 hover:bg-slate-100">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+</button>
+<button class="p-2 rounded-full text-slate-600 hover:bg-slate-100">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto pb-32"><!-- Section: Ready to Train -->
+<div class="p-4">
+<div class="relative overflow-hidden bg-slate-50 rounded-xl border border-slate-200 p-5 flex items-center justify-between">
+<div class="relative z-10">
+<h3 class="text-lg font-bold text-slate-900 mb-1">Ready to train?</h3>
+<p class="text-sm text-slate-600 mb-3">Master your technique before you compete.</p>
+<a class="inline-flex items-center gap-2 font-semibold text-primary text-sm" href="#">
+<span>Browse Exercises</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<div class="opacity-10 absolute -right-4 -bottom-4 transform rotate-12">
+<span class="material-symbols-outlined text-8xl text-slate-900">fitness_center</span>
+</div>
+</div>
+</div>
+<!-- Section: Featured Feed -->
+<section class="px-4 py-2">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-slate-900">Featured Feed</h2>
+<button class="text-primary text-sm font-semibold">View All</button>
+</div>
+<div class="flex flex-col gap-6 pb-24">
+<!-- Card: 30-Day Core Blast -->
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+<div class="relative h-48">
+<img alt="Core Blast" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-g9C2cjTx8ffCGJdNVIH83tjAN1BDZhPN1ryuI4-gpn1dIkLdJGnSxG6P5sLuRnWW2k22WDbn2tvbmYUm_eRMBJ_C3SFEKEC1TODq_znBujD1Imi-AQ0we5byvS3k9TktdIT7uX0YumWe4RqhQZmTn3n9l6edwKjAzbyUINntJ-dMWEUgjJgQDyPdyI-PbUyE4ntilXgHFy15jE0yFQ4V6V7aaoATY7w-7819eHfHRdVoXZOB5Pq7GWko4czx8g8yMl_bPgohMtld"/>
+<div class="absolute top-3 left-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider">Trending</div>
+<div class="absolute bottom-3 left-3 flex items-center gap-1 text-white text-xs font-medium">
+<span class="material-symbols-outlined text-sm">group</span>
+                    12.4k Participants
+                </div>
+</div>
+<div class="p-4">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-slate-900">30-Day Core Blast</h3>
+<span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-full">Expert</span>
+</div>
+<p class="text-sm text-slate-600 mb-4">The ultimate journey to functional core strength and definition. Recommended for all levels.</p>
+<div class="flex gap-3">
+<button class="flex-1 bg-primary text-white font-bold py-3 rounded-xl transition-colors">Join Challenge</button>
+<button class="p-3 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined text-2xl">share</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card: Morning Yoga Streak -->
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+<div class="relative h-48">
+<img alt="Morning Yoga" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsfjFD95-m1ILv1DE6qhIG3FdggRrS3aXCYR6sAN4rtD8umbSy6G-DZVcOSdqz9TM3GhsuiopdO203G7tiLlNWM5HE05BFWvCMrSk83dSkQbIYU0oolvE-nsGnaGtjXztI3cd4NbwFhzg9ig8nHnZOheujTystoapk7hD2MMbBJOC5Ra1GlID1cvsghJQYNT7gf8mahCL2zSfcV3PPA8MbjYgjFcg9_RSWjuQZMPdyYpvEKwPKnwbKtFZ-cp8AkeP84BSa43VCDLE3"/>
+<div class="absolute bottom-3 left-3 flex items-center gap-1 text-white text-xs font-medium">
+<span class="material-symbols-outlined text-sm">group</span>
+                    5.4k Participants
+                </div>
+</div>
+<div class="p-4">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-slate-900">Morning Yoga Streak</h3>
+<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">Daily habit</span>
+</div>
+<p class="text-sm text-slate-600 mb-4">Start your day with clarity. 15 minutes of flow every morning for 14 days straight.</p>
+<div class="flex gap-3">
+<button class="flex-1 bg-primary text-white font-bold py-3 rounded-xl transition-colors">Join Challenge</button>
+<button class="p-3 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined text-2xl">share</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card: 100 Push-up Daily (Joined) -->
+<div class="bg-white rounded-xl border border-primary/30 overflow-hidden shadow-sm">
+<div class="relative h-48">
+<img alt="Push-ups" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa4HUBC3unSGhWg03eVtkAZ1CHXL5vfpKI90bIxB61DWqE86PhiM984MZwnuUg-8JsLXcowPGfe4itZL904xs9f86aLvl7weEjrXi1ZLIZMNPukm_VHg7U7I71375-CHlpA9WjXIk2xiFjcvpeYlQY5TIs-7b2RkzW8eZAItyF-LSEfXdulzpUsosDJo-hO9RtrTIhEQQuTI_HD3E3GV_s9bDk_h_EWh3hYrpeiWVn8Im9eCWSm5i7-ML3hne7wG8rFPz8orlRv1oc"/>
+<div class="absolute top-3 right-3 bg-white/90 backdrop-blur text-primary text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                    Joined
+                </div>
+<div class="absolute bottom-3 left-3 flex items-center gap-1 text-white text-xs font-medium">
+<span class="material-symbols-outlined text-sm">group</span>
+                    8.2k Participants
+                </div>
+</div>
+<div class="p-4 flex flex-col gap-4">
+<h3 class="text-lg font-bold text-slate-900">100 Push-up Daily</h3>
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-bold">
+<span class="text-primary">Progress</span>
+<span class="text-slate-900">45%</span>
+</div>
+<div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 45%"></div>
+</div>
+</div>
+<button class="w-full bg-slate-50 text-primary border border-slate-200 font-bold py-3 rounded-xl hover:bg-slate-100 transition-colors">View Progress</button>
+</div>
+</div>
+</div>
+</section></main>
+<!-- Floating Action Button (FAB) for Create Challenge -->
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
+<button class="flex items-center gap-2 bg-primary text-white px-6 py-4 rounded-full shadow-lg shadow-primary/30 hover:scale-105 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-2xl">add</span>
+<span class="font-bold whitespace-nowrap">Create a Challenge</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-3 z-40">
+<div class="max-w-md mx-auto flex items-center justify-between">
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-xs font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">groups</span>
+<span class="text-xs font-medium">Groups</span>
+</a>
+<div class="w-12"></div> <!-- Spacer for FAB -->
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined text-2xl">trophy</span>
+<span class="text-xs font-bold">Challenges</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="text-xs font-medium">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

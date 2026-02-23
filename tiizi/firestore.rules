@@ -1,0 +1,208 @@
+rules_version = '2';
+service cloud.firestore {
+  function isAuthenticated() {
+    return request.auth != null;
+  }
+
+  function hasUserRole(role) {
+    return isAuthenticated()
+      && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+      && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+  }
+
+  function hasAdminRole(role) {
+    return isAuthenticated()
+      && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == role;
+  }
+
+  function hasProfileRole(role) {
+    return isAuthenticated()
+      && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+      && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.profile.role == role;
+  }
+
+  function isSuperAdmin() {
+    return hasAdminRole('super_admin') || hasUserRole('super_admin');
+  }
+
+  function canAccessAdmin() {
+    return isSuperAdmin()
+      || hasAdminRole('admin')
+      || hasAdminRole('moderator')
+      || hasAdminRole('support')
+      || hasAdminRole('content_manager')
+      || hasUserRole('admin')
+      || hasUserRole('moderator')
+      || hasUserRole('support')
+      || hasUserRole('content_manager')
+      || hasProfileRole('admin');
+  }
+
+  function canModerateChallenges() {
+    return isSuperAdmin()
+      || hasAdminRole('admin')
+      || hasAdminRole('moderator')
+      || hasAdminRole('content_manager')
+      || hasUserRole('admin')
+      || hasUserRole('moderator')
+      || hasUserRole('content_manager');
+  }
+
+  function canManageExercises() {
+    return isSuperAdmin()
+      || hasAdminRole('content_manager')
+      || hasUserRole('content_manager');
+  }
+
+  function canManageUsers() {
+    return isSuperAdmin()
+      || hasAdminRole('admin')
+      || hasAdminRole('moderator')
+      || hasAdminRole('support')
+      || hasUserRole('admin')
+      || hasUserRole('moderator')
+      || hasUserRole('support');
+  }
+
+  function canManageGroups() {
+    return isSuperAdmin()
+      || hasAdminRole('admin')
+      || hasAdminRole('moderator')
+      || hasUserRole('admin')
+      || hasUserRole('moderator');
+  }
+
+  function canModerateGroups() {
+    return canManageGroups();
+  }
+
+  function canManageSettings() {
+    return isSuperAdmin();
+  }
+
+  function canManageAdminUsers() {
+    return isSuperAdmin();
+  }
+
+  function canViewSystemLogs() {
+    return isSuperAdmin()
+      || hasAdminRole('admin')
+      || hasAdminRole('moderator')
+      || hasAdminRole('support')
+      || hasUserRole('admin')
+      || hasUserRole('moderator')
+      || hasUserRole('support');
+  }
+
+  match /databases/{database}/documents {
+    match /catalogExercises/{exerciseId} {
+      allow read: if true;
+      allow create, update, delete: if canManageExercises();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (request.auth.uid == userId || canManageUsers() || canManageAdminUsers());
+    }
+
+    match /groups/{groupId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid
+        || canManageGroups()
+      );
+    }
+
+    match /groupMembers/{membershipId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                            && (
+                              resource.data.userId == request.auth.uid
+                              || canManageGroups()
+                            );
+    }
+
+    match /challenges/{challengeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid
+        || canModerateChallenges()
+      );
+    }
+
+    match /workouts/{workoutId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                            && resource.data.userId == request.auth.uid;
+    }
+
+    match /settings/{settingId} {
+      allow read: if canAccessAdmin();
+      allow write: if canManageSettings();
+    }
+
+    match /challengeTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if canModerateChallenges();
+    }
+
+    match /supportTickets/{ticketId} {
+      allow read: if canManageUsers();
+      allow write: if canManageUsers();
+    }
+
+    match /groupReports/{reportId} {
+      allow read: if canManageGroups();
+      allow write: if canModerateGroups();
+    }
+
+    match /donationCampaigns/{campaignId} {
+      allow read: if canAccessAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    match /donationTransactions/{transactionId} {
+      allow read: if canAccessAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    match /exerciseInterests/{interestId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || hasAdminRole('content_manager') || hasUserRole('content_manager');
+    }
+
+    match /wellnessGoals/{goalId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || hasAdminRole('content_manager') || hasUserRole('content_manager');
+    }
+
+    match /onboardingContent/{docId} {
+      allow read: if canAccessAdmin();
+      allow write: if isSuperAdmin() || hasAdminRole('content_manager') || hasUserRole('content_manager');
+    }
+
+    match /notificationTemplates/{docId} {
+      allow read: if canAccessAdmin();
+      allow write: if isSuperAdmin() || hasAdminRole('content_manager') || hasUserRole('content_manager') || hasAdminRole('moderator') || hasUserRole('moderator');
+    }
+
+    match /admins/{adminId} {
+      allow read: if isAuthenticated() && (request.auth.uid == adminId || canManageAdminUsers());
+      allow write: if canManageAdminUsers();
+    }
+
+    match /systemLogs/{logId} {
+      allow read: if canViewSystemLogs();
+      allow create: if canAccessAdmin()
+                    && request.resource.data.actorUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

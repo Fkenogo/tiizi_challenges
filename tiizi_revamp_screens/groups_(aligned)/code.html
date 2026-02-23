@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi Groups</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "12px",
+                        "lg": "16px",
+                        "xl": "24px",
+                        "full": "9999px"
+                    },
+                    fontSize: {
+                        "xs": "12px",
+                        "sm": "14px",
+                        "base": "16px",
+                        "lg": "18px",
+                        "xl": "20px",
+                        "2xl": "24px",
+                        "3xl": "30px",
+                        "4xl": "36px"
+                    },
+                    spacing: {
+                        "px": "1px",
+                        "0": "0px",
+                        "1": "4px",
+                        "2": "8px",
+                        "3": "12px",
+                        "4": "16px",
+                        "5": "20px",
+                        "6": "24px",
+                        "8": "32px",
+                        "10": "40px",
+                        "12": "48px"
+                    }
+                },
+            },
+        }</script><style>
+    :root {
+        --primary: #ff6a00;
+        --bg-subtle: #f8fafc;
+        --text-secondary: #64748b;
+        --card-radius: 12px;
+    }
+    body {
+        font-family: 'Lexend', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    .interactive-card {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .interactive-card:active {
+        transform: scale(0.98);
+    }
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+</style>
+<style>
+        body {
+            font-family: 'Lexend', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen pb-24">
+<!-- Sticky Header -->
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10 px-4 py-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="text-primary">
+<span class="material-symbols-outlined text-2xl">group_work</span>
+</div>
+<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Your Groups</h1>
+</div>
+<div class="flex gap-2">
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+</button>
+</div>
+</header>
+<!-- Tabs -->
+<div class="px-4 py-2 flex gap-6 border-b border-slate-100 dark:border-slate-800">
+<button class="pb-2 border-b-2 border-primary text-primary font-semibold text-sm">My Groups</button>
+<button class="pb-2 border-b-2 border-transparent text-slate-500 font-medium text-sm hover:text-slate-700">Discover</button>
+<button class="pb-2 border-b-2 border-transparent text-slate-500 font-medium text-sm hover:text-slate-700">Invites</button>
+</div>
+<!-- Main Content: Group List -->
+<main class="p-4 space-y-4 max-w-2xl mx-auto">
+<!-- Group Card 1 -->
+<div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 interactive-card mb-4">
+<div class="relative h-44">
+<img alt="Early Birds" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWmFRZLez-KxBk7wrc96-UatCD9bD7WL6nuI341bzN50iPALPL6u9-mM2GnrWSNyscrMskadAjIFrhcrrDMKKg7hi348uAyRBVu2TZ0ltAcjXEcwD9vgpTnoSpZDCkKP-yU9DqmBQr4oFkU9Flz-KzRe4dMRh5J2StFkSiYcsCR_4KWUU_YTWKiBHQB0GUyjAa2jooGaukfQqkhTWf3Dv6NGXFa7HKsTBPZs74p5Vu06YhhqSnKLQSNkSvwq6R1XM5N-2NxQ9pw6Xr"/>
+<div class="absolute top-3 left-3">
+<span class="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-sm">Active Now</span>
+</div>
+</div>
+<div class="p-4">
+<div class="flex justify-between items-start mb-2">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Early Birds Kenya</h2>
+<button class="text-slate-400"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
+                    Waking up early to achieve our fitness goals together. Join us for morning drills and accountability!
+                </p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">group</span>
+<span>1,240</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm fill-1">trophy</span>
+<span>3 Challenges</span>
+</div>
+</div>
+<button class="bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors px-4 py-1.5 rounded-lg text-sm font-bold">
+    View
+</button>
+</div>
+</div>
+</div>
+<!-- Group Card 2 -->
+<div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 interactive-card mb-4">
+<div class="relative h-44">
+<img alt="Nairobi Tech" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbScZXdjrt_oaZbbZSy5ZHCMFqnTc2iXWbsnzRFrTLXILRQwhWPSucIGDXygOynJJiCh6ee2rHgAaBC8y28Xm13Sze24Q21f8gekj-dYnENoTLnuUWbD4aIv9YBXrxCjNhIb_8rTLJvW8rA-JCD1ZCEVUsWCZAagN3GCGxPB1iywrBpCNjrU1MlxZT4n2C-6Q_GsX61s-JHxxZzp_nY6uHlPJcRAhi8nnrOkvifiAn5k08eYEQ7dORIZADpdmGFi2V-efCqfUE0e1i"/>
+</div>
+<div class="p-4">
+<div class="flex justify-between items-start mb-2">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Nairobi Tech Runners</h2>
+<button class="text-slate-400"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
+                    Weekly evening runs starting from Westlands. For the developers who need to step away from the screen.
+                </p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">group</span>
+<span>850</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-sm fill-1">trophy</span>
+<span>1 Challenge</span>
+</div>
+</div>
+<button class="bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors px-4 py-1.5 rounded-lg text-sm font-bold">
+    View
+</button>
+</div>
+</div>
+</div>
+<!-- Group Card 3 -->
+<div class="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 interactive-card">
+<div class="relative h-44">
+<img alt="Mindful Kilimani" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfpzgDjKSCdu1XzqHlM1HRePhGBvVjNQ_byq7i_rq-z58xBIsqUwDb9BE_TewBBtASfVvv0JdRobmxJ_hwSU6c4KWo0RAzXZ-TF_eRLzeFAmr6GSAxJJCz6XvNnXx3FATKgvVjTVAuISYT1YjqRIBlE3uwyT27qmyYqvifwg8-O0-sZp8q2_7-llN1B8vb8-b7YXMlCsZhIIpE1FQWSjYa_oVMUnsRCWpnfS7pPv5fsRcGlOggmX5eJJQfJH6vJ5II7p40n6o9O1e3"/>
+</div>
+<div class="p-4">
+<div class="flex justify-between items-start mb-2">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Mindful Kilimani</h2>
+<button class="text-slate-400"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
+                    Focusing on mental health and light physical activity in the heart of Kilimani. All levels welcome.
+                </p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">group</span>
+<span>312</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trophy</span>
+<span>0 Challenges</span>
+</div>
+</div>
+<button class="bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors px-4 py-1.5 rounded-lg text-sm font-bold">
+    View
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar with FAB -->
+<nav class="fixed bottom-0 left-0 right-0 glass-effect border-t border-slate-100 dark:bg-slate-900/90 dark:border-slate-800 px-6 pb-6 pt-3 flex items-center justify-between z-50">
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-xs font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl fill-1">groups</span>
+<span class="text-xs font-bold">Groups</span>
+</a>
+<div class="relative -top-8">
+<button class="bg-primary text-white w-14 h-14 rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">emoji_events</span>
+<span class="text-xs font-medium">Challenges</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">account_circle</span>
+<span class="text-xs font-medium">Profile</span>
+</a>
+</nav>
+</body></html>

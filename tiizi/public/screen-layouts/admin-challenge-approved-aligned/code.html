@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head><link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Group Details - Active Challenges</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#221610",
+                        "slate": {
+                            50: "#f8fafc",
+                            100: "#f1f5f9",
+                            200: "#e2e8f0",
+                            300: "#cbd5e1",
+                            400: "#94a3b8",
+                            500: "#64748b",
+                            600: "#475569",
+                            700: "#334155",
+                            800: "#1e293b",
+                            900: "#0f172a",
+                        }
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"],
+                        "body": ["Lexend", "sans-serif"]
+                    },
+                    fontSize: {
+                        "xs": "10px",
+                        "sm": "12px",
+                        "base": "14px",
+                        "lg": "18px",
+                        "xl": "20px",
+                        "2xl": "24px"
+                    },
+                    spacing: {
+                        "1": "4px",
+                        "2": "8px",
+                        "3": "12px",
+                        "4": "16px",
+                        "5": "20px",
+                        "6": "24px"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "8px",
+                        "xl": "12px",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }</script>
+<style>
+        :root {
+            --primary: #ff6a00;
+            --spacing-standard: 16px;
+            --spacing-compact: 12px;
+            --radius-card: 12px;
+        }
+        body {
+            font-family: 'Lexend', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        .screen-title {
+            font-size: 24px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+        .heading-standard {
+            font-size: 18px;
+            font-weight: 700;
+        }
+    </style>
+<style>
+        :root {
+            --primary: #ff6a00;
+            --spacing-standard: 16px;
+            --spacing-compact: 12px;
+            --radius-card: 12px;
+        }
+        body {
+            font-family: 'Lexend', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        .screen-title {
+            font-size: 24px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+        .heading-standard {
+            font-size: 18px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Success Toast Notification -->
+<div class="fixed top-4 left-4 right-4 z-50 flex justify-center">
+<div class="flex items-center gap-3 bg-white dark:bg-zinc-800 border-l-4 border-primary px-4 py-3 rounded-lg shadow-xl w-full max-w-md">
+<span class="material-symbols-outlined text-primary active-icon">check_circle</span>
+<div class="flex-1">
+<p class="text-sm font-bold leading-tight">Challenge Approved!</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Morning Yoga Flow is now live.</p>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto pb-24">
+<!-- Header / Navigation Bar -->
+<div class="p-4">
+<button class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold heading-standard">Yoga Enthusiasts</h1>
+<button class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<!-- Group Info Hero -->
+<div class="p-4">
+<div class="relative h-48 w-full rounded-xl overflow-hidden mb-4">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+<div class="absolute inset-0 bg-cover bg-center" data-alt="People practicing yoga in a bright studio" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBrCCxrgwy3uuF4LgqAoLxoLPErN3njpxAZnlIg4WEDhfcETu1tf-Lf91lxCrWBaba9ak9EMPmg_ZRvjD5CpBcZUm9c1woNoedl_UOwXsGoO--rJslkamCrzZQTG5_WyKbpN_4-zDg3W-8ALwBcmdenu2PPtPCFg-at-Cu7QY-_PxGwrFC_eZ74jtVn1GRPAHqpYTcZyBEQ9xOGwVnwk7BzVI39Q_gDcqwhMhDIjXK3MBAbMr-M0pL2xDtcYudCRyWRh0rT_UbOQWp4')"></div>
+<div class="absolute bottom-4 left-4 z-20">
+<h2 class="text-white screen-title">Yoga Enthusiasts</h2>
+<p class="text-white/80 text-sm">1.2k members • Private Group</p>
+</div>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+<button class="px-4 py-2 rounded-full text-sm font-medium bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300">Overview</button>
+<button class="px-4 py-2 rounded-full text-sm font-medium bg-primary text-white shadow-md">Challenges</button>
+<button class="px-4 py-2 rounded-full text-sm font-medium bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300">Members</button>
+<button class="px-4 py-2 rounded-full text-sm font-medium bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300">Chat</button>
+</div>
+</div>
+<!-- Active Challenges Section -->
+<div class="p-4">
+<div class="flex items-center justify-between">
+<h3 class="font-bold heading-standard">Active Challenges</h3>
+<span class="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded-full">3 New Today</span>
+</div>
+<!-- Newly Approved Challenge Card -->
+<div class="p-4">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-3">
+<div class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">self_improvement</span>
+</div>
+<div>
+<h4 class="font-bold text-base">Morning Yoga Flow</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400">Ends in 29 days • Started Today</p>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-wider font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded">Active</span>
+</div>
+<div class="space-y-2 mb-4">
+<div class="flex justify-between text-xs font-medium">
+<span>Your Progress</span>
+<span>0%</span>
+</div>
+<div class="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[2%]"></div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary text-white text-sm font-bold py-2.5 rounded-lg transition-transform active:scale-95">
+                        View Details
+                    </button>
+<button class="px-3 py-2.5 bg-slate-100 dark:bg-zinc-800 rounded-lg text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-sm">share</span>
+</button>
+</div>
+</div>
+<!-- Other Active Challenges -->
+<div class="p-4">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-3">
+<div class="size-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined text-3xl">water_drop</span>
+</div>
+<div>
+<h4 class="font-bold text-base">Hydration Hero</h4>
+<p class="text-xs text-slate-500 dark:text-slate-400">Ends in 5 days • Ongoing</p>
+</div>
+</div>
+</div>
+<div class="space-y-2 mb-4">
+<div class="flex justify-between text-xs font-medium">
+<span>Your Progress</span>
+<span>65%</span>
+</div>
+<div class="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500 rounded-full w-[65%]"></div>
+</div>
+</div>
+<button class="w-full bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-slate-100 text-sm font-bold py-2.5 rounded-lg">
+                    Continue Challenge
+                </button>
+</div>
+</div>
+<!-- Leaderboard Preview -->
+<div class="p-4">
+<h3 class="font-bold mb-4 heading-standard">Top Performers</h3>
+<div class="flex gap-4">
+<div class="flex flex-col items-center gap-1">
+<div class="relative">
+<img class="size-14 rounded-full border-2 border-primary p-0.5" data-alt="User profile avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5KlKoJK4SxEbIA0jcrKm0nLLo5epZxfPsEoBIXO1j1G6DyKryU2BL5IVTweJJaMVvcqD7t7ra83Rr532OsE2UP7QY7hQceNcjfrKVS4F47Q5ioKOIcmflKAi6a-Th8w0OTMUOEUzkXuMN6RhlDVHBbMsZfOu4TRU2MCnSfyySMbZbbPdJrLHqt0Fd9CJNYkukvqSMEpHoQ68wdr8uXEXJL2_9z_lC3PbcVWg3iF_oMM_vJp37VLu3OL685ZVrvwNpjJBr1KkJd-nd"/>
+<div class="absolute -bottom-1 -right-1 bg-yellow-400 text-black text-[10px] font-bold size-5 flex items-center justify-center rounded-full border-2 border-white dark:border-zinc-900">1</div>
+</div>
+<span class="text-xs font-medium">Sarah W.</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="relative">
+<img class="size-14 rounded-full border-2 border-slate-300 p-0.5" data-alt="User profile avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0GSW_oUxy3SbebicCSvrlBRxljqVsTiakcFaMf0oU_9zvwrh_IKzkNT-IOQ0ILIyaQo3Fu8Pz1Ju5vIZJiPHAhgyUDLj1xOHpScAmyYxy4VFHqzVZR0gvZApR6iRszsanBdGZDMt--T9xQBgRffeTV8eGE419fWO2SUBxW9MdeaiD2UIfJ7er5uW3xCSbt5e1AdUv867H4v5aVZgyDdWk719UQw_MpQme6nq-aklp028_N2vjg9l9Fx1Jsjf7XlZZH36FcqPte7lV"/>
+<div class="absolute -bottom-1 -right-1 bg-slate-300 text-black text-[10px] font-bold size-5 flex items-center justify-center rounded-full border-2 border-white dark:border-zinc-900">2</div>
+</div>
+<span class="text-xs font-medium">Mike R.</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="relative">
+<img class="size-14 rounded-full border-2 border-amber-600 p-0.5" data-alt="User profile avatar 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDN-58EovBymitwIgo7v0V2m2vV_lPV5NVXfDBb6j4UVjh29UDhnz2x9haj2apRVZsaf67QRh1j1_VWkhPiVjTvs_KwFCjCmLD5mvH7TIZxL-DVQxBVUJSNys9doxw3v1ug-iB0S_6pkCoK9YEHzCwvhlLQ2fK_230Bk7A74wXTBt9jrot9jmDS9SkCEyHstRrVnUP1zRPTse9kre5k8J-R2nmGxJeceW2u3v-FR7aIr8bM7axqRjlXPh9wDKDUSVLpFgXt5Y87G3xm"/>
+<div class="absolute -bottom-1 -right-1 bg-amber-600 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full border-2 border-white dark:border-zinc-900">3</div>
+</div>
+<span class="text-xs font-medium">Elena G.</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 px-4 pb-6 pt-2 z-30">
+<div class="flex items-center justify-between max-w-lg mx-auto">
+<a class="flex flex-col items-center gap-1 text-slate-400 w-12" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-xs font-medium uppercase tracking-tighter">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary w-12" href="#">
+<span class="material-symbols-outlined active-icon text-2xl">groups</span>
+<span class="text-xs font-bold uppercase tracking-tighter">Groups</span>
+</a>
+<div class="-mt-8">
+<button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 text-slate-400 w-12" href="#">
+<span class="material-symbols-outlined text-2xl">trophy</span>
+<span class="text-xs font-medium uppercase tracking-tighter">Challenges</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 w-12" href="#">
+<span class="material-symbols-outlined text-2xl">account_circle</span>
+<span class="text-xs font-medium uppercase tracking-tighter">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

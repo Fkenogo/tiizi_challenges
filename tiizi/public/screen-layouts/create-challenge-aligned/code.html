@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi - New Challenge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23170f",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    fontSize: {
+                        'xs': '0.625rem',    /* 10px */
+                        'sm': '0.75rem',     /* 12px */
+                        'base': '0.875rem',  /* 14px */
+                        'lg': '1.125rem',    /* 18px */
+                        'xl': '1.25rem',     /* 20px */
+                        '2xl': '1.5rem',     /* 24px */
+                    },
+                    spacing: {
+                        '3': '0.75rem',      /* 12px */
+                        '4': '1rem',         /* 16px */
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.625rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }</script>
+<style>:root {
+      --primary: #ff6a00;
+      --primary-hover: #e65f00;
+    }
+    body {
+        font-family: 'Lexend', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .active-icon {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Mobile system overrides */
+    .form-input, .form-select, .form-textarea {
+        @apply border-slate-200 focus:border-primary focus:ring-primary rounded-lg text-base;
+    }
+    h1 { @apply text-2xl font-black; }
+    h2 { @apply text-lg font-bold; }
+    .label-text { @apply text-[10px] font-bold uppercase tracking-wider text-slate-500; }</style>
+<style>:root {
+      --primary: #ff6a00;
+      --primary-hover: #e65f00;
+    }
+    body {
+        font-family: 'Lexend', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .active-icon {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Mobile system overrides */
+    .form-input, .form-select, .form-textarea {
+        @apply border-slate-200 focus:border-primary focus:ring-primary rounded-lg text-base;
+    }
+    h1 { @apply text-2xl font-black; }
+    h2 { @apply text-lg font-bold; }
+    .label-text { @apply text-[10px] font-bold uppercase tracking-wider text-slate-500; }</style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#1d130c] dark:text-white font-display">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto bg-white dark:bg-background-dark shadow-xl pb-24">
+<!-- Header -->
+<header class="sticky top-0 z-10 flex items-center bg-white dark:bg-background-dark px-4 py-4 border-b border-gray-100 dark:border-gray-800">
+<button class="flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+<span class="material-symbols-outlined text-[#1d130c] dark:text-white">arrow_back</span>
+</button>
+<h1 class="flex-1 text-center text-2xl font-black tracking-tight pr-10">New Challenge</h1>
+</header>
+<!-- Form Content -->
+<main class="flex flex-col gap-6 p-4">
+<!-- Cover Image Upload -->
+<section class="flex flex-col">
+<div class="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 px-6 py-10 transition-all hover:bg-primary/10">
+<div class="flex flex-col items-center gap-1 text-center">
+<span class="material-symbols-outlined text-primary text-4xl mb-2">add_a_photo</span>
+<p class="text-lg font-bold">Upload Challenge Cover</p>
+<p class="text-sm text-gray-500 dark:text-gray-400">Add a visual for your challenge</p>
+</div>
+<button class="flex min-w-[140px] cursor-pointer items-center justify-center rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold shadow-md hover:bg-primary/90 transition-all">
+                        Choose Image
+                    </button>
+</div>
+</section>
+<!-- Info Section -->
+<section class="flex flex-col gap-4">
+<h2 class="label-text text-slate-900 dark:text-white">Info</h2>
+<div class="flex flex-col gap-4">
+<label class="flex flex-col gap-2">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">CHALLENGE NAME</span>
+<input class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" placeholder="e.g. 30 Day Shred" type="text"/>
+</label>
+<label class="flex flex-col gap-2">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">CHALLENGE DESCRIPTION</span>
+<textarea class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" placeholder="Tell everyone what this is about..." rows="3"></textarea>
+</label>
+</div>
+</section>
+<!-- Type Section -->
+<section class="flex flex-col gap-4">
+<h2 class="label-text text-slate-900 dark:text-white">Challenge Type</h2>
+<div class="flex flex-wrap gap-2">
+<button class="px-5 py-2.5 rounded-full text-xs font-bold bg-primary text-white border border-primary transition-all uppercase">Collective</button>
+<button class="px-5 py-2.5 rounded-full text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-all uppercase">Competitive</button>
+<button class="px-5 py-2.5 rounded-full text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-all uppercase">Streak</button>
+</div>
+</section>
+<!-- Timeline Section -->
+<section class="flex flex-col gap-4">
+<h2 class="label-text text-slate-900 dark:text-white">Timeline</h2>
+<div class="grid grid-cols-2 gap-4">
+<label class="flex flex-col gap-2">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">START DATE</span>
+<div class="relative">
+<input class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" type="date"/>
+</div>
+</label>
+<label class="flex flex-col gap-2">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">END DATE</span>
+<div class="relative">
+<input class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" type="date"/>
+</div>
+</label>
+</div>
+</section>
+<!-- Activities Section -->
+<section class="flex flex-col gap-4">
+<div class="flex flex-col gap-3 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+<h2 class="label-text text-slate-900 dark:text-white">Challenge Activities</h2>
+</div>
+<div class="flex flex-col gap-3 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+<div class="grid grid-cols-1 gap-3">
+<label class="flex flex-col gap-1.5">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">Activity Name</span>
+<div class="relative">
+<input class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" placeholder="Search activities (e.g. Pushups)" type="text"/>
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">search</span>
+</div>
+</label>
+<div class="grid grid-cols-2 gap-3">
+<label class="flex flex-col gap-1.5">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">Target Value</span>
+<input class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" placeholder="0" type="number"/>
+</label>
+<label class="flex flex-col gap-1.5">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">Unit</span>
+<select class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all">
+<option>Reps</option>
+<option>Seconds</option>
+<option>Minutes</option>
+<option>Km</option>
+<option>Miles</option>
+</select>
+</label>
+</div>
+</div>
+</div>
+<button class="flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-dashed border-primary/20 text-primary font-bold text-sm hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined text-lg">add</span>
+                    Add Another Activity
+                </button>
+</section>
+<!-- Support Section -->
+<section class="flex flex-col gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<h2 class="label-text text-slate-900 dark:text-white">Info</h2>
+<p class="text-xs text-gray-500">Raise money for a charity</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex flex-col gap-4 pt-2">
+<label class="flex flex-col gap-2">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">CAUSE DESCRIPTION</span>
+<input class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" placeholder="e.g. Save the Oceans Foundation" type="text"/>
+</label>
+<label class="flex flex-col gap-2">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">TARGET TOTAL DONATION ($)</span>
+<div class="relative">
+<span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">$</span>
+<input class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" placeholder="500" type="number"/>
+</div>
+</label>
+</div>
+</section>
+<!-- Submit Button -->
+<div class="pt-4 pb-8">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">rocket_launch</span>
+                    Launch Challenge
+                </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto flex gap-2 border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-background-dark/90 backdrop-blur-md px-4 pb-6 pt-2 z-20">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">home</span>
+<p class="text-[10px] font-medium leading-normal tracking-tight">Home</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary font-bold" href="#">
+<span class="material-symbols-outlined active-icon">groups</span>
+<p class="text-[10px] font-medium leading-normal tracking-tight">Groups</p>
+</a>
+<a class="flex flex-1 items-center justify-center -mt-8" href="#"><div class="bg-primary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center border-4 border-white dark:border-background-dark">
+<span class="material-symbols-outlined text-3xl">add</span>
+</div></a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">trophy</span>
+<p class="text-[10px] font-medium leading-normal tracking-tight">Challenges</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">person</span>
+<p class="text-[10px] font-medium leading-normal tracking-tight">Profile</p>
+</a>
+</nav>
+</div>
+</body></html>
