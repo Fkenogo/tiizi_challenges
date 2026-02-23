@@ -30,7 +30,7 @@ import React from 'react';
  *         <img src="hero.jpg" alt="Hero" className="w-full" />
  *       </div>
  *       <div className="px-4 py-4">
- *         {/* Content with padding */}
+ *         Content with padding
  *       </div>
  *     </Screen>
  *   );
@@ -38,7 +38,7 @@ import React from 'react';
  * 
  * @example Custom background
  * <Screen className="bg-gradient-to-b from-primary to-primary-dark">
- *   {/* Content */}
+ *   Content
  * </Screen>
  */
 interface ScreenProps {

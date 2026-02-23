@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const cwd = process.cwd();
-const src = path.resolve(cwd, '..', 'tiizi_revamp_screens');
+const src = path.resolve(cwd, 'docs', 'ui-reference', 'tiizi_revamp_screens');
 const out = path.resolve(cwd, 'public', 'screen-layouts');
 const dataOut = path.resolve(cwd, 'src', 'data', 'screenLayouts.json');
 
