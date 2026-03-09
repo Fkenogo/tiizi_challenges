@@ -2,9 +2,9 @@ import {
   addDoc,
   collection,
   doc,
+  documentId,
   getDoc,
   getDocs,
-  increment,
   limit,
   query,
   setDoc,
@@ -33,9 +33,18 @@ type GroupMembership = {
   groupId: string;
   userId: string;
   role: 'owner' | 'admin' | 'member';
-  status: 'joined' | 'pending' | 'rejected';
+  status: 'joined' | 'active' | 'pending' | 'rejected' | 'left';
   createdAt: string;
   approvedAt?: string;
+  seedTag?: string;
+};
+
+type ReportGroupInput = {
+  groupId: string;
+  reporterUid: string;
+  reason: string;
+  reportType?: 'group' | 'member';
+  reportedUserId?: string;
 };
 
 function normalizeInviteCode(name: string) {
@@ -50,45 +59,6 @@ function normalizeInviteCode(name: string) {
 class GroupService {
   private collectionName = 'groups';
   private membershipsCollection = 'groupMembers';
-  private seedTag = 'tiizi_seed_v1';
-
-  private async bootstrapSeedMemberships(userId: string): Promise<void> {
-    const existing = await getDocs(
-      query(collection(db, this.membershipsCollection), where('userId', '==', userId), limit(1)),
-    );
-    if (!existing.empty) return;
-
-    const seedGroupsSnap = await getDocs(
-      query(
-        collection(db, this.collectionName),
-        where('seedTag', '==', this.seedTag),
-        where('isPrivate', '==', false),
-        limit(3),
-      ),
-    );
-
-    if (seedGroupsSnap.empty) return;
-
-    const nowIso = new Date().toISOString();
-    await Promise.all(
-      seedGroupsSnap.docs.map(async (groupDoc) => {
-        const membershipRef = doc(db, this.membershipsCollection, `${groupDoc.id}_${userId}`);
-        await setDoc(
-          membershipRef,
-          {
-            groupId: groupDoc.id,
-            userId,
-            role: 'member',
-            status: 'joined',
-            createdAt: nowIso,
-            approvedAt: nowIso,
-            seedTag: this.seedTag,
-          } satisfies GroupMembership & { seedTag: string },
-          { merge: true },
-        );
-      }),
-    );
-  }
 
   async getGroups(): Promise<Group[]> {
     const snap = await getDocs(collection(db, this.collectionName));
@@ -97,32 +67,54 @@ class GroupService {
         const data = d.data() as Omit<Group, 'id'>;
         return { id: d.id, ...data };
       })
+      .map((group) => ({ ...group, memberCount: group.memberCount ?? 0 }))
       .sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0));
   }
 
   async getMyGroups(userId: string): Promise<Group[]> {
-    let membershipSnap = await getDocs(
-      query(collection(db, this.membershipsCollection), where('userId', '==', userId), where('status', '==', 'joined')),
+    const membershipSnap = await getDocs(
+      query(collection(db, this.membershipsCollection), where('userId', '==', userId)),
     );
-
-    if (membershipSnap.empty) {
-      await this.bootstrapSeedMemberships(userId);
-      membershipSnap = await getDocs(
-        query(collection(db, this.membershipsCollection), where('userId', '==', userId), where('status', '==', 'joined')),
-      );
-    }
-
     if (membershipSnap.empty) return [];
 
-    const groupIds = membershipSnap.docs.map((item) => (item.data() as GroupMembership).groupId);
-    const groups = await Promise.all(groupIds.map((groupId) => this.getGroupById(groupId)));
-    return groups.filter((group): group is Group => !!group);
+    const groupIds = membershipSnap.docs
+      .map((item) => item.data() as GroupMembership)
+      .filter((membership) => membership.status === 'joined' || membership.status === 'active')
+      .map((membership) => membership.groupId);
+
+    if (groupIds.length === 0) return [];
+
+    return this.getGroupsByIds(groupIds);
   }
 
   async getGroupById(id: string): Promise<Group | null> {
     const snap = await getDoc(doc(db, this.collectionName, id));
     if (!snap.exists()) return null;
     return { id: snap.id, ...(snap.data() as Omit<Group, 'id'>) };
+  }
+
+  async getGroupsByIds(groupIds: string[]): Promise<Group[]> {
+    const uniqueIds = Array.from(new Set(groupIds)).filter(Boolean);
+    if (uniqueIds.length === 0) return [];
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < uniqueIds.length; i += 10) {
+      chunks.push(uniqueIds.slice(i, i + 10));
+    }
+
+    const snaps = await Promise.all(
+      chunks.map((chunk) =>
+        getDocs(
+          query(collection(db, this.collectionName), where(documentId(), 'in', chunk)),
+        ),
+      ),
+    );
+
+    const groups: Group[] = snaps.flatMap((snap) =>
+      snap.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<Group, 'id'>) })),
+    );
+
+    return groups;
   }
 
   async getGroupsByOwner(ownerId: string): Promise<Group[]> {
@@ -153,7 +145,7 @@ class GroupService {
       groupId: ref.id,
       userId: input.ownerId,
       role: 'owner',
-      status: 'joined',
+      status: 'active',
       createdAt: new Date().toISOString(),
       approvedAt: new Date().toISOString(),
     } satisfies GroupMembership);
@@ -171,7 +163,11 @@ class GroupService {
 
     if (memberSnap.exists()) {
       const existing = memberSnap.data() as GroupMembership;
+      if (existing.status === 'active') {
+        return { group, status: 'joined' };
+      }
       if (existing.status === 'joined') {
+        await setDoc(memberRef, { status: 'active', approvedAt: nowIso }, { merge: true });
         return { group, status: 'joined' };
       }
       if (existing.status === 'pending') {
@@ -180,7 +176,7 @@ class GroupService {
     }
 
     const needsApproval = !!group.isPrivate || !!group.requireAdminApproval;
-    const status: GroupMembership['status'] = needsApproval ? 'pending' : 'joined';
+    const status: GroupMembership['status'] = needsApproval ? 'pending' : 'active';
 
     await setDoc(memberRef, {
       groupId,
@@ -188,19 +184,16 @@ class GroupService {
       role: 'member',
       status,
       createdAt: nowIso,
-      approvedAt: status === 'joined' ? nowIso : undefined,
+      approvedAt: status === 'active' ? nowIso : undefined,
     } satisfies GroupMembership);
 
-    if (status === 'joined') {
-      await updateDoc(doc(db, this.collectionName, groupId), {
-        memberCount: increment(1),
-      });
+    if (status === 'active') {
       return {
         group: {
           ...group,
-          memberCount: (group.memberCount || 0) + 1,
+          memberCount: Math.max(1, group.memberCount || 0),
         },
-        status,
+        status: 'joined',
       };
     }
 
@@ -230,9 +223,59 @@ class GroupService {
     const memberSnap = await getDoc(memberRef);
     if (!memberSnap.exists()) return 'none';
     const member = memberSnap.data() as GroupMembership;
+    if (member.status === 'active') return 'joined';
     return member.status;
+  }
+
+  async getGroupMemberCount(groupId: string): Promise<number> {
+    const membershipsSnap = await getDocs(
+      query(collection(db, this.membershipsCollection), where('groupId', '==', groupId)),
+    );
+
+    return membershipsSnap.docs
+      .map((item) => String((item.data() as GroupMembership).status ?? '').toLowerCase())
+      .filter((status) => status === 'joined' || status === 'active')
+      .length;
+  }
+
+  async leaveGroup(groupId: string, userId: string): Promise<void> {
+    const group = await this.getGroupById(groupId);
+    if (!group) throw new Error('Group not found');
+    if (group.ownerId === userId) {
+      throw new Error('Group owner cannot leave. Transfer ownership first.');
+    }
+
+    const memberRef = doc(db, this.membershipsCollection, `${groupId}_${userId}`);
+    const memberSnap = await getDoc(memberRef);
+    if (!memberSnap.exists()) return;
+
+    const membership = memberSnap.data() as GroupMembership;
+    if (membership.status !== 'joined' && membership.status !== 'active') return;
+
+    await updateDoc(memberRef, {
+      status: 'left',
+      leftAt: new Date().toISOString(),
+    });
+  }
+
+  async reportGroup(input: ReportGroupInput): Promise<string> {
+    const group = await this.getGroupById(input.groupId);
+    if (!group) throw new Error('Group not found');
+    if (!input.reason.trim()) throw new Error('Reason is required');
+
+    const ref = await addDoc(collection(db, 'groupReports'), {
+      groupId: input.groupId,
+      groupName: group.name,
+      reportType: input.reportType ?? 'group',
+      reason: input.reason.trim(),
+      reportedUserId: input.reportedUserId || null,
+      reportedBy: input.reporterUid,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+    });
+    return ref.id;
   }
 }
 
 export const groupService = new GroupService();
-export type { CreateGroupInput, GroupJoinResult };
+export type { CreateGroupInput, GroupJoinResult, ReportGroupInput };

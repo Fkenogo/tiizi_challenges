@@ -14,7 +14,12 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-          if (id.includes('firebase')) return 'vendor-firebase';
+          if (id.includes('firebase/auth')) return 'vendor-firebase-auth';
+          if (id.includes('firebase/firestore')) return 'vendor-firebase-firestore';
+          if (id.includes('firebase/storage')) return 'vendor-firebase-storage';
+          if (id.includes('firebase/app')) return 'vendor-firebase-core';
+          if (id.includes('@firebase/')) return 'vendor-firebase-internal';
+          if (id.includes('firebase')) return 'vendor-firebase-misc';
           if (id.includes('@tanstack/react-query')) return 'vendor-query';
           if (id.includes('react-router') || id.includes('@remix-run')) return 'vendor-router';
           if (id.includes('lucide-react')) return 'vendor-icons';

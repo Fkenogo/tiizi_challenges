@@ -19,8 +19,8 @@ function OnboardingContentScreen() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-slate-600">Review versioned onboarding copy and active steps.</p>
           <div className="flex gap-2">
-            <button className="h-9 px-3 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold" onClick={() => navigate('/app/admin/content/books')}>Books</button>
             <button className="h-9 px-3 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold" onClick={() => navigate('/app/admin/content/interests-goals')}>Interests & Goals</button>
+            <button className="h-9 px-3 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold" onClick={() => navigate('/app/admin/content/pages')}>Content Pages</button>
           </div>
         </div>
       </Card>

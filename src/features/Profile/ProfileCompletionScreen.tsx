@@ -1,10 +1,11 @@
 import { ArrowLeft, Calendar, Camera } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfileSetup, useSaveProfileSetup } from '../../hooks/useProfileSetup';
+import { isPersistableImageSource, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
 
 function ProfileCompletionScreen() {
   const navigate = useNavigate();
@@ -17,6 +18,9 @@ function ProfileCompletionScreen() {
   const [birthday, setBirthday] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [heightCm, setHeightCm] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const weightOptions = Array.from({ length: 171 }, (_, idx) => 30 + idx); // 30kg-200kg
   const heightOptions = Array.from({ length: 121 }, (_, idx) => 120 + idx); // 120cm-240cm
 
@@ -25,7 +29,40 @@ function ProfileCompletionScreen() {
     setBirthday(setup?.personalInfo?.birthday || '');
     setWeightKg(setup?.personalInfo?.weightKg ? String(setup.personalInfo.weightKg) : '');
     setHeightCm(setup?.personalInfo?.heightCm ? String(setup.personalInfo.heightCm) : '');
-  }, [setup, profile?.displayName]);
+    setPhotoUrl(setup?.personalInfo?.photoURL || user?.photoURL || '');
+  }, [setup, profile?.displayName, user?.photoURL]);
+
+  const handlePickPhoto = () => {
+    if (isUploadingPhoto) return;
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingPhoto(true);
+      const uploadedUrl = await uploadImageFile(file, 'profile-photos', user?.uid);
+      setPhotoUrl(uploadedUrl);
+      showToast('Profile photo uploaded.', 'success');
+    } catch {
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        if (isPersistableImageSource(dataUrl)) {
+          setPhotoUrl(dataUrl);
+          showToast('Using local profile photo preview. Upload may require storage permissions.', 'success');
+        } else {
+          showToast('Image is too large. Please choose a smaller photo.', 'error');
+        }
+      } catch {
+        showToast('Could not process selected image.', 'error');
+      }
+    } finally {
+      setIsUploadingPhoto(false);
+      event.target.value = '';
+    }
+  };
 
   const handleNext = async () => {
     if (!user?.uid || !fullName.trim()) {
@@ -58,10 +95,12 @@ function ProfileCompletionScreen() {
           weightKg: Number(weightKg) || undefined,
           heightCm: Number(heightCm) || undefined,
           displayName: setup?.personalInfo?.displayName ?? fullName.trim(),
+          photoURL: photoUrl || undefined,
         },
       });
       navigate('/app/profile/interests');
-    } catch {
+    } catch (error) {
+      console.error('Profile setup save failed (step 1):', error);
       showToast('Could not save your profile details.', 'error');
     }
   };
@@ -96,6 +135,7 @@ function ProfileCompletionScreen() {
           weightKg: Number(weightKg) || undefined,
           heightCm: Number(heightCm) || undefined,
           displayName: setup?.personalInfo?.displayName || fullName.trim() || setup?.personalInfo?.fullName || profile?.displayName || '',
+          photoURL: photoUrl || undefined,
         },
       });
     } catch {
@@ -128,13 +168,46 @@ function ProfileCompletionScreen() {
         <h1 className="st-heading-xl mt-6">Complete Your Profile</h1>
 
         <div className="mt-6 flex flex-col items-center">
-          <div className="relative h-44 w-44 rounded-full border-[3px] border-dashed border-orange-200 bg-orange-50/30 flex items-center justify-center">
-            <div className="h-14 w-14 rounded-full bg-primary/20" />
-            <button className="absolute bottom-2 right-2 h-14 w-14 rounded-full bg-primary text-white flex items-center justify-center">
+          <div
+            className="relative h-44 w-44 rounded-full border-[3px] border-dashed border-orange-200 bg-orange-50/30 flex items-center justify-center overflow-hidden cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={handlePickPhoto}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handlePickPhoto();
+              }
+            }}
+            aria-label="Add profile picture"
+          >
+            {photoUrl ? (
+              <img src={photoUrl} alt="Selected profile" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-14 w-14 rounded-full bg-primary/20" />
+            )}
+            <button
+              className="absolute bottom-2 right-2 h-14 w-14 rounded-full bg-primary text-white flex items-center justify-center"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                handlePickPhoto();
+              }}
+              disabled={isUploadingPhoto}
+            >
               <Camera size={22} />
             </button>
           </div>
-          <p className="mt-4 text-[16px] leading-[22px] font-bold text-slate-500">Tap to add a profile picture</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoSelected}
+          />
+          <p className="mt-4 text-[16px] leading-[22px] font-bold text-slate-500">
+            {isUploadingPhoto ? 'Uploading profile picture...' : 'Tap to add a profile picture'}
+          </p>
         </div>
 
         <div className="st-form-max mt-8 space-y-5">

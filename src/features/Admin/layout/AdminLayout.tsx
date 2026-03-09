@@ -27,7 +27,7 @@ export function AdminLayout({
       <AdminSidebar permissions={permissions} density={density} />
       <div className="flex-1 min-w-0">
         <AdminHeader title={title} />
-        <main className={`${density === 'compact' ? 'p-4 lg:p-5' : 'p-6 lg:p-8'} max-w-[1700px]`}>{children}</main>
+        <main className={`${density === 'compact' ? 'p-4 lg:p-5' : 'p-6 lg:p-8'} w-full max-w-[1700px]`}>{children}</main>
       </div>
     </div>
   );

@@ -4,9 +4,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
 import { useSuggestedChallengeTemplates } from '../../hooks/useChallengeTemplates';
 import type { SuggestedChallengeTemplate } from '../../services/challengeTemplateService';
+import { isLikelyDirectImageUrl } from '../../services/imageUploadService';
 
 type FilterType = 'all' | 'collective' | 'competitive' | 'streak';
-const isValidHttpImage = (value?: string) => !!value && /^https?:\/\//i.test(value);
+const canRenderImage = (value?: string) => !!value && isLikelyDirectImageUrl(value);
 
 function SuggestedChallengesScreen() {
   const navigate = useNavigate();
@@ -77,16 +78,18 @@ function SuggestedChallengesScreen() {
           {templates.map((template) => (
             <article key={template.id} className="st-card overflow-hidden">
               <div className="relative" style={{ height: 270, minHeight: 270, maxHeight: 270 }}>
-                <img
-                  src={
-                    isValidHttpImage(template.coverImageUrl)
-                      ? template.coverImageUrl!
-                      : 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1200&q=80'
-                  }
-                  alt={template.name}
-                  className="h-full w-full object-cover"
-                  style={{ display: 'block' }}
-                />
+                {canRenderImage(template.coverImageUrl) ? (
+                  <img
+                    src={template.coverImageUrl}
+                    alt={template.name}
+                    className="h-full w-full object-cover"
+                    style={{ display: 'block' }}
+                  />
+                ) : (
+                  <div className="h-full w-full bg-slate-200 flex items-center justify-center text-slate-500 text-[12px] font-semibold">
+                    No cover image
+                  </div>
+                )}
                 <span className={`absolute top-4 left-4 rounded-full px-4 py-2 text-[14px] leading-[14px] tracking-[0.08em] uppercase font-bold text-white ${template.tag?.toLowerCase() === 'hardcore' ? 'bg-red-500' : 'bg-primary'}`}>
                   {template.tag || 'Trending'}
                 </span>
@@ -126,20 +129,22 @@ function SuggestedChallengesScreen() {
             <div className="mx-auto w-full max-w-mobile px-4">
               <div className="st-card overflow-hidden rounded-[26px]">
             <div className="relative h-[230px]">
-              <img
-                src={
-                  isValidHttpImage(previewTemplate.coverImageUrl)
-                    ? previewTemplate.coverImageUrl!
-                    : 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=80'
-                }
-                alt={previewTemplate.name}
-                className="h-full w-full object-cover"
-              />
+              {canRenderImage(previewTemplate.coverImageUrl) ? (
+                <img
+                  src={previewTemplate.coverImageUrl}
+                  alt={previewTemplate.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full bg-slate-200 flex items-center justify-center text-slate-500 text-[12px] font-semibold">
+                  No cover image
+                </div>
+              )}
               <button className="absolute top-4 right-4 h-10 w-10 rounded-full bg-slate-900/45 text-white flex items-center justify-center" onClick={() => setPreviewTemplate(null)}>
                 <X size={26} />
               </button>
               <span className="absolute left-4 bottom-4 rounded-full bg-primary px-4 py-2 text-[13px] leading-[13px] tracking-[0.08em] uppercase font-bold text-white">
-                Weekly
+                {previewTemplate.tag || previewTemplate.challengeType}
               </span>
             </div>
 

@@ -95,6 +95,32 @@ function ChallengeCompletedScreen() {
           <button className="st-btn-primary mt-6" onClick={() => navigate(toShare)}>
             Share Achievement
           </button>
+          <section className="mt-4 rounded-2xl border border-primary/20 bg-[#fff4eb] px-4 py-4">
+            <p className="text-[16px] leading-[20px] font-black text-slate-900">Nice work finishing the challenge</p>
+            <p className="mt-2 text-[13px] leading-[19px] text-slate-600">
+              If Tiizi helped you stay consistent, you can support its growth. This is optional.
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <button
+                className="h-10 rounded-xl bg-primary text-white text-[12px] font-bold"
+                onClick={() => navigate(`/app/donate?trigger=challenge_completion&challengeId=${challengeId}`)}
+              >
+                Support Tiizi
+              </button>
+              <button
+                className="h-10 rounded-xl bg-slate-100 text-slate-700 text-[12px] font-semibold"
+                onClick={() => navigate(toHome)}
+              >
+                Maybe later
+              </button>
+              <button
+                className="h-10 rounded-xl bg-slate-100 text-slate-700 text-[12px] font-semibold"
+                onClick={() => navigate(toHome)}
+              >
+                Skip
+              </button>
+            </div>
+          </section>
           <button className="st-btn-secondary mt-3 border-primary/30 text-primary" onClick={() => navigate(toHome)}>
             Go to Home
           </button>

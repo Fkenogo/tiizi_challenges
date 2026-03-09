@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export type InterestGoalItem = {
@@ -26,8 +26,61 @@ export type NotificationTemplate = {
   name: string;
   channel: 'push' | 'in_app' | 'email';
   audience: string;
+  subject?: string;
+  body?: string;
+  triggerType?: 'manual' | 'scheduled' | 'inactivity' | 'challenge_completion' | 'streak_milestone' | 'donation_nudge';
+  triggerCooldownDays?: number;
+  inactivityDays?: number;
+  milestoneValue?: number;
   status: 'draft' | 'scheduled' | 'sent';
+  scheduledAt?: string;
+  publishedAt?: string;
   updatedAt: string;
+};
+
+export type NotificationTemplateInput = {
+  id?: string;
+  name: string;
+  channel: NotificationTemplate['channel'];
+  audience: string;
+  subject?: string;
+  body?: string;
+  status?: NotificationTemplate['status'];
+  scheduledAt?: string;
+  triggerType?: NotificationTemplate['triggerType'];
+  triggerCooldownDays?: number;
+  inactivityDays?: number;
+  milestoneValue?: number;
+};
+
+export type InterestGoalInput = {
+  id?: string;
+  name: string;
+  type: 'interest' | 'goal';
+  category: string;
+  icon?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  order: number;
+};
+
+export type ContentPage = {
+  id: string;
+  title: string;
+  slug: string;
+  category: 'legal' | 'policy' | 'update' | 'help';
+  body: string;
+  status: 'draft' | 'published';
+  updatedAt: string;
+};
+
+export type ContentPageInput = {
+  id?: string;
+  title: string;
+  slug: string;
+  category: ContentPage['category'];
+  body: string;
+  status: ContentPage['status'];
 };
 
 export type AdminBookRow = {
@@ -146,11 +199,157 @@ class AdminContentService {
           name: String(data.name ?? 'Untitled Notification'),
           channel: (data.channel as NotificationTemplate['channel']) ?? 'push',
           audience: String(data.audience ?? 'all-users'),
+          subject: typeof data.subject === 'string' ? data.subject : '',
+          body: typeof data.body === 'string' ? data.body : '',
+          triggerType: (data.triggerType as NotificationTemplate['triggerType']) ?? 'manual',
+          triggerCooldownDays: Number(data.triggerCooldownDays ?? 0),
+          inactivityDays: Number(data.inactivityDays ?? 0),
+          milestoneValue: Number(data.milestoneValue ?? 0),
           status: (data.status as NotificationTemplate['status']) ?? 'draft',
+          scheduledAt: typeof data.scheduledAt === 'string' ? data.scheduledAt : '',
+          publishedAt: typeof data.publishedAt === 'string' ? data.publishedAt : '',
           updatedAt: String(data.updatedAt ?? data.createdAt ?? ''),
         };
       })
       .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+  }
+
+  async upsertInterestGoal(input: InterestGoalInput, actorUid: string): Promise<string> {
+    const collectionName = input.type === 'interest' ? 'exerciseInterests' : 'wellnessGoals';
+    const payload = {
+      name: input.name.trim(),
+      category: input.category.trim() || 'General',
+      icon: input.icon?.trim() || null,
+      isActive: input.isActive,
+      isDefault: input.isDefault,
+      order: input.order,
+      updatedAt: new Date().toISOString(),
+      updatedBy: actorUid,
+      updatedAtServer: serverTimestamp(),
+    };
+    if (!payload.name) {
+      throw new Error('Name is required.');
+    }
+
+    if (input.id && input.id.trim()) {
+      const id = input.id.trim();
+      await setDoc(doc(db, collectionName, id), payload, { merge: true });
+      return id;
+    }
+
+    const ref = await addDoc(collection(db, collectionName), {
+      ...payload,
+      createdAt: new Date().toISOString(),
+      createdBy: actorUid,
+      createdAtServer: serverTimestamp(),
+    });
+    return ref.id;
+  }
+
+  async deleteInterestGoal(type: 'interest' | 'goal', id: string): Promise<void> {
+    const collectionName = type === 'interest' ? 'exerciseInterests' : 'wellnessGoals';
+    await deleteDoc(doc(db, collectionName, id));
+  }
+
+  async upsertNotificationTemplate(input: NotificationTemplateInput, actorUid: string): Promise<string> {
+    const payload = {
+      name: input.name.trim(),
+      channel: input.channel,
+      audience: input.audience.trim() || 'all-users',
+      subject: input.subject?.trim() || '',
+      body: input.body?.trim() || '',
+      status: input.status ?? (input.scheduledAt ? 'scheduled' : 'draft'),
+      scheduledAt: input.scheduledAt || '',
+      triggerType: input.triggerType ?? 'manual',
+      triggerCooldownDays: Number(input.triggerCooldownDays ?? 0),
+      inactivityDays: Number(input.inactivityDays ?? 0),
+      milestoneValue: Number(input.milestoneValue ?? 0),
+      updatedAt: new Date().toISOString(),
+      updatedBy: actorUid,
+      updatedAtServer: serverTimestamp(),
+    };
+    if (!payload.name) throw new Error('Template name is required.');
+    if (!payload.body) throw new Error('Template message is required.');
+
+    if (input.id && input.id.trim()) {
+      const id = input.id.trim();
+      await setDoc(doc(db, 'notificationTemplates', id), payload, { merge: true });
+      return id;
+    }
+
+    const ref = await addDoc(collection(db, 'notificationTemplates'), {
+      ...payload,
+      createdAt: new Date().toISOString(),
+      createdBy: actorUid,
+      createdAtServer: serverTimestamp(),
+    });
+    return ref.id;
+  }
+
+  async publishNotificationTemplate(id: string, actorUid: string): Promise<void> {
+    await updateDoc(doc(db, 'notificationTemplates', id), {
+      status: 'sent',
+      publishedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: actorUid,
+      updatedAtServer: serverTimestamp(),
+    });
+  }
+
+  async deleteNotificationTemplate(id: string): Promise<void> {
+    await deleteDoc(doc(db, 'notificationTemplates', id));
+  }
+
+  async getContentPages(): Promise<ContentPage[]> {
+    const snap = await getDocs(collection(db, 'contentPages'));
+    return snap.docs
+      .map((d) => {
+        const data = d.data() as Record<string, unknown>;
+        return {
+          id: d.id,
+          title: String(data.title ?? 'Untitled'),
+          slug: String(data.slug ?? d.id),
+          category: (data.category as ContentPage['category']) ?? 'policy',
+          body: String(data.body ?? ''),
+          status: (data.status as ContentPage['status']) ?? 'draft',
+          updatedAt: String(data.updatedAt ?? data.createdAt ?? ''),
+        };
+      })
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }
+
+  async upsertContentPage(input: ContentPageInput, actorUid: string): Promise<string> {
+    const payload = {
+      title: input.title.trim(),
+      slug: input.slug.trim(),
+      category: input.category,
+      body: input.body.trim(),
+      status: input.status,
+      updatedAt: new Date().toISOString(),
+      updatedBy: actorUid,
+      updatedAtServer: serverTimestamp(),
+    };
+    if (!payload.title) throw new Error('Title is required.');
+    if (!payload.slug) throw new Error('Slug is required.');
+    if (!payload.body) throw new Error('Content body is required.');
+
+    if (input.id && input.id.trim()) {
+      const id = input.id.trim();
+      await setDoc(doc(db, 'contentPages', id), payload, { merge: true });
+      return id;
+    }
+
+    const ref = await addDoc(collection(db, 'contentPages'), {
+      ...payload,
+      createdAt: new Date().toISOString(),
+      createdBy: actorUid,
+      createdAtServer: serverTimestamp(),
+    });
+    return ref.id;
+  }
+
+  async deleteContentPage(id: string): Promise<void> {
+    await deleteDoc(doc(db, 'contentPages', id));
   }
 
   async getBooks(): Promise<AdminBookRow[]> {

@@ -3,14 +3,17 @@ import { applicationDefault, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import catalogExercisesSource from '../catalogExercises_CLEAN.json';
 
-const requiredEnvKeys = ['VITE_FIREBASE_PROJECT_ID', 'GOOGLE_APPLICATION_CREDENTIALS'] as const;
+const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.VITE_FIREBASE_PROJECT_ID;
+const requiredEnvKeys = ['GOOGLE_APPLICATION_CREDENTIALS'] as const;
+
+if (!projectId) {
+  throw new Error('Missing FIREBASE_PROJECT_ID (or fallback VITE_FIREBASE_PROJECT_ID) env var.');
+}
 for (const key of requiredEnvKeys) {
   if (!process.env[key]) {
     throw new Error(`Missing required env var: ${key}`);
   }
 }
-
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID as string;
 const seedTag = process.env.SEED_TAG ?? 'tiizi_seed_v1';
 const primaryUid = process.env.SEED_PRIMARY_UID?.trim() || '';
 const primaryEmail = process.env.SEED_PRIMARY_EMAIL?.trim() || '';
@@ -125,6 +128,22 @@ type SeedWorkout = {
   groupId: string;
   completedAt: string;
   notes?: string;
+  seedTag: string;
+};
+
+type SeedChallengeMember = {
+  id: string;
+  challengeId: string;
+  userId: string;
+  groupId: string;
+  joinedAt: string;
+  status: 'active' | 'completed' | 'abandoned';
+  activitiesCompleted: number;
+  totalActivities: number;
+  totalPoints: number;
+  completionRate: number;
+  lastActivityAt?: string;
+  completedAt?: string;
   seedTag: string;
 };
 
@@ -692,6 +711,68 @@ function buildWorkouts(challenges: SeedChallenge[], memberships: SeedMembership[
   return workouts;
 }
 
+function buildChallengeMembers(
+  challenges: SeedChallenge[],
+  memberships: SeedMembership[],
+  workouts: SeedWorkout[],
+): SeedChallengeMember[] {
+  const joinedByGroup = new Map<string, string[]>();
+  memberships
+    .filter((membership) => membership.status === 'joined')
+    .forEach((membership) => {
+      const current = joinedByGroup.get(membership.groupId) ?? [];
+      if (!current.includes(membership.userId)) current.push(membership.userId);
+      joinedByGroup.set(membership.groupId, current);
+    });
+
+  const workoutStats = new Map<string, { count: number; points: number; lastAt?: string }>();
+  workouts.forEach((workout) => {
+    const key = `${workout.challengeId}_${workout.userId}`;
+    const current = workoutStats.get(key) ?? { count: 0, points: 0, lastAt: undefined };
+    current.count += 1;
+    current.points += Math.max(10, Math.round(workout.value));
+    if (!current.lastAt || workout.completedAt > current.lastAt) {
+      current.lastAt = workout.completedAt;
+    }
+    workoutStats.set(key, current);
+  });
+
+  const challengeMembers: SeedChallengeMember[] = [];
+
+  challenges.forEach((challenge, idx) => {
+    const groupUsers = joinedByGroup.get(challenge.groupId) ?? [];
+    const participantTarget = Math.max(1, Number(challenge.participantCount ?? 1));
+    const participants = groupUsers.slice(0, participantTarget);
+    const totalActivities = Math.max(1, challenge.activities.length);
+
+    participants.forEach((userId, pIndex) => {
+      const id = `${challenge.id}_${userId}`;
+      const key = `${challenge.id}_${userId}`;
+      const stat = workoutStats.get(key);
+      const activitiesCompleted = stat?.count ?? Math.max(0, (idx + pIndex) % totalActivities);
+      const completionRate = Math.min(100, Math.round((activitiesCompleted / totalActivities) * 100));
+      const isCompleted = challenge.status === 'completed' || completionRate >= 100;
+      challengeMembers.push({
+        id,
+        challengeId: challenge.id,
+        userId,
+        groupId: challenge.groupId,
+        joinedAt: isoDaysAgo(Math.max(1, 22 - idx - pIndex)),
+        status: isCompleted ? 'completed' : 'active',
+        activitiesCompleted,
+        totalActivities,
+        totalPoints: stat?.points ?? activitiesCompleted * 10,
+        completionRate,
+        lastActivityAt: stat?.lastAt,
+        completedAt: isCompleted ? (stat?.lastAt ?? isoDaysAgo(Math.max(0, 3 - pIndex))) : undefined,
+        seedTag,
+      });
+    });
+  });
+
+  return challengeMembers;
+}
+
 async function seedStaticContent() {
   const interestDocs = exerciseInterests.map(([id, name, icon], index) => ({
     id: `seed_interest_${id}`,
@@ -1033,6 +1114,7 @@ async function main() {
     'users',
     'groups',
     'groupMembers',
+    'challengeMembers',
     'challenges',
     'workouts',
     'exerciseInterests',
@@ -1064,6 +1146,20 @@ async function main() {
   const memberships = buildMemberships(groups, users);
   const challenges = buildChallenges(groups, memberships, exercisePool);
   const workouts = buildWorkouts(challenges, memberships);
+  const challengeMembers = buildChallengeMembers(challenges, memberships, workouts);
+  const participantCountByChallenge = new Map<string, number>();
+  challengeMembers.forEach((member) => {
+    if (member.status === 'active' || member.status === 'completed') {
+      participantCountByChallenge.set(
+        member.challengeId,
+        (participantCountByChallenge.get(member.challengeId) ?? 0) + 1,
+      );
+    }
+  });
+  const challengesWithCounts = challenges.map((challenge) => ({
+    ...challenge,
+    participantCount: Math.max(1, participantCountByChallenge.get(challenge.id) ?? 1),
+  }));
 
   const groupMemberCounts = new Map<string, number>();
   memberships
@@ -1079,7 +1175,8 @@ async function main() {
   await setDocs('users', users);
   await setDocs('groups', groupsWithCounts);
   await setDocs('groupMembers', memberships);
-  await setDocs('challenges', challenges);
+  await setDocs('challengeMembers', challengeMembers);
+  await setDocs('challenges', challengesWithCounts);
   await setDocs('workouts', workouts);
   await seedStaticContent();
 
@@ -1087,7 +1184,8 @@ async function main() {
     users: users.length,
     groups: groupsWithCounts.length,
     memberships: memberships.length,
-    challenges: challenges.length,
+    challengeMembers: challengeMembers.length,
+    challenges: challengesWithCounts.length,
     workouts: workouts.length,
   };
 

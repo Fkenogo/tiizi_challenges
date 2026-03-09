@@ -26,6 +26,7 @@ function LogWorkoutScreen() {
 
   const [value, setValue] = useState(25);
   const [notes, setNotes] = useState('');
+  const valueOptions = useMemo(() => Array.from({ length: 1001 }, (_, index) => index), []);
 
   const displayUnit = unitParam || exercise?.metric.unit || 'Reps';
   const displayName = exercise?.name || exerciseNameParam || 'Pushups';
@@ -54,6 +55,17 @@ function LogWorkoutScreen() {
       showToast('Enter a valid value.', 'error');
       return;
     }
+    const now = new Date();
+    const startAt = challenge?.startDate ? new Date(challenge.startDate) : null;
+    const endAt = challenge?.endDate ? new Date(challenge.endDate) : null;
+    if (startAt && now < startAt) {
+      showToast(`Challenge starts on ${startAt.toLocaleDateString()}.`, 'error');
+      return;
+    }
+    if (endAt && now > endAt) {
+      showToast('Challenge has ended.', 'error');
+      return;
+    }
 
     try {
       await logWorkout.mutateAsync({
@@ -73,25 +85,29 @@ function LogWorkoutScreen() {
         exerciseName: displayName,
         value: String(value),
         target: String(target),
+        unit: displayUnit,
       });
       if (groupId) qs.set('groupId', groupId);
       navigate(`/app/workouts/success?${qs.toString()}`);
-    } catch {
-      showToast('Failed to log workout.', 'error');
+    } catch (error) {
+      console.error('Workout logging failed:', error);
+      const message = error instanceof Error ? error.message : 'Failed to log workout.';
+      showToast(message, 'error');
     }
   };
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="st-frame st-bottom-safe pb-[108px]">
-        <header className="st-form-max flex items-center justify-between">
-          <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(backPath)}>
-            <ArrowLeft size={28} className="text-slate-900" />
-          </button>
-          <h1 className="st-page-title truncate">Log {displayName}</h1>
-          <span className="w-10" />
-        </header>
-        <div className="st-form-max mt-4 h-px bg-[#ead9cc]" />
+        <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 pb-3">
+          <header className="st-form-max flex items-center justify-between">
+            <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(backPath)}>
+              <ArrowLeft size={28} className="text-slate-900" />
+            </button>
+            <h1 className="st-page-title truncate">Log {displayName}</h1>
+            <span className="w-10" />
+          </header>
+        </div>
 
         <main className="st-form-max mt-5">
           <div className="mx-auto h-20 w-20 rounded-full bg-[#f8e9df] text-primary text-[24px] flex items-center justify-center">✕</div>
@@ -112,6 +128,33 @@ function LogWorkoutScreen() {
             >
               <Plus size={24} />
             </button>
+          </div>
+          <div className="mt-4">
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={value}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                if (Number.isNaN(next)) return;
+                setValue(Math.max(0, Math.floor(next)));
+              }}
+              className="w-full h-12 rounded-xl border border-[#f4cdb5] bg-white px-4 text-center text-[22px] font-bold text-[#1b120d]"
+              aria-label="Workout value"
+            />
+            <select
+              className="mt-3 w-full h-12 rounded-xl border border-[#f4cdb5] bg-white px-4 text-center text-[18px] font-semibold text-[#1b120d] appearance-none"
+              value={value}
+              onChange={(event) => setValue(Number(event.target.value) || 0)}
+              aria-label="Quick value picker"
+            >
+              {valueOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="mt-8">

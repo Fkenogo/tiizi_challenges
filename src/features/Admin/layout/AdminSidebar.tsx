@@ -1,4 +1,4 @@
-import { BarChart3, BellRing, BookOpen, CircleDollarSign, Dumbbell, LayoutDashboard, Settings, ShieldCheck, Trophy, Users, UsersRound, LucideIcon, FileText } from 'lucide-react';
+import { BarChart3, BellRing, CircleDollarSign, Dumbbell, LayoutDashboard, Settings, ShieldCheck, Sparkles, Trophy, Users, UsersRound, LucideIcon, FileText } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { AdminPermissions } from '../../../services/adminAccessService';
 import { AdminDensity } from '../../../hooks/useAdminDensity';
@@ -23,13 +23,14 @@ const navSections: NavSection[] = [
   {
     label: 'Content',
     items: [
-      { label: 'Challenges', path: '/app/admin/challenges/pending', icon: Trophy, visible: (p) => p.canModerateChallenges },
+      { label: 'Cause Approvals', path: '/app/admin/challenges/pending', icon: Trophy, visible: (p) => p.canModerateChallenges },
       { label: 'Templates', path: '/app/admin/challenges/templates', icon: Trophy, visible: (p) => p.canModerateChallenges },
       { label: 'Active Challenges', path: '/app/admin/challenges/active', icon: Trophy, visible: (p) => p.canModerateChallenges },
       { label: 'Exercises', path: '/app/admin/exercises', icon: Dumbbell, visible: (p) => p.canManageExercises },
-      { label: 'Books', path: '/app/admin/content/books', icon: BookOpen, visible: (p) => p.canManageContent },
+      { label: 'Wellness Activities', path: '/app/admin/wellness-activities', icon: Sparkles, visible: (p) => p.canModerateChallenges },
       { label: 'Interests & Goals', path: '/app/admin/content/interests-goals', icon: FileText, visible: (p) => p.canManageContent },
       { label: 'Notifications', path: '/app/admin/content/notifications', icon: BellRing, visible: (p) => p.canManageNotifications },
+      { label: 'Content Pages', path: '/app/admin/content/pages', icon: FileText, visible: (p) => p.canManageContent },
     ],
   },
   {

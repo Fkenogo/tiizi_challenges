@@ -128,7 +128,7 @@ function ExerciseListScreen() {
                   <td className="py-2 pr-3 text-slate-700">{row.difficulty}</td>
                   <td className="py-2 pr-3 text-slate-700">{row.usageCount}</td>
                   <td className="py-2 space-x-2">
-                    <button className="text-primary font-bold disabled:opacity-50" disabled={!permissions.canEditExercises} onClick={() => navigate(`/app/admin/exercises/${row.id}/edit`)}>Edit</button>
+                    <button className="text-primary font-bold disabled:opacity-50" disabled={!permissions.canEditExercises} onClick={() => navigate(`/app/admin/exercises/${encodeURIComponent(row.id)}/edit`)}>Edit</button>
                     <button className="text-red-600 font-bold disabled:opacity-50" disabled={!permissions.canDeleteExercises || deleteMutation.isPending} onClick={() => onDelete(row.id, row.name)}>Delete</button>
                   </td>
                 </tr>

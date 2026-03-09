@@ -1,7 +1,7 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Dumbbell, Home, Plus, Trophy, User, Users } from 'lucide-react';
+import { ArrowLeft, Dumbbell } from 'lucide-react';
 import { useExercise } from '../../hooks/useExercises';
-import { Screen } from '../../components/Layout';
+import { BottomNav, Screen } from '../../components/Layout';
 import { EmptyState, LoadingSpinner } from '../../components/Mobile';
 
 function ExerciseDetailScreen() {
@@ -41,13 +41,15 @@ function ExerciseDetailScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="st-frame st-bottom-safe pb-[132px]">
-        <header className="st-form-max flex items-center justify-between">
-          <button onClick={() => navigate(backPath)} className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-900">
-            <ArrowLeft size={20} />
-          </button>
-          <h2 className="text-[28px] leading-[30px] font-black text-slate-900">Exercise Detail</h2>
-          <button className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-primary text-[20px]">♥</button>
-        </header>
+        <div className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 pb-2">
+          <header className="st-form-max flex items-center justify-between">
+            <button onClick={() => navigate(backPath)} className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-900">
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="text-[28px] leading-[30px] font-black text-slate-900">Exercise Detail</h2>
+            <button className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-primary text-[20px]">♥</button>
+          </header>
+        </div>
 
         <div className="st-form-max mt-4">
           <div className="h-[230px] rounded-[22px] overflow-hidden border border-slate-100">
@@ -147,31 +149,7 @@ function ExerciseDetailScreen() {
         </div>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 z-20">
-        <div className="max-w-mobile mx-auto flex items-end justify-between">
-          <button className="h-11 min-w-[64px] flex flex-col items-center justify-center text-slate-500" onClick={() => navigate('/app/home')}>
-            <Home size={20} />
-            <span className="text-xs">Home</span>
-          </button>
-          <button className="h-11 min-w-[64px] flex flex-col items-center justify-center text-slate-500" onClick={() => navigate('/app/groups')}>
-            <Users size={20} />
-            <span className="text-xs">Groups</span>
-          </button>
-          <div className="-mt-6">
-            <button className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg" onClick={() => navigate('/app/quick-actions')}>
-              <Plus size={24} />
-            </button>
-          </div>
-          <button className="h-11 min-w-[64px] flex flex-col items-center justify-center text-slate-500" onClick={() => navigate('/app/challenges')}>
-            <Trophy size={20} />
-            <span className="text-xs">Challenges</span>
-          </button>
-          <button className="h-11 min-w-[64px] flex flex-col items-center justify-center text-primary" onClick={() => navigate('/app/profile')}>
-            <User size={20} />
-            <span className="text-xs font-bold">Profile</span>
-          </button>
-        </div>
-      </nav>
+      <BottomNav active="challenges" />
     </Screen>
   );
 }

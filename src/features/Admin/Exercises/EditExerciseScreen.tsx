@@ -10,9 +10,36 @@ import { AdminLayout } from '../layout/AdminLayout';
 import { ExerciseForm } from './ExerciseForm';
 import { defaultExerciseInput } from './exerciseFormUtils';
 
+function normalizeExerciseInput(input: Partial<AdminExerciseInput>): AdminExerciseInput {
+  return {
+    ...defaultExerciseInput,
+    ...input,
+    metric: {
+      ...defaultExerciseInput.metric,
+      ...(input.metric ?? {}),
+    },
+    recommendedVolume: {
+      ...defaultExerciseInput.recommendedVolume,
+      ...(input.recommendedVolume ?? {}),
+    },
+    musclesTargeted: input.musclesTargeted ?? defaultExerciseInput.musclesTargeted,
+    equipment: input.equipment ?? defaultExerciseInput.equipment,
+    trainingGoals: input.trainingGoals ?? defaultExerciseInput.trainingGoals,
+    setup: input.setup ?? defaultExerciseInput.setup,
+    execution: input.execution ?? defaultExerciseInput.execution,
+    breathing: input.breathing ?? defaultExerciseInput.breathing,
+    formCues: input.formCues ?? defaultExerciseInput.formCues,
+    commonMistakes: input.commonMistakes ?? defaultExerciseInput.commonMistakes,
+    progressions: input.progressions ?? defaultExerciseInput.progressions,
+    advancedVariations: input.advancedVariations ?? defaultExerciseInput.advancedVariations,
+    safetyNotes: input.safetyNotes ?? defaultExerciseInput.safetyNotes,
+  };
+}
+
 function EditExerciseScreen() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params.id ? decodeURIComponent(params.id) : undefined;
   const { user } = useAuth();
   const { showToast } = useToast();
   const { permissions } = useAdminPermissions(user?.uid);
@@ -23,7 +50,7 @@ function EditExerciseScreen() {
   useEffect(() => {
     if (!data) return;
     const { id: _id, ...rest } = data;
-    setForm(rest);
+    setForm(normalizeExerciseInput(rest));
   }, [data]);
 
   const onSave = async () => {

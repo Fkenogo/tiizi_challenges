@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
@@ -49,6 +49,7 @@ function ProfileSetupFinishScreen() {
           weightKg: setup?.personalInfo?.weightKg,
           heightCm: setup?.personalInfo?.heightCm,
           displayName: displayName.trim() || setup?.personalInfo?.fullName || '',
+          photoURL: setup?.personalInfo?.photoURL,
         },
       });
       navigate('/app/home');
@@ -67,18 +68,6 @@ function ProfileSetupFinishScreen() {
         </header>
 
         <h1 className="st-heading-xl mt-8">Let’s get you set up.</h1>
-
-        <div className="mt-8 flex flex-col items-center">
-          <div className="relative h-48 w-48 rounded-full bg-orange-50/80 border-4 border-white shadow-sm flex items-center justify-center">
-            <div className="h-28 w-28 rounded-full bg-white border border-orange-100 shadow-inner flex items-center justify-center">
-              <Camera size={34} className="text-orange-200" />
-            </div>
-            <button className="absolute bottom-3 right-2 h-14 w-14 rounded-full bg-primary text-white flex items-center justify-center">
-              <Camera size={24} />
-            </button>
-          </div>
-          <p className="text-primary text-[16px] leading-[20px] font-bold mt-4">Add Photo</p>
-        </div>
 
         <div className="st-form-max st-card mt-8 p-5">
           <p className="text-[12px] tracking-[0.16em] uppercase font-bold text-slate-500">Display Name</p>

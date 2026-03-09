@@ -13,6 +13,7 @@ export type AdminChallenge = Challenge & {
 
 export type ChallengeTemplate = {
   id: string;
+  category?: 'fitness' | 'wellness';
   name: string;
   description: string;
   durationDays: number;
@@ -41,8 +42,10 @@ class AdminChallengeService {
     const all = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<AdminChallenge, 'id'>) }));
     return all
       .filter((c) => {
-        const normalized = c.moderationStatus ?? (c.status === 'active' ? 'approved' : 'pending');
-        return normalized === 'pending' || normalized === 'needs_changes';
+        if (!c.donation?.enabled) return false;
+        const donationStatus = c.donation?.approvalStatus;
+        const normalized = c.moderationStatus ?? (donationStatus === 'approved' ? 'approved' : 'pending');
+        return normalized === 'pending' || normalized === 'needs_changes' || donationStatus === 'pending';
       })
       .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
   }
@@ -64,12 +67,17 @@ class AdminChallengeService {
   }
 
   async getTemplates(): Promise<ChallengeTemplate[]> {
-    const snap = await getDocs(collection(db, this.templatesCollection));
-    return snap.docs
+    const [fitnessSnap, wellnessSnap] = await Promise.all([
+      getDocs(collection(db, this.templatesCollection)),
+      getDocs(collection(db, 'wellnessTemplates')),
+    ]);
+
+    const fitnessTemplates = fitnessSnap.docs
       .map((d) => {
         const data = d.data() as Record<string, unknown>;
         return {
           id: d.id,
+          category: (data.category as ChallengeTemplate['category']) ?? 'fitness',
           name: String(data.name ?? 'Untitled template'),
           description: String(data.description ?? ''),
           durationDays: Number(data.durationDays ?? 30),
@@ -79,25 +87,86 @@ class AdminChallengeService {
           version: Number(data.version ?? 1),
           isPublished: data.isPublished !== false,
         };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
+      });
+
+    const wellnessTemplates = wellnessSnap.docs.map((d) => {
+      const data = d.data() as Record<string, unknown>;
+      return {
+        id: d.id,
+        category: 'wellness' as const,
+        name: String(data.name ?? 'Untitled wellness template'),
+        description: String(data.description ?? ''),
+        durationDays: Number(data.duration ?? 30),
+        challengeType: (data.type as ChallengeTemplate['challengeType']) ?? 'streak',
+        difficultyLevel: (data.difficulty as ChallengeTemplate['difficultyLevel']) ?? 'beginner',
+        activityCount: Array.isArray(data.activities) ? data.activities.length : 0,
+        version: 1,
+        isPublished: data.isPublished !== false,
+      };
+    });
+
+    return [...fitnessTemplates, ...wellnessTemplates].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async createChallengeFromAdmin(payload: {
+    category?: 'fitness' | 'wellness' | 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social';
     name: string;
     description: string;
     challengeType: 'collective' | 'competitive' | 'streak';
     startDate: string;
     endDate: string;
     createdBy: string;
+    coverImageUrl?: string;
+    activities?: Array<{
+      exerciseId?: string;
+      activityId?: string;
+      activityType?: string;
+      exerciseName?: string;
+      description?: string;
+      category?: string;
+      difficulty?: string;
+      icon?: string;
+      protocolSteps?: string[];
+      benefits?: string[];
+      guidelines?: string[];
+      warnings?: string[];
+      frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
+      instructions?: string[];
+      pointsPerCompletion?: number;
+      dailyFrequency?: number;
+      targetValue: number;
+      unit: string;
+    }>;
+    donation?: {
+      enabled: boolean;
+      causeName?: string;
+      causeDescription?: string;
+      targetAmountKes?: number;
+      contributionStartDate?: string;
+      contributionEndDate?: string;
+      contributionPhoneNumber?: string;
+      contributionCardUrl?: string;
+      disclaimer?: string;
+    };
   }): Promise<string> {
     const createdAt = new Date().toISOString();
+    const requiresApproval = payload.donation?.enabled === true;
     const result = await addDoc(collection(db, this.collectionName), {
       ...payload,
-      status: 'active',
+      category: payload.category ?? 'fitness',
+      exerciseIds: (payload.activities ?? [])
+        .map((item) => item.exerciseId)
+        .filter((item): item is string => !!item),
+      status: requiresApproval ? 'draft' : 'active',
       progress: 0,
       participantCount: 0,
-      moderationStatus: 'approved',
+      moderationStatus: requiresApproval ? 'pending' : 'approved',
+      donation: payload.donation?.enabled
+        ? {
+            ...payload.donation,
+            approvalStatus: 'pending',
+          }
+        : payload.donation,
       createdAt,
     });
     return result.id;
@@ -137,6 +206,7 @@ class AdminChallengeService {
     await updateDoc(doc(db, this.collectionName, challengeId), {
       moderationStatus: 'approved',
       status: 'active',
+      'donation.approvalStatus': 'approved',
       moderatedBy: moderatorUid,
       moderatedAt: new Date().toISOString(),
       moderationNote: '',
@@ -147,6 +217,7 @@ class AdminChallengeService {
     await updateDoc(doc(db, this.collectionName, challengeId), {
       moderationStatus: 'needs_changes',
       status: 'draft',
+      'donation.approvalStatus': 'rejected',
       moderatedBy: moderatorUid,
       moderatedAt: new Date().toISOString(),
       moderationNote: note.trim(),

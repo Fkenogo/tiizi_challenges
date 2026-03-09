@@ -7,6 +7,7 @@ export const metricTypeOptions = ['reps', 'time', 'distance', 'weight'];
 
 export const defaultExerciseInput: AdminExerciseInput = {
   name: '',
+  imageUrl: '',
   tier_1: 'Core',
   tier_2: 'Strength',
   difficulty: 'Beginner',
@@ -55,4 +56,3 @@ export function arrayToLines(arr: string[] | undefined): string {
 export function arrayToCsv(arr: string[] | undefined): string {
   return (arr ?? []).join(', ');
 }
-

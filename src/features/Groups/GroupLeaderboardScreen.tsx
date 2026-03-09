@@ -32,7 +32,9 @@ function GroupLeaderboardScreen() {
     );
   }
 
-  if (membershipStatus !== 'joined') {
+  const canView = !group.isPrivate || membershipStatus === 'joined';
+
+  if (!canView) {
     return (
       <Screen className="st-page">
         <div className="mx-auto max-w-mobile px-4 pt-8">
@@ -49,8 +51,8 @@ function GroupLeaderboardScreen() {
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
-      <div className="mx-auto max-w-mobile min-h-screen pb-[96px]">
-        <header className="px-4 py-4 bg-white border-b border-slate-200">
+      <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
+        <header className="sticky top-0 z-20 px-4 py-4 bg-slate-50 border-b border-slate-200">
           <div className="flex items-center justify-between">
             <button className="h-10 w-10 flex items-center justify-center text-slate-900" onClick={() => navigate(`/app/group/${id}`)}><ArrowLeft size={24} /></button>
             <h1 className="text-[20px] leading-[24px] font-black text-slate-900">{group.name}</h1>

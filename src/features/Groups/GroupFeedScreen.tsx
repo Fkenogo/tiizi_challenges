@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
 import { useGroupFeed } from '../../hooks/useGroupInsights';
 import { setActiveGroupId } from '../../hooks/useActiveGroup';
-import { useGroup, useGroupMembershipStatus } from '../../hooks/useGroups';
+import { useGroup, useGroupMemberCount, useGroupMembershipStatus } from '../../hooks/useGroups';
 import { GroupBottomNav } from './components/GroupBottomNav';
 import { GroupDetailTabs } from './components/GroupDetailTabs';
 
@@ -14,6 +14,7 @@ function GroupFeedScreen() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { data: group } = useGroup(id);
+  const { data: memberCount = 0 } = useGroupMemberCount(id);
   const { data: membershipStatus = 'none' } = useGroupMembershipStatus(id);
   const { data: feedItems = [] } = useGroupFeed(id);
 
@@ -32,7 +33,10 @@ function GroupFeedScreen() {
     );
   }
 
-  if (membershipStatus !== 'joined') {
+  const canView = !group.isPrivate || membershipStatus === 'joined';
+  const canEngage = membershipStatus === 'joined';
+
+  if (!canView) {
     return (
       <Screen className="st-page">
         <div className="mx-auto max-w-mobile px-4 pt-8">
@@ -46,7 +50,7 @@ function GroupFeedScreen() {
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
-      <div className="mx-auto max-w-mobile min-h-screen pb-[96px]">
+      <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
         <section className="relative h-[270px]">
           <img src={group.coverImageUrl || heroImage} alt={group.name} className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/70" />
@@ -59,7 +63,7 @@ function GroupFeedScreen() {
             <h1 className="text-[20px] leading-[24px] font-black text-white">{group.name}</h1>
             <div className="mt-2 flex gap-2">
               <span className="rounded-full border border-white/60 bg-black/35 px-3 py-1 text-[12px] leading-[14px] font-bold uppercase tracking-[0.08em] text-white">{group.isPrivate ? 'Private Group' : 'Public Group'}</span>
-              <span className="rounded-full border border-white/60 bg-black/35 px-3 py-1 text-[12px] leading-[14px] font-bold uppercase tracking-[0.08em] text-white">{group.memberCount.toLocaleString()} Members</span>
+              <span className="rounded-full border border-white/60 bg-black/35 px-3 py-1 text-[12px] leading-[14px] font-bold uppercase tracking-[0.08em] text-white">{memberCount.toLocaleString()} Members</span>
             </div>
           </div>
         </section>
@@ -68,9 +72,11 @@ function GroupFeedScreen() {
 
         <main className="px-4 pt-6 space-y-5">
           <section className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-full bg-[#fbe9d9] text-primary flex items-center justify-center">🗒️</div>
-              <button className="h-11 flex-1 rounded-full bg-slate-100 text-left px-5 text-[15px] leading-[20px] text-[#61758f]">Share an update with the group...</button>
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-full bg-[#fbe9d9] text-primary flex items-center justify-center">🗒️</div>
+              <button className="h-11 flex-1 rounded-full bg-slate-100 text-left px-5 text-[15px] leading-[20px] text-[#61758f] disabled:opacity-60" disabled={!canEngage}>
+                {canEngage ? 'Share an update with the group...' : 'Join group to post updates'}
+              </button>
             </div>
           </section>
 
@@ -106,7 +112,7 @@ function GroupFeedScreen() {
 
               <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between text-[#4c627e]">
                 <div className="flex items-center gap-5">
-                  <button className="inline-flex items-center gap-2 text-[15px] leading-[18px] font-semibold"><MessageSquare size={16} /> Reply</button>
+                  <button className="inline-flex items-center gap-2 text-[15px] leading-[18px] font-semibold disabled:opacity-60" disabled={!canEngage}><MessageSquare size={16} /> Reply</button>
                 </div>
                 <div className="flex items-center gap-3">
                   <button><Share2 size={18} /></button>

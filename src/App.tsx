@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { mockupAliases } from './data/mockupAliases';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
@@ -8,10 +8,15 @@ import { AdminRoute } from './components/Auth/AdminRoute';
 import { RequireGroupRoute } from './components/Auth/RequireGroupRoute';
 import { ToastProvider } from './context/ToastContext';
 import { LoadingSpinner } from './components/Mobile';
+import { useAuth } from './hooks/useAuth';
+import { dailyGoalsService } from './services/dailyGoalsService';
+import { groupService } from './services/groupService';
+import { challengeService } from './services/challengeService';
 
 const ExerciseLibraryScreen = lazy(() => import('./features/Exercises/ExerciseLibraryScreen'));
 const ExerciseDetailScreen = lazy(() => import('./features/Exercises/ExerciseDetailScreen'));
 const LogWorkoutScreen = lazy(() => import('./features/Workouts/LogWorkoutScreen'));
+const LogWellnessActivityScreen = lazy(() => import('./features/Workouts/LogWellnessActivityScreen'));
 const SelectChallengeActivityScreen = lazy(() => import('./features/Workouts/SelectChallengeActivityScreen'));
 const WorkoutLoggedScreen = lazy(() => import('./features/Workouts/WorkoutLoggedScreen'));
 const HomeScreen = lazy(() => import('./features/Home/HomeScreen'));
@@ -20,6 +25,9 @@ const ChallengesScreen = lazy(() => import('./features/Challenges/ChallengesScre
 const ChallengeDetailScreen = lazy(() => import('./features/Challenges/ChallengeDetailScreen'));
 const CreateChallengeWizard = lazy(() => import('./features/Challenges/CreateChallengeWizard'));
 const SuggestedChallengesScreen = lazy(() => import('./features/Challenges/SuggestedChallengesScreen'));
+const WellnessTemplateGalleryScreen = lazy(() => import('./features/Challenges/WellnessTemplateGalleryScreen'));
+const WellnessTemplateDetailScreen = lazy(() => import('./features/Challenges/WellnessTemplateDetailScreen'));
+const BrowseChallengesScreen = lazy(() => import('./features/Challenges/BrowseChallengesScreen'));
 const ChallengePreviewScreen = lazy(() => import('./features/Challenges/ChallengePreviewScreen'));
 const CompetitiveChallengeScreen = lazy(() => import('./features/Challenges/CompetitiveChallengeScreen'));
 const CollectiveChallengeScreen = lazy(() => import('./features/Challenges/CollectiveChallengeScreen'));
@@ -27,6 +35,8 @@ const StreakChallengeScreen = lazy(() => import('./features/Challenges/StreakCha
 const ChallengeLeaderboardScreen = lazy(() => import('./features/Challenges/ChallengeLeaderboardScreen'));
 const ChallengeCompletedScreen = lazy(() => import('./features/Challenges/ChallengeCompletedScreen'));
 const ProfileScreen = lazy(() => import('./features/Profile/ProfileScreen'));
+const ProfileSettingsScreen = lazy(() => import('./features/Profile/ProfileSettingsScreen'));
+const ProfileAnalyticsScreen = lazy(() => import('./features/Profile/ProfileAnalyticsScreen'));
 const ProfilePersonalInfoScreen = lazy(() => import('./features/Profile/ProfilePersonalInfoScreen'));
 const ProfilePrivacySettingsScreen = lazy(() => import('./features/Profile/ProfilePrivacySettingsScreen'));
 const ProfileCompletionScreen = lazy(() => import('./features/Profile/ProfileCompletionScreen'));
@@ -58,6 +68,9 @@ const AdminAddExerciseScreen = lazy(() => import('./features/Admin/Exercises/Add
 const AdminEditExerciseScreen = lazy(() => import('./features/Admin/Exercises/EditExerciseScreen'));
 const AdminBulkImportScreen = lazy(() => import('./features/Admin/Exercises/BulkImportScreen'));
 const AdminExerciseStatsScreen = lazy(() => import('./features/Admin/Exercises/ExerciseStatsScreen'));
+const AdminWellnessActivityListScreen = lazy(() => import('./features/Admin/Wellness/WellnessActivityListScreen'));
+const AdminAddWellnessActivityScreen = lazy(() => import('./features/Admin/Wellness/AddWellnessActivityScreen'));
+const AdminEditWellnessActivityScreen = lazy(() => import('./features/Admin/Wellness/EditWellnessActivityScreen'));
 const AdminUserListScreen = lazy(() => import('./features/Admin/Users/UserListScreen'));
 const AdminUserDetailScreen = lazy(() => import('./features/Admin/Users/UserDetailScreen'));
 const AdminUserAnalyticsScreen = lazy(() => import('./features/Admin/Users/UserAnalyticsScreen'));
@@ -79,7 +92,7 @@ const DonationReportsScreen = lazy(() => import('./features/Admin/Donations/Dona
 const InterestsGoalsScreen = lazy(() => import('./features/Admin/Content/InterestsGoalsScreen'));
 const OnboardingContentScreen = lazy(() => import('./features/Admin/Content/OnboardingContentScreen'));
 const AdminNotificationsScreen = lazy(() => import('./features/Admin/Content/NotificationsScreen'));
-const AdminBooksScreen = lazy(() => import('./features/Admin/Content/BooksScreen'));
+const AdminContentPagesScreen = lazy(() => import('./features/Admin/Content/ContentPagesScreen'));
 const AppSettingsScreen = lazy(() => import('./features/Admin/Settings/AppSettingsScreen'));
 const AdminUsersSettingsScreen = lazy(() => import('./features/Admin/Settings/AdminUsersScreen'));
 const SystemLogsScreen = lazy(() => import('./features/Admin/Settings/SystemLogsScreen'));
@@ -91,7 +104,17 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 2,
+      retry: (failureCount, error) => {
+        const code = String((error as { code?: string } | null)?.code ?? '');
+        if (
+          code.includes('permission-denied')
+          || code.includes('unauthenticated')
+          || code.includes('failed-precondition')
+        ) {
+          return false;
+        }
+        return failureCount < 1;
+      },
       staleTime: 5 * 60 * 1000,
     },
   },
@@ -111,6 +134,40 @@ function RouteViewportMode() {
   return null;
 }
 
+function RouteWarmup() {
+  const queryClient = useQueryClient();
+  const { isAuthenticated, user } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Warm up high-traffic chunks after authentication to improve first navigation latency.
+    void import('./features/Home/HomeScreen');
+    void import('./features/Groups/GroupsScreen');
+    void import('./features/Challenges/ChallengesScreen');
+    void import('./features/Challenges/ChallengeDetailScreen');
+
+    if (!user?.uid) return;
+    void queryClient.prefetchQuery({
+      queryKey: ['daily-goals', user.uid],
+      queryFn: () => dailyGoalsService.getTodayGoals(user.uid),
+      staleTime: 2 * 60 * 1000,
+    });
+    void queryClient.prefetchQuery({
+      queryKey: ['my-groups', user.uid],
+      queryFn: () => groupService.getMyGroups(user.uid),
+      staleTime: 2 * 60 * 1000,
+    });
+    void queryClient.prefetchQuery({
+      queryKey: ['challenges', user.uid],
+      queryFn: () => challengeService.getUserAccessibleChallenges(user.uid),
+      staleTime: 5 * 60 * 1000,
+    });
+  }, [isAuthenticated, queryClient, user?.uid]);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -118,6 +175,7 @@ function App() {
         <ToastProvider>
           <BrowserRouter>
             <RouteViewportMode />
+            <RouteWarmup />
             <Suspense fallback={<LoadingSpinner fullScreen label="Loading screen..." />}>
               <Routes>
                 <Route path="/mockups" element={<MockupCatalogScreen />} />
@@ -154,6 +212,9 @@ function App() {
                 <Route path="/app/admin/exercises/:id/edit" element={<AdminRoute><AdminEditExerciseScreen /></AdminRoute>} />
                 <Route path="/app/admin/exercises/import" element={<AdminRoute><AdminBulkImportScreen /></AdminRoute>} />
                 <Route path="/app/admin/exercises/stats" element={<AdminRoute><AdminExerciseStatsScreen /></AdminRoute>} />
+                <Route path="/app/admin/wellness-activities" element={<AdminRoute><AdminWellnessActivityListScreen /></AdminRoute>} />
+                <Route path="/app/admin/wellness-activities/add" element={<AdminRoute><AdminAddWellnessActivityScreen /></AdminRoute>} />
+                <Route path="/app/admin/wellness-activities/:id/edit" element={<AdminRoute><AdminEditWellnessActivityScreen /></AdminRoute>} />
                 <Route path="/app/admin/users" element={<AdminRoute><AdminUserListScreen /></AdminRoute>} />
                 <Route path="/app/admin/users/:uid" element={<AdminRoute><AdminUserDetailScreen /></AdminRoute>} />
                 <Route path="/app/admin/users/analytics" element={<AdminRoute><AdminUserAnalyticsScreen /></AdminRoute>} />
@@ -167,7 +228,8 @@ function App() {
                 <Route path="/app/admin/content/interests-goals" element={<AdminRoute><InterestsGoalsScreen /></AdminRoute>} />
                 <Route path="/app/admin/content/onboarding" element={<AdminRoute><OnboardingContentScreen /></AdminRoute>} />
                 <Route path="/app/admin/content/notifications" element={<AdminRoute><AdminNotificationsScreen /></AdminRoute>} />
-                <Route path="/app/admin/content/books" element={<AdminRoute><AdminBooksScreen /></AdminRoute>} />
+                <Route path="/app/admin/content/pages" element={<AdminRoute><AdminContentPagesScreen /></AdminRoute>} />
+                <Route path="/app/admin/content/books" element={<Navigate to="/app/admin/content/pages" replace />} />
                 <Route path="/app/admin/analytics" element={<AdminRoute><AdminAnalyticsOverviewScreen /></AdminRoute>} />
                 <Route path="/app/admin/analytics/user-growth" element={<AdminRoute><AdminAnalyticsUserGrowthScreen /></AdminRoute>} />
                 <Route path="/app/admin/analytics/engagement" element={<AdminRoute><AdminAnalyticsEngagementScreen /></AdminRoute>} />
@@ -179,6 +241,7 @@ function App() {
                 <Route path="/app/exercises" element={<ProtectedRoute><ExerciseLibraryScreen /></ProtectedRoute>} />
                 <Route path="/app/exercises/:id" element={<ProtectedRoute><ExerciseDetailScreen /></ProtectedRoute>} />
                 <Route path="/app/workouts/log" element={<ProtectedRoute><RequireGroupRoute><LogWorkoutScreen /></RequireGroupRoute></ProtectedRoute>} />
+                <Route path="/app/workouts/log-wellness" element={<ProtectedRoute><RequireGroupRoute><LogWellnessActivityScreen /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/workouts/select-activity" element={<ProtectedRoute><RequireGroupRoute><SelectChallengeActivityScreen /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/workouts/success" element={<ProtectedRoute><RequireGroupRoute><WorkoutLoggedScreen /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/groups" element={<ProtectedRoute><GroupsScreen /></ProtectedRoute>} />
@@ -189,17 +252,22 @@ function App() {
                 <Route path="/app/group/:id/challenges/highlighted" element={<ProtectedRoute><GroupChallengesHighlightedScreen /></ProtectedRoute>} />
                 <Route path="/app/create-group" element={<ProtectedRoute><CreateGroupScreen /></ProtectedRoute>} />
                 <Route path="/app/join-group" element={<ProtectedRoute><JoinGroupScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges" element={<ProtectedRoute><RequireGroupRoute><ChallengesScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenges/suggested" element={<ProtectedRoute><RequireGroupRoute><SuggestedChallengesScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenges/preview" element={<ProtectedRoute><RequireGroupRoute><ChallengePreviewScreen /></RequireGroupRoute></ProtectedRoute>} />
+                <Route path="/app/challenges" element={<ProtectedRoute><ChallengesScreen /></ProtectedRoute>} />
+                <Route path="/app/challenges/wellness" element={<ProtectedRoute><WellnessTemplateGalleryScreen /></ProtectedRoute>} />
+                <Route path="/app/challenges/wellness/:id" element={<ProtectedRoute><WellnessTemplateDetailScreen /></ProtectedRoute>} />
+                <Route path="/app/challenges/browse" element={<ProtectedRoute><BrowseChallengesScreen /></ProtectedRoute>} />
+                <Route path="/app/challenges/suggested" element={<ProtectedRoute><SuggestedChallengesScreen /></ProtectedRoute>} />
+                <Route path="/app/challenges/preview" element={<ProtectedRoute><ChallengePreviewScreen /></ProtectedRoute>} />
                 <Route path="/app/challenges/competitive" element={<ProtectedRoute><RequireGroupRoute><CompetitiveChallengeScreen /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/challenges/collective" element={<ProtectedRoute><RequireGroupRoute><CollectiveChallengeScreen /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/challenges/streak" element={<ProtectedRoute><RequireGroupRoute><StreakChallengeScreen /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/challenges/leaderboard" element={<ProtectedRoute><RequireGroupRoute><ChallengeLeaderboardScreen /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/challenges/completed" element={<ProtectedRoute><RequireGroupRoute><ChallengeCompletedScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenge/:id" element={<ProtectedRoute><RequireGroupRoute><ChallengeDetailScreen /></RequireGroupRoute></ProtectedRoute>} />
+                <Route path="/app/challenge/:id" element={<ProtectedRoute><ChallengeDetailScreen /></ProtectedRoute>} />
                 <Route path="/app/create-challenge" element={<ProtectedRoute><RequireGroupRoute><CreateChallengeWizard /></RequireGroupRoute></ProtectedRoute>} />
                 <Route path="/app/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
+                <Route path="/app/profile/settings" element={<ProtectedRoute><ProfileSettingsScreen /></ProtectedRoute>} />
+                <Route path="/app/profile/settings/analytics" element={<ProtectedRoute><ProfileAnalyticsScreen /></ProtectedRoute>} />
                 <Route path="/app/profile/personal-info" element={<ProtectedRoute><ProfilePersonalInfoScreen /></ProtectedRoute>} />
                 <Route path="/app/profile/privacy-settings" element={<ProtectedRoute><ProfilePrivacySettingsScreen /></ProtectedRoute>} />
                 <Route path="/app/profile/completion" element={<ProtectedRoute><ProfileCompletionScreen /></ProtectedRoute>} />

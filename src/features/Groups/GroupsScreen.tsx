@@ -24,15 +24,17 @@ function GroupCard({
   ctaLabel: string;
   onCta: (group: Group) => void;
 }) {
+  const [coverSrc, setCoverSrc] = useState(group.coverImageUrl || fallbackImage);
   return (
     <article className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
       <button className="w-full text-left" onClick={() => onCta(group)}>
         <div className="relative overflow-hidden" style={{ height: 168, minHeight: 168, maxHeight: 168 }}>
           <img
-            src={group.coverImageUrl || fallbackImage}
+            src={coverSrc}
             alt={group.name}
             className="h-full w-full object-cover"
             style={{ display: 'block' }}
+            onError={() => setCoverSrc(fallbackImage)}
           />
           {!!group.activeChallenges && (
             <span className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-[11px] leading-[11px] font-black tracking-[0.08em] uppercase text-white">
@@ -85,14 +87,14 @@ function GroupsScreen() {
   const joinGroup = useJoinGroup();
 
   const normalizedGroups = useMemo(() => {
-    const activeCountByGroup = new Map<string, number>();
+    const challengeCountByGroup = new Map<string, number>();
     challenges.forEach((challenge) => {
-      if (!challenge.groupId || challenge.status !== 'active') return;
-      activeCountByGroup.set(challenge.groupId, (activeCountByGroup.get(challenge.groupId) ?? 0) + 1);
+      if (!challenge.groupId || challenge.status === 'completed') return;
+      challengeCountByGroup.set(challenge.groupId, (challengeCountByGroup.get(challenge.groupId) ?? 0) + 1);
     });
     return allGroups.map((group) => ({
       ...group,
-      activeChallenges: activeCountByGroup.get(group.id) ?? 0,
+      activeChallenges: challengeCountByGroup.get(group.id) ?? 0,
     }));
   }, [allGroups, challenges]);
 
@@ -112,29 +114,9 @@ function GroupsScreen() {
     navigate(`/app/group/${group.id}`);
   };
 
-  const handleDiscoverCta = async (group: Group) => {
-    if (!user?.uid) {
-      showToast('Please sign in first.', 'error');
-      return;
-    }
-
-    try {
-      const result = await joinGroup.mutateAsync({ groupId: group.id });
-      if (!result) {
-        showToast('Unable to join group.', 'error');
-        return;
-      }
-      setActiveGroupId(group.id);
-      if (result.status === 'pending') {
-        showToast('Join request sent. Await admin approval.', 'success');
-        setTab('invites');
-        return;
-      }
-      showToast('Joined group.', 'success');
-      navigate(`/app/group/${group.id}`);
-    } catch {
-      showToast('Could not join group.', 'error');
-    }
+  const handleDiscoverCta = (group: Group) => {
+    setActiveGroupId(group.id);
+    navigate(`/app/group/${group.id}`);
   };
 
   const handleInviteJoin = async () => {
@@ -152,14 +134,15 @@ function GroupsScreen() {
       }
       showToast('Joined via invite.', 'success');
       navigate(`/app/group/${result.group.id}`);
-    } catch {
+    } catch (error) {
+      console.error('Invite join failed:', error);
       showToast('Could not process invite code.', 'error');
     }
   };
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
-      <div className="mx-auto max-w-mobile min-h-screen pb-[108px]">
+      <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
         <header className="px-4 pt-4 pb-2 border-b border-slate-200 bg-slate-50 sticky top-0 z-20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -215,7 +198,7 @@ function GroupsScreen() {
                 </div>
               ) : (
                 discoverGroups.map((group) => (
-                  <GroupCard key={group.id} group={group} ctaLabel={group.isPrivate || group.requireAdminApproval ? 'Request' : 'Join'} onCta={handleDiscoverCta} />
+                  <GroupCard key={group.id} group={group} ctaLabel="View" onCta={handleDiscoverCta} />
                 ))
               )}
             </>

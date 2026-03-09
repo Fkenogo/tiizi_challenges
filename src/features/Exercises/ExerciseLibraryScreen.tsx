@@ -6,7 +6,6 @@ import { useChallenges } from '../../hooks/useChallenges';
 import { useGroups } from '../../hooks/useGroups';
 import { BottomNav, Screen } from '../../components/Layout';
 import { EmptyState, LoadingSpinner } from '../../components/Mobile';
-import { challengePresets } from '../../data/challengePresets';
 
 function difficultyDots(level: string) {
   const value = level === 'Beginner' ? 2 : level === 'Intermediate' ? 3 : 4;
@@ -36,10 +35,7 @@ function ExerciseLibraryScreen() {
   const { data: challenges } = useChallenges();
   const { data: groups } = useGroups();
 
-  const hasValidChallengeId = !!challengeId && (
-    !!challenges?.some((challenge) => challenge.id === challengeId) ||
-    challengePresets.some((challenge) => challenge.id === challengeId)
-  );
+  const hasValidChallengeId = !!challengeId && !!challenges?.some((challenge) => challenge.id === challengeId);
   const activeChallengeId = hasValidChallengeId ? challengeId : undefined;
   const challengeGroupId = challenges?.find((challenge) => challenge.id === activeChallengeId)?.groupId;
   const hasValidGroupId = !!groupId && !!groups?.some((group) => group.id === groupId);

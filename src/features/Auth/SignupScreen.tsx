@@ -21,8 +21,8 @@ function SignupScreen() {
 
   const nextPath = (() => {
     const raw = params.get('next');
-    if (!raw) return '/app/groups';
-    return raw.startsWith('/app') ? raw : '/app/groups';
+    if (!raw) return '/app/profile/completion';
+    return raw.startsWith('/app') ? raw : '/app/profile/completion';
   })();
 
   useEffect(() => {
@@ -57,22 +57,24 @@ function SignupScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="st-frame st-bottom-safe px-4">
-        <header className="flex items-center justify-between">
-          <button className="h-8 w-8 flex items-center justify-center" onClick={() => navigate('/app/welcome')}>
-            <ArrowLeft size={20} className="text-slate-900" />
-          </button>
-          <h1 className="text-base font-bold">Sign Up</h1>
-          <span className="w-8" />
-        </header>
+        <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 pb-2">
+          <header className="flex items-center justify-between">
+            <button className="h-8 w-8 flex items-center justify-center" onClick={() => navigate('/app/welcome')}>
+              <ArrowLeft size={20} className="text-slate-900" />
+            </button>
+            <h1 className="text-base font-bold">Sign Up</h1>
+            <span className="w-8" />
+          </header>
 
-        <div className="mt-4 border-b border-slate-200 flex">
-          <button className="flex-1 h-10 text-sm font-semibold text-slate-900 border-b-2 border-primary">Sign Up</button>
-          <button
-            className="flex-1 h-10 text-sm font-medium text-slate-500 border-b-2 border-transparent"
-            onClick={() => navigate(`/app/login${params.get('next') ? `?next=${encodeURIComponent(params.get('next') ?? '')}` : ''}`)}
-          >
-            Login
-          </button>
+          <div className="mt-4 flex">
+            <button className="flex-1 h-10 text-sm font-semibold text-slate-900 border-b-2 border-primary">Sign Up</button>
+            <button
+              className="flex-1 h-10 text-sm font-medium text-slate-500 border-b-2 border-transparent"
+              onClick={() => navigate(`/app/login${params.get('next') ? `?next=${encodeURIComponent(params.get('next') ?? '')}` : ''}`)}
+            >
+              Login
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 space-y-3">

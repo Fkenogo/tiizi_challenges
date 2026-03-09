@@ -33,7 +33,8 @@ function JoinGroupScreen() {
       }
       showToast('Joined group.', 'success');
       navigate(`/app/group/${result.group.id}`);
-    } catch {
+    } catch (error) {
+      console.error('Join group via invite failed:', error);
       showToast('Could not join group.', 'error');
     }
   };

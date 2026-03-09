@@ -5,6 +5,7 @@ import { BottomNav, Screen } from '../../components/Layout';
 import { useAuth } from '../../hooks/useAuth';
 import { useChallenge } from '../../hooks/useChallenges';
 import { useGroupMembers } from '../../hooks/useGroupInsights';
+import { useChallengeStreak } from '../../hooks/useStreak';
 import { useChallengeWorkouts } from '../../hooks/useWorkouts';
 
 function StreakChallengeScreen() {
@@ -16,8 +17,9 @@ function StreakChallengeScreen() {
   const { data: challenge } = useChallenge(challengeId);
   const { data: workouts = [] } = useChallengeWorkouts(challengeId);
   const { data: members = [] } = useGroupMembers(groupId || challenge?.groupId);
+  const { data: streak } = useChallengeStreak(user?.uid, challengeId);
 
-  const title = challenge?.name || '30-Day Yoga Streak';
+  const title = challenge?.name || 'Challenge';
   const logWorkoutRoute = `/app/workouts/select-activity?challengeId=${challengeId || 'yoga-streak'}${groupId ? `&groupId=${groupId}` : ''}`;
   const leaderboardRoute = `/app/challenges/leaderboard?challengeId=${challengeId || 'yoga-streak'}${groupId ? `&groupId=${groupId}` : ''}`;
   const backToChallenges = `/app/challenges${groupId ? `?groupId=${groupId}` : ''}`;
@@ -123,7 +125,7 @@ function StreakChallengeScreen() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[16px] leading-[20px] font-semibold text-[#3f5674]">Personal Progress</p>
-              <p className="mt-2 text-[24px] leading-[28px] font-black tracking-[-0.02em] text-slate-900">{weekData.weekActiveCount} Day</p>
+              <p className="mt-2 text-[24px] leading-[28px] font-black tracking-[-0.02em] text-slate-900">{streak?.current ?? weekData.weekActiveCount} Day</p>
               <p className="text-[24px] leading-[28px] font-black tracking-[-0.02em] text-slate-900">Streak</p>
             </div>
             <div className="rounded-[18px] bg-white border border-slate-200 px-4 py-3 text-right min-w-[86px]">

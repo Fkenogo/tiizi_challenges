@@ -1,27 +1,56 @@
 import { ChevronRight, Settings, Share2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { BottomNav, Screen } from '../../components/Layout';
 import { useAuth } from '../../hooks/useAuth';
 import { useChallenges } from '../../hooks/useChallenges';
 import { useMyGroups } from '../../hooks/useGroups';
 import { useProfileSetup } from '../../hooks/useProfileSetup';
+import { useUserStreak } from '../../hooks/useStreak';
 import { useUserWorkouts } from '../../hooks/useWorkouts';
-import { adminDonationService } from '../../services/adminDonationService';
+import { useDailyGoalsAnalytics } from '../../hooks/useDailyGoals';
+import { useSupportDonations } from '../../hooks/useDonations';
+
+function isInActivePledgePeriod(createdAt: string, frequency: string): boolean {
+  const ts = Date.parse(createdAt);
+  if (Number.isNaN(ts)) return false;
+  const pledgeDate = new Date(ts);
+  const now = new Date();
+
+  if (frequency === 'monthly') {
+    return (
+      pledgeDate.getFullYear() === now.getFullYear()
+      && pledgeDate.getMonth() === now.getMonth()
+    );
+  }
+
+  if (frequency === 'annual') {
+    return pledgeDate.getFullYear() === now.getFullYear();
+  }
+
+  if (frequency === 'goal_triggered') {
+    const days = Math.floor((now.getTime() - pledgeDate.getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 30;
+  }
+
+  if (frequency === 'one_time') {
+    const days = Math.floor((now.getTime() - pledgeDate.getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 30;
+  }
+
+  return false;
+}
 
 function ProfileScreen() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, logout } = useAuth();
   const { data: profileSetup } = useProfileSetup(user?.uid);
   const { data: myGroups = [] } = useMyGroups();
   const { data: challenges = [] } = useChallenges();
   const { data: workouts = [] } = useUserWorkouts(user?.uid);
-  const { data: donationCampaigns = [] } = useQuery({
-    queryKey: ['profile-donation-campaigns'],
-    queryFn: () => adminDonationService.getCampaigns(),
-    staleTime: 60 * 1000,
-  });
+  const { data: goalsAnalytics } = useDailyGoalsAnalytics(user?.uid);
+  const { data: streak } = useUserStreak(user?.uid);
+  const { data: supportDonations = [] } = useSupportDonations();
 
   const myChallengeIds = useMemo(() => {
     const myGroupIds = new Set(myGroups.map((item) => item.id));
@@ -40,19 +69,32 @@ function ProfileScreen() {
     profile?.displayName ||
     user?.displayName ||
     'Tiizi Member';
+  const profilePhoto = profileSetup?.personalInfo?.photoURL || user?.photoURL || '';
 
   const memberSinceYear = user?.metadata.creationTime ? new Date(user.metadata.creationTime).getFullYear() : new Date().getFullYear();
-  const activeCampaign = donationCampaigns.find((campaign) => campaign.status === 'active') ?? donationCampaigns[0];
-  const impactAmount = activeCampaign?.raisedAmount ?? workouts.length * 1.2;
-  const impactTarget = activeCampaign?.goalAmount ?? 10000;
+  const activeSupportEntries = useMemo(
+    () =>
+      supportDonations
+        .filter((row) => row.status === 'intent' || row.status === 'confirmed')
+        .filter((row) => isInActivePledgePeriod(row.createdAt, row.frequency))
+        .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)),
+    [supportDonations],
+  );
+  const latestPledge = activeSupportEntries[0];
+  const impactTarget = Math.max(1, latestPledge?.amountKes ?? 10000);
+  const impactAmount = latestPledge
+    ? activeSupportEntries
+      .filter((row) => row.status === 'confirmed' && row.frequency === latestPledge.frequency)
+      .reduce((sum, row) => sum + row.amountKes, 0)
+    : 0;
   const impactProgress = impactTarget > 0 ? Math.min(100, Math.round((impactAmount / impactTarget) * 100)) : 0;
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen pb-[96px] bg-slate-50">
-        <header className="px-4 pt-4 pb-3 bg-slate-50">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
-            <button className="h-10 w-10 flex items-center justify-center text-slate-500" onClick={() => navigate('/app/profile/privacy-settings')}>
+            <button className="h-10 w-10 flex items-center justify-center text-slate-500" onClick={() => navigate('/app/profile/settings')}>
               <Settings size={22} />
             </button>
             <h1 className="st-page-title">Profile</h1>
@@ -65,11 +107,17 @@ function ProfileScreen() {
         <main className="px-4 pt-2 space-y-6">
           <section className="text-center">
             <div className="relative inline-block">
-              <img
-                src={user?.photoURL || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=320&q=80'}
-                alt={displayName}
-                className="h-40 w-40 rounded-full object-cover border-[6px] border-[#f4dccb]"
-              />
+              {profilePhoto ? (
+                <img
+                  src={profilePhoto}
+                  alt={displayName}
+                  className="h-40 w-40 rounded-full object-cover border-[6px] border-[#f4dccb]"
+                />
+              ) : (
+                <div className="h-40 w-40 rounded-full border-[6px] border-[#f4dccb] bg-primary/15 text-primary flex items-center justify-center text-5xl font-bold">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
               <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-2 text-[13px] leading-[16px] font-black uppercase tracking-[0.04em] text-white">
                 {myGroups.length > 0 ? 'Top 5% Contributor' : 'New Member'}
               </span>
@@ -90,31 +138,43 @@ function ProfileScreen() {
               <p className="text-[13px] leading-[17px] tracking-[0.1em] font-bold text-slate-500 uppercase mt-1">Wins</p>
             </article>
             <article className="rounded-[20px] border border-slate-200 bg-white py-5 flex flex-col justify-center items-center">
-              <p className="text-[16px] leading-[20px] font-black text-primary">{workouts.length}</p>
-              <p className="text-[13px] leading-[17px] tracking-[0.1em] font-bold text-slate-500 uppercase mt-1">Nudges</p>
+              <p className="text-[16px] leading-[20px] font-black text-primary">{streak?.current ?? 0}</p>
+              <p className="text-[13px] leading-[17px] tracking-[0.1em] font-bold text-slate-500 uppercase mt-1">Streak</p>
             </article>
+          </section>
+
+          <section className="rounded-[16px] border border-slate-200 bg-white p-3 flex items-center justify-between">
+            <p className="text-[13px] leading-[18px] text-slate-600">
+              Goal completion: <span className="font-bold text-primary">{goalsAnalytics?.completionRate ?? 0}%</span>
+            </p>
+            <button className="text-[13px] font-semibold text-primary" onClick={() => navigate('/app/profile/settings/analytics')}>
+              View details
+            </button>
           </section>
 
           <section className="rounded-[24px] border border-primary/20 bg-[#fff4eb] p-5">
             <div className="flex items-start gap-3">
               <div className="h-14 w-14 rounded-2xl bg-primary text-white flex items-center justify-center text-[28px] leading-none">❤</div>
               <div className="min-w-0 flex-1">
-              <p className="text-[15px] leading-[20px] font-black text-slate-900">Community Impact</p>
-                <p className="text-[14px] leading-[20px] text-slate-600">{activeCampaign?.name ?? 'Clean Water Initiative'}</p>
+                <p className="text-[18px] leading-[24px] font-black text-slate-900">Tiizi stays free thanks to you.</p>
+                <p className="text-[14px] leading-[20px] text-slate-600">Chip in to keep your challenges coming</p>
               </div>
             </div>
-            <div className="mt-4 flex items-center justify-between text-[15px] leading-[20px] font-semibold">
-              <span className="text-primary">${impactAmount.toFixed(0)} raised</span>
-              <span className="text-slate-500">Goal: ${impactTarget.toLocaleString()}</span>
+            <div className="mt-4 flex items-center justify-between text-[16px] leading-[22px] font-black text-slate-900">
+              <span>[{'█'.repeat(Math.max(0, Math.round((impactProgress / 100) * 10))).padEnd(10, '░')}]</span>
+              <span>{impactProgress}%</span>
             </div>
+            <p className="mt-2 text-[18px] leading-[24px] font-black text-slate-900">
+              KES {impactAmount.toLocaleString()} of KES {impactTarget.toLocaleString()}
+            </p>
             <div className="mt-3 h-3 rounded-full bg-primary/20 overflow-hidden">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${impactProgress}%` }} />
+              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${impactProgress}%` }} />
             </div>
             <p className="mt-3 text-[14px] leading-[20px] text-slate-500">
-              Your logged activity contributes to this campaign.
+              Tiizi remains free for everyone. Support is optional.
             </p>
-            <button className="mt-4 h-[56px] w-full rounded-[16px] bg-primary text-white text-[16px] leading-[20px] font-black" onClick={() => navigate('/app/donate')}>
-              Donate Now
+            <button className="mt-4 h-[56px] w-full rounded-[16px] bg-primary text-white text-[16px] leading-[20px] font-black" onClick={() => navigate('/app/donate?trigger=manual')}>
+              Keep Tiizi Free
             </button>
           </section>
 
@@ -152,6 +212,18 @@ function ProfileScreen() {
                 ))
               )}
             </div>
+          </section>
+
+          <section>
+            <button
+              className="w-full h-12 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-semibold"
+              onClick={async () => {
+                await logout();
+                navigate('/app/login', { replace: true });
+              }}
+            >
+              Sign Out
+            </button>
           </section>
         </main>
 

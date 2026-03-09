@@ -17,7 +17,7 @@ function CompetitiveChallengeScreen() {
   const { data: workouts = [] } = useChallengeWorkouts(challengeId);
   const { data: members = [] } = useGroupMembers(groupId || challenge?.groupId);
 
-  const title = challenge?.name || '30-Day Pushup Duel';
+  const title = challenge?.name || 'Challenge';
   const unit = challenge?.activities?.[0]?.unit ?? 'Pushups';
 
   const backToChallenges = `/app/challenges${groupId ? `?groupId=${groupId}` : ''}`;

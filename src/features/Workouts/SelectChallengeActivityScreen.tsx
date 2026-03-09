@@ -31,48 +31,108 @@ function SelectChallengeActivityScreen() {
 
   const displayName = challenge?.name || 'Challenge';
   const challengeType = challenge?.challengeType ?? 'collective';
+  const challengeStartsAt = challenge?.startDate ? new Date(challenge.startDate) : null;
+  const challengeEndsAt = challenge?.endDate ? new Date(challenge.endDate) : null;
+  const now = new Date();
+  const isBeforeStart = !!challengeStartsAt && now < challengeStartsAt;
+  const isAfterEnd = !!challengeEndsAt && now > challengeEndsAt;
+  const isChallengeActiveNow = !isBeforeStart && !isAfterEnd;
   const backPath = challengeId
     ? `/app/challenges/${challengeType}?challengeId=${challengeId}${groupId ? `&groupId=${groupId}` : ''}`
     : '/app/challenges';
 
-  const handleLog = (exerciseId: string, unit: string, exerciseName: string, disabled?: boolean) => {
+  const handleLog = (
+    exerciseId: string,
+    unit: string,
+    exerciseName: string,
+    disabled?: boolean,
+    activityId?: string,
+    activityType?: string,
+  ) => {
     if (disabled) return;
     const qs = new URLSearchParams();
     if (challengeId) qs.set('challengeId', challengeId);
     if (groupId) qs.set('groupId', groupId);
+    const normalizedType = String(activityType ?? '').toLowerCase();
+    const isWellness = (challenge?.category && challenge.category !== 'fitness') || !!activityType || exerciseId.startsWith('wellness:');
+    if (isWellness) {
+      qs.set('activityId', activityId || exerciseId);
+      qs.set('activityType', normalizedType || 'wellness');
+      qs.set('activityName', exerciseName);
+      qs.set('unit', unit);
+      qs.set('targetValue', String(
+        activities.find((item) => (('activityId' in item && item.activityId && item.activityId === activityId) || item.exerciseId === exerciseId))?.targetValue ?? 1,
+      ));
+      navigate(`/app/workouts/log-wellness?${qs.toString()}`);
+      return;
+    }
     qs.set('exerciseId', exerciseId);
     qs.set('unit', unit);
     qs.set('exerciseName', exerciseName);
     navigate(`/app/workouts/log?${qs.toString()}`);
   };
 
-  const subtitle = (unit: string) => {
-    if (unit.toLowerCase() === 'reps') return 'Reps-based activity';
-    if (unit.toLowerCase() === 'seconds' || unit.toLowerCase() === 'minutes') return 'Time-based activity';
-    return 'Distance/Time-based';
+  const subtitle = (unit: string, activityType?: string) => {
+    const normalizedUnit = unit.toLowerCase();
+    const normalizedType = String(activityType ?? '').toLowerCase();
+
+    if (
+      normalizedType === 'fasting'
+      || normalizedType === 'sleep'
+      || normalizedType === 'meditation'
+      || normalizedUnit === 'seconds'
+      || normalizedUnit === 'minutes'
+      || normalizedUnit === 'hours'
+    ) {
+      return 'Time-based activity';
+    }
+    if (
+      normalizedType === 'water'
+      || normalizedUnit === 'milliliters'
+      || normalizedUnit === 'ml'
+      || normalizedUnit === 'liters'
+      || normalizedUnit === 'l'
+    ) {
+      return 'Volume-based activity';
+    }
+    if (normalizedUnit === 'reps') return 'Reps-based activity';
+    if (normalizedUnit === 'km' || normalizedUnit === 'miles' || normalizedUnit === 'meters' || normalizedUnit === 'm') {
+      return 'Distance-based activity';
+    }
+    return 'Count-based activity';
   };
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="st-frame st-bottom-safe pb-[108px]">
-        <header className="st-form-max h-12 flex items-center gap-3">
-          <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(backPath)}>
-            <ArrowLeft size={28} className="text-slate-900" />
-          </button>
-          <h1 className="text-[24px] leading-[30px] tracking-[-0.01em] font-black text-slate-900">Select Activity</h1>
-        </header>
-        <div className="st-form-max mt-4 h-px bg-[#ead9cc]" />
+        <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 pb-3">
+          <header className="st-form-max h-12 flex items-center gap-3">
+            <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(backPath)}>
+              <ArrowLeft size={28} className="text-slate-900" />
+            </button>
+            <h1 className="text-[24px] leading-[30px] tracking-[-0.01em] font-black text-slate-900">Select Activity</h1>
+          </header>
+        </div>
 
         <section className="st-form-max mt-5 rounded-none border-y border-[#e7d7ca] bg-[#faf5f1] -mx-5 px-5 py-6">
           <p className="text-[12px] leading-[14px] tracking-[0.12em] uppercase font-black text-primary">Current Challenge</p>
           <p className="mt-2 text-[24px] leading-[30px] tracking-[-0.01em] font-black text-[#18110d]">{displayName}</p>
-          <p className="mt-1 text-[16px] leading-[22px] font-medium text-[#5f5a55]">Pick an exercise to log your progress</p>
+          <p className="mt-1 text-[16px] leading-[22px] font-medium text-[#5f5a55]">Pick an activity to log your progress</p>
+          {!isChallengeActiveNow && (
+            <p className="mt-2 text-[14px] leading-[20px] font-semibold text-primary">
+              {isBeforeStart
+                ? `Challenge starts on ${challengeStartsAt?.toLocaleDateString()}. Logging opens then.`
+                : 'Challenge has ended. Logging is closed.'}
+            </p>
+          )}
         </section>
 
         <section className="st-form-max mt-4 space-y-4">
           {activities.map((activity) => {
             const isOptional = false;
             const match = exercises.find((item) => item.id === activity.exerciseId || item.name.toLowerCase() === (activity.exerciseName || '').toLowerCase());
+            const activityId = 'activityId' in activity ? activity.activityId : undefined;
+            const resolvedExerciseId = match?.id || activity.exerciseId || activityId || 'wellness-activity';
             const icon =
               activity.unit.toLowerCase() === 'reps'
                 ? <Dumbbell size={28} />
@@ -88,14 +148,26 @@ function SelectChallengeActivityScreen() {
                     <p className="text-[20px] leading-[24px] tracking-[-0.01em] font-black text-[#18110d] truncate">
                       {match?.name || activity.exerciseName || 'Activity'}
                     </p>
-                    <p className="mt-1 text-[16px] leading-[22px] font-medium text-[#68605a]">{isOptional ? 'Bonus challenge' : subtitle(activity.unit)}</p>
+                    <p className="mt-1 text-[16px] leading-[22px] font-medium text-[#68605a]">
+                      {isOptional
+                        ? 'Bonus challenge'
+                        : subtitle(activity.unit, 'activityType' in activity ? activity.activityType : undefined)}
+                    </p>
                   </div>
                 </div>
                 <button
                   className={`h-16 min-w-[104px] rounded-full px-6 text-[16px] leading-[16px] font-black ${isOptional ? 'bg-[#d7dbe1] text-[#8f96a1]' : 'bg-primary text-white'}`}
-                  onClick={() => handleLog(match?.id || activity.exerciseId, activity.unit, match?.name || activity.exerciseName || 'Activity', isOptional)}
+                  onClick={() =>
+                    handleLog(
+                      resolvedExerciseId,
+                      activity.unit,
+                      match?.name || activity.exerciseName || 'Activity',
+                      isOptional || !isChallengeActiveNow,
+                      activityId,
+                      'activityType' in activity ? activity.activityType : undefined,
+                    )}
                 >
-                  Log
+                  {!isChallengeActiveNow ? 'Locked' : 'Log'}
                 </button>
               </article>
             );

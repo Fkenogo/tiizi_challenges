@@ -1,0 +1,450 @@
+{
+  "templates": [
+    {
+      "id": "fasting-16hr-beginner",
+      "category": "fasting",
+      "name": "16-Hour Daily Fast (Beginner Friendly)",
+      "description": "The 16/8 intermittent fasting protocol - fast for 16 hours, eat within 8-hour window. Perfect for beginners.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 21,
+      "coverImage": "https://example.com/fasting-16hr.jpg",
+      "icon": "🕐",
+      "color": "#FF6B00",
+      "activities": [
+        {
+          "activityId": "fast-16hr-daily",
+          "order": 1,
+          "activityType": "fasting",
+          "name": "Complete 16-Hour Fast",
+          "description": "Fast for 16 consecutive hours daily",
+          "instructions": [
+            "Stop eating by 8:00 PM",
+            "Sleep through most of the fast",
+            "Break fast at 12:00 PM (noon) the next day",
+            "Stay hydrated with water, black coffee, or unsweetened tea",
+            "Log your fast when complete"
+          ],
+          "metricUnit": "hours",
+          "targetValue": 16,
+          "dailyFrequency": 1,
+          "pointsPerCompletion": 10,
+          "bonusPoints": [
+            {"condition": "Complete 7 consecutive days", "points": 50},
+            {"condition": "Complete 14 consecutive days", "points": 100},
+            {"condition": "Complete all 21 days", "points": 200}
+          ],
+          "fastingProtocol": {
+            "fastingHours": 16,
+            "eatingHours": 8,
+            "startTime": "20:00",
+            "endTime": "12:00"
+          }
+        }
+      ],
+      "benefits": [
+        "Improved mental clarity and focus",
+        "Weight loss (0.5-1kg per week)",
+        "Better insulin sensitivity",
+        "Reduced inflammation",
+        "Enhanced cellular repair (autophagy)",
+        "More stable energy levels"
+      ],
+      "guidelines": [
+        "Stay well-hydrated throughout the fast",
+        "Black coffee and unsweetened tea are allowed",
+        "Listen to your body - break fast if feeling unwell",
+        "Focus on nutritious whole foods during eating window",
+        "Start gradually if new to fasting",
+        "Plan fasting window to include sleeping hours"
+      ],
+      "warnings": [
+        "Not recommended for pregnant or breastfeeding women",
+        "Not suitable for those with eating disorder history",
+        "Consult doctor if on diabetes medication",
+        "Not recommended for children or adolescents"
+      ]
+    },
+    {
+      "id": "hydration-2l-beginner",
+      "category": "hydration",
+      "name": "Daily Hydration Challenge (2L)",
+      "description": "Drink 2 liters of water daily to optimize health, energy, and skin. Perfect starting point for hydration goals.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 21,
+      "coverImage": "https://example.com/hydration-2l.jpg",
+      "icon": "💧",
+      "color": "#3B82F6",
+      "activities": [
+        {
+          "activityId": "water-2l-daily",
+          "order": 1,
+          "activityType": "water",
+          "name": "Drink 2L Water Daily",
+          "description": "Consume 2 liters (8 glasses) of water throughout the day",
+          "instructions": [
+            "Track each glass (250ml) of water",
+            "Spread throughout the day",
+            "Start with morning hydration",
+            "Drink before meals",
+            "Log each intake"
+          ],
+          "metricUnit": "milliliters",
+          "targetValue": 2000,
+          "dailyFrequency": 1,
+          "pointsPerCompletion": 10,
+          "bonusPoints": [
+            {"condition": "Morning hydration (first 30min)", "points": 5},
+            {"condition": "Hit goal 7 days straight", "points": 50}
+          ],
+          "hydrationProtocol": {
+            "dailyTarget": 2000,
+            "containerSize": 250,
+            "timing": ["morning", "pre-meal"]
+          }
+        }
+      ],
+      "benefits": [
+        "Improved skin hydration and appearance",
+        "Better energy levels throughout day",
+        "Enhanced mental clarity",
+        "Improved digestion",
+        "Better exercise performance",
+        "Reduced headaches"
+      ],
+      "guidelines": [
+        "Drink first glass within 30 minutes of waking",
+        "Drink 250ml water 20 minutes before each meal",
+        "Carry reusable water bottle",
+        "Set hourly reminders",
+        "Track intake using app or journal"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "sleep-8hr-beginner",
+      "category": "sleep",
+      "name": "8-Hour Sleep Streak",
+      "description": "Achieve 8 hours of quality sleep every night for 21 days. Build the foundation of optimal health.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 21,
+      "coverImage": "https://example.com/sleep-8hr.jpg",
+      "icon": "😴",
+      "color": "#8B5CF6",
+      "activities": [
+        {
+          "activityId": "sleep-8hr-nightly",
+          "order": 1,
+          "activityType": "sleep",
+          "name": "Get 8 Hours of Sleep",
+          "description": "Sleep for 8 consecutive hours each night",
+          "instructions": [
+            "Set consistent bedtime",
+            "Set consistent wake time",
+            "Log sleep start and end times",
+            "Rate sleep quality (1-5 stars)",
+            "Track any interruptions"
+          ],
+          "metricUnit": "hours",
+          "targetValue": 8,
+          "dailyFrequency": 1,
+          "pointsPerCompletion": 10,
+          "bonusPoints": [
+            {"condition": "Screen-free 1hr before bed", "points": 5},
+            {"condition": "7-day streak", "points": 50}
+          ],
+          "sleepProtocol": {
+            "targetHours": 8,
+            "bedtimeWindow": "22:00-23:00",
+            "wakeWindow": "06:00-07:00",
+            "consistency": true
+          }
+        }
+      ],
+      "benefits": [
+        "Improved cognitive function and memory",
+        "Better mood and emotional regulation",
+        "Enhanced immune system",
+        "Improved athletic performance",
+        "Better weight management",
+        "Reduced disease risk"
+      ],
+      "guidelines": [
+        "Create dark, cool sleeping environment",
+        "Avoid screens 1 hour before bed",
+        "Limit caffeine after 2 PM",
+        "Exercise regularly but not close to bedtime",
+        "Develop relaxing bedtime routine"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "meditation-5min-beginner",
+      "category": "mindfulness",
+      "name": "5-Minute Daily Meditation",
+      "description": "Practice mindfulness meditation for just 5 minutes daily. Perfect introduction to meditation practice.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 21,
+      "coverImage": "https://example.com/meditation-5min.jpg",
+      "icon": "🧘",
+      "color": "#10B981",
+      "activities": [
+        {
+          "activityId": "meditate-5min-daily",
+          "order": 1,
+          "activityType": "meditation",
+          "name": "5-Minute Meditation",
+          "description": "Meditate for 5 minutes using guided or silent practice",
+          "instructions": [
+            "Find quiet space",
+            "Sit comfortably",
+            "Use guided meditation app or breathe silently",
+            "Focus on breath or mantra",
+            "Log completion and mood before/after"
+          ],
+          "metricUnit": "minutes",
+          "targetValue": 5,
+          "dailyFrequency": 1,
+          "pointsPerCompletion": 10,
+          "bonusPoints": [
+            {"condition": "Morning practice", "points": 5},
+            {"condition": "7-day streak", "points": 50}
+          ]
+        }
+      ],
+      "benefits": [
+        "Reduced stress and anxiety (40% decrease)",
+        "Improved focus and concentration",
+        "Better emotional regulation",
+        "Enhanced self-awareness",
+        "Improved sleep quality",
+        "Lower blood pressure"
+      ],
+      "guidelines": [
+        "Practice at same time daily (morning preferred)",
+        "Start with guided meditations",
+        "Don't judge your thoughts",
+        "Consistency more important than duration",
+        "Use apps like Headspace or Calm"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "vegetables-5day-beginner",
+      "category": "nutrition",
+      "name": "5-a-Day Vegetables Challenge",
+      "description": "Eat 5 servings of vegetables daily for improved nutrition, energy, and health.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 21,
+      "coverImage": "https://example.com/vegetables-5day.jpg",
+      "icon": "🥗",
+      "color": "#22C55E",
+      "activities": [
+        {
+          "activityId": "veggies-5-servings",
+          "order": 1,
+          "activityType": "food",
+          "name": "Eat 5 Vegetable Servings",
+          "description": "Consume 5 servings of vegetables throughout the day",
+          "instructions": [
+            "1 serving = 1 cup raw leafy greens or 1/2 cup cooked",
+            "Track each serving",
+            "Aim for variety (different colors)",
+            "Include at each meal",
+            "Log all servings"
+          ],
+          "metricUnit": "servings",
+          "targetValue": 5,
+          "dailyFrequency": 1,
+          "pointsPerCompletion": 10,
+          "bonusPoints": [
+            {"condition": "5+ different types", "points": 5},
+            {"condition": "Rainbow plate (5 colors)", "points": 10}
+          ]
+        }
+      ],
+      "benefits": [
+        "Increased fiber intake",
+        "Better digestion",
+        "Weight management",
+        "Reduced disease risk",
+        "Improved skin health",
+        "More consistent energy"
+      ],
+      "guidelines": [
+        "Aim for variety of colors",
+        "Include at breakfast (spinach in eggs)",
+        "Prep vegetables ahead of time",
+        "Try new vegetables weekly",
+        "Make half your plate vegetables"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "morning-routine-beginner",
+      "category": "habits",
+      "name": "Morning Routine Challenge",
+      "description": "Build a consistent morning routine to start every day with intention and energy.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 30,
+      "coverImage": "https://example.com/morning-routine.jpg",
+      "icon": "✅",
+      "color": "#F59E0B",
+      "activities": [
+        {
+          "activityId": "morning-routine-complete",
+          "order": 1,
+          "activityType": "habit",
+          "name": "Complete Morning Routine",
+          "description": "Follow your planned morning routine consistently",
+          "instructions": [
+            "Wake at same time daily",
+            "Complete routine steps in order",
+            "Track completion of each step",
+            "Time-block your routine",
+            "Prepare night before"
+          ],
+          "metricUnit": "completion",
+          "targetValue": 1,
+          "dailyFrequency": 1,
+          "pointsPerCompletion": 15,
+          "bonusPoints": [
+            {"condition": "Before 7 AM", "points": 5},
+            {"condition": "7-day streak", "points": 75}
+          ]
+        }
+      ],
+      "benefits": [
+        "More productive days",
+        "Better mood and mental state",
+        "Reduced decision fatigue",
+        "Improved time management",
+        "Enhanced self-discipline",
+        "Better overall wellbeing"
+      ],
+      "guidelines": [
+        "Start with 3-5 simple steps",
+        "Make it achievable (20-30 minutes)",
+        "Prepare everything night before",
+        "Track consistency",
+        "Adjust based on what works"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "breathing-3x-beginner",
+      "category": "stress",
+      "name": "Deep Breathing Practice (3x Daily)",
+      "description": "Practice deep breathing exercises 3 times daily to reduce stress and improve wellbeing.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 21,
+      "coverImage": "https://example.com/breathing.jpg",
+      "icon": "🌬️",
+      "color": "#06B6D4",
+      "activities": [
+        {
+          "activityId": "breathing-exercise",
+          "order": 1,
+          "activityType": "breathing",
+          "name": "5-Minute Breathing Exercise",
+          "description": "Practice box breathing or 4-7-8 breathing for 5 minutes",
+          "instructions": [
+            "Find quiet space",
+            "Use box breathing (4-4-4-4) or 4-7-8 method",
+            "Focus only on breath",
+            "Do 3 times daily (morning, afternoon, evening)",
+            "Log each session"
+          ],
+          "metricUnit": "sessions",
+          "targetValue": 3,
+          "dailyFrequency": 3,
+          "pointsPerCompletion": 5,
+          "bonusPoints": [
+            {"condition": "All 3 sessions daily", "points": 10}
+          ]
+        }
+      ],
+      "benefits": [
+        "Immediate stress reduction",
+        "Lower blood pressure",
+        "Better sleep quality",
+        "Anxiety relief",
+        "Improved focus",
+        "Enhanced parasympathetic activation"
+      ],
+      "guidelines": [
+        "Practice at same times daily",
+        "Set reminders",
+        "Use breathing apps for guidance",
+        "Focus on exhalation",
+        "Make it a habit anchor"
+      ],
+      "warnings": []
+    },
+    {
+      "id": "social-connection-beginner",
+      "category": "social",
+      "name": "Daily Social Connection",
+      "description": "Have at least one meaningful social interaction every day to improve mental health and happiness.",
+      "difficulty": "beginner",
+      "type": "streak",
+      "duration": 30,
+      "coverImage": "https://example.com/social-connection.jpg",
+      "icon": "👥",
+      "color": "#EC4899",
+      "activities": [
+        {
+          "activityId": "social-interaction-daily",
+          "order": 1,
+          "activityType": "social",
+          "name": "Meaningful Social Interaction",
+          "description": "Have a meaningful conversation or interaction with someone",
+          "instructions": [
+            "Call, video chat, or meet in person",
+            "Conversation must be 10+ minutes",
+            "Focus on quality over quantity",
+            "Be fully present",
+            "Log who you connected with"
+          ],
+          "metricUnit": "interactions",
+          "targetValue": 1,
+          "dailyFrequency": 1,
+          "pointsPerCompletion": 10,
+          "bonusPoints": [
+            {"condition": "In-person interaction", "points": 5},
+            {"condition": "Help someone", "points": 10}
+          ]
+        }
+      ],
+      "benefits": [
+        "Reduced loneliness",
+        "Better mental health",
+        "Increased happiness",
+        "Longer lifespan",
+        "Stronger immune system",
+        "Improved cognitive function"
+      ],
+      "guidelines": [
+        "Quality over quantity",
+        "Put phone away during interaction",
+        "Ask meaningful questions",
+        "Practice active listening",
+        "Reach out to different people"
+      ],
+      "warnings": []
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "totalTemplates": 8,
+    "categories": ["fasting", "hydration", "sleep", "mindfulness", "nutrition", "habits", "stress", "social"],
+    "lastUpdated": "2026-02-26",
+    "schemaVersion": "1.0"
+  }
+}

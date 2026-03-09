@@ -9,6 +9,7 @@ import {
   tier1Options,
   tier2Options,
 } from './exerciseFormUtils';
+import { isLikelyDirectImageUrl, isValidImageUrl } from '../../../services/imageUploadService';
 
 type Props = {
   value: AdminExerciseInput;
@@ -24,6 +25,15 @@ export function ExerciseForm({ value, onChange }: Props) {
         placeholder="Exercise name"
         className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm"
       />
+      <input
+        value={value.imageUrl ?? ''}
+        onChange={(e) => onChange({ ...value, imageUrl: e.target.value })}
+        placeholder="Exercise image URL (optional)"
+        className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm"
+      />
+      {!!value.imageUrl && isValidImageUrl(value.imageUrl) && !isLikelyDirectImageUrl(value.imageUrl) ? (
+        <p className="text-xs text-amber-600">Album/page URL accepted. Preview cards may require a direct image link.</p>
+      ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         <select
@@ -173,4 +183,3 @@ export function ExerciseForm({ value, onChange }: Props) {
     </div>
   );
 }
-

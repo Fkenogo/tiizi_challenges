@@ -6,17 +6,36 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useCreateChallenge } from '../../hooks/useChallenges';
 import { useSuggestedChallengeTemplate } from '../../hooks/useChallengeTemplates';
+import { useWellnessTemplate } from '../../hooks/useWellnessTemplates';
 import { useExercises } from '../../hooks/useExercises';
-import { useGroups } from '../../hooks/useGroups';
-import { isPersistableImageSource, isValidImageUrl, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
+import { useWellnessActivities } from '../../hooks/useWellnessActivities';
+import { useGroupMembershipStatus, useMyGroups } from '../../hooks/useGroups';
+import { isLikelyDirectImageUrl, isPersistableImageSource, isValidImageUrl, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
+import { groupService } from '../../services/groupService';
+import type { Challenge } from '../../types';
+import type { WellnessActivity } from '../../types/wellnessActivity';
 
 type ChallengeType = 'collective' | 'competitive' | 'streak';
 
 type ActivityRow = {
   query: string;
   exerciseId: string;
+  activityId?: string;
+  activityType?: string;
+  description?: string;
+  category?: string;
+  difficulty?: string;
+  icon?: string;
+  protocolSteps?: string[];
+  benefits?: string[];
+  guidelines?: string[];
+  warnings?: string[];
+  frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
   targetValue: string;
   unit: string;
+  pointsPerCompletion?: number;
+  dailyFrequency?: number;
+  instructions?: string[];
 };
 
 const typeOptions: Array<{ id: ChallengeType; label: string }> = [
@@ -29,15 +48,22 @@ function normalizeSearchTerm(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function isPermissionDenied(error: unknown): boolean {
+  const maybeCode = (error as { code?: string } | null)?.code;
+  return typeof maybeCode === 'string' && maybeCode.includes('permission-denied');
+}
+
 function CreateChallengeWizard() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const groupId = params.get('groupId') ?? undefined;
   const templateId = params.get('templateId') ?? undefined;
+  const wellnessTemplateId = params.get('wellnessTemplateId') ?? undefined;
   const initialType = (params.get('type') as ChallengeType | null) ?? 'collective';
-  const { data: groups } = useGroups();
-  const hasValidGroupId = !!groupId && !!groups?.some((group) => group.id === groupId);
-  const activeGroupId = hasValidGroupId ? groupId : undefined;
+  const { data: myGroups = [] } = useMyGroups();
+  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const activeGroupId = selectedGroupId || undefined;
+  const { data: membershipStatus = 'none' } = useGroupMembershipStatus(activeGroupId);
   const { user } = useAuth();
   const { showToast } = useToast();
   const createChallenge = useCreateChallenge();
@@ -47,6 +73,17 @@ function CreateChallengeWizard() {
     isError: isExercisesError,
   } = useExercises();
   const { data: template } = useSuggestedChallengeTemplate(templateId);
+  const { data: wellnessTemplate } = useWellnessTemplate(wellnessTemplateId);
+  const [wellnessCategoryFilter, setWellnessCategoryFilter] = useState<'all' | WellnessActivity['category']>('all');
+  const [wellnessSearch, setWellnessSearch] = useState('');
+  const {
+    data: wellnessActivities = [],
+    isLoading: isWellnessActivitiesLoading,
+    isError: isWellnessActivitiesError,
+  } = useWellnessActivities({
+    category: wellnessCategoryFilter,
+    search: wellnessSearch,
+  });
 
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [coverImageUploadState, setCoverImageUploadState] = useState<'idle' | 'uploading'>('idle');
@@ -60,17 +97,29 @@ function CreateChallengeWizard() {
   const [pickerRowIndex, setPickerRowIndex] = useState<number | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerTier, setPickerTier] = useState('All');
+  const [wellnessPickerOpen, setWellnessPickerOpen] = useState(false);
   const [donationEnabled, setDonationEnabled] = useState(false);
+  const [causeName, setCauseName] = useState('');
   const [causeDescription, setCauseDescription] = useState('');
-  const [targetDonation, setTargetDonation] = useState('500');
+  const [targetDonation, setTargetDonation] = useState('');
+  const [contributionStartDate, setContributionStartDate] = useState('');
+  const [contributionEndDate, setContributionEndDate] = useState('');
+  const [contributionPhone, setContributionPhone] = useState('');
+  const [contributionCardUrl, setContributionCardUrl] = useState('');
   const [templateApplied, setTemplateApplied] = useState(false);
+  const [wellnessTemplateApplied, setWellnessTemplateApplied] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [challengeCategory, setChallengeCategory] = useState<'fitness' | 'wellness' | 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social'>('fitness');
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (groupId && groups && !hasValidGroupId) {
-      navigate('/app/create-challenge', { replace: true });
+    if (!groupId) return;
+    if (myGroups.some((group) => group.id === groupId)) {
+      setSelectedGroupId(groupId);
+      return;
     }
-  }, [groupId, groups, hasValidGroupId, navigate]);
+    navigate('/app/create-challenge', { replace: true });
+  }, [groupId, myGroups, navigate]);
 
   useEffect(() => {
     const selectedExerciseId = params.get('selectedExerciseId');
@@ -93,11 +142,12 @@ function CreateChallengeWizard() {
     const cleanParams = new URLSearchParams();
     if (groupId) cleanParams.set('groupId', groupId);
     if (templateId) cleanParams.set('templateId', templateId);
+    if (wellnessTemplateId) cleanParams.set('wellnessTemplateId', wellnessTemplateId);
     if (challengeType && challengeType !== 'collective') cleanParams.set('type', challengeType);
     const cleanQuery = cleanParams.toString();
     navigate(`/app/create-challenge${cleanQuery ? `?${cleanQuery}` : ''}`, { replace: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, groupId, templateId, challengeType, navigate, activities.length]);
+  }, [params, groupId, templateId, wellnessTemplateId, challengeType, navigate, activities.length]);
 
   useEffect(() => {
     if (!template || templateApplied) return;
@@ -128,12 +178,57 @@ function CreateChallengeWizard() {
 
     if (template.donation?.enabled) {
       setDonationEnabled(true);
+      setCauseName(template.donation.causeName ?? '');
       setCauseDescription(template.donation.causeDescription ?? '');
-      setTargetDonation(String(template.donation.targetAmount ?? 0));
+      setTargetDonation(String(template.donation.targetAmountKes ?? 0));
+      setContributionStartDate(template.donation.contributionStartDate ?? '');
+      setContributionEndDate(template.donation.contributionEndDate ?? '');
+      setContributionPhone(template.donation.contributionPhoneNumber ?? '');
+      setContributionCardUrl(template.donation.contributionCardUrl ?? '');
     }
 
     setTemplateApplied(true);
   }, [template, templateApplied, exercises]);
+
+  useEffect(() => {
+    if (!wellnessTemplate || wellnessTemplateApplied || templateId) return;
+
+    const today = new Date();
+    const start = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const endDateFromDuration = new Date(today);
+    endDateFromDuration.setDate(today.getDate() + (wellnessTemplate.duration || 21));
+    const end = `${endDateFromDuration.getFullYear()}-${String(endDateFromDuration.getMonth() + 1).padStart(2, '0')}-${String(endDateFromDuration.getDate()).padStart(2, '0')}`;
+
+    setCoverImageUrl(wellnessTemplate.coverImage ?? '');
+    setName(wellnessTemplate.name);
+    setDescription(wellnessTemplate.description);
+    setChallengeType(wellnessTemplate.type as ChallengeType);
+    setChallengeCategory(wellnessTemplate.category);
+    setStartDate(start);
+    setEndDate(end);
+    setActivities(wellnessTemplate.activities.map((activity) => ({
+      query: activity.name,
+      exerciseId: '',
+      activityId: activity.activityId,
+      activityType: activity.activityType,
+      description: activity.description,
+      category: activity.category,
+      difficulty: activity.difficulty,
+      icon: activity.icon,
+      protocolSteps: activity.protocolSteps,
+      benefits: activity.benefits,
+      guidelines: activity.guidelines,
+      warnings: activity.warnings,
+      targetValue: String(activity.targetValue || ''),
+      unit: activity.metricUnit || 'count',
+      frequency: activity.frequency ?? 'daily',
+      pointsPerCompletion: activity.pointsPerCompletion,
+      dailyFrequency: activity.dailyFrequency,
+      instructions: activity.instructions ?? activity.protocolSteps,
+    })));
+
+    setWellnessTemplateApplied(true);
+  }, [wellnessTemplate, wellnessTemplateApplied, templateId]);
 
   const exerciseById = useMemo(
     () => new Map(exercises.map((exercise) => [exercise.id, exercise])),
@@ -147,6 +242,7 @@ function CreateChallengeWizard() {
     const msPerDay = 1000 * 60 * 60 * 24;
     return Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
   }, [startDate, endDate]);
+  const isWellnessMode = challengeCategory !== 'fitness';
 
   const handleCoverUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     setCoverImageUrl(event.target.value);
@@ -211,6 +307,45 @@ function CreateChallengeWizard() {
     setPickerTier('All');
   };
 
+  const openWellnessActivityPicker = (index: number) => {
+    setPickerRowIndex(index);
+    setWellnessPickerOpen(true);
+    setWellnessSearch('');
+    setWellnessCategoryFilter('all');
+  };
+
+  const closeWellnessActivityPicker = () => {
+    setWellnessPickerOpen(false);
+    setWellnessSearch('');
+    setWellnessCategoryFilter('all');
+  };
+
+  const pickWellnessActivityForRow = (activity: WellnessActivity) => {
+    if (pickerRowIndex === null) return;
+    updateActivity(pickerRowIndex, {
+      query: activity.name,
+      exerciseId: '',
+      activityId: activity.id,
+      activityType: activity.activityType,
+      description: activity.description,
+      category: activity.category,
+      difficulty: activity.difficulty,
+      icon: activity.icon,
+      protocolSteps: activity.protocolSteps,
+      benefits: activity.benefits,
+      guidelines: activity.guidelines,
+      warnings: activity.warnings,
+      targetValue: String(activity.defaultTargetValue),
+      unit: activity.defaultMetricUnit,
+      frequency: 'daily',
+      pointsPerCompletion: activity.defaultPoints,
+      dailyFrequency: activity.suggestedFrequency,
+      instructions: activity.protocolSteps,
+    });
+    closeWellnessActivityPicker();
+    setPickerRowIndex(null);
+  };
+
   const removeActivity = (index: number) => {
     if (activities.length === 1) return;
     setActivities((prev) => prev.filter((_, idx) => idx !== index));
@@ -243,6 +378,10 @@ function CreateChallengeWizard() {
   }, [exercises, pickerSearch, pickerTier]);
 
   const handleLaunch = async () => {
+    if (isLaunching || createChallenge.isPending) return;
+    setIsLaunching(true);
+
+    try {
     if (!user?.uid) {
       showToast('Please sign in to create a challenge.', 'error');
       return;
@@ -264,9 +403,38 @@ function CreateChallengeWizard() {
       return;
     }
 
+    if (!activeGroupId) {
+      showToast('Join or select a group before creating a challenge.', 'error');
+      return;
+    }
+    const liveMembershipStatus = await groupService.getMembershipStatus(activeGroupId, user.uid);
+    if (liveMembershipStatus !== 'joined' && liveMembershipStatus !== 'active') {
+      await groupService.joinGroup(activeGroupId, user.uid).catch(() => null);
+      const refreshedMembershipStatus = await groupService.getMembershipStatus(activeGroupId, user.uid);
+      if (refreshedMembershipStatus !== 'joined' && refreshedMembershipStatus !== 'active') {
+        showToast('Join this group before creating a challenge.', 'error');
+        navigate(`/app/group/${activeGroupId}`);
+        return;
+      }
+    }
+
     const validActivities = activities
-      .map((activity) => {
+      .map((activity, index) => {
+        if (isWellnessMode) {
+          if (!activity.activityId || Number(activity.targetValue) <= 0) return null;
+          return activity;
+        }
         if (activity.exerciseId && Number(activity.targetValue) > 0) return activity;
+        if (wellnessTemplateId && activity.query.trim() && Number(activity.targetValue) > 0) {
+          return {
+            ...activity,
+            activityId: activity.activityId || `wellness:${index + 1}`,
+            activityType: activity.activityType || 'habit',
+            category: activity.category || challengeCategory,
+            difficulty: activity.difficulty || 'beginner',
+            unit: activity.unit || 'count',
+          };
+        }
         const query = normalizeSearchTerm(activity.query);
         const matched = exercises.find(
           (exercise) => {
@@ -286,9 +454,20 @@ function CreateChallengeWizard() {
       showToast('Add at least one valid activity.', 'error');
       return;
     }
+    if (donationEnabled) {
+      if (!causeName.trim() || !causeDescription.trim()) {
+        showToast('Add cause name and description for Fitness + Cause.', 'error');
+        return;
+      }
+      if (!contributionPhone.trim() && !contributionCardUrl.trim()) {
+        showToast('Provide a mobile number or card link for contributions.', 'error');
+        return;
+      }
+    }
 
     try {
-      const challenge = await createChallenge.mutateAsync({
+      const payload = {
+        category: (isWellnessMode ? 'wellness' : challengeCategory) as Challenge['category'],
         name: name.trim(),
         description: description.trim(),
         createdBy: user.uid,
@@ -297,28 +476,71 @@ function CreateChallengeWizard() {
         startDate,
         endDate,
         coverImageUrl: persistableCover,
-        exerciseIds: Array.from(new Set(validActivities.map((activity) => activity.exerciseId))),
+        exerciseIds: Array.from(
+          new Set(validActivities
+            .map((activity) => activity.exerciseId)
+            .filter((exerciseId): exerciseId is string => !!exerciseId && exerciseById.has(exerciseId))),
+        ),
         activities: validActivities.map((activity) => ({
-          exerciseId: activity.exerciseId,
-          exerciseName: exerciseById.get(activity.exerciseId)?.name ?? activity.query,
+          exerciseId: activity.exerciseId || undefined,
+          activityId: activity.activityId || undefined,
+          activityType: activity.activityType || undefined,
+          exerciseName: activity.exerciseId ? (exerciseById.get(activity.exerciseId)?.name ?? activity.query) : activity.query,
+          description: activity.description,
+          category: activity.category,
+          difficulty: activity.difficulty,
+          icon: activity.icon,
           targetValue: Number(activity.targetValue),
           unit: activity.unit,
+          instructions: activity.instructions,
+          protocolSteps: activity.protocolSteps,
+          benefits: activity.benefits,
+          guidelines: activity.guidelines,
+          warnings: activity.warnings,
+          frequency: activity.frequency,
+          pointsPerCompletion: activity.pointsPerCompletion,
+          dailyFrequency: activity.dailyFrequency,
         })),
         donation: donationEnabled
           ? {
               enabled: true,
+              causeName: causeName.trim(),
               causeDescription: causeDescription.trim(),
-              targetAmount: Number(targetDonation) || 0,
+              targetAmountKes: Number(targetDonation) || 0,
+              contributionStartDate: contributionStartDate || undefined,
+              contributionEndDate: contributionEndDate || undefined,
+              contributionPhoneNumber: contributionPhone.trim() || undefined,
+              contributionCardUrl: contributionCardUrl.trim() || undefined,
+              disclaimer: 'Tiizi does not hold or manage funds. Contributions are coordinated by the group.',
             }
           : {
               enabled: false,
             },
-      });
+      };
 
-      showToast('Challenge launched.', 'success');
+      let challenge;
+      try {
+        challenge = await createChallenge.mutateAsync(payload);
+      } catch (error) {
+        if (!isPermissionDenied(error)) throw error;
+        // Retry once; best-effort membership refresh for edge cases.
+        await groupService.joinGroup(activeGroupId, user.uid).catch(() => null);
+        challenge = await createChallenge.mutateAsync(payload);
+      }
+
+      if (payload.donation?.enabled) {
+        showToast('Challenge submitted for super admin approval before going active.', 'success');
+      } else {
+        showToast('Challenge launched.', 'success');
+      }
       navigate(challengeRoute(challengeType, challenge.id));
-    } catch {
-      showToast('Failed to launch challenge.', 'error');
+    } catch (error) {
+      console.error('Challenge launch failed:', error);
+      const message = error instanceof Error ? error.message : 'Failed to launch challenge.';
+      showToast(message, 'error');
+    }
+    } finally {
+      setIsLaunching(false);
     }
   };
 
@@ -338,6 +560,13 @@ function CreateChallengeWizard() {
             <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-primary">Using Suggested Template</p>
             <p className="text-[16px] leading-[22px] font-bold text-slate-900 mt-1">{template.name}</p>
             <p className="text-[13px] leading-[18px] text-slate-600 mt-1">Fields are prefilled. You can edit before launching.</p>
+          </div>
+        )}
+        {!template && !!wellnessTemplate && (
+          <div className="st-form-max mt-3 st-card border-emerald-300 bg-emerald-50 p-4">
+            <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-emerald-700">Using Wellness Template</p>
+            <p className="text-[16px] leading-[22px] font-bold text-slate-900 mt-1">{wellnessTemplate.name}</p>
+            <p className="text-[13px] leading-[18px] text-slate-600 mt-1">Protocol activities are prefilled. You can customize before launch.</p>
           </div>
         )}
 
@@ -375,6 +604,11 @@ function CreateChallengeWizard() {
           {coverImageUrl.trim() && !isValidImageUrl(coverImageUrl) && !coverImageUrl.startsWith('data:image/') && (
             <p className="mt-2 text-[12px] leading-[16px] text-amber-600">Image URL should start with http:// or https://</p>
           )}
+          {isValidImageUrl(coverImageUrl) && !isLikelyDirectImageUrl(coverImageUrl) && (
+            <p className="mt-2 text-[12px] leading-[16px] text-amber-600">
+              This looks like a page/album link. Use a direct image URL so the cover can render correctly.
+            </p>
+          )}
           {coverImageUrl.startsWith('data:image/') && !isPersistableImageSource(coverImageUrl) && (
             <p className="mt-2 text-[12px] leading-[16px] text-amber-600">Selected image is too large. Use a smaller file or paste an image URL.</p>
           )}
@@ -382,6 +616,22 @@ function CreateChallengeWizard() {
 
         <p className="st-form-max mt-4 st-section-title text-primary">Info</p>
         <div className="st-form-max mt-2.5 space-y-3.5">
+          <div>
+            <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Group</p>
+            <select
+              className="st-input mt-2 appearance-none"
+              value={selectedGroupId}
+              onChange={(event) => setSelectedGroupId(event.target.value)}
+            >
+              <option value="">Select group to post challenge</option>
+              {myGroups.map((group) => (
+                <option key={group.id} value={group.id}>{group.name}</option>
+              ))}
+            </select>
+            {myGroups.length === 0 && (
+              <p className="mt-2 text-[12px] leading-[16px] text-slate-500">Join a group first to launch this challenge.</p>
+            )}
+          </div>
           <div>
             <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Challenge Name</p>
             <input className="st-input mt-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. 30 Day Shred" />
@@ -440,19 +690,28 @@ function CreateChallengeWizard() {
         <div className="st-form-max mt-4">
           <div className="st-card p-4">
             <p className="st-section-title text-primary">Challenge Activities</p>
-            {isExercisesLoading && (
+            {isExercisesLoading && !isWellnessMode && (
               <p className="mt-2 text-[12px] leading-[16px] text-slate-500">Loading exercise library...</p>
             )}
-            {isExercisesError && (
+            {isExercisesError && !isWellnessMode && (
               <p className="mt-2 text-[12px] leading-[16px] text-red-500">Could not load exercises. Please retry.</p>
             )}
-            {!isExercisesLoading && !isExercisesError && exercises.length === 0 && (
+            {!isExercisesLoading && !isExercisesError && exercises.length === 0 && !isWellnessMode && (
               <p className="mt-2 text-[12px] leading-[16px] text-amber-600">No exercises available yet. Load catalog exercises first.</p>
+            )}
+            {isWellnessMode && isWellnessActivitiesLoading && (
+              <p className="mt-2 text-[12px] leading-[16px] text-slate-500">Loading wellness activity library...</p>
+            )}
+            {isWellnessMode && isWellnessActivitiesError && (
+              <p className="mt-2 text-[12px] leading-[16px] text-red-500">Could not load wellness activities. Please retry.</p>
+            )}
+            {isWellnessMode && !isWellnessActivitiesLoading && !isWellnessActivitiesError && wellnessActivities.length === 0 && (
+              <p className="mt-2 text-[12px] leading-[16px] text-amber-600">No wellness activities available yet. Seed the wellness activity library.</p>
             )}
 
           {activities.map((activity, index) => {
-              const normalizedQuery = normalizeSearchTerm(activity.query);
-              const filtered = exercises
+            const normalizedQuery = normalizeSearchTerm(activity.query);
+            const filtered = exercises
                 .filter((exercise) => {
                   const normalizedName = normalizeSearchTerm(exercise.name);
                   return (
@@ -480,19 +739,35 @@ function CreateChallengeWizard() {
                     <input
                       id={`activity-search-${index}`}
                       className="st-input pl-10"
-                      placeholder="Search activities (e.g. Pushups)"
+                      placeholder={isWellnessMode ? 'Search wellness activities' : 'Search activities (e.g. Pushups)'}
                       value={activity.query}
-                      onFocus={() => setActiveSearchRow(index)}
-                      onBlur={() => window.setTimeout(() => setActiveSearchRow((current) => (current === index ? null : current)), 120)}
+                      onFocus={() => {
+                        if (!isWellnessMode) setActiveSearchRow(index);
+                      }}
+                      onBlur={() => {
+                        if (!isWellnessMode) {
+                          window.setTimeout(() => setActiveSearchRow((current) => (current === index ? null : current)), 120);
+                        }
+                      }}
                       onChange={(e) => {
-                        setActiveSearchRow(index);
-                        updateActivity(index, { query: e.target.value, exerciseId: '' });
+                        if (!isWellnessMode) setActiveSearchRow(index);
+                        updateActivity(index, {
+                          query: e.target.value,
+                          exerciseId: '',
+                          ...(isWellnessMode ? { activityId: '' } : {}),
+                        });
                       }}
                     />
                     <button
                       className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center"
-                      onClick={() => openActivityPicker(index)}
-                      aria-label="Open exercise picker"
+                      onClick={() => {
+                        if (isWellnessMode) {
+                          openWellnessActivityPicker(index);
+                          return;
+                        }
+                        openActivityPicker(index);
+                      }}
+                      aria-label={isWellnessMode ? 'Open wellness activity picker' : 'Open exercise picker'}
                     >
                       <Plus size={16} />
                     </button>
@@ -500,12 +775,18 @@ function CreateChallengeWizard() {
 
                   <button
                     className="mt-2 text-[13px] leading-[18px] font-bold text-primary"
-                    onClick={() => openActivityPicker(index)}
+                    onClick={() => {
+                      if (isWellnessMode) {
+                        openWellnessActivityPicker(index);
+                        return;
+                      }
+                      openActivityPicker(index);
+                    }}
                   >
-                    Browse exercise library
+                    {isWellnessMode ? 'Browse wellness activity library' : 'Browse exercise library'}
                   </button>
 
-                  {showSuggestions && filtered.length > 0 && (
+                  {showSuggestions && filtered.length > 0 && !isWellnessMode && (
                     <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
                       {filtered.map((exercise) => (
                         <button
@@ -523,13 +804,13 @@ function CreateChallengeWizard() {
                       ))}
                     </div>
                   )}
-                  {showSuggestions && filtered.length === 0 && (
+                  {showSuggestions && filtered.length === 0 && !isWellnessMode && (
                     <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                       <p className="text-[12px] leading-[16px] text-slate-500">No matches. Try another activity name.</p>
                     </div>
                   )}
 
-                  {!!activity.exerciseId && (
+                  {!!activity.exerciseId && !isWellnessMode && (
                     <button
                       className="mt-2 text-[13px] font-bold text-primary"
                       onClick={() => navigate(`/app/exercises/${activity.exerciseId}`)}
@@ -552,15 +833,59 @@ function CreateChallengeWizard() {
                     </div>
                     <div>
                       <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Unit</p>
-                      <select className="st-input mt-2 appearance-none" value={activity.unit} onChange={(e) => updateActivity(index, { unit: e.target.value })}>
-                        <option value="Reps">Reps</option>
-                        <option value="Seconds">Seconds</option>
-                        <option value="Minutes">Minutes</option>
-                        <option value="Km">Km</option>
-                        <option value="Kg">Kg</option>
-                      </select>
+                      {isWellnessMode ? (
+                        <input
+                          className="st-input mt-2"
+                          value={activity.unit}
+                          onChange={(e) => updateActivity(index, { unit: e.target.value })}
+                          placeholder="hours / ml / servings"
+                        />
+                      ) : (
+                        <select className="st-input mt-2 appearance-none" value={activity.unit} onChange={(e) => updateActivity(index, { unit: e.target.value })}>
+                          <option value="Reps">Reps</option>
+                          <option value="Seconds">Seconds</option>
+                          <option value="Minutes">Minutes</option>
+                          <option value="Km">Km</option>
+                          <option value="Kg">Kg</option>
+                        </select>
+                      )}
                     </div>
                   </div>
+                  {isWellnessMode && (
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Frequency</p>
+                        <select
+                          className="st-input mt-2 appearance-none"
+                          value={activity.frequency ?? 'daily'}
+                          onChange={(e) => updateActivity(index, { frequency: e.target.value as ActivityRow['frequency'] })}
+                        >
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="3x-week">3x / week</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Points</p>
+                        <input
+                          className="st-input mt-2"
+                          type="number"
+                          min={0}
+                          value={activity.pointsPerCompletion ?? 10}
+                          onChange={(e) => updateActivity(index, { pointsPerCompletion: Number(e.target.value || 0) })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {isWellnessMode && (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                      <p className="text-[12px] leading-[16px] text-slate-700 font-semibold">{activity.icon ?? '✨'} {activity.category ?? 'wellness'} • {activity.difficulty ?? 'beginner'}</p>
+                      {activity.description && (
+                        <p className="mt-1 text-[12px] leading-[16px] text-slate-500">{activity.description}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -573,30 +898,69 @@ function CreateChallengeWizard() {
 
         <div className="st-form-max mt-4 st-card p-4">
           <div className="flex items-center justify-between">
-            <p className="st-section-title text-primary">Info</p>
+            <p className="st-section-title text-primary">Fitness + Cause</p>
             <button className={`st-toggle ${donationEnabled ? 'on' : ''}`} onClick={() => setDonationEnabled((prev) => !prev)}>
               <span />
             </button>
           </div>
 
-          <p className="text-[12px] leading-[16px] text-slate-500 mt-1">Raise money for a charity</p>
+          <p className="text-[12px] leading-[16px] text-slate-500 mt-1">Mark this challenge as a fundraising challenge.</p>
 
           {donationEnabled && (
             <div className="mt-3 space-y-3">
               <div>
-                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Cause Description</p>
-                <input className="st-input mt-2" value={causeDescription} onChange={(e) => setCauseDescription(e.target.value)} placeholder="e.g. Save the Oceans Foundation" />
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Cause Name</p>
+                <input className="st-input mt-2" value={causeName} onChange={(e) => setCauseName(e.target.value)} placeholder="e.g. Community Health Fund" />
               </div>
               <div>
-                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Target Total Donation ($)</p>
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Cause Description</p>
+                <textarea
+                  className="w-full h-20 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[16px] leading-[22px] text-slate-700"
+                  value={causeDescription}
+                  onChange={(e) => setCauseDescription(e.target.value)}
+                  placeholder="Describe the cause and expected impact"
+                />
+              </div>
+              <div>
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Target Contribution (KES, optional)</p>
                 <input className="st-input mt-2" type="number" min={0} value={targetDonation} onChange={(e) => setTargetDonation(e.target.value)} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Contribution Start</p>
+                  <input className="st-input mt-2" type="date" value={contributionStartDate} onChange={(e) => setContributionStartDate(e.target.value)} />
+                </div>
+                <div>
+                  <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Contribution End</p>
+                  <input className="st-input mt-2" type="date" value={contributionEndDate} onChange={(e) => setContributionEndDate(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Donate Here: Mobile Number</p>
+                <input className="st-input mt-2" value={contributionPhone} onChange={(e) => setContributionPhone(e.target.value)} placeholder="e.g. +2547XXXXXXXX" />
+              </div>
+              <div>
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Donate Here: Card Link (optional)</p>
+                <input className="st-input mt-2" value={contributionCardUrl} onChange={(e) => setContributionCardUrl(e.target.value)} placeholder="https://..." />
+              </div>
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-[16px] text-amber-800">
+                Tiizi does not hold or manage funds. Contributions are coordinated by the group. Donation-enabled challenges require super admin approval before going active.
+              </p>
             </div>
           )}
         </div>
 
-        <button className="st-form-max st-btn-primary mt-6" disabled={createChallenge.isPending} onClick={handleLaunch}>
-          {createChallenge.isPending ? 'Launching...' : 'Launch Challenge'}
+        <button
+          type="button"
+          className="st-form-max st-btn-primary mt-6 disabled:opacity-60"
+          disabled={createChallenge.isPending || isLaunching || !activeGroupId}
+          onClick={handleLaunch}
+        >
+          {(createChallenge.isPending || isLaunching)
+            ? 'Launching...'
+            : !activeGroupId
+              ? 'Select Group to Launch'
+              : 'Launch Challenge'}
         </button>
       </div>
 
@@ -663,6 +1027,77 @@ function CreateChallengeWizard() {
                   ))
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {wellnessPickerOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/55">
+          <div className="mx-auto h-full w-full max-w-mobile bg-[#f7f9fc] pb-6">
+            <div className="st-form-max pt-4 flex items-center justify-between">
+              <div>
+                <p className="st-section-title">Wellness Activity Library</p>
+                <p className="st-body">Select activities and customize targets</p>
+              </div>
+              <button
+                className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center"
+                onClick={closeWellnessActivityPicker}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="st-form-max mt-3 relative">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                className="st-input pl-10"
+                value={wellnessSearch}
+                onChange={(event) => setWellnessSearch(event.target.value)}
+                placeholder="Search wellness activities..."
+              />
+            </div>
+
+            <div className="st-form-max mt-3 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              {(['all', 'fasting', 'hydration', 'sleep', 'mindfulness', 'nutrition', 'habits', 'stress', 'social'] as const).map((category) => (
+                <button
+                  key={category}
+                  className={`h-9 rounded-full px-3 text-[12px] leading-[16px] font-semibold uppercase whitespace-nowrap ${wellnessCategoryFilter === category ? 'bg-primary text-white' : 'bg-white border border-slate-200 text-slate-700'}`}
+                  onClick={() => setWellnessCategoryFilter(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+
+            <div className="st-form-max mt-3 max-h-[66vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white">
+              {wellnessActivities.length === 0 ? (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-[16px] leading-[22px] font-semibold text-slate-800">No wellness activities found</p>
+                  <p className="mt-1 text-[13px] leading-[18px] text-slate-500">Try another category or search term.</p>
+                </div>
+              ) : (
+                wellnessActivities.map((activity) => (
+                  <button
+                    key={`wellness-${activity.id}`}
+                    className="w-full border-b last:border-b-0 border-slate-100 px-4 py-3 text-left"
+                    onClick={() => pickWellnessActivityForRow(activity)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[16px] leading-[22px] font-semibold text-slate-900 truncate">{activity.icon} {activity.name}</p>
+                        <p className="text-[12px] leading-[16px] text-slate-500 truncate">
+                          {activity.category} • {activity.difficulty} • {activity.defaultTargetValue} {activity.defaultMetricUnit}
+                        </p>
+                        <p className="mt-1 text-[12px] leading-[16px] text-slate-600 line-clamp-2">{activity.description}</p>
+                      </div>
+                      <span className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0">
+                        <Plus size={16} />
+                      </span>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -7,9 +7,19 @@ export function useChallenges() {
   const { user } = useAuth();
   return useQuery({
     queryKey: ['challenges', user?.uid],
-    queryFn: () => challengeService.getChallenges(),
+    queryFn: () => (user?.uid ? challengeService.getUserAccessibleChallenges(user.uid) : Promise.resolve([])),
     enabled: !!user?.uid,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useChallengesByGroup(groupId: string | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['challenges-by-group', groupId, user?.uid],
+    queryFn: () => (groupId ? challengeService.getChallengesByGroup(groupId) : Promise.resolve([])),
+    enabled: !!groupId && !!user?.uid,
+    staleTime: 60 * 1000,
   });
 }
 
@@ -23,8 +33,82 @@ export function useChallenge(id: string | undefined) {
   });
 }
 
+export function useCanAccessChallenge(challengeId: string | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['challenge-access', challengeId, user?.uid],
+    queryFn: () =>
+      challengeId && user?.uid
+        ? challengeService.canAccessChallenge(user.uid, challengeId)
+        : Promise.resolve(false),
+    enabled: !!challengeId && !!user?.uid,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
+export function useChallengeMembership(challengeId: string | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['challenge-membership', challengeId, user?.uid],
+    queryFn: () =>
+      challengeId && user?.uid
+        ? challengeService.getChallengeMembership(user.uid, challengeId)
+        : Promise.resolve(null),
+    enabled: !!challengeId && !!user?.uid,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
+export function useJoinChallenge() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (challengeId: string) => {
+      if (!user?.uid) throw new Error('User required');
+      return challengeService.joinChallenge(user.uid, challengeId);
+    },
+    onSuccess: async (_data, challengeId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['challenges'] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge', challengeId] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge-membership', challengeId, user?.uid] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge-memberships-index', user?.uid] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge-access', challengeId, user?.uid] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge-participant-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['home-screen-data', user?.uid] }),
+      ]);
+    },
+  });
+}
+
+export function useLeaveChallenge() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (challengeId: string) => {
+      if (!user?.uid) throw new Error('User required');
+      return challengeService.leaveChallenge(user.uid, challengeId);
+    },
+    onSuccess: async (_data, challengeId) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['challenges'] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge', challengeId] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge-membership', challengeId, user?.uid] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge-memberships-index', user?.uid] }),
+        queryClient.invalidateQueries({ queryKey: ['challenge-participant-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['home-screen-data', user?.uid] }),
+      ]);
+    },
+  });
+}
+
 export function useCreateChallenge() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: (input: CreateChallengeInput) => challengeService.createChallenge(input),
     onMutate: async (input) => {
@@ -52,7 +136,9 @@ export function useCreateChallenge() {
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         createdBy: input.createdBy,
-        status: 'active' as const,
+        status: input.donation?.enabled ? ('draft' as const) : ('active' as const),
+        participantCount: input.donation?.enabled ? 0 : 1,
+        moderationStatus: input.donation?.enabled ? ('pending' as const) : ('approved' as const),
       };
 
       queryClient.setQueryData(['challenges'], (old: typeof previous) => {
@@ -69,6 +155,9 @@ export function useCreateChallenge() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['challenges'] });
+      queryClient.invalidateQueries({ queryKey: ['challenge-memberships-index', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['home-screen-data', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['my-groups', user?.uid] });
     },
   });
 }

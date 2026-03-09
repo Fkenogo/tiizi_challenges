@@ -3,18 +3,18 @@ import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import exercisesData from '../catalogExercises_CLEAN.json';
 
-const requiredEnvKeys = [
-  'VITE_FIREBASE_PROJECT_ID',
-  'GOOGLE_APPLICATION_CREDENTIALS',
-] as const;
+const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.VITE_FIREBASE_PROJECT_ID;
+const requiredEnvKeys = ['GOOGLE_APPLICATION_CREDENTIALS'] as const;
+
+if (!projectId) {
+  throw new Error('Missing FIREBASE_PROJECT_ID (or fallback VITE_FIREBASE_PROJECT_ID) env var.');
+}
 
 for (const key of requiredEnvKeys) {
   if (!process.env[key]) {
     throw new Error(`Missing required env var: ${key}`);
   }
 }
-
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID as string;
 
 if (!getApps().length) {
   initializeApp({

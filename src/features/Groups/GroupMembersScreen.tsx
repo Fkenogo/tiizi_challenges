@@ -2,18 +2,24 @@ import { ArrowLeft, MessageSquare, MoreHorizontal, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
+import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useGroupMembers } from '../../hooks/useGroupInsights';
 import { setActiveGroupId } from '../../hooks/useActiveGroup';
-import { useGroup, useGroupMembershipStatus } from '../../hooks/useGroups';
+import { useGroup, useGroupMemberCount, useGroupMembershipStatus, useReportGroup } from '../../hooks/useGroups';
 import { GroupBottomNav } from './components/GroupBottomNav';
 import { GroupDetailTabs } from './components/GroupDetailTabs';
 
 function GroupMembersScreen() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { showToast } = useToast();
+  const { user } = useAuth();
   const { data: group } = useGroup(id);
+  const { data: memberCount = 0 } = useGroupMemberCount(id);
   const { data: membershipStatus = 'none' } = useGroupMembershipStatus(id);
   const { data: members = [] } = useGroupMembers(id);
+  const reportGroup = useReportGroup();
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -31,7 +37,7 @@ function GroupMembersScreen() {
     );
   }
 
-  if (membershipStatus !== 'joined') {
+  if (group.isPrivate && membershipStatus !== 'joined') {
     return (
       <Screen className="st-page">
         <div className="mx-auto max-w-mobile px-4 pt-8">
@@ -51,18 +57,31 @@ function GroupMembersScreen() {
 
   const admins = filteredMembers.filter((member) => member.role === 'Coach');
   const others = filteredMembers.filter((member) => member.role !== 'Coach');
+  const formatJoined = (iso?: string) => {
+    if (!iso) return 'Joined recently';
+    const joined = Date.parse(iso);
+    if (Number.isNaN(joined)) return 'Joined recently';
+    const deltaDays = Math.max(0, Math.floor((Date.now() - joined) / (1000 * 60 * 60 * 24)));
+    if (deltaDays === 0) return 'Joined today';
+    if (deltaDays === 1) return 'Joined yesterday';
+    if (deltaDays < 30) return `Joined ${deltaDays} days ago`;
+    const months = Math.floor(deltaDays / 30);
+    if (months < 12) return `Joined ${months} month${months === 1 ? '' : 's'} ago`;
+    const years = Math.floor(months / 12);
+    return `Joined ${years} year${years === 1 ? '' : 's'} ago`;
+  };
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
-      <div className="mx-auto max-w-mobile min-h-screen pb-[96px]">
-        <header className="px-4 py-4 border-b border-slate-200 bg-white">
+      <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
+        <header className="sticky top-0 z-20 px-4 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center justify-between">
             <button className="h-10 w-10 rounded-full bg-[#e6edf7] text-[#4d637d] flex items-center justify-center" onClick={() => navigate(`/app/group/${id}`)}><ArrowLeft size={22} /></button>
             <h1 className="text-[20px] leading-[24px] font-black text-slate-900">{group.name}</h1>
             <button className="h-10 w-10 rounded-full bg-[#e6edf7] text-[#4d637d] flex items-center justify-center"><MoreHorizontal size={20} /></button>
           </div>
 
-          <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">{group.memberCount.toLocaleString()} members • Active daily</p>
+          <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">{memberCount.toLocaleString()} members • Active daily</p>
           <span className="mt-2 inline-block rounded-full bg-[#fff1e7] px-3 py-1 text-[12px] leading-[14px] font-semibold text-primary">Community Group</span>
         </header>
 
@@ -93,12 +112,36 @@ function GroupMembersScreen() {
                     <div className="h-14 w-14 rounded-full bg-[#ffd9bf] border-2 border-primary" />
                     <div>
                       <p className="text-[17px] leading-[22px] font-black text-slate-900">{member.name}</p>
-                      <p className="text-[13px] leading-[16px] text-[#61758f]">Joined 1 year ago</p>
+                      <p className="text-[13px] leading-[16px] text-[#61758f]">{formatJoined(member.joinedAt)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="rounded-full bg-[#fff1e7] px-3 py-1 text-[12px] leading-[14px] font-bold text-primary">ADMIN</span>
                     <button className="text-primary"><MessageSquare size={18} /></button>
+                    {membershipStatus === 'joined' && user?.uid !== member.id ? (
+                      <button
+                        className="text-xs font-bold text-red-600"
+                        onClick={async () => {
+                          if (!id || !user?.uid) return;
+                          const reason = window.prompt(`Report ${member.name} to admin. Add reason:`);
+                          if (!reason || !reason.trim()) return;
+                          try {
+                            await reportGroup.mutateAsync({
+                              groupId: id,
+                              reporterUid: user.uid,
+                              reason,
+                              reportType: 'member',
+                              reportedUserId: member.id,
+                            });
+                            showToast('Member report sent to admin.', 'success');
+                          } catch {
+                            showToast('Could not send report.', 'error');
+                          }
+                        }}
+                      >
+                        Report
+                      </button>
+                    ) : null}
                   </div>
                 </article>
               ))}
@@ -121,7 +164,33 @@ function GroupMembersScreen() {
                       <p className="text-[12px] leading-[16px] uppercase tracking-[0.08em] font-semibold text-[#72849d]">{member.streak}</p>
                     </div>
                   </div>
-                  <span className="text-[#d1dae6] text-[24px]">›</span>
+                  <div className="flex items-center gap-3">
+                    {membershipStatus === 'joined' && user?.uid !== member.id ? (
+                      <button
+                        className="text-xs font-bold text-red-600"
+                        onClick={async () => {
+                          if (!id || !user?.uid) return;
+                          const reason = window.prompt(`Report ${member.name} to admin. Add reason:`);
+                          if (!reason || !reason.trim()) return;
+                          try {
+                            await reportGroup.mutateAsync({
+                              groupId: id,
+                              reporterUid: user.uid,
+                              reason,
+                              reportType: 'member',
+                              reportedUserId: member.id,
+                            });
+                            showToast('Member report sent to admin.', 'success');
+                          } catch {
+                            showToast('Could not send report.', 'error');
+                          }
+                        }}
+                      >
+                        Report
+                      </button>
+                    ) : null}
+                    <span className="text-[#d1dae6] text-[24px]">›</span>
+                  </div>
                 </article>
               ))}
             </div>

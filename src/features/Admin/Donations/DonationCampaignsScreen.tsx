@@ -30,6 +30,7 @@ function DonationCampaignsScreen() {
             <thead>
               <tr className="text-left border-b border-slate-200">
                 <th className="py-2 pr-3">Campaign</th>
+                <th className="py-2 pr-3">Source</th>
                 <th className="py-2 pr-3">Goal</th>
                 <th className="py-2 pr-3">Raised</th>
                 <th className="py-2 pr-3">Donors</th>
@@ -40,10 +41,11 @@ function DonationCampaignsScreen() {
               {(data ?? []).map((campaign) => (
                 <tr key={campaign.id} className="border-b border-slate-100">
                   <td className="py-2 pr-3 font-semibold text-slate-900">{campaign.name}</td>
-                  <td className="py-2 pr-3 text-slate-700">{campaign.goalAmount.toLocaleString()}</td>
-                  <td className="py-2 pr-3 text-slate-700">{campaign.raisedAmount.toLocaleString()}</td>
+                  <td className="py-2 pr-3 text-slate-700 capitalize">{campaign.source.replace('_', ' ')}</td>
+                  <td className="py-2 pr-3 text-slate-700">{campaign.goalAmount.toLocaleString()} KES</td>
+                  <td className="py-2 pr-3 text-slate-700">{campaign.raisedAmount.toLocaleString()} KES</td>
                   <td className="py-2 pr-3 text-slate-700">{campaign.donorCount}</td>
-                  <td className="py-2 pr-3 text-slate-700 capitalize">{campaign.status}</td>
+                  <td className="py-2 pr-3 text-slate-700 capitalize">{campaign.status.replace('_', ' ')}</td>
                 </tr>
               ))}
             </tbody>

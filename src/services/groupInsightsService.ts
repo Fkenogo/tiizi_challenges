@@ -19,6 +19,7 @@ export type GroupMemberItem = {
   name: string;
   role: 'Coach' | 'Member';
   streak: string;
+  joinedAt?: string;
 };
 
 export type GroupLeaderboardEntry = {
@@ -45,7 +46,8 @@ type GroupMembershipDoc = {
   groupId: string;
   userId: string;
   role: 'owner' | 'admin' | 'member';
-  status: 'joined' | 'pending' | 'rejected';
+  status: 'joined' | 'active' | 'pending' | 'rejected';
+  createdAt?: string;
 };
 
 type UserDoc = {
@@ -73,9 +75,11 @@ function shortUserLabel(uid: string, user?: UserDoc): string {
 
 async function loadGroupMemberships(groupId: string): Promise<GroupMembershipDoc[]> {
   const membershipsSnap = await getDocs(
-    query(collection(db, 'groupMembers'), where('groupId', '==', groupId), where('status', '==', 'joined')),
+    query(collection(db, 'groupMembers'), where('groupId', '==', groupId)),
   );
-  return membershipsSnap.docs.map((item) => item.data() as GroupMembershipDoc);
+  return membershipsSnap.docs
+    .map((item) => item.data() as GroupMembershipDoc)
+    .filter((membership) => membership.status === 'joined' || membership.status === 'active');
 }
 
 async function loadUsersByIds(userIds: string[]): Promise<Map<string, UserDoc>> {
@@ -183,7 +187,8 @@ class GroupInsightsService {
         id: uid,
         name: shortUserLabel(uid, userMap.get(uid)),
         role,
-        streak: `${Math.min(Math.max(count, 1), 30)}d streak`,
+        streak: `${count} log${count === 1 ? '' : 's'}`,
+        joinedAt: membership?.createdAt,
       };
     });
   }

@@ -1,4 +1,15 @@
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getCountFromServer,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Challenge, Group, Workout } from '../types';
 
@@ -87,17 +98,20 @@ class AdminUserService {
     if (!userSnap.exists()) return null;
 
     const data = userSnap.data() as Record<string, unknown>;
-    const [workoutSnap, challengeSnap, groupSnap] = await Promise.all([
-      getDocs(query(collection(db, 'workouts'), where('userId', '==', uid))),
-      getDocs(query(collection(db, 'challenges'), where('createdBy', '==', uid))),
-      getDocs(query(collection(db, 'groups'), where('ownerId', '==', uid))),
+    const [workoutCountSnap, challengeCountSnap, groupCountSnap, recentWorkoutSnap] = await Promise.all([
+      getCountFromServer(query(collection(db, 'workouts'), where('userId', '==', uid))),
+      getCountFromServer(query(collection(db, 'challenges'), where('createdBy', '==', uid))),
+      getCountFromServer(query(collection(db, 'groups'), where('ownerId', '==', uid))),
+      getDocs(
+        query(
+          collection(db, 'workouts'),
+          where('userId', '==', uid),
+          orderBy('completedAt', 'desc'),
+          limit(1),
+        ),
+      ),
     ]);
-
-    const workouts = workoutSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Workout, 'id'>) }));
-    const challenges = challengeSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) }));
-    const groups = groupSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Group, 'id'>) }));
-
-    const lastWorkout = [...workouts].sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt))[0];
+    const lastWorkout = recentWorkoutSnap.docs[0]?.data() as Omit<Workout, 'id'> | undefined;
 
     return {
       id: userSnap.id,
@@ -108,9 +122,9 @@ class AdminUserService {
       lastActiveAt: lastWorkout?.completedAt,
       profile: (data.profile as Record<string, unknown> | undefined) ?? {},
       stats: {
-        workoutCount: workouts.length,
-        challengeCount: challenges.length,
-        groupCount: groups.length,
+        workoutCount: workoutCountSnap.data().count,
+        challengeCount: challengeCountSnap.data().count,
+        groupCount: groupCountSnap.data().count,
       },
     };
   }
@@ -124,16 +138,18 @@ class AdminUserService {
   }
 
   async getUserAnalytics(): Promise<AdminUserAnalytics> {
-    const [usersSnap, workoutsSnap] = await Promise.all([
-      getDocs(collection(db, 'users')),
-      getDocs(collection(db, 'workouts')),
-    ]);
-
-    const users = usersSnap.docs.map((d) => d.data() as Record<string, unknown>);
-    const workouts = workoutsSnap.docs.map((d) => d.data() as Record<string, unknown>);
-
     const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
+    const sevenDaysAgoIso = new Date(now - 7 * dayMs).toISOString();
+    const thirtyDaysAgoIso = new Date(now - 30 * dayMs).toISOString();
+
+    const [totalUsersCountSnap, users7dSnap, users30dSnap, workouts30dSnap] = await Promise.all([
+      getCountFromServer(collection(db, 'users')),
+      getDocs(query(collection(db, 'users'), where('createdAt', '>=', sevenDaysAgoIso))),
+      getDocs(query(collection(db, 'users'), where('createdAt', '>=', thirtyDaysAgoIso))),
+      getDocs(query(collection(db, 'workouts'), where('completedAt', '>=', thirtyDaysAgoIso))),
+    ]);
+    const workouts = workouts30dSnap.docs.map((d) => d.data() as Record<string, unknown>);
     const active7 = new Set<string>();
     const active30 = new Set<string>();
     workouts.forEach((w) => {
@@ -145,21 +161,13 @@ class AdminUserService {
       if (now - ts <= 30 * dayMs) active30.add(uid);
     });
 
-    const newUsers7d = users.filter((u) => {
-      const createdAt = typeof u.createdAt === 'string' ? u.createdAt : '';
-      const ts = Date.parse(createdAt);
-      return !Number.isNaN(ts) && now - ts <= 7 * dayMs;
-    }).length;
-    const newUsers30d = users.filter((u) => {
-      const createdAt = typeof u.createdAt === 'string' ? u.createdAt : '';
-      const ts = Date.parse(createdAt);
-      return !Number.isNaN(ts) && now - ts <= 30 * dayMs;
-    }).length;
-
-    const churnEstimate30d = Math.max(users.length - active30.size, 0);
+    const newUsers7d = users7dSnap.size;
+    const newUsers30d = users30dSnap.size;
+    const totalUsers = totalUsersCountSnap.data().count;
+    const churnEstimate30d = Math.max(totalUsers - active30.size, 0);
 
     return {
-      totalUsers: users.length,
+      totalUsers,
       active7d: active7.size,
       active30d: active30.size,
       newUsers7d,
@@ -169,7 +177,9 @@ class AdminUserService {
   }
 
   async getSupportTickets(): Promise<SupportTicket[]> {
-    const snap = await getDocs(collection(db, 'supportTickets'));
+    const snap = await getDocs(
+      query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'), limit(200)),
+    );
     return snap.docs
       .map((d) => {
         const data = d.data() as Record<string, unknown>;

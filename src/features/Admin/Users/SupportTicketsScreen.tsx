@@ -11,7 +11,7 @@ function SupportTicketsScreen() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { permissions } = useAdminPermissions(user?.uid);
-  const { data, isLoading } = useSupportTickets();
+  const { data, isLoading, isError } = useSupportTickets();
   const setStatus = useSetSupportTicketStatus();
   const { prefs, setPrefs, resetPrefs } = useAdminTablePrefs<{
     status: 'all' | 'new' | 'in_progress' | 'resolved';
@@ -28,6 +28,16 @@ function SupportTicketsScreen() {
   });
 
   if (isLoading) return <LoadingSpinner fullScreen label="Loading support tickets..." />;
+  if (isError) {
+    return (
+      <AdminLayout title="Support Tickets" permissions={permissions}>
+        <Card>
+          <p className="text-sm text-red-600">Could not load support tickets from Firestore.</p>
+          <p className="text-sm text-slate-600 mt-1">Check admin access rules for the `supportTickets` collection.</p>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
   const rows = useMemo(() => {
     const q = prefs.search.trim().toLowerCase();

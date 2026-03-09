@@ -8,10 +8,12 @@ interface ActiveChallengeCardProps {
     season: string;
     level: string;
     progress: number;
+    progressLabel: string;
     day: number;
     totalDays: number;
     groupId?: string;
     challengeType: 'collective' | 'competitive' | 'streak';
+    actionLabel: 'Log Workout' | 'Log Activity';
   };
 }
 
@@ -30,7 +32,7 @@ export function ActiveChallengeCard({ challenge }: ActiveChallengeCardProps) {
         <p className="text-[14px] leading-[18px] text-white/70 whitespace-nowrap">Day {challenge.day} of {challenge.totalDays}</p>
       </div>
       <div className="mt-3">
-        <p className="text-[15px] leading-[20px] font-bold text-primary">{challenge.progress}% Complete</p>
+        <p className="text-[15px] leading-[20px] font-bold text-primary">{challenge.progressLabel}</p>
         <div className="mt-2 h-[14px] rounded-full bg-[#33435c] overflow-hidden p-[2px]">
           <div className="h-full rounded-full bg-primary" style={{ width: `${challenge.progress}%` }} />
         </div>
@@ -41,7 +43,7 @@ export function ActiveChallengeCard({ challenge }: ActiveChallengeCardProps) {
       >
         <span className="inline-flex items-center gap-1">
           <Plus size={18} />
-          Log Workout
+          {challenge.actionLabel}
         </span>
       </button>
     </article>

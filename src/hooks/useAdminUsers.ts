@@ -5,7 +5,8 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: ['admin-users'],
     queryFn: () => adminUserService.getUsers(),
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -14,7 +15,8 @@ export function useAdminUser(uid: string | undefined) {
     queryKey: ['admin-user', uid],
     queryFn: () => (uid ? adminUserService.getUserDetail(uid) : Promise.resolve(null)),
     enabled: !!uid,
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -36,7 +38,8 @@ export function useAdminUserAnalytics() {
   return useQuery({
     queryKey: ['admin-user-analytics'],
     queryFn: () => adminUserService.getUserAnalytics(),
-    staleTime: 30 * 1000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -44,7 +47,8 @@ export function useSupportTickets() {
   return useQuery({
     queryKey: ['admin-support-tickets'],
     queryFn: () => adminUserService.getSupportTickets(),
-    staleTime: 15 * 1000,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 

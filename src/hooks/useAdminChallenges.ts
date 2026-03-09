@@ -45,12 +45,45 @@ export function useCreateAdminChallenge() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: {
+      category?: 'fitness' | 'wellness' | 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social';
       name: string;
       description: string;
       challengeType: 'collective' | 'competitive' | 'streak';
       startDate: string;
       endDate: string;
       createdBy: string;
+      coverImageUrl?: string;
+      activities?: Array<{
+        exerciseId?: string;
+        activityId?: string;
+        activityType?: string;
+        exerciseName?: string;
+        description?: string;
+        category?: string;
+        difficulty?: string;
+        icon?: string;
+        protocolSteps?: string[];
+        benefits?: string[];
+        guidelines?: string[];
+        warnings?: string[];
+        frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
+        instructions?: string[];
+        pointsPerCompletion?: number;
+        dailyFrequency?: number;
+        targetValue: number;
+        unit: string;
+      }>;
+      donation?: {
+        enabled: boolean;
+        causeName?: string;
+        causeDescription?: string;
+        targetAmountKes?: number;
+        contributionStartDate?: string;
+        contributionEndDate?: string;
+        contributionPhoneNumber?: string;
+        contributionCardUrl?: string;
+        disclaimer?: string;
+      };
     }) => adminChallengeService.createChallengeFromAdmin(payload),
     onSuccess: async () => {
       await Promise.all([

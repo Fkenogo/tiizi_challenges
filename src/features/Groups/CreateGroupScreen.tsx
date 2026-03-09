@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { setActiveGroupId } from '../../hooks/useActiveGroup';
 import { useCreateGroup } from '../../hooks/useGroups';
-import { isPersistableImageSource, isValidImageUrl, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
+import { isLikelyDirectImageUrl, isPersistableImageSource, isValidImageUrl, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
 import { GroupBottomNav } from './components/GroupBottomNav';
 
 function ToggleRow({ title, subtitle, value, onToggle }: { title: string; subtitle: string; value: boolean; onToggle: () => void }) {
@@ -147,6 +147,11 @@ function CreateGroupScreen() {
             />
             {coverImageUrl.trim() && !isValidImageUrl(coverImageUrl) && !coverImageUrl.startsWith('data:image/') && (
               <p className="mt-2 text-[12px] leading-[16px] text-amber-600">Image URL should start with http:// or https://</p>
+            )}
+            {isValidImageUrl(coverImageUrl) && !isLikelyDirectImageUrl(coverImageUrl) && (
+              <p className="mt-2 text-[12px] leading-[16px] text-amber-600">
+                This looks like a webpage link (for example an album page). Use the direct image URL for reliable display.
+              </p>
             )}
             {coverImageUrl.startsWith('data:image/') && !isPersistableImageSource(coverImageUrl) && (
               <p className="mt-2 text-[12px] leading-[16px] text-amber-600">Selected image is too large. Use a smaller file or paste an image URL.</p>

@@ -21,12 +21,19 @@ Set service account credentials in your shell:
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/tiizi-challenges-firebase-adminsdk-xxxx.json"
+export FIREBASE_PROJECT_ID="your-project-id"
 ```
 
 Then run:
 
 ```bash
 npm run seed:exercises
+```
+
+## Security Scan
+
+```bash
+npm run audit:secrets
 ```
 
 ## Deploy

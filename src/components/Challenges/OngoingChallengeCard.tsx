@@ -30,6 +30,8 @@ export function OngoingChallengeCard({ item, groupId }: OngoingChallengeCardProp
           src={item.image}
           alt={item.name}
           className="h-12 w-12 rounded-lg object-cover"
+          loading="lazy"
+          decoding="async"
           onError={(event) => {
             event.currentTarget.src = fallbackImage;
           }}
@@ -39,7 +41,7 @@ export function OngoingChallengeCard({ item, groupId }: OngoingChallengeCardProp
           <p className="text-[10px] text-slate-500">👥 {item.participants}</p>
         </div>
         <button
-          className="h-9 w-16 rounded-lg bg-primary text-white text-xs font-semibold"
+          className="h-10 min-w-[72px] rounded-lg bg-primary px-3 text-white text-sm font-semibold"
           onClick={() => navigate(challengeRoute(item, groupId))}
         >
           Join

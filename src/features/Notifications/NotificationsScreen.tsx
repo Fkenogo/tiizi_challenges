@@ -1,30 +1,29 @@
-import { useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, Section } from '../../components/Layout';
 import { Card } from '../../components/Mobile';
+import { useAuth } from '../../hooks/useAuth';
+import { useMarkAllNotificationsRead, useNotifications } from '../../hooks/useNotifications';
 
-type NotificationItem = {
-  id: string;
-  title: string;
-  message: string;
-  time: string;
-  unread: boolean;
-};
-
-const initialNotifications: NotificationItem[] = [
-  { id: 'n1', title: 'Challenge reminder', message: 'Your 30-Day Core Blast session is due today.', time: '5m ago', unread: true },
-  { id: 'n2', title: 'Group update', message: 'Marathon Group added a new challenge.', time: '1h ago', unread: true },
-  { id: 'n3', title: 'Streak progress', message: 'You are on a 7-day streak. Keep going.', time: 'Yesterday', unread: false },
-];
+function formatRelativeTime(iso: string): string {
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return 'Recently';
+  const deltaMs = Date.now() - ts;
+  const minutes = Math.floor(deltaMs / (60 * 1000));
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  return `${days}d ago`;
+}
 
 function NotificationsScreen() {
   const navigate = useNavigate();
-  const [items, setItems] = useState(initialNotifications);
-
-  const markAllRead = () => {
-    setItems((prev) => prev.map((item) => ({ ...item, unread: false })));
-  };
+  const { user } = useAuth();
+  const { data: items = [] } = useNotifications(user?.uid);
+  const markAllRead = useMarkAllNotificationsRead();
 
   return (
     <Screen>
@@ -35,7 +34,11 @@ function NotificationsScreen() {
               <Bell size={18} className="text-primary" />
               <p className="text-sm font-bold text-slate-900">Activity Inbox</p>
             </div>
-            <button className="h-9 px-3 rounded-lg bg-primary/10 text-primary text-xs font-bold" onClick={markAllRead}>
+            <button
+              className="h-9 px-3 rounded-lg bg-primary/10 text-primary text-xs font-bold disabled:opacity-60"
+              onClick={() => markAllRead.mutate()}
+              disabled={markAllRead.isPending || items.length === 0}
+            >
               <CheckCheck size={14} className="inline-block mr-1" />
               Mark all read
             </button>
@@ -50,10 +53,15 @@ function NotificationsScreen() {
                   <p className="text-sm font-bold text-slate-900">{item.title}</p>
                   <p className="text-xs text-slate-600 mt-1">{item.message}</p>
                 </div>
-                <span className="text-[11px] text-slate-500 whitespace-nowrap">{item.time}</span>
+                <span className="text-[11px] text-slate-500 whitespace-nowrap">{formatRelativeTime(item.createdAt)}</span>
               </div>
             </Card>
           ))}
+          {items.length === 0 && (
+            <Card variant="flat">
+              <p className="text-xs text-slate-500">No notifications yet.</p>
+            </Card>
+          )}
         </div>
 
         <Card className="mt-3">
@@ -67,4 +75,3 @@ function NotificationsScreen() {
 }
 
 export default NotificationsScreen;
-

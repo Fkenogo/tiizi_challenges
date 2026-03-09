@@ -3,37 +3,68 @@ import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Screen, BottomNav } from '../../components/Layout';
 import { useChallenges } from '../../hooks/useChallenges';
+import { useJoinChallenge } from '../../hooks/useChallenges';
 import { useChallengeTemplates } from '../../hooks/useChallengeTemplates';
 import { LoadingSpinner } from '../../components/Layout/LoadingSpinner';
 import { useQuery } from '@tanstack/react-query';
-import { workoutService } from '../../services/workoutService';
+import { challengeService } from '../../services/challengeService';
+import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
+import { useGroups, useMyGroups } from '../../hooks/useGroups';
+import { useWellnessTemplates } from '../../hooks/useWellnessTemplates';
 
 type ChallengeCardType = 'collective' | 'competitive' | 'streak';
 
 const isValidHttpImage = (value?: string) => !!value && /^https?:\/\//i.test(value);
+const localDateKey = (value: Date) =>
+  `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
 
 function ChallengesScreen() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { user } = useAuth();
   const groupId = params.get('groupId') ?? undefined;
+  const { showToast } = useToast();
   const { data: challengeData = [], isLoading: isLoadingChallenges } = useChallenges();
-  const { data: templateData = [], isLoading: isLoadingTemplates } = useChallengeTemplates();
-  const visibleChallenges = useMemo(
-    () => challengeData.filter((challenge) => challenge.status === 'active' && (!groupId || challenge.groupId === groupId)),
-    [challengeData, groupId],
+  const { data: allChallenges = [] } = useQuery({
+    queryKey: ['all-challenges-catalog', user?.uid],
+    enabled: !!user?.uid,
+    queryFn: () => challengeService.getVisibleChallengesForUser(String(user?.uid), { statuses: ['active'] }),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+  const { data: groups = [] } = useGroups();
+  const { data: myGroups = [] } = useMyGroups();
+  const effectiveGroupId = useMemo(
+    () => (groupId && myGroups.some((group) => group.id === groupId) ? groupId : undefined),
+    [groupId, myGroups],
   );
+  const joinChallenge = useJoinChallenge();
+  const { data: templateData = [], isLoading: isLoadingTemplates } = useChallengeTemplates();
+  const { data: wellnessTemplateData = [], isLoading: isLoadingWellnessTemplates } = useWellnessTemplates();
+  const visibleChallenges = useMemo(
+    () => challengeData.filter((challenge) => challenge.status === 'active' && (!effectiveGroupId || challenge.groupId === effectiveGroupId)),
+    [challengeData, effectiveGroupId],
+  );
+  const browseChallenges = useMemo(() => {
+    const groupIndex = new Map(groups.map((group) => [group.id, group]));
+    const myGroupIds = new Set(myGroups.map((group) => group.id));
+    return allChallenges
+      .filter((challenge) => challenge.status === 'active')
+      .filter((challenge) => !myGroupIds.has(challenge.groupId))
+      .filter((challenge) => {
+        const challengeGroup = groupIndex.get(challenge.groupId);
+        return !!challengeGroup && !challengeGroup.isPrivate;
+      })
+      .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
+  }, [allChallenges, groups, myGroups]);
 
-  const { data: challengeStats = new Map<string, number>() } = useQuery({
-    queryKey: ['challenge-participant-stats', visibleChallenges.map((c) => c.id).join(',')],
-    enabled: visibleChallenges.length > 0,
+  const { data: membershipIndex = new Map<string, string>() } = useQuery({
+    queryKey: ['challenge-memberships-index', user?.uid],
+    enabled: !!user?.uid,
     queryFn: async () => {
-      const entries = await Promise.all(
-        visibleChallenges.map(async (challenge) => {
-          const workouts = await workoutService.getWorkoutsByChallenge(challenge.id).catch(() => []);
-          return [challenge.id, new Set(workouts.map((workout) => workout.userId)).size] as const;
-        }),
-      );
-      return new Map<string, number>(entries);
+      if (!user?.uid) return new Map<string, string>();
+      return challengeService.getUserChallengeMembershipIndex(user.uid);
     },
     staleTime: 30 * 1000,
   });
@@ -42,31 +73,73 @@ function ChallengesScreen() {
     return visibleChallenges
       .slice(0, 3)
       .map((item) => {
+        const start = new Date(item.startDate);
         const end = new Date(item.endDate);
         const now = new Date();
-        const days = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        const hasStarted = localDateKey(now) >= localDateKey(start);
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const days = hasStarted
+          ? Math.max(0, Math.ceil((end.getTime() - now.getTime()) / msPerDay))
+          : Math.max(0, Math.ceil((start.getTime() - now.getTime()) / msPerDay));
+        const membershipStatus = membershipIndex.get(item.id);
+        const isJoined = membershipStatus === 'active' || membershipStatus === 'completed';
         return {
           id: item.id,
           name: item.name,
-          participants: challengeStats.get(item.id) ?? 0,
-          daysLeft: `${days} Days Left`,
-          image: isValidHttpImage(item.coverImageUrl)
-            ? item.coverImageUrl!
-            : 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1000&q=80',
+          participants: item.participantCount ?? 0,
+          daysLabel: hasStarted ? `${days} Days Left` : `Starts in ${days} Days`,
+          hasStarted,
+          isJoined,
+          imageUrl: isValidHttpImage(item.coverImageUrl) ? item.coverImageUrl : undefined,
           challengeType: (item.challengeType ?? 'collective') as ChallengeCardType,
+          isWellness: !!item.category && item.category !== 'fitness',
         };
       });
-  }, [visibleChallenges, challengeStats]);
-  const querySuffix = groupId ? `?groupId=${groupId}` : '';
+  }, [visibleChallenges, membershipIndex]);
 
-  if (isLoadingChallenges || isLoadingTemplates) {
+  const browseCards = useMemo(() => {
+    return browseChallenges
+      .slice(0, 6)
+      .map((item) => {
+        const start = new Date(item.startDate);
+        const end = new Date(item.endDate);
+        const now = new Date();
+        const hasStarted = localDateKey(now) >= localDateKey(start);
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const days = hasStarted
+          ? Math.max(0, Math.ceil((end.getTime() - now.getTime()) / msPerDay))
+          : Math.max(0, Math.ceil((start.getTime() - now.getTime()) / msPerDay));
+        return {
+          id: item.id,
+          name: item.name,
+          participants: item.participantCount ?? 0,
+          daysLabel: hasStarted ? `${days} Days Left` : `Starts in ${days} Days`,
+          imageUrl: isValidHttpImage(item.coverImageUrl) ? item.coverImageUrl : undefined,
+        };
+      });
+  }, [browseChallenges]);
+  const querySuffix = effectiveGroupId ? `?groupId=${effectiveGroupId}` : '';
+
+  const handleJoinChallenge = async (challengeId: string, challengeType: ChallengeCardType) => {
+    try {
+      await joinChallenge.mutateAsync(challengeId);
+      const query = new URLSearchParams({ challengeId });
+      if (effectiveGroupId) query.set('groupId', effectiveGroupId);
+      navigate(`/app/challenges/${challengeType}?${query.toString()}`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Could not join challenge.';
+      showToast(msg, 'error');
+    }
+  };
+
+  if (isLoadingChallenges || isLoadingTemplates || isLoadingWellnessTemplates) {
     return <LoadingSpinner fullScreen label="Loading Challenges..." />;
   }
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
-        <header className="px-4 pt-4 pb-2">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 px-4 pt-4 pb-2">
           <div className="flex items-center justify-between">
             <h1 className="st-page-title">Challenges</h1>
             <button
@@ -94,25 +167,23 @@ function ChallengesScreen() {
               <div className="flex gap-3">
                 {templateData.slice(0, 6).map((item) => {
                   const challengeTypeLabel =
-                    item.challengeType === 'competitive'
-                      ? 'Advanced'
-                      : item.challengeType === 'streak'
-                        ? 'Beginner'
-                        : 'Intermediate';
+                    item.tag?.trim()
+                    || (item.challengeType ? item.challengeType.toUpperCase() : 'TEMPLATE');
                   return (
                   <article key={item.id} className="w-[270px] shrink-0 rounded-[18px] border border-slate-200 bg-white overflow-hidden">
                       <div className="relative" style={{ height: 210, minHeight: 210, maxHeight: 210 }}>
-                        <img
-                          src={
-                            isValidHttpImage(item.coverImageUrl)
-                              ? item.coverImageUrl!
-                              :
-                            'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1000&q=80'
-                          }
-                          alt={item.name}
-                          className="h-full w-full object-cover"
-                          style={{ display: 'block' }}
-                        />
+                        {isValidHttpImage(item.coverImageUrl) ? (
+                          <img
+                            src={item.coverImageUrl}
+                            alt={item.name}
+                            className="h-full w-full object-cover"
+                            style={{ display: 'block' }}
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-slate-200 flex items-center justify-center text-slate-500 text-[12px] font-semibold">
+                            No cover image
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/15 to-transparent" />
                         <span className="absolute left-3 top-3 rounded-lg border border-primary/50 bg-primary/15 px-3 py-1 text-[11px] leading-[11px] tracking-[0.08em] font-bold uppercase text-primary">
                           {challengeTypeLabel}
@@ -124,7 +195,7 @@ function ChallengesScreen() {
                             onClick={() =>
                               navigate(
                                 `/app/challenges/suggested?previewTemplateId=${item.id}${
-                                  groupId ? `&groupId=${groupId}` : ''
+                                  effectiveGroupId ? `&groupId=${effectiveGroupId}` : ''
                                 }`,
                               )
                             }
@@ -147,6 +218,47 @@ function ChallengesScreen() {
 
           <section className="mt-6">
             <div className="flex items-center justify-between mb-2">
+              <h2 className="st-section-title">Wellness Templates</h2>
+              <button
+                className="text-[14px] leading-[18px] font-semibold text-primary"
+                onClick={() => navigate(`/app/challenges/wellness${querySuffix}`)}
+              >
+                View All
+              </button>
+            </div>
+
+            <div className="mt-3 -mx-4 overflow-x-auto px-4 hide-scrollbar">
+              <div className="flex gap-3">
+                {wellnessTemplateData.slice(0, 8).map((item) => (
+                  <article key={item.id} className="w-[220px] shrink-0 rounded-[18px] border border-slate-200 bg-white p-3">
+                    <button
+                      className="w-full text-left"
+                      onClick={() => navigate(`/app/challenges/wellness/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xl">{item.icon ?? '✨'}</span>
+                        <span className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-600">{item.category}</span>
+                      </div>
+                      <p className="mt-2 text-[14px] leading-[18px] font-black text-slate-900">{item.name}</p>
+                      <p className="mt-1 text-[11px] leading-[15px] text-slate-500">{item.duration} days • {item.difficulty}</p>
+                      <span className="mt-3 inline-flex h-9 min-w-[96px] items-center justify-center rounded-lg bg-primary px-3 text-[12px] font-bold text-white">
+                        Preview
+                      </span>
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            {wellnessTemplateData.length === 0 && (
+              <article className="mt-2 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500">
+                No wellness templates published yet.
+              </article>
+            )}
+          </section>
+
+          <section className="mt-6">
+            <div className="flex items-center justify-between mb-2">
               <h2 className="st-section-title">Ongoing Challenges</h2>
               <button
                 className="text-[14px] leading-[18px] font-semibold text-primary"
@@ -158,27 +270,56 @@ function ChallengesScreen() {
 
             <div className="mt-3 space-y-3">
               {ongoingCards.slice(0, 3).map((item) => {
-                const query = new URLSearchParams({ challengeId: item.id });
-                if (groupId) query.set('groupId', groupId);
                 return (
                   <article key={item.id} className="rounded-[18px] border border-slate-200 bg-white p-3 overflow-hidden">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-[76px] w-[76px] rounded-[12px] object-cover flex-shrink-0"
-                        style={{ minWidth: 76, minHeight: 76 }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] leading-[18px] font-black text-slate-900">{item.name || 'Challenge'}</p>
-                        <p className="mt-1 truncate text-[11px] leading-[15px] text-[#61758f]">👥 {item.participants.toLocaleString()} Participants</p>
-                        <p className="mt-1 text-[12px] leading-[15px] text-primary font-semibold">{item.daysLeft}</p>
-                      </div>
+                      <button
+                        className="min-w-0 flex flex-1 items-center gap-3 text-left"
+                        onClick={() => navigate(`/app/challenge/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`)}
+                      >
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="h-[76px] w-[76px] rounded-[12px] object-cover flex-shrink-0"
+                            style={{ minWidth: 76, minHeight: 76 }}
+                          />
+                        ) : (
+                          <div
+                            className="h-[76px] w-[76px] rounded-[12px] border border-slate-200 bg-slate-100 text-[10px] text-slate-500 flex items-center justify-center flex-shrink-0"
+                            style={{ minWidth: 76, minHeight: 76 }}
+                          >
+                            No image
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] leading-[18px] font-black text-slate-900">{item.name || 'Challenge'}</p>
+                          <p className="mt-1 truncate text-[11px] leading-[15px] text-[#61758f]">👥 {item.participants.toLocaleString()} Participants</p>
+                          <p className="mt-1 text-[12px] leading-[15px] text-primary font-semibold">{item.daysLabel}</p>
+                        </div>
+                      </button>
                       <button
                         className="h-10 min-w-[86px] rounded-xl bg-primary px-0 text-white text-[14px] font-bold flex-shrink-0"
-                        onClick={() => navigate(`/app/challenges/${item.challengeType}?${query.toString()}`)}
+                        onClick={() => {
+                          if (item.isJoined) {
+                            if (item.hasStarted) {
+                              const qs = new URLSearchParams({ challengeId: item.id });
+                              if (effectiveGroupId) qs.set('groupId', effectiveGroupId);
+                              navigate(`/app/workouts/select-activity?${qs.toString()}`);
+                              return;
+                            }
+                            navigate(`/app/challenge/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`);
+                            return;
+                          }
+                          handleJoinChallenge(item.id, item.challengeType);
+                        }}
+                        disabled={joinChallenge.isPending}
                       >
-                        Join
+                        {joinChallenge.isPending
+                          ? 'Joining...'
+                          : item.isJoined
+                          ? (item.hasStarted ? (item.isWellness ? 'Log Activity' : 'Log Workout') : 'View')
+                          : 'Join'}
                       </button>
                     </div>
                   </article>
@@ -188,6 +329,64 @@ function ChallengesScreen() {
             {ongoingCards.length === 0 && (
               <article className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500">
                 No active challenges for your group yet.
+              </article>
+            )}
+          </section>
+
+          <section className="mt-6">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="st-section-title">Browse Challenges</h2>
+              <button
+                className="text-[14px] leading-[18px] font-semibold text-primary"
+                onClick={() => navigate('/app/challenges/browse')}
+              >
+                View All
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {browseCards.map((item) => (
+                <article key={item.id} className="rounded-[18px] border border-slate-200 bg-white p-3 overflow-hidden">
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="min-w-0 flex flex-1 items-center gap-3 text-left"
+                      onClick={() => navigate(`/app/challenge/${item.id}`)}
+                    >
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-[76px] w-[76px] rounded-[12px] object-cover flex-shrink-0"
+                          style={{ minWidth: 76, minHeight: 76 }}
+                        />
+                      ) : (
+                        <div
+                          className="h-[76px] w-[76px] rounded-[12px] border border-slate-200 bg-slate-100 text-[10px] text-slate-500 flex items-center justify-center flex-shrink-0"
+                          style={{ minWidth: 76, minHeight: 76 }}
+                        >
+                          No image
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] leading-[18px] font-black text-slate-900">{item.name || 'Challenge'}</p>
+                        <p className="mt-1 truncate text-[11px] leading-[15px] text-[#61758f]">👥 {item.participants.toLocaleString()} Participants</p>
+                        <p className="mt-1 text-[12px] leading-[15px] text-primary font-semibold">{item.daysLabel}</p>
+                      </div>
+                    </button>
+                    <button
+                      className="h-10 min-w-[86px] rounded-xl bg-primary px-0 text-white text-[14px] font-bold flex-shrink-0"
+                      onClick={() => navigate(`/app/challenge/${item.id}`)}
+                    >
+                      View
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {browseCards.length === 0 && (
+              <article className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500">
+                No public challenges available to browse yet.
               </article>
             )}
           </section>

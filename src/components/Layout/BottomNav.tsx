@@ -21,14 +21,14 @@ function NavItem({
 }) {
   return (
     <button
-      className={`h-9 min-w-[56px] flex flex-col items-center justify-center transition-colors ${
+      className={`h-11 min-w-[64px] flex flex-col items-center justify-center transition-colors ${
         active ? 'text-primary' : 'text-slate-400'
       }`}
       onClick={onClick}
     >
       {icon}
       <span
-        className={`text-[9px] leading-none mt-0.5 ${
+        className={`text-[11px] leading-[13px] mt-0.5 ${
           active ? 'font-semibold' : 'font-medium'
         }`}
       >
@@ -55,17 +55,17 @@ export function BottomNav({ active }: Props) {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-mobile -translate-x-1/2 bg-white border-t border-slate-200 px-3 py-2">
+    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-mobile -translate-x-1/2 bg-white border-t border-slate-200 px-3 py-2.5">
       <div className="mx-auto max-w-mobile flex items-end justify-between">
         <NavItem
           label="Home"
-          icon={<Home size={18} />}
+          icon={<Home size={20} />}
           active={active === 'home'}
           onClick={() => navigate('/app/home')}
         />
         <NavItem
           label="Groups"
-          icon={<Users size={18} />}
+          icon={<Users size={20} />}
           active={active === 'groups'}
           onClick={() => navigate('/app/groups')}
         />
@@ -79,13 +79,13 @@ export function BottomNav({ active }: Props) {
         </div>
         <NavItem
           label="Challenges"
-          icon={<Trophy size={18} />}
+          icon={<Trophy size={20} />}
           active={active === 'challenges'}
           onClick={() => navigate('/app/challenges')}
         />
         <NavItem
           label="Profile"
-          icon={<User size={18} />}
+          icon={<User size={20} />}
           active={active === 'profile'}
           onClick={() => navigate('/app/profile')}
         />

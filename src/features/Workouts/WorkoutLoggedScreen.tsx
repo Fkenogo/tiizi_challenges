@@ -11,7 +11,9 @@ function WorkoutLoggedScreen() {
   const [params] = useSearchParams();
   const challengeId = params.get('challengeId') ?? undefined;
   const groupId = params.get('groupId') ?? undefined;
+  const exerciseId = params.get('exerciseId') ?? undefined;
   const exerciseName = params.get('exerciseName') ?? 'Workout';
+  const unit = params.get('unit') ?? '';
   const { user } = useAuth();
   const { data: challenge } = useChallenge(challengeId);
   const { data: workouts = [] } = useChallengeWorkouts(challengeId);
@@ -25,7 +27,15 @@ function WorkoutLoggedScreen() {
     return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
   }, [challenge]);
   const target = Number(params.get('target') || totalDays);
-  const completion = Math.max(0, Math.min(100, Math.round((myWorkouts.length / Math.max(target, 1)) * 100)));
+  const relevantWorkouts = useMemo(
+    () => myWorkouts.filter((item) => (exerciseId ? item.exerciseId === exerciseId : true)),
+    [myWorkouts, exerciseId],
+  );
+  const totalValue = useMemo(
+    () => relevantWorkouts.reduce((sum, item) => sum + Math.max(0, Number(item.value ?? 0)), 0),
+    [relevantWorkouts],
+  );
+  const completion = Math.max(0, Math.min(100, Math.round((totalValue / Math.max(target, 1)) * 100)));
 
   const toFeedPath = groupId ? `/app/group/${groupId}/feed` : `/app/challenges/collective?challengeId=${challengeId || 'core-blast'}`;
   const toCompletionPath = `/app/challenges/completed?challengeId=${challengeId || 'core-blast'}${groupId ? `&groupId=${groupId}` : ''}`;
@@ -57,8 +67,8 @@ function WorkoutLoggedScreen() {
             </div>
             <div className="mt-4 flex items-end justify-between">
               <p className="text-[18px] leading-[22px] font-black text-primary">
-                {myWorkouts.length}
-                <span className="text-[#a3a6ad]"> / {target} Workouts</span>
+                {Number.isFinite(totalValue) ? Math.round(totalValue * 10) / 10 : 0}
+                <span className="text-[#a3a6ad]"> / {target}{unit ? ` ${unit}` : ''}</span>
               </p>
               <div className="text-right">
                 <p className="text-[12px] leading-[14px] tracking-[0.14em] uppercase font-black text-[#9597a0]">Completion</p>

@@ -13,6 +13,9 @@ function UserGrowthScreen() {
 
   if (isLoading) return <LoadingSpinner fullScreen label="Loading user growth..." />;
 
+  const rows = data ?? [];
+  const maxSignups = Math.max(1, ...rows.map((row) => row.signups));
+
   return (
     <AdminLayout title="User Growth (30d)" permissions={permissions}>
       {!permissions.canViewUserGrowthAnalytics ? (
@@ -31,6 +34,27 @@ function UserGrowthScreen() {
       </Card>
 
       <Card className="mt-3">
+        <p className="text-sm font-black text-slate-900">Signup Trend</p>
+        <div className="mt-3 space-y-2">
+          {rows.map((row) => (
+            <div key={`chart-${row.date}`} className="flex items-center gap-3">
+              <p className="w-24 text-xs text-slate-500">{row.date.slice(5)}</p>
+              <div className="h-3 flex-1 rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className="h-full bg-primary"
+                  style={{ width: `${Math.max(2, Math.round((row.signups / maxSignups) * 100))}%` }}
+                />
+              </div>
+              <p className="w-10 text-right text-xs font-bold text-slate-700">{row.signups}</p>
+            </div>
+          ))}
+          {rows.length === 0 ? (
+            <p className="text-sm text-slate-600">No signup records available.</p>
+          ) : null}
+        </div>
+      </Card>
+
+      <Card className="mt-3">
         <div className="overflow-auto">
           <table className="w-full text-sm">
             <thead>
@@ -41,7 +65,7 @@ function UserGrowthScreen() {
               </tr>
             </thead>
             <tbody>
-              {(data ?? []).map((row) => (
+              {rows.map((row) => (
                 <tr key={row.date} className="border-b border-slate-100">
                   <td className="py-2 pr-3">{row.date}</td>
                   <td className="py-2 pr-3 font-semibold text-slate-900">{row.signups}</td>

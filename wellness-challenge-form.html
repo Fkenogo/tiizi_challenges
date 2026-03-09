@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Tiizi - New Wellness Challenge</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff6a00",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23170f",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    fontSize: {
+                        'xs': '0.625rem',    /* 10px */
+                        'sm': '0.75rem',     /* 12px */
+                        'base': '0.875rem',  /* 14px */
+                        'lg': '1.125rem',    /* 18px */
+                        'xl': '1.25rem',     /* 20px */
+                        '2xl': '1.5rem',     /* 24px */
+                    },
+                    spacing: {
+                        '3': '0.75rem',      /* 12px */
+                        '4': '1rem',         /* 16px */
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.625rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    
+    <style>
+        :root {
+            --primary: #ff6a00;
+            --primary-hover: #e65f00;
+        }
+        body {
+            font-family: 'Lexend', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .form-input, .form-select, .form-textarea {
+            @apply border-slate-200 focus:border-primary focus:ring-primary rounded-lg text-base;
+        }
+        h1 { @apply text-2xl font-black; }
+        h2 { @apply text-lg font-bold; }
+        .label-text { 
+            @apply text-[10px] font-bold uppercase tracking-wider text-slate-500; 
+        }
+        
+        /* Activity card styles */
+        .activity-card {
+            transition: all 0.2s ease;
+        }
+        .activity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 106, 0, 0.1);
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            max-width: 480px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-[#1d130c] dark:text-white font-display">
+    <div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto bg-white dark:bg-background-dark shadow-xl pb-24">
+        
+        <!-- Header -->
+        <header class="sticky top-0 z-10 flex items-center bg-white dark:bg-background-dark px-4 py-4 border-b border-gray-100 dark:border-gray-800">
+            <button onclick="history.back()" class="flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                <span class="material-symbols-outlined text-[#1d130c] dark:text-white">arrow_back</span>
+            </button>
+            <h1 class="flex-1 text-center text-2xl font-black tracking-tight pr-10 text-primary">New Wellness Challenge</h1>
+        </header>
+
+        <!-- Form Content -->
+        <main class="flex flex-col gap-6 p-4">
+            
+            <!-- Cover Image Upload -->
+            <section class="flex flex-col">
+                <div class="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 px-6 py-10 transition-all hover:bg-primary/10 cursor-pointer">
+                    <div class="flex flex-col items-center gap-1 text-center">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-2">add_a_photo</span>
+                        <p class="text-lg font-bold">Upload Challenge Cover</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Add a visual for your challenge</p>
+                    </div>
+                    <button type="button" class="flex min-w-[140px] cursor-pointer items-center justify-center rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold shadow-md hover:bg-primary/90 transition-all">
+                        Choose Image
+                    </button>
+                </div>
+            </section>
+
+            <!-- Info Section -->
+            <section class="flex flex-col gap-4">
+                <h2 class="label-text dark:text-white text-primary">Info</h2>
+                <div class="flex flex-col gap-4">
+                    <label class="flex flex-col gap-2">
+                        <span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">CHALLENGE NAME</span>
+                        <input 
+                            id="challengeName"
+                            class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" 
+                            placeholder="e.g. 30 Day Wellness Reset" 
+                            type="text"
+                        />
+                    </label>
+                    
+                    <label class="flex flex-col gap-2">
+                        <span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">CHALLENGE DESCRIPTION</span>
+                        <textarea 
+                            id="challengeDescription"
+                            class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" 
+                            placeholder="Tell everyone what this is about..." 
+                            rows="3"
+                        ></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Type Section -->
+            <section class="flex flex-col gap-4">
+                <h2 class="label-text dark:text-white text-primary">Challenge Type</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button 
+                        type="button"
+                        onclick="selectChallengeType('collective')"
+                        id="type-collective"
+                        class="px-5 py-2.5 rounded-full text-xs font-bold bg-primary text-white border border-primary transition-all uppercase"
+                    >
+                        Collective
+                    </button>
+                    <button 
+                        type="button"
+                        onclick="selectChallengeType('competitive')"
+                        id="type-competitive"
+                        class="px-5 py-2.5 rounded-full text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-all uppercase"
+                    >
+                        Competitive
+                    </button>
+                    <button 
+                        type="button"
+                        onclick="selectChallengeType('streak')"
+                        id="type-streak"
+                        class="px-5 py-2.5 rounded-full text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-all uppercase"
+                    >
+                        Streak
+                    </button>
+                </div>
+            </section>
+
+            <!-- Timeline Section -->
+            <section class="flex flex-col gap-4">
+                <h2 class="label-text dark:text-white text-primary">Timeline</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="flex flex-col gap-2">
+                        <span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">START DATE</span>
+                        <input 
+                            id="startDate"
+                            class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" 
+                            type="date"
+                            onchange="calculateDuration()"
+                        />
+                    </label>
+                    <label class="flex flex-col gap-2">
+                        <span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">END DATE</span>
+                        <input 
+                            id="endDate"
+                            class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" 
+                            type="date"
+                            onchange="calculateDuration()"
+                        />
+                    </label>
+                </div>
+                <div id="durationDisplay" class="text-sm text-slate-600 dark:text-slate-400 ml-1"></div>
+            </section>
+
+            <!-- Activities Section -->
+            <section class="flex flex-col gap-4">
+                <h2 class="label-text dark:text-white text-primary">Challenge Activities</h2>
+                
+                <!-- Added Activities List -->
+                <div id="addedActivities" class="flex flex-col gap-3">
+                    <!-- Activities will be added here dynamically -->
+                </div>
+
+                <!-- Add Activity Button -->
+                <button 
+                    type="button"
+                    onclick="openActivityBrowser()"
+                    class="flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-dashed border-primary/20 text-primary font-bold text-sm hover:bg-primary/5 transition-all"
+                >
+                    <span class="material-symbols-outlined text-lg">add</span>
+                    Add Wellness Activity from Library
+                </button>
+            </section>
+
+            <!-- Support Section -->
+            <section class="flex flex-col gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <h2 class="label-text dark:text-white text-primary">Info</h2>
+                        <p class="text-xs text-gray-500">Raise money for a charity</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            id="charityToggle"
+                            type="checkbox" 
+                            class="sr-only peer"
+                            onchange="toggleCharity()"
+                        />
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+                
+                <div id="charityFields" class="flex flex-col gap-4 pt-2" style="display: none;">
+                    <label class="flex flex-col gap-2">
+                        <span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">CAUSE DESCRIPTION</span>
+                        <input 
+                            id="charityDescription"
+                            class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 text-base transition-all" 
+                            placeholder="e.g. Save the Oceans Foundation" 
+                            type="text"
+                        />
+                    </label>
+                    
+                    <label class="flex flex-col gap-2">
+                        <span class="label-text text-slate-700 dark:text-slate-300 ml-1 mb-1">TARGET TOTAL DONATION ($)</span>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                            <input 
+                                id="charityTarget"
+                                class="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-primary focus:border-primary p-3 pl-8 text-base transition-all" 
+                                placeholder="500" 
+                                type="number"
+                            />
+                        </div>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Submit Button -->
+            <div class="pt-4 pb-8">
+                <button 
+                    type="button"
+                    onclick="launchChallenge()"
+                    class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                >
+                    <span class="material-symbols-outlined">rocket_launch</span>
+                    Launch Challenge
+                </button>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto flex gap-2 border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-background-dark/90 backdrop-blur-md px-4 pb-6 pt-2 z-20">
+            <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
+                <span class="material-symbols-outlined">home</span>
+                <p class="text-[10px] font-medium leading-normal tracking-tight">Home</p>
+            </a>
+            <a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary font-bold" href="#">
+                <span class="material-symbols-outlined active-icon">groups</span>
+                <p class="text-[10px] font-medium leading-normal tracking-tight">Groups</p>
+            </a>
+            <a class="flex flex-1 items-center justify-center -mt-8" href="#">
+                <div class="bg-primary text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center border-4 border-white dark:border-background-dark">
+                    <span class="material-symbols-outlined text-3xl">add</span>
+                </div>
+            </a>
+            <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
+                <span class="material-symbols-outlined">trophy</span>
+                <p class="text-[10px] font-medium leading-normal tracking-tight">Challenges</p>
+            </a>
+            <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400" href="#">
+                <span class="material-symbols-outlined">person</span>
+                <p class="text-[10px] font-medium leading-normal tracking-tight">Profile</p>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Activity Browser Modal -->
+    <div id="activityBrowserModal" class="modal">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-white z-10 border-b border-gray-100 p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="closeActivityBrowser()" class="p-2 hover:bg-gray-100 rounded-full">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <h2 class="text-xl font-bold">Add Wellness Activity</h2>
+                    <div class="w-10"></div>
+                </div>
+                
+                <!-- Search -->
+                <input 
+                    id="activitySearch"
+                    type="text" 
+                    placeholder="Search activities..." 
+                    class="w-full rounded-lg border-slate-200 p-3 text-base"
+                    oninput="filterActivities()"
+                />
+                
+                <!-- Category Tabs -->
+                <div class="flex gap-2 overflow-x-auto mt-4 pb-2">
+                    <button onclick="filterByCategory('all')" class="category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-primary text-white">All</button>
+                    <button onclick="filterByCategory('fasting')" class="category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600">Fasting</button>
+                    <button onclick="filterByCategory('hydration')" class="category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600">Hydration</button>
+                    <button onclick="filterByCategory('sleep')" class="category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600">Sleep</button>
+                    <button onclick="filterByCategory('mindfulness')" class="category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600">Mindfulness</button>
+                    <button onclick="filterByCategory('nutrition')" class="category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600">Nutrition</button>
+                </div>
+            </div>
+            
+            <!-- Activity List -->
+            <div id="activityList" class="p-4 space-y-3">
+                <!-- Activities populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Detail Modal -->
+    <div id="activityDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-white z-10 border-b border-gray-100 p-4">
+                <div class="flex items-center justify-between">
+                    <button onclick="closeActivityDetail()" class="p-2 hover:bg-gray-100 rounded-full">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <h2 class="text-xl font-bold">Activity Detail</h2>
+                    <div class="w-10"></div>
+                </div>
+            </div>
+            
+            <div id="activityDetailContent" class="p-4 pb-24">
+                <!-- Activity details populated by JavaScript -->
+            </div>
+            
+            <div class="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto p-4 bg-white border-t">
+                <button 
+                    onclick="addActivityToChallenge()"
+                    class="w-full bg-primary text-white font-bold py-4 rounded-xl"
+                >
+                    Add to Challenge
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample wellness activities data
+        const wellnessActivities = [
+            {
+                id: 'fasting-16hr',
+                category: 'fasting',
+                name: '16-Hour Daily Fast',
+                shortName: '16hr Fast',
+                description: 'Fast for 16 hours, eat within 8-hour window. Perfect for beginners.',
+                difficulty: 'beginner',
+                icon: '🕐',
+                defaultTargetValue: 16,
+                defaultMetricUnit: 'hours',
+                protocolSteps: [
+                    'Stop eating by 8:00 PM',
+                    'Sleep through most of the fast',
+                    'Break fast at 12:00 PM the next day',
+                    'Stay hydrated with water, coffee, tea'
+                ],
+                benefits: [
+                    'Improved mental clarity',
+                    'Weight loss (0.5-1kg/week)',
+                    'Better insulin sensitivity',
+                    'Reduced inflammation'
+                ],
+                guidelines: [
+                    'Stay well-hydrated',
+                    'Break fast if feeling unwell',
+                    'Focus on nutritious foods'
+                ],
+                warnings: [
+                    'Not for pregnant/breastfeeding women',
+                    'Consult doctor if on medications'
+                ],
+                defaultPoints: 10
+            },
+            {
+                id: 'hydration-2l',
+                category: 'hydration',
+                name: 'Daily Hydration (2L)',
+                shortName: '2L Water',
+                description: 'Drink 2 liters of water daily for optimal health.',
+                difficulty: 'beginner',
+                icon: '💧',
+                defaultTargetValue: 2000,
+                defaultMetricUnit: 'ml',
+                protocolSteps: [
+                    'Track each glass (250ml)',
+                    'Spread throughout the day',
+                    'Start with morning hydration',
+                    'Drink before meals'
+                ],
+                benefits: [
+                    'Improved skin hydration',
+                    'Better energy levels',
+                    'Enhanced mental clarity',
+                    'Improved digestion'
+                ],
+                guidelines: [
+                    'Drink first glass within 30min of waking',
+                    'Drink 250ml before each meal',
+                    'Carry reusable water bottle'
+                ],
+                warnings: [],
+                defaultPoints: 10
+            },
+            {
+                id: 'sleep-8hr',
+                category: 'sleep',
+                name: '8-Hour Sleep Streak',
+                shortName: '8hr Sleep',
+                description: 'Get 8 hours of quality sleep every night.',
+                difficulty: 'beginner',
+                icon: '😴',
+                defaultTargetValue: 8,
+                defaultMetricUnit: 'hours',
+                protocolSteps: [
+                    'Set consistent bedtime',
+                    'Set consistent wake time',
+                    'Dark, cool sleeping environment',
+                    'No screens 1hr before bed'
+                ],
+                benefits: [
+                    'Improved cognitive function',
+                    'Better mood',
+                    'Enhanced immune system',
+                    'Improved athletic performance'
+                ],
+                guidelines: [
+                    'Create dark sleeping environment',
+                    'Avoid screens before bed',
+                    'Limit caffeine after 2 PM'
+                ],
+                warnings: [],
+                defaultPoints: 10
+            },
+            {
+                id: 'meditation-5min',
+                category: 'mindfulness',
+                name: '5-Minute Daily Meditation',
+                shortName: '5min Meditation',
+                description: 'Practice mindfulness meditation for 5 minutes daily.',
+                difficulty: 'beginner',
+                icon: '🧘',
+                defaultTargetValue: 5,
+                defaultMetricUnit: 'minutes',
+                protocolSteps: [
+                    'Find quiet space',
+                    'Sit comfortably',
+                    'Focus on breath',
+                    'Use guided meditation app if needed'
+                ],
+                benefits: [
+                    'Reduced stress (40% decrease)',
+                    'Improved focus',
+                    'Better emotional regulation',
+                    'Enhanced self-awareness'
+                ],
+                guidelines: [
+                    'Practice at same time daily',
+                    'Start with guided meditations',
+                    'Don\'t judge your thoughts',
+                    'Consistency over duration'
+                ],
+                warnings: [],
+                defaultPoints: 10
+            },
+            {
+                id: 'vegetables-5day',
+                category: 'nutrition',
+                name: '5-a-Day Vegetables',
+                shortName: '5 Veggies',
+                description: 'Eat 5 servings of vegetables daily.',
+                difficulty: 'beginner',
+                icon: '🥗',
+                defaultTargetValue: 5,
+                defaultMetricUnit: 'servings',
+                protocolSteps: [
+                    '1 serving = 1 cup raw or 1/2 cup cooked',
+                    'Track each serving',
+                    'Aim for variety (different colors)',
+                    'Include at each meal'
+                ],
+                benefits: [
+                    'Increased fiber intake',
+                    'Better digestion',
+                    'Weight management',
+                    'Reduced disease risk'
+                ],
+                guidelines: [
+                    'Aim for variety of colors',
+                    'Include at breakfast',
+                    'Prep vegetables ahead',
+                    'Make half your plate vegetables'
+                ],
+                warnings: [],
+                defaultPoints: 10
+            }
+        ];
+
+        let selectedActivities = [];
+        let currentActivity = null;
+        let selectedCategory = 'all';
+        let selectedChallengeType = 'collective';
+
+        // Challenge type selection
+        function selectChallengeType(type) {
+            selectedChallengeType = type;
+            document.querySelectorAll('[id^="type-"]').forEach(btn => {
+                btn.className = 'px-5 py-2.5 rounded-full text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-all uppercase';
+            });
+            document.getElementById(`type-${type}`).className = 'px-5 py-2.5 rounded-full text-xs font-bold bg-primary text-white border border-primary transition-all uppercase';
+        }
+
+        // Calculate duration
+        function calculateDuration() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                document.getElementById('durationDisplay').textContent = `Duration: ${diff} days`;
+            }
+        }
+
+        // Toggle charity
+        function toggleCharity() {
+            const toggle = document.getElementById('charityToggle').checked;
+            document.getElementById('charityFields').style.display = toggle ? 'flex' : 'none';
+        }
+
+        // Open activity browser
+        function openActivityBrowser() {
+            document.getElementById('activityBrowserModal').classList.add('active');
+            renderActivityList();
+        }
+
+        // Close activity browser
+        function closeActivityBrowser() {
+            document.getElementById('activityBrowserModal').classList.remove('active');
+        }
+
+        // Filter activities by category
+        function filterByCategory(category) {
+            selectedCategory = category;
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.className = 'category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-slate-100 text-slate-600';
+            });
+            event.target.className = 'category-tab px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap bg-primary text-white';
+            renderActivityList();
+        }
+
+        // Filter activities by search
+        function filterActivities() {
+            renderActivityList();
+        }
+
+        // Render activity list
+        function renderActivityList() {
+            const searchTerm = document.getElementById('activitySearch').value.toLowerCase();
+            const filtered = wellnessActivities.filter(activity => {
+                const matchesCategory = selectedCategory === 'all' || activity.category === selectedCategory;
+                const matchesSearch = activity.name.toLowerCase().includes(searchTerm) || 
+                                    activity.description.toLowerCase().includes(searchTerm);
+                return matchesCategory && matchesSearch;
+            });
+
+            const listHtml = filtered.map(activity => `
+                <div class="activity-card p-4 border border-slate-200 rounded-xl cursor-pointer hover:border-primary" onclick="viewActivityDetail('${activity.id}')">
+                    <div class="flex gap-3">
+                        <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl">
+                            ${activity.icon}
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold mb-1">${activity.name}</h3>
+                            <p class="text-sm text-slate-600 mb-2">${activity.description}</p>
+                            <div class="flex gap-2 text-xs text-slate-500">
+                                <span class="capitalize">${activity.difficulty}</span>
+                                <span>•</span>
+                                <span>${activity.defaultTargetValue} ${activity.defaultMetricUnit}</span>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('activityList').innerHTML = listHtml || '<p class="text-center text-slate-500">No activities found</p>';
+        }
+
+        // View activity detail
+        function viewActivityDetail(activityId) {
+            currentActivity = wellnessActivities.find(a => a.id === activityId);
+            renderActivityDetail();
+            document.getElementById('activityBrowserModal').classList.remove('active');
+            document.getElementById('activityDetailModal').classList.add('active');
+        }
+
+        // Render activity detail
+        function renderActivityDetail() {
+            if (!currentActivity) return;
+
+            const detailHtml = `
+                <!-- Hero -->
+                <div class="mb-6">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-4xl">${currentActivity.icon}</span>
+                        <div>
+                            <p class="text-xs font-bold uppercase text-primary">${currentActivity.category}</p>
+                            <h1 class="text-2xl font-bold">${currentActivity.name}</h1>
+                        </div>
+                    </div>
+                    <p class="text-base text-slate-600 mb-3">${currentActivity.description}</p>
+                    <div class="flex gap-2">
+                        <span class="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold capitalize">${currentActivity.difficulty}</span>
+                        <span class="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold">${currentActivity.defaultTargetValue} ${currentActivity.defaultMetricUnit}</span>
+                    </div>
+                </div>
+
+                <!-- Protocol Details -->
+                ${currentActivity.protocolSteps.length > 0 ? `
+                <div class="mb-6">
+                    <h2 class="text-lg font-bold mb-3">Protocol Details</h2>
+                    <div class="p-4 bg-slate-50 rounded-xl space-y-3">
+                        ${currentActivity.protocolSteps.map((step, i) => `
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xs font-bold">${i + 1}</span>
+                                </div>
+                                <p class="text-sm">${step}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Benefits -->
+                <div class="mb-6">
+                    <h2 class="text-lg font-bold mb-3">Benefits</h2>
+                    <div class="space-y-3">
+                        ${currentActivity.benefits.map(benefit => `
+                            <div class="flex gap-3">
+                                <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-green-600 text-sm">✓</span>
+                                </div>
+                                <p class="text-sm">${benefit}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Guidelines -->
+                <div class="mb-6">
+                    <h2 class="text-lg font-bold mb-3">Guidelines</h2>
+                    <div class="space-y-3">
+                        ${currentActivity.guidelines.map(guideline => `
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary">info</span>
+                                <p class="text-sm">${guideline}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Warnings -->
+                ${currentActivity.warnings.length > 0 ? `
+                <div class="mb-6">
+                    <h2 class="text-lg font-bold mb-3 text-red-600">Important Warnings</h2>
+                    <div class="p-4 bg-red-50 border-2 border-red-200 rounded-xl space-y-3">
+                        ${currentActivity.warnings.map(warning => `
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-red-600">warning</span>
+                                <p class="text-sm text-red-900">${warning}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Customize Targets -->
+                <div class="mb-6">
+                    <h2 class="text-lg font-bold mb-3">Customize Targets</h2>
+                    <div class="space-y-4 p-4 bg-slate-50 rounded-xl">
+                        <label class="flex flex-col gap-2">
+                            <span class="label-text text-slate-700 ml-1">TARGET VALUE</span>
+                            <input 
+                                id="customTargetValue"
+                                type="number" 
+                                value="${currentActivity.defaultTargetValue}"
+                                class="w-full rounded-lg border-slate-200 p-3 text-base"
+                            />
+                        </label>
+                        <label class="flex flex-col gap-2">
+                            <span class="label-text text-slate-700 ml-1">METRIC UNIT</span>
+                            <input 
+                                id="customMetricUnit"
+                                type="text" 
+                                value="${currentActivity.defaultMetricUnit}"
+                                class="w-full rounded-lg border-slate-200 p-3 text-base"
+                                readonly
+                            />
+                        </label>
+                        <label class="flex flex-col gap-2">
+                            <span class="label-text text-slate-700 ml-1">FREQUENCY</span>
+                            <select 
+                                id="customFrequency"
+                                class="w-full rounded-lg border-slate-200 p-3 text-base"
+                            >
+                                <option value="daily">Daily</option>
+                                <option value="3x-week">3x per week</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </label>
+                        <label class="flex flex-col gap-2">
+                            <span class="label-text text-slate-700 ml-1">POINTS PER COMPLETION</span>
+                            <input 
+                                id="customPoints"
+                                type="number" 
+                                value="${currentActivity.defaultPoints}"
+                                class="w-full rounded-lg border-slate-200 p-3 text-base"
+                            />
+                        </label>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('activityDetailContent').innerHTML = detailHtml;
+        }
+
+        // Close activity detail
+        function closeActivityDetail() {
+            document.getElementById('activityDetailModal').classList.remove('active');
+            document.getElementById('activityBrowserModal').classList.add('active');
+        }
+
+        // Add activity to challenge
+        function addActivityToChallenge() {
+            const customizedActivity = {
+                ...currentActivity,
+                targetValue: parseInt(document.getElementById('customTargetValue').value),
+                metricUnit: document.getElementById('customMetricUnit').value,
+                frequency: document.getElementById('customFrequency').value,
+                pointsPerCompletion: parseInt(document.getElementById('customPoints').value),
+                order: selectedActivities.length + 1
+            };
+
+            selectedActivities.push(customizedActivity);
+            renderAddedActivities();
+            
+            document.getElementById('activityDetailModal').classList.remove('active');
+        }
+
+        // Render added activities
+        function renderAddedActivities() {
+            const activitiesHtml = selectedActivities.map((activity, index) => `
+                <div class="p-4 border border-slate-200 rounded-xl">
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl">${activity.icon}</span>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold mb-1">${activity.name}</h3>
+                            <p class="text-sm text-slate-600 mb-2">
+                                Target: ${activity.targetValue} ${activity.metricUnit} • ${activity.frequency}
+                            </p>
+                            <p class="text-xs text-slate-500">${activity.pointsPerCompletion} points per completion</p>
+                        </div>
+                        <button onclick="removeActivity(${index})" class="text-red-500 hover:bg-red-50 p-2 rounded">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('addedActivities').innerHTML = activitiesHtml || 
+                '<p class="text-sm text-slate-500 text-center py-4">No activities added yet</p>';
+        }
+
+        // Remove activity
+        function removeActivity(index) {
+            selectedActivities.splice(index, 1);
+            renderAddedActivities();
+        }
+
+        // Launch challenge
+        function launchChallenge() {
+            const challengeData = {
+                name: document.getElementById('challengeName').value,
+                description: document.getElementById('challengeDescription').value,
+                type: selectedChallengeType,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                activities: selectedActivities,
+                charityEnabled: document.getElementById('charityToggle').checked,
+                charityDescription: document.getElementById('charityDescription').value,
+                charityTarget: document.getElementById('charityTarget').value
+            };
+
+            // Validation
+            if (!challengeData.name || !challengeData.description) {
+                alert('Please fill in challenge name and description');
+                return;
+            }
+            if (!challengeData.startDate || !challengeData.endDate) {
+                alert('Please set start and end dates');
+                return;
+            }
+            if (selectedActivities.length === 0) {
+                alert('Please add at least one activity');
+                return;
+            }
+
+            console.log('Challenge Data:', challengeData);
+            alert('Challenge created successfully! (This would save to Firestore in production)');
+            
+            // In production, save to Firestore here
+            // saveToFirestore(challengeData);
+        }
+
+        // Initialize
+        renderAddedActivities();
+    </script>
+</body>
+</html>

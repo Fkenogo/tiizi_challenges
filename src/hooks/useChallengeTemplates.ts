@@ -10,7 +10,7 @@ export function useSuggestedChallengeTemplates() {
   const { user } = useAuth();
   return useQuery<SuggestedChallengeTemplate[]>({
     queryKey: ['suggested-challenge-templates', user?.uid],
-    queryFn: () => challengeTemplateService.getPublishedTemplates(),
+    queryFn: () => challengeTemplateService.getPublishedTemplates('fitness'),
     enabled: !!user?.uid,
     staleTime: 60 * 1000,
   });

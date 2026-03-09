@@ -16,7 +16,7 @@ export function TemplateCard({ item, groupId }: TemplateCardProps) {
   return (
     <article key={item.id} className="w-[200px] shrink-0 rounded-xl border border-slate-200 bg-white overflow-hidden">
       <div className="relative h-24">
-        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+        <img src={item.image} alt={item.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <span className="absolute left-2 bottom-2 rounded px-2 py-0.5 text-[10px] font-bold uppercase bg-primary text-white">
           {item.level}
@@ -25,7 +25,7 @@ export function TemplateCard({ item, groupId }: TemplateCardProps) {
       <div className="p-2">
         <h3 className="text-sm font-bold text-slate-900 truncate">{item.name}</h3>
         <button
-          className="mt-2 h-8 w-full rounded-lg bg-primary text-white text-xs font-semibold"
+          className="mt-2 h-10 w-full rounded-lg bg-primary text-white text-sm font-semibold"
           onClick={() => navigate(`/app/challenges/suggested?previewTemplateId=${item.id}${groupId ? `&groupId=${groupId}` : ''}`)}
         >
           Preview

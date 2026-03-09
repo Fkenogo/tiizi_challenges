@@ -14,12 +14,14 @@ function DonationListScreen() {
   const { data, isLoading } = useDonationTransactions();
   const { prefs, setPrefs, resetPrefs } = useAdminTablePrefs<{
     status: 'all' | 'success' | 'pending' | 'failed' | 'refunded';
+    source: 'all' | 'platform' | 'challenge_cause' | 'legacy';
     search: string;
     sortKey: DonationSortKey;
     pageSize: number;
     page: number;
   }>('donation_list', {
     status: 'all',
+    source: 'all',
     search: '',
     sortKey: 'createdAt',
     pageSize: 25,
@@ -30,13 +32,14 @@ function DonationListScreen() {
     const q = prefs.search.trim().toLowerCase();
     const filtered = (data ?? [])
       .filter((item) => (prefs.status === 'all' ? true : item.status === prefs.status))
+      .filter((item) => (prefs.source === 'all' ? true : item.source === prefs.source))
       .filter((item) => {
         if (!q) return true;
         return item.donorName.toLowerCase().includes(q) || item.donorEmail.toLowerCase().includes(q) || item.campaignName.toLowerCase().includes(q);
       });
     if (prefs.sortKey === 'amount') return filtered.sort((a, b) => b.amount - a.amount);
     return filtered.sort((a, b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''));
-  }, [data, prefs.status, prefs.search, prefs.sortKey]);
+  }, [data, prefs.status, prefs.source, prefs.search, prefs.sortKey]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / prefs.pageSize));
   const clampedPage = Math.min(Math.max(1, prefs.page), totalPages);
@@ -61,6 +64,12 @@ function DonationListScreen() {
             <option value="failed">Failed</option>
             <option value="refunded">Refunded</option>
           </select>
+          <select value={prefs.source} onChange={(e) => setPrefs((prev) => ({ ...prev, source: e.target.value as typeof prev.source, page: 1 }))} className="h-10 rounded-lg border border-slate-200 px-3 text-sm">
+            <option value="all">All sources</option>
+            <option value="platform">Platform Support</option>
+            <option value="challenge_cause">Challenge Cause</option>
+            <option value="legacy">Legacy</option>
+          </select>
           <select value={prefs.sortKey} onChange={(e) => setPrefs((prev) => ({ ...prev, sortKey: e.target.value as DonationSortKey }))} className="h-10 rounded-lg border border-slate-200 px-3 text-sm">
             <option value="createdAt">Sort: Date</option>
             <option value="amount">Sort: Amount</option>
@@ -83,8 +92,11 @@ function DonationListScreen() {
               <tr className="text-left border-b border-slate-200">
                 <th className="py-2 pr-3">Date</th>
                 <th className="py-2 pr-3">Donor</th>
+                <th className="py-2 pr-3">Source</th>
                 <th className="py-2 pr-3">Campaign</th>
                 <th className="py-2 pr-3">Amount</th>
+                <th className="py-2 pr-3">Transaction ID</th>
+                <th className="py-2 pr-3">Confirmed At</th>
                 <th className="py-2 pr-3">Status</th>
               </tr>
             </thead>
@@ -93,8 +105,11 @@ function DonationListScreen() {
                 <tr key={row.id} className="border-b border-slate-100">
                   <td className="py-2 pr-3 text-slate-700">{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '-'}</td>
                   <td className="py-2 pr-3 text-slate-700">{row.donorName}</td>
+                  <td className="py-2 pr-3 text-slate-700 capitalize">{row.source.replace('_', ' ')}</td>
                   <td className="py-2 pr-3 text-slate-700">{row.campaignName}</td>
                   <td className="py-2 pr-3 font-semibold text-slate-900">{row.amount.toLocaleString()} {row.currency}</td>
+                  <td className="py-2 pr-3 text-slate-700">{row.transactionId || '-'}</td>
+                  <td className="py-2 pr-3 text-slate-700">{row.confirmedAt ? new Date(row.confirmedAt).toLocaleString() : '-'}</td>
                   <td className="py-2 pr-3 text-slate-700 capitalize">{row.status}</td>
                 </tr>
               ))}

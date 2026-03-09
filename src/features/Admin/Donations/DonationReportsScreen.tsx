@@ -14,9 +14,14 @@ function DonationReportsScreen() {
   return (
     <AdminLayout title="Donation Reports" permissions={permissions}>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">All-Time Donations</p><p className="text-2xl font-black text-slate-900">{data?.totalDonationsAllTime.toLocaleString() ?? 0}</p></Card>
-        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">Donations (30d)</p><p className="text-2xl font-black text-slate-900">{data?.totalDonations30d.toLocaleString() ?? 0}</p></Card>
-        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">Avg Donation</p><p className="text-2xl font-black text-slate-900">{data?.avgDonationAmount.toLocaleString() ?? 0}</p></Card>
+        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">All-Time Donations</p><p className="text-2xl font-black text-slate-900">{data?.totalDonationsAllTime.toLocaleString() ?? 0} KES</p></Card>
+        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">Donations (30d)</p><p className="text-2xl font-black text-slate-900">{data?.totalDonations30d.toLocaleString() ?? 0} KES</p></Card>
+        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">Avg Donation</p><p className="text-2xl font-black text-slate-900">{data?.avgDonationAmount.toLocaleString() ?? 0} KES</p></Card>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-3">
+        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">Platform Support</p><p className="text-xl font-black text-slate-900">{data?.bySource.platform.toLocaleString() ?? 0} KES</p></Card>
+        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">Challenge Causes</p><p className="text-xl font-black text-slate-900">{data?.bySource.challenge_cause.toLocaleString() ?? 0} KES</p></Card>
+        <Card variant="flat"><p className="text-xs uppercase font-bold text-slate-500">Legacy Donations</p><p className="text-xl font-black text-slate-900">{data?.bySource.legacy.toLocaleString() ?? 0} KES</p></Card>
       </div>
 
       <Card className="mt-3">
@@ -25,7 +30,7 @@ function DonationReportsScreen() {
           {(data?.topCampaigns ?? []).map((item) => (
             <div key={item.campaignId} className="rounded-lg border border-slate-200 p-2 flex items-center justify-between">
               <span className="text-sm text-slate-700">{item.name}</span>
-              <span className="text-sm font-bold text-slate-900">{item.raisedAmount.toLocaleString()}</span>
+              <span className="text-sm font-bold text-slate-900">{item.raisedAmount.toLocaleString()} KES</span>
             </div>
           ))}
         </div>

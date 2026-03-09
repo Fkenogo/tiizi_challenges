@@ -105,10 +105,12 @@ select {
   }
 
   body.admin-desktop #root {
+    width: 100%;
     max-width: none;
     margin: 0;
     box-shadow: none;
     background: transparent;
+    overflow-x: visible;
   }
 
   body.admin-desktop {

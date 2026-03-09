@@ -1,5 +1,5 @@
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { storage } from '../lib/firebase';
+import { storage } from '../lib/firebaseStorage';
 
 const IMAGE_MIME_PREFIX = 'image/';
 // Firestore single document limit is 1 MiB. Keep some headroom for other fields.
@@ -10,6 +10,19 @@ export function isValidImageUrl(value: string): boolean {
   try {
     const parsed = new URL(value.trim());
     return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+export function isLikelyDirectImageUrl(value: string): boolean {
+  if (!isValidImageUrl(value)) return false;
+  try {
+    const parsed = new URL(value.trim());
+    const path = parsed.pathname.toLowerCase();
+    if (/\.(jpg|jpeg|png|gif|webp|avif|svg)$/.test(path)) return true;
+    if (parsed.hostname.includes('i.ibb.co')) return true;
+    return false;
   } catch {
     return false;
   }

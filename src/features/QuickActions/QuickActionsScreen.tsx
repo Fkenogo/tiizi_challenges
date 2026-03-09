@@ -1,19 +1,24 @@
-import { BookOpen, ChevronRight, Dumbbell, Search, Trophy, UserPlus } from 'lucide-react';
+import { CheckSquare, ChevronRight, Dumbbell, Search, Trophy, UserPlus } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
-import { getStoredActiveGroupId } from '../../hooks/useActiveGroup';
+import { getStoredActiveGroupId, setActiveGroupId } from '../../hooks/useActiveGroup';
+import { useMyGroups } from '../../hooks/useGroups';
 
 function QuickActionsScreen() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { data: myGroups = [] } = useMyGroups();
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
   const activeGroupId = getStoredActiveGroupId();
+  const defaultGroupId = useMemo(
+    () => activeGroupId || myGroups[0]?.id,
+    [activeGroupId, myGroups],
+  );
 
-  const createChallengePath = activeGroupId
-    ? `/app/create-challenge?groupId=${activeGroupId}`
-    : '/app/groups';
-  const logWorkoutPath = activeGroupId
-    ? `/app/workouts/select-activity?groupId=${activeGroupId}`
+  const logActivityPath = defaultGroupId
+    ? `/app/workouts/select-activity?groupId=${defaultGroupId}`
     : '/app/groups';
 
   return (
@@ -50,8 +55,17 @@ function QuickActionsScreen() {
               <button
                 className="w-full rounded-[16px] border border-slate-200 bg-[#f8fafd] px-4 py-3 flex items-center gap-4"
                 onClick={() => {
-                  if (!activeGroupId) showToast('Join or create a group first to create challenges.', 'error');
-                  navigate(createChallengePath);
+                  if (myGroups.length === 0) {
+                    showToast('Join or create a group first to create challenges.', 'error');
+                    navigate('/app/groups');
+                    return;
+                  }
+                  if (myGroups.length === 1) {
+                    setActiveGroupId(myGroups[0].id);
+                    navigate(`/app/create-challenge?groupId=${myGroups[0].id}`);
+                    return;
+                  }
+                  setShowGroupPicker(true);
                 }}
               >
                 <span className="h-12 w-12 rounded-[12px] bg-[#f7f1df] text-[#dba700] flex items-center justify-center">
@@ -67,15 +81,15 @@ function QuickActionsScreen() {
               <button
                 className="w-full rounded-[16px] border border-slate-200 bg-[#f8fafd] px-4 py-3 flex items-center gap-4"
                 onClick={() => {
-                  if (!activeGroupId) showToast('Join or create a group first to log workouts.', 'error');
-                  navigate(logWorkoutPath);
+                  if (!defaultGroupId) showToast('Join or create a group first to log activities.', 'error');
+                  navigate(logActivityPath);
                 }}
               >
                 <span className="h-12 w-12 rounded-[12px] bg-[#e8eefb] text-[#3b82f6] flex items-center justify-center">
                   <Dumbbell size={24} />
                 </span>
                 <span className="flex-1 text-left">
-                  <span className="block text-[16px] leading-[20px] font-black text-slate-900">Log Workout</span>
+                  <span className="block text-[16px] leading-[20px] font-black text-slate-900">Log Activity</span>
                   <span className="block mt-1 text-[12px] leading-[16px] text-[#60748f]">Share your progress</span>
                 </span>
                 <ChevronRight size={24} className="text-[#9eb0c6]" />
@@ -97,14 +111,14 @@ function QuickActionsScreen() {
 
               <button
                 className="w-full rounded-[16px] border border-slate-200 bg-[#f8fafd] px-4 py-3 flex items-center gap-4"
-                onClick={() => navigate('/app/library')}
+                onClick={() => navigate('/app/home?focusGoals=1')}
               >
                 <span className="h-12 w-12 rounded-[12px] bg-[#efe9ff] text-[#6d28d9] flex items-center justify-center">
-                  <BookOpen size={24} />
+                  <CheckSquare size={24} />
                 </span>
                 <span className="flex-1 text-left">
-                  <span className="block text-[16px] leading-[20px] font-black text-slate-900">Read Books</span>
-                  <span className="block mt-1 text-[12px] leading-[16px] text-[#60748f]">Read with text-to-speech</span>
+                  <span className="block text-[16px] leading-[20px] font-black text-slate-900">Set Daily Goals</span>
+                  <span className="block mt-1 text-[12px] leading-[16px] text-[#60748f]">Plan up to 3 goals for today</span>
                 </span>
                 <ChevronRight size={24} className="text-[#9eb0c6]" />
               </button>
@@ -118,6 +132,34 @@ function QuickActionsScreen() {
 
         <BottomNav />
       </div>
+
+      {showGroupPicker && (
+        <div className="fixed inset-0 z-50 bg-slate-900/55">
+          <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-mobile rounded-t-3xl bg-white p-4">
+            <p className="text-[18px] leading-[22px] font-black text-slate-900">Choose Group</p>
+            <p className="mt-1 text-[13px] leading-[18px] text-slate-600">Select where you want to create this challenge.</p>
+            <div className="mt-3 max-h-[45vh] space-y-2 overflow-y-auto">
+              {myGroups.map((group) => (
+                <button
+                  key={group.id}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-3 text-left"
+                  onClick={() => {
+                    setActiveGroupId(group.id);
+                    setShowGroupPicker(false);
+                    navigate(`/app/create-challenge?groupId=${group.id}`);
+                  }}
+                >
+                  <p className="text-[15px] font-bold text-slate-900">{group.name}</p>
+                  <p className="text-[12px] text-slate-500">{group.memberCount} members</p>
+                </button>
+              ))}
+            </div>
+            <button className="mt-3 w-full h-11 rounded-xl bg-slate-100 text-slate-700 font-semibold" onClick={() => setShowGroupPicker(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </Screen>
   );
 }

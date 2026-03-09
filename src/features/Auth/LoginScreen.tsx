@@ -18,8 +18,8 @@ function LoginScreen() {
 
   const nextPath = (() => {
     const raw = params.get('next');
-    if (!raw) return '/app/groups';
-    return raw.startsWith('/app') ? raw : '/app/groups';
+    if (!raw) return '/app/home';
+    return raw.startsWith('/app') ? raw : '/app/home';
   })();
 
   useEffect(() => {
@@ -54,22 +54,24 @@ function LoginScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="st-frame st-bottom-safe px-4">
-        <header className="flex items-center justify-between">
-          <button className="h-8 w-8 flex items-center justify-center" onClick={() => navigate('/app/welcome')}>
-            <ArrowLeft size={20} className="text-slate-900" />
-          </button>
-          <h1 className="text-base font-bold">Login</h1>
-          <span className="w-8" />
-        </header>
+        <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 pb-2">
+          <header className="flex items-center justify-between">
+            <button className="h-8 w-8 flex items-center justify-center" onClick={() => navigate('/app/welcome')}>
+              <ArrowLeft size={20} className="text-slate-900" />
+            </button>
+            <h1 className="text-base font-bold">Login</h1>
+            <span className="w-8" />
+          </header>
 
-        <div className="mt-4 border-b border-slate-200 flex">
-          <button
-            className="flex-1 h-10 text-sm font-medium text-slate-500 border-b-2 border-transparent"
-            onClick={() => navigate(`/app/signup${params.get('next') ? `?next=${encodeURIComponent(params.get('next') ?? '')}` : ''}`)}
-          >
-            Sign Up
-          </button>
-          <button className="flex-1 h-10 text-sm font-semibold text-slate-900 border-b-2 border-primary">Login</button>
+          <div className="mt-4 flex">
+            <button
+              className="flex-1 h-10 text-sm font-medium text-slate-500 border-b-2 border-transparent"
+              onClick={() => navigate(`/app/signup${params.get('next') ? `?next=${encodeURIComponent(params.get('next') ?? '')}` : ''}`)}
+            >
+              Sign Up
+            </button>
+            <button className="flex-1 h-10 text-sm font-semibold text-slate-900 border-b-2 border-primary">Login</button>
+          </div>
         </div>
 
         <div className="mt-4 space-y-3">

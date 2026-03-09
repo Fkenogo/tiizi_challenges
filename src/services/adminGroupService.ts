@@ -1,4 +1,15 @@
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getCountFromServer,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Challenge, Group, Workout } from '../types';
 
@@ -22,6 +33,8 @@ export type GroupModerationItem = {
   groupName: string;
   reportType: string;
   reason: string;
+  reportedUserId?: string;
+  reportedBy?: string;
   status: 'open' | 'reviewed' | 'resolved';
   createdAt: string;
 };
@@ -34,26 +47,7 @@ function normalizeStatus(data: Record<string, unknown>): AdminGroupStatus {
 
 class AdminGroupService {
   async getGroups(): Promise<AdminGroupRow[]> {
-    const [groupSnap, challengeSnap, workoutSnap] = await Promise.all([
-      getDocs(collection(db, 'groups')),
-      getDocs(collection(db, 'challenges')),
-      getDocs(collection(db, 'workouts')),
-    ]);
-
-    const challenges = challengeSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) }));
-    const workouts = workoutSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Workout, 'id'>) }));
-
-    const challengesByGroup = new Map<string, number>();
-    challenges.forEach((c) => {
-      if (!c.groupId) return;
-      challengesByGroup.set(c.groupId, (challengesByGroup.get(c.groupId) ?? 0) + 1);
-    });
-
-    const workoutsByGroup = new Map<string, number>();
-    workouts.forEach((w) => {
-      if (!w.groupId) return;
-      workoutsByGroup.set(w.groupId, (workoutsByGroup.get(w.groupId) ?? 0) + 1);
-    });
+    const groupSnap = await getDocs(collection(db, 'groups'));
 
     return groupSnap.docs
       .map((d) => {
@@ -67,8 +61,8 @@ class AdminGroupService {
           createdAt: data.createdAt,
           moderationStatus: normalizeStatus(data),
           isFeatured: data.isFeatured === true,
-          challengeCount: challengesByGroup.get(d.id) ?? 0,
-          workoutCount: workoutsByGroup.get(d.id) ?? 0,
+          challengeCount: Number(data.activeChallenges ?? 0),
+          workoutCount: Number(data.totalWorkouts ?? 0),
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -78,9 +72,11 @@ class AdminGroupService {
     const groupSnap = await getDoc(doc(db, 'groups', id));
     if (!groupSnap.exists()) return null;
 
-    const [challengeSnap, workoutSnap] = await Promise.all([
-      getDocs(query(collection(db, 'challenges'), where('groupId', '==', id))),
-      getDocs(query(collection(db, 'workouts'), where('groupId', '==', id))),
+    const [challengeCountSnap, workoutCountSnap, challengeSnap, workoutSnap] = await Promise.all([
+      getCountFromServer(query(collection(db, 'challenges'), where('groupId', '==', id))),
+      getCountFromServer(query(collection(db, 'workouts'), where('groupId', '==', id))),
+      getDocs(query(collection(db, 'challenges'), where('groupId', '==', id), orderBy('startDate', 'desc'), limit(8))),
+      getDocs(query(collection(db, 'workouts'), where('groupId', '==', id), orderBy('completedAt', 'desc'), limit(12))),
     ]);
 
     const data = groupSnap.data() as Omit<Group, 'id'> & Record<string, unknown>;
@@ -100,8 +96,8 @@ class AdminGroupService {
       createdAt: data.createdAt,
       moderationStatus: normalizeStatus(data),
       isFeatured: data.isFeatured === true,
-      challengeCount: challenges.length,
-      workoutCount: workouts.length,
+      challengeCount: challengeCountSnap.data().count,
+      workoutCount: workoutCountSnap.data().count,
       recentChallenges: challenges.slice(0, 8).map((c) => ({
         id: c.id,
         name: c.name,
@@ -145,6 +141,8 @@ class AdminGroupService {
           groupName: String(data.groupName ?? 'Unknown group'),
           reportType: String(data.reportType ?? 'content'),
           reason: String(data.reason ?? ''),
+          reportedUserId: typeof data.reportedUserId === 'string' ? data.reportedUserId : undefined,
+          reportedBy: typeof data.reportedBy === 'string' ? data.reportedBy : undefined,
           status: (data.status as GroupModerationItem['status']) ?? 'open',
           createdAt: String(data.createdAt ?? ''),
         };
@@ -157,6 +155,30 @@ class AdminGroupService {
       status,
       reviewedBy: adminUid,
       reviewedAt: new Date().toISOString(),
+    });
+  }
+
+  async suspendGroup(groupId: string, adminUid: string): Promise<void> {
+    await updateDoc(doc(db, 'groups', groupId), {
+      moderationStatus: 'deactivated',
+      moderatedBy: adminUid,
+      moderatedAt: new Date().toISOString(),
+    });
+  }
+
+  async activateGroup(groupId: string, adminUid: string): Promise<void> {
+    await updateDoc(doc(db, 'groups', groupId), {
+      moderationStatus: 'active',
+      moderatedBy: adminUid,
+      moderatedAt: new Date().toISOString(),
+    });
+  }
+
+  async suspendMemberInGroup(groupId: string, userId: string, adminUid: string): Promise<void> {
+    await updateDoc(doc(db, 'groupMembers', `${groupId}_${userId}`), {
+      status: 'expelled',
+      moderatedBy: adminUid,
+      moderatedAt: new Date().toISOString(),
     });
   }
 }
