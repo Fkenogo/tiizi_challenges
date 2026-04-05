@@ -55,8 +55,8 @@ class WellnessLogService {
       throw new Error('Join challenge before logging wellness activity.');
     }
     const membership = membershipSnap.data() as ChallengeMember;
-    const completed = Number(membership.activitiesCompleted ?? 0) + 1;
     const totalActivities = Math.max(1, Number(membership.totalActivities ?? 1));
+    const completed = Math.min(Number(membership.activitiesCompleted ?? 0) + 1, totalActivities);
     const completionRate = Math.min(100, Math.round((completed / totalActivities) * 100));
 
     const logRef = doc(collection(db, this.logsCollection));
@@ -79,7 +79,7 @@ class WellnessLogService {
     batch.set(
       membershipRef,
       {
-        activitiesCompleted: increment(1),
+        activitiesCompleted: completed,
         totalPoints: increment(points),
         lastActivityAt: now,
         completionRate,

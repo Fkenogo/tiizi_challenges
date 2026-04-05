@@ -178,10 +178,10 @@ function App() {
             <RouteWarmup />
             <Suspense fallback={<LoadingSpinner fullScreen label="Loading screen..." />}>
               <Routes>
-                <Route path="/mockups" element={<MockupCatalogScreen />} />
-                <Route path="/mockups/:slug" element={<MockupScreen />} />
+                {import.meta.env.DEV && <Route path="/mockups" element={<MockupCatalogScreen />} />}
+                {import.meta.env.DEV && <Route path="/mockups/:slug" element={<MockupScreen />} />}
 
-                {mockupAliases.map((alias) => (
+                {import.meta.env.DEV && mockupAliases.map((alias) => (
                   <Route
                     key={alias.path}
                     path={alias.path}

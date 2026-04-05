@@ -93,8 +93,9 @@ class WorkoutService {
     }
 
     const membership = membershipSnap.data() as ChallengeMember;
-    const nextCompleted = (membership.activitiesCompleted ?? 0) + 1;
     const totalActivities = Math.max(1, membership.totalActivities ?? 1);
+    const alreadyCompleted = membership.activitiesCompleted ?? 0;
+    const nextCompleted = Math.min(alreadyCompleted + 1, totalActivities);
     const nextRate = Math.min(100, Math.round((nextCompleted / totalActivities) * 100));
 
     const batch = writeBatch(db);
@@ -118,7 +119,7 @@ class WorkoutService {
     );
 
     const membershipUpdate: Record<string, unknown> = {
-      activitiesCompleted: increment(1),
+      activitiesCompleted: nextCompleted,
       totalPoints: increment(10),
       lastActivityAt: Timestamp.now(),
       completionRate: nextRate,

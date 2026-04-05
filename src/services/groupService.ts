@@ -5,6 +5,7 @@ import {
   documentId,
   getDoc,
   getDocs,
+  increment,
   limit,
   query,
   setDoc,
@@ -188,10 +189,13 @@ class GroupService {
     } satisfies GroupMembership);
 
     if (status === 'active') {
+      await updateDoc(doc(db, this.collectionName, groupId), {
+        memberCount: increment(1),
+      });
       return {
         group: {
           ...group,
-          memberCount: Math.max(1, group.memberCount || 0),
+          memberCount: Math.max(1, (group.memberCount || 0) + 1),
         },
         status: 'joined',
       };
@@ -255,6 +259,9 @@ class GroupService {
     await updateDoc(memberRef, {
       status: 'left',
       leftAt: new Date().toISOString(),
+    });
+    await updateDoc(doc(db, this.collectionName, groupId), {
+      memberCount: increment(-1),
     });
   }
 
