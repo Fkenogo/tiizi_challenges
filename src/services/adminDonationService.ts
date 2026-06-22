@@ -1,5 +1,38 @@
-import { collection, getDocs } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+  type DocumentSnapshot,
+  startAfter,
+} from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import type { SupportDonationSettings } from '../types';
+
+export type PlatformSupportAction = 'confirm' | 'reject' | 'flag' | 'unflag' | 'note' | 'refund';
+
+export type PlatformSupportDonation = {
+  id: string;
+  userId: string;
+  donorName: string;
+  donorEmail?: string;
+  amountKes: number;
+  frequency: string;
+  paymentMethod: string;
+  status: 'intent' | 'pending_confirmation' | 'confirmed' | 'rejected' | 'refunded' | 'cancelled';
+  flagged?: boolean;
+  transactionId?: string;
+  note?: string;
+  adminNote?: string;
+  confirmedAt?: string;
+  createdAt: string;
+};
 
 export type DonationCampaign = {
   id: string;
@@ -198,6 +231,93 @@ class AdminDonationService {
       topCampaigns,
       bySource,
     };
+  }
+
+  async getPlatformSupportDonations(
+    statusFilter: 'all' | PlatformSupportDonation['status'] | 'flagged',
+    pageSize: number,
+    cursor?: DocumentSnapshot,
+  ): Promise<{ items: PlatformSupportDonation[]; nextCursor: DocumentSnapshot | null }> {
+    const constraints = [
+      orderBy('createdAt', 'desc'),
+      limit(pageSize + 1),
+      ...(statusFilter !== 'all' && statusFilter !== 'flagged'
+        ? [where('status', '==', statusFilter)]
+        : []),
+      ...(cursor ? [startAfter(cursor)] : []),
+    ];
+    const snap = await getDocs(query(collection(db, 'supportDonations'), ...constraints));
+    let docs = snap.docs;
+    const hasMore = docs.length > pageSize;
+    if (hasMore) docs = docs.slice(0, pageSize);
+    let items: PlatformSupportDonation[] = docs.map((d) => {
+      const data = d.data() as Record<string, unknown>;
+      return {
+        id: d.id,
+        userId: String(data.userId ?? ''),
+        donorName: String(data.donorName ?? data.userId ?? 'Member'),
+        donorEmail: data.donorEmail ? String(data.donorEmail) : undefined,
+        amountKes: Number(data.amountKes ?? 0),
+        frequency: String(data.frequency ?? 'one_time'),
+        paymentMethod: String(data.paymentMethod ?? 'mobile_money'),
+        status: (data.status as PlatformSupportDonation['status']) ?? 'intent',
+        flagged: Boolean(data.flagged),
+        transactionId: data.transactionId ? String(data.transactionId) : undefined,
+        note: data.note ? String(data.note) : undefined,
+        adminNote: data.adminNote ? String(data.adminNote) : undefined,
+        confirmedAt: data.confirmedAt ? String(data.confirmedAt) : undefined,
+        createdAt: String(data.createdAt ?? ''),
+      };
+    });
+    if (statusFilter === 'flagged') items = items.filter((item) => item.flagged);
+    return {
+      items,
+      nextCursor: hasMore ? docs[docs.length - 1] : null,
+    };
+  }
+
+  async getPlatformSupportReport(goalAmountKes: number): Promise<{
+    totalConfirmedKes: number;
+    pendingIntentKes: number;
+    donorCount: number;
+    goalProgressPct: number;
+  }> {
+    const snap = await getDocs(collection(db, 'supportDonations'));
+    const donations = snap.docs.map((d) => d.data() as Record<string, unknown>);
+    const confirmed = donations.filter((d) => d.status === 'confirmed');
+    const pending = donations.filter((d) => d.status === 'intent' || d.status === 'pending_confirmation');
+    const totalConfirmedKes = confirmed.reduce((sum, d) => sum + Number(d.amountKes ?? 0), 0);
+    const pendingIntentKes = pending.reduce((sum, d) => sum + Number(d.amountKes ?? 0), 0);
+    const donorCount = new Set(confirmed.map((d) => String(d.userId ?? ''))).size;
+    const goalProgressPct = goalAmountKes > 0 ? Math.round((totalConfirmedKes / goalAmountKes) * 100) : 0;
+    return { totalConfirmedKes, pendingIntentKes, donorCount, goalProgressPct };
+  }
+
+  async getPlatformSupportSettings(): Promise<SupportDonationSettings | null> {
+    const snap = await getDoc(doc(db, 'platformSettings', 'support'));
+    if (!snap.exists()) return null;
+    return snap.data() as SupportDonationSettings;
+  }
+
+  async savePlatformSupportSettings(settings: SupportDonationSettings, _adminUid: string): Promise<void> {
+    await setDoc(doc(db, 'platformSettings', 'support'), settings);
+  }
+
+  async updatePlatformSupportDonation(
+    donationId: string,
+    action: PlatformSupportAction,
+    _adminUid: string,
+    note: string,
+  ): Promise<void> {
+    const ref = doc(db, 'supportDonations', donationId);
+    const updates: Record<string, unknown> = {};
+    if (action === 'confirm') updates.status = 'confirmed';
+    else if (action === 'reject') updates.status = 'rejected';
+    else if (action === 'refund') updates.status = 'refunded';
+    else if (action === 'flag') updates.flagged = true;
+    else if (action === 'unflag') updates.flagged = false;
+    if (note) updates.note = note;
+    await updateDoc(ref, updates);
   }
 }
 

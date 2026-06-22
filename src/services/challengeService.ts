@@ -620,6 +620,31 @@ class ChallengeService {
     await updateDoc(doc(db, this.collectionName, id), { status });
   }
 
+  async getCompletedChallengesForUser(userId: string, maxResults = 20): Promise<Array<{ challenge: Challenge; membership: ChallengeMember }>> {
+    const membershipsSnap = await getDocs(
+      query(
+        collection(db, this.challengeMembersCollection),
+        where('userId', '==', userId),
+        where('status', '==', 'completed'),
+        orderBy('completedAt', 'desc'),
+        limit(maxResults),
+      ),
+    );
+    if (membershipsSnap.empty) return [];
+    const memberships = membershipsSnap.docs.map((d) => d.data() as ChallengeMember);
+    const challengeIds = [...new Set(memberships.map((m) => m.challengeId))].filter(Boolean);
+    const chunks: string[][] = [];
+    for (let i = 0; i < challengeIds.length; i += 10) chunks.push(challengeIds.slice(i, i + 10));
+    const challengeDocs = (
+      await Promise.all(chunks.map((chunk) => getDocs(query(collection(db, this.collectionName), where(documentId(), 'in', chunk)))))
+    ).flatMap((snap) => snap.docs);
+    const challengeMap = new Map(challengeDocs.map((d) => [d.id, { id: d.id, ...(d.data() as Omit<Challenge, 'id'>) } as Challenge]));
+    return memberships.flatMap((membership) => {
+      const challenge = challengeMap.get(membership.challengeId);
+      return challenge ? [{ challenge, membership }] : [];
+    });
+  }
+
   private mapChallengeDoc(id: string, data: Omit<Challenge, 'id'>): Challenge {
     return { id, ...data };
   }

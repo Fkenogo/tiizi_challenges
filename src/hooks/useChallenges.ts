@@ -162,6 +162,17 @@ export function useCreateChallenge() {
   });
 }
 
+export function useCompletedChallengesForUser(maxResults?: number) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['completed-challenges', user?.uid, maxResults],
+    queryFn: () =>
+      user?.uid ? challengeService.getCompletedChallengesForUser(user.uid, maxResults) : Promise.resolve([]),
+    enabled: !!user?.uid,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useUpdateChallengeStatus() {
   const queryClient = useQueryClient();
   return useMutation({

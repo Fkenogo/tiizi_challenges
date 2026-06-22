@@ -114,9 +114,12 @@ export interface Challenge {
   startDate: string;
   endDate: string;
   createdBy: string;
-  status: 'draft' | 'active' | 'completed';
+  status: 'draft' | 'active' | 'completed' | 'expired';
   participantCount?: number;
   moderationStatus?: 'pending' | 'approved' | 'needs_changes';
+  visibility?: 'public' | 'private';
+  groupVisibility?: 'public' | 'private';
+  durationDays?: number;
 }
 
 export interface WellnessTemplate {
@@ -236,4 +239,76 @@ export interface ChallengeContributionPledge {
   paymentPhoneNumber?: string;
   status: 'pledged' | 'skipped';
   createdAt: string;
+}
+
+export interface ChallengeActivitySummary {
+  id: string;
+  challengeId?: string;
+  groupId?: string;
+  participantCount?: number;
+  totalLogs?: number;
+  uniqueParticipantCount?: number;
+  lastActivityAt?: unknown;
+  [key: string]: unknown;
+}
+
+export interface GroupActivityFeedSummary {
+  id: string;
+  groupId: string;
+  challengeId?: string;
+  userId: string;
+  source?: string;
+  value?: number;
+  score?: number;
+  createdAt?: unknown;
+  authorName?: string;
+  text?: string;
+  challengeCoverImageUrl?: string;
+  activityLabel?: string;
+  valueLabel?: string;
+}
+
+export interface ChallengeLeaderboardSummary {
+  id: string;
+  challengeId: string;
+  groupId: string;
+  userId: string;
+  score: number;
+  rank?: number;
+  displayName?: string;
+}
+
+export interface GroupLeaderboardSummary {
+  id: string;
+  groupId: string;
+  userId: string;
+  score: number;
+  rank?: number;
+  displayName?: string;
+}
+
+export interface GroupMemberStatSummary {
+  id: string;
+  groupId: string;
+  userId: string;
+  score: number;
+  totalLogs?: number;
+  challengesCompleted?: number;
+  displayName?: string;
+}
+
+export interface SupportDonationSettings {
+  active: boolean;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  goalAmountKes: number;
+  suggestedAmountsKes: number[];
+  mobileMoneyNumber?: string;
+  mobileMoneyUssdCode?: string;
+  cardPaymentUrl?: string;
+  manualPaymentNote: string;
+  thankYouMessage: string;
+  showPublicGoal: boolean;
+  reminderCadence?: 'none' | 'monthly' | 'quarterly';
 }

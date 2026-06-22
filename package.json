@@ -24,7 +24,13 @@
     "reset:all-data": "tsx scripts/resetAllData.ts",
     "reset:all-data:apply": "tsx scripts/resetAllData.ts --apply",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
-    "deploy:firestore": "firebase deploy --only firestore:rules && firebase deploy --only firestore:indexes"
+    "deploy:firestore": "firebase deploy --only firestore:rules && firebase deploy --only firestore:indexes",
+    "test:scoring-guards": "tsx scripts/testScoringGuards.ts",
+    "test:home-challenge-feeds": "tsx scripts/testHomeChallengeFeeds.ts",
+    "test:home-performance-guards": "tsx scripts/testHomePerformanceGuards.ts",
+    "test:pilot-ux-polish-guards": "tsx scripts/testPilotUxPolishGuards.ts",
+    "test:challenge-creation-backend": "tsx scripts/testChallengeCreationBackend.ts",
+    "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
