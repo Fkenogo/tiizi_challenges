@@ -2,12 +2,15 @@ import {
   collection,
   doc,
   documentId,
+  DocumentSnapshot,
   getDoc,
   getDocs,
   limit,
+  orderBy,
   QueryConstraint,
   query,
   setDoc,
+  startAfter,
   updateDoc,
   where,
   increment,
@@ -16,6 +19,21 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Challenge, ChallengeMember } from '../types';
+
+type ChallengeCursor = DocumentSnapshot;
+
+type ChallengeDiscoveryPageOptions = {
+  pageSize?: number;
+  statuses?: Challenge['status'][];
+  cursor?: ChallengeCursor;
+  userId?: string;
+};
+
+type PaginatedChallengeResponse = {
+  items: Challenge[];
+  nextCursor: ChallengeCursor | null;
+  hasMore: boolean;
+};
 
 type CreateChallengeInput = {
   category?: Challenge['category'];
@@ -601,6 +619,92 @@ class ChallengeService {
 
   async updateChallengeStatus(id: string, status: Challenge['status']): Promise<void> {
     await updateDoc(doc(db, this.collectionName, id), { status });
+  }
+
+  private mapChallengeDoc(id: string, data: Omit<Challenge, 'id'>): Challenge {
+    return { id, ...data };
+  }
+
+  async getChallengesByGroupPage(
+    groupId: string,
+    options: ChallengeDiscoveryPageOptions = {},
+  ): Promise<PaginatedChallengeResponse> {
+    const pageSize = Math.min(Math.max(options.pageSize ?? 25, 1), 50);
+    const statusFilter = options.statuses?.length ? options.statuses : ['active'];
+    const results: Challenge[] = [];
+    let nextCursor: ChallengeCursor | null = null;
+    let hasMore = false;
+
+    // The allow list rule requires visibility == 'public' OR groupVisibility == 'public'.
+    // Run two queries (one per field) so Firestore can prove the constraint from the query alone.
+    const visibilityFields: Array<'visibility' | 'groupVisibility'> = ['visibility', 'groupVisibility'];
+    let primaryQueriesSucceeded = false;
+
+    for (const status of statusFilter) {
+      const snaps = await Promise.allSettled(
+        visibilityFields.map((field) => {
+          const constraints: QueryConstraint[] = [
+            where('groupId', '==', groupId),
+            where('status', '==', status),
+            where(field, '==', 'public'),
+            orderBy('startDate', 'desc'),
+            limit(pageSize),
+          ];
+          if (options.cursor && statusFilter.length === 1) {
+            constraints.splice(4, 0, startAfter(options.cursor));
+          }
+          return getDocs(query(collection(db, this.collectionName), ...constraints));
+        }),
+      );
+      for (const result of snaps) {
+        if (result.status === 'fulfilled') {
+          primaryQueriesSucceeded = true;
+          results.push(...result.value.docs.map((d) => this.mapChallengeDoc(d.id, d.data() as Omit<Challenge, 'id'>)));
+          if (statusFilter.length === 1) {
+            const lastDoc = result.value.docs.at(-1) ?? null;
+            nextCursor = result.value.docs.length === pageSize ? lastDoc : null;
+            hasMore = hasMore || result.value.docs.length === pageSize;
+          }
+        }
+      }
+    }
+
+    // Membership-based fallback: only for private groups (where public visibility queries found nothing).
+    if (!primaryQueriesSucceeded && options.userId) {
+      try {
+        const membershipSnap = await getDocs(
+          query(collection(db, this.challengeMembersCollection), where('userId', '==', options.userId)),
+        );
+        const candidateIds = membershipSnap.docs
+          .map((d) => (d.data() as { challengeId?: string }).challengeId)
+          .filter((id): id is string => !!id);
+        const fallbackSnaps = await Promise.all(
+          candidateIds.slice(0, 30).map((id) => getDoc(doc(db, this.collectionName, id))),
+        );
+        for (const snap of fallbackSnaps) {
+          if (snap.exists()) {
+            const challenge = this.mapChallengeDoc(snap.id, snap.data() as Omit<Challenge, 'id'>);
+            if (challenge.groupId === groupId && statusFilter.includes(challenge.status)) {
+              results.push(challenge);
+            }
+          }
+        }
+      } catch {
+        // Private-group fallback failed — return whatever primary queries found.
+      }
+    }
+
+    const deduped = Array.from(new Map(results.map((item) => [item.id, item])).values())
+      .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate))
+      .slice(0, pageSize);
+    return {
+      items: deduped.map((item) => ({
+        ...item,
+        participantCount: Math.max(0, Number(item.participantCount ?? 0)),
+      })),
+      nextCursor,
+      hasMore,
+    };
   }
 }
 
