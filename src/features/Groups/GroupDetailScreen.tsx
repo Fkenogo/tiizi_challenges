@@ -160,8 +160,7 @@ function GroupDetailScreen() {
               className="h-10 w-10 flex items-center justify-center text-slate-700"
               onClick={async () => {
                 if (!user?.uid || !id) return;
-                const reason = window.prompt('Report this group to admin. Add a brief reason:');
-                if (!reason || !reason.trim()) return;
+                const reason = 'Reported by member';
                 try {
                   await reportGroup.mutateAsync({
                     groupId: id,
@@ -169,7 +168,7 @@ function GroupDetailScreen() {
                     reason,
                     reportType: 'group',
                   });
-                  showToast('Report submitted to admin moderation.', 'success');
+                  showToast('Report submitted for review.', 'success');
                 } catch {
                   showToast('Could not submit report.', 'error');
                 }

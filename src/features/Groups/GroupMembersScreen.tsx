@@ -42,7 +42,7 @@ function GroupMembersScreen() {
       <Screen className="st-page">
         <div className="mx-auto max-w-mobile px-4 pt-8">
           <p className="text-[20px] leading-[24px] font-black text-slate-900">Members list is members-only</p>
-          <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">Join this group first to view member roster and admin contacts.</p>
+          <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">Join this group first to view the member roster.</p>
           <button className="mt-4 h-12 rounded-xl bg-primary text-white px-5 font-bold" onClick={() => navigate(`/app/group/${id}`)}>Go to Group Detail</button>
         </div>
       </Screen>
@@ -99,11 +99,11 @@ function GroupMembersScreen() {
           </label>
 
           <section className="mt-6">
-            <h2 className="text-[18px] leading-[22px] font-black text-slate-900">Admins</h2>
+            <h2 className="text-[18px] leading-[22px] font-black text-slate-900">Organizers</h2>
             <div className="mt-4 space-y-3">
               {admins.length === 0 && (
                 <article className="rounded-[20px] border border-slate-200 bg-white p-4">
-                  <p className="text-[14px] leading-[20px] text-[#61758f]">No admin profiles available yet.</p>
+                  <p className="text-[14px] leading-[20px] text-[#61758f]">No organizer profiles available yet.</p>
                 </article>
               )}
               {admins.map((member) => (
@@ -116,15 +116,14 @@ function GroupMembersScreen() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="rounded-full bg-[#fff1e7] px-3 py-1 text-[12px] leading-[14px] font-bold text-primary">ADMIN</span>
+                    <span className="rounded-full bg-[#fff1e7] px-3 py-1 text-[12px] leading-[14px] font-bold text-primary">LEAD</span>
                     <button className="text-primary"><MessageSquare size={18} /></button>
                     {membershipStatus === 'joined' && user?.uid !== member.id ? (
                       <button
                         className="text-xs font-bold text-red-600"
                         onClick={async () => {
                           if (!id || !user?.uid) return;
-                          const reason = window.prompt(`Report ${member.name} to admin. Add reason:`);
-                          if (!reason || !reason.trim()) return;
+                          const reason = 'Reported by member';
                           try {
                             await reportGroup.mutateAsync({
                               groupId: id,
@@ -170,8 +169,7 @@ function GroupMembersScreen() {
                         className="text-xs font-bold text-red-600"
                         onClick={async () => {
                           if (!id || !user?.uid) return;
-                          const reason = window.prompt(`Report ${member.name} to admin. Add reason:`);
-                          if (!reason || !reason.trim()) return;
+                          const reason = 'Reported by member';
                           try {
                             await reportGroup.mutateAsync({
                               groupId: id,

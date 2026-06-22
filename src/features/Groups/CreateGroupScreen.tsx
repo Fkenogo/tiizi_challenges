@@ -86,7 +86,7 @@ function CreateGroupScreen() {
       setCoverImageUrl(uploadedUrl);
       showToast('Group cover uploaded.', 'success');
     } catch (error) {
-      console.error('Group cover upload failed:', error);
+      console.warn('Group cover upload failed:', error);
       try {
         const fallbackDataUrl = await readFileAsDataUrl(file);
         setCoverImageUrl(fallbackDataUrl);

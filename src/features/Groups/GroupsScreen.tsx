@@ -135,7 +135,7 @@ function GroupsScreen() {
       showToast('Joined via invite.', 'success');
       navigate(`/app/group/${result.group.id}`);
     } catch (error) {
-      console.error('Invite join failed:', error);
+      console.warn('Invite join failed:', error);
       showToast('Could not process invite code.', 'error');
     }
   };

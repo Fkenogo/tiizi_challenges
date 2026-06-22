@@ -185,7 +185,7 @@ function ChallengeDetailScreen() {
           <p className="text-xs text-slate-500">Duration: {summary?.durationDays} day{summary?.durationDays === 1 ? '' : 's'}</p>
           {requiresApproval && (
             <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-xs text-amber-800">
-              This Fitness + Cause challenge is awaiting super admin approval before it goes active.
+              This Fitness + Cause challenge is awaiting platform review before it goes active.
             </p>
           )}
           <div className="grid grid-cols-3 gap-2 mt-3">
@@ -308,7 +308,7 @@ function ChallengeDetailScreen() {
               <p className="mt-1 text-xs text-slate-500">No leaderboard activity yet.</p>
             )}
           </div>
-          {!!normalizedGroupId && <p className="text-xs text-primary mt-1">Linked to selected group</p>}
+          {!!normalizedGroupId && <p className="text-xs text-primary mt-1">Linked to {challengeGroup?.name ?? normalizedGroupId}</p>}
           <div className="mt-4 space-y-2">
             {!membership || membership.status !== 'active' ? (
               <button
@@ -324,6 +324,7 @@ function ChallengeDetailScreen() {
                     await joinChallenge.mutateAsync(resolvedChallenge.id);
                     showToast('Joined challenge.', 'success');
                   } catch (error) {
+                    console.warn('[JoinChallenge] failed:', error);
                     const msg = error instanceof Error ? error.message : 'Could not join challenge.';
                     showToast(msg, 'error');
                   }

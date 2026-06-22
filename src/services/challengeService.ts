@@ -500,8 +500,18 @@ class ChallengeService {
   }
 
   async getChallengesByGroup(groupId: string): Promise<Challenge[]> {
-    const page = await this.getChallengesByGroupPage(groupId, { statuses: ['active'] });
-    return page.items;
+    // Simple direct query — rule allows group members and public-group visitors.
+    // The [groupId, status] composite index covers this without an orderBy.
+    const snap = await getDocs(
+      query(
+        collection(db, this.collectionName),
+        where('groupId', '==', groupId),
+        where('status', '==', 'active'),
+      ),
+    );
+    return snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) } as Challenge))
+      .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
   }
 
   async getGroupChallenges(groupId: string, userId: string): Promise<Challenge[]> {

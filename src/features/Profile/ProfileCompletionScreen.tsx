@@ -16,6 +16,7 @@ function ProfileCompletionScreen() {
 
   const [fullName, setFullName] = useState('');
   const [birthday, setBirthday] = useState('');
+  const [birthdayError, setBirthdayError] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [heightCm, setHeightCm] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
@@ -69,6 +70,11 @@ function ProfileCompletionScreen() {
       showToast('Please enter your full name.', 'error');
       return;
     }
+    if (!birthday.trim()) {
+      setBirthdayError('Please enter your birthday.');
+      return;
+    }
+    setBirthdayError('');
 
     try {
       await saveProfileSetup.mutateAsync({
@@ -224,11 +230,12 @@ function ProfileCompletionScreen() {
                 type="date"
                 max={new Date().toISOString().slice(0, 10)}
                 value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
+                onChange={(e) => { setBirthday(e.target.value); if (birthdayError) setBirthdayError(''); }}
                 placeholder="DD/MM/YYYY"
               />
               <Calendar size={24} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
+            {!!birthdayError && <p className="mt-1 text-xs text-red-600">{birthdayError}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

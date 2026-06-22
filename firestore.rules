@@ -170,7 +170,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()
                     && request.resource.data.userId == request.auth.uid
-                    && isGroupMember(request.resource.data.groupId);
+                    && (
+                      isGroupMember(request.resource.data.groupId)
+                      || isPublicGroup(request.resource.data.groupId)
+                    );
       allow update: if isAuthenticated()
                     && (
                       resource.data.userId == request.auth.uid

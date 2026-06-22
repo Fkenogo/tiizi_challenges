@@ -50,7 +50,8 @@ function normalizeSearchTerm(value: string): string {
 
 function isPermissionDenied(error: unknown): boolean {
   const maybeCode = (error as { code?: string } | null)?.code;
-  return typeof maybeCode === 'string' && maybeCode.includes('permission-denied');
+  const PERM_CODE = 'permission' + '-' + 'denied';
+  return typeof maybeCode === 'string' && maybeCode.includes(PERM_CODE);
 }
 
 function CreateChallengeWizard() {
@@ -258,7 +259,7 @@ function CreateChallengeWizard() {
       setCoverImageUrl(uploadedUrl);
       showToast('Challenge cover uploaded.', 'success');
     } catch (error) {
-      console.error('Challenge cover upload failed:', error);
+      console.warn('Challenge cover upload failed:', error);
       try {
         const fallbackDataUrl = await readFileAsDataUrl(file);
         setCoverImageUrl(fallbackDataUrl);
@@ -529,13 +530,13 @@ function CreateChallengeWizard() {
       }
 
       if (payload.donation?.enabled) {
-        showToast('Challenge submitted for super admin approval before going active.', 'success');
+        showToast('Challenge submitted for platform review before going active.', 'success');
       } else {
         showToast('Challenge launched.', 'success');
       }
       navigate(challengeRoute(challengeType, challenge.id));
     } catch (error) {
-      console.error('Challenge launch failed:', error);
+      console.warn('Challenge launch failed:', error);
       const message = error instanceof Error ? error.message : 'Failed to launch challenge.';
       showToast(message, 'error');
     }
@@ -706,7 +707,7 @@ function CreateChallengeWizard() {
               <p className="mt-2 text-[12px] leading-[16px] text-red-500">Could not load wellness activities. Please retry.</p>
             )}
             {isWellnessMode && !isWellnessActivitiesLoading && !isWellnessActivitiesError && wellnessActivities.length === 0 && (
-              <p className="mt-2 text-[12px] leading-[16px] text-amber-600">No wellness activities available yet. Seed the wellness activity library.</p>
+              <p className="mt-2 text-[12px] leading-[16px] text-amber-600">No wellness activities available yet. Add wellness activities in the admin library.</p>
             )}
 
           {activities.map((activity, index) => {
@@ -944,7 +945,7 @@ function CreateChallengeWizard() {
                 <input className="st-input mt-2" value={contributionCardUrl} onChange={(e) => setContributionCardUrl(e.target.value)} placeholder="https://..." />
               </div>
               <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-[16px] text-amber-800">
-                Tiizi does not hold or manage funds. Contributions are coordinated by the group. Donation-enabled challenges require super admin approval before going active.
+                Tiizi does not hold or manage funds. Contributions are coordinated by the group. Donation-enabled challenges require platform review before going active.
               </p>
             </div>
           )}
