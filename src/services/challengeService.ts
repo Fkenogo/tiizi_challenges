@@ -500,9 +500,8 @@ class ChallengeService {
   }
 
   async getChallengesByGroup(groupId: string): Promise<Challenge[]> {
-    const q = query(collection(db, this.collectionName), where('groupId', '==', groupId));
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) }));
+    const page = await this.getChallengesByGroupPage(groupId, { statuses: ['active'] });
+    return page.items;
   }
 
   async getGroupChallenges(groupId: string, userId: string): Promise<Challenge[]> {
