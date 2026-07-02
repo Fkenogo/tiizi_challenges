@@ -1,5 +1,40 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6H — Fix Collective Challenge Creation (2026-07-02)
+
+**Type:** Validation bug fix. No data model, service, or UI layout changes.
+
+### Root cause
+
+`challengeFormValidation.ts` had a stale check blocking Collective challenge creation:
+
+```ts
+if (!input.groupCumulativeTarget || Number(input.groupCumulativeTarget) <= 0) {
+  return 'Set a group cumulative target greater than zero.';
+}
+```
+
+The UI input for `groupCumulativeTarget` was removed in a prior phase (now derived from `activities[0].targetValue` at payload time). But the validation interface still accepted the field and all callers still passed the now-always-empty state variable `''` → error always fired for Collective.
+
+### Fix
+
+- Removed `groupCumulativeTarget: string` from `ChallengeFormValidationInput`
+- Removed the stale blocking check
+- Removed stale field from all four `validateChallengeForm` call sites (wizard, admin create, admin edit wellness, audit script)
+- Fixed wizard "Ready to launch?" collective checklist item to check `activities.some(a => Number(a.targetValue) > 0)` instead of `groupCumulativeTarget` state
+
+Payload derivation (`groupCumulativeTarget: Number(finalActivities[0]?.targetValue ?? 0)`) was already correct in all four creation paths — no payload changes needed.
+
+### Guards
+
+9 new guards added to `testChallengeActivityModel.ts`. **44/44 passing.** All other suites unchanged.
+
+### Report
+
+`docs/superpowers/reports/phase-18I-6H-collective-challenge-validation-fix.md`
+
+---
+
 ## Session: Phase 18I-6G Final Gap — Template Engine Filter Labels (2026-07-02)
 
 **Type:** UI fix only. No logic, service, or data model changes.
