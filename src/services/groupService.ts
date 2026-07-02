@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Group } from '../types';
-import { isGroupActive } from '../utils/groupLifecycle';
+import { buildGroupDefaults, isGroupActive } from '../utils/groupLifecycle';
 
 type CreateGroupInput = {
   name: string;
@@ -129,19 +129,16 @@ class GroupService {
 
   async createGroup(input: CreateGroupInput): Promise<Group> {
     const inviteCodeBase = normalizeInviteCode(input.name || 'GROUP');
-    const payload: Omit<Group, 'id'> = {
+    const payload: Omit<Group, 'id'> = buildGroupDefaults({
       name: input.name,
       description: input.description,
       ownerId: input.ownerId,
-      memberCount: 1,
-      createdAt: new Date().toISOString(),
       coverImageUrl: input.coverImageUrl,
-      isPrivate: !!input.isPrivate,
-      requireAdminApproval: !!input.requireAdminApproval,
-      allowMemberChallenges: input.allowMemberChallenges ?? true,
+      isPrivate: input.isPrivate,
+      requireAdminApproval: input.requireAdminApproval,
+      allowMemberChallenges: input.allowMemberChallenges,
       inviteCode: `${inviteCodeBase}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-      activeChallenges: 0,
-    };
+    });
     const ref = await addDoc(collection(db, this.collectionName), payload);
 
     const ownerMembershipRef = doc(db, this.membershipsCollection, `${ref.id}_${input.ownerId}`);

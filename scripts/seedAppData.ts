@@ -71,8 +71,12 @@ type SeedGroup = {
   allowMemberChallenges: boolean;
   inviteCode: string;
   activeChallenges: number;
+  status: 'active' | 'inactive';
   moderationStatus: 'active' | 'flagged' | 'deactivated';
+  visibility: 'public' | 'private';
   isFeatured: boolean;
+  isVerified: boolean;
+  reviewStatus: 'pending' | 'verified';
   seedTag: string;
 };
 
@@ -417,8 +421,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'EARLY-BIRDS',
       activeChallenges: 2,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: true,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -434,8 +442,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'ZEN-YOGA',
       activeChallenges: 1,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'private',
       isFeatured: true,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -451,8 +463,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'STRONG-CLUB',
       activeChallenges: 2,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: false,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -468,8 +484,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'SQUAD-254',
       activeChallenges: 2,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: true,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -485,8 +505,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: false,
       inviteCode: 'TRAIL-TEAM',
       activeChallenges: 1,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'private',
       isFeatured: false,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -502,8 +526,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'HYDRATE-NOW',
       activeChallenges: 1,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: false,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
   ];

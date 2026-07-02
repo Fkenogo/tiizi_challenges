@@ -71,6 +71,12 @@ export interface Group {
   status?: 'active' | 'inactive' | 'suspended' | 'deleted';
   /** Admin moderation record — audit/display only. Use `status` for gating logic. */
   moderationStatus?: 'active' | 'flagged' | 'deactivated';
+  /** Derived from isPrivate; kept as a denormalized field for query convenience. */
+  visibility?: 'public' | 'private';
+  isFeatured?: boolean;
+  isVerified?: boolean;
+  reviewStatus?: 'pending' | 'verified' | 'flagged';
+  countersUpdatedAt?: string;
 }
 
 export interface Challenge {

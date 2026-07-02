@@ -487,6 +487,113 @@ async function run() {
     'getVisibleChallengesForUser applies filterActiveGroupIds to full allowed-group list',
   );
 
+  // ============================================================
+  // Phase 18I-6D: Group Schema Consistency Guards
+  // ============================================================
+
+  const groupLifecycleSrc = fs.readFileSync('src/utils/groupLifecycle.ts', 'utf-8');
+  const groupServiceSrcFresh = fs.readFileSync('src/services/groupService.ts', 'utf-8');
+
+  // --- Test 22: buildGroupDefaults writes status: 'active' ---
+  console.log('\n--- Test 22: buildGroupDefaults writes status active ---');
+  const { buildGroupDefaults } = await import('../src/utils/groupLifecycle');
+  const defaults = buildGroupDefaults({
+    name: 'Test Group',
+    description: 'desc',
+    ownerId: 'user1',
+    inviteCode: 'TEST-1234',
+  });
+  assert(defaults.status === 'active', 'buildGroupDefaults writes status: active');
+  assert(defaults.moderationStatus === 'active', 'buildGroupDefaults writes moderationStatus: active');
+  assert(defaults.visibility === 'public', 'buildGroupDefaults writes visibility: public for non-private group');
+  assert(defaults.allowMemberChallenges === true, 'buildGroupDefaults writes allowMemberChallenges: true');
+  assert(defaults.isFeatured === false, 'buildGroupDefaults writes isFeatured: false');
+  assert(defaults.activeChallenges === 0, 'buildGroupDefaults writes activeChallenges: 0');
+  assert(defaults.reviewStatus === 'pending', 'buildGroupDefaults writes reviewStatus: pending');
+
+  // --- Test 23: buildGroupDefaults sets visibility: private for private groups ---
+  console.log('\n--- Test 23: buildGroupDefaults sets visibility based on isPrivate ---');
+  const privateDefaults = buildGroupDefaults({
+    name: 'Private Group',
+    description: 'desc',
+    ownerId: 'user1',
+    isPrivate: true,
+    inviteCode: 'PRIV-1234',
+  });
+  assert(privateDefaults.visibility === 'private', 'private group gets visibility: private');
+
+  // --- Test 24: groupService.createGroup uses buildGroupDefaults (static guard) ---
+  console.log('\n--- Test 24: static guard — groupService uses buildGroupDefaults ---');
+  assert(
+    groupServiceSrcFresh.includes('buildGroupDefaults'),
+    'groupService.ts imports and calls buildGroupDefaults',
+  );
+
+  // --- Test 25: isGroupActive respects moderationStatus: deactivated ---
+  console.log('\n--- Test 25: isGroupActive blocks moderationStatus: deactivated ---');
+  assert(
+    !isGroupActive({ status: 'active', moderationStatus: 'deactivated' }),
+    'isGroupActive returns false when moderationStatus is deactivated even if status is active',
+  );
+  assert(
+    isGroupActive({ status: 'active', moderationStatus: 'active' }),
+    'isGroupActive returns true for status+moderationStatus both active',
+  );
+  assert(
+    isGroupActive({ status: 'active' }),
+    'isGroupActive returns true for status active with no moderationStatus (legacy)',
+  );
+
+  // --- Test 26: isGroupActive source checks moderationStatus ---
+  console.log('\n--- Test 26: static guard — isGroupActive checks moderationStatus ---');
+  assert(
+    groupLifecycleSrc.includes('moderationStatus'),
+    'isGroupActive implementation checks moderationStatus',
+  );
+
+  // --- Test 27: inactive groups remain blocked after schema changes ---
+  console.log('\n--- Test 27: inactive group still blocked for challenge join ---');
+  db.update('groups/g2', { status: 'inactive', moderationStatus: 'deactivated' });
+  assertThrows(
+    () => challengeSvc.joinChallenge('user1', 'c2'),
+    'deactivated group',
+    'challenge join still blocked for inactive group after schema changes',
+  );
+
+  // --- Test 28: active group with full schema can participate ---
+  console.log('\n--- Test 28: group with full canonical schema is active ---');
+  db.set('groups/g_new', {
+    id: 'g_new',
+    name: 'Newly Created Group',
+    status: 'active',
+    moderationStatus: 'active',
+    visibility: 'public',
+    isFeatured: false,
+    isVerified: false,
+    reviewStatus: 'pending',
+    allowMemberChallenges: true,
+    requireAdminApproval: false,
+    activeChallenges: 0,
+    memberCount: 1,
+    createdAt: new Date().toISOString(),
+    ownerId: 'user1',
+    inviteCode: 'NEW-XXXX',
+    description: 'desc',
+  });
+  assert(isGroupActive(db.get('groups/g_new').data as { status?: string; moderationStatus?: string }), 'new group with full schema is active');
+  assert(groupSvc.joinGroup('g_new').status === 'joined', 'joinGroup succeeds for new group with full schema');
+
+  // --- Test 29: (static) audit script exists and checks required fields ---
+  console.log('\n--- Test 29: static guard — audit script exists ---');
+  const auditScriptExists = fs.existsSync('scripts/auditGroupDocumentSchema.ts');
+  assert(auditScriptExists, 'scripts/auditGroupDocumentSchema.ts exists');
+  const auditSrc = fs.readFileSync('scripts/auditGroupDocumentSchema.ts', 'utf-8');
+  assert(auditSrc.includes("'status'"), 'audit script checks status field');
+  assert(auditSrc.includes("'moderationStatus'"), 'audit script checks moderationStatus field');
+  assert(auditSrc.includes("'visibility'"), 'audit script checks visibility field');
+  assert(auditSrc.includes('allowMemberChallenges'), 'audit script checks allowMemberChallenges field');
+  assert(auditSrc.includes('--execute') && auditSrc.includes('--confirm'), 'audit script requires --execute --confirm for writes');
+
   // ---------------------------------------------------------------------------
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
   if (failed > 0) process.exit(1);
