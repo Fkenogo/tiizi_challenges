@@ -1,4 +1,4 @@
-import { ArrowLeft, Calendar, Camera, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
@@ -11,15 +11,32 @@ import { useExercises } from '../../hooks/useExercises';
 import { useWellnessActivities } from '../../hooks/useWellnessActivities';
 import { useGroupMembershipStatus, useMyGroups } from '../../hooks/useGroups';
 import { isLikelyDirectImageUrl, isPersistableImageSource, isValidImageUrl, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '../../lib/firebase';
 import { groupService } from '../../services/groupService';
+import { challengeTemplateService } from '../../services/challengeTemplateService';
+import { wellnessTemplateService } from '../../services/wellnessTemplateService';
 import type { Challenge } from '../../types';
+import { ChallengeBasicInfoSection } from './components/ChallengeBasicInfoSection';
+import { ChallengeTimelineSection } from './components/ChallengeTimelineSection';
+import { ChallengeActivitySection } from './components/ChallengeActivitySection';
+import { ChallengeEngineSettingsSection } from './components/ChallengeEngineSettingsSection';
+import { ChallengeDonationSection } from './components/ChallengeDonationSection';
+import { validateChallengeForm } from './utils/challengeFormValidation';
+import { calculateInclusiveDurationDays } from './utils/challengeDuration';
+import {
+  DEFAULT_AUTO_COMPLETE_ON_GROUP_TARGET,
+  DEFAULT_STREAK_RESET_ON_MISS,
+  DURATION_FALLBACK_DAYS,
+} from './utils/challengeFormDefaults';
+import { DONATION_PAYLOAD_DISCLAIMER } from './utils/challengeFormCopy';
 import type { WellnessActivity } from '../../types/wellnessActivity';
 
 type ChallengeType = 'collective' | 'competitive' | 'streak';
 
 type ActivityRow = {
   query: string;
-  exerciseId: string;
+  exerciseId?: string;
   activityId?: string;
   activityType?: string;
   description?: string;
@@ -30,7 +47,8 @@ type ActivityRow = {
   benefits?: string[];
   guidelines?: string[];
   warnings?: string[];
-  frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
+  frequency?: 'daily' | 'weekly' | '2x-week' | '3x-week' | '5x-week' | 'custom';
+  targetType?: 'daily' | 'cumulative';
   targetValue: string;
   unit: string;
   pointsPerCompletion?: number;
@@ -38,11 +56,6 @@ type ActivityRow = {
   instructions?: string[];
 };
 
-const typeOptions: Array<{ id: ChallengeType; label: string }> = [
-  { id: 'collective', label: 'Collective' },
-  { id: 'competitive', label: 'Competitive' },
-  { id: 'streak', label: 'Streak' },
-];
 
 function normalizeSearchTerm(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -93,8 +106,7 @@ function CreateChallengeWizard() {
   const [challengeType, setChallengeType] = useState<ChallengeType>(initialType);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [activities, setActivities] = useState<ActivityRow[]>([{ query: '', exerciseId: '', targetValue: '', unit: 'Reps' }]);
-  const [activeSearchRow, setActiveSearchRow] = useState<number | null>(null);
+  const [activities, setActivities] = useState<ActivityRow[]>([{ query: '', exerciseId: undefined, targetValue: '', unit: 'Reps' }]);
   const [pickerRowIndex, setPickerRowIndex] = useState<number | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerTier, setPickerTier] = useState('All');
@@ -110,9 +122,14 @@ function CreateChallengeWizard() {
   const [templateApplied, setTemplateApplied] = useState(false);
   const [wellnessTemplateApplied, setWellnessTemplateApplied] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
-  const [challengeCategory, setChallengeCategory] = useState<'fitness' | 'wellness' | 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social'>('fitness');
-  const coverInputRef = useRef<HTMLInputElement>(null);
-
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
+  const [stepError, setStepError] = useState('');
+  // v2 engine fields — always written for new challenges
+  const [groupCumulativeTarget, setGroupCumulativeTarget] = useState('');
+  const [autoCompleteOnGroupTarget, setAutoCompleteOnGroupTarget] = useState(DEFAULT_AUTO_COMPLETE_ON_GROUP_TARGET);
+  const [requiredConsecutiveDays, setRequiredConsecutiveDays] = useState('');
+  const [streakResetOnMiss, setStreakResetOnMiss] = useState(DEFAULT_STREAK_RESET_ON_MISS);
+  const [challengeCategory, setChallengeCategory] = useState<'fitness' | 'wellness' | 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social' | 'movement' | 'health-monitoring'>('fitness');
   useEffect(() => {
     if (!groupId) return;
     if (myGroups.some((group) => group.id === groupId)) {
@@ -138,7 +155,6 @@ function CreateChallengeWizard() {
       query: selectedExerciseName,
       unit: selectedExerciseUnit || activities[targetIndex]?.unit || 'Reps',
     });
-    setActiveSearchRow(null);
 
     const cleanParams = new URLSearchParams();
     if (groupId) cleanParams.set('groupId', groupId);
@@ -150,13 +166,24 @@ function CreateChallengeWizard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, groupId, templateId, wellnessTemplateId, challengeType, navigate, activities.length]);
 
+  // Pre-populate first activity when landing from ExerciseDetailScreen via ?exerciseId=<id>
+  const exerciseIdParam = params.get('exerciseId') ?? undefined;
+  const exercisePrefillAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!exerciseIdParam || exercises.length === 0 || exercisePrefillAppliedRef.current) return;
+    const match = exercises.find((e) => e.id === exerciseIdParam);
+    if (!match) return;
+    exercisePrefillAppliedRef.current = true;
+    setActivities([{ query: match.name, exerciseId: match.id, targetValue: '', unit: match.metric.unit }]);
+  }, [exerciseIdParam, exercises]);
+
   useEffect(() => {
     if (!template || templateApplied) return;
 
     const today = new Date();
     const start = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const endDate = new Date(today);
-    endDate.setDate(today.getDate() + (template.durationDays || 30));
+    endDate.setDate(today.getDate() + (template.durationDays || DURATION_FALLBACK_DAYS));
     const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
 
     setCoverImageUrl(template.coverImageUrl ?? '');
@@ -171,7 +198,7 @@ function CreateChallengeWizard() {
         const matched = exercises.find((exercise) => exercise.name.toLowerCase() === activity.exerciseName.toLowerCase());
         return {
         query: activity.exerciseName,
-        exerciseId: activity.exerciseId ?? matched?.id ?? '',
+        exerciseId: activity.exerciseId ?? matched?.id ?? undefined,
         targetValue: String(activity.targetValue || ''),
         unit: activity.unit || 'Reps',
       };}));
@@ -186,6 +213,20 @@ function CreateChallengeWizard() {
       setContributionEndDate(template.donation.contributionEndDate ?? '');
       setContributionPhone(template.donation.contributionPhoneNumber ?? '');
       setContributionCardUrl(template.donation.contributionCardUrl ?? '');
+    }
+
+    // Apply engine-specific fields stored in template
+    if (template.groupCumulativeTarget != null && template.groupCumulativeTarget > 0) {
+      setGroupCumulativeTarget(String(template.groupCumulativeTarget));
+    }
+    if (template.autoCompleteOnGroupTarget != null) {
+      setAutoCompleteOnGroupTarget(template.autoCompleteOnGroupTarget);
+    }
+    if (template.requiredConsecutiveDays != null && template.requiredConsecutiveDays > 0) {
+      setRequiredConsecutiveDays(String(template.requiredConsecutiveDays));
+    }
+    if (template.streakResetOnMiss != null) {
+      setStreakResetOnMiss(template.streakResetOnMiss);
     }
 
     setTemplateApplied(true);
@@ -209,7 +250,7 @@ function CreateChallengeWizard() {
     setEndDate(end);
     setActivities(wellnessTemplate.activities.map((activity) => ({
       query: activity.name,
-      exerciseId: '',
+      exerciseId: undefined,
       activityId: activity.activityId,
       activityType: activity.activityType,
       description: activity.description,
@@ -223,10 +264,23 @@ function CreateChallengeWizard() {
       targetValue: String(activity.targetValue || ''),
       unit: activity.metricUnit || 'count',
       frequency: activity.frequency ?? 'daily',
-      pointsPerCompletion: activity.pointsPerCompletion,
       dailyFrequency: activity.dailyFrequency,
       instructions: activity.instructions ?? activity.protocolSteps,
     })));
+
+    // Engine-specific fields — same parity as fitness template apply
+    if (wellnessTemplate.groupCumulativeTarget != null && wellnessTemplate.groupCumulativeTarget > 0) {
+      setGroupCumulativeTarget(String(wellnessTemplate.groupCumulativeTarget));
+    }
+    if (wellnessTemplate.autoCompleteOnGroupTarget != null) {
+      setAutoCompleteOnGroupTarget(wellnessTemplate.autoCompleteOnGroupTarget);
+    }
+    if (wellnessTemplate.requiredConsecutiveDays != null && wellnessTemplate.requiredConsecutiveDays > 0) {
+      setRequiredConsecutiveDays(String(wellnessTemplate.requiredConsecutiveDays));
+    }
+    if (wellnessTemplate.streakResetOnMiss != null) {
+      setStreakResetOnMiss(wellnessTemplate.streakResetOnMiss);
+    }
 
     setWellnessTemplateApplied(true);
   }, [wellnessTemplate, wellnessTemplateApplied, templateId]);
@@ -235,19 +289,11 @@ function CreateChallengeWizard() {
     () => new Map(exercises.map((exercise) => [exercise.id, exercise])),
     [exercises],
   );
-  const challengeDurationDays = useMemo(() => {
-    if (!startDate || !endDate) return null;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return null;
-    const msPerDay = 1000 * 60 * 60 * 24;
-    return Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
-  }, [startDate, endDate]);
+  const challengeDurationDays = useMemo(
+    () => calculateInclusiveDurationDays(startDate, endDate),
+    [startDate, endDate],
+  );
   const isWellnessMode = challengeCategory !== 'fitness';
-
-  const handleCoverUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setCoverImageUrl(event.target.value);
-  };
 
   const handleCoverFileSelected = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -296,13 +342,12 @@ function CreateChallengeWizard() {
       query: exerciseName,
       unit: exerciseUnit || activities[pickerRowIndex]?.unit || 'Reps',
     });
-    setActiveSearchRow(null);
     closeActivityPicker();
   };
 
   const addActivity = () => {
     const nextIndex = activities.length;
-    setActivities((prev) => [...prev, { query: '', exerciseId: '', targetValue: '', unit: 'Reps' }]);
+    setActivities((prev) => [...prev, { query: '', exerciseId: undefined, targetValue: '', unit: isWellnessMode ? 'count' : 'Reps' }]);
     setPickerRowIndex(nextIndex);
     setPickerSearch('');
     setPickerTier('All');
@@ -325,7 +370,7 @@ function CreateChallengeWizard() {
     if (pickerRowIndex === null) return;
     updateActivity(pickerRowIndex, {
       query: activity.name,
-      exerciseId: '',
+      exerciseId: undefined,
       activityId: activity.id,
       activityType: activity.activityType,
       description: activity.description,
@@ -339,7 +384,6 @@ function CreateChallengeWizard() {
       targetValue: String(activity.defaultTargetValue),
       unit: activity.defaultMetricUnit,
       frequency: 'daily',
-      pointsPerCompletion: activity.defaultPoints,
       dailyFrequency: activity.suggestedFrequency,
       instructions: activity.protocolSteps,
     });
@@ -350,6 +394,13 @@ function CreateChallengeWizard() {
   const removeActivity = (index: number) => {
     if (activities.length === 1) return;
     setActivities((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleTypeChange = (newType: ChallengeType) => {
+    if (newType !== 'streak' && activities.length > 1) {
+      setActivities((prev) => [prev[0]]);
+    }
+    setChallengeType(newType);
   };
 
   const challengeRoute = (type: ChallengeType, id: string) => {
@@ -388,8 +439,24 @@ function CreateChallengeWizard() {
       return;
     }
 
-    if (!name.trim() || description.trim().length < 8) {
-      showToast('Add challenge name and description.', 'error');
+    const validationError = validateChallengeForm({
+      name,
+      description,
+      startDate,
+      endDate,
+      challengeType,
+      activities,
+      groupCumulativeTarget,
+      requiredConsecutiveDays,
+      durationDays: challengeDurationDays,
+      donationEnabled,
+      causeName,
+      causeDescription,
+      contributionPhoneNumber: contributionPhone,
+      contributionCardUrl,
+    });
+    if (validationError) {
+      showToast(validationError, 'error');
       return;
     }
 
@@ -397,11 +464,6 @@ function CreateChallengeWizard() {
     const persistableCover = isPersistableImageSource(normalizedCover) ? normalizedCover : undefined;
     if (normalizedCover && !persistableCover) {
       showToast('Cover image preview kept locally. Challenge will launch without saving that image source.', 'info');
-    }
-
-    if (!startDate || !endDate || new Date(endDate) < new Date(startDate)) {
-      showToast('Set a valid start and end date.', 'error');
-      return;
     }
 
     if (!activeGroupId) {
@@ -455,17 +517,6 @@ function CreateChallengeWizard() {
       showToast('Add at least one valid activity.', 'error');
       return;
     }
-    if (donationEnabled) {
-      if (!causeName.trim() || !causeDescription.trim()) {
-        showToast('Add cause name and description for Fitness + Cause.', 'error');
-        return;
-      }
-      if (!contributionPhone.trim() && !contributionCardUrl.trim()) {
-        showToast('Provide a mobile number or card link for contributions.', 'error');
-        return;
-      }
-    }
-
     try {
       const payload = {
         category: (isWellnessMode ? 'wellness' : challengeCategory) as Challenge['category'],
@@ -499,8 +550,8 @@ function CreateChallengeWizard() {
           guidelines: activity.guidelines,
           warnings: activity.warnings,
           frequency: activity.frequency,
-          pointsPerCompletion: activity.pointsPerCompletion,
           dailyFrequency: activity.dailyFrequency,
+          targetType: activity.targetType,
         })),
         donation: donationEnabled
           ? {
@@ -512,28 +563,45 @@ function CreateChallengeWizard() {
               contributionEndDate: contributionEndDate || undefined,
               contributionPhoneNumber: contributionPhone.trim() || undefined,
               contributionCardUrl: contributionCardUrl.trim() || undefined,
-              disclaimer: 'Tiizi does not hold or manage funds. Contributions are coordinated by the group.',
+              disclaimer: DONATION_PAYLOAD_DISCLAIMER,
             }
           : {
               enabled: false,
             },
+        // Explicit durationDays prevents the backend from re-deriving it via date subtraction,
+        // eliminating any risk of off-by-one from timezone-shifted ISO strings.
+        durationDays: challengeDurationDays ?? undefined,
+        // v2 engine — always set on new challenges
+        engineVersion: 'v2' as const,
+        ...(challengeType === 'collective'
+          ? {
+              groupCumulativeTarget: Number(groupCumulativeTarget),
+              autoCompleteOnGroupTarget,
+            }
+          : {}),
+        ...(challengeType === 'streak'
+          ? {
+              requiredConsecutiveDays: Number(requiredConsecutiveDays),
+              streakResetOnMiss,
+            }
+          : {}),
       };
 
-      let challenge;
-      try {
-        challenge = await createChallenge.mutateAsync(payload);
-      } catch (error) {
-        if (!isPermissionDenied(error)) throw error;
-        // Retry once; best-effort membership refresh for edge cases.
-        await groupService.joinGroup(activeGroupId, user.uid).catch(() => null);
-        challenge = await createChallenge.mutateAsync(payload);
-      }
+      const createChallengeCallable = httpsCallable<Record<string, unknown>, { challenge: { id: string } }>(
+        getFunctions(app, 'us-central1'),
+        'createChallengeWithCreatorMembership',
+      );
+      const callableResult = await createChallengeCallable(payload as Record<string, unknown>);
+      const challenge = callableResult.data.challenge;
 
       if (payload.donation?.enabled) {
         showToast('Challenge submitted for platform review before going active.', 'success');
       } else {
         showToast('Challenge launched.', 'success');
       }
+      // Fire-and-forget: increment usage count on the source template (if any)
+      if (templateId) challengeTemplateService.incrementUsageCount(templateId).catch(() => null);
+      if (wellnessTemplateId) wellnessTemplateService.incrementUsageCount(wellnessTemplateId).catch(() => null);
       navigate(challengeRoute(challengeType, challenge.id));
     } catch (error) {
       console.warn('Challenge launch failed:', error);
@@ -545,11 +613,43 @@ function CreateChallengeWizard() {
     }
   };
 
+  const stepLabels: string[] = [
+    'Type',
+    challengeType === 'collective' ? 'Group Goal' : challengeType === 'streak' ? 'Streak' : 'Configure',
+    'Activities',
+    'Review',
+  ];
+
+  function advanceStep() {
+    setStepError('');
+    if (wizardStep === 1) {
+      if (!name.trim()) { setStepError('Challenge name is required.'); return; }
+      if (!description.trim() || description.trim().length < 8) { setStepError('Description must be at least 8 characters.'); return; }
+      if (!selectedGroupId) { setStepError('Please select a group.'); return; }
+      setWizardStep(2);
+    } else if (wizardStep === 2) {
+      if (!startDate || !endDate) { setStepError('Set start and end dates.'); return; }
+      if (new Date(endDate) < new Date(startDate)) { setStepError('End date must be after start date.'); return; }
+      if (challengeType === 'collective' && (!groupCumulativeTarget || Number(groupCumulativeTarget) <= 0)) { setStepError('Set a group cumulative target for this collective challenge.'); return; }
+      if (challengeType === 'streak' && (!requiredConsecutiveDays || Number(requiredConsecutiveDays) <= 0)) { setStepError('Set the required consecutive days for this streak challenge.'); return; }
+      setWizardStep(3);
+    } else if (wizardStep === 3) {
+      if (!activities.some((a) => a.exerciseId || a.activityId)) { setStepError('Add at least one activity.'); return; }
+      setWizardStep(4);
+    }
+  }
+
+  function goBack() {
+    setStepError('');
+    if (wizardStep > 1) setWizardStep((prev) => (prev - 1) as 1 | 2 | 3 | 4);
+    else navigate(`/app/challenges${activeGroupId ? `?groupId=${activeGroupId}` : ''}`);
+  }
+
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="st-frame st-bottom-safe">
         <header className="flex items-center justify-between">
-          <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(`/app/challenges${activeGroupId ? `?groupId=${activeGroupId}` : ''}`)}>
+          <button className="h-10 w-10 flex items-center justify-center" onClick={goBack}>
             <ArrowLeft size={28} className="text-slate-900" />
           </button>
           <h1 className="st-page-title text-slate-900">New Challenge</h1>
@@ -571,538 +671,330 @@ function CreateChallengeWizard() {
           </div>
         )}
 
-        <div className="st-form-max mt-3 st-card border-dashed border-primary/40 p-4 text-center">
-          <div className="h-12 w-12 rounded-full bg-primary/10 text-primary mx-auto flex items-center justify-center">
-            <Camera size={24} />
-          </div>
-          <p className="text-[16px] leading-[22px] font-bold text-slate-900 mt-3">Upload Challenge Cover</p>
-          <p className="text-[13px] leading-[18px] text-slate-500 mt-1">Add a visual for your challenge</p>
-          {coverImageUrl && (
-            <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
-              <img src={coverImageUrl} alt="Challenge cover preview" className="h-28 w-full object-cover" />
-            </div>
-          )}
-          <input
-            ref={coverInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleCoverFileSelected}
-          />
-          <button
-            className="mt-4 h-11 rounded-xl bg-primary px-5 text-[14px] font-bold text-white disabled:opacity-60"
-            onClick={() => coverInputRef.current?.click()}
-            disabled={coverImageUploadState === 'uploading'}
-          >
-            {coverImageUploadState === 'uploading' ? 'Uploading image...' : 'Choose Image'}
-          </button>
-          <input
-            className="st-input mt-3"
-            value={coverImageUrl}
-            onChange={handleCoverUrlChange}
-            placeholder="Paste image URL"
-          />
-          {coverImageUrl.trim() && !isValidImageUrl(coverImageUrl) && !coverImageUrl.startsWith('data:image/') && (
-            <p className="mt-2 text-[12px] leading-[16px] text-amber-600">Image URL should start with http:// or https://</p>
-          )}
-          {isValidImageUrl(coverImageUrl) && !isLikelyDirectImageUrl(coverImageUrl) && (
-            <p className="mt-2 text-[12px] leading-[16px] text-amber-600">
-              This looks like a page/album link. Use a direct image URL so the cover can render correctly.
-            </p>
-          )}
-          {coverImageUrl.startsWith('data:image/') && !isPersistableImageSource(coverImageUrl) && (
-            <p className="mt-2 text-[12px] leading-[16px] text-amber-600">Selected image is too large. Use a smaller file or paste an image URL.</p>
-          )}
-        </div>
-
-        <p className="st-form-max mt-4 st-section-title text-primary">Info</p>
-        <div className="st-form-max mt-2.5 space-y-3.5">
-          <div>
-            <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Group</p>
-            <select
-              className="st-input mt-2 appearance-none"
-              value={selectedGroupId}
-              onChange={(event) => setSelectedGroupId(event.target.value)}
-            >
-              <option value="">Select group to post challenge</option>
-              {myGroups.map((group) => (
-                <option key={group.id} value={group.id}>{group.name}</option>
-              ))}
-            </select>
-            {myGroups.length === 0 && (
-              <p className="mt-2 text-[12px] leading-[16px] text-slate-500">Join a group first to launch this challenge.</p>
-            )}
-          </div>
-          <div>
-            <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Challenge Name</p>
-            <input className="st-input mt-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. 30 Day Shred" />
-          </div>
-          <div>
-            <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Challenge Description</p>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell everyone what this is about..."
-              className="w-full h-24 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[16px] leading-[22px] text-slate-700"
-            />
-          </div>
-        </div>
-
-        <p className="st-form-max mt-4 st-section-title text-primary">Challenge Type</p>
-        <div className="st-form-max mt-2.5 grid grid-cols-3 gap-2">
-          {typeOptions.map((option) => (
-            <button
-              key={option.id}
-              className={`h-11 rounded-full text-[12px] uppercase tracking-[0.1em] font-bold ${challengeType === option.id ? 'bg-primary text-white' : 'bg-white border border-slate-200 text-slate-700'}`}
-              onClick={() => setChallengeType(option.id)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
-        <p className="st-form-max mt-4 st-section-title text-primary">Timeline</p>
-        <div className="st-form-max mt-2.5 grid grid-cols-2 gap-3">
-          <div>
-            <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Start Date</p>
-            <div className="relative mt-2">
-              <input className="st-input pr-10" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              <Calendar size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            </div>
-          </div>
-          <div>
-            <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">End Date</p>
-            <div className="relative mt-2">
-              <input className="st-input pr-10" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              <Calendar size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            </div>
-          </div>
-        </div>
-        <div className="st-form-max mt-2.5">
-          <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2">
-            <p className="text-[13px] leading-[18px] font-semibold text-primary">
-              {challengeDurationDays
-                ? `Challenge Duration: ${challengeDurationDays} day${challengeDurationDays === 1 ? '' : 's'}`
-                : 'Select both dates to calculate challenge duration.'}
-            </p>
-          </div>
-        </div>
-
+        {/* Step progress indicator */}
         <div className="st-form-max mt-4">
-          <div className="st-card p-4">
-            <p className="st-section-title text-primary">Challenge Activities</p>
-            {isExercisesLoading && !isWellnessMode && (
-              <p className="mt-2 text-[12px] leading-[16px] text-slate-500">Loading exercise library...</p>
-            )}
-            {isExercisesError && !isWellnessMode && (
-              <p className="mt-2 text-[12px] leading-[16px] text-red-500">Could not load exercises. Please retry.</p>
-            )}
-            {!isExercisesLoading && !isExercisesError && exercises.length === 0 && !isWellnessMode && (
-              <p className="mt-2 text-[12px] leading-[16px] text-amber-600">No exercises available yet. Load catalog exercises first.</p>
-            )}
-            {isWellnessMode && isWellnessActivitiesLoading && (
-              <p className="mt-2 text-[12px] leading-[16px] text-slate-500">Loading wellness activity library...</p>
-            )}
-            {isWellnessMode && isWellnessActivitiesError && (
-              <p className="mt-2 text-[12px] leading-[16px] text-red-500">Could not load wellness activities. Please retry.</p>
-            )}
-            {isWellnessMode && !isWellnessActivitiesLoading && !isWellnessActivitiesError && wellnessActivities.length === 0 && (
-              <p className="mt-2 text-[12px] leading-[16px] text-amber-600">No wellness activities available yet. Add wellness activities in the admin library.</p>
-            )}
-
-          {activities.map((activity, index) => {
-            const normalizedQuery = normalizeSearchTerm(activity.query);
-            const filtered = exercises
-                .filter((exercise) => {
-                  const normalizedName = normalizeSearchTerm(exercise.name);
-                  return (
-                    normalizedName.includes(normalizedQuery)
-                    || normalizedQuery.includes(normalizedName)
-                  );
-                })
-                .slice(0, 5);
-              const showSuggestions = activeSearchRow === index;
-
-              return (
-                <div key={`activity-${index}`} className="mt-3 st-card p-3 border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[16px] leading-[20px] font-semibold text-slate-800">Activity {index + 1}</p>
-                    {activities.length > 1 && (
-                      <button className="text-[13px] font-bold text-red-500" onClick={() => removeActivity(index)}>
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  <label className="sr-only" htmlFor={`activity-search-${index}`}>Search activities</label>
-                  <div className="relative mt-2">
-                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id={`activity-search-${index}`}
-                      className="st-input pl-10"
-                      placeholder={isWellnessMode ? 'Search wellness activities' : 'Search activities (e.g. Pushups)'}
-                      value={activity.query}
-                      onFocus={() => {
-                        if (!isWellnessMode) setActiveSearchRow(index);
-                      }}
-                      onBlur={() => {
-                        if (!isWellnessMode) {
-                          window.setTimeout(() => setActiveSearchRow((current) => (current === index ? null : current)), 120);
-                        }
-                      }}
-                      onChange={(e) => {
-                        if (!isWellnessMode) setActiveSearchRow(index);
-                        updateActivity(index, {
-                          query: e.target.value,
-                          exerciseId: '',
-                          ...(isWellnessMode ? { activityId: '' } : {}),
-                        });
-                      }}
-                    />
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center"
-                      onClick={() => {
-                        if (isWellnessMode) {
-                          openWellnessActivityPicker(index);
-                          return;
-                        }
-                        openActivityPicker(index);
-                      }}
-                      aria-label={isWellnessMode ? 'Open wellness activity picker' : 'Open exercise picker'}
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-
-                  <button
-                    className="mt-2 text-[13px] leading-[18px] font-bold text-primary"
-                    onClick={() => {
-                      if (isWellnessMode) {
-                        openWellnessActivityPicker(index);
-                        return;
-                      }
-                      openActivityPicker(index);
-                    }}
-                  >
-                    {isWellnessMode ? 'Browse wellness activity library' : 'Browse exercise library'}
-                  </button>
-
-                  {showSuggestions && filtered.length > 0 && !isWellnessMode && (
-                    <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden">
-                      {filtered.map((exercise) => (
-                        <button
-                          key={`${index}-${exercise.id}`}
-                          className="w-full text-left px-3 py-2 border-b last:border-b-0 border-slate-100 text-[14px] leading-[18px] font-semibold text-slate-700"
-                          onMouseDown={(event) => event.preventDefault()}
-                          onPointerDown={(event) => event.preventDefault()}
-                          onClick={() => {
-                            updateActivity(index, { query: exercise.name, exerciseId: exercise.id, unit: exercise.metric.unit });
-                            setActiveSearchRow(null);
-                          }}
-                        >
-                          {exercise.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {showSuggestions && filtered.length === 0 && !isWellnessMode && (
-                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                      <p className="text-[12px] leading-[16px] text-slate-500">No matches. Try another activity name.</p>
-                    </div>
-                  )}
-
-                  {!!activity.exerciseId && !isWellnessMode && (
-                    <button
-                      className="mt-2 text-[13px] font-bold text-primary"
-                      onClick={() => navigate(`/app/exercises/${activity.exerciseId}`)}
-                    >
-                      View exercise detail
-                    </button>
-                  )}
-
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Target Value</p>
-                      <input
-                        className="st-input mt-2"
-                        type="number"
-                        min={0}
-                        value={activity.targetValue}
-                        onChange={(e) => updateActivity(index, { targetValue: e.target.value })}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Unit</p>
-                      {isWellnessMode ? (
-                        <input
-                          className="st-input mt-2"
-                          value={activity.unit}
-                          onChange={(e) => updateActivity(index, { unit: e.target.value })}
-                          placeholder="hours / ml / servings"
-                        />
-                      ) : (
-                        <select className="st-input mt-2 appearance-none" value={activity.unit} onChange={(e) => updateActivity(index, { unit: e.target.value })}>
-                          <option value="Reps">Reps</option>
-                          <option value="Seconds">Seconds</option>
-                          <option value="Minutes">Minutes</option>
-                          <option value="Km">Km</option>
-                          <option value="Kg">Kg</option>
-                        </select>
-                      )}
-                    </div>
-                  </div>
-                  {isWellnessMode && (
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Frequency</p>
-                        <select
-                          className="st-input mt-2 appearance-none"
-                          value={activity.frequency ?? 'daily'}
-                          onChange={(e) => updateActivity(index, { frequency: e.target.value as ActivityRow['frequency'] })}
-                        >
-                          <option value="daily">Daily</option>
-                          <option value="weekly">Weekly</option>
-                          <option value="3x-week">3x / week</option>
-                          <option value="custom">Custom</option>
-                        </select>
-                      </div>
-                      <div>
-                        <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Points</p>
-                        <input
-                          className="st-input mt-2"
-                          type="number"
-                          min={0}
-                          value={activity.pointsPerCompletion ?? 10}
-                          onChange={(e) => updateActivity(index, { pointsPerCompletion: Number(e.target.value || 0) })}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {isWellnessMode && (
-                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                      <p className="text-[12px] leading-[16px] text-slate-700 font-semibold">{activity.icon ?? '✨'} {activity.category ?? 'wellness'} • {activity.difficulty ?? 'beginner'}</p>
-                      {activity.description && (
-                        <p className="mt-1 text-[12px] leading-[16px] text-slate-500">{activity.description}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            <button className="mt-4 w-full h-12 rounded-2xl border border-dashed border-primary/40 text-[15px] leading-[20px] font-bold text-primary flex items-center justify-center gap-2" onClick={addActivity}>
-              <Plus size={16} /> Add Another Activity
-            </button>
+          <div className="flex gap-1.5">
+            {[1, 2, 3, 4].map((s) => (
+              <div key={s} className="flex-1">
+                <div className={`h-1.5 rounded-full transition-colors ${s <= wizardStep ? 'bg-primary' : 'bg-slate-200'}`} />
+                <p className={`mt-1.5 text-[9px] font-bold uppercase tracking-wide text-center ${s === wizardStep ? 'text-primary' : s < wizardStep ? 'text-slate-400' : 'text-slate-300'}`}>
+                  {stepLabels[s - 1]}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="st-form-max mt-4 st-card p-4">
-          <div className="flex items-center justify-between">
-            <p className="st-section-title text-primary">Fitness + Cause</p>
-            <button className={`st-toggle ${donationEnabled ? 'on' : ''}`} onClick={() => setDonationEnabled((prev) => !prev)}>
-              <span />
-            </button>
-          </div>
-
-          <p className="text-[12px] leading-[16px] text-slate-500 mt-1">Mark this challenge as a fundraising challenge.</p>
-
-          {donationEnabled && (
-            <div className="mt-3 space-y-3">
-              <div>
-                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Cause Name</p>
-                <input className="st-input mt-2" value={causeName} onChange={(e) => setCauseName(e.target.value)} placeholder="e.g. Community Health Fund" />
-              </div>
-              <div>
-                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Cause Description</p>
-                <textarea
-                  className="w-full h-20 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[16px] leading-[22px] text-slate-700"
-                  value={causeDescription}
-                  onChange={(e) => setCauseDescription(e.target.value)}
-                  placeholder="Describe the cause and expected impact"
-                />
-              </div>
-              <div>
-                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Target Contribution (KES, optional)</p>
-                <input className="st-input mt-2" type="number" min={0} value={targetDonation} onChange={(e) => setTargetDonation(e.target.value)} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Contribution Start</p>
-                  <input className="st-input mt-2" type="date" value={contributionStartDate} onChange={(e) => setContributionStartDate(e.target.value)} />
-                </div>
-                <div>
-                  <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Contribution End</p>
-                  <input className="st-input mt-2" type="date" value={contributionEndDate} onChange={(e) => setContributionEndDate(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Donate Here: Mobile Number</p>
-                <input className="st-input mt-2" value={contributionPhone} onChange={(e) => setContributionPhone(e.target.value)} placeholder="e.g. +2547XXXXXXXX" />
-              </div>
-              <div>
-                <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Donate Here: Card Link (optional)</p>
-                <input className="st-input mt-2" value={contributionCardUrl} onChange={(e) => setContributionCardUrl(e.target.value)} placeholder="https://..." />
-              </div>
-              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-[16px] text-amber-800">
-                Tiizi does not hold or manage funds. Contributions are coordinated by the group. Donation-enabled challenges require platform review before going active.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          className="st-form-max st-btn-primary mt-6 disabled:opacity-60"
-          disabled={createChallenge.isPending || isLaunching || !activeGroupId}
-          onClick={handleLaunch}
-        >
-          {(createChallenge.isPending || isLaunching)
-            ? 'Launching...'
-            : !activeGroupId
-              ? 'Select Group to Launch'
-              : 'Launch Challenge'}
-        </button>
-      </div>
-
-      {pickerRowIndex !== null && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50">
-          <div className="relative mx-auto h-full w-full max-w-[375px]">
-            <div className="absolute inset-x-0 bottom-0 rounded-t-[20px] bg-[#f7f9fc] pb-6 pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.2)]">
-              <div className="mx-auto h-1.5 w-16 rounded-full bg-slate-300" />
-              <div className="st-form-max mt-3 flex items-center justify-between">
-                <div>
-                  <p className="st-section-title">Exercise Library</p>
-                  <p className="st-body">Pick an exercise to add to this activity</p>
-                </div>
-                <button className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center" onClick={closeActivityPicker}>
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="st-form-max mt-3 relative">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  className="st-input pl-10"
-                  value={pickerSearch}
-                  onChange={(event) => setPickerSearch(event.target.value)}
-                  placeholder="Search exercises..."
-                />
-              </div>
-
-              <div className="st-form-max mt-3 flex gap-2 overflow-x-auto pb-1">
-                {activityTierOptions.map((tier) => (
-                  <button
-                    key={tier}
-                    className={`h-9 min-w-[72px] px-3 rounded-full text-[12px] leading-[16px] font-semibold whitespace-nowrap ${pickerTier === tier ? 'bg-primary text-white' : 'bg-white border border-slate-200 text-slate-700'}`}
-                    onClick={() => setPickerTier(tier)}
-                  >
-                    {tier}
-                  </button>
+        {wizardStep === 1 && (<>
+        <ChallengeBasicInfoSection
+          className="st-form-max mt-3"
+          coverImageUrl={coverImageUrl}
+          coverImageUploadState={coverImageUploadState}
+          onCoverFileChange={handleCoverFileSelected}
+          onCoverUrlChange={setCoverImageUrl}
+          afterCoverSlot={
+            <div>
+              <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Group</p>
+              <select
+                className="st-input mt-2 appearance-none"
+                value={selectedGroupId}
+                onChange={(event) => setSelectedGroupId(event.target.value)}
+              >
+                <option value="">Select group to post challenge</option>
+                {myGroups.map((group) => (
+                  <option key={group.id} value={group.id}>{group.name}</option>
                 ))}
-              </div>
+              </select>
+              {myGroups.length === 0 && (
+                <p className="mt-2 text-[12px] leading-[16px] text-slate-500">Join a group first to launch this challenge.</p>
+              )}
+            </div>
+          }
+          name={name}
+          onNameChange={setName}
+          description={description}
+          onDescriptionChange={setDescription}
+          isWellnessMode={isWellnessMode}
+          onModeChange={(mode) => setChallengeCategory(mode)}
+          challengeType={challengeType}
+          onTypeChange={handleTypeChange}
+        />
+        </>)}
 
-              <div className="st-form-max mt-3 max-h-[46vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white">
-                {pickerExercises.length === 0 ? (
-                  <div className="px-4 py-6 text-center">
-                    <p className="text-[16px] leading-[22px] font-semibold text-slate-800">No exercises found</p>
-                    <p className="mt-1 text-[13px] leading-[18px] text-slate-500">Try a different search term or category.</p>
-                  </div>
-                ) : (
-                  pickerExercises.map((exercise) => (
-                    <button
-                      key={`picker-${exercise.id}`}
-                      className="w-full border-b last:border-b-0 border-slate-100 px-4 py-3 flex items-center justify-between gap-3 text-left"
-                      onClick={() => pickExerciseForActivity(exercise.id, exercise.name, exercise.metric.unit)}
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[16px] leading-[22px] font-semibold text-slate-900 truncate">{exercise.name}</p>
-                        <p className="text-[12px] leading-[16px] text-slate-500 truncate">
-                          {exercise.tier_1} • {exercise.tier_2} • {exercise.metric.unit}
-                        </p>
-                      </div>
-                      <span className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0">
-                        <Plus size={16} />
-                      </span>
-                    </button>
-                  ))
+        {wizardStep === 2 && (<>
+        {name.trim() && (
+          <div className="st-form-max mt-4 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 flex items-center gap-2 flex-wrap">
+            <p className="text-[13px] font-black text-slate-900 flex-1 min-w-0 truncate">{name.trim()}</p>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold flex-shrink-0 ${challengeType === 'collective' ? 'bg-blue-100 text-blue-700' : challengeType === 'competitive' ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-orange-700'}`}>
+              {challengeType === 'collective' ? '👥 Collective' : challengeType === 'competitive' ? '🏆 Competitive' : '🔥 Streak'}
+            </span>
+          </div>
+        )}
+        <ChallengeEngineSettingsSection
+          className="st-form-max"
+          challengeType={challengeType}
+          groupCumulativeTarget={groupCumulativeTarget}
+          onGroupCumulativeTargetChange={setGroupCumulativeTarget}
+          autoCompleteOnGroupTarget={autoCompleteOnGroupTarget}
+          onAutoCompleteOnGroupTargetChange={setAutoCompleteOnGroupTarget}
+          requiredConsecutiveDays={requiredConsecutiveDays}
+          onRequiredConsecutiveDaysChange={setRequiredConsecutiveDays}
+          streakResetOnMiss={streakResetOnMiss}
+          onStreakResetOnMissChange={setStreakResetOnMiss}
+        />
+
+        <ChallengeTimelineSection
+          className="st-form-max"
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          durationDays={challengeDurationDays}
+        />
+        </>)}
+
+        {wizardStep === 3 && (<>
+        {name.trim() && (
+          <div className="st-form-max mt-4 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 flex items-center gap-2 flex-wrap">
+            <p className="text-[13px] font-black text-slate-900 flex-1 min-w-0 truncate">{name.trim()}</p>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${challengeType === 'collective' ? 'bg-blue-100 text-blue-700' : challengeType === 'competitive' ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-orange-700'}`}>
+                {challengeType === 'collective' ? '👥 Collective' : challengeType === 'competitive' ? '🏆 Competitive' : '🔥 Streak'}
+              </span>
+              {challengeDurationDays != null && <span className="text-[10px] text-slate-500">{challengeDurationDays}d</span>}
+            </div>
+          </div>
+        )}
+        <ChallengeActivitySection
+          className="st-form-max mt-4"
+          isWellnessMode={isWellnessMode}
+          challengeType={challengeType}
+          activities={activities}
+          onUpdateActivity={updateActivity}
+          onAddActivity={addActivity}
+          onRemoveActivity={removeActivity}
+          exercises={exercises}
+          isExercisesLoading={isExercisesLoading}
+          isExercisesError={isExercisesError}
+          wellnessActivities={wellnessActivities}
+          isWellnessActivitiesLoading={isWellnessActivitiesLoading}
+          isWellnessActivitiesError={isWellnessActivitiesError}
+          fitnessPicker={pickerRowIndex !== null}
+          fitnessPickerIndex={pickerRowIndex}
+          fitnessPickerSearch={pickerSearch}
+          onFitnessPickerSearchChange={setPickerSearch}
+          fitnessPickerExercises={pickerExercises}
+          fitnessPickerTierOptions={activityTierOptions}
+          fitnessPickerTier={pickerTier}
+          onFitnessPickerTierChange={setPickerTier}
+          onOpenFitnessPicker={openActivityPicker}
+          onCloseFitnessPicker={closeActivityPicker}
+          onPickFitnessExercise={(exercise) => pickExerciseForActivity(exercise.id, exercise.name, exercise.metric.unit)}
+          wellnessPickerOpen={wellnessPickerOpen}
+          wellnessPickerIndex={pickerRowIndex}
+          wellnessPickerSearch={wellnessSearch}
+          onWellnessPickerSearchChange={setWellnessSearch}
+          wellnessPickerCategoryFilter={wellnessCategoryFilter}
+          onWellnessPickerCategoryFilterChange={setWellnessCategoryFilter}
+          isWellnessPickerLoading={isWellnessActivitiesLoading}
+          onOpenWellnessPicker={openWellnessActivityPicker}
+          onCloseWellnessPicker={closeWellnessActivityPicker}
+          onPickWellnessActivity={pickWellnessActivityForRow}
+          onNavigateToExercise={(exerciseId) => navigate(`/app/exercises/${exerciseId}`)}
+        />
+
+        <ChallengeDonationSection
+          className="st-form-max mt-4"
+          donationEnabled={donationEnabled}
+          onDonationEnabledChange={setDonationEnabled}
+          causeName={causeName}
+          onCauseNameChange={setCauseName}
+          causeDescription={causeDescription}
+          onCauseDescriptionChange={setCauseDescription}
+          targetAmountKes={targetDonation}
+          onTargetAmountKesChange={setTargetDonation}
+          contributionStartDate={contributionStartDate}
+          onContributionStartDateChange={setContributionStartDate}
+          contributionEndDate={contributionEndDate}
+          onContributionEndDateChange={setContributionEndDate}
+          contributionPhoneNumber={contributionPhone}
+          onContributionPhoneNumberChange={setContributionPhone}
+          contributionCardUrl={contributionCardUrl}
+          onContributionCardUrlChange={setContributionCardUrl}
+        />
+        </>)}
+
+        {wizardStep === 4 && (<>
+        {name.trim() && challengeType && (
+          <div className="st-form-max mt-6 space-y-3">
+            {/* Header */}
+            <div className="st-card border-primary/30 bg-primary/5 p-4">
+              <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-primary">Challenge Review</p>
+              <p className="text-[17px] leading-[22px] font-black text-slate-900 mt-1">{name.trim()}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className={`flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-bold ${
+                  challengeType === 'collective' ? 'bg-blue-100 text-blue-700'
+                  : challengeType === 'competitive' ? 'bg-amber-100 text-amber-700'
+                  : 'bg-orange-100 text-orange-700'
+                }`}>
+                  {challengeType === 'collective' && '👥'}
+                  {challengeType === 'competitive' && '🏆'}
+                  {challengeType === 'streak' && '🔥'}
+                  {' '}{challengeType.charAt(0).toUpperCase() + challengeType.slice(1)}
+                </span>
+                {challengeDurationDays != null && challengeDurationDays > 0 && (
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[12px] font-bold text-slate-600">{challengeDurationDays} days</span>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {wellnessPickerOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/55">
-          <div className="mx-auto h-full w-full max-w-mobile bg-[#f7f9fc] pb-6">
-            <div className="st-form-max pt-4 flex items-center justify-between">
-              <div>
-                <p className="st-section-title">Wellness Activity Library</p>
-                <p className="st-body">Select activities and customize targets</p>
-              </div>
-              <button
-                className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center"
-                onClick={closeWellnessActivityPicker}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="st-form-max mt-3 relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                className="st-input pl-10"
-                value={wellnessSearch}
-                onChange={(event) => setWellnessSearch(event.target.value)}
-                placeholder="Search wellness activities..."
-              />
-            </div>
-
-            <div className="st-form-max mt-3 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-              {(['all', 'fasting', 'hydration', 'sleep', 'mindfulness', 'nutrition', 'habits', 'stress', 'social'] as const).map((category) => (
-                <button
-                  key={category}
-                  className={`h-9 rounded-full px-3 text-[12px] leading-[16px] font-semibold uppercase whitespace-nowrap ${wellnessCategoryFilter === category ? 'bg-primary text-white' : 'bg-white border border-slate-200 text-slate-700'}`}
-                  onClick={() => setWellnessCategoryFilter(category)}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-
-            <div className="st-form-max mt-3 max-h-[66vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white">
-              {wellnessActivities.length === 0 ? (
-                <div className="px-4 py-6 text-center">
-                  <p className="text-[16px] leading-[22px] font-semibold text-slate-800">No wellness activities found</p>
-                  <p className="mt-1 text-[13px] leading-[18px] text-slate-500">Try another category or search term.</p>
+            {/* How it works */}
+            <div className="st-card p-4">
+              <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-slate-500 mb-3">How it works</p>
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-slate-500">How you complete it</p>
+                  <p className="text-[12px] text-slate-800 text-right max-w-[180px]">
+                    {challengeType === 'collective' && 'Group reaches shared cumulative target'}
+                    {challengeType === 'competitive' && 'Each member hits per-activity targets'}
+                    {challengeType === 'streak' && 'Log the required activity every day'}
+                  </p>
                 </div>
-              ) : (
-                wellnessActivities.map((activity) => (
-                  <button
-                    key={`wellness-${activity.id}`}
-                    className="w-full border-b last:border-b-0 border-slate-100 px-4 py-3 text-left"
-                    onClick={() => pickWellnessActivityForRow(activity)}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[16px] leading-[22px] font-semibold text-slate-900 truncate">{activity.icon} {activity.name}</p>
-                        <p className="text-[12px] leading-[16px] text-slate-500 truncate">
-                          {activity.category} • {activity.difficulty} • {activity.defaultTargetValue} {activity.defaultMetricUnit}
-                        </p>
-                        <p className="mt-1 text-[12px] leading-[16px] text-slate-600 line-clamp-2">{activity.description}</p>
-                      </div>
-                      <span className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0">
-                        <Plus size={16} />
-                      </span>
-                    </div>
-                  </button>
-                ))
-              )}
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-slate-500">Who wins</p>
+                  <p className="text-[12px] text-slate-800 text-right max-w-[180px]">
+                    {challengeType === 'collective' && 'Team succeeds together'}
+                    {challengeType === 'competitive' && 'Highest completion % wins'}
+                    {challengeType === 'streak' && 'Longest streak / first to complete required streak'}
+                  </p>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-slate-500">Rankings</p>
+                  <p className="text-[12px] text-slate-800 text-right max-w-[180px]">
+                    {challengeType === 'collective' && 'Ranked by contribution'}
+                    {challengeType === 'competitive' && 'Ranked by completion %'}
+                    {challengeType === 'streak' && 'Ranked by current streak'}
+                  </p>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[12px] font-semibold text-slate-500">Scoring</p>
+                  <p className="text-[12px] text-slate-800 text-right max-w-[180px]">
+                    {challengeType === 'collective' && 'Points per contribution toward team goal'}
+                    {challengeType === 'competitive' && 'Points scale with proximity to target'}
+                    {challengeType === 'streak' && 'Points per consistent day logged'}
+                  </p>
+                </div>
+              </div>
             </div>
+
+            {/* Type-specific settings */}
+            {challengeType === 'collective' && groupCumulativeTarget && Number(groupCumulativeTarget) > 0 && (
+              <div className="st-card p-4">
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-slate-500 mb-3">Collective Settings</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[12px] font-semibold text-slate-500">Group target</p>
+                    <p className="text-[12px] font-black text-slate-900">
+                      {Number(groupCumulativeTarget).toLocaleString()} {activities[0]?.unit}{activities[0]?.query ? ` of ${activities[0].query}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[12px] font-semibold text-slate-500">Auto-complete on target</p>
+                    <p className="text-[12px] font-black text-slate-900">{autoCompleteOnGroupTarget ? 'Yes' : 'No'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {challengeType === 'streak' && requiredConsecutiveDays && Number(requiredConsecutiveDays) > 0 && (
+              <div className="st-card p-4">
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-slate-500 mb-3">Streak Settings</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[12px] font-semibold text-slate-500">Required streak</p>
+                    <p className="text-[12px] font-black text-slate-900">{requiredConsecutiveDays} days in a row</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[12px] font-semibold text-slate-500">On missed day</p>
+                    <p className="text-[12px] font-black text-slate-900">{streakResetOnMiss ? 'Streak resets to 0' : 'Streak pauses'}</p>
+                  </div>
+                  {activities.filter((a) => a.exerciseId || a.activityId).map((a, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <p className="text-[12px] font-semibold text-slate-500 truncate max-w-[160px]">{a.query || a.exerciseId || `Activity ${i + 1}`}</p>
+                      <p className="text-[12px] font-black text-slate-900">{a.targetValue || '—'} {a.unit} / day</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {challengeType === 'competitive' && activities.some((a) => a.targetValue && Number(a.targetValue) > 0) && (
+              <div className="st-card p-4">
+                <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-slate-500 mb-3">Competitive Targets</p>
+                <div className="space-y-1.5">
+                  {activities.filter((a) => a.exerciseId).map((a, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <p className="text-[12px] text-slate-600 truncate max-w-[200px]">{a.query || a.exerciseId}</p>
+                      <p className="text-[12px] font-bold text-slate-900">{a.targetValue || '—'} {a.unit}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Launch readiness checklist */}
+        <div className="st-form-max mt-4 st-card p-4">
+          <p className="text-[12px] leading-[16px] tracking-[0.08em] uppercase font-bold text-slate-500 mb-3">Ready to launch?</p>
+          <div className="space-y-2">
+            {([
+              { ok: !!name.trim(), label: 'Challenge name set' },
+              { ok: !!selectedGroupId, label: 'Group selected' },
+              { ok: !!startDate && !!endDate && endDate >= startDate, label: 'Dates configured' },
+              { ok: activities.some((a) => a.exerciseId || a.activityId), label: 'At least one activity' },
+              ...(challengeType === 'collective' ? [{ ok: !!groupCumulativeTarget && Number(groupCumulativeTarget) > 0, label: 'Group target set' }] : []),
+              ...(challengeType === 'streak' ? [{ ok: !!requiredConsecutiveDays && Number(requiredConsecutiveDays) > 0, label: 'Streak days set' }] : []),
+            ] as { ok: boolean; label: string }[]).map(({ ok, label }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${ok ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}>
+                  {ok ? '✓' : '○'}
+                </span>
+                <p className={`text-[13px] leading-[18px] ${ok ? 'text-slate-800' : 'text-slate-400'}`}>{label}</p>
+              </div>
+            ))}
           </div>
         </div>
-      )}
+        </>)}
+
+        {stepError && (
+          <p className="st-form-max mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] leading-[18px] text-red-700 font-semibold">{stepError}</p>
+        )}
+
+        {wizardStep < 4 ? (
+          <button
+            type="button"
+            className="st-form-max st-btn-primary mt-6"
+            onClick={advanceStep}
+          >
+            Next: {stepLabels[wizardStep]}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="st-form-max st-btn-primary mt-6 disabled:opacity-60"
+            disabled={createChallenge.isPending || isLaunching || !activeGroupId}
+            onClick={handleLaunch}
+          >
+            {(createChallenge.isPending || isLaunching)
+              ? 'Launching...'
+              : !activeGroupId
+                ? 'Select Group to Launch'
+                : 'Launch Challenge'}
+          </button>
+        )}
+      </div>
+
     </Screen>
   );
 }
