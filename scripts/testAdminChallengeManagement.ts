@@ -443,6 +443,16 @@ assert(
 );
 
 assert(
+  'ChallengeTemplatesScreen engine filter buttons have visible text labels (not just emoji)',
+  challengeTemplatesScreen.includes('Collective') && challengeTemplatesScreen.includes('Competitive') && challengeTemplatesScreen.includes('Streak'),
+);
+
+assert(
+  'ChallengeTemplatesScreen engine filter covers all three types with labels',
+  challengeTemplatesScreen.includes('👥 Collective') && challengeTemplatesScreen.includes('🏆 Competitive') && challengeTemplatesScreen.includes('🔥 Streak'),
+);
+
+assert(
   'Deleted challenges excluded by effectiveStatus or raw status check',
   activeChallengesScreen.includes("effectiveStatus === 'deleted'") || activeChallengesScreen.includes("status === 'deleted'"),
 );

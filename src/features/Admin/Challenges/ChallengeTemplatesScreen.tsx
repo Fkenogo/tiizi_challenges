@@ -756,8 +756,8 @@ function ChallengeTemplatesScreen() {
 
         {/* Engine filter + sort */}
         <div className="mt-2 flex flex-wrap gap-2 items-center">
-          <div className="flex gap-1.5">
-            {([['all', 'All'], ['collective', '👥'], ['competitive', '🏆'], ['streak', '🔥']] as const).map(([v, label]) => (
+          <div className="flex gap-1.5 flex-wrap">
+            {([['all', 'All Types'], ['collective', '👥 Collective'], ['competitive', '🏆 Competitive'], ['streak', '🔥 Streak']] as const).map(([v, label]) => (
               <button
                 key={v}
                 className={`h-8 rounded-full px-3 text-[11px] font-bold ${engineFilter === v ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'}`}
