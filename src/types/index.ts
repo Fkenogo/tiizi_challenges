@@ -67,6 +67,10 @@ export interface Group {
   allowMemberChallenges?: boolean;
   inviteCode?: string;
   activeChallenges?: number;
+  /** Operational availability. 'active' = fully open; 'inactive' = deactivated by admin. */
+  status?: 'active' | 'inactive' | 'suspended' | 'deleted';
+  /** Admin moderation record — audit/display only. Use `status` for gating logic. */
+  moderationStatus?: 'active' | 'flagged' | 'deactivated';
 }
 
 export interface Challenge {
@@ -94,9 +98,10 @@ export interface Challenge {
     benefits?: string[];
     guidelines?: string[];
     warnings?: string[];
-    frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
+    frequency?: 'daily' | 'weekly' | '2x-week' | '3x-week' | '5x-week' | 'custom';
     pointsPerCompletion?: number;
     dailyFrequency?: number;
+    targetType?: 'daily' | 'cumulative';
   }>;
   donation?: {
     enabled: boolean;
@@ -120,11 +125,20 @@ export interface Challenge {
   visibility?: 'public' | 'private';
   groupVisibility?: 'public' | 'private';
   durationDays?: number;
+  // v2 engine fields
+  engineVersion?: 'v2';
+  // Collective v2
+  groupCumulativeTarget?: number;
+  autoCompleteOnGroupTarget?: boolean;
+  groupCurrentTotal?: number;
+  // Streak v2
+  requiredConsecutiveDays?: number;
+  streakResetOnMiss?: boolean;
 }
 
 export interface WellnessTemplate {
   id: string;
-  category: 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social';
+  category: 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social' | 'movement' | 'health-monitoring';
   name: string;
   description: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert';
@@ -149,7 +163,8 @@ export interface WellnessTemplate {
     warnings?: string[];
     metricUnit: string;
     targetValue: number;
-    frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
+    targetType?: 'daily' | 'cumulative';
+    frequency?: 'daily' | 'weekly' | '2x-week' | '3x-week' | '5x-week' | 'custom';
     dailyFrequency?: number;
     pointsPerCompletion?: number;
   }>;
@@ -157,6 +172,21 @@ export interface WellnessTemplate {
   guidelines?: string[];
   warnings?: string[];
   isPublished?: boolean;
+  // Engine-specific fields (v2 engines) — must match SuggestedChallengeTemplate
+  groupCumulativeTarget?: number;
+  autoCompleteOnGroupTarget?: boolean;
+  requiredConsecutiveDays?: number;
+  streakResetOnMiss?: boolean;
+  // Lifecycle fields
+  status?: 'draft' | 'published' | 'archived' | 'deleted';
+  version?: number;
+  usageCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  archivedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface WellnessLog {
@@ -200,6 +230,12 @@ export interface ChallengeMember {
   lastActivityAt?: unknown;
   completedAt?: unknown;
   completionRate: number;
+  currentStreak?: number;
+  longestStreak?: number;
+  lastLogDate?: string;
+  cumulativeLoggedValue?: number;
+  cumulativeValues?: Record<string, number>;
+  engineVersion?: 'v2';
 }
 
 export interface SupportDonation {

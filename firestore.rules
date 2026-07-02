@@ -4,6 +4,18 @@ service cloud.firestore {
     return request.auth != null;
   }
 
+  function configuredChallengeActivityCountFrom(challengeData) {
+    let activityCount = challengeData.get('activities', []).size();
+    let durationDays = challengeData.get('durationDays', 1);
+    let effectiveDays = durationDays < 1 ? 1 : durationDays;
+    return activityCount * effectiveDays;
+  }
+
+  function isValidChallengeMemberCreate(challengeData) {
+    return request.resource.data.totalActivities == 0
+      || request.resource.data.totalActivities == configuredChallengeActivityCountFrom(challengeData);
+  }
+
   function hasUserRole(role) {
     return isAuthenticated()
       && exists(/databases/(default)/documents/users/$(request.auth.uid))
@@ -110,6 +122,36 @@ service cloud.firestore {
       && !(get(/databases/(default)/documents/groups/$(groupId)).data.isPrivate == true);
   }
 
+  // Returns true when the group is active or has no status field (legacy default-open).
+  // Any new collection that links to a group by groupId MUST use this helper on create.
+  function isActiveGroup(groupId) {
+    let g = get(/databases/(default)/documents/groups/$(groupId));
+    return !g.data.keys().hasAll(['status']) || g.data.status != 'inactive';
+  }
+
+  // Returns true when the authenticated user holds an active challengeMembers doc
+  // for the given challenge. Membership ID format: ${challengeId}_${userId}.
+  function isActiveChallengeMember(challengeId) {
+    let membershipId = challengeId + '_' + request.auth.uid;
+    return isAuthenticated()
+      && exists(/databases/(default)/documents/challengeMembers/$(membershipId))
+      && get(/databases/(default)/documents/challengeMembers/$(membershipId)).data.status in ['active', 'joined'];
+  }
+
+  // Returns true when the write is a collective-progress-only update:
+  // only groupCurrentTotal (and optionally status='completed' + completedAt) may change.
+  // Requires the challenge to be an active v2 collective and the writer to be a member.
+  function isActiveCollectiveProgressUpdate(challengeId) {
+    return resource.data.engineVersion == 'v2'
+      && resource.data.challengeType == 'collective'
+      && resource.data.status == 'active'
+      && isActiveChallengeMember(challengeId)
+      && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['groupCurrentTotal', 'status', 'completedAt'])
+      && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+          || request.resource.data.status == 'completed');
+  }
+
   match /databases/{database}/documents {
     match /catalogExercises/{exerciseId} {
       allow read: if true;
@@ -133,7 +175,8 @@ service cloud.firestore {
     match /groupMembers/{membershipId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid;
+                    && request.resource.data.userId == request.auth.uid
+                    && isActiveGroup(request.resource.data.groupId);
       allow update, delete: if isAuthenticated()
                             && (
                               resource.data.userId == request.auth.uid
@@ -156,20 +199,50 @@ service cloud.firestore {
                         && request.resource.data.moderationStatus == 'pending'
                       )
                     );
-      allow update, delete: if isAuthenticated() && (
+      // Creator can update non-donation-activation writes, provided moderationStatus is unchanged.
+      // Old rule used !(request.resource.data.moderationStatus == 'approved'), which evaluated
+      // the post-write merged doc and blocked all creator updates to approved challenges (BUG-G6).
+      // Fix: compare against the existing value — moderationStatus may not change via this path.
+      allow update: if isAuthenticated() && (
         (
           resource.data.createdBy == request.auth.uid
           && !(resource.data.donation.enabled == true && request.resource.data.status == 'active')
-          && !(request.resource.data.moderationStatus == 'approved')
+          && request.resource.data.moderationStatus == resource.data.moderationStatus
+        )
+        || isActiveCollectiveProgressUpdate(challengeId)
+        || canModerateChallenges()
+      );
+      // Creator can delete their own challenges unless approved or active-donation.
+      allow delete: if isAuthenticated() && (
+        (
+          resource.data.createdBy == request.auth.uid
+          && !(resource.data.donation.enabled == true && resource.data.status == 'active')
+          && resource.data.moderationStatus != 'approved'
         )
         || canModerateChallenges()
       );
     }
 
     match /challengeMembers/{membershipId} {
-      allow read: if isAuthenticated();
+      // H2 fix: removed vacuous || isAuthenticated() tail clause.
+      // Allows: own membership | same-group member | public-group visitor | moderator.
+      // resource == null / resource.data == null covers the self-heal probe (getDoc on
+      // a non-existent doc must return exists()===false, not a permission error).
+      allow get: if isAuthenticated() && (
+        resource == null
+        || resource.data == null
+        || resource.data.userId == request.auth.uid
+        || isGroupMember(resource.data.groupId)
+        || isPublicGroup(resource.data.groupId)
+        || canModerateChallenges()
+      );
+      // H3: flat-collection design prevents WHERE-clause inspection in rules.
+      // All app queries include a challengeId, userId, or groupId constraint —
+      // broad enumeration is rejected at the application layer, not rules layer.
+      allow list: if isAuthenticated();
       allow create: if isAuthenticated()
                     && request.resource.data.userId == request.auth.uid
+                    && isActiveGroup(request.resource.data.groupId)
                     && (
                       isGroupMember(request.resource.data.groupId)
                       || isPublicGroup(request.resource.data.groupId)
@@ -189,7 +262,11 @@ service cloud.firestore {
     match /workouts/{workoutId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid;
+                    && request.resource.data.userId == request.auth.uid
+                    && (
+                      !('groupId' in request.resource.data)
+                      || isActiveGroup(request.resource.data.groupId)
+                    );
       allow update, delete: if isAuthenticated()
                             && resource.data.userId == request.auth.uid;
     }
@@ -215,10 +292,23 @@ service cloud.firestore {
     }
 
     match /wellnessLogs/{logId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.scoringVersion == 'v2'
+                        ? request.resource.data.points >= 0
+                        : request.resource.data.points >= 0)
+                    && (
+                      !('groupId' in request.resource.data)
+                      || isActiveGroup(request.resource.data.groupId)
+                    );
+      // Own logs always readable. Group members can read all logs within their group so that
+      // the group feed (getGroupFeed) can query wellnessLogs where groupId == groupId. Without
+      // this clause the collection query is PERMISSION_DENIED (Firestore evaluates list queries
+      // against the rule body — a userId-only constraint does not cover other members' docs).
       allow read: if isAuthenticated()
                   && (
                     resource.data.userId == request.auth.uid
+                    || isGroupMember(resource.data.groupId)
                     || canAccessAdmin()
                   );
       allow update, delete: if isAuthenticated()

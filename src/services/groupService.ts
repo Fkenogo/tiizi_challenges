@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Group } from '../types';
+import { isGroupActive } from '../utils/groupLifecycle';
 
 type CreateGroupInput = {
   name: string;
@@ -68,6 +69,7 @@ class GroupService {
         const data = d.data() as Omit<Group, 'id'>;
         return { id: d.id, ...data };
       })
+      .filter((g) => isGroupActive(g))
       .map((group) => ({ ...group, memberCount: group.memberCount ?? 0 }))
       .sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0));
   }
@@ -157,6 +159,9 @@ class GroupService {
   async joinGroup(groupId: string, userId: string): Promise<GroupJoinResult | null> {
     const group = await this.getGroupById(groupId);
     if (!group) return null;
+    if (!isGroupActive(group)) {
+      throw new Error('This group is no longer active and cannot be joined.');
+    }
 
     const memberRef = doc(db, this.membershipsCollection, `${groupId}_${userId}`);
     const memberSnap = await getDoc(memberRef);

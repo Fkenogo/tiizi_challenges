@@ -11,6 +11,7 @@ import { setActiveGroupId } from '../../hooks/useActiveGroup';
 import { useGroup, useGroupMemberCount, useGroupMembershipStatus, useJoinGroup, useLeaveGroup, useReportGroup } from '../../hooks/useGroups';
 import { useChallengeWorkouts } from '../../hooks/useWorkouts';
 import { db } from '../../lib/firebase';
+import { isChallengeOngoing, isChallengeUpcoming } from '../../utils/challengeLifecycle';
 import { GroupBottomNav } from './components/GroupBottomNav';
 import { GroupDetailTabs } from './components/GroupDetailTabs';
 
@@ -25,6 +26,7 @@ function GroupDetailScreen() {
   const { data: group, isLoading } = useGroup(id);
   const { data: memberCount = 0 } = useGroupMemberCount(id);
   const { data: membershipStatus = 'none' } = useGroupMembershipStatus(id);
+  const isDeactivated = group?.status === 'inactive';
   const joinGroup = useJoinGroup();
   const leaveGroup = useLeaveGroup();
   const reportGroup = useReportGroup();
@@ -39,8 +41,15 @@ function GroupDetailScreen() {
     [challenges, id],
   );
 
-  const activeChallenge = groupChallenges.find((challenge) => challenge.status === 'active') || groupChallenges[0];
-  const upcomingChallenge = groupChallenges.find((challenge) => challenge.id !== activeChallenge?.id);
+  const activeChallenges = useMemo(
+    () => groupChallenges.filter((c) => isChallengeOngoing(c)),
+    [groupChallenges],
+  );
+  const upcomingChallenges = useMemo(
+    () => groupChallenges.filter((c) => isChallengeUpcoming(c)),
+    [groupChallenges],
+  );
+  const activeChallenge = activeChallenges[0] ?? null;
   const { data: activeChallengeWorkouts = [] } = useChallengeWorkouts(activeChallenge?.id);
   const { data: activeChallengeWellnessLogs = [] } = useQuery({
     queryKey: ['challenge-wellness-logs', activeChallenge?.id],
@@ -179,6 +188,15 @@ function GroupDetailScreen() {
           </div>
         </header>
 
+        {isDeactivated && (
+          <div className="mx-4 mt-4 rounded-2xl bg-slate-100 border border-slate-300 px-4 py-3">
+            <p className="text-[14px] font-bold text-slate-800">This community is no longer active.</p>
+            <p className="text-[12px] text-slate-600 mt-0.5">
+              It has been deactivated by Tiizi administrators. Challenges are now read-only and no new activity can be recorded.
+            </p>
+          </div>
+        )}
+
         <section className="px-4 pt-4 pb-5 bg-white border-b border-slate-200">
           <div className="flex items-start gap-4">
             <img src={group?.coverImageUrl || fallbackCover} alt={group?.name} className="h-24 w-24 rounded-2xl object-cover" />
@@ -188,7 +206,7 @@ function GroupDetailScreen() {
                 <ShieldCheck size={16} className="text-blue-500" />
               </div>
               <p className="mt-1 text-[14px] leading-[20px] font-medium text-[#61758f]">{memberCount.toLocaleString()} Members • {(group?.isPrivate ? 'Private' : 'Official')} Group</p>
-              {membershipStatus === 'joined' && (
+              {!isDeactivated && membershipStatus === 'joined' && (
                 <div className="mt-3 flex gap-2">
                   <button className="h-10 px-5 rounded-xl bg-[#e9eff8] text-slate-900 text-[15px] font-semibold">✓ Joined</button>
                   <button
@@ -210,10 +228,10 @@ function GroupDetailScreen() {
                   </button>
                 </div>
               )}
-              {membershipStatus === 'pending' && (
+              {!isDeactivated && membershipStatus === 'pending' && (
                 <button className="mt-3 h-10 px-5 rounded-xl bg-[#fff1e7] text-primary text-[15px] font-semibold">Pending Approval</button>
               )}
-              {membershipStatus === 'none' && (
+              {!isDeactivated && membershipStatus === 'none' && (
                 <button className="mt-3 h-10 px-5 rounded-xl bg-primary text-white text-[15px] font-semibold disabled:opacity-60" onClick={handleJoin} disabled={joinGroup.isPending}>
                   {joinGroup.isPending ? 'Joining...' : 'Join Group'}
                 </button>
@@ -225,98 +243,123 @@ function GroupDetailScreen() {
         <GroupDetailTabs groupId={id} active="challenges" />
 
         <main className="px-4 pt-6 space-y-7">
+          {/* ── Active Challenges ── */}
           <section>
-            <h3 className="text-[16px] leading-[21px] font-black text-slate-900">Active Challenges</h3>
-            <article className="mt-3 rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              {membershipStatus !== 'joined' ? (
-                <>
-                  {activeChallenge ? (
-                    <>
-                      <p className="text-[18px] leading-[24px] font-black text-slate-900">{activeChallenge.name}</p>
-                      <p className="mt-1 text-[14px] leading-[20px] text-[#61758f]">{activeChallenge.challengeType || 'Group challenge'} • {activeChallenge.status}</p>
-                      <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">You can preview public group challenges. Join the group to participate.</p>
-                      <div className="mt-4 flex gap-2">
-                        <button className="h-10 px-4 rounded-xl border border-slate-300 text-slate-800 text-[14px] font-semibold" onClick={() => navigate(`/app/challenge/${activeChallenge.id}?groupId=${id}`)}>
-                          View Challenge
-                        </button>
-                        <button className="h-10 px-4 rounded-xl bg-primary text-white text-[14px] font-semibold disabled:opacity-60" onClick={handleJoin} disabled={joinGroup.isPending}>
-                          {joinGroup.isPending ? 'Joining...' : 'Join Group'}
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-[18px] leading-[24px] font-black text-slate-900">Join this group to access challenges</p>
-                      <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">All challenges and workout logs are available only to approved group members.</p>
-                    </>
-                  )}
-                </>
-              ) : activeChallenge ? (
-                <>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[17px] leading-[22px] font-black text-slate-900">{activeChallenge.name}</p>
-                      <p className="text-[14px] leading-[20px] text-[#61758f]">{activeChallenge.challengeType || 'Group challenge'}</p>
-                    </div>
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-[12px] leading-[14px] font-bold text-emerald-700 uppercase">Enrolled</span>
-                  </div>
-
-                  <div className="mt-6 flex items-end justify-between">
-                    <p className="text-[16px] leading-[20px] font-semibold text-[#3c4f69]">Current Progress</p>
-                    <p className="text-[16px] leading-[20px] font-black text-primary">{activeProgress.progressLabel}</p>
-                  </div>
-                  <div className="mt-2 h-3 rounded-full bg-slate-200">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${activeProgress.percent}%` }} />
-                  </div>
-
-                  <div className="mt-6 flex items-center justify-between gap-3">
-                    <p className="text-[14px] leading-[18px] text-[#61758f] flex items-center gap-2">
-                      <CalendarClock size={16} />
-                      {activeProgress.daysRemaining > 0
-                        ? `${activeProgress.daysRemaining} day${activeProgress.daysRemaining === 1 ? '' : 's'} remaining`
-                        : 'Final day'}
-                    </p>
-                    <button className="h-11 px-6 rounded-xl bg-primary text-white text-[15px] font-bold" onClick={() => navigate(`/app/challenge/${activeChallenge.id}?groupId=${id}`)}>Continue</button>
-                  </div>
-                  <p className="mt-3 text-[13px] leading-[18px] text-[#61758f]">
-                    {activeProgress.myLogs} personal log{activeProgress.myLogs === 1 ? '' : 's'} in this challenge
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-[18px] leading-[24px] font-black text-slate-900">No active challenges</p>
-                  <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">Create your first group challenge to start activity.</p>
-                  <button className="mt-4 h-11 px-6 rounded-xl bg-primary text-white text-[15px] font-bold" onClick={() => navigate(`/app/create-challenge?groupId=${id}`)}>Create Group Challenge</button>
-                </>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[16px] leading-[21px] font-black text-slate-900">Ongoing Challenges</h3>
+              {activeChallenges.length > 0 && (
+                <button
+                  className="text-[13px] font-semibold text-primary"
+                  onClick={() => navigate(`/app/challenges/browse?groupId=${id}`)}
+                >
+                  View All
+                </button>
               )}
-            </article>
+            </div>
+
+            {membershipStatus !== 'joined' && activeChallenges.length === 0 && (
+              <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <p className="text-[18px] leading-[24px] font-black text-slate-900">Join this group to access challenges</p>
+                <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">All challenges and workout logs are available only to approved group members.</p>
+              </article>
+            )}
+
+            {membershipStatus !== 'joined' && activeChallenges.length > 0 && (
+              <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <p className="text-[18px] leading-[24px] font-black text-slate-900">{activeChallenges[0].name}</p>
+                <p className="mt-1 text-[14px] leading-[20px] text-[#61758f]">{activeChallenges[0].challengeType || 'Group challenge'} • {activeChallenges.length} active</p>
+                <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">Join the group to participate in {activeChallenges.length > 1 ? 'these challenges' : 'this challenge'}.</p>
+                <div className="mt-4 flex gap-2">
+                  <button className="h-10 px-4 rounded-xl border border-slate-300 text-slate-800 text-[14px] font-semibold" onClick={() => navigate(`/app/challenge/${activeChallenges[0].id}?groupId=${id}`)}>
+                    Preview
+                  </button>
+                  <button className="h-10 px-4 rounded-xl bg-primary text-white text-[14px] font-semibold disabled:opacity-60" onClick={handleJoin} disabled={joinGroup.isPending}>
+                    {joinGroup.isPending ? 'Joining...' : 'Join Group'}
+                  </button>
+                </div>
+              </article>
+            )}
+
+            {membershipStatus === 'joined' && activeChallenges.length === 0 && (
+              <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <p className="text-[18px] leading-[24px] font-black text-slate-900">No ongoing challenges</p>
+                <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">Create a challenge to get started.</p>
+                <button className="mt-4 h-11 px-6 rounded-xl bg-primary text-white text-[15px] font-bold" onClick={() => navigate(`/app/create-challenge?groupId=${id}`)}>Create Challenge</button>
+              </article>
+            )}
+
+            {membershipStatus === 'joined' && activeChallenges.length > 0 && (
+              <div className="-mx-4 overflow-x-auto px-4">
+                <div className="flex gap-3 pb-1" style={{ width: 'max-content' }}>
+                  {activeChallenges.slice(0, 3).map((c, idx) => {
+                    const isFirst = idx === 0;
+                    const daysLeft = Math.max(0, Math.ceil((Date.parse(c.endDate) - Date.now()) / (1000 * 60 * 60 * 24)));
+                    return (
+                      <button
+                        key={c.id}
+                        className="w-[240px] shrink-0 rounded-[20px] border border-slate-200 bg-white p-4 text-left shadow-[0_1px_3px_rgba(15,23,42,0.07)]"
+                        onClick={() => navigate(`/app/challenge/${c.id}?groupId=${id}`)}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[14px] leading-[19px] font-black text-slate-900 line-clamp-2">{c.name}</p>
+                          <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase leading-[16px]">Active</span>
+                        </div>
+                        <p className="mt-1 text-[11px] leading-[15px] text-[#61758f] capitalize">{c.challengeType || 'challenge'}</p>
+                        {isFirst && (
+                          <>
+                            <div className="mt-3 h-2 rounded-full bg-slate-100">
+                              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${activeProgress.percent}%` }} />
+                            </div>
+                            <p className="mt-1.5 text-[11px] text-[#61758f]">{activeProgress.progressLabel}</p>
+                          </>
+                        )}
+                        <div className="mt-3 flex items-center justify-between">
+                          <p className="text-[11px] text-[#61758f] flex items-center gap-1">
+                            <CalendarClock size={12} />
+                            {daysLeft > 0 ? `${daysLeft}d left` : 'Final day'}
+                          </p>
+                          <span className="text-[12px] font-bold text-primary">{isFirst ? 'Continue' : 'View'} →</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </section>
 
+          {/* ── Upcoming Challenges ── */}
           <section>
             <h3 className="text-[16px] leading-[21px] font-black text-slate-900">Upcoming Challenges</h3>
-            <article className="mt-3 rounded-[24px] border border-dashed border-[#c9d7e9] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              {upcomingChallenge ? (
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <img src={upcomingChallenge.coverImageUrl || group?.coverImageUrl || fallbackCover} alt={upcomingChallenge.name} className="h-16 w-16 rounded-2xl object-cover" />
-                    <div>
-                      <p className="text-[17px] leading-[22px] font-black text-slate-900">{upcomingChallenge.name}</p>
-                      <p className="mt-1 text-[14px] leading-[20px] text-[#61758f]">
-                        Starts in{' '}
-                        {Math.max(
-                          0,
-                          Math.ceil((Date.parse(upcomingChallenge.startDate) - Date.now()) / (1000 * 60 * 60 * 24)),
-                        )}{' '}
-                        day(s)
-                      </p>
-                    </div>
-                  </div>
-                  <button className="h-10 px-4 rounded-xl border border-[#f7b790] text-primary text-[14px] font-semibold">Remind Me</button>
-                </div>
+            <div className="mt-3 space-y-3">
+              {upcomingChallenges.length === 0 ? (
+                <article className="rounded-[24px] border border-dashed border-[#c9d7e9] bg-white p-5">
+                  <p className="text-[14px] leading-[20px] text-[#61758f]">Scheduled challenges will appear here when this group has upcoming challenges.</p>
+                </article>
               ) : (
-                <p className="text-[14px] leading-[20px] text-[#61758f]">No upcoming challenges set yet.</p>
+                upcomingChallenges.map((c) => (
+                  <article key={c.id} className="rounded-[24px] border border-dashed border-[#c9d7e9] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <img src={c.coverImageUrl || group?.coverImageUrl || fallbackCover} alt={c.name} className="h-16 w-16 rounded-2xl object-cover" />
+                        <div>
+                          <p className="text-[17px] leading-[22px] font-black text-slate-900">{c.name}</p>
+                          <p className="mt-1 text-[14px] leading-[20px] text-[#61758f]">
+                            Starts in {Math.max(0, Math.ceil((Date.parse(c.startDate) - Date.now()) / (1000 * 60 * 60 * 24)))} day(s)
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        className="h-10 px-4 rounded-xl border border-[#f7b790] text-primary text-[14px] font-semibold"
+                        onClick={() => navigate(`/app/challenge/${c.id}?groupId=${id}`)}
+                      >
+                        View
+                      </button>
+                    </div>
+                  </article>
+                ))
               )}
-            </article>
+            </div>
           </section>
         </main>
       </div>
