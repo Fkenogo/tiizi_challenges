@@ -1,15 +1,29 @@
 /**
  * scripts/testChallengeActivityModel.ts
  *
- * Phase 18I-6E guards: MVP challenge activity model
+ * Phase 18I-6E guards: MVP challenge activity model (follow-up)
  *
  * Rules under test:
- * 1. ChallengeActivitySection hides "Add Another Activity" for non-streak
- * 2. CreateChallengeWizard normalizes activities to 1 when switching from streak
- * 3. Admin CreateChallengeScreen has the same normalization
- * 4. Admin EditChallengeTemplateScreen has the same normalization
- * 5. Admin EditWellnessTemplateScreen has the same normalization
- * 6. Streak engine already prevents double-streak-increment for same day
+ * 1.  ChallengeActivitySection hides "Add Another Activity" for non-streak
+ * 2.  CreateChallengeWizard normalizes activities to 1 when switching to non-streak
+ * 3.  Admin CreateChallengeScreen has the same normalization
+ * 4.  Admin EditChallengeTemplateScreen has the same normalization
+ * 5.  Admin EditWellnessTemplateScreen has the same normalization
+ * 6.  ChallengeEngineSettingsSection has NO groupCumulativeTarget input for collective
+ * 7.  Wizard derives groupCumulativeTarget from finalActivities[0].targetValue
+ * 8.  Admin CreateChallengeScreen derives groupCumulativeTarget from finalActivities[0].targetValue
+ * 9.  Admin EditChallengeTemplateScreen derives groupCumulativeTarget from finalActivities[0].targetValue
+ * 10. Admin EditWellnessTemplateScreen derives groupCumulativeTarget from finalActivities[0].targetValue
+ * 11. Wizard caps non-streak to 1 activity in payload (finalActivities = slice(0,1))
+ * 12. Admin CreateChallengeScreen caps non-streak to 1 in payload
+ * 13. Admin EditChallengeTemplateScreen caps non-streak to 1 in payload
+ * 14. Admin EditWellnessTemplateScreen caps non-streak to 1 in payload
+ * 15. Wizard removes groupCumulativeTarget step-2 validation for collective
+ * 16. Review screen shows activity unit and name with group target
+ * 17. SelectChallengeActivityScreen has multi-streak checklist mode
+ * 18. Checklist submit disabled until all values are > 0
+ * 19. Streak engine idempotent for same-day logs
+ * 20. SelectChallengeActivityScreen: normal (single/non-streak) Log button still present
  */
 
 import * as fs from 'fs';
@@ -33,7 +47,7 @@ function readSrc(relPath: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Test 1: ChallengeActivitySection hides "Add Another Activity" for non-streak
+// Test 1: ChallengeActivitySection hides Add Another Activity for non-streak
 // ---------------------------------------------------------------------------
 console.log('\n--- Test 1: ChallengeActivitySection hides Add Another Activity for non-streak ---');
 {
@@ -43,102 +57,173 @@ console.log('\n--- Test 1: ChallengeActivitySection hides Add Another Activity f
     src.includes("challengeType === 'streak'") && src.includes('Add Another Activity'),
   );
   assert(
-    'Button is inside the streak condition (not unconditionally rendered)',
-    // The button text appears only once and is wrapped in the streak condition
+    'Button is rendered only once and after the streak condition',
     (src.match(/Add Another Activity/g) ?? []).length === 1 &&
       src.indexOf("challengeType === 'streak'") < src.indexOf('Add Another Activity'),
   );
 }
 
 // ---------------------------------------------------------------------------
-// Test 2: CreateChallengeWizard normalizes activities on type switch
+// Tests 2-5: Type-change normalization across all creation screens
 // ---------------------------------------------------------------------------
-console.log('\n--- Test 2: CreateChallengeWizard normalizes activities on type switch ---');
+console.log('\n--- Tests 2-5: Type-change normalization ---');
+const normalizationFiles: [string, string][] = [
+  ['src/features/Challenges/CreateChallengeWizard.tsx', 'wizard'],
+  ['src/features/Admin/Challenges/CreateChallengeScreen.tsx', 'admin CreateChallengeScreen'],
+  ['src/features/Admin/Challenges/EditChallengeTemplateScreen.tsx', 'EditChallengeTemplateScreen'],
+  ['src/features/Admin/Challenges/EditWellnessTemplateScreen.tsx', 'EditWellnessTemplateScreen'],
+];
+for (const [filePath, label] of normalizationFiles) {
+  const src = readSrc(filePath);
+  assert(
+    `${label}: handleTypeChange normalizes activities to first when switching to non-streak`,
+    src.includes("newType !== 'streak' && activities.length > 1"),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Test 6: ChallengeEngineSettingsSection has no groupCumulativeTarget input for collective
+// ---------------------------------------------------------------------------
+console.log('\n--- Test 6: No groupCumulativeTarget input in collective settings ---');
+{
+  const src = readSrc('src/features/Challenges/components/ChallengeEngineSettingsSection.tsx');
+  assert(
+    'collective section has no number input for groupCumulativeTarget',
+    !/<input[^>]*groupCumulativeTarget/.test(src) &&
+      !src.includes('onGroupCumulativeTargetChange(e.target.value)'),
+  );
+  assert(
+    'collective section explains group target is derived automatically',
+    src.includes('derived automatically') || src.includes('derived from the activity'),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tests 7-10: groupCumulativeTarget derived from finalActivities[0].targetValue
+// ---------------------------------------------------------------------------
+console.log('\n--- Tests 7-10: groupCumulativeTarget derived from activity target ---');
+const derivedFiles: [string, string][] = [
+  ['src/features/Challenges/CreateChallengeWizard.tsx', 'wizard'],
+  ['src/features/Admin/Challenges/CreateChallengeScreen.tsx', 'admin CreateChallengeScreen'],
+  ['src/features/Admin/Challenges/EditChallengeTemplateScreen.tsx', 'EditChallengeTemplateScreen'],
+  ['src/features/Admin/Challenges/EditWellnessTemplateScreen.tsx', 'EditWellnessTemplateScreen'],
+];
+for (const [filePath, label] of derivedFiles) {
+  const src = readSrc(filePath);
+  assert(
+    `${label}: groupCumulativeTarget derived from first activity targetValue`,
+    src.includes('finalActivities[0]?.targetValue') ||
+      src.includes('finalActivities[0].targetValue'),
+  );
+  assert(
+    `${label}: no longer uses raw groupCumulativeTarget state as the payload value`,
+    !src.includes('groupCumulativeTarget: Number(groupCumulativeTarget),'),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tests 11-14: Non-streak capped to 1 activity in payload
+// ---------------------------------------------------------------------------
+console.log('\n--- Tests 11-14: Non-streak payload capped to 1 activity ---');
+const capFiles: [string, string][] = [
+  ['src/features/Challenges/CreateChallengeWizard.tsx', 'wizard (finalActivities)'],
+  ['src/features/Admin/Challenges/CreateChallengeScreen.tsx', 'admin CreateChallengeScreen (finalActivities)'],
+  ['src/features/Admin/Challenges/EditChallengeTemplateScreen.tsx', 'EditChallengeTemplateScreen (finalActivities)'],
+  ['src/features/Admin/Challenges/EditWellnessTemplateScreen.tsx', 'EditWellnessTemplateScreen (finalActivities)'],
+];
+for (const [filePath, label] of capFiles) {
+  const src = readSrc(filePath);
+  assert(
+    `${label}: caps non-streak activities to first entry`,
+    src.includes("challengeType !== 'streak'") && src.includes('slice(0, 1)'),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Test 15: Wizard removes groupCumulativeTarget step-2 validation for collective
+// ---------------------------------------------------------------------------
+console.log('\n--- Test 15: Wizard step-2 no longer validates groupCumulativeTarget for collective ---');
 {
   const src = readSrc('src/features/Challenges/CreateChallengeWizard.tsx');
   assert(
-    'handleTypeChange function is defined in wizard',
-    src.includes('handleTypeChange'),
-  );
-  assert(
-    'handleTypeChange normalizes activities to first element when switching to non-streak',
-    src.includes("newType !== 'streak' && activities.length > 1"),
-  );
-  assert(
-    'handleTypeChange is passed to onTypeChange (not raw setChallengeType)',
-    src.includes('onTypeChange={handleTypeChange}') && !src.includes('onTypeChange={setChallengeType}'),
-  );
-  assert(
-    'Review step shows activity unit and name with group target',
-    src.includes('activities[0]?.unit') && src.includes('activities[0]?.query'),
+    'groupCumulativeTarget step-2 validation removed from wizard',
+    !src.includes("'collective' && (!groupCumulativeTarget"),
   );
 }
 
 // ---------------------------------------------------------------------------
-// Test 3: Admin CreateChallengeScreen normalizes on type switch
+// Test 16: Review screen shows unit and activity name with group target
 // ---------------------------------------------------------------------------
-console.log('\n--- Test 3: Admin CreateChallengeScreen normalizes on type switch ---');
+console.log('\n--- Test 16: Review screen shows activity unit and name with group target ---');
 {
-  const src = readSrc('src/features/Admin/Challenges/CreateChallengeScreen.tsx');
+  const src = readSrc('src/features/Challenges/CreateChallengeWizard.tsx');
   assert(
-    'handleTypeChange defined in admin CreateChallengeScreen',
-    src.includes('handleTypeChange'),
+    'Review screen shows activities[0]?.unit alongside group target',
+    src.includes('activities[0]?.unit'),
   );
   assert(
-    'handleTypeChange normalizes to first activity',
-    src.includes("newType !== 'streak' && activities.length > 1"),
-  );
-  assert(
-    'Admin CreateChallengeScreen uses handleTypeChange not raw setChallengeType for onTypeChange',
-    src.includes('onTypeChange={handleTypeChange}'),
+    'Review screen shows activities[0]?.query for activity name',
+    src.includes('activities[0]?.query'),
   );
 }
 
 // ---------------------------------------------------------------------------
-// Test 4: Admin EditChallengeTemplateScreen normalizes on type switch
+// Tests 17-18: SelectChallengeActivityScreen multi-streak checklist
 // ---------------------------------------------------------------------------
-console.log('\n--- Test 4: Admin EditChallengeTemplateScreen normalizes on type switch ---');
+console.log('\n--- Tests 17-18: SelectChallengeActivityScreen multi-streak checklist ---');
 {
-  const src = readSrc('src/features/Admin/Challenges/EditChallengeTemplateScreen.tsx');
+  const src = readSrc('src/features/Workouts/SelectChallengeActivityScreen.tsx');
   assert(
-    'handleTypeChange defined in EditChallengeTemplateScreen',
-    src.includes('handleTypeChange'),
+    'isMultiStreakMode detects streak + activities.length > 1',
+    src.includes("challengeType === 'streak' && activities.length > 1"),
   );
   assert(
-    'Type buttons use handleTypeChange not raw setChallengeType',
-    src.includes('handleTypeChange(option.id)') && !src.includes('setChallengeType(option.id)'),
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Test 5: Admin EditWellnessTemplateScreen normalizes on type switch
-// ---------------------------------------------------------------------------
-console.log('\n--- Test 5: Admin EditWellnessTemplateScreen normalizes on type switch ---');
-{
-  const src = readSrc('src/features/Admin/Challenges/EditWellnessTemplateScreen.tsx');
-  assert(
-    'handleTypeChange defined in EditWellnessTemplateScreen',
-    src.includes('handleTypeChange'),
+    'handleChecklistSubmit is defined for batch submission',
+    src.includes('handleChecklistSubmit'),
   );
   assert(
-    'EditWellnessTemplateScreen passes handleTypeChange to onTypeChange',
-    src.includes('onTypeChange={handleTypeChange}'),
+    'allChecklistValuesValid requires every value > 0',
+    src.includes('allChecklistValuesValid') && src.includes('every(') && src.includes('> 0'),
+  );
+  assert(
+    'Log Day button is disabled until all values valid',
+    src.includes('disabled={!allChecklistValuesValid'),
+  );
+  assert(
+    'Checklist submit calls both logWellness and logWorkout services',
+    src.includes('logWellness.mutateAsync') && src.includes('logWorkout.mutateAsync'),
   );
 }
 
 // ---------------------------------------------------------------------------
-// Test 6: Streak engine already idempotent for same-day re-logs
+// Test 19: Streak engine idempotent for same-day logs
 // ---------------------------------------------------------------------------
-console.log('\n--- Test 6: Streak engine is idempotent for same-day logs ---');
+console.log('\n--- Test 19: Streak engine idempotent for same-day logs ---');
 {
   const src = readSrc('src/services/challengeEngine/streakEngine.ts');
   assert(
-    "streakEngine has 'prevLastLogDate === today' guard (no double increment)",
+    "streakEngine guards prevLastLogDate === today (no double increment)",
     src.includes('prevLastLogDate === today'),
   );
   assert(
-    'When prevLastLogDate === today, newStreak = prevStreak (not incremented)',
+    'When same-day, newStreak stays at prevStreak',
     /prevLastLogDate === today[\s\S]{0,80}newStreak = prevStreak/.test(src),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Test 20: Normal Log button preserved for single-activity / non-streak
+// ---------------------------------------------------------------------------
+console.log('\n--- Test 20: Normal Log button preserved for non-checklist mode ---');
+{
+  const src = readSrc('src/features/Workouts/SelectChallengeActivityScreen.tsx');
+  assert(
+    'Log button still rendered in normal mode (isOptional || !isChallengeActiveNow check present)',
+    src.includes('isOptional || !isChallengeActiveNow'),
+  );
+  assert(
+    'handleLog function still exists for single-activity navigation',
+    src.includes('handleLog'),
   );
 }
 

@@ -517,6 +517,8 @@ function CreateChallengeWizard() {
       showToast('Add at least one valid activity.', 'error');
       return;
     }
+    // Collective and Competitive support exactly one activity; cap to first if stale state slipped through.
+    const finalActivities = challengeType !== 'streak' ? validActivities.slice(0, 1) : validActivities;
     try {
       const payload = {
         category: (isWellnessMode ? 'wellness' : challengeCategory) as Challenge['category'],
@@ -529,11 +531,11 @@ function CreateChallengeWizard() {
         endDate,
         coverImageUrl: persistableCover,
         exerciseIds: Array.from(
-          new Set(validActivities
+          new Set(finalActivities
             .map((activity) => activity.exerciseId)
             .filter((exerciseId): exerciseId is string => !!exerciseId && exerciseById.has(exerciseId))),
         ),
-        activities: validActivities.map((activity) => ({
+        activities: finalActivities.map((activity) => ({
           exerciseId: activity.exerciseId || undefined,
           activityId: activity.activityId || undefined,
           activityType: activity.activityType || undefined,
@@ -575,7 +577,7 @@ function CreateChallengeWizard() {
         engineVersion: 'v2' as const,
         ...(challengeType === 'collective'
           ? {
-              groupCumulativeTarget: Number(groupCumulativeTarget),
+              groupCumulativeTarget: Number(finalActivities[0]?.targetValue ?? 0),
               autoCompleteOnGroupTarget,
             }
           : {}),
@@ -615,7 +617,7 @@ function CreateChallengeWizard() {
 
   const stepLabels: string[] = [
     'Type',
-    challengeType === 'collective' ? 'Group Goal' : challengeType === 'streak' ? 'Streak' : 'Configure',
+    challengeType === 'collective' ? 'Settings' : challengeType === 'streak' ? 'Streak' : 'Configure',
     'Activities',
     'Review',
   ];
@@ -630,7 +632,6 @@ function CreateChallengeWizard() {
     } else if (wizardStep === 2) {
       if (!startDate || !endDate) { setStepError('Set start and end dates.'); return; }
       if (new Date(endDate) < new Date(startDate)) { setStepError('End date must be after start date.'); return; }
-      if (challengeType === 'collective' && (!groupCumulativeTarget || Number(groupCumulativeTarget) <= 0)) { setStepError('Set a group cumulative target for this collective challenge.'); return; }
       if (challengeType === 'streak' && (!requiredConsecutiveDays || Number(requiredConsecutiveDays) <= 0)) { setStepError('Set the required consecutive days for this streak challenge.'); return; }
       setWizardStep(3);
     } else if (wizardStep === 3) {

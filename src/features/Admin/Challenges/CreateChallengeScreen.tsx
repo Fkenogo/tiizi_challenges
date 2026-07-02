@@ -342,13 +342,16 @@ function CreateChallengeScreen() {
     const normalizedCover = coverImageUrl.trim();
     const persistableCover = isPersistableImageSource(normalizedCover) ? normalizedCover : undefined;
 
+    // Collective and Competitive support exactly one activity; cap to first.
+    const finalActivities = challengeType !== 'streak' ? resolvedActivities.slice(0, 1) : resolvedActivities;
+
     try {
       if (templateMode === 'wellness') {
         setIsSavingWellnessTemplate(true);
-        const primaryCategory = (resolvedActivities[0]?.category as 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social' | undefined) ?? 'habits';
-        const mergedBenefits = Array.from(new Set(resolvedActivities.flatMap((activity) => activity.benefits ?? [])));
-        const mergedGuidelines = Array.from(new Set(resolvedActivities.flatMap((activity) => activity.guidelines ?? [])));
-        const mergedWarnings = Array.from(new Set(resolvedActivities.flatMap((activity) => activity.warnings ?? [])));
+        const primaryCategory = (finalActivities[0]?.category as 'fasting' | 'hydration' | 'sleep' | 'mindfulness' | 'nutrition' | 'habits' | 'stress' | 'social' | undefined) ?? 'habits';
+        const mergedBenefits = Array.from(new Set(finalActivities.flatMap((activity) => activity.benefits ?? [])));
+        const mergedGuidelines = Array.from(new Set(finalActivities.flatMap((activity) => activity.guidelines ?? [])));
+        const mergedWarnings = Array.from(new Set(finalActivities.flatMap((activity) => activity.warnings ?? [])));
         await wellnessTemplateService.createTemplate({
           category: primaryCategory,
           name: name.trim(),
@@ -359,7 +362,7 @@ function CreateChallengeScreen() {
           coverImage: persistableCover,
           icon: '✨',
           color: '#FF6B00',
-          activities: resolvedActivities.map((activity, index) => ({
+          activities: finalActivities.map((activity, index) => ({
             activityId: activity.activityId ?? `wellness-${index + 1}`,
             order: index + 1,
             activityType: activity.activityType ?? 'habit',
@@ -383,8 +386,8 @@ function CreateChallengeScreen() {
           warnings: mergedWarnings,
           isPublished: publish,
           // Engine-specific fields — same as fitness templates
-          ...(challengeType === 'collective' && Number(groupCumulativeTarget) > 0 ? {
-            groupCumulativeTarget: Number(groupCumulativeTarget),
+          ...(challengeType === 'collective' ? {
+            groupCumulativeTarget: Number(finalActivities[0]?.targetValue ?? 0),
             autoCompleteOnGroupTarget,
           } : {}),
           ...(challengeType === 'streak' && Number(requiredConsecutiveDays) > 0 ? {
@@ -405,15 +408,15 @@ function CreateChallengeScreen() {
           durationDays: challengeDurationDays ?? DURATION_FALLBACK_DAYS,
           difficultyLevel: 'beginner',
           coverImageUrl: persistableCover,
-          ...(challengeType === 'collective' && Number(groupCumulativeTarget) > 0 ? {
-            groupCumulativeTarget: Number(groupCumulativeTarget),
+          ...(challengeType === 'collective' ? {
+            groupCumulativeTarget: Number(finalActivities[0]?.targetValue ?? 0),
             autoCompleteOnGroupTarget,
           } : {}),
           ...(challengeType === 'streak' && Number(requiredConsecutiveDays) > 0 ? {
             requiredConsecutiveDays: Number(requiredConsecutiveDays),
             streakResetOnMiss,
           } : {}),
-          activities: resolvedActivities,
+          activities: finalActivities,
           donation: donationPayload,
           isPublished: publish,
         });

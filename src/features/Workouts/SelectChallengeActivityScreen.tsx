@@ -1,9 +1,28 @@
-import { ArrowLeft, Circle, Clock3, Dumbbell } from 'lucide-react';
-import { useMemo } from 'react';
+import { ArrowLeft, CheckCircle2, Circle, Clock3, Dumbbell, Flame, Info, Trophy, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
-import { useChallenge } from '../../hooks/useChallenges';
+import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
+import { useChallenge, useChallengeMembership } from '../../hooks/useChallenges';
 import { useExercises } from '../../hooks/useExercises';
+import { useLogWellnessActivity, useLogWorkout } from '../../hooks/useWorkouts';
+import { buildActivitySuccessPath, parseLoggedActivityIndexes, resolveWellnessActivityType } from '../../services/challengeActivityFlow';
+import { computeActivityScore, type ChallengeType } from '../../services/scoringConfig';
+import { resolveChallengeProgress } from '../Challenges/challengeProgressResolver';
+
+function resolveActivityKey(activity: {
+  activityId?: string;
+  exerciseId?: string;
+  exerciseName?: string;
+}): string {
+  return activity.activityId ?? activity.exerciseId ?? activity.exerciseName ?? '';
+}
+
+function todayDateString(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function SelectChallengeActivityScreen() {
   const navigate = useNavigate();
@@ -11,7 +30,18 @@ function SelectChallengeActivityScreen() {
   const challengeId = params.get('challengeId') ?? undefined;
   const groupId = params.get('groupId') ?? undefined;
   const { data: challenge } = useChallenge(challengeId);
+  const { data: membership } = useChallengeMembership(challengeId);
   const { data: exercises = [] } = useExercises();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const logWorkout = useLogWorkout();
+  const logWellness = useLogWellnessActivity();
+  const [checklistValues, setChecklistValues] = useState<Record<number, number>>({});
+  const [isChecklistSubmitting, setIsChecklistSubmitting] = useState(false);
+
+  const engineVersion = challenge?.engineVersion;
+  const challengeType = challenge?.challengeType ?? 'collective';
+  const isV2 = engineVersion === 'v2';
 
   const activities = useMemo(() => {
     if (challenge?.activities && challenge.activities.length > 0) return challenge.activities;
@@ -30,7 +60,6 @@ function SelectChallengeActivityScreen() {
   }, [challenge?.activities, challenge?.exerciseIds, exercises]);
 
   const displayName = challenge?.name || 'Challenge';
-  const challengeType = challenge?.challengeType ?? 'collective';
   const challengeStartsAt = challenge?.startDate ? new Date(challenge.startDate) : null;
   const challengeEndsAt = challenge?.endDate ? new Date(challenge.endDate) : null;
   const now = new Date();
@@ -40,6 +69,129 @@ function SelectChallengeActivityScreen() {
   const backPath = challengeId
     ? `/app/challenges/${challengeType}?challengeId=${challengeId}${groupId ? `&groupId=${groupId}` : ''}`
     : '/app/challenges';
+
+  const loggedActivityIndexes = parseLoggedActivityIndexes(params.get('loggedActivityIndexes'));
+  const allLogged = activities.length > 0 && loggedActivityIndexes.length >= activities.length;
+
+  // Multi-activity streak mode: show inline checklist instead of sequential per-activity navigation.
+  const isMultiStreakMode = challengeType === 'streak' && activities.length > 1;
+  const allChecklistValuesValid = isMultiStreakMode && activities.every((_, idx) => (checklistValues[idx] ?? 0) > 0);
+
+  const handleChecklistSubmit = async () => {
+    if (!user?.uid || !challengeId || !groupId) {
+      showToast('Missing challenge context.', 'error');
+      return;
+    }
+    const now = new Date();
+    const startAt = challenge?.startDate ? new Date(challenge.startDate) : null;
+    const endAt = challenge?.endDate ? new Date(challenge.endDate) : null;
+    if (startAt && now < startAt) { showToast(`Challenge starts on ${startAt.toLocaleDateString()}.`, 'error'); return; }
+    if (endAt && now > endAt) { showToast('Challenge has ended.', 'error'); return; }
+
+    setIsChecklistSubmitting(true);
+    try {
+      for (let i = 0; i < activities.length; i++) {
+        const activity = activities[i];
+        const value = checklistValues[i] ?? 0;
+        const match = exercises.find((item) => item.id === activity.exerciseId || item.name.toLowerCase() === (activity.exerciseName || '').toLowerCase());
+        const activityId = 'activityId' in activity ? activity.activityId : undefined;
+        const activityType = 'activityType' in activity ? activity.activityType : undefined;
+        const resolvedExerciseId = match?.id || activity.exerciseId || activityId || 'wellness-activity';
+        const isWellness = (challenge?.category && challenge.category !== 'fitness') || !!activityType || resolvedExerciseId.startsWith('wellness:');
+        if (isWellness) {
+          await logWellness.mutateAsync({
+            userId: user.uid,
+            challengeId,
+            groupId,
+            activityId: activityId || resolvedExerciseId,
+            activityType: resolveWellnessActivityType(activityType?.toLowerCase(), activity.exerciseName ?? '', challenge?.category),
+            value,
+            unit: activity.unit,
+          });
+        } else {
+          await logWorkout.mutateAsync({
+            userId: user.uid,
+            challengeId,
+            exerciseId: resolvedExerciseId,
+            value,
+            unit: activity.unit,
+            groupId,
+          });
+        }
+      }
+      navigate(buildActivitySuccessPath({
+        challengeId,
+        groupId,
+        source: 'workout',
+        activityName: challenge?.name ?? 'Challenge',
+        value: activities.length,
+        unit: 'activities',
+        targetValue: activities.length,
+        points: 0,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to log activities.';
+      showToast(message, 'error');
+    } finally {
+      setIsChecklistSubmitting(false);
+    }
+  };
+
+  const today = todayDateString();
+  const loggedToday = membership?.lastLogDate === today;
+
+  // --- Engine-specific data — from canonical resolver ---
+  const _rp = resolveChallengeProgress({ challenge: challenge ?? null, membership: membership ?? null });
+  const groupCurrentTotal = _rp.groupTotal;
+  const groupCumulativeTarget = _rp.groupTarget;
+  const groupPct = _rp.groupPercent;
+
+  const currentStreak = _rp.streakCurrentDays;
+  const longestStreak = membership?.longestStreak ?? 0;
+  const requiredDays = _rp.streakTargetDays;
+  const daysRemaining = requiredDays > 0 ? Math.max(0, requiredDays - currentStreak) : null;
+
+  const competitiveActivities = useMemo(() => {
+    if (!challenge?.activities) return [];
+    return challenge.activities.map((activity) => {
+      const key = resolveActivityKey(activity);
+      const cumulative = membership?.cumulativeValues?.[key] ?? 0;
+      const target = activity.targetValue ?? 0;
+      const pct = target > 0 ? Math.min(100, Math.round((cumulative / target) * 100)) : 0;
+      return { name: activity.exerciseName || key, cumulative, target, unit: activity.unit, pct };
+    });
+  }, [challenge?.activities, membership?.cumulativeValues]);
+
+  const handleSessionComplete = () => {
+    if (!challengeId) return;
+    const totals = activities.reduce(
+      (acc, activity, idx) => {
+        if (loggedActivityIndexes.includes(idx)) {
+          const targetValue = activity.targetValue ?? 0;
+          const scoring = computeActivityScore({
+            value: targetValue,
+            targetValue,
+            challengeType: (challengeType ?? 'collective') as ChallengeType,
+          });
+          acc.points += scoring.pointsEarned;
+        }
+        return acc;
+      },
+      { points: 0 },
+    );
+    const firstActivity = activities[0];
+    const targetValue = firstActivity?.targetValue ?? 0;
+    navigate(buildActivitySuccessPath({
+      challengeId,
+      groupId,
+      source: 'workout',
+      activityName: challenge?.name ?? 'Challenge',
+      value: loggedActivityIndexes.length,
+      unit: 'activities',
+      targetValue,
+      points: totals.points,
+    }));
+  };
 
   const handleLog = (
     exerciseId: string,
@@ -57,7 +209,7 @@ function SelectChallengeActivityScreen() {
     const isWellness = (challenge?.category && challenge.category !== 'fitness') || !!activityType || exerciseId.startsWith('wellness:');
     if (isWellness) {
       qs.set('activityId', activityId || exerciseId);
-      qs.set('activityType', normalizedType || 'wellness');
+      qs.set('activityType', resolveWellnessActivityType(normalizedType || undefined, exerciseName, challenge?.category));
       qs.set('activityName', exerciseName);
       qs.set('unit', unit);
       qs.set('targetValue', String(
@@ -117,7 +269,12 @@ function SelectChallengeActivityScreen() {
         <section className="st-form-max mt-5 rounded-none border-y border-[#e7d7ca] bg-[#faf5f1] -mx-5 px-5 py-6">
           <p className="text-[12px] leading-[14px] tracking-[0.12em] uppercase font-black text-primary">Current Challenge</p>
           <p className="mt-2 text-[24px] leading-[30px] tracking-[-0.01em] font-black text-[#18110d]">{displayName}</p>
-          <p className="mt-1 text-[16px] leading-[22px] font-medium text-[#5f5a55]">Pick an activity to log your progress</p>
+          <p className="mt-1 text-[16px] leading-[22px] font-medium text-[#5f5a55]">
+            {isV2 && challengeType === 'collective' && 'Contribute to the team\'s goal.'}
+            {isV2 && challengeType === 'competitive' && 'My race toward completion.'}
+            {isV2 && challengeType === 'streak' && 'Keep the streak alive.'}
+            {!isV2 && 'Pick an activity to log your progress'}
+          </p>
           {!isChallengeActiveNow && (
             <p className="mt-2 text-[14px] leading-[20px] font-semibold text-primary">
               {isBeforeStart
@@ -127,8 +284,157 @@ function SelectChallengeActivityScreen() {
           )}
         </section>
 
+        {/* Engine context panel */}
+        {isV2 && isChallengeActiveNow && (
+          <section className="st-form-max mt-4">
+            {/* Collective progress */}
+            {challengeType === 'collective' && groupCumulativeTarget > 0 && (
+              <div className="st-card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users size={16} className="text-primary" />
+                  <p className="text-[13px] leading-[16px] font-bold text-primary uppercase tracking-[0.08em]">Team Progress</p>
+                </div>
+                <div className="h-4 rounded-full bg-[#e8edf5] overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${groupPct}%` }} />
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-[13px] leading-[16px] text-slate-700">
+                    {groupCurrentTotal.toLocaleString()} / {groupCumulativeTarget.toLocaleString()}
+                  </p>
+                  <p className="text-[15px] font-black text-primary">{groupPct}%</p>
+                </div>
+                <p className="mt-1 text-[12px] text-slate-500">Every contribution moves the team closer.</p>
+              </div>
+            )}
+
+            {/* Competitive per-activity progress */}
+            {challengeType === 'competitive' && competitiveActivities.length > 0 && (
+              <div className="st-card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy size={16} className="text-primary" />
+                  <p className="text-[13px] leading-[16px] font-bold text-primary uppercase tracking-[0.08em]">My Progress</p>
+                </div>
+                <div className="space-y-3">
+                  {competitiveActivities.map((activity) => (
+                    <div key={activity.name}>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[13px] font-semibold text-slate-800">{activity.name}</p>
+                        <p className="text-[13px] font-black text-primary">{activity.cumulative.toLocaleString()} / {activity.target.toLocaleString()} {activity.unit}</p>
+                      </div>
+                      <div className="h-2.5 rounded-full bg-[#e8edf5] overflow-hidden">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${activity.pct}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Streak progress */}
+            {challengeType === 'streak' && (
+              <div className="st-card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Flame size={16} className="text-primary" />
+                  <p className="text-[13px] leading-[16px] font-bold text-primary uppercase tracking-[0.08em]">Streak Status</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl bg-[#fff3e8] py-2.5">
+                    <p className="text-[20px] font-black text-primary">{currentStreak}</p>
+                    <p className="text-[10px] uppercase tracking-[0.08em] font-bold text-slate-500 mt-0.5">Current</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 py-2.5">
+                    <p className="text-[20px] font-black text-slate-800">{longestStreak}</p>
+                    <p className="text-[10px] uppercase tracking-[0.08em] font-bold text-slate-500 mt-0.5">Best</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 py-2.5">
+                    <p className="text-[20px] font-black text-slate-800">{daysRemaining ?? '—'}</p>
+                    <p className="text-[10px] uppercase tracking-[0.08em] font-bold text-slate-500 mt-0.5">To Go</p>
+                  </div>
+                </div>
+                {requiredDays > 0 && (
+                  <div className="mt-2">
+                    <div className="h-2.5 rounded-full bg-[#e8edf5] overflow-hidden">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.round((currentStreak / requiredDays) * 100))}%` }} />
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Day {currentStreak} of {requiredDays} · {challenge?.streakResetOnMiss ? 'Resets on miss' : 'Pauses on miss'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Already logged today banner */}
+            {loggedToday && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
+                <Info size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-[13px] leading-[18px] font-semibold text-amber-800">You've already logged today.</p>
+                  <p className="text-[12px] leading-[16px] text-amber-700 mt-0.5">
+                    Additional sessions improve your totals.
+                    {challengeType === 'streak' && ' They won\'t advance your streak.'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Multi-activity streak: inline checklist — all activities must be filled before saving */}
+        {isMultiStreakMode && (
+          <section className="st-form-max mt-4">
+            <div className="st-card p-4">
+              <p className="text-[13px] leading-[16px] tracking-[0.08em] uppercase font-bold text-primary mb-3">
+                Today's Checklist
+              </p>
+              <div className="space-y-3">
+                {activities.map((activity, idx) => {
+                  const match = exercises.find((item) => item.id === activity.exerciseId || item.name.toLowerCase() === (activity.exerciseName || '').toLowerCase());
+                  const name = match?.name || activity.exerciseName || `Activity ${idx + 1}`;
+                  const val = checklistValues[idx] ?? 0;
+                  const filled = val > 0;
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <div className="flex-shrink-0 text-primary">
+                        {filled ? <CheckCircle2 size={22} /> : <Circle size={22} className="text-slate-300" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-semibold text-slate-800 truncate">{name}</p>
+                        {activity.targetValue > 0 && (
+                          <p className="text-[11px] text-slate-500">Daily target: {activity.targetValue} {activity.unit}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <input
+                          type="number"
+                          min={0}
+                          className="w-20 h-10 rounded-xl border border-slate-200 bg-white px-2 text-[15px] font-bold text-center text-slate-900"
+                          value={val === 0 ? '' : val}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const n = Math.max(0, Number(e.target.value) || 0);
+                            setChecklistValues((prev) => ({ ...prev, [idx]: n }));
+                          }}
+                        />
+                        <span className="text-[12px] text-slate-500 w-10 truncate">{activity.unit}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                className={`mt-4 w-full h-14 rounded-2xl text-[16px] font-black transition-colors ${allChecklistValuesValid && isChallengeActiveNow && !isChecklistSubmitting ? 'bg-primary text-white' : 'bg-slate-200 text-slate-400'}`}
+                disabled={!allChecklistValuesValid || !isChallengeActiveNow || isChecklistSubmitting}
+                onClick={handleChecklistSubmit}
+              >
+                {isChecklistSubmitting ? 'Saving…' : !isChallengeActiveNow ? 'Locked' : `Log Day${!allChecklistValuesValid ? ' (fill all values)' : ''}`}
+              </button>
+            </div>
+          </section>
+        )}
+
         <section className="st-form-max mt-4 space-y-4">
-          {activities.map((activity) => {
+          {!isMultiStreakMode && activities.map((activity) => {
             const isOptional = false;
             const match = exercises.find((item) => item.id === activity.exerciseId || item.name.toLowerCase() === (activity.exerciseName || '').toLowerCase());
             const activityId = 'activityId' in activity ? activity.activityId : undefined;
@@ -153,6 +459,35 @@ function SelectChallengeActivityScreen() {
                         ? 'Bonus challenge'
                         : subtitle(activity.unit, 'activityType' in activity ? activity.activityType : undefined)}
                     </p>
+                    {isV2 && challengeType === 'competitive' && (() => {
+                      const found = competitiveActivities.find((a) => a.name === (match?.name || activity.exerciseName));
+                      return found && found.target > 0 ? (
+                        <p className="mt-0.5 text-[12px] text-primary font-semibold">
+                          {found.cumulative.toLocaleString()} / {found.target.toLocaleString()} {found.unit}
+                        </p>
+                      ) : null;
+                    })()}
+                    {isV2 && challengeType === 'collective' && activity.targetValue > 0 && (
+                      <p className="mt-0.5 text-[12px] text-primary font-semibold">Target: {activity.targetValue.toLocaleString()} {activity.unit}</p>
+                    )}
+                    {isV2 && challengeType === 'streak' && (
+                      <p className="mt-0.5 text-[12px] text-primary font-semibold">Log daily to keep your streak</p>
+                    )}
+                    {match?.id && (
+                      <button
+                        className="mt-2 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 active:opacity-70"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const qs = new URLSearchParams();
+                          if (challengeId) qs.set('challengeId', challengeId);
+                          if (groupId) qs.set('groupId', groupId);
+                          navigate(`/app/exercises/${match.id}?${qs.toString()}`);
+                        }}
+                      >
+                        <Info size={11} className="text-primary flex-shrink-0" />
+                        <span className="text-[11px] font-bold text-primary leading-none">View Exercise Guide</span>
+                      </button>
+                    )}
                   </div>
                 </div>
                 <button
@@ -176,6 +511,11 @@ function SelectChallengeActivityScreen() {
             <article className="st-card p-4">
               <p className="text-[14px] leading-[20px] text-slate-600">No challenge activities found yet. Ask your group admin to configure challenge activities.</p>
             </article>
+          )}
+          {!isMultiStreakMode && allLogged && (
+            <button className="st-btn-primary mt-2" onClick={handleSessionComplete}>
+              View Session Results →
+            </button>
           )}
         </section>
       </div>

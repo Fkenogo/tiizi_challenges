@@ -180,6 +180,7 @@ function EditChallengeTemplateScreen() {
 
   const buildPayload = () => {
     const persistableCover = isPersistableImageSource(coverImageUrl.trim()) ? coverImageUrl.trim() : undefined;
+    const finalActivities = challengeType !== 'streak' ? resolvedActivities.slice(0, 1) : resolvedActivities;
     return {
       name: name.trim(),
       description: description.trim(),
@@ -187,9 +188,9 @@ function EditChallengeTemplateScreen() {
       durationDays: Number(durationDays) || 30,
       difficultyLevel,
       coverImageUrl: persistableCover,
-      activities: resolvedActivities,
-      ...(challengeType === 'collective' && Number(groupCumulativeTarget) > 0 ? {
-        groupCumulativeTarget: Number(groupCumulativeTarget),
+      activities: finalActivities,
+      ...(challengeType === 'collective' ? {
+        groupCumulativeTarget: Number(finalActivities[0]?.targetValue ?? 0),
         autoCompleteOnGroupTarget,
       } : {}),
       ...(challengeType === 'streak' && Number(requiredConsecutiveDays) > 0 ? {

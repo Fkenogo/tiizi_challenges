@@ -248,6 +248,7 @@ function EditWellnessTemplateScreen() {
     if (err) { showToast(err, 'error'); return; }
     if (!templateId) return;
     setIsBusy(true);
+    const finalActivities = challengeType !== 'streak' ? resolvedActivities.slice(0, 1) : resolvedActivities;
     try {
       await updateMutation.mutateAsync({
         templateId,
@@ -256,9 +257,9 @@ function EditWellnessTemplateScreen() {
           description: description.trim(),
           type: challengeType,
           duration: Number(duration) || 21,
-          activities: resolvedActivities,
-          ...(challengeType === 'collective' && Number(groupCumulativeTarget) > 0
-            ? { groupCumulativeTarget: Number(groupCumulativeTarget), autoCompleteOnGroupTarget }
+          activities: finalActivities,
+          ...(challengeType === 'collective'
+            ? { groupCumulativeTarget: Number(finalActivities[0]?.targetValue ?? 0), autoCompleteOnGroupTarget }
             : {}),
           ...(challengeType === 'streak' && Number(requiredConsecutiveDays) > 0
             ? { requiredConsecutiveDays: Number(requiredConsecutiveDays), streakResetOnMiss }
@@ -279,6 +280,7 @@ function EditWellnessTemplateScreen() {
     if (err) { showToast(err, 'error'); return; }
     if (!templateId) return;
     setIsBusy(true);
+    const finalActivities = challengeType !== 'streak' ? resolvedActivities.slice(0, 1) : resolvedActivities;
     try {
       await updateMutation.mutateAsync({
         templateId,
@@ -287,9 +289,9 @@ function EditWellnessTemplateScreen() {
           description: description.trim(),
           type: challengeType,
           duration: Number(duration) || 21,
-          activities: resolvedActivities,
-          ...(challengeType === 'collective' && Number(groupCumulativeTarget) > 0
-            ? { groupCumulativeTarget: Number(groupCumulativeTarget), autoCompleteOnGroupTarget }
+          activities: finalActivities,
+          ...(challengeType === 'collective'
+            ? { groupCumulativeTarget: Number(finalActivities[0]?.targetValue ?? 0), autoCompleteOnGroupTarget }
             : {}),
           ...(challengeType === 'streak' && Number(requiredConsecutiveDays) > 0
             ? { requiredConsecutiveDays: Number(requiredConsecutiveDays), streakResetOnMiss }
