@@ -25,7 +25,7 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Cause Approvals', path: '/app/admin/challenges/pending', icon: Trophy, visible: (p) => p.canModerateChallenges },
       { label: 'Templates', path: '/app/admin/challenges/templates', icon: Trophy, visible: (p) => p.canModerateChallenges },
-      { label: 'Active Challenges', path: '/app/admin/challenges/active', icon: Trophy, visible: (p) => p.canModerateChallenges },
+      { label: 'Challenge Management', path: '/app/admin/challenges/active', icon: Trophy, visible: (p) => p.canModerateChallenges },
       { label: 'Exercises', path: '/app/admin/exercises', icon: Dumbbell, visible: (p) => p.canManageExercises },
       { label: 'Wellness Activities', path: '/app/admin/wellness-activities', icon: Sparkles, visible: (p) => p.canModerateChallenges },
       { label: 'Interests & Goals', path: '/app/admin/content/interests-goals', icon: FileText, visible: (p) => p.canManageContent },

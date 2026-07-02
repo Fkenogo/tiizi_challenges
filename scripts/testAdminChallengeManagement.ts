@@ -319,6 +319,134 @@ assert(
   useWellnessTemplates.includes('useUnfeatureWellnessTemplate'),
 );
 
+// ─── Section 10: 18I-6G Follow-up fixes ──────────────────────────────────────
+
+console.log('\nSection 10 — 18I-6G Follow-up fixes');
+
+const adminSidebar = read('src/features/Admin/layout/AdminSidebar.tsx');
+const appRoutes = read('src/App.tsx');
+const adminChallengeDetail = read('src/features/Admin/Challenges/AdminChallengeDetailScreen.tsx');
+
+assert(
+  'AdminSidebar label is "Challenge Management" not "Active Challenges"',
+  adminSidebar.includes("'Challenge Management'") || adminSidebar.includes('"Challenge Management"') || adminSidebar.includes('Challenge Management'),
+);
+
+assert(
+  'AdminSidebar does not label nav item "Active Challenges"',
+  !(adminSidebar.includes("label: 'Active Challenges'") || adminSidebar.includes('label: "Active Challenges"')),
+);
+
+assert(
+  'deriveEffectiveStatus exported from adminChallengeService',
+  adminChallengeService.includes('deriveEffectiveStatus') && adminChallengeService.includes('export function deriveEffectiveStatus'),
+);
+
+assert(
+  'AdminChallengeRow type has effectiveStatus field',
+  adminChallengeService.includes('effectiveStatus'),
+);
+
+assert(
+  'getAllChallenges computes effectiveStatus per row',
+  adminChallengeService.includes('effectiveStatus: deriveEffectiveStatus('),
+);
+
+assert(
+  'getChallengeAnalytics uses effectiveStatus for active count',
+  adminChallengeService.includes("c.effectiveStatus === 'active'"),
+);
+
+assert(
+  'getChallengeAnalytics uses effectiveStatus for completed count',
+  adminChallengeService.includes("c.effectiveStatus === 'completed'"),
+);
+
+assert(
+  'ActiveChallengesScreen filters by effectiveStatus not raw status',
+  activeChallengesScreen.includes('c.effectiveStatus'),
+);
+
+assert(
+  'ActiveChallengesScreen shows StatusBadge with effectiveStatus',
+  activeChallengesScreen.includes('effectiveStatus') && activeChallengesScreen.includes('StatusBadge'),
+);
+
+assert(
+  'ActiveChallengesScreen row navigates to admin challenge detail (not user flow)',
+  activeChallengesScreen.includes('/app/admin/challenges/${row.id}') || activeChallengesScreen.includes('/app/admin/challenges/'),
+);
+
+assert(
+  'ActiveChallengesScreen row does NOT navigate to member /app/challenges/ route',
+  !activeChallengesScreen.includes("navigate(`/app/challenges/${row.id}`)"),
+);
+
+assert(
+  'AdminChallengeDetailScreen exists',
+  adminChallengeDetail.length > 0,
+);
+
+assert(
+  'AdminChallengeDetailScreen shows challenge name',
+  adminChallengeDetail.includes('challenge.name'),
+);
+
+assert(
+  'AdminChallengeDetailScreen shows effectiveStatus and stored status',
+  adminChallengeDetail.includes('effectiveStatus') && adminChallengeDetail.includes('challenge.status'),
+);
+
+assert(
+  'AdminChallengeDetailScreen shows activities list',
+  adminChallengeDetail.includes('activities') && adminChallengeDetail.includes('Activities'),
+);
+
+assert(
+  'AdminChallengeDetailScreen has Back to Challenge Management link',
+  adminChallengeDetail.includes('Back to Challenge Management') || adminChallengeDetail.includes('challenges/active'),
+);
+
+assert(
+  'Admin challenge detail route registered in App.tsx',
+  appRoutes.includes('/app/admin/challenges/:id'),
+);
+
+assert(
+  'useAdminChallenge hook exported from useAdminChallenges',
+  useAdminChallenges.includes('useAdminChallenge'),
+);
+
+assert(
+  'adminChallengeService has getChallenge() method',
+  adminChallengeService.includes('async getChallenge('),
+);
+
+assert(
+  'ChallengeAnalyticsScreen uses isRefetching for feedback',
+  analyticsScreen.includes('isRefetching'),
+);
+
+assert(
+  'ChallengeAnalyticsScreen shows last-updated timestamp',
+  analyticsScreen.includes('dataUpdatedAt') || analyticsScreen.includes('lastUpdated'),
+);
+
+assert(
+  'ChallengeTemplatesScreen has engine filter for collective/competitive/streak',
+  challengeTemplatesScreen.includes('engineFilter') && challengeTemplatesScreen.includes("'collective'") && challengeTemplatesScreen.includes("'streak'"),
+);
+
+assert(
+  'ChallengeTemplatesScreen engine filter applied in filtered list',
+  challengeTemplatesScreen.includes("engineFilter !== 'all'"),
+);
+
+assert(
+  'Deleted challenges excluded by effectiveStatus or raw status check',
+  activeChallengesScreen.includes("effectiveStatus === 'deleted'") || activeChallengesScreen.includes("status === 'deleted'"),
+);
+
 // ─── Results ──────────────────────────────────────────────────────────────────
 
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

@@ -84,7 +84,10 @@ const AdminAnalyticsEngagementScreen = lazy(() => import('./features/Admin/Analy
 const AdminAnalyticsRevenueScreen = lazy(() => import('./features/Admin/Analytics/RevenueScreen'));
 const AdminChallengeTemplatesScreen = lazy(() => import('./features/Admin/Challenges/ChallengeTemplatesScreen'));
 const AdminActiveChallengesScreen = lazy(() => import('./features/Admin/Challenges/ActiveChallengesScreen'));
+const AdminChallengeDetailScreen = lazy(() => import('./features/Admin/Challenges/AdminChallengeDetailScreen').then((m) => ({ default: m.AdminChallengeDetailScreen })));
 const AdminCreateChallengeScreen = lazy(() => import('./features/Admin/Challenges/CreateChallengeScreen'));
+const AdminEditChallengeTemplateScreen = lazy(() => import('./features/Admin/Challenges/EditChallengeTemplateScreen'));
+const AdminEditWellnessTemplateScreen = lazy(() => import('./features/Admin/Challenges/EditWellnessTemplateScreen'));
 const AdminChallengeAnalyticsScreen = lazy(() => import('./features/Admin/Challenges/ChallengeAnalyticsScreen'));
 const DonationCampaignsScreen = lazy(() => import('./features/Admin/Donations/DonationCampaignsScreen'));
 const DonationListScreen = lazy(() => import('./features/Admin/Donations/DonationListScreen'));
@@ -204,7 +207,10 @@ function App() {
                 <Route path="/app/admin/challenges/pending" element={<AdminRoute><AdminPendingChallengesScreen /></AdminRoute>} />
                 <Route path="/app/admin/challenges/approved" element={<AdminRoute><AdminApprovedChallengesScreen /></AdminRoute>} />
                 <Route path="/app/admin/challenges/templates" element={<AdminRoute><AdminChallengeTemplatesScreen /></AdminRoute>} />
+                <Route path="/app/admin/challenges/templates/:id/edit" element={<AdminRoute><AdminEditChallengeTemplateScreen /></AdminRoute>} />
+                <Route path="/app/admin/challenges/wellness-templates/:id/edit" element={<AdminRoute><AdminEditWellnessTemplateScreen /></AdminRoute>} />
                 <Route path="/app/admin/challenges/active" element={<AdminRoute><AdminActiveChallengesScreen /></AdminRoute>} />
+                <Route path="/app/admin/challenges/:id" element={<AdminRoute><AdminChallengeDetailScreen /></AdminRoute>} />
                 <Route path="/app/admin/challenges/create" element={<AdminRoute><AdminCreateChallengeScreen /></AdminRoute>} />
                 <Route path="/app/admin/challenges/analytics" element={<AdminRoute><AdminChallengeAnalyticsScreen /></AdminRoute>} />
                 <Route path="/app/admin/exercises" element={<AdminRoute><AdminExerciseListScreen /></AdminRoute>} />
