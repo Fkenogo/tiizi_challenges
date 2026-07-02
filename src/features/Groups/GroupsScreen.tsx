@@ -47,11 +47,6 @@ function GroupCard({
           <div className="flex items-start justify-between gap-2">
             <h2 className="min-w-0 flex-1 truncate text-[14px] leading-[19px] font-black text-slate-900">
               {group.name}
-              {group.status === 'inactive' && (
-                <span className="ml-1.5 text-[10px] font-bold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5 align-middle">
-                  Inactive
-                </span>
-              )}
             </h2>
             <span className="text-slate-400">•••</span>
           </div>

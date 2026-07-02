@@ -133,6 +133,25 @@ function GroupDetailScreen() {
     );
   }
 
+  if (isDeactivated) {
+    return (
+      <Screen className="st-page">
+        <div className="mx-auto max-w-mobile px-4 pt-8">
+          <p className="text-[20px] leading-[24px] font-black text-slate-900">{group?.name ?? 'Group'}</p>
+          <div className="mt-4 rounded-2xl bg-slate-100 border border-slate-300 px-4 py-3">
+            <p className="text-[14px] font-bold text-slate-800">This community is no longer active.</p>
+            <p className="text-[12px] text-slate-600 mt-0.5">
+              It has been deactivated by Tiizi administrators. Challenges are now read-only and no new activity can be recorded.
+            </p>
+          </div>
+          <button className="mt-4 h-12 rounded-xl bg-slate-100 text-slate-700 px-5 font-bold" onClick={() => navigate('/app/groups')}>
+            Back to Groups
+          </button>
+        </div>
+      </Screen>
+    );
+  }
+
   if (group?.isPrivate && membershipStatus !== 'joined') {
     return (
       <Screen className="st-page">
@@ -188,15 +207,6 @@ function GroupDetailScreen() {
           </div>
         </header>
 
-        {isDeactivated && (
-          <div className="mx-4 mt-4 rounded-2xl bg-slate-100 border border-slate-300 px-4 py-3">
-            <p className="text-[14px] font-bold text-slate-800">This community is no longer active.</p>
-            <p className="text-[12px] text-slate-600 mt-0.5">
-              It has been deactivated by Tiizi administrators. Challenges are now read-only and no new activity can be recorded.
-            </p>
-          </div>
-        )}
-
         <section className="px-4 pt-4 pb-5 bg-white border-b border-slate-200">
           <div className="flex items-start gap-4">
             <img src={group?.coverImageUrl || fallbackCover} alt={group?.name} className="h-24 w-24 rounded-2xl object-cover" />
@@ -206,7 +216,7 @@ function GroupDetailScreen() {
                 <ShieldCheck size={16} className="text-blue-500" />
               </div>
               <p className="mt-1 text-[14px] leading-[20px] font-medium text-[#61758f]">{memberCount.toLocaleString()} Members • {(group?.isPrivate ? 'Private' : 'Official')} Group</p>
-              {!isDeactivated && membershipStatus === 'joined' && (
+              {membershipStatus === 'joined' && (
                 <div className="mt-3 flex gap-2">
                   <button className="h-10 px-5 rounded-xl bg-[#e9eff8] text-slate-900 text-[15px] font-semibold">✓ Joined</button>
                   <button
@@ -228,10 +238,10 @@ function GroupDetailScreen() {
                   </button>
                 </div>
               )}
-              {!isDeactivated && membershipStatus === 'pending' && (
+              {membershipStatus === 'pending' && (
                 <button className="mt-3 h-10 px-5 rounded-xl bg-[#fff1e7] text-primary text-[15px] font-semibold">Pending Approval</button>
               )}
-              {!isDeactivated && membershipStatus === 'none' && (
+              {membershipStatus === 'none' && (
                 <button className="mt-3 h-10 px-5 rounded-xl bg-primary text-white text-[15px] font-semibold disabled:opacity-60" onClick={handleJoin} disabled={joinGroup.isPending}>
                   {joinGroup.isPending ? 'Joining...' : 'Join Group'}
                 </button>

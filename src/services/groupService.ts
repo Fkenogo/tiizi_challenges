@@ -87,7 +87,8 @@ class GroupService {
 
     if (groupIds.length === 0) return [];
 
-    return this.getGroupsByIds(groupIds);
+    const groups = await this.getGroupsByIds(groupIds);
+    return groups.filter((g) => isGroupActive(g));
   }
 
   async getGroupById(id: string): Promise<Group | null> {

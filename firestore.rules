@@ -192,6 +192,7 @@ service cloud.firestore {
       );
       allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid
                     && isGroupMember(request.resource.data.groupId)
+                    && isActiveGroup(request.resource.data.groupId)
                     && (
                       request.resource.data.donation.enabled != true
                       || (

@@ -131,7 +131,7 @@ class FakeGroupService {
   getMyGroups(): Array<Doc> {
     const results: Doc[] = [];
     for (const [path, doc] of (this.db as unknown as { store: Map<string, Doc> }).store.entries()) {
-      if (path.startsWith('groups/')) results.push(doc);
+      if (path.startsWith('groups/') && isGroupActive(doc as { status?: string })) results.push(doc);
     }
     return results;
   }
@@ -383,10 +383,10 @@ async function run() {
   assert(!names.includes('Inactive Group'), 'inactive group excluded from discovery');
   assert(names.includes('Legacy Group (no status)'), 'legacy group (no status) included');
 
-  // --- Test 10: getMyGroups includes inactive (history) ---
-  console.log('\n--- Test 10: getMyGroups includes inactive (history) ---');
+  // --- Test 10: getMyGroups excludes inactive groups (18I-6C: inactive not shown to regular users) ---
+  console.log('\n--- Test 10: getMyGroups excludes inactive groups ---');
   const myGroups = groupSvc.getMyGroups();
-  assert(myGroups.some((g) => g.name === 'Inactive Group'), 'inactive group visible in my-groups (history)');
+  assert(!myGroups.some((g) => g.name === 'Inactive Group'), 'inactive group excluded from my-groups');
 
   // --- Test 11: challenge discovery excludes challenges from inactive groups ---
   console.log('\n--- Test 11: challenge discovery excludes inactive group challenges ---');
@@ -418,6 +418,74 @@ async function run() {
   const rulesSrc = fs.readFileSync('firestore.rules', 'utf-8');
   assert(rulesSrc.includes('function isActiveGroup'), 'isActiveGroup helper present');
   assert(rulesSrc.includes('isActiveGroup(request.resource.data.groupId)'), 'isActiveGroup applied to groupMembers/challengeMembers/workouts/wellnessLogs');
+
+  // ============================================================
+  // Phase 18I-6C: Gap-closure guards
+  // ============================================================
+
+  // --- Test 16: (static) Firestore challenges create rule has isActiveGroup ---
+  console.log('\n--- Test 16: static guard — challenges create rule blocks inactive group ---');
+  // The challenges block must contain isActiveGroup next to the isGroupMember check.
+  const challengesCreateBlock = rulesSrc.slice(
+    rulesSrc.indexOf('match /challenges/'),
+    rulesSrc.indexOf('match /challengeMembers/'),
+  );
+  assert(
+    challengesCreateBlock.includes('isActiveGroup(request.resource.data.groupId)'),
+    'challenges allow create includes isActiveGroup gate',
+  );
+
+  // --- Test 17: getMyGroups excludes inactive groups ---
+  console.log('\n--- Test 17: getMyGroups excludes inactive groups ---');
+  // g2 is inactive; getMyGroups() calls getGroupsByIds then filters by isGroupActive
+  // Simulate getMyGroups with our fake — the real service adds the filter.
+  // Static guard: source must filter inactive in getMyGroups.
+  assert(
+    groupServiceSrc.includes('groups.filter((g) => isGroupActive'),
+    'getMyGroups applies isGroupActive filter on result',
+  );
+
+  // Behavioural: getGroups (discover) must not include inactive, getMyGroups must not include inactive
+  db.update('groups/g1', { status: 'active' }); // restore g1 after test 12
+  const discoveryGroups = groupSvc.getGroups();
+  assert(!discoveryGroups.some((g) => g.name === 'Inactive Group'), 'getGroups (discover) excludes inactive');
+
+  // --- Test 18: (static) GroupDetailScreen early-returns for inactive before private gate ---
+  console.log('\n--- Test 18: static guard — GroupDetailScreen shows deactivated state before private-group gate ---');
+  const groupDetailSrc = fs.readFileSync('src/features/Groups/GroupDetailScreen.tsx', 'utf-8');
+  const deactivatedReturnIdx = groupDetailSrc.indexOf('if (isDeactivated)');
+  const privateGateIdx = groupDetailSrc.indexOf("if (group?.isPrivate && membershipStatus !== 'joined')");
+  assert(deactivatedReturnIdx !== -1, 'isDeactivated early-return exists');
+  assert(privateGateIdx !== -1, 'private group gate exists');
+  assert(deactivatedReturnIdx < privateGateIdx, 'deactivated check comes before private-group gate');
+
+  // --- Test 19: (static) GroupDetailScreen has no Create Challenge CTA reachable when deactivated ---
+  console.log('\n--- Test 19: static guard — Create Challenge only reachable after deactivated gate ---');
+  // "Create Challenge" button must appear AFTER the deactivated early-return in the source,
+  // meaning it's only rendered for active groups.
+  const createChallengeIdx = groupDetailSrc.indexOf('Create Challenge');
+  assert(createChallengeIdx > deactivatedReturnIdx, 'Create Challenge CTA is after the deactivated early-return');
+  // The deactivated early-return renders a read-only screen without a Create Challenge button.
+  const deactivatedBlock = groupDetailSrc.slice(
+    deactivatedReturnIdx,
+    groupDetailSrc.indexOf('if (group?.isPrivate'),
+  );
+  assert(!deactivatedBlock.includes('Create Challenge'), 'deactivated early-return block has no Create Challenge CTA');
+
+  // --- Test 20: (static) No "Continue" CTA in deactivated screen ---
+  console.log('\n--- Test 20: static guard — deactivated screen has no "Continue" CTA ---');
+  assert(!deactivatedBlock.includes('Continue'), 'deactivated screen does not show Continue CTA');
+
+  // --- Test 21: (static) challengeService getVisibleChallengesForUser filters public inactive groups ---
+  console.log('\n--- Test 21: static guard — getVisibleChallengesForUser filters inactive public groups ---');
+  assert(
+    challengeServiceSrc.includes('isGroupActive(d.data()'),
+    'getVisibleChallengesForUser filters inactive public groups inline',
+  );
+  assert(
+    challengeServiceSrc.includes('filterActiveGroupIds(rawAllowedGroupIds)'),
+    'getVisibleChallengesForUser applies filterActiveGroupIds to full allowed-group list',
+  );
 
   // ---------------------------------------------------------------------------
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
