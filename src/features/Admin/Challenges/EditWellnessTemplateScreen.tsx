@@ -231,7 +231,6 @@ function EditWellnessTemplateScreen() {
       targetValue: a.targetValue,
       unit: a.unit,
     })),
-    groupCumulativeTarget,
     requiredConsecutiveDays,
     durationDays: Number(duration) || null,
     donationEnabled: false,
@@ -239,7 +238,7 @@ function EditWellnessTemplateScreen() {
     causeDescription: '',
     contributionPhoneNumber: '',
     contributionCardUrl: '',
-  }), [name, description, challengeType, activities, groupCumulativeTarget, requiredConsecutiveDays, duration]);
+  }), [name, description, challengeType, activities, requiredConsecutiveDays, duration]);
 
   const canSave = !validateChallengeForm(validationInput);
 

@@ -228,6 +228,98 @@ console.log('\n--- Test 20: Normal Log button preserved for non-checklist mode -
 }
 
 // ---------------------------------------------------------------------------
+// Test 21: Checklist partial-failure — no navigation on error, error toast shown
+// ---------------------------------------------------------------------------
+console.log('\n--- Test 21: Checklist partial-failure behavior ---');
+{
+  const src = readSrc('src/features/Workouts/SelectChallengeActivityScreen.tsx');
+  assert(
+    'handleChecklistSubmit does NOT call navigate inside the catch block',
+    (() => {
+      const catchIdx = src.indexOf('} catch (error)');
+      const finallyIdx = src.indexOf('} finally {');
+      if (catchIdx === -1 || finallyIdx === -1) return false;
+      const catchBlock = src.slice(catchIdx, finallyIdx);
+      return !catchBlock.includes('navigate(');
+    })(),
+  );
+  assert(
+    'handleChecklistSubmit shows error toast in catch block',
+    (() => {
+      const catchIdx = src.indexOf('} catch (error)');
+      const finallyIdx = src.indexOf('} finally {');
+      if (catchIdx === -1 || finallyIdx === -1) return false;
+      const catchBlock = src.slice(catchIdx, finallyIdx);
+      return catchBlock.includes('showToast');
+    })(),
+  );
+  assert(
+    'MVP partial-failure limitation is documented in a comment',
+    src.includes('MVP limitation') || src.includes('partially written'),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Phase 18I-6H: Fix Collective challenge creation (stale groupCumulativeTarget validation)
+// ---------------------------------------------------------------------------
+console.log('\n--- Phase 18I-6H: Collective challenge validation fixes ---');
+{
+  const validationSrc = readSrc('src/features/Challenges/utils/challengeFormValidation.ts');
+  assert(
+    'validateChallengeForm interface no longer has groupCumulativeTarget field',
+    !validationSrc.includes('groupCumulativeTarget: string'),
+  );
+  assert(
+    'Stale "Set a group cumulative target greater than zero" error is removed from validation',
+    !validationSrc.includes('Set a group cumulative target greater than zero'),
+  );
+  assert(
+    'validateChallengeForm still validates unit consistency for collective',
+    validationSrc.includes("'Collective challenges require all activities to share the same unit.'"),
+  );
+}
+
+{
+  const wizardSrc = readSrc('src/features/Challenges/CreateChallengeWizard.tsx');
+  assert(
+    'Wizard validateChallengeForm call does not pass groupCumulativeTarget',
+    !wizardSrc.includes('groupCumulativeTarget,\n      requiredConsecutiveDays'),
+  );
+  assert(
+    'Wizard "Ready to launch?" collective item checks activity targetValue, not state',
+    wizardSrc.includes("activities.some((a) => Number(a.targetValue) > 0)"),
+  );
+}
+
+{
+  const adminCreateSrc = readSrc('src/features/Admin/Challenges/CreateChallengeScreen.tsx');
+  assert(
+    'Admin CreateChallengeScreen validateChallengeForm call does not pass groupCumulativeTarget',
+    !adminCreateSrc.includes('groupCumulativeTarget,\n      requiredConsecutiveDays'),
+  );
+}
+
+{
+  const editWellnessSrc = readSrc('src/features/Admin/Challenges/EditWellnessTemplateScreen.tsx');
+  assert(
+    'EditWellnessTemplateScreen validationInput does not include groupCumulativeTarget field',
+    !editWellnessSrc.includes('groupCumulativeTarget,\n    requiredConsecutiveDays'),
+  );
+  assert(
+    'EditWellnessTemplateScreen useMemo deps no longer includes groupCumulativeTarget',
+    !editWellnessSrc.includes('groupCumulativeTarget, requiredConsecutiveDays, duration'),
+  );
+}
+
+{
+  const auditSrc = readSrc('scripts/auditChallengeCreationPayloads.ts');
+  assert(
+    'auditChallengeCreationPayloads no longer passes groupCumulativeTarget to validateChallengeForm',
+    !auditSrc.includes("groupCumulativeTarget: type === 'collective'"),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Results
 // ---------------------------------------------------------------------------
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

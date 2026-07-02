@@ -348,9 +348,16 @@ function CreateChallengeWizard() {
   const addActivity = () => {
     const nextIndex = activities.length;
     setActivities((prev) => [...prev, { query: '', exerciseId: undefined, targetValue: '', unit: isWellnessMode ? 'count' : 'Reps' }]);
-    setPickerRowIndex(nextIndex);
-    setPickerSearch('');
-    setPickerTier('All');
+    if (isWellnessMode) {
+      setPickerRowIndex(nextIndex);
+      setWellnessPickerOpen(true);
+      setWellnessSearch('');
+      setWellnessCategoryFilter('all');
+    } else {
+      setPickerRowIndex(nextIndex);
+      setPickerSearch('');
+      setPickerTier('All');
+    }
   };
 
   const openWellnessActivityPicker = (index: number) => {
@@ -446,7 +453,6 @@ function CreateChallengeWizard() {
       endDate,
       challengeType,
       activities,
-      groupCumulativeTarget,
       requiredConsecutiveDays,
       durationDays: challengeDurationDays,
       donationEnabled,
@@ -954,7 +960,7 @@ function CreateChallengeWizard() {
               { ok: !!selectedGroupId, label: 'Group selected' },
               { ok: !!startDate && !!endDate && endDate >= startDate, label: 'Dates configured' },
               { ok: activities.some((a) => a.exerciseId || a.activityId), label: 'At least one activity' },
-              ...(challengeType === 'collective' ? [{ ok: !!groupCumulativeTarget && Number(groupCumulativeTarget) > 0, label: 'Group target set' }] : []),
+              ...(challengeType === 'collective' ? [{ ok: activities.some((a) => Number(a.targetValue) > 0), label: 'Group target set' }] : []),
               ...(challengeType === 'streak' ? [{ ok: !!requiredConsecutiveDays && Number(requiredConsecutiveDays) > 0, label: 'Streak days set' }] : []),
             ] as { ok: boolean; label: string }[]).map(({ ok, label }) => (
               <div key={label} className="flex items-center gap-2">

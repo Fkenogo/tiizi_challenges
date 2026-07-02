@@ -325,7 +325,6 @@ function CreateChallengeScreen() {
       endDate,
       challengeType,
       activities,
-      groupCumulativeTarget,
       requiredConsecutiveDays,
       durationDays: challengeDurationDays,
       donationEnabled,
