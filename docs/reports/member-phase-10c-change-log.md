@@ -1,5 +1,37 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6G Follow-up — Challenge Management Fixes (2026-07-02)
+
+**Type:** Admin bug fix + new screen. No member-facing changes.
+
+### Root causes fixed
+
+- Sidebar label still said "Active Challenges" (hardcoded in AdminSidebar.tsx)
+- `getAllChallenges()` returned raw Firestore `status` with no date logic; expired challenges appeared as "Active"
+- Challenge Management row navigated to member challenge detail (`/app/challenges/:id`); no admin detail screen existed
+- Analytics refresh button called `refetch()` with no loading/timestamp feedback
+
+### Changes
+
+- `AdminSidebar.tsx`: "Active Challenges" → "Challenge Management"
+- `adminChallengeService.ts`: exported `deriveEffectiveStatus()` utility; `AdminChallengeRow` now includes `effectiveStatus`; `getAllChallenges()` and `getChallengeAnalytics()` both use effective status (expired-active → completed, future-active → upcoming)
+- `ActiveChallengesScreen.tsx`: filter, badge, and ActionMenu all use `effectiveStatus`; row click → `/app/admin/challenges/:id`
+- `AdminChallengeDetailScreen.tsx`: **new screen** — name/status/type/category/group/dates/activities/engine fields/lifecycle actions
+- `App.tsx`: `/app/admin/challenges/:id` route added
+- `useAdminChallenges.ts`: added `useAdminChallenge(id)` hook
+- `ChallengeAnalyticsScreen.tsx`: `isRefetching` feedback + `dataUpdatedAt` timestamp on refresh button
+- Template engine filter (collective/competitive/streak) was already working — no code change needed; guards confirm
+
+### Validation
+
+All commands ✅ — tsc clean, build clean, 64/64 admin-challenge-management guards (+24 new in Section 10).
+
+### Report
+
+`docs/superpowers/reports/phase-18I-6G-followup-challenge-management-fixes.md`
+
+---
+
 ## Session: Phase 18I-6G — Admin Challenge Management + Analytics + Featured Templates (2026-07-02)
 
 **Type:** Admin UI overhaul + service extensions. No changes to member-facing logging or scoring.
