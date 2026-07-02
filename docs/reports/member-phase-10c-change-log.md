@@ -1,5 +1,51 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6G — Admin Challenge Management + Analytics + Featured Templates (2026-07-02)
+
+**Type:** Admin UI overhaul + service extensions. No changes to member-facing logging or scoring.
+
+### Changes
+
+**Challenge Management screen** (`ActiveChallengesScreen.tsx`):
+- Renamed from "Active Challenges" to "Challenge Management"
+- Full status filter (all/active/upcoming/completed/archived/inactive/draft/pending), type filter (collective/competitive/streak), category dropdown, and search
+- Per-row status badge with colour coding
+- Contextual action menu per row: deactivate/complete/archive for active; reactivate for inactive; delete with confirmation modal
+- Row links to challenge detail; group name links to admin group detail
+
+**Challenge Analytics screen** (`ChallengeAnalyticsScreen.tsx`):
+- Replaced static placeholder with live data from enhanced `getChallengeAnalytics()`
+- 9 metric cards, by-type completion rates, by-category bar breakdown, top-10 challenges by participants
+
+**adminChallengeService.ts**:
+- `getAllChallenges()` — fetch all challenges ordered by startDate desc, mapped to `AdminChallengeRow`
+- `archiveChallenge()`, `deactivateChallenge()`, `reactivateChallenge()`, `markChallengeCompleted()`, `deleteChallenge()` (soft delete)
+- `getChallengeAnalytics()` now returns 13 fields including `byCategory`, `topByParticipants`, `completionRateByType`, `recentlyCreated`
+
+**Featured templates** (Task D):
+- `challengeTemplateService` + `wellnessTemplateService`: `isFeatured`, `featuredAt`, `featuredBy` fields; `featureTemplate()`, `unfeatureTemplate()` methods; `getPublishedTemplates`/`getTemplates` sort featured first
+- `ChallengeTemplatesScreen.tsx`: Feature/Unfeature menu items, ⭐ Featured badge on card
+- `types/index.ts`: `isFeatured?`, `featuredAt?`, `featuredBy?` added to `WellnessTemplate`
+- New hooks: `useFeatureTemplate`, `useUnfeatureTemplate`, `useFeatureWellnessTemplate`, `useUnfeatureWellnessTemplate`
+
+**Test guards**: `scripts/testAdminChallengeManagement.ts` — 40 guards, 9 sections.
+
+### Manual retest needed
+
+- Create/deactivate/reactivate a challenge via Challenge Management screen
+- Feature a fitness template; confirm ⭐ badge appears; confirm featured templates sort first in member gallery
+- Feature a wellness template; same verification
+
+### Validation
+
+All commands ✅ — tsc clean, build clean, 40/40 admin-challenge-management guards, all prior suites passing.
+
+### Report
+
+`docs/superpowers/reports/phase-18I-6G-admin-challenge-mgmt-analytics-featured-templates.md`
+
+---
+
 ## Session: Phase 18I-6D — Group Document Schema Consistency (2026-07-02)
 
 **Type:** Data model fix + audit tooling. No UI changes.

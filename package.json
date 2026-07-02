@@ -38,7 +38,9 @@
     "cleanup:seeded-challenge-members": "tsx scripts/cleanupSeededChallengeMembers.ts",
     "audit:challenge-progress-integrity": "tsx scripts/auditChallengeProgressIntegrity.ts",
     "audit:group-document-schema": "tsx scripts/auditGroupDocumentSchema.ts",
-    "test:challenge-activity-model": "tsx scripts/testChallengeActivityModel.ts"
+    "test:challenge-activity-model": "tsx scripts/testChallengeActivityModel.ts",
+    "audit:challenge-templates": "tsx scripts/auditChallengeTemplates.ts",
+    "test:admin-challenge-management": "tsx scripts/testAdminChallengeManagement.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",
