@@ -1,5 +1,25 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6G Final Gap — Template Engine Filter Labels (2026-07-02)
+
+**Type:** UI fix only. No logic, service, or data model changes.
+
+### Root cause
+
+Engine filter chips on Admin Challenge Templates showed only emoji (`👥`, `🏆`, `🔥`) with no text labels. Visually ambiguous; easy to miss. Filter logic was already correct.
+
+### Fix
+
+`ChallengeTemplatesScreen.tsx`: labels changed to `All Types / 👥 Collective / 🏆 Competitive / 🔥 Streak`. Added `flex-wrap` to chip row.
+
+Test guards strengthened: 2 new assertions check for visible text labels. **66/66 passing.**
+
+### Report
+
+`docs/superpowers/reports/phase-18I-6G-final-template-engine-filter-labels.md`
+
+---
+
 ## Session: Phase 18I-6G Follow-up — Challenge Management Fixes (2026-07-02)
 
 **Type:** Admin bug fix + new screen. No member-facing changes.
