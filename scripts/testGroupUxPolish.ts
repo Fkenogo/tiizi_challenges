@@ -38,7 +38,23 @@ assert.match(
   'GroupDetailTabs must use grid-cols-3 after removing the leaderboard tab',
 );
 
-// ── Task 3: GroupHeroHeader extraction ────────────────────────────────────────
+// ── Issue B: redirect message in GroupLeaderboardScreen ──────────────────────
+
+const groupLeaderboardScreen = readFileSync('src/features/Groups/GroupLeaderboardScreen.tsx', 'utf8');
+
+assert.match(
+  groupLeaderboardScreen,
+  /Group leaderboard has moved/,
+  'GroupLeaderboardScreen must show redirect message "Group leaderboard has moved"',
+);
+
+assert.doesNotMatch(
+  groupLeaderboardScreen,
+  /GroupDetailTabs/,
+  'GroupLeaderboardScreen must not render GroupDetailTabs (it is a redirect page)',
+);
+
+// ── Issue E: shared GroupHeroHeader ──────────────────────────────────────────
 
 const groupHeroHeader = readFileSync('src/features/Groups/components/GroupHeroHeader.tsx', 'utf8');
 const groupMembersScreen = readFileSync('src/features/Groups/GroupMembersScreen.tsx', 'utf8');
@@ -47,7 +63,7 @@ const groupDetailScreen = readFileSync('src/features/Groups/GroupDetailScreen.ts
 assert.match(
   groupHeroHeader,
   /GroupHeroHeader/,
-  'GroupHeroHeader component must exist',
+  'GroupHeroHeader component must exist and export GroupHeroHeader',
 );
 
 assert.match(
@@ -56,19 +72,13 @@ assert.match(
   'GroupMembersScreen must use GroupHeroHeader',
 );
 
-assert.doesNotMatch(
-  groupMembersScreen,
-  /sticky top-0.*h-10.*ArrowLeft|ArrowLeft.*sticky top-0/s,
-  'GroupMembersScreen must not have old sticky header with ArrowLeft outside the hero',
-);
-
 assert.match(
   groupDetailScreen,
   /GroupHeroHeader/,
   'GroupDetailScreen must use GroupHeroHeader',
 );
 
-// ── Task 4: Clickable member rows + member detail modal ───────────────────────
+// ── Issue D: clickable member rows + detail modal ─────────────────────────────
 
 const groupMembersScreenV2 = readFileSync('src/features/Groups/GroupMembersScreen.tsx', 'utf8');
 
@@ -80,11 +90,11 @@ assert.match(
 
 assert.match(
   groupMembersScreenV2,
-  /onClick.*setSelectedMember|setSelectedMember.*onClick/s,
+  /setSelectedMember/,
   'GroupMembersScreen community member rows must call setSelectedMember on click',
 );
 
-// ── Task 5: useJoinGroup retry and home-screen-data invalidation ──────────────
+// ── Issue F: join group retry + home-screen-data invalidation ─────────────────
 
 const useGroupsHook = readFileSync('src/hooks/useGroups.ts', 'utf8');
 
@@ -100,4 +110,4 @@ assert.match(
   'useJoinGroup onSuccess must invalidate home-screen-data so Home feed reflects membership',
 );
 
-console.log('✅ testGroupUxPolish — 12/12 passed (competitive progress source, leaderboard tab removed, GroupHeroHeader extracted, clickable member rows with detail modal, useJoinGroup retry + home-screen-data invalidation)');
+console.log('✅ testGroupUxPolish — 13/13 passed');

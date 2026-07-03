@@ -34,6 +34,7 @@
     "test:challenge-creation-backend": "tsx scripts/testChallengeCreationBackend.ts",
     "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts",
     "test:group-lifecycle": "tsx scripts/testGroupLifecycle.ts",
+    "test:group-ux-polish": "tsx scripts/testGroupUxPolish.ts",
     "audit:seeded-challenge-members": "tsx scripts/cleanupSeededChallengeMembers.ts",
     "cleanup:seeded-challenge-members": "tsx scripts/cleanupSeededChallengeMembers.ts",
     "audit:challenge-progress-integrity": "tsx scripts/auditChallengeProgressIntegrity.ts",
