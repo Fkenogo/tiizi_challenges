@@ -12,6 +12,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useGroups, useMyGroups } from '../../hooks/useGroups';
 import { useWellnessTemplates } from '../../hooks/useWellnessTemplates';
+import { isChallengeOngoing } from '../../utils/challengeLifecycle';
 
 type ChallengeCardType = 'collective' | 'competitive' | 'streak';
 
@@ -43,14 +44,14 @@ function ChallengesScreen() {
   const { data: templateData = [], isLoading: isLoadingTemplates } = useChallengeTemplates();
   const { data: wellnessTemplateData = [], isLoading: isLoadingWellnessTemplates } = useWellnessTemplates();
   const visibleChallenges = useMemo(
-    () => challengeData.filter((challenge) => challenge.status === 'active' && (!effectiveGroupId || challenge.groupId === effectiveGroupId)),
+    () => challengeData.filter((challenge) => isChallengeOngoing(challenge) && (!effectiveGroupId || challenge.groupId === effectiveGroupId)),
     [challengeData, effectiveGroupId],
   );
   const browseChallenges = useMemo(() => {
     const groupIndex = new Map(groups.map((group) => [group.id, group]));
     const myGroupIds = new Set(myGroups.map((group) => group.id));
     return allChallenges
-      .filter((challenge) => challenge.status === 'active')
+      .filter((challenge) => isChallengeOngoing(challenge))
       .filter((challenge) => !myGroupIds.has(challenge.groupId))
       .filter((challenge) => {
         const challengeGroup = groupIndex.get(challenge.groupId);
@@ -120,12 +121,11 @@ function ChallengesScreen() {
   }, [browseChallenges]);
   const querySuffix = effectiveGroupId ? `?groupId=${effectiveGroupId}` : '';
 
-  const handleJoinChallenge = async (challengeId: string, challengeType: ChallengeCardType) => {
+  const handleJoinChallenge = async (challengeId: string, _challengeType: ChallengeCardType) => {
     try {
       await joinChallenge.mutateAsync(challengeId);
-      const query = new URLSearchParams({ challengeId });
-      if (effectiveGroupId) query.set('groupId', effectiveGroupId);
-      navigate(`/app/challenges/${challengeType}?${query.toString()}`);
+      const qs = effectiveGroupId ? `?groupId=${effectiveGroupId}` : '';
+      navigate(`/app/challenge/${challengeId}${qs}`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Could not join challenge.';
       showToast(msg, 'error');
@@ -262,7 +262,7 @@ function ChallengesScreen() {
               <h2 className="st-section-title">Ongoing Challenges</h2>
               <button
                 className="text-[14px] leading-[18px] font-semibold text-primary"
-                onClick={() => navigate(`/app/challenges/suggested${querySuffix}`)}
+                onClick={() => navigate(`/app/challenges/browse${querySuffix}`)}
               >
                 View All
               </button>
@@ -308,16 +308,12 @@ function ChallengesScreen() {
                               navigate(`/app/workouts/select-activity?${qs.toString()}`);
                               return;
                             }
-                            navigate(`/app/challenge/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`);
-                            return;
                           }
-                          handleJoinChallenge(item.id, item.challengeType);
+                          navigate(`/app/challenge/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`);
                         }}
                         disabled={joinChallenge.isPending}
                       >
-                        {joinChallenge.isPending
-                          ? 'Joining...'
-                          : item.isJoined
+                        {item.isJoined
                           ? (item.hasStarted ? (item.isWellness ? 'Log Activity' : 'Log Workout') : 'View')
                           : 'Join'}
                       </button>

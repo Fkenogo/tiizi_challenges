@@ -110,4 +110,53 @@ assert.match(
   'useJoinGroup onSuccess must invalidate home-screen-data so Home feed reflects membership',
 );
 
-console.log('✅ testGroupUxPolish — 13/13 passed');
+// ── Phase 18I-6K follow-up: Home Log Activity routes to SelectChallengeActivityScreen ──
+
+const activeChallengeCard = readFileSync('src/components/Home/ActiveChallengeCard.tsx', 'utf8');
+const competitiveScreen = readFileSync('src/features/Challenges/CompetitiveChallengeScreen.tsx', 'utf8');
+const collectiveScreen = readFileSync('src/features/Challenges/CollectiveChallengeScreen.tsx', 'utf8');
+const streakScreen = readFileSync('src/features/Challenges/StreakChallengeScreen.tsx', 'utf8');
+
+assert.match(
+  activeChallengeCard,
+  /select-activity/,
+  'ActiveChallengeCard Log button must navigate to /app/workouts/select-activity (SelectChallengeActivityScreen)',
+);
+
+assert.match(
+  activeChallengeCard,
+  /navigate\(logPath\)/,
+  'ActiveChallengeCard Log button must use logPath (select-activity) not detailPath (legacy dashboard screen)',
+);
+
+assert.doesNotMatch(
+  competitiveScreen,
+  /No workout logs yet for this challenge\./,
+  'CompetitiveChallengeScreen must not render stale "No workout logs yet" text — screen now redirects to ChallengeDetailScreen',
+);
+
+assert.doesNotMatch(
+  streakScreen,
+  /No workout logs yet for this challenge\./,
+  'StreakChallengeScreen must not render stale "No workout logs yet" text — screen now redirects to ChallengeDetailScreen',
+);
+
+assert.match(
+  competitiveScreen,
+  /Navigate/,
+  'CompetitiveChallengeScreen must redirect to ChallengeDetailScreen (removes duplicated leaderboard logic)',
+);
+
+assert.match(
+  collectiveScreen,
+  /Navigate/,
+  'CollectiveChallengeScreen must redirect to ChallengeDetailScreen (removes duplicated leaderboard logic)',
+);
+
+assert.match(
+  streakScreen,
+  /Navigate/,
+  'StreakChallengeScreen must redirect to ChallengeDetailScreen (removes duplicated leaderboard logic)',
+);
+
+console.log('✅ testGroupUxPolish — 20/20 passed');
