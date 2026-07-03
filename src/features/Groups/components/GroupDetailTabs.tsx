@@ -2,14 +2,13 @@ import { useNavigate } from 'react-router-dom';
 
 type Props = {
   groupId: string;
-  active: 'feed' | 'challenges' | 'members' | 'leaderboard';
+  active: 'feed' | 'challenges' | 'members';
 };
 
 const tabs: Array<{ key: Props['active']; label: string; path: (groupId: string) => string }> = [
   { key: 'feed', label: 'Feed', path: (groupId) => `/app/group/${groupId}/feed` },
   { key: 'challenges', label: 'Challenges', path: (groupId) => `/app/group/${groupId}` },
   { key: 'members', label: 'Members', path: (groupId) => `/app/group/${groupId}/members` },
-  { key: 'leaderboard', label: 'Leaderboard', path: (groupId) => `/app/group/${groupId}/leaderboard` },
 ];
 
 export function GroupDetailTabs({ groupId, active }: Props) {
@@ -18,7 +17,7 @@ export function GroupDetailTabs({ groupId, active }: Props) {
   return (
     <div className="border-y border-slate-200 bg-white px-4">
       <div className="mx-auto max-w-mobile">
-        <div className="grid grid-cols-4 items-stretch">
+        <div className="grid grid-cols-3 items-stretch">
           {tabs.map((tab) => (
             <button
               key={tab.key}

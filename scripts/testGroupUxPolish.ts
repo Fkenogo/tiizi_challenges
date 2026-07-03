@@ -18,4 +18,24 @@ assert.doesNotMatch(
   'SelectChallengeActivityScreen must not read membership.cumulativeValues — use resolveChallengeProgress output instead',
 );
 
-console.log('✅ testGroupUxPolish — 1/1 passed (competitive progress source)');
+const groupDetailTabs = readFileSync('src/features/Groups/components/GroupDetailTabs.tsx', 'utf8');
+
+assert.doesNotMatch(
+  groupDetailTabs,
+  /leaderboard/,
+  'GroupDetailTabs must not contain a leaderboard tab entry',
+);
+
+assert.doesNotMatch(
+  groupDetailTabs,
+  /'feed' \| 'challenges' \| 'members' \| 'leaderboard'/,
+  "GroupDetailTabs active prop type must be 3-way union (no 'leaderboard')",
+);
+
+assert.match(
+  groupDetailTabs,
+  /grid-cols-3/,
+  'GroupDetailTabs must use grid-cols-3 after removing the leaderboard tab',
+);
+
+console.log('✅ testGroupUxPolish — 4/4 passed (competitive progress source, leaderboard tab removed)');
