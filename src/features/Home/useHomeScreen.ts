@@ -36,7 +36,7 @@ type HomeScreenData = {
     text: string;
     completed: boolean;
   }>;
-  mostPopularOngoing: Array<{
+  mostActiveOngoing: Array<{
     id: string;
     name: string;
     members: string;
@@ -285,13 +285,42 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
   const nowMs = Date.now();
   const oneDay = 1000 * 60 * 60 * 24;
 
-  // Most Popular Ongoing: only challenges that are currently within their date window
-  // and not completed/cancelled. Sorted by participant count descending. Max 3.
   const membershipIndex = await challengeService.getUserChallengeMembershipIndex(uid).catch(() => new Map<string, string>());
-  const mostPopularOngoing: HomeScreenData['mostPopularOngoing'] = allChallenges
-    .filter((challenge) => isChallengeOngoing(challenge, nowMs))
-    .sort((a, b) => (b.participantCount ?? 0) - (a.participantCount ?? 0))
-    .slice(0, 3)
+
+  // Batch-read challengeActivitySummaries for all ongoing candidates to rank by totalLogs.
+  // Maintained by Cloud Functions on every workout + wellness log. Missing docs → totalLogs = 0.
+  const ongoingCandidates = allChallenges.filter((challenge) => isChallengeOngoing(challenge, nowMs));
+  const candidateIds = ongoingCandidates.map((c) => c.id).filter(Boolean);
+  const activitySummaryMap = new Map<string, { totalLogs: number }>();
+  if (candidateIds.length > 0) {
+    const chunks: string[][] = [];
+    for (let i = 0; i < candidateIds.length; i += 10) {
+      chunks.push(candidateIds.slice(i, i + 10));
+    }
+    const snaps = await Promise.all(
+      chunks.map((chunk) =>
+        getDocs(
+          query(collection(db, 'challengeActivitySummaries'), where(documentId(), 'in', chunk)),
+        ).catch(() => null),
+      ),
+    );
+    for (const snap of snaps) {
+      if (!snap) continue;
+      for (const doc of snap.docs) {
+        const data = doc.data() as { totalLogs?: number };
+        activitySummaryMap.set(doc.id, { totalLogs: Math.max(0, Number(data.totalLogs ?? 0)) });
+      }
+    }
+  }
+
+  const mostActiveOngoing: HomeScreenData['mostActiveOngoing'] = ongoingCandidates
+    .sort((a, b) => {
+      const aLogs = activitySummaryMap.get(a.id)?.totalLogs ?? 0;
+      const bLogs = activitySummaryMap.get(b.id)?.totalLogs ?? 0;
+      if (bLogs !== aLogs) return bLogs - aLogs;
+      return (b.participantCount ?? 0) - (a.participantCount ?? 0);
+    })
+    .slice(0, 5)
     .map((challenge) => {
       const end = Date.parse(challenge.endDate);
       const remaining = !Number.isNaN(end) ? Math.max(0, Math.ceil((end - nowMs) / oneDay)) : 0;
@@ -303,12 +332,15 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
       } else if (joined) {
         actionLabel = (challenge.category && challenge.category !== 'fitness') ? 'Log Activity' : 'Log Workout';
       }
+      const totalLogs = activitySummaryMap.get(challenge.id)?.totalLogs ?? 0;
       return {
         id: challenge.id,
         name: challenge.name,
         groupId: challenge.groupId,
         challengeType: challenge.challengeType ?? 'collective',
-        members: formatCompactCount(challenge.participantCount ?? 0),
+        members: totalLogs > 0
+          ? `${formatCompactCount(totalLogs)} logs`
+          : `${formatCompactCount(challenge.participantCount ?? 0)} members`,
         imageUrl: challenge.coverImageUrl,
         joined,
         daysLabel: `${remaining} Days Left`,
@@ -332,7 +364,7 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
       { id: 'goal-profile', text: 'Complete your profile setup', completed: !!profile?.onboardingCompleted },
       { id: 'goal-group', text: 'Join at least one active group', completed: myGroups.length > 0 },
     ],
-    mostPopularOngoing,
+    mostActiveOngoing,
   };
 }
 
