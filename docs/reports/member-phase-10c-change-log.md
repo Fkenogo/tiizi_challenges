@@ -1,5 +1,33 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6I — Home Challenge Cards Relevance (2026-07-03)
+
+**Type:** UX relevance improvement. No schema changes, no Cloud Functions, no migrations.
+
+### Changes
+
+**My Challenges** (`useHomeScreen.ts`):
+- Sort changed from `startDate desc` to: Tier 1 `lastActivityAt desc` (recently logged challenges first), Tier 2 `endDate asc` (soonest deadline for unlogged challenges). Uses `lastActivityAt` already in membership summaries — zero new reads.
+- Limit raised from 3 → 10 (carousel shows 3 at a time, swipe for more).
+
+**Most Active** (was "Most Popular") (`useHomeScreen.ts` + `HomeScreen.tsx`):
+- Section renamed from "Most Popular" → "Most Active".
+- Now batch-reads `challengeActivitySummaries/{id}` (Cloud Function–maintained aggregate) for all ongoing candidates.
+- Sorted by `totalLogs` desc → `participantCount` desc fallback.
+- Missing `challengeActivitySummaries` treated as `totalLogs = 0`; challenge not excluded.
+- Stat label: `"X logs"` / `"X members"` fallback.
+- Limit raised from 3 → 5.
+
+### Guards
+
+11 new guards in `scripts/testHomeChallengeFeeds.ts`.
+
+### Report
+
+`docs/superpowers/reports/phase-18I-6I-home-challenge-relevance.md`
+
+---
+
 ## Session: Phase 18I-6H — Fix Collective Challenge Creation (2026-07-02)
 
 **Type:** Validation bug fix. No data model, service, or UI layout changes.
