@@ -1,5 +1,25 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6J — Group UX and Log Activity Polish (2026-07-03)
+
+**Branch:** fix/p0-pre-deploy-blockers
+
+### Fixed
+
+- **Issue A:** Competitive challenge "My Progress" card in SelectChallengeActivityScreen now uses `resolveChallengeProgress` output (`membership.cumulativeLoggedValue`) instead of `membership.cumulativeValues` (per-activity map that was often 0). Progress now matches Challenge Detail.
+- **Issue B:** Removed Group Leaderboard tab from `GroupDetailTabs`. Tab bar is now 3 tabs: Feed / Challenges / Members. Leaderboard route preserved; screen replaced with redirect message pointing to challenge-level leaderboards.
+- **Issue C:** Challenge-level leaderboards (`ChallengeLeaderboardScreen`) unchanged and fully functional.
+- **Issue E:** Created shared `GroupHeroHeader` component. All group tabs now show the full-bleed cover photo hero on entry. `GroupDetailScreen` and `GroupMembersScreen` updated; `GroupFeedScreen` unchanged (already had hero).
+- **Issue D:** Member rows in `GroupMembersScreen` are now clickable. Tapping a row opens a bottom-sheet modal with name, role, joined date, and streak.
+- **Issue F:** `useJoinGroup` now throws on null result (enabling TanStack retry), adds `retry: 1` (300 ms delay), and invalidates `home-screen-data` on success. `handleJoin` in `GroupDetailScreen` simplified accordingly.
+
+### Tests
+
+- 13/13 new guards in `scripts/testGroupUxPolish.ts` (`npm run test:group-ux-polish`)
+- All existing suites remain green: `test:group-lifecycle`, `test:pilot-ux-polish-guards`, `tsc --noEmit`, `npm run build`
+
+---
+
 ## Session: Phase 18I-6I — Home Challenge Cards Relevance (2026-07-03)
 
 **Type:** UX relevance improvement. No schema changes, no Cloud Functions, no migrations.
