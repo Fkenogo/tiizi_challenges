@@ -68,4 +68,20 @@ assert.match(
   'GroupDetailScreen must use GroupHeroHeader',
 );
 
-console.log('✅ testGroupUxPolish — 8/8 passed (competitive progress source, leaderboard tab removed, GroupHeroHeader extracted)');
+// ── Task 4: Clickable member rows + member detail modal ───────────────────────
+
+const groupMembersScreenV2 = readFileSync('src/features/Groups/GroupMembersScreen.tsx', 'utf8');
+
+assert.match(
+  groupMembersScreenV2,
+  /selectedMember/,
+  'GroupMembersScreen must have selectedMember state for member detail modal',
+);
+
+assert.match(
+  groupMembersScreenV2,
+  /onClick.*setSelectedMember|setSelectedMember.*onClick/s,
+  'GroupMembersScreen community member rows must call setSelectedMember on click',
+);
+
+console.log('✅ testGroupUxPolish — 10/10 passed (competitive progress source, leaderboard tab removed, GroupHeroHeader extracted, clickable member rows with detail modal)');

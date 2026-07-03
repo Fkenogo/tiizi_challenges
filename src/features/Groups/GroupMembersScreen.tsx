@@ -1,6 +1,7 @@
 import { MessageSquare, Search } from 'lucide-react';
 import { GroupHeroHeader } from './components/GroupHeroHeader';
 import { useEffect, useMemo, useState } from 'react';
+import type { GroupMemberItem } from '../../services/groupInsightsService';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
@@ -22,6 +23,7 @@ function GroupMembersScreen() {
   const { data: members = [] } = useGroupMembers(id);
   const reportGroup = useReportGroup();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMember, setSelectedMember] = useState<GroupMemberItem | null>(null);
 
   useEffect(() => {
     if (id) setActiveGroupId(id);
@@ -105,7 +107,7 @@ function GroupMembersScreen() {
                 </article>
               )}
               {admins.map((member) => (
-                <article key={member.id} className="rounded-[22px] border border-[#f8d6bd] bg-white p-4 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <article key={member.id} className="rounded-[22px] border border-[#f8d6bd] bg-white p-4 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-pointer active:bg-slate-50" onClick={() => setSelectedMember(member)}>
                   <div className="flex items-center gap-3">
                     <div className="h-14 w-14 rounded-full bg-[#ffd9bf] border-2 border-primary" />
                     <div>
@@ -153,7 +155,7 @@ function GroupMembersScreen() {
 
             <div className="mt-4 space-y-3">
               {others.map((member) => (
-                <article key={member.id} className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <article key={member.id} className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-pointer active:bg-slate-50" onClick={() => setSelectedMember(member)}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-14 w-14 rounded-full bg-[#ffd9bf]" />
                     <div className="min-w-0">
@@ -195,6 +197,54 @@ function GroupMembersScreen() {
           </section>
         </main>
       </div>
+
+      {/* Member detail modal */}
+      {selectedMember && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          onClick={() => setSelectedMember(null)}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative w-full max-w-mobile rounded-t-[28px] bg-white px-6 pt-6 pb-10 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle */}
+            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-slate-200" />
+
+            {/* Name + role */}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[22px] leading-[28px] font-black text-slate-900">{selectedMember.name}</p>
+              {selectedMember.role === 'Coach' ? (
+                <span className="rounded-full bg-[#fff1e7] px-3 py-1 text-[12px] leading-[14px] font-bold text-primary">LEAD</span>
+              ) : (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-[12px] leading-[14px] font-semibold text-slate-600">Member</span>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-[14px] leading-[18px] font-semibold text-slate-500">Joined</p>
+                <p className="text-[14px] leading-[18px] font-bold text-slate-900">{formatJoined(selectedMember.joinedAt)}</p>
+              </div>
+              {selectedMember.streak && (
+                <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                  <p className="text-[14px] leading-[18px] font-semibold text-slate-500">Streak</p>
+                  <p className="text-[14px] leading-[18px] font-bold text-slate-900">{selectedMember.streak}</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="mt-6 w-full h-12 rounded-xl bg-slate-100 text-[15px] font-bold text-slate-700"
+              onClick={() => setSelectedMember(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <GroupBottomNav active="groups" />
     </Screen>
