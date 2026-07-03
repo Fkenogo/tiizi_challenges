@@ -1,4 +1,5 @@
-import { ArrowLeft, CalendarClock, MoreVertical, ShieldCheck } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
+import { GroupHeroHeader } from './components/GroupHeroHeader';
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,7 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChallengesByGroup } from '../../hooks/useChallenges';
 import { setActiveGroupId } from '../../hooks/useActiveGroup';
-import { useGroup, useGroupMemberCount, useGroupMembershipStatus, useJoinGroup, useLeaveGroup, useReportGroup } from '../../hooks/useGroups';
+import { useGroup, useGroupMemberCount, useGroupMembershipStatus, useJoinGroup, useLeaveGroup } from '../../hooks/useGroups';
 import { useChallengeWorkouts } from '../../hooks/useWorkouts';
 import { db } from '../../lib/firebase';
 import { isChallengeOngoing, isChallengeUpcoming } from '../../utils/challengeLifecycle';
@@ -29,7 +30,6 @@ function GroupDetailScreen() {
   const isDeactivated = group?.status === 'inactive';
   const joinGroup = useJoinGroup();
   const leaveGroup = useLeaveGroup();
-  const reportGroup = useReportGroup();
   const { data: challenges = [] } = useChallengesByGroup(id);
 
   useEffect(() => {
@@ -180,75 +180,53 @@ function GroupDetailScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
-        <header className="sticky top-0 z-20 px-4 py-4 border-b border-slate-200 bg-slate-50">
-          <div className="flex items-center justify-between">
-            <button className="h-10 w-10 flex items-center justify-center text-primary" onClick={() => navigate('/app/groups')}><ArrowLeft size={24} /></button>
-            <h1 className="text-[18px] leading-[22px] font-black text-slate-900">Group Detail</h1>
+        <GroupHeroHeader
+          groupName={group?.name ?? ''}
+          coverImageUrl={group?.coverImageUrl}
+          memberCount={memberCount}
+          isPrivate={group?.isPrivate ?? false}
+          onBack={() => navigate('/app/groups')}
+        />
+
+        {/* Compact action bar below hero */}
+        {membershipStatus === 'joined' && (
+          <div className="px-4 py-3 bg-white border-b border-slate-200 flex items-center gap-2">
+            <button className="h-10 px-5 rounded-xl bg-[#e9eff8] text-slate-900 text-[15px] font-semibold">✓ Joined</button>
             <button
-              className="h-10 w-10 flex items-center justify-center text-slate-700"
+              className="h-10 px-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-[14px] font-semibold disabled:opacity-60"
+              disabled={leaveGroup.isPending}
               onClick={async () => {
-                if (!user?.uid || !id) return;
-                const reason = 'Reported by member';
+                if (!id) return;
                 try {
-                  await reportGroup.mutateAsync({
-                    groupId: id,
-                    reporterUid: user.uid,
-                    reason,
-                    reportType: 'group',
-                  });
-                  showToast('Report submitted for review.', 'success');
-                } catch {
-                  showToast('Could not submit report.', 'error');
+                  await leaveGroup.mutateAsync(id);
+                  showToast('You left this group.', 'success');
+                  navigate('/app/groups');
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : 'Could not leave group.';
+                  showToast(message, 'error');
                 }
               }}
             >
-              <MoreVertical size={22} />
+              {leaveGroup.isPending ? 'Leaving...' : 'Leave'}
             </button>
           </div>
-        </header>
-
-        <section className="px-4 pt-4 pb-5 bg-white border-b border-slate-200">
-          <div className="flex items-start gap-4">
-            <img src={group?.coverImageUrl || fallbackCover} alt={group?.name} className="h-24 w-24 rounded-2xl object-cover" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-[16px] leading-[21px] font-black text-slate-900 truncate">{group?.name}</h2>
-                <ShieldCheck size={16} className="text-blue-500" />
-              </div>
-              <p className="mt-1 text-[14px] leading-[20px] font-medium text-[#61758f]">{memberCount.toLocaleString()} Members • {(group?.isPrivate ? 'Private' : 'Official')} Group</p>
-              {membershipStatus === 'joined' && (
-                <div className="mt-3 flex gap-2">
-                  <button className="h-10 px-5 rounded-xl bg-[#e9eff8] text-slate-900 text-[15px] font-semibold">✓ Joined</button>
-                  <button
-                    className="h-10 px-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-[14px] font-semibold disabled:opacity-60"
-                    disabled={leaveGroup.isPending}
-                    onClick={async () => {
-                      if (!id) return;
-                      try {
-                        await leaveGroup.mutateAsync(id);
-                        showToast('You left this group.', 'success');
-                        navigate('/app/groups');
-                      } catch (error) {
-                        const message = error instanceof Error ? error.message : 'Could not leave group.';
-                        showToast(message, 'error');
-                      }
-                    }}
-                  >
-                    {leaveGroup.isPending ? 'Leaving...' : 'Leave'}
-                  </button>
-                </div>
-              )}
-              {membershipStatus === 'pending' && (
-                <button className="mt-3 h-10 px-5 rounded-xl bg-[#fff1e7] text-primary text-[15px] font-semibold">Pending Approval</button>
-              )}
-              {membershipStatus === 'none' && (
-                <button className="mt-3 h-10 px-5 rounded-xl bg-primary text-white text-[15px] font-semibold disabled:opacity-60" onClick={handleJoin} disabled={joinGroup.isPending}>
-                  {joinGroup.isPending ? 'Joining...' : 'Join Group'}
-                </button>
-              )}
-            </div>
+        )}
+        {membershipStatus === 'pending' && (
+          <div className="px-4 py-3 bg-white border-b border-slate-200">
+            <button className="h-10 px-5 rounded-xl bg-[#fff1e7] text-primary text-[15px] font-semibold">Pending Approval</button>
           </div>
-        </section>
+        )}
+        {membershipStatus === 'none' && !isDeactivated && (
+          <div className="px-4 py-3 bg-white border-b border-slate-200">
+            <button
+              className="h-10 px-5 rounded-xl bg-primary text-white text-[15px] font-semibold disabled:opacity-60"
+              onClick={handleJoin}
+              disabled={joinGroup.isPending}
+            >
+              {joinGroup.isPending ? 'Joining...' : 'Join Group'}
+            </button>
+          </div>
+        )}
 
         <GroupDetailTabs groupId={id} active="challenges" />
 

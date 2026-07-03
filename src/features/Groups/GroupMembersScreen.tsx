@@ -1,4 +1,5 @@
-import { ArrowLeft, MessageSquare, MoreHorizontal, Search } from 'lucide-react';
+import { MessageSquare, Search } from 'lucide-react';
+import { GroupHeroHeader } from './components/GroupHeroHeader';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
@@ -74,16 +75,13 @@ function GroupMembersScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
-        <header className="sticky top-0 z-20 px-4 py-4 border-b border-slate-200 bg-slate-50">
-          <div className="flex items-center justify-between">
-            <button className="h-10 w-10 rounded-full bg-[#e6edf7] text-[#4d637d] flex items-center justify-center" onClick={() => navigate(`/app/group/${id}`)}><ArrowLeft size={22} /></button>
-            <h1 className="text-[20px] leading-[24px] font-black text-slate-900">{group.name}</h1>
-            <button className="h-10 w-10 rounded-full bg-[#e6edf7] text-[#4d637d] flex items-center justify-center"><MoreHorizontal size={20} /></button>
-          </div>
-
-          <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">{memberCount.toLocaleString()} members • Active daily</p>
-          <span className="mt-2 inline-block rounded-full bg-[#fff1e7] px-3 py-1 text-[12px] leading-[14px] font-semibold text-primary">Community Group</span>
-        </header>
+        <GroupHeroHeader
+          groupName={group.name}
+          coverImageUrl={group.coverImageUrl}
+          memberCount={memberCount}
+          isPrivate={group.isPrivate ?? false}
+          onBack={() => navigate(`/app/group/${id}`)}
+        />
 
         <GroupDetailTabs groupId={id} active="members" />
 
