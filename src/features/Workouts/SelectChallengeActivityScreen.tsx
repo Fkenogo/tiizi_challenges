@@ -11,14 +11,6 @@ import { buildActivitySuccessPath, parseLoggedActivityIndexes, resolveWellnessAc
 import { computeActivityScore, type ChallengeType } from '../../services/scoringConfig';
 import { resolveChallengeProgress } from '../Challenges/challengeProgressResolver';
 
-function resolveActivityKey(activity: {
-  activityId?: string;
-  exerciseId?: string;
-  exerciseName?: string;
-}): string {
-  return activity.activityId ?? activity.exerciseId ?? activity.exerciseName ?? '';
-}
-
 function todayDateString(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -88,6 +80,10 @@ function SelectChallengeActivityScreen() {
     if (startAt && now < startAt) { showToast(`Challenge starts on ${startAt.toLocaleDateString()}.`, 'error'); return; }
     if (endAt && now > endAt) { showToast('Challenge has ended.', 'error'); return; }
 
+    // MVP limitation: activities are logged sequentially. If activity N succeeds but N+1 fails,
+    // the streak day is partially written in Firestore. The user sees an error toast and is NOT
+    // navigated to the success screen, so they know to retry. The streak engine's same-day
+    // idempotency guard (prevLastLogDate === today → no increment) prevents double-counting on retry.
     setIsChecklistSubmitting(true);
     try {
       for (let i = 0; i < activities.length; i++) {
@@ -150,17 +146,6 @@ function SelectChallengeActivityScreen() {
   const longestStreak = membership?.longestStreak ?? 0;
   const requiredDays = _rp.streakTargetDays;
   const daysRemaining = requiredDays > 0 ? Math.max(0, requiredDays - currentStreak) : null;
-
-  const competitiveActivities = useMemo(() => {
-    if (!challenge?.activities) return [];
-    return challenge.activities.map((activity) => {
-      const key = resolveActivityKey(activity);
-      const cumulative = membership?.cumulativeValues?.[key] ?? 0;
-      const target = activity.targetValue ?? 0;
-      const pct = target > 0 ? Math.min(100, Math.round((cumulative / target) * 100)) : 0;
-      return { name: activity.exerciseName || key, cumulative, target, unit: activity.unit, pct };
-    });
-  }, [challenge?.activities, membership?.cumulativeValues]);
 
   const handleSessionComplete = () => {
     if (!challengeId) return;
@@ -307,25 +292,19 @@ function SelectChallengeActivityScreen() {
               </div>
             )}
 
-            {/* Competitive per-activity progress */}
-            {challengeType === 'competitive' && competitiveActivities.length > 0 && (
+            {/* Competitive overall progress */}
+            {challengeType === 'competitive' && (
               <div className="st-card p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} className="text-primary" />
                   <p className="text-[13px] leading-[16px] font-bold text-primary uppercase tracking-[0.08em]">My Progress</p>
                 </div>
-                <div className="space-y-3">
-                  {competitiveActivities.map((activity) => (
-                    <div key={activity.name}>
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-[13px] font-semibold text-slate-800">{activity.name}</p>
-                        <p className="text-[13px] font-black text-primary">{activity.cumulative.toLocaleString()} / {activity.target.toLocaleString()} {activity.unit}</p>
-                      </div>
-                      <div className="h-2.5 rounded-full bg-[#e8edf5] overflow-hidden">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${activity.pct}%` }} />
-                      </div>
-                    </div>
-                  ))}
+                <div className="h-2.5 rounded-full bg-[#e8edf5] overflow-hidden">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${_rp.progressPercent}%` }} />
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-[13px] leading-[16px] text-slate-700">{_rp.primaryLabel}</p>
+                  <p className="text-[15px] font-black text-primary">{_rp.progressPercent}%</p>
                 </div>
               </div>
             )}
@@ -459,14 +438,6 @@ function SelectChallengeActivityScreen() {
                         ? 'Bonus challenge'
                         : subtitle(activity.unit, 'activityType' in activity ? activity.activityType : undefined)}
                     </p>
-                    {isV2 && challengeType === 'competitive' && (() => {
-                      const found = competitiveActivities.find((a) => a.name === (match?.name || activity.exerciseName));
-                      return found && found.target > 0 ? (
-                        <p className="mt-0.5 text-[12px] text-primary font-semibold">
-                          {found.cumulative.toLocaleString()} / {found.target.toLocaleString()} {found.unit}
-                        </p>
-                      ) : null;
-                    })()}
                     {isV2 && challengeType === 'collective' && activity.targetValue > 0 && (
                       <p className="mt-0.5 text-[12px] text-primary font-semibold">Target: {activity.targetValue.toLocaleString()} {activity.unit}</p>
                     )}
