@@ -6,6 +6,8 @@ import { groupService } from '../../services/groupService';
 import { userProfileService } from '../../services/userProfileService';
 import { db } from '../../lib/firebase';
 import { Challenge } from '../../types';
+import { isChallengeOngoing, isChallengeCompletedOrExpired } from '../../utils/challengeLifecycle';
+import { buildChallengeProgress } from '../Challenges/challengeProgressDisplay';
 
 type HomeScreenData = {
   profileSummary: {
@@ -13,25 +15,28 @@ type HomeScreenData = {
     photoURL: string;
   };
   myGroupsCount: number;
-  activeChallenge: {
+  myChallenges: Array<{
     id: string;
     name: string;
     season: string;
     level: string;
     progress: number;
     progressLabel: string;
+    secondaryLabel?: string;
     day: number;
     totalDays: number;
     groupId?: string;
     challengeType: 'collective' | 'competitive' | 'streak';
     actionLabel: 'Log Workout' | 'Log Activity';
-  } | null;
+    /** True when the user has personally completed their challenge goal. */
+    isUserCompleted: boolean;
+  }>;
   todaysGoals: Array<{
     id: string;
     text: string;
     completed: boolean;
   }>;
-  trendingChallenges: Array<{
+  mostPopularOngoing: Array<{
     id: string;
     name: string;
     members: string;
@@ -64,19 +69,7 @@ function formatCompactCount(value: number) {
   return `${value}`;
 }
 
-function isChallengeActiveNow(startDate: string, endDate: string) {
-  const now = Date.now();
-  const start = Date.parse(startDate);
-  const end = Date.parse(endDate);
-  if (Number.isNaN(start) || Number.isNaN(end)) return false;
-  return now >= start && now <= end;
-}
 
-function formatMetric(value: number, unit: string) {
-  const safeUnit = unit || 'units';
-  const rounded = Number.isInteger(value) ? value : Number(value.toFixed(1));
-  return `${rounded} ${safeUnit}`;
-}
 
 export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> {
   const [
@@ -151,116 +144,165 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
     .map((challengeId) => challengeIndex.get(challengeId))
     .filter((challenge): challenge is Challenge => !!challenge);
 
-  const activeChallenge =
-    membershipChallenges.find((challenge) =>
-      challenge.status === 'active' && isChallengeActiveNow(challenge.startDate, challenge.endDate),
-    )
-    ?? null;
+  // Up to 10 joined ongoing challenges for the My Challenges carousel.
+  const ongoingMemberChallenges = membershipChallenges
+    .filter((challenge) => isChallengeOngoing(challenge))
+    .sort((a, b) => {
+      const aLast = membershipSummaries.get(a.id)?.lastActivityAt;
+      const bLast = membershipSummaries.get(b.id)?.lastActivityAt;
+      // Tier 1: has recent activity → sort by lastActivityAt desc
+      if (aLast && bLast) return aLast > bLast ? -1 : aLast < bLast ? 1 : 0;
+      if (aLast) return -1;
+      if (bLast) return 1;
+      // Tier 2: no activity → sort by endDate asc (soonest deadline first)
+      return Date.parse(a.endDate) - Date.parse(b.endDate);
+    })
+    .slice(0, 10);
 
-  const activeChallengeCard = activeChallenge
-    ? {
-        id: activeChallenge.id,
-        name: activeChallenge.name,
-        season: activeChallenge.challengeType ? `${activeChallenge.challengeType} challenge` : 'Group challenge',
-        level: activeChallenge.status === 'active' ? 'Active' : 'Open',
-        day: 1,
-        totalDays: dayDiff(activeChallenge.startDate, activeChallenge.endDate),
-        progress: 0,
-        groupId: activeChallenge.groupId,
-        challengeType: activeChallenge.challengeType ?? 'collective',
-        actionLabel:
-          activeChallenge.category && activeChallenge.category !== 'fitness'
-            ? 'Log Activity'
-            : 'Log Workout' as 'Log Workout' | 'Log Activity',
-        progressLabel: '0 complete',
-      }
-    : null;
+  // For competitive v2 challenges, fetch a lightweight leaderboard (all members for the
+  // challenge, sorted by score in-memory) so home cards can show leader comparison.
+  // At most 3 challenges, so at most 3 extra Firestore reads.
+  const competitiveChallengeIds = ongoingMemberChallenges
+    .filter((c) => c.challengeType === 'competitive' && c.engineVersion === 'v2')
+    .map((c) => c.id);
 
-  if (activeChallengeCard && activeChallenge) {
-    const rawDay = currentDay(activeChallenge.startDate);
-    activeChallengeCard.day = Math.min(activeChallengeCard.totalDays, Math.max(1, rawDay));
+  const competitiveLeaderboards = new Map<string, Array<{ userId: string; score: number }>>();
+  if (competitiveChallengeIds.length > 0) {
+    await Promise.all(
+      competitiveChallengeIds.map(async (cId) => {
+        const snap = await getDocs(
+          query(collection(db, 'challengeMembers'), where('challengeId', '==', cId)),
+        ).catch(() => null);
+        if (!snap) return;
+        const rows = snap.docs
+          .map((d) => {
+            const data = d.data() as { userId?: string; cumulativeLoggedValue?: number };
+            return { userId: data.userId ?? '', score: Math.max(0, Number(data.cumulativeLoggedValue ?? 0)) };
+          })
+          .filter((r) => r.userId)
+          .sort((a, b) => b.score - a.score);
+        competitiveLeaderboards.set(cId, rows);
+      }),
+    );
   }
 
+  // Build base cards synchronously, then enrich the first card with live progress.
+  const myChallengeCards: HomeScreenData['myChallenges'] = ongoingMemberChallenges.map((c) => {
+    const totalDays = dayDiff(c.startDate, c.endDate);
+    const rawDay = currentDay(c.startDate);
+    const day = Math.min(totalDays, Math.max(1, rawDay));
+    const membership = membershipSummaries.get(c.id) ?? null;
+    const leaderboard = competitiveLeaderboards.get(c.id);
+    // buildChallengeProgress guarantees that progress (bar) and progressLabel (text) derive
+    // from the same source — no more "0 / 700 reps" while the bar shows 14%.
+    const display = buildChallengeProgress(c, membership, leaderboard, uid);
+    return {
+      id: c.id,
+      name: c.name,
+      season: c.challengeType ? `${c.challengeType} challenge` : 'Group challenge',
+      level: 'Active',
+      day,
+      totalDays,
+      progress: display.progress,
+      progressLabel: display.primaryLabel,
+      secondaryLabel: display.secondaryLabel,
+      groupId: c.groupId,
+      challengeType: c.challengeType ?? 'collective',
+      actionLabel: (c.category && c.category !== 'fitness' ? 'Log Activity' : 'Log Workout') as 'Log Workout' | 'Log Activity',
+      isUserCompleted: display.isUserCompleted,
+    };
+  });
+
+  // Enrich first card with live log-based progress (one Firestore read, same as before).
   let workoutLoggedToday = false;
-  if (activeChallengeCard && activeChallenge) {
-    const selectedActiveChallenge = activeChallenge;
+  const firstChallenge = ongoingMemberChallenges[0] ?? null;
+  const firstCard = myChallengeCards[0] ?? null;
+  if (firstChallenge && firstCard) {
     const today = new Date().toISOString().slice(0, 10);
-    const membership = membershipSummaries.get(activeChallengeCard.id);
+    const membership = membershipSummaries.get(firstCard.id);
     const lastActivityIso = membership?.lastActivityAt;
     workoutLoggedToday = Boolean(lastActivityIso && lastActivityIso.slice(0, 10) === today);
 
-    const primaryActivity = selectedActiveChallenge.activities?.[0];
+    const primaryActivity = firstChallenge.activities?.[0];
     const targetValue = Math.max(1, Number(primaryActivity?.targetValue ?? 0));
     const unit = String(primaryActivity?.unit ?? 'units');
     let progressValue = 0;
 
     if (targetValue > 0 && primaryActivity) {
-      const isWellness = (selectedActiveChallenge.category && selectedActiveChallenge.category !== 'fitness') || !!primaryActivity.activityId;
+      const isWellness = (firstChallenge.category && firstChallenge.category !== 'fitness') || !!primaryActivity.activityId;
       if (isWellness) {
         const logsSnap = await getDocs(
-          query(collection(db, 'wellnessLogs'), where('challengeId', '==', selectedActiveChallenge.id)),
-        );
-        logsSnap.docs.forEach((item) => {
+          query(
+            collection(db, 'wellnessLogs'),
+            where('challengeId', '==', firstChallenge.id),
+            where('userId', '==', uid),
+          ),
+        ).catch(() => null);
+        logsSnap?.docs.forEach((item) => {
           const data = item.data() as { userId?: string; value?: number; activityId?: string };
-          const shouldCount = selectedActiveChallenge.challengeType === 'collective'
-            ? (primaryActivity.activityId ? data.activityId === primaryActivity.activityId : true)
-            : data.userId === uid && (primaryActivity.activityId ? data.activityId === primaryActivity.activityId : true);
-          if (shouldCount) {
-            progressValue += Math.max(0, Number(data.value ?? 0));
-          }
+          const activityMatch = primaryActivity.activityId ? data.activityId === primaryActivity.activityId : true;
+          if (activityMatch) progressValue += Math.max(0, Number(data.value ?? 0));
         });
       } else {
         const workoutsSnap = await getDocs(
-          query(collection(db, 'workouts'), where('challengeId', '==', selectedActiveChallenge.id)),
-        );
-        workoutsSnap.docs.forEach((item) => {
+          query(
+            collection(db, 'workouts'),
+            where('challengeId', '==', firstChallenge.id),
+            where('userId', '==', uid),
+          ),
+        ).catch(() => null);
+        workoutsSnap?.docs.forEach((item) => {
           const data = item.data() as { userId?: string; value?: number; exerciseId?: string };
-          const shouldCount = selectedActiveChallenge.challengeType === 'collective'
-            ? (primaryActivity.exerciseId ? data.exerciseId === primaryActivity.exerciseId : true)
-            : data.userId === uid && (primaryActivity.exerciseId ? data.exerciseId === primaryActivity.exerciseId : true);
-          if (shouldCount) {
-            progressValue += Math.max(0, Number(data.value ?? 0));
-          }
+          const exerciseMatch = primaryActivity.exerciseId ? data.exerciseId === primaryActivity.exerciseId : true;
+          if (exerciseMatch) progressValue += Math.max(0, Number(data.value ?? 0));
         });
       }
     }
 
     if (targetValue > 0) {
-      const metricPercent = Math.min(100, Math.round((progressValue / targetValue) * 100));
-      activeChallengeCard.progress = metricPercent;
-      activeChallengeCard.progressLabel = `${formatMetric(progressValue, unit)} of ${formatMetric(targetValue, unit)}`;
+      // Override both bar and label from the same live value so they stay in sync.
+      const liveDisplay = buildChallengeProgress(
+        { ...firstChallenge, groupCurrentTotal: firstChallenge.groupCurrentTotal ?? 0 },
+        {
+          completionRate: membership?.completionRate ?? 0,
+          cumulativeLoggedValue: progressValue,
+          currentStreak: membership?.currentStreak ?? 0,
+          status: membership?.status,
+        },
+        competitiveLeaderboards.get(firstCard.id),
+        uid,
+      );
+      firstCard.progress = liveDisplay.progress;
+      firstCard.progressLabel = liveDisplay.primaryLabel;
+      firstCard.secondaryLabel = liveDisplay.secondaryLabel;
+      firstCard.isUserCompleted = liveDisplay.isUserCompleted;
     } else {
-      const fallbackPercent = Math.min(100, Math.round(membership?.completionRate ?? 0));
-      activeChallengeCard.progress = fallbackPercent;
-      activeChallengeCard.progressLabel = `${activeChallengeCard.progress}% complete`;
+      firstCard.progress = Math.min(100, Math.round(membership?.completionRate ?? 0));
+      firstCard.progressLabel = `${firstCard.progress}% complete`;
     }
   }
 
-  // allChallenges already comes from visibility-safe queries
-  // (public groups + member groups), so avoid secondary group lookups
-  // that can hide data during first-auth hydration.
-  const openChallenges = allChallenges
-    .filter((challenge) => challenge.status === 'active' || challenge.status === 'completed')
-    .slice(0, 30);
+  const nowMs = Date.now();
+  const oneDay = 1000 * 60 * 60 * 24;
 
-  const trendingChallenges: HomeScreenData['trendingChallenges'] = openChallenges
-    .sort((a, b) => {
-      const participantDelta = (b.participantCount ?? 0) - (a.participantCount ?? 0);
-      if (participantDelta !== 0) return participantDelta;
-      return Date.parse(b.startDate) - Date.parse(a.startDate);
-    })
-    .slice(0, 5)
+  // Most Popular Ongoing: only challenges that are currently within their date window
+  // and not completed/cancelled. Sorted by participant count descending. Max 3.
+  const membershipIndex = await challengeService.getUserChallengeMembershipIndex(uid).catch(() => new Map<string, string>());
+  const mostPopularOngoing: HomeScreenData['mostPopularOngoing'] = allChallenges
+    .filter((challenge) => isChallengeOngoing(challenge, nowMs))
+    .sort((a, b) => (b.participantCount ?? 0) - (a.participantCount ?? 0))
+    .slice(0, 3)
     .map((challenge) => {
-      const now = Date.now();
-      const start = Date.parse(challenge.startDate);
       const end = Date.parse(challenge.endDate);
-      const oneDay = 1000 * 60 * 60 * 24;
-      const hasStarted = !Number.isNaN(start) && now >= start;
-      const hasEnded = !Number.isNaN(end) && now > end;
-      const remaining = !Number.isNaN(end) ? Math.max(0, Math.ceil((end - now) / oneDay)) : 0;
-      const startsIn = !Number.isNaN(start) ? Math.max(0, Math.ceil((start - now) / oneDay)) : 0;
+      const remaining = !Number.isNaN(end) ? Math.max(0, Math.ceil((end - nowMs) / oneDay)) : 0;
+      const memberStatus = membershipIndex.get(challenge.id) ?? membershipSummaries.get(challenge.id)?.status;
       const joined = activeMembershipChallengeIds.has(challenge.id);
-      const isCompleted = challenge.status === 'completed' || hasEnded;
+      let actionLabel: 'Join' | 'View' | 'Log Workout' | 'Log Activity' = 'Join';
+      if (memberStatus === 'completed') {
+        actionLabel = 'View';
+      } else if (joined) {
+        actionLabel = (challenge.category && challenge.category !== 'fitness') ? 'Log Activity' : 'Log Workout';
+      }
       return {
         id: challenge.id,
         name: challenge.name,
@@ -269,14 +311,8 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
         members: formatCompactCount(challenge.participantCount ?? 0),
         imageUrl: challenge.coverImageUrl,
         joined,
-        daysLabel: isCompleted ? 'Completed' : (hasStarted ? `${remaining} Days Left` : `Starts in ${startsIn} Days`),
-        actionLabel: isCompleted
-          ? 'View'
-          : joined
-            ? (hasStarted
-              ? ((challenge.category && challenge.category !== 'fitness') ? 'Log Activity' : 'Log Workout')
-              : 'View')
-            : 'Join',
+        daysLabel: `${remaining} Days Left`,
+        actionLabel,
       };
     });
 
@@ -290,13 +326,13 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
       photoURL: profile?.personalInfo?.photoURL || identity?.photoURL || '',
     },
     myGroupsCount: myGroups.length,
-    activeChallenge: activeChallengeCard,
+    myChallenges: myChallengeCards,
     todaysGoals: [
-      { id: 'goal-log-workout', text: 'Log today’s challenge workout', completed: workoutLoggedToday },
+      { id: 'goal-log-workout', text: 'Log today\'s challenge workout', completed: workoutLoggedToday },
       { id: 'goal-profile', text: 'Complete your profile setup', completed: !!profile?.onboardingCompleted },
       { id: 'goal-group', text: 'Join at least one active group', completed: myGroups.length > 0 },
     ],
-    trendingChallenges,
+    mostPopularOngoing,
   };
 }
 
