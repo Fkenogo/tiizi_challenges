@@ -1,5 +1,44 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6K — Log Activity Leaderboard Data Unification (2026-07-03)
+
+**Branch:** fix/p0-pre-deploy-blockers
+
+### Problem
+
+`SelectChallengeActivityScreen` called `resolveChallengeProgress({ challenge, membership })` without a leaderboard. This caused:
+- **Collective:** `groupTotal = max(challenge.groupCurrentTotal, 0, 0, userContributionTotal)`. When `challenge.groupCurrentTotal` was stale in the 5-minute cache at 0 and the current user had not yet personally logged, the screen showed `0 / 30,000 minutes` even though the real team total was 210 minutes.
+- **Competitive:** `leaderLabel` / `secondaryLabel` were computed by the resolver but never rendered. No ranking context shown.
+- **All types:** No leaderboard section, no podium, no "No activity logged yet" state.
+
+`ChallengeDetailScreen` avoided this by fetching the leaderboard (staleTime 60s), computing `memberSumContribution` from all members' `cumulativeLoggedValue`, and passing it to the resolver → `groupTotal = max(0, 210, 0, 0) = 210`.
+
+### Fix
+
+- Added `challenge-leaderboard-snapshot` `useQuery` to `SelectChallengeActivityScreen` with identical queryKey to `ChallengeDetailScreen` — TanStack Query serves from shared cache when the user navigated through Challenge Detail first; otherwise fetches fresh data.
+- Added `challenge-participant-names` `useQuery` with identical queryKey.
+- `resolveChallengeProgress` now receives `leaderboard`, `memberSumContribution`, and `currentUserId` — same call signature as `ChallengeDetailScreen`.
+- `_rp.secondaryLabel` rendered below progress bar (shows leader gap for competitive; user contribution for collective).
+- Compact leaderboard section added (rank badges, names, scores, empty state: "No activity logged yet. Be the first!").
+
+### Tests
+
+- 9 new guards in `scripts/testChallengeActivityModel.ts` (Phase 18I-6K block, 53/53 total)
+- 18I-4C scoring guards updated to reflect new canonical approach (old guards enforced deprecated `cumulativeValues` path removed in 18I-6J)
+- 18I-6J `testGroupUxPolish.ts` guard tightened: `membership.cumulativeValues` pattern narrowed so it does not match Firestore data reads in the leaderboard queryFn
+- `tsc --noEmit` clean, `npm run build` clean, all 4 suites pass
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/features/Workouts/SelectChallengeActivityScreen.tsx` | Add leaderboard + names queries, updated resolver call, render secondaryLabel, add compact leaderboard section |
+| `scripts/testChallengeActivityModel.ts` | 9 new Phase 18I-6K guards |
+| `scripts/testScoringGuards.ts` | 18I-4C block updated to match new canonical approach |
+| `scripts/testGroupUxPolish.ts` | Issue A guard pattern narrowed to `membership?.cumulativeValues` |
+
+---
+
 ## Session: Phase 18I-6J — Group UX and Log Activity Polish (2026-07-03)
 
 **Branch:** fix/p0-pre-deploy-blockers
