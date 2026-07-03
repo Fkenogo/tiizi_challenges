@@ -128,4 +128,72 @@ assert(
   );
 }
 
+// ── Phase 18I-6I: Most Active section ────────────────────────────────────
+
+{
+  // Guard: useHomeScreen reads challengeActivitySummaries for Most Active ranking
+  assert(
+    homeHook.includes("'challengeActivitySummaries'"),
+    'useHomeScreen must read challengeActivitySummaries collection for Most Active ranking',
+  );
+
+  // Guard: sorts by totalLogs before participantCount
+  assert(
+    homeHook.includes('totalLogs') && homeHook.includes('participantCount'),
+    'useHomeScreen Most Active must sort by totalLogs then participantCount',
+  );
+
+  // Guard: totalLogs sort is primary (appears before participantCount in sort)
+  assert(
+    (() => {
+      const totalLogsIdx = homeHook.indexOf('totalLogs');
+      const participantIdx = homeHook.indexOf('participantCount');
+      return totalLogsIdx !== -1 && participantIdx !== -1 && totalLogsIdx < participantIdx;
+    })(),
+    'useHomeScreen Most Active: totalLogs sort must appear before participantCount sort',
+  );
+
+  // Guard: Most Active limit is 5
+  assert(
+    homeHook.includes('.slice(0, 5)'),
+    'useHomeScreen must limit mostActiveOngoing to 5',
+  );
+
+  // Guard: uses chunked in-query (no unbounded challengeActivitySummaries read)
+  assert(
+    homeHook.includes("documentId(), 'in'") || homeHook.includes('documentId(), "in"'),
+    'useHomeScreen challengeActivitySummaries read must use documentId() in-query (chunked, not unbounded)',
+  );
+
+  // Guard: missing summary treated as totalLogs = 0 (not excluded)
+  assert(
+    homeHook.includes('totalLogs ?? 0') || homeHook.includes("totalLogs ?? 0"),
+    'useHomeScreen Most Active must treat missing challengeActivitySummaries as totalLogs = 0',
+  );
+
+  // Guard: stat label shows "logs" when totalLogs > 0
+  assert(
+    homeHook.includes('logs'),
+    'useHomeScreen Most Active card members label must include "logs" string',
+  );
+
+  // Guard: HomeScreen renders "Most Active" section label (not "Most Popular")
+  assert(
+    homeScreen.includes('Most Active') && !homeScreen.includes('Most Popular'),
+    'HomeScreen must render "Most Active" section label, not "Most Popular"',
+  );
+
+  // Guard: HomeScreen uses mostActiveOngoing field (not mostPopularOngoing)
+  assert(
+    homeScreen.includes('mostActiveOngoing') && !homeScreen.includes('mostPopularOngoing'),
+    'HomeScreen must reference mostActiveOngoing (renamed from mostPopularOngoing)',
+  );
+
+  // Guard: useHomeScreen type uses mostActiveOngoing (not mostPopularOngoing)
+  assert(
+    homeHook.includes('mostActiveOngoing') && !homeHook.includes('mostPopularOngoing'),
+    'useHomeScreen HomeScreenData type must use mostActiveOngoing field name',
+  );
+}
+
 console.log('✅ testHomeChallengeFeeds: all guards passed');
