@@ -84,4 +84,20 @@ assert.match(
   'GroupMembersScreen community member rows must call setSelectedMember on click',
 );
 
-console.log('✅ testGroupUxPolish — 10/10 passed (competitive progress source, leaderboard tab removed, GroupHeroHeader extracted, clickable member rows with detail modal)');
+// ── Task 5: useJoinGroup retry and home-screen-data invalidation ──────────────
+
+const useGroupsHook = readFileSync('src/hooks/useGroups.ts', 'utf8');
+
+assert.match(
+  useGroupsHook,
+  /retry.*1|retryDelay/,
+  'useJoinGroup must have retry: 1 to handle first-click auth token race',
+);
+
+assert.match(
+  useGroupsHook,
+  /home-screen-data/,
+  'useJoinGroup onSuccess must invalidate home-screen-data so Home feed reflects membership',
+);
+
+console.log('✅ testGroupUxPolish — 12/12 passed (competitive progress source, leaderboard tab removed, GroupHeroHeader extracted, clickable member rows with detail modal, useJoinGroup retry + home-screen-data invalidation)');

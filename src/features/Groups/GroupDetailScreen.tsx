@@ -108,10 +108,6 @@ function GroupDetailScreen() {
     if (!id) return;
     try {
       const result = await joinGroup.mutateAsync({ groupId: id });
-      if (!result) {
-        showToast('Could not join group.', 'error');
-        return;
-      }
       if (result.status === 'pending') {
         showToast('Join request sent for approval.', 'success');
         return;

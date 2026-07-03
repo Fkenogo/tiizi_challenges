@@ -106,13 +106,19 @@ export function useJoinGroup() {
   return useMutation({
     mutationFn: async ({ groupId, inviteCode }: { groupId?: string; inviteCode?: string }) => {
       if (!user?.uid) throw new Error('User required');
-      if (groupId) return groupService.joinGroup(groupId, user.uid);
-      if (inviteCode) return groupService.joinGroupByInviteCode(inviteCode, user.uid);
-      throw new Error('Group identifier required');
+      let result;
+      if (groupId) result = await groupService.joinGroup(groupId, user.uid);
+      else if (inviteCode) result = await groupService.joinGroupByInviteCode(inviteCode, user.uid);
+      else throw new Error('Group identifier required');
+      if (!result) throw new Error('Group not found or not active');
+      return result;
     },
+    retry: 1,
+    retryDelay: 300,
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
       queryClient.invalidateQueries({ queryKey: ['my-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['home-screen-data', user?.uid] });
       const resolvedGroupId = result?.group?.id ?? variables.groupId;
       if (resolvedGroupId) {
         queryClient.invalidateQueries({ queryKey: ['group-member-count', resolvedGroupId] });
