@@ -1,5 +1,29 @@
 # Phase 10c Change Log
 
+## Session: Phase 18I-6K (follow-up) — Route Home Log Activity to SelectChallengeActivityScreen (2026-07-03)
+
+**Branch:** fix/p0-pre-deploy-blockers
+
+### Problem
+
+Phase 18I-6K added the canonical leaderboard data source to `SelectChallengeActivityScreen`, but manual testing showed the user was still seeing the OLD UI ("No workout logs yet for this challenge.", legacy podium, "TOTAL MINUTES 0 / 500"). Root cause: `ActiveChallengeCard`'s "Log Activity" button was navigating to `/app/challenges/${type}?challengeId=...`, which routed to `CompetitiveChallengeScreen` / `StreakChallengeScreen` — legacy dashboard screens using `useChallengeWorkouts` (raw workout logs, not the canonical resolver).
+
+### Fix
+
+- **`ActiveChallengeCard`:** Log Workout / Log Activity button now navigates to `/app/workouts/select-activity?challengeId=...&groupId=...` (SelectChallengeActivityScreen). "View Challenge" (completed state) continues to use `detailPath`.
+- **`CompetitiveChallengeScreen`:** Replaced entirely with a `<Navigate replace>` to `/app/challenge/${challengeId}`. All duplicated leaderboard logic removed, "No workout logs yet for this challenge." gone.
+- **`CollectiveChallengeScreen`:** Same redirect pattern — consolidated to ChallengeDetailScreen.
+- **`StreakChallengeScreen`:** Same redirect pattern — "No workout logs yet" text removed.
+- **`ChallengesScreen.handleJoinChallenge`:** Updated to navigate to `/app/challenge/${challengeId}` directly instead of the legacy type-specific paths.
+
+### Tests
+
+- 7 new guards in `scripts/testGroupUxPolish.ts` (20/20 total)
+- All 4 suites pass: `test:group-ux-polish`, `test:home-challenge-feeds`, `test:challenge-activity-model`, `test:scoring-guards`
+- `tsc --noEmit` clean, `npm run build` clean
+
+---
+
 ## Session: Phase 18I-6K — Log Activity Leaderboard Data Unification (2026-07-03)
 
 **Branch:** fix/p0-pre-deploy-blockers
