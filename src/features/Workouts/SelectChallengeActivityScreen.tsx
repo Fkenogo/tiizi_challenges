@@ -1,14 +1,18 @@
 import { ArrowLeft, CheckCircle2, Circle, Clock3, Dumbbell, Flame, Info, Trophy, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 import { BottomNav, Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChallenge, useChallengeMembership } from '../../hooks/useChallenges';
 import { useExercises } from '../../hooks/useExercises';
 import { useLogWellnessActivity, useLogWorkout } from '../../hooks/useWorkouts';
+import { db } from '../../lib/firebase';
 import { buildActivitySuccessPath, parseLoggedActivityIndexes, resolveWellnessActivityType } from '../../services/challengeActivityFlow';
 import { computeActivityScore, type ChallengeType } from '../../services/scoringConfig';
+import { sortLeaderboardRows } from '../../utils/leaderboardSort';
 import { resolveChallengeProgress } from '../Challenges/challengeProgressResolver';
 
 function todayDateString(): string {
@@ -34,6 +38,94 @@ function SelectChallengeActivityScreen() {
   const engineVersion = challenge?.engineVersion;
   const challengeType = challenge?.challengeType ?? 'collective';
   const isV2 = engineVersion === 'v2';
+
+  // ── Leaderboard snapshot — identical queryKey to ChallengeDetailScreen so TanStack cache is shared ──
+  const { data: leaderboardData = { entries: [], memberSumContribution: 0 } } = useQuery({
+    queryKey: ['challenge-leaderboard-snapshot', challenge?.id, challenge?.engineVersion, challenge?.challengeType],
+    queryFn: async () => {
+      const snap = await getDocs(
+        query(collection(db, 'challengeMembers'), where('challengeId', '==', challenge!.id)),
+      );
+      const rows = snap.docs.map((d) => {
+        const data = d.data() as {
+          userId: string;
+          totalPoints?: number;
+          completionRate?: number;
+          currentStreak?: number;
+          longestStreak?: number;
+          cumulativeLoggedValue?: number;
+          cumulativeValues?: Record<string, number>;
+        };
+        const cumulativeFromValues = Object.values(data.cumulativeValues ?? {}).reduce((s, v) => s + v, 0);
+        return {
+          userId: data.userId,
+          totalPoints: Math.max(0, Number(data.totalPoints ?? 0)),
+          completionRate: Math.max(0, Number(data.completionRate ?? 0)),
+          currentStreak: Math.max(0, Number(data.currentStreak ?? 0)),
+          longestStreak: Math.max(0, Number(data.longestStreak ?? 0)),
+          cumulativeLoggedValue: Math.max(0, Number(data.cumulativeLoggedValue ?? cumulativeFromValues)),
+        };
+      });
+      const memberSumContribution = rows.reduce((s, r) => s + r.cumulativeLoggedValue, 0);
+      const sorted = sortLeaderboardRows(rows, challenge!.engineVersion, challenge!.challengeType);
+      const ct = challenge!.challengeType;
+      const entries = sorted.slice(0, 5).map((entry, index) => {
+        let score: number;
+        let scoreLabel: string;
+        if (ct === 'streak') {
+          score = entry.currentStreak;
+          scoreLabel = score === 1 ? 'day streak' : 'days';
+        } else if (ct === 'competitive') {
+          const totalTarget = (challenge!.activities ?? []).reduce((s, a) => s + (a.targetValue ?? 0), 0);
+          const activityUnit = challenge!.activities?.[0]?.unit ?? '';
+          score = entry.cumulativeLoggedValue;
+          scoreLabel = totalTarget > 0 ? `/ ${totalTarget.toLocaleString()} ${activityUnit}`.trim() : '';
+        } else if (ct === 'collective') {
+          score = entry.cumulativeLoggedValue;
+          scoreLabel = '';
+        } else {
+          score = entry.totalPoints;
+          scoreLabel = 'pts';
+        }
+        return { rank: index + 1, userId: entry.userId, score, scoreLabel };
+      });
+      return { entries, memberSumContribution };
+    },
+    enabled: !!challenge?.id,
+    staleTime: 60 * 1000,
+  });
+  const leaderboard = leaderboardData.entries;
+  const leaderboardMemberSum = leaderboardData.memberSumContribution;
+
+  const leaderboardUserIds = useMemo(() => leaderboard.map((e) => e.userId), [leaderboard]);
+  const { data: leaderboardNames = new Map<string, string>() } = useQuery({
+    queryKey: ['challenge-participant-names', leaderboardUserIds.join(',')],
+    queryFn: async () => {
+      const map = new Map<string, string>();
+      if (leaderboardUserIds.length === 0) return map;
+      const snaps = await Promise.all(leaderboardUserIds.map((uid) => getDoc(doc(db, 'users', uid))));
+      snaps.forEach((snap, i) => {
+        const uid = leaderboardUserIds[i];
+        if (snap.exists()) {
+          const data = snap.data() as {
+            email?: string;
+            profile?: { personalInfo?: { displayName?: string; fullName?: string } };
+          };
+          const name =
+            data.profile?.personalInfo?.displayName ||
+            data.profile?.personalInfo?.fullName ||
+            data.email?.split('@')[0] ||
+            '';
+          map.set(uid, name.trim() || `Member ${uid.slice(0, 6).toUpperCase()}`);
+        } else {
+          map.set(uid, `Member ${uid.slice(0, 6).toUpperCase()}`);
+        }
+      });
+      return map;
+    },
+    enabled: leaderboardUserIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const activities = useMemo(() => {
     if (challenge?.activities && challenge.activities.length > 0) return challenge.activities;
@@ -136,8 +228,14 @@ function SelectChallengeActivityScreen() {
   const today = todayDateString();
   const loggedToday = membership?.lastLogDate === today;
 
-  // --- Engine-specific data — from canonical resolver ---
-  const _rp = resolveChallengeProgress({ challenge: challenge ?? null, membership: membership ?? null });
+  // --- Engine-specific data — from canonical resolver (same inputs as ChallengeDetailScreen) ---
+  const _rp = resolveChallengeProgress({
+    challenge: challenge ?? null,
+    membership: membership ?? null,
+    leaderboard,
+    memberSumContribution: leaderboardMemberSum,
+    currentUserId: user?.uid,
+  });
   const groupCurrentTotal = _rp.groupTotal;
   const groupCumulativeTarget = _rp.groupTarget;
   const groupPct = _rp.groupPercent;
@@ -289,6 +387,9 @@ function SelectChallengeActivityScreen() {
                   <p className="text-[15px] font-black text-primary">{groupPct}%</p>
                 </div>
                 <p className="mt-1 text-[12px] text-slate-500">Every contribution moves the team closer.</p>
+                {_rp.secondaryLabel && (
+                  <p className="mt-1 text-[12px] text-slate-500">{_rp.secondaryLabel}</p>
+                )}
               </div>
             )}
 
@@ -306,6 +407,9 @@ function SelectChallengeActivityScreen() {
                   <p className="text-[13px] leading-[16px] text-slate-700">{_rp.primaryLabel}</p>
                   <p className="text-[15px] font-black text-primary">{_rp.progressPercent}%</p>
                 </div>
+                {_rp.secondaryLabel && (
+                  <p className="mt-1 text-[12px] text-slate-500">{_rp.secondaryLabel}</p>
+                )}
               </div>
             )}
 
@@ -356,6 +460,46 @@ function SelectChallengeActivityScreen() {
                 </div>
               </div>
             )}
+
+            {/* Compact leaderboard — same data source as ChallengeDetailScreen */}
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Trophy size={14} className="text-primary" />
+                  <p className="text-[13px] leading-[16px] font-bold text-primary uppercase tracking-[0.08em]">Leaderboard</p>
+                </div>
+                {leaderboard.length > 0 && (
+                  <p className="text-[12px] text-slate-400">{leaderboard.length} shown</p>
+                )}
+              </div>
+              {leaderboard.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {leaderboard.map((entry) => (
+                    <div key={`${entry.userId}-${entry.rank}`} className="flex items-center gap-3 px-4 py-2.5">
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0 ${
+                        entry.rank === 1 ? 'bg-primary text-white' :
+                        entry.rank === 2 ? 'bg-slate-200 text-slate-700' :
+                        entry.rank === 3 ? 'bg-orange-100 text-orange-700' :
+                        'bg-slate-100 text-slate-500'
+                      }`}>
+                        {entry.rank}
+                      </span>
+                      <div className="h-8 w-8 rounded-full bg-slate-200 flex-shrink-0" />
+                      <p className="flex-1 text-[13px] font-semibold text-slate-700 truncate">
+                        {entry.userId === user?.uid
+                          ? `You (${leaderboardNames.get(entry.userId) ?? 'Me'})`
+                          : (leaderboardNames.get(entry.userId) ?? `Member ${entry.userId.slice(0, 6).toUpperCase()}`)}
+                      </p>
+                      <p className="text-[14px] font-black text-slate-900">
+                        {entry.score.toLocaleString()}{entry.scoreLabel ? <span className="text-[11px] font-normal text-slate-400"> {entry.scoreLabel}</span> : null}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="px-4 py-4 text-[13px] text-slate-400">No activity logged yet. Be the first!</p>
+              )}
+            </div>
           </section>
         )}
 

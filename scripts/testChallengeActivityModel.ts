@@ -320,6 +320,60 @@ console.log('\n--- Phase 18I-6H: Collective challenge validation fixes ---');
 }
 
 // ---------------------------------------------------------------------------
+// Phase 18I-6K guards: SelectChallengeActivityScreen uses shared leaderboard queryKeys
+// ---------------------------------------------------------------------------
+{
+  console.log('\n--- Phase 18I-6K: SelectChallengeActivityScreen leaderboard data source ---');
+  const selectSrc = readSrc('src/features/Workouts/SelectChallengeActivityScreen.tsx');
+  const detailSrc = readSrc('src/features/Challenges/ChallengeDetailScreen.tsx');
+
+  assert(
+    'SelectChallengeActivityScreen uses challenge-leaderboard-snapshot queryKey',
+    selectSrc.includes("'challenge-leaderboard-snapshot'"),
+  );
+
+  assert(
+    'SelectChallengeActivityScreen uses challenge-participant-names queryKey',
+    selectSrc.includes("'challenge-participant-names'"),
+  );
+
+  assert(
+    'ChallengeDetailScreen also uses challenge-leaderboard-snapshot (shared cache baseline)',
+    detailSrc.includes("'challenge-leaderboard-snapshot'"),
+  );
+
+  assert(
+    'ChallengeDetailScreen also uses challenge-participant-names (shared cache baseline)',
+    detailSrc.includes("'challenge-participant-names'"),
+  );
+
+  assert(
+    'SelectChallengeActivityScreen passes memberSumContribution to resolveChallengeProgress',
+    selectSrc.includes('memberSumContribution') && selectSrc.includes('resolveChallengeProgress'),
+  );
+
+  assert(
+    'SelectChallengeActivityScreen passes currentUserId to resolveChallengeProgress',
+    selectSrc.includes('currentUserId') && selectSrc.includes('resolveChallengeProgress'),
+  );
+
+  assert(
+    'SelectChallengeActivityScreen passes leaderboard to resolveChallengeProgress',
+    /resolveChallengeProgress\(\{[\s\S]{0,400}leaderboard/.test(selectSrc),
+  );
+
+  assert(
+    'SelectChallengeActivityScreen renders empty state "No activity logged yet. Be the first!"',
+    selectSrc.includes('No activity logged yet. Be the first!'),
+  );
+
+  assert(
+    'SelectChallengeActivityScreen renders _rp.secondaryLabel',
+    selectSrc.includes('_rp.secondaryLabel'),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Results
 // ---------------------------------------------------------------------------
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);

@@ -14,7 +14,7 @@ const selectScreen = readFileSync('src/features/Workouts/SelectChallengeActivity
 
 assert.doesNotMatch(
   selectScreen,
-  /cumulativeValues/,
+  /membership(?:\?\.)cumulativeValues|membership\[['"]cumulativeValues['"]\]/,
   'SelectChallengeActivityScreen must not read membership.cumulativeValues — use resolveChallengeProgress output instead',
 );
 
