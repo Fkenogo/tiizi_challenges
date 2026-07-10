@@ -31,7 +31,12 @@ function ExerciseDetailScreen() {
     );
   }
 
-  const handleStart = () => {
+  const handleAddToChallenge = () => {
+    const qs = new URLSearchParams({ exerciseId: exercise.id });
+    navigate(`/app/create-challenge?${qs.toString()}`);
+  };
+
+  const handleLogWorkout = () => {
     const qs = new URLSearchParams({ exerciseId: exercise.id });
     if (challengeId) qs.set('challengeId', challengeId);
     if (groupId) qs.set('groupId', groupId);
@@ -46,13 +51,13 @@ function ExerciseDetailScreen() {
             <button onClick={() => navigate(backPath)} className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-900">
               <ArrowLeft size={20} />
             </button>
-            <h2 className="text-[28px] leading-[30px] font-black text-slate-900">Exercise Detail</h2>
+            <h2 className="st-page-title">Exercise Detail</h2>
             <button className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-primary text-[20px]">♥</button>
           </header>
         </div>
 
         <div className="st-form-max mt-4">
-          <div className="h-[230px] rounded-[22px] overflow-hidden border border-slate-100">
+          <div className="h-[220px] rounded-2xl overflow-hidden border border-slate-100">
             <img
               src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1100&q=80"
               alt={exercise.name}
@@ -62,11 +67,28 @@ function ExerciseDetailScreen() {
         </div>
 
         <section className="st-form-max mt-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <h1 className="text-[24px] leading-[30px] font-black text-slate-900">{exercise.name}</h1>
-            <span className="rounded-full bg-primary/15 px-3 py-2 text-[12px] leading-[12px] tracking-[0.1em] uppercase font-bold text-primary">
-              {exercise.tier_2}
-            </span>
+            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+              <span className="rounded-full bg-primary/15 px-3 py-2 text-[12px] leading-[12px] tracking-[0.1em] uppercase font-bold text-primary">
+                {exercise.tier_2}
+              </span>
+              {exercise.movementType === 'isometric' && (
+                <span className="rounded-full bg-violet-100 px-3 py-1.5 text-[11px] leading-[11px] tracking-[0.1em] uppercase font-bold text-violet-700">
+                  Isometric
+                </span>
+              )}
+              {exercise.movementType === 'isotonic' && (
+                <span className="rounded-full bg-sky-100 px-3 py-1.5 text-[11px] leading-[11px] tracking-[0.1em] uppercase font-bold text-sky-700">
+                  Isotonic
+                </span>
+              )}
+              {exercise.holdBased === true && (
+                <span className="rounded-full bg-amber-100 px-3 py-1.5 text-[11px] leading-[11px] tracking-[0.1em] uppercase font-bold text-amber-700">
+                  Hold-Based
+                </span>
+              )}
+            </div>
           </div>
         </section>
 
@@ -77,13 +99,17 @@ function ExerciseDetailScreen() {
 
         <section className="st-form-max mt-4 grid grid-cols-2 gap-3">
           <div className="st-card p-4">
-            <p className="text-[12px] leading-[14px] tracking-[0.1em] uppercase font-bold text-slate-500">Metric Unit</p>
+            <p className="text-[12px] leading-[14px] tracking-[0.1em] uppercase font-bold text-slate-500">
+              {exercise.holdBased ? 'Hold Duration' : 'Metric Unit'}
+            </p>
             <p className="mt-2 text-[24px] leading-[30px] font-black text-primary">{exercise.metric.unit.toUpperCase()}</p>
           </div>
           <div className="st-card p-4">
             <p className="text-[12px] leading-[14px] tracking-[0.1em] uppercase font-bold text-slate-500">Recommended</p>
-            <p className="mt-2 text-[24px] leading-[30px] font-black text-slate-900">10-20</p>
-            <p className="text-[14px] leading-[18px] text-slate-500">per set</p>
+            <p className="mt-2 text-[20px] leading-[26px] font-black text-slate-900">
+              {exercise.recommendedVolume?.intermediate || (exercise.holdBased ? 'Hold duration' : '10–20')}
+            </p>
+            <p className="text-[12px] leading-[16px] text-slate-500">intermediate</p>
           </div>
         </section>
 
@@ -144,8 +170,12 @@ function ExerciseDetailScreen() {
       </div>
 
       <div className="fixed bottom-[92px] left-0 right-0 z-30 px-5">
-        <div className="mx-auto max-w-mobile">
-          <button className="st-btn-primary" onClick={handleStart}>START EXERCISE</button>
+        <div className="mx-auto max-w-mobile space-y-2">
+          {challengeId ? (
+            <button className="st-btn-primary" onClick={handleLogWorkout}>Log Workout</button>
+          ) : (
+            <button className="st-btn-primary" onClick={handleAddToChallenge}>Add to Challenge</button>
+          )}
         </div>
       </div>
 

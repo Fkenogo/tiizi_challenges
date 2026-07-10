@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { groupService, type CreateGroupInput, type ReportGroupInput } from '../services/groupService';
+import { groupService, type CreateGroupInput, type ReportGroupInput, type UpdateGroupInput } from '../services/groupService';
 import { useAuth } from './useAuth';
 
 export function useGroups() {
@@ -145,6 +145,19 @@ export function useLeaveGroup() {
       queryClient.invalidateQueries({ queryKey: ['group-membership', groupId, user?.uid] });
       queryClient.invalidateQueries({ queryKey: ['group', groupId, user?.uid] });
       queryClient.invalidateQueries({ queryKey: ['home-screen-data', user?.uid] });
+    },
+  });
+}
+
+export function useUpdateGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ groupId, patch }: { groupId: string; patch: UpdateGroupInput }) =>
+      groupService.updateGroup(groupId, patch),
+    onSuccess: (_result, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['my-groups'] });
     },
   });
 }

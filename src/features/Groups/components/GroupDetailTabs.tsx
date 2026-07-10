@@ -21,7 +21,7 @@ export function GroupDetailTabs({ groupId, active }: Props) {
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              className={`h-14 w-full min-w-0 border-b-[3px] px-1 text-center text-[12px] leading-[16px] font-semibold whitespace-nowrap ${
+              className={`h-[50px] w-full min-w-0 border-b-[3px] px-1 text-center text-[13px] leading-[18px] font-semibold whitespace-nowrap ${
                 active === tab.key ? 'text-primary border-primary' : 'text-slate-500 border-transparent'
               }`}
               onClick={() => navigate(tab.path(groupId))}

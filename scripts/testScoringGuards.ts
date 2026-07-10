@@ -703,13 +703,20 @@ assert.ok(
   );
 }
 
-// Profile Wins button must have a visual affordance (ChevronRight or similar)
+// Profile quick stat cards: Groups and Active Challenges must navigate to their screens
 {
   const profileScreen = readFileSync('src/features/Profile/ProfileScreen.tsx', 'utf8');
-  const winsButtonMatch = profileScreen.match(/<button[^>]*>\s*[\s\S]*?Wins[\s\S]*?<\/button>/)?.[0] ?? '';
-  assert.ok(
-    winsButtonMatch.includes('ChevronRight') || winsButtonMatch.includes('chevron') || winsButtonMatch.includes('›'),
-    'Profile Wins button must include a visual affordance (ChevronRight, chevron, or ›)',
+  // Groups card navigates to /app/groups
+  assert.match(
+    profileScreen,
+    /navigate\(['"]\/app\/groups['"]\)/,
+    'Profile Groups quick stat must navigate to /app/groups',
+  );
+  // Active Challenges card navigates to /app/challenges
+  assert.match(
+    profileScreen,
+    /navigate\(['"]\/app\/challenges['"]\)/,
+    'Profile Active Challenges quick stat must navigate to /app/challenges',
   );
 }
 

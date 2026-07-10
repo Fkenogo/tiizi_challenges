@@ -1,4 +1,5 @@
 import { Plus, Search, X } from 'lucide-react';
+import { useState } from 'react';
 import type { CatalogExercise } from '../../../types';
 import type { WellnessActivity, WellnessCategory } from '../../../types/wellnessActivity';
 
@@ -87,6 +88,18 @@ interface ChallengeActivitySectionProps {
   className?: string;
 }
 
+type MovementTypeFilter = 'all' | 'isometric' | 'isotonic';
+
+export function resolveExerciseUnit(exercise: CatalogExercise): string {
+  const isIsometric = exercise.holdBased === true || exercise.movementType === 'isometric';
+  if (isIsometric) {
+    return exercise.metric.unit === 'minutes' ? 'Minutes' : 'Seconds';
+  }
+  const raw = exercise.metric.unit;
+  if (!raw) return 'Reps';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
 export function ChallengeActivitySection({
   isWellnessMode,
   challengeType,
@@ -124,6 +137,8 @@ export function ChallengeActivitySection({
   onNavigateToExercise,
   className,
 }: ChallengeActivitySectionProps) {
+  const [fitnessPickerMovementType, setFitnessPickerMovementType] = useState<MovementTypeFilter>('all');
+
   function openPicker(index: number) {
     if (isWellnessMode) { onOpenWellnessPicker(index); return; }
     onOpenFitnessPicker(index);
@@ -305,23 +320,53 @@ export function ChallengeActivitySection({
                 </div>
               )}
 
-              <div className="st-form-max mt-3 max-h-[46vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white">
-                {fitnessPickerExercises.length === 0 ? (
+                      <div className="st-form-max mt-2 flex gap-2 overflow-x-auto pb-1">
+                {(['all', 'isometric', 'isotonic'] as const).map((mt) => {
+                  const label = mt === 'all' ? 'All Types' : mt === 'isometric' ? 'Isometric' : 'Isotonic';
+                  const active = fitnessPickerMovementType === mt;
+                  return (
+                    <button
+                      key={mt}
+                      className={`h-8 px-3 rounded-full text-[11px] font-semibold whitespace-nowrap ${active ? 'bg-violet-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}
+                      onClick={() => setFitnessPickerMovementType(mt)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {(() => {
+                const visibleExercises = fitnessPickerMovementType === 'all'
+                  ? fitnessPickerExercises
+                  : fitnessPickerExercises.filter((ex) =>
+                      ex.movementType === fitnessPickerMovementType ||
+                      (ex.tags ?? []).includes(fitnessPickerMovementType),
+                    );
+                return (
+      <div className="st-form-max mt-2 max-h-[40vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white">
+                {visibleExercises.length === 0 ? (
                   <div className="px-4 py-6 text-center">
                     <p className="text-[16px] leading-[22px] font-semibold text-slate-800">No exercises found</p>
                     <p className="mt-1 text-[13px] leading-[18px] text-slate-500">Try a different search term or category.</p>
                   </div>
                 ) : (
-                  fitnessPickerExercises.map((exercise) => (
+                  visibleExercises.map((exercise) => (
                     <button
                       key={`picker-${exercise.id}`}
                       className="w-full border-b last:border-b-0 border-slate-100 px-4 py-3 flex items-center justify-between gap-3 text-left"
-                      onClick={() => onPickFitnessExercise(exercise)}
+                      onClick={() => {
+                        onPickFitnessExercise(exercise);
+                        if (fitnessPickerIndex !== null) {
+                          onUpdateActivity(fitnessPickerIndex, { unit: resolveExerciseUnit(exercise) });
+                        }
+                      }}
                     >
                       <div className="min-w-0">
                         <p className="text-[16px] leading-[22px] font-semibold text-slate-900 truncate">{exercise.name}</p>
                         <p className="text-[12px] leading-[16px] text-slate-500 truncate">
                           {exercise.tier_1} • {exercise.tier_2} • {exercise.metric.unit}
+                          {exercise.movementType === 'isometric' ? ' • Isometric' : ''}
                         </p>
                       </div>
                       <span className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0">
@@ -331,6 +376,8 @@ export function ChallengeActivitySection({
                   ))
                 )}
               </div>
+                );
+              })()}
             </div>
           </div>
         </div>

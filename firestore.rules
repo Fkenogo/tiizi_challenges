@@ -129,6 +129,15 @@ service cloud.firestore {
     return !g.data.keys().hasAll(['status']) || g.data.status != 'inactive';
   }
 
+  // Returns true when the authenticated user can read a specific groupActivityFeed item.
+  // Used to gate subcollection (reactions, comments, replies) reads.
+  function canReadFeedItem(feedItemId) {
+    let feedItem = get(/databases/(default)/documents/groupActivityFeed/$(feedItemId));
+    return isGroupMember(feedItem.data.groupId)
+        || isPublicGroup(feedItem.data.groupId)
+        || canAccessAdmin();
+  }
+
   // Returns true when the authenticated user holds an active challengeMembers doc
   // for the given challenge. Membership ID format: ${challengeId}_${userId}.
   function isActiveChallengeMember(challengeId) {
@@ -397,6 +406,13 @@ service cloud.firestore {
       allow write: if isSuperAdmin() || hasAdminRole('content_manager') || hasUserRole('content_manager') || hasAdminRole('moderator') || hasUserRole('moderator');
     }
 
+    match /platformSettings/{settingId} {
+      // Authenticated users may read the public support settings doc only.
+      // Other platform settings docs remain admin-only.
+      allow read: if isAuthenticated() && settingId == "support";
+      allow write: if isSuperAdmin();
+    }
+
     match /admins/{adminId} {
       allow read: if isAuthenticated() && (request.auth.uid == adminId || canManageAdminUsers());
       allow write: if canManageAdminUsers();
@@ -407,6 +423,78 @@ service cloud.firestore {
       allow create: if canAccessAdmin()
                     && request.resource.data.actorUid == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    match /groupActivityFeed/{feedItemId} {
+      // Group members and public-group visitors may read feed items.
+      allow read: if isAuthenticated()
+                  && (
+                    isGroupMember(resource.data.groupId)
+                    || isPublicGroup(resource.data.groupId)
+                    || canAccessAdmin()
+                  );
+      // Feed items are written only by Cloud Functions (service account), not clients.
+      allow create, update, delete: if false;
+
+      match /reactions/{reactionUserId} {
+        // Tightened from Phase 19A-4: reads now follow parent feed item access
+        // rather than any authenticated user.
+        allow read: if isAuthenticated() && canReadFeedItem(feedItemId);
+        // A user may create or update only their own reaction doc,
+        // and only when they are an active group member.
+        allow create, update: if isAuthenticated()
+                              && request.auth.uid == reactionUserId
+                              && request.resource.data.userId == request.auth.uid
+                              && isGroupMember(request.resource.data.groupId);
+        // A user may delete only their own reaction, verified against both
+        // the doc ID and the stored userId field.
+        allow delete: if isAuthenticated()
+                      && request.auth.uid == reactionUserId
+                      && resource.data.userId == request.auth.uid;
+      }
+
+      match /comments/{commentId} {
+        // Users who can read the parent feed item may read comments.
+        allow read: if isAuthenticated() && canReadFeedItem(feedItemId);
+        // Only group members may create comments.
+        // authorName is denormalised client-side; userId ownership is enforced.
+        allow create: if isAuthenticated()
+                      && request.resource.data.userId == request.auth.uid
+                      && isGroupMember(request.resource.data.groupId)
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 500;
+        // Owner may update only text field (not userId, groupId, feedItemId).
+        allow update: if isAuthenticated()
+                      && resource.data.userId == request.auth.uid
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 500
+                      && request.resource.data.userId == resource.data.userId;
+        // Owner may delete their own comment.
+        allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+        match /replies/{replyId} {
+          // Users who can read the parent feed item may read replies.
+          allow read: if isAuthenticated() && canReadFeedItem(feedItemId);
+          // Only group members may create replies.
+          allow create: if isAuthenticated()
+                        && request.resource.data.userId == request.auth.uid
+                        && isGroupMember(request.resource.data.groupId)
+                        && request.resource.data.text is string
+                        && request.resource.data.text.size() > 0
+                        && request.resource.data.text.size() <= 500;
+          // Owner may update only text field.
+          allow update: if isAuthenticated()
+                        && resource.data.userId == request.auth.uid
+                        && request.resource.data.text is string
+                        && request.resource.data.text.size() > 0
+                        && request.resource.data.text.size() <= 500
+                        && request.resource.data.userId == resource.data.userId;
+          // Owner may delete their own reply.
+          allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+        }
+      }
     }
   }
 }

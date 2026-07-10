@@ -150,10 +150,15 @@ function EditChallengeTemplateScreen() {
 
   const pickFitnessExercise = (exercise: CatalogExercise) => {
     if (pickerIndex === null) return;
+    const isIsometric = exercise.holdBased === true || exercise.movementType === 'isometric';
+    const raw = exercise.metric.unit;
+    const unit = isIsometric
+      ? (raw === 'minutes' ? 'Minutes' : 'Seconds')
+      : (raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Reps');
     updateActivity(pickerIndex, {
       query: exercise.name,
       exerciseId: exercise.id,
-      unit: exercise.metric.unit || 'Reps',
+      unit,
     });
     closeFitnessPicker();
   };
@@ -301,9 +306,9 @@ function EditChallengeTemplateScreen() {
             <>
               <p className="st-section-title text-primary">Collective Settings</p>
               <div className="space-y-3">
-                <div>
-                  <p className="text-[12px] leading-[16px] tracking-[0.08em] font-semibold uppercase text-slate-800">Group Cumulative Target</p>
-                  <input className="st-input mt-2" type="number" min={0} value={groupCumulativeTarget} onChange={(e) => setGroupCumulativeTarget(e.target.value)} placeholder="e.g. 10000" />
+                <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                  <p className="text-[12px] leading-[16px] font-semibold text-blue-800">💡 Group target is derived automatically</p>
+                  <p className="text-[12px] leading-[16px] text-blue-700 mt-0.5">The group cumulative target is set to the activity's target value. Configure the activity below.</p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-[14px] leading-[18px] font-semibold text-slate-800">Auto-complete on target</p>

@@ -22,10 +22,11 @@ Completed the MVP activity model simplification by closing three gaps left after
 | `src/features/Challenges/components/ChallengeEngineSettingsSection.tsx` | Collective section: removed `groupCumulativeTarget` number input; replaced with info box explaining the target is derived automatically from the activity |
 | `src/features/Challenges/CreateChallengeWizard.tsx` | Removed step-2 validation for collective target; step label "Group Goal" → "Settings"; payload derives `groupCumulativeTarget = Number(finalActivities[0].targetValue)`; caps non-streak to `validActivities.slice(0,1)` |
 | `src/features/Admin/Challenges/CreateChallengeScreen.tsx` | Same payload derivation + non-streak cap (`finalActivities`) for both wellness and fitness template saves |
-| `src/features/Admin/Challenges/EditChallengeTemplateScreen.tsx` | `buildPayload()` uses `finalActivities` (capped) and derives `groupCumulativeTarget` from first activity |
+| `src/features/Admin/Challenges/EditChallengeTemplateScreen.tsx` | `buildPayload()` uses `finalActivities` (capped) and derives `groupCumulativeTarget` from first activity; old inline `groupCumulativeTarget` `<input>` replaced with derived-automatically info box + auto-complete toggle |
 | `src/features/Admin/Challenges/EditWellnessTemplateScreen.tsx` | Same changes for both `onSaveDraft` and `onSaveAndPublish` |
-| `src/features/Workouts/SelectChallengeActivityScreen.tsx` | Multi-activity streak checklist: added `isMultiStreakMode`, `checklistValues` state, `allChecklistValuesValid`, `handleChecklistSubmit` (sequential log of all activities); existing single-activity Log button preserved via `!isMultiStreakMode` guard |
-| `scripts/testChallengeActivityModel.ts` | Extended from 15 to 32 guards covering all new behaviors |
+| `src/features/Workouts/SelectChallengeActivityScreen.tsx` | Multi-activity streak checklist: added `isMultiStreakMode`, `checklistValues` state, `allChecklistValuesValid`, `handleChecklistSubmit` (sequential log of all activities); existing single-activity Log button preserved via `!isMultiStreakMode` guard; MVP partial-failure limitation documented in code comment |
+| `scripts/testChallengeActivityModel.ts` | Extended from 15 to 35 guards (added Test 21: checklist partial-failure — no navigation on error, toast shown, limitation documented) |
+| `scripts/testScoringGuards.ts` | Updated stale guards 13F-9, 14B-11, and 16A-7 to match new `groupCumulativeTarget` derivation from `finalActivities[0]?.targetValue` |
 
 ---
 
@@ -75,5 +76,6 @@ Mixed fitness+wellness multi-activity streaks are supported because `handleCheck
 | `npm run test:challenge-creation-6combos` | ✅ passed |
 | `npm run test:challenge-creation-backend` | ✅ passed |
 | `npm run test:home-challenge-feeds` | ✅ passed |
-| `npm run test:scoring-guards` | ✅ passed |
+| `npm run test:scoring-guards` | ✅ passed (guards 13F-9, 14B-11, 16A-7 updated) |
 | `npm run audit:challenge-creation-payloads` | ✅ passed |
+| `npm run test:challenge-creation-6combos` | ✅ passed |

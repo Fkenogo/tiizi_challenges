@@ -108,8 +108,11 @@ type SeedChallenge = {
   }>;
   donation?: {
     enabled: boolean;
+    causeName?: string;
     causeDescription?: string;
-    targetAmount?: number;
+    targetAmountKes?: number;
+    currency?: string;
+    approvalStatus?: string;
   };
   startDate: string;
   endDate: string;
@@ -663,8 +666,11 @@ function buildChallenges(
           template.type === 'collective'
             ? {
                 enabled: true,
+                causeName: 'Community Clean Water Initiative',
                 causeDescription: 'Community clean water initiative',
-                targetAmount: 50000 + challengeIndex * 4000,
+                targetAmountKes: 50000 + challengeIndex * 4000,
+                currency: 'KES',
+                approvalStatus: 'approved',
               }
             : { enabled: false },
         startDate,

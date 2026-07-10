@@ -6,33 +6,37 @@ function WelcomeScreen() {
 
   return (
     <Screen noPadding noBottomPadding className="st-page bg-slate-950">
-      <div className="st-hero">
+      {/* Full-bleed cover */}
+      <div className="relative h-screen w-full flex flex-col justify-end overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80"
-          alt="Fitness community"
-          className="absolute inset-0 h-full w-full object-cover"
+          src="/tiizi-cover.png"
+          alt="Tiizi community"
+          className="absolute inset-0 h-full w-full object-cover object-top"
         />
-        <div className="st-hero-overlay" />
 
-        <div className="st-hero-content">
-          <h1 className="st-heading-xl text-white text-center">Fitness is Better Together</h1>
-          <p className="st-text-lg text-white/90 text-center mt-4">The first community-driven accountability app.</p>
+        {/* Gradient — strong at bottom for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-          <button className="st-btn-primary mt-6" onClick={() => navigate('/app/signup')}>
-            Get Started →
-          </button>
-
-          <div className="mt-8 flex justify-center -space-x-2">
-            <div className="h-12 w-12 rounded-full border-2 border-white bg-slate-100" />
-            <div className="h-12 w-12 rounded-full border-2 border-white bg-orange-100" />
-            <div className="h-12 w-12 rounded-full border-2 border-white bg-slate-200" />
-            <div className="h-12 w-12 rounded-full border-2 border-slate-900 bg-primary flex items-center justify-center text-white text-sm font-bold">10K+</div>
+        {/* Bottom-anchored content */}
+        <section className="relative z-10 w-full px-6 pb-12">
+          {/* Headline & subtitle — left aligned */}
+          <div className="mb-8">
+            <h1 className="text-[32px] leading-[38px] font-black text-white tracking-tight max-w-[85%]">
+              Fitness is Better Together
+            </h1>
+            <p className="mt-3 text-[15px] leading-[22px] text-white/85 max-w-[90%]">
+              Build healthy habits with communities that help you stay active, accountable and consistent.
+            </p>
           </div>
 
-          <p className="text-center text-white text-[16px] leading-[22px] mt-6">
-            Trusted by <span className="text-primary font-black">10,000+</span> members
-          </p>
-        </div>
+          {/* CTA */}
+          <button
+            className="w-full h-14 rounded-xl bg-primary text-white text-[17px] font-bold flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform"
+            onClick={() => navigate('/app/signup')}
+          >
+            Get Started →
+          </button>
+        </section>
       </div>
     </Screen>
   );

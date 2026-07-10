@@ -2,14 +2,16 @@ import type { AdminWellnessActivityInput } from '../../../services/adminWellness
 import type { WellnessActivityType, WellnessCategory, WellnessDifficulty } from '../../../types/wellnessActivity';
 
 export const wellnessCategoryOptions: WellnessCategory[] = [
-  'fasting',
+  'movement',
   'hydration',
   'sleep',
   'mindfulness',
   'nutrition',
+  'fasting',
   'habits',
   'stress',
   'social',
+  'health-monitoring',
 ];
 
 export const wellnessDifficultyOptions: WellnessDifficulty[] = [
@@ -20,14 +22,18 @@ export const wellnessDifficultyOptions: WellnessDifficulty[] = [
 ];
 
 export const wellnessActivityTypeOptions: WellnessActivityType[] = [
-  'fasting',
+  'steps',
+  'walking',
+  'yoga',
   'water',
   'sleep',
   'meditation',
-  'food',
-  'habit',
   'breathing',
+  'food',
+  'fasting',
+  'habit',
   'social',
+  'monitoring',
 ];
 
 export function linesToArray(value: string): string[] {

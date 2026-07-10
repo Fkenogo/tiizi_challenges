@@ -28,7 +28,8 @@ export function useCreateSupportDonation() {
   return useMutation({
     mutationFn: async (input: {
       amountKes: number;
-      frequency: 'monthly' | 'annual' | 'goal_triggered' | 'one_time';
+      currency?: string;
+      frequency: 'one_time' | 'occasional' | 'monthly' | 'annual';
       trigger: 'manual' | 'challenge_completion' | 'streak_milestone';
       paymentMethod: 'mobile_money' | 'card';
       paymentDestination: { mobileNumber?: string; cardUrl?: string };
@@ -43,8 +44,7 @@ export function useCreateSupportDonation() {
       await Promise.all([
         donationService.saveSupportPreference({
           userId: user.uid,
-          preferredFrequency:
-            variables.frequency === 'one_time' ? 'goal_triggered' : variables.frequency,
+          preferredFrequency: variables.frequency,
           preferredTrigger: variables.trigger,
         }),
         queryClient.invalidateQueries({ queryKey: ['support-donations', user.uid] }),
@@ -76,16 +76,26 @@ export function useConfirmSupportDonation() {
   });
 }
 
-export function useChallengeContribution(challengeId: string | undefined) {
+export function useChallengeContributions(challengeId: string | undefined) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['challenge-contribution', challengeId, user?.uid],
+    queryKey: ['challenge-contributions', challengeId, user?.uid],
     queryFn: () =>
       challengeId && user?.uid
-        ? donationService.getUserChallengeContribution(challengeId, user.uid)
-        : Promise.resolve(null),
+        ? donationService.getUserChallengeContributions(challengeId, user.uid)
+        : Promise.resolve([]),
     enabled: !!challengeId && !!user?.uid,
     staleTime: 30 * 1000,
+  });
+}
+
+export function useChallengeTotalRaised(challengeId: string | undefined) {
+  return useQuery({
+    queryKey: ['challenge-total-raised', challengeId],
+    queryFn: () =>
+      challengeId ? donationService.getChallengeTotalRaised(challengeId) : Promise.resolve(0),
+    enabled: !!challengeId,
+    staleTime: 60 * 1000,
   });
 }
 
@@ -96,23 +106,44 @@ export function useCreateChallengeContribution() {
     mutationFn: async (input: {
       challengeId: string;
       groupId: string;
-      amountKes: number;
+      pledgedAmount: number;
+      currency?: string;
+      causeName?: string;
       timingStartDate?: string;
       timingEndDate?: string;
       paymentPhoneNumber?: string;
       status: 'pledged' | 'skipped';
     }) => {
       if (!user?.uid) throw new Error('Sign in required');
-      return donationService.createChallengeContribution({
-        ...input,
-        userId: user.uid,
-      });
+      return donationService.createChallengeContribution({ ...input, userId: user.uid });
     },
     onSuccess: async (_data, variables) => {
       if (!user?.uid) return;
       await queryClient.invalidateQueries({
-        queryKey: ['challenge-contribution', variables.challengeId, user.uid],
+        queryKey: ['challenge-contributions', variables.challengeId, user.uid],
       });
+    },
+  });
+}
+
+export function useConfirmChallengeContribution() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { pledgeId: string; challengeId: string }) => {
+      if (!user?.uid) throw new Error('Sign in required');
+      return donationService.confirmChallengeContribution(input.pledgeId, user.uid);
+    },
+    onSuccess: async (_data, variables) => {
+      if (!user?.uid) return;
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['challenge-contributions', variables.challengeId, user.uid],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['challenge-total-raised', variables.challengeId],
+        }),
+      ]);
     },
   });
 }

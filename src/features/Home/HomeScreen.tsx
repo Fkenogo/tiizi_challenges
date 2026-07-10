@@ -176,35 +176,35 @@ function HomeScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen pb-[96px] bg-slate-50">
-        <header className="px-4 pt-5 pb-4 border-b border-slate-200 bg-slate-50">
+        <header className="px-4 pt-4 pb-3 border-b border-slate-200/70 bg-slate-50">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               {profilePhoto ? (
                 <img
                   src={profilePhoto}
                   alt={displayName}
-                  className="w-14 h-14 rounded-full object-cover border-[3px] border-[#f6cdb5]"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-[#f6cdb5] flex-shrink-0"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full border-[3px] border-[#f6cdb5] bg-primary/15 text-primary flex items-center justify-center text-lg font-bold">
+                <div className="w-10 h-10 rounded-full border-2 border-[#f6cdb5] bg-primary/10 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-[13px] leading-[16px] text-slate-500">Welcome back,</p>
-                <h1 className="st-page-title truncate">
-                  {displayName}!
+                <p className="text-[11px] leading-[14px] font-medium text-slate-400 uppercase tracking-[0.06em]">Welcome back</p>
+                <h1 className="text-[17px] leading-[22px] font-black text-slate-900 truncate">
+                  {displayName}
                 </h1>
               </div>
             </div>
-            <button className="relative h-11 w-11 flex items-center justify-center text-slate-800" onClick={() => navigate('/app/notifications')}>
-              <Bell size={22} />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
+            <button className="relative h-9 w-9 flex items-center justify-center text-slate-700" onClick={() => navigate('/app/notifications')}>
+              <Bell size={20} />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
             </button>
           </div>
         </header>
 
-        <main className="px-4 pt-5 space-y-8">
+        <main className="px-4 pt-5 space-y-7">
           <section>
             <h2 className="st-section-label mb-3">My Challenges</h2>
             {effectiveMyChallenges.length > 0 ? (
@@ -221,11 +221,11 @@ function HomeScreen() {
               <article className="rounded-2xl border border-slate-200 bg-white px-3 py-4">
                 <p className="text-sm text-slate-600">No ongoing challenges yet.</p>
                 {data?.myGroupsCount ? (
-                  <button className="mt-3 h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white" onClick={() => navigate('/app/challenges')}>
+                  <button className="mt-3 h-10 rounded-xl bg-primary px-5 text-sm font-bold text-white" onClick={() => navigate('/app/challenges')}>
                     Browse Challenges
                   </button>
                 ) : (
-                  <button className="mt-3 h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white" onClick={() => navigate('/app/groups')}>
+                  <button className="mt-3 h-10 rounded-xl bg-primary px-5 text-sm font-bold text-white" onClick={() => navigate('/app/groups', { state: { tab: 'discover' } })}>
                     Join a Group
                   </button>
                 )}
@@ -235,42 +235,43 @@ function HomeScreen() {
 
           <section ref={goalsSectionRef}>
             <h3 className="st-section-label mb-3">Today's Goals</h3>
-            <article className="rounded-2xl border border-slate-200 bg-white p-4">
+            <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex gap-2">
                 <input
                   ref={goalInputRef}
-                  className="h-11 flex-1 rounded-xl border border-slate-200 px-3 text-sm"
-                  placeholder="Write your goal for today..."
+                  className="h-10 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[14px] placeholder:text-slate-400"
+                  placeholder="Add a goal for today…"
                   value={goalInput}
                   onChange={(event) => setGoalInput(event.target.value)}
                   disabled={dailyGoals.length >= 3 || saveDailyGoals.isPending}
                 />
                 <button
-                  className="h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-60"
+                  className="h-10 rounded-xl bg-primary px-4 text-[13px] font-bold text-white disabled:opacity-50"
                   onClick={handleAddGoal}
                   disabled={!canAddGoal || saveDailyGoals.isPending}
                 >
                   Add
                 </button>
               </div>
-              <p className="mt-2 text-xs text-slate-500">Up to 3 goals per day.</p>
 
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-1.5">
                 {sortedGoals.map((goal) => (
                   <button
                     key={goal.id}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left"
+                    className={`w-full flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${goal.completed ? 'border-slate-100 bg-slate-50' : 'border-slate-200 bg-white'}`}
                     onClick={() => toggleGoal(goal.id)}
                     disabled={saveDailyGoals.isPending}
                   >
-                    <span className={`text-sm ${goal.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                      {goal.completed ? '✓ ' : '○ '}
+                    <span className={`text-[15px] leading-none flex-shrink-0 ${goal.completed ? 'text-primary' : 'text-slate-300'}`}>
+                      {goal.completed ? '✓' : '○'}
+                    </span>
+                    <span className={`text-[13px] leading-[18px] ${goal.completed ? 'line-through text-slate-400' : 'text-slate-800 font-medium'}`}>
                       {goal.text}
                     </span>
                   </button>
                 ))}
                 {sortedGoals.length === 0 && (
-                  <p className="text-sm text-slate-500">No goals yet. Add up to 3 goals for today.</p>
+                  <p className="text-[12px] text-slate-400 py-1">Up to 3 goals per day.</p>
                 )}
               </div>
             </article>
@@ -279,8 +280,8 @@ function HomeScreen() {
           <section>
             <div className="flex items-end justify-between mb-3">
               <h3 className="st-section-label">Most Active</h3>
-              <button className="text-[14px] leading-[18px] font-semibold text-primary" onClick={() => navigate('/app/challenges')}>
-                See All →
+              <button className="text-[13px] leading-[18px] font-semibold text-primary" onClick={() => navigate('/app/challenges')}>
+                See all
               </button>
             </div>
             {effectiveMostActive.length > 0 && (

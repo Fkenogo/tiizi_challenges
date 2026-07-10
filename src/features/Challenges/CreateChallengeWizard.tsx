@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
+import { LearnMoreLink } from '../../components/LearnMoreLink';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useCreateChallenge } from '../../hooks/useChallenges';
@@ -115,6 +116,7 @@ function CreateChallengeWizard() {
   const [causeName, setCauseName] = useState('');
   const [causeDescription, setCauseDescription] = useState('');
   const [targetDonation, setTargetDonation] = useState('');
+  const [donationCurrency, setDonationCurrency] = useState<'KES' | 'RWF' | 'UGX'>('KES');
   const [contributionStartDate, setContributionStartDate] = useState('');
   const [contributionEndDate, setContributionEndDate] = useState('');
   const [contributionPhone, setContributionPhone] = useState('');
@@ -174,8 +176,41 @@ function CreateChallengeWizard() {
     const match = exercises.find((e) => e.id === exerciseIdParam);
     if (!match) return;
     exercisePrefillAppliedRef.current = true;
-    setActivities([{ query: match.name, exerciseId: match.id, targetValue: '', unit: match.metric.unit }]);
+    const isIso = match.holdBased === true || match.movementType === 'isometric';
+    const prefillUnit = isIso
+      ? (match.metric.unit === 'minutes' ? 'Minutes' : 'Seconds')
+      : (match.metric.unit ? match.metric.unit.charAt(0).toUpperCase() + match.metric.unit.slice(1) : 'Reps');
+    setActivities([{ query: match.name, exerciseId: match.id, targetValue: '', unit: prefillUnit }]);
   }, [exerciseIdParam, exercises]);
+
+  // Pre-populate first activity when landing from WellnessActivityDetailScreen via ?wellnessActivityId=<id>
+  const wellnessActivityIdParam = params.get('wellnessActivityId') ?? undefined;
+  const wellnessPrefillAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!wellnessActivityIdParam || wellnessActivities.length === 0 || wellnessPrefillAppliedRef.current) return;
+    const match = wellnessActivities.find((a) => a.id === wellnessActivityIdParam);
+    if (!match) return;
+    wellnessPrefillAppliedRef.current = true;
+    setChallengeCategory(match.category);
+    setActivities([{
+      query: match.name,
+      exerciseId: undefined,
+      activityId: match.id,
+      activityType: match.activityType,
+      description: match.description,
+      category: match.category,
+      difficulty: match.difficulty,
+      icon: match.icon,
+      protocolSteps: match.protocolSteps,
+      benefits: match.benefits,
+      guidelines: match.guidelines,
+      warnings: match.warnings,
+      targetValue: String(match.defaultTargetValue),
+      unit: match.defaultMetricUnit,
+      frequency: 'daily',
+      dailyFrequency: match.suggestedFrequency,
+    }]);
+  }, [wellnessActivityIdParam, wellnessActivities]);
 
   useEffect(() => {
     if (!template || templateApplied) return;
@@ -209,6 +244,9 @@ function CreateChallengeWizard() {
       setCauseName(template.donation.causeName ?? '');
       setCauseDescription(template.donation.causeDescription ?? '');
       setTargetDonation(String(template.donation.targetAmountKes ?? 0));
+      if (template.donation.currency === 'RWF' || template.donation.currency === 'UGX') {
+        setDonationCurrency(template.donation.currency);
+      }
       setContributionStartDate(template.donation.contributionStartDate ?? '');
       setContributionEndDate(template.donation.contributionEndDate ?? '');
       setContributionPhone(template.donation.contributionPhoneNumber ?? '');
@@ -335,12 +373,22 @@ function CreateChallengeWizard() {
     setPickerTier('All');
   };
 
-  const pickExerciseForActivity = (exerciseId: string, exerciseName: string, exerciseUnit: string) => {
+  const pickExerciseForActivity = (
+    exerciseId: string,
+    exerciseName: string,
+    exerciseUnit: string,
+    holdBased?: boolean,
+    movementType?: string,
+  ) => {
     if (pickerRowIndex === null) return;
+    const isIsometric = holdBased === true || movementType === 'isometric';
+    const resolvedUnit = isIsometric
+      ? (exerciseUnit === 'minutes' ? 'Minutes' : 'Seconds')
+      : (exerciseUnit ? exerciseUnit.charAt(0).toUpperCase() + exerciseUnit.slice(1) : activities[pickerRowIndex]?.unit || 'Reps');
     updateActivity(pickerRowIndex, {
       exerciseId,
       query: exerciseName,
-      unit: exerciseUnit || activities[pickerRowIndex]?.unit || 'Reps',
+      unit: resolvedUnit,
     });
     closeActivityPicker();
   };
@@ -567,6 +615,7 @@ function CreateChallengeWizard() {
               causeName: causeName.trim(),
               causeDescription: causeDescription.trim(),
               targetAmountKes: Number(targetDonation) || 0,
+              currency: donationCurrency,
               contributionStartDate: contributionStartDate || undefined,
               contributionEndDate: contributionEndDate || undefined,
               contributionPhoneNumber: contributionPhone.trim() || undefined,
@@ -659,9 +708,36 @@ function CreateChallengeWizard() {
           <button className="h-10 w-10 flex items-center justify-center" onClick={goBack}>
             <ArrowLeft size={28} className="text-slate-900" />
           </button>
-          <h1 className="st-page-title text-slate-900">New Challenge</h1>
+          <div className="flex flex-col items-center">
+            <h1 className="st-page-title text-slate-900">New Challenge</h1>
+            <LearnMoreLink section="wizard" label="How this works" />
+          </div>
           <span className="w-10" />
         </header>
+
+        {/* Template entry point — only shown when no template is already active */}
+        {!template && !wellnessTemplate && (
+          <div className="st-form-max mt-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-[13px] font-bold text-slate-700">Not sure where to start?</p>
+              <p className="text-[12px] text-slate-500 mt-0.5">Browse ready-made challenge templates</p>
+            </div>
+            <div className="flex flex-col items-end gap-1 ml-3 flex-shrink-0">
+              <button
+                className="h-8 rounded-full bg-primary px-4 text-[12px] font-bold text-white"
+                onClick={() => navigate(selectedGroupId ? `/app/challenges/suggested?groupId=${selectedGroupId}` : '/app/challenges/suggested')}
+              >
+                Fitness →
+              </button>
+              <button
+                className="h-8 rounded-full bg-emerald-600 px-4 text-[12px] font-bold text-white"
+                onClick={() => navigate('/app/challenges/wellness')}
+              >
+                Wellness →
+              </button>
+            </div>
+          </div>
+        )}
 
         {!!template && (
           <div className="st-form-max mt-3 st-card border-primary/30 bg-primary/5 p-4">
@@ -796,7 +872,7 @@ function CreateChallengeWizard() {
           onFitnessPickerTierChange={setPickerTier}
           onOpenFitnessPicker={openActivityPicker}
           onCloseFitnessPicker={closeActivityPicker}
-          onPickFitnessExercise={(exercise) => pickExerciseForActivity(exercise.id, exercise.name, exercise.metric.unit)}
+          onPickFitnessExercise={(exercise) => pickExerciseForActivity(exercise.id, exercise.name, exercise.metric.unit, exercise.holdBased, exercise.movementType)}
           wellnessPickerOpen={wellnessPickerOpen}
           wellnessPickerIndex={pickerRowIndex}
           wellnessPickerSearch={wellnessSearch}
@@ -820,6 +896,8 @@ function CreateChallengeWizard() {
           onCauseDescriptionChange={setCauseDescription}
           targetAmountKes={targetDonation}
           onTargetAmountKesChange={setTargetDonation}
+          currency={donationCurrency}
+          onCurrencyChange={setDonationCurrency}
           contributionStartDate={contributionStartDate}
           onContributionStartDateChange={setContributionStartDate}
           contributionEndDate={contributionEndDate}

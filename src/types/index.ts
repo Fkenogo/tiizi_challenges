@@ -10,6 +10,12 @@ export interface RecommendedVolume {
   advanced: string;
 }
 
+export interface ExerciseBreathing {
+  inhale: string;
+  exhale: string;
+  pattern: string;
+}
+
 export interface CatalogExercise {
   id: string;
   name: string;
@@ -24,13 +30,16 @@ export interface CatalogExercise {
   description: string;
   setup: string[];
   execution: string[];
-  breathing: string[];
+  breathing: ExerciseBreathing;
   formCues: string[];
   commonMistakes: string[];
   progressions: string[];
   advancedVariations: string[];
   safetyNotes: string[];
   recommendedVolume: RecommendedVolume;
+  tags?: string[];
+  movementType?: 'isometric' | 'isotonic';
+  holdBased?: boolean;
 }
 
 export interface User {
@@ -77,6 +86,18 @@ export interface Group {
   isVerified?: boolean;
   reviewStatus?: 'pending' | 'verified' | 'flagged';
   countersUpdatedAt?: string;
+  /** Group type/category for discovery */
+  groupType?: 'fitness' | 'wellness' | 'mixed' | 'cause-based' | 'workplace' | 'school' | 'friends-family' | 'community';
+  /** Activity interests — same ids as user exercise interests */
+  activityInterests?: string[];
+  /** Wellness topic interests — same ids as user wellness interests */
+  wellnessTopics?: string[];
+  /** Group goals/purpose */
+  groupGoals?: string[];
+  /** Geographic/scope context */
+  locationScope?: 'local' | 'online' | 'workplace' | 'school' | 'private-circle';
+  /** Community rules checklist */
+  groupRules?: string[];
 }
 
 export interface Challenge {
@@ -121,6 +142,8 @@ export interface Challenge {
     disclaimer?: string;
     approvalStatus?: 'pending' | 'approved' | 'rejected';
     approvalRequired?: boolean;
+    /** ISO 4217 currency code for display, e.g. "RWF". Field name kept separate from targetAmountKes storage. */
+    currency?: string;
   };
   startDate: string;
   endDate: string;
@@ -185,6 +208,9 @@ export interface WellnessTemplate {
   streakResetOnMiss?: boolean;
   // Lifecycle fields
   status?: 'draft' | 'published' | 'archived' | 'deleted';
+  isFeatured?: boolean;
+  featuredAt?: string;
+  featuredBy?: string;
   version?: number;
   usageCount?: number;
   createdAt?: string;
@@ -248,7 +274,9 @@ export interface SupportDonation {
   id: string;
   userId: string;
   amountKes: number;
-  frequency: 'monthly' | 'annual' | 'goal_triggered' | 'one_time';
+  /** ISO 4217 currency code the user selected (e.g. "KES", "RWF", "UGX"). */
+  currency?: string;
+  frequency: 'one_time' | 'occasional' | 'monthly' | 'annual';
   trigger: 'manual' | 'challenge_completion' | 'streak_milestone';
   paymentMethod: 'mobile_money' | 'card';
   paymentDestination: {
@@ -265,7 +293,7 @@ export interface SupportDonation {
 
 export interface SupportDonationPreference {
   userId: string;
-  preferredFrequency: 'monthly' | 'annual' | 'goal_triggered';
+  preferredFrequency: 'one_time' | 'occasional' | 'monthly' | 'annual';
   preferredTrigger: 'challenge_completion' | 'streak_milestone' | 'manual';
   updatedAt: string;
 }
@@ -275,12 +303,20 @@ export interface ChallengeContributionPledge {
   challengeId: string;
   groupId: string;
   userId: string;
+  /** The amount the user pledged in the chosen currency. */
+  pledgedAmount: number;
+  /** Kept for backwards compatibility. Equal to pledgedAmount. */
   amountKes: number;
+  /** ISO 4217 currency code (e.g. "KES", "RWF", "UGX"). */
+  currency?: string;
+  causeName?: string;
   timingStartDate?: string;
   timingEndDate?: string;
   paymentPhoneNumber?: string;
-  status: 'pledged' | 'skipped';
+  status: 'pledged' | 'confirmed' | 'skipped';
   createdAt: string;
+  updatedAt?: string;
+  confirmedAt?: string;
 }
 
 export interface ChallengeActivitySummary {
@@ -294,6 +330,40 @@ export interface ChallengeActivitySummary {
   [key: string]: unknown;
 }
 
+export interface FeedProgressSnapshot {
+  challengeType: string;
+  unit?: string;
+  loggedValue?: number;
+  userCumulativeValue?: number;
+  teamCumulativeValue?: number;
+  targetValue?: number;
+  remainingValue?: number;
+  percentComplete?: number;
+  daysRemaining?: number;
+  streakDay?: number;
+  dailyTarget?: number;
+  leaderName?: string;
+  leaderValue?: number;
+  leaderDelta?: number;
+  leadingBy?: number;
+  isLeading?: boolean;
+  label: string;
+}
+
+export type FeedItemType = 'activity_log' | 'milestone' | 'achievement';
+
+export type MilestoneType =
+  | 'first_log'
+  | 'collective_25'
+  | 'collective_50'
+  | 'collective_75'
+  | 'collective_complete'
+  | 'streak_3'
+  | 'streak_7'
+  | 'streak_14'
+  | 'competitive_leader'
+  | 'challenge_complete';
+
 export interface GroupActivityFeedSummary {
   id: string;
   groupId: string;
@@ -305,9 +375,18 @@ export interface GroupActivityFeedSummary {
   createdAt?: unknown;
   authorName?: string;
   text?: string;
+  challengeName?: string;
   challengeCoverImageUrl?: string;
+  challengeType?: 'collective' | 'competitive' | 'streak';
+  challengeStartDate?: string;
+  challengeEndDate?: string;
+  userPhotoURL?: string;
   activityLabel?: string;
   valueLabel?: string;
+  feedItemType?: FeedItemType;
+  milestoneType?: MilestoneType;
+  story?: string;
+  feedProgressSnapshot?: FeedProgressSnapshot;
 }
 
 export interface ChallengeLeaderboardSummary {
@@ -353,4 +432,12 @@ export interface SupportDonationSettings {
   thankYouMessage: string;
   showPublicGoal: boolean;
   reminderCadence?: 'none' | 'monthly' | 'quarterly';
+  /** ISO 4217 default currency for display, e.g. "KES". */
+  currency?: string;
+  /** Preferred default currency for the Support Tiizi screen. */
+  defaultCurrency?: string;
+  /** Currencies users may select on the Support Tiizi screen. */
+  supportedCurrencies?: string[];
+  /** Whether card payment UI is enabled. False during pilot. */
+  cardPaymentEnabled?: boolean;
 }

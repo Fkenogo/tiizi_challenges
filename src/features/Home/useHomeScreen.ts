@@ -186,6 +186,33 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
     );
   }
 
+  // Read challengeActivitySummaries (CF-maintained canonical collective team totals) for all
+  // member challenges. This read happens before card-building so the team total is available
+  // without a second pass. Missing docs (first log ever or CF delayed) leave the map empty;
+  // the resolver falls back to userContribFloor (cumulativeLoggedValue) as a lower bound.
+  const memberChallengeIds = ongoingMemberChallenges.map((c) => c.id).filter(Boolean);
+  const memberActivitySummaryMap = new Map<string, { totalValue: number }>();
+  if (memberChallengeIds.length > 0) {
+    const chunks: string[][] = [];
+    for (let i = 0; i < memberChallengeIds.length; i += 10) {
+      chunks.push(memberChallengeIds.slice(i, i + 10));
+    }
+    const summarySnaps = await Promise.all(
+      chunks.map((chunk) =>
+        getDocs(
+          query(collection(db, 'challengeActivitySummaries'), where(documentId(), 'in', chunk)),
+        ).catch(() => null),
+      ),
+    );
+    for (const snap of summarySnaps) {
+      if (!snap) continue;
+      for (const doc of snap.docs) {
+        const data = doc.data() as { totalValue?: number };
+        memberActivitySummaryMap.set(doc.id, { totalValue: Math.max(0, Number(data.totalValue ?? 0)) });
+      }
+    }
+  }
+
   // Build base cards synchronously, then enrich the first card with live progress.
   const myChallengeCards: HomeScreenData['myChallenges'] = ongoingMemberChallenges.map((c) => {
     const totalDays = dayDiff(c.startDate, c.endDate);
@@ -195,7 +222,8 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
     const leaderboard = competitiveLeaderboards.get(c.id);
     // buildChallengeProgress guarantees that progress (bar) and progressLabel (text) derive
     // from the same source — no more "0 / 700 reps" while the bar shows 14%.
-    const display = buildChallengeProgress(c, membership, leaderboard, uid);
+    const activitySummaryTotal = memberActivitySummaryMap.get(c.id)?.totalValue;
+    const display = buildChallengeProgress(c, membership, leaderboard, uid, activitySummaryTotal, c.groupCurrentTotal);
     return {
       id: c.id,
       name: c.name,
@@ -225,52 +253,23 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
 
     const primaryActivity = firstChallenge.activities?.[0];
     const targetValue = Math.max(1, Number(primaryActivity?.targetValue ?? 0));
-    const unit = String(primaryActivity?.unit ?? 'units');
-    let progressValue = 0;
-
-    if (targetValue > 0 && primaryActivity) {
-      const isWellness = (firstChallenge.category && firstChallenge.category !== 'fitness') || !!primaryActivity.activityId;
-      if (isWellness) {
-        const logsSnap = await getDocs(
-          query(
-            collection(db, 'wellnessLogs'),
-            where('challengeId', '==', firstChallenge.id),
-            where('userId', '==', uid),
-          ),
-        ).catch(() => null);
-        logsSnap?.docs.forEach((item) => {
-          const data = item.data() as { userId?: string; value?: number; activityId?: string };
-          const activityMatch = primaryActivity.activityId ? data.activityId === primaryActivity.activityId : true;
-          if (activityMatch) progressValue += Math.max(0, Number(data.value ?? 0));
-        });
-      } else {
-        const workoutsSnap = await getDocs(
-          query(
-            collection(db, 'workouts'),
-            where('challengeId', '==', firstChallenge.id),
-            where('userId', '==', uid),
-          ),
-        ).catch(() => null);
-        workoutsSnap?.docs.forEach((item) => {
-          const data = item.data() as { userId?: string; value?: number; exerciseId?: string };
-          const exerciseMatch = primaryActivity.exerciseId ? data.exerciseId === primaryActivity.exerciseId : true;
-          if (exerciseMatch) progressValue += Math.max(0, Number(data.value ?? 0));
-        });
-      }
-    }
 
     if (targetValue > 0) {
-      // Override both bar and label from the same live value so they stay in sync.
+      // Use challengeMembers.cumulativeLoggedValue as the source of truth for user progress.
+      // Raw workout/wellnessLog queries were removed — they diverged from the field written
+      // by client engines (workoutService, wellnessLogService, activityLogSessionService).
       const liveDisplay = buildChallengeProgress(
-        { ...firstChallenge, groupCurrentTotal: firstChallenge.groupCurrentTotal ?? 0 },
+        firstChallenge,
         {
           completionRate: membership?.completionRate ?? 0,
-          cumulativeLoggedValue: progressValue,
+          cumulativeLoggedValue: Math.max(0, Number(membership?.cumulativeLoggedValue ?? 0)),
           currentStreak: membership?.currentStreak ?? 0,
           status: membership?.status,
         },
         competitiveLeaderboards.get(firstCard.id),
         uid,
+        memberActivitySummaryMap.get(firstCard.id)?.totalValue,
+        firstChallenge.groupCurrentTotal,
       );
       firstCard.progress = liveDisplay.progress;
       firstCard.progressLabel = liveDisplay.primaryLabel;

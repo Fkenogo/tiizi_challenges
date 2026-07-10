@@ -26,6 +26,7 @@
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:firestore": "firebase deploy --only firestore:rules && firebase deploy --only firestore:indexes",
     "test:scoring-guards": "tsx scripts/testScoringGuards.ts",
+    "test:onboarding-guards": "tsx scripts/testOnboardingGuards.ts",
     "test:home-challenge-feeds": "tsx scripts/testHomeChallengeFeeds.ts",
     "test:home-performance-guards": "tsx scripts/testHomePerformanceGuards.ts",
     "test:pilot-ux-polish-guards": "tsx scripts/testPilotUxPolishGuards.ts",
@@ -41,7 +42,9 @@
     "audit:group-document-schema": "tsx scripts/auditGroupDocumentSchema.ts",
     "test:challenge-activity-model": "tsx scripts/testChallengeActivityModel.ts",
     "audit:challenge-templates": "tsx scripts/auditChallengeTemplates.ts",
-    "test:admin-challenge-management": "tsx scripts/testAdminChallengeManagement.ts"
+    "test:admin-challenge-management": "tsx scripts/testAdminChallengeManagement.ts",
+    "test:challenges-view-polish": "tsx scripts/testChallengesViewPolish.ts",
+    "test:profile-analytics-guards": "tsx scripts/testProfileAnalyticsGuards.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",

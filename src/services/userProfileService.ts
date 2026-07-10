@@ -3,11 +3,14 @@ import { db } from '../lib/firebase';
 
 export type UserProfileSetup = {
   exerciseInterests: string[];
+  wellnessInterests: string[];
   customInterests: string[];
+  goals: string[];
   primaryGoal?: string;
   secondaryGoal?: string;
   customGoals: string[];
   onboardingCompleted: boolean;
+  hasSeenIntro: boolean;
   region: string;
   personalInfo?: {
     fullName: string;
@@ -18,6 +21,8 @@ export type UserProfileSetup = {
     heightCm?: number;
     displayName?: string;
     photoURL?: string;
+    gender?: string;
+    genderSelfDescribe?: string;
   };
   privacySettings?: {
     isProfilePublic: boolean;
@@ -54,13 +59,22 @@ class UserProfileService {
     const data = snap.data() as { profile?: Partial<UserProfileSetup> };
     const profile = data.profile;
     if (!profile) return null;
+    // goals[]: read stored array; fall back to primaryGoal/secondaryGoal for old records
+    const storedGoals = (profile as unknown as { goals?: string[] }).goals;
+    const derivedGoals = storedGoals?.length
+      ? storedGoals
+      : [profile.primaryGoal, profile.secondaryGoal].filter(Boolean) as string[];
+
     return {
       exerciseInterests: profile.exerciseInterests ?? [],
+      wellnessInterests: (profile as unknown as { wellnessInterests?: string[] }).wellnessInterests ?? [],
       customInterests: profile.customInterests ?? [],
+      goals: derivedGoals,
       primaryGoal: profile.primaryGoal,
       secondaryGoal: profile.secondaryGoal,
       customGoals: profile.customGoals ?? [],
       onboardingCompleted: profile.onboardingCompleted ?? false,
+      hasSeenIntro: (profile as unknown as { hasSeenIntro?: boolean }).hasSeenIntro ?? false,
       region: profile.region ?? 'Kenya',
       personalInfo: {
         fullName: profile.personalInfo?.fullName ?? '',
@@ -71,6 +85,8 @@ class UserProfileService {
         heightCm: profile.personalInfo?.heightCm ?? undefined,
         displayName: profile.personalInfo?.displayName ?? '',
         photoURL: profile.personalInfo?.photoURL ?? '',
+        gender: (profile.personalInfo as { gender?: string })?.gender ?? undefined,
+        genderSelfDescribe: (profile.personalInfo as { genderSelfDescribe?: string })?.genderSelfDescribe ?? undefined,
       },
       privacySettings: {
         isProfilePublic: profile.privacySettings?.isProfilePublic ?? true,
@@ -118,6 +134,8 @@ class UserProfileService {
       weightKg: input.personalInfo?.weightKg ?? null,
       heightCm: input.personalInfo?.heightCm ?? null,
       displayName: input.personalInfo?.displayName ?? '',
+      gender: input.personalInfo?.gender ?? null,
+      genderSelfDescribe: input.personalInfo?.genderSelfDescribe ?? null,
     };
 
     // Preserve existing profile photo unless caller explicitly sends one.
@@ -127,9 +145,12 @@ class UserProfileService {
 
     const profilePayload: Record<string, unknown> = {
       exerciseInterests: input.exerciseInterests,
+      wellnessInterests: input.wellnessInterests,
       customInterests: input.customInterests,
+      goals: input.goals,
       customGoals: input.customGoals,
       onboardingCompleted: input.onboardingCompleted,
+      hasSeenIntro: input.hasSeenIntro,
       region: input.region,
       personalInfo: personalInfoPayload,
       privacySettings: {
@@ -142,8 +163,11 @@ class UserProfileService {
       },
     };
 
-    if (input.primaryGoal) profilePayload.primaryGoal = input.primaryGoal;
-    if (input.secondaryGoal) profilePayload.secondaryGoal = input.secondaryGoal;
+    // Derive backwards-compat scalar fields from goals[]
+    const primaryGoal = input.goals[0] || input.primaryGoal || '';
+    const secondaryGoal = input.goals[1] || input.secondaryGoal || '';
+    if (primaryGoal) profilePayload.primaryGoal = primaryGoal;
+    if (secondaryGoal) profilePayload.secondaryGoal = secondaryGoal;
 
     const rootPayload: Record<string, unknown> = { profile: profilePayload };
     if (input.personalInfo?.photoURL) {

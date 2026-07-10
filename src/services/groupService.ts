@@ -24,6 +24,12 @@ type CreateGroupInput = {
   isPrivate?: boolean;
   requireAdminApproval?: boolean;
   allowMemberChallenges?: boolean;
+  groupType?: string;
+  activityInterests?: string[];
+  wellnessTopics?: string[];
+  groupGoals?: string[];
+  locationScope?: string;
+  groupRules?: string[];
 };
 
 type GroupJoinResult = {
@@ -138,6 +144,12 @@ class GroupService {
       requireAdminApproval: input.requireAdminApproval,
       allowMemberChallenges: input.allowMemberChallenges,
       inviteCode: `${inviteCodeBase}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+      ...(input.groupType && { groupType: input.groupType as Group['groupType'] }),
+      ...(input.activityInterests?.length && { activityInterests: input.activityInterests }),
+      ...(input.wellnessTopics?.length && { wellnessTopics: input.wellnessTopics }),
+      ...(input.groupGoals?.length && { groupGoals: input.groupGoals }),
+      ...(input.locationScope && { locationScope: input.locationScope as Group['locationScope'] }),
+      ...(input.groupRules?.length && { groupRules: input.groupRules }),
     });
     const ref = await addDoc(collection(db, this.collectionName), payload);
 
@@ -268,6 +280,26 @@ class GroupService {
     });
   }
 
+  async updateGroup(groupId: string, patch: UpdateGroupInput): Promise<void> {
+    const ref = doc(db, this.collectionName, groupId);
+    const payload: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+
+    if (patch.name !== undefined) payload.name = patch.name;
+    if (patch.description !== undefined) payload.description = patch.description;
+    if (patch.coverImageUrl !== undefined) payload.coverImageUrl = patch.coverImageUrl;
+    if (patch.isPrivate !== undefined) payload.isPrivate = patch.isPrivate;
+    if (patch.requireAdminApproval !== undefined) payload.requireAdminApproval = patch.requireAdminApproval;
+    if (patch.allowMemberChallenges !== undefined) payload.allowMemberChallenges = patch.allowMemberChallenges;
+    if (patch.groupType !== undefined) payload.groupType = patch.groupType;
+    if (patch.activityInterests !== undefined) payload.activityInterests = patch.activityInterests;
+    if (patch.wellnessTopics !== undefined) payload.wellnessTopics = patch.wellnessTopics;
+    if (patch.groupGoals !== undefined) payload.groupGoals = patch.groupGoals;
+    if (patch.locationScope !== undefined) payload.locationScope = patch.locationScope;
+    if (patch.groupRules !== undefined) payload.groupRules = patch.groupRules;
+
+    await updateDoc(ref, payload);
+  }
+
   async reportGroup(input: ReportGroupInput): Promise<string> {
     const group = await this.getGroupById(input.groupId);
     if (!group) throw new Error('Group not found');
@@ -288,4 +320,20 @@ class GroupService {
 }
 
 export const groupService = new GroupService();
+
+export type UpdateGroupInput = {
+  name?: string;
+  description?: string;
+  coverImageUrl?: string;
+  isPrivate?: boolean;
+  requireAdminApproval?: boolean;
+  allowMemberChallenges?: boolean;
+  groupType?: string;
+  activityInterests?: string[];
+  wellnessTopics?: string[];
+  groupGoals?: string[];
+  locationScope?: string;
+  groupRules?: string[];
+};
+
 export type { CreateGroupInput, GroupJoinResult, ReportGroupInput };

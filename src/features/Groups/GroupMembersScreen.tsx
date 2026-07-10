@@ -1,5 +1,5 @@
 import { MessageSquare, Search } from 'lucide-react';
-import { GroupHeroHeader } from './components/GroupHeroHeader';
+import { GroupSharedHeader } from './components/GroupSharedHeader';
 import { useEffect, useMemo, useState } from 'react';
 import type { GroupMemberItem } from '../../services/groupInsightsService';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -8,9 +8,8 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useGroupMembers } from '../../hooks/useGroupInsights';
 import { setActiveGroupId } from '../../hooks/useActiveGroup';
-import { useGroup, useGroupMemberCount, useGroupMembershipStatus, useReportGroup } from '../../hooks/useGroups';
+import { useGroup, useGroupMembershipStatus, useReportGroup } from '../../hooks/useGroups';
 import { GroupBottomNav } from './components/GroupBottomNav';
-import { GroupDetailTabs } from './components/GroupDetailTabs';
 
 function GroupMembersScreen() {
   const navigate = useNavigate();
@@ -18,8 +17,7 @@ function GroupMembersScreen() {
   const { showToast } = useToast();
   const { user } = useAuth();
   const { data: group } = useGroup(id);
-  const { data: memberCount = 0 } = useGroupMemberCount(id);
-  const { data: membershipStatus = 'none' } = useGroupMembershipStatus(id);
+const { data: membershipStatus = 'none' } = useGroupMembershipStatus(id);
   const { data: members = [] } = useGroupMembers(id);
   const reportGroup = useReportGroup();
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,42 +75,34 @@ function GroupMembersScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
-        <GroupHeroHeader
-          groupName={group.name}
-          coverImageUrl={group.coverImageUrl}
-          memberCount={memberCount}
-          isPrivate={group.isPrivate ?? false}
-          onBack={() => navigate(`/app/group/${id}`)}
-        />
-
-        <GroupDetailTabs groupId={id} active="members" />
+        <GroupSharedHeader groupId={id} active="members" />
 
         <main className="px-4 pt-6">
-          <label className="h-14 rounded-full border border-slate-200 bg-white px-4 flex items-center gap-3 text-[#8da0ba] text-[15px] leading-[20px] font-medium">
+          <label className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 flex items-center gap-3 text-slate-400 text-[14px] leading-[20px] font-medium">
             <Search size={20} />
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search members..."
-              className="h-full w-full bg-transparent text-[15px] leading-[20px] font-medium text-slate-700 placeholder:text-[#8da0ba] focus:outline-none"
+              className="h-full w-full bg-transparent text-[14px] leading-[20px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none"
             />
           </label>
 
           <section className="mt-6">
-            <h2 className="text-[18px] leading-[22px] font-black text-slate-900">Organizers</h2>
-            <div className="mt-4 space-y-3">
+            <h2 className="st-section-title mb-3">Organizers</h2>
+            <div className="space-y-3">
               {admins.length === 0 && (
-                <article className="rounded-[20px] border border-slate-200 bg-white p-4">
-                  <p className="text-[14px] leading-[20px] text-[#61758f]">No organizer profiles available yet.</p>
+                <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <p className="text-[13px] leading-[18px] text-slate-500">No organizer profiles available yet.</p>
                 </article>
               )}
               {admins.map((member) => (
-                <article key={member.id} className="rounded-[22px] border border-[#f8d6bd] bg-white p-4 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-pointer active:bg-slate-50" onClick={() => setSelectedMember(member)}>
+                <article key={member.id} className="rounded-2xl border border-[#fde8d8] bg-white p-4 flex items-center justify-between gap-3 shadow-sm cursor-pointer active:bg-slate-50" onClick={() => setSelectedMember(member)}>
                   <div className="flex items-center gap-3">
                     <div className="h-14 w-14 rounded-full bg-[#ffd9bf] border-2 border-primary" />
                     <div>
-                      <p className="text-[17px] leading-[22px] font-black text-slate-900">{member.name}</p>
-                      <p className="text-[13px] leading-[16px] text-[#61758f]">{formatJoined(member.joinedAt)}</p>
+                      <p className="text-[15px] leading-[20px] font-black text-slate-900">{member.name}</p>
+                      <p className="text-[12px] leading-[16px] text-slate-500">{formatJoined(member.joinedAt)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -149,17 +139,17 @@ function GroupMembersScreen() {
 
           <section className="mt-7 pb-6">
             <div className="flex items-end justify-between">
-              <h2 className="text-[18px] leading-[22px] font-black text-slate-900">Community Members</h2>
+              <h2 className="st-section-title">Community Members</h2>
               <p className="text-[14px] leading-[18px] font-medium text-[#8ea1bb]">{others.length} total</p>
             </div>
 
             <div className="mt-4 space-y-3">
               {others.map((member) => (
-                <article key={member.id} className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-pointer active:bg-slate-50" onClick={() => setSelectedMember(member)}>
+                <article key={member.id} className="rounded-2xl border border-slate-100 bg-white px-4 py-3.5 flex items-center justify-between gap-3 shadow-sm cursor-pointer active:bg-slate-50" onClick={() => setSelectedMember(member)}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-14 w-14 rounded-full bg-[#ffd9bf]" />
                     <div className="min-w-0">
-                      <p className="text-[17px] leading-[22px] font-black text-slate-900 truncate">{member.name}</p>
+                      <p className="text-[15px] leading-[20px] font-black text-slate-900 truncate">{member.name}</p>
                       <p className="text-[12px] leading-[16px] uppercase tracking-[0.08em] font-semibold text-[#72849d]">{member.streak}</p>
                     </div>
                   </div>

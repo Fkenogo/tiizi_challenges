@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BottomNav, Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
-import { useChallenge, useChallengeMembership } from '../../hooks/useChallenges';
+import { useChallenge, useChallengeMembership, useChallengeSummary } from '../../hooks/useChallenges';
 import { useExercises } from '../../hooks/useExercises';
 import { useLogWellnessActivity, useLogWorkout } from '../../hooks/useWorkouts';
 import { db } from '../../lib/firebase';
@@ -27,6 +27,7 @@ function SelectChallengeActivityScreen() {
   const groupId = params.get('groupId') ?? undefined;
   const { data: challenge } = useChallenge(challengeId);
   const { data: membership } = useChallengeMembership(challengeId);
+  const { data: challengeSummary } = useChallengeSummary(challengeId);
   const { data: exercises = [] } = useExercises();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -235,6 +236,7 @@ function SelectChallengeActivityScreen() {
     leaderboard,
     memberSumContribution: leaderboardMemberSum,
     currentUserId: user?.uid,
+    activitySummaryTotal: challengeSummary?.totalValue,
   });
   const groupCurrentTotal = _rp.groupTotal;
   const groupCumulativeTarget = _rp.groupTarget;
@@ -345,7 +347,7 @@ function SelectChallengeActivityScreen() {
             <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(backPath)}>
               <ArrowLeft size={28} className="text-slate-900" />
             </button>
-            <h1 className="text-[24px] leading-[30px] tracking-[-0.01em] font-black text-slate-900">Select Activity</h1>
+            <h1 className="st-page-title">Select Activity</h1>
           </header>
         </div>
 
@@ -572,7 +574,7 @@ function SelectChallengeActivityScreen() {
             return (
               <article key={`${activity.exerciseId}-${activity.exerciseName}`} className={`st-card p-4 flex items-center justify-between ${isOptional ? 'opacity-50' : ''}`}>
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="h-20 w-20 rounded-[22px] bg-[#f8e9df] text-primary flex items-center justify-center">{icon}</div>
+                  <div className="h-20 w-20 rounded-2xl bg-[#f8e9df] text-primary flex items-center justify-center">{icon}</div>
                   <div className="min-w-0">
                     <p className="text-[20px] leading-[24px] tracking-[-0.01em] font-black text-[#18110d] truncate">
                       {match?.name || activity.exerciseName || 'Activity'}

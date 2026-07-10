@@ -27,6 +27,11 @@ service-account*.json
 firebase-credentials.json
 *credentials*.json
 *client_secret*.json
+serviceAccountKey.json
+*serviceAccount*.json
+
+# === PLAYWRIGHT MCP ===
+.playwright-mcp/
 
 # === SECRETS ===
 *.pem

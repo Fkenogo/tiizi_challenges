@@ -2,55 +2,65 @@ import { ArrowLeft } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
-import { useAuth } from '../../hooks/useAuth';
-import { useChallenges } from '../../hooks/useChallenges';
-import { useDailyGoalsAnalytics } from '../../hooks/useDailyGoals';
-import { useMyGroups } from '../../hooks/useGroups';
-import { useUserStreak } from '../../hooks/useStreak';
-import { useUserWorkouts } from '../../hooks/useWorkouts';
+import { LearnMoreLink } from '../../components/LearnMoreLink';
+import { useSupportDonations } from '../../hooks/useDonations';
+import { useUserAnalytics } from '../../hooks/useUserAnalytics';
 
-function isWithinDays(iso: string, days: number) {
-  const ts = Date.parse(iso);
-  if (Number.isNaN(ts)) return false;
-  const now = Date.now();
-  const diff = now - ts;
-  return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
+function StatTile({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+      <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">{label}</p>
+      <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{value}</p>
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  children,
+  onClick,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-[14px] leading-[18px] font-bold text-slate-500 uppercase tracking-[0.08em]">{title}</h2>
+        {onClick && (
+          <button className="text-[13px] font-semibold text-primary" onClick={onClick}>
+            View
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {children}
+      </div>
+    </section>
+  );
 }
 
 function ProfileAnalyticsScreen() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { data: groups = [] } = useMyGroups();
-  const { data: challenges = [] } = useChallenges();
-  const { data: workouts = [] } = useUserWorkouts(user?.uid);
-  const { data: streak } = useUserStreak(user?.uid);
-  const { data: goalsAnalytics } = useDailyGoalsAnalytics(user?.uid);
+  const { data: analytics } = useUserAnalytics();
+  const { data: supportDonations = [] } = useSupportDonations();
 
-  const insights = useMemo(() => {
-    const workouts7d = workouts.filter((item) => isWithinDays(item.completedAt, 7)).length;
-    const workouts30d = workouts.filter((item) => isWithinDays(item.completedAt, 30)).length;
-    const activeChallenges = challenges.filter((item) => {
-      const now = Date.now();
-      const start = Date.parse(item.startDate);
-      const end = Date.parse(item.endDate);
-      return item.status === 'active' && now >= start && now <= end;
-    }).length;
-    const upcomingChallenges = challenges.filter((item) => Date.parse(item.startDate) > Date.now()).length;
+  const logsThisWeek = (analytics?.fitnessLogsLast7d ?? 0) + (analytics?.wellnessLogsLast7d ?? 0);
+  const logsThisMonth = analytics?.totalLogsLast30d ?? 0;
+  const totalJoined = analytics?.totalChallengesJoinedCount ?? 0;
+  const completed = analytics?.completedChallengesCount ?? 0;
+  const ongoingChallenges = analytics?.ongoingChallengesCount ?? 0;
 
+  const donationStats = useMemo(() => {
+    const confirmed = supportDonations.filter((d) => d.status === 'confirmed');
+    const totalKes = confirmed.reduce((sum, d) => sum + d.amountKes, 0);
     return {
-      workouts7d,
-      workouts30d,
-      activeChallenges,
-      upcomingChallenges,
-      groupsCount: groups.length,
-      currentStreak: streak?.current ?? 0,
-      longestStreak: streak?.longest ?? 0,
-      goalCompletionRate: goalsAnalytics?.completionRate ?? 0,
-      goalsCompleted: goalsAnalytics?.totalGoalsCompleted ?? 0,
-      goalsPlanned: goalsAnalytics?.totalGoalsPlanned ?? 0,
-      daysTracked: goalsAnalytics?.totalDaysTracked ?? 0,
+      totalContributions: supportDonations.length,
+      confirmedContributions: confirmed.length,
+      totalConfirmedKes: totalKes,
     };
-  }, [workouts, challenges, groups.length, streak?.current, streak?.longest, goalsAnalytics]);
+  }, [supportDonations]);
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
@@ -59,76 +69,55 @@ function ProfileAnalyticsScreen() {
           <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate('/app/profile/settings')}>
             <ArrowLeft size={22} className="text-slate-900" />
           </button>
-          <h1 className="text-[18px] leading-[22px] font-black text-slate-900">Reports & Analytics</h1>
+          <div className="flex flex-col items-center">
+            <h1 className="text-[18px] leading-[22px] font-black text-slate-900">Reports & Analytics</h1>
+            <LearnMoreLink section="analytics" />
+          </div>
           <span className="w-10" />
         </header>
 
         <main className="px-4 py-4 space-y-4">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
-            <h2 className="text-[14px] leading-[18px] font-bold text-slate-500 uppercase tracking-[0.08em]">Consistency</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Current Streak</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.currentStreak}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Best Streak</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.longestStreak}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Workouts (7d)</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.workouts7d}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Workouts (30d)</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.workouts30d}</p>
-              </div>
-            </div>
-          </section>
+          <SectionCard title="Consistency">
+            <StatTile label="Current Streak" value={analytics?.currentStreak ?? 0} />
+            <StatTile label="Best Streak" value={analytics?.longestStreak ?? 0} />
+            <StatTile label="Logs this week" value={logsThisWeek} />
+            <StatTile label="Logs this month" value={logsThisMonth} />
+          </SectionCard>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
-            <h2 className="text-[14px] leading-[18px] font-bold text-slate-500 uppercase tracking-[0.08em]">Goals</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Completion Rate</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.goalCompletionRate}%</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Days Tracked</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.daysTracked}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Goals Completed</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.goalsCompleted}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Goals Planned</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.goalsPlanned}</p>
-              </div>
+          <SectionCard title="Activity">
+            <StatTile label="Fitness logs (30d)" value={analytics?.fitnessLogsLast30d ?? 0} />
+            <StatTile label="Wellness logs (30d)" value={analytics?.wellnessLogsLast30d ?? 0} />
+            <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Most logged activity</p>
+              <p className="mt-1 text-[16px] leading-[22px] font-black text-primary">
+                {analytics?.mostLoggedActivityName ?? '—'}
+              </p>
             </div>
-          </section>
+          </SectionCard>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4">
-            <h2 className="text-[14px] leading-[18px] font-bold text-slate-500 uppercase tracking-[0.08em]">Community</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Groups</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.groupsCount}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Active Challenges</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.activeChallenges}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Upcoming Challenges</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{insights.upcomingChallenges}</p>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Total Challenges</p>
-                <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{challenges.length}</p>
-              </div>
+          <SectionCard title="Challenges" onClick={() => navigate('/app/challenges')}>
+            <StatTile label="Ongoing" value={ongoingChallenges} />
+            <StatTile label="Completed" value={completed} />
+            <StatTile label="Total joined" value={totalJoined} />
+          </SectionCard>
+
+          <SectionCard title="Community" onClick={() => navigate('/app/groups')}>
+            <StatTile label="Current Groups" value={analytics?.groupsCount ?? 0} />
+            <StatTile label="Total Joined" value={analytics?.totalGroupsJoinedCount ?? 0} />
+          </SectionCard>
+
+          <SectionCard title="Donations & Support" onClick={() => navigate('/app/donate?trigger=manual')}>
+            <StatTile label="Contributions" value={donationStats.totalContributions} />
+            <StatTile label="Confirmed" value={donationStats.confirmedContributions} />
+            <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <p className="text-[11px] uppercase font-bold tracking-[0.1em] text-slate-500">Total contributed</p>
+              <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">
+                {donationStats.totalConfirmedKes > 0
+                  ? `KES ${donationStats.totalConfirmedKes.toLocaleString()}`
+                  : 'Not started yet'}
+              </p>
             </div>
-          </section>
+          </SectionCard>
         </main>
 
         <BottomNav active="profile" />

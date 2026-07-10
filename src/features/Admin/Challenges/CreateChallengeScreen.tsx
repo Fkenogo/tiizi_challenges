@@ -25,6 +25,7 @@ import {
   DURATION_FALLBACK_DAYS,
 } from '../../Challenges/utils/challengeFormDefaults';
 import { DONATION_PAYLOAD_DISCLAIMER } from '../../Challenges/utils/challengeFormCopy';
+import type { CatalogExercise } from '../../../types';
 import type { WellnessActivity } from '../../../types/wellnessActivity';
 
 type ChallengeType = 'collective' | 'competitive' | 'streak';
@@ -116,6 +117,7 @@ function CreateChallengeScreen() {
   const [causeName, setCauseName] = useState('');
   const [causeDescription, setCauseDescription] = useState('');
   const [targetAmountKes, setTargetAmountKes] = useState('');
+  const [donationCurrency, setDonationCurrency] = useState<'KES' | 'RWF' | 'UGX'>('KES');
   const [contributionStartDate, setContributionStartDate] = useState('');
   const [contributionEndDate, setContributionEndDate] = useState('');
   const [contributionPhoneNumber, setContributionPhoneNumber] = useState('');
@@ -226,12 +228,17 @@ function CreateChallengeScreen() {
     setPickerTier('All');
   };
 
-  const pickExerciseForActivity = (exercise: { id: string; name: string; metric: { unit: string } }) => {
+  const pickExerciseForActivity = (exercise: CatalogExercise) => {
     if (pickerIndex === null) return;
+    const isIsometric = exercise.holdBased === true || exercise.movementType === 'isometric';
+    const raw = exercise.metric.unit;
+    const unit = isIsometric
+      ? (raw === 'minutes' ? 'Minutes' : 'Seconds')
+      : (raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Reps');
     updateActivity(pickerIndex, {
       query: exercise.name,
       exerciseId: exercise.id,
-      unit: exercise.metric.unit || 'Reps',
+      unit,
     });
     closeActivityPicker();
   };
@@ -309,6 +316,7 @@ function CreateChallengeScreen() {
         causeName: causeName.trim(),
         causeDescription: causeDescription.trim(),
         targetAmountKes: Number(targetAmountKes) || 0,
+        currency: donationCurrency,
         contributionStartDate: contributionStartDate || undefined,
         contributionEndDate: contributionEndDate || undefined,
         contributionPhoneNumber: contributionPhoneNumber.trim() || undefined,
@@ -515,6 +523,8 @@ function CreateChallengeScreen() {
             onCauseDescriptionChange={setCauseDescription}
             targetAmountKes={targetAmountKes}
             onTargetAmountKesChange={setTargetAmountKes}
+            currency={donationCurrency}
+            onCurrencyChange={setDonationCurrency}
             contributionStartDate={contributionStartDate}
             onContributionStartDateChange={setContributionStartDate}
             contributionEndDate={contributionEndDate}

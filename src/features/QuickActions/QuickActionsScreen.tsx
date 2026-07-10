@@ -1,25 +1,18 @@
 import { CheckSquare, ChevronRight, Dumbbell, Search, Trophy, UserPlus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
-import { useToast } from '../../context/ToastContext';
 import { getStoredActiveGroupId, setActiveGroupId } from '../../hooks/useActiveGroup';
 import { useMyGroups } from '../../hooks/useGroups';
 
 function QuickActionsScreen() {
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const { data: myGroups = [] } = useMyGroups();
   const [showGroupPicker, setShowGroupPicker] = useState(false);
-  const activeGroupId = getStoredActiveGroupId();
-  const defaultGroupId = useMemo(
-    () => activeGroupId || myGroups[0]?.id,
-    [activeGroupId, myGroups],
-  );
+  const [showActivitiesPicker, setShowActivitiesPicker] = useState(false);
 
-  const logActivityPath = defaultGroupId
-    ? `/app/workouts/select-activity?groupId=${defaultGroupId}`
-    : '/app/groups';
+  const activeGroupId = getStoredActiveGroupId();
+  const defaultGroupId = activeGroupId || myGroups[0]?.id;
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
@@ -38,6 +31,7 @@ function QuickActionsScreen() {
             </p>
 
             <div className="mt-5 space-y-3">
+              {/* Create Group */}
               <button
                 className="w-full rounded-[16px] border border-[#f8d6c0] bg-[#fff8f3] px-4 py-3 flex items-center gap-4"
                 onClick={() => navigate('/app/create-group')}
@@ -52,12 +46,12 @@ function QuickActionsScreen() {
                 <ChevronRight size={24} className="text-[#9eb0c6]" />
               </button>
 
+              {/* Create Challenge */}
               <button
                 className="w-full rounded-[16px] border border-slate-200 bg-[#f8fafd] px-4 py-3 flex items-center gap-4"
                 onClick={() => {
                   if (myGroups.length === 0) {
-                    showToast('Join or create a group first to create challenges.', 'error');
-                    navigate('/app/groups');
+                    navigate('/app/groups', { state: { tab: 'discover' } });
                     return;
                   }
                   if (myGroups.length === 1) {
@@ -78,12 +72,10 @@ function QuickActionsScreen() {
                 <ChevronRight size={24} className="text-[#9eb0c6]" />
               </button>
 
+              {/* Log Activity — always routes to challenge picker */}
               <button
                 className="w-full rounded-[16px] border border-slate-200 bg-[#f8fafd] px-4 py-3 flex items-center gap-4"
-                onClick={() => {
-                  if (!defaultGroupId) showToast('Join or create a group first to log activities.', 'error');
-                  navigate(logActivityPath);
-                }}
+                onClick={() => navigate('/app/workouts/choose-challenge')}
               >
                 <span className="h-12 w-12 rounded-[12px] bg-[#e8eefb] text-[#3b82f6] flex items-center justify-center">
                   <Dumbbell size={24} />
@@ -95,20 +87,22 @@ function QuickActionsScreen() {
                 <ChevronRight size={24} className="text-[#9eb0c6]" />
               </button>
 
+              {/* Browse Activities */}
               <button
                 className="w-full rounded-[16px] border border-slate-200 bg-[#f8fafd] px-4 py-3 flex items-center gap-4"
-                onClick={() => navigate('/app/exercises')}
+                onClick={() => setShowActivitiesPicker(true)}
               >
                 <span className="h-12 w-12 rounded-[12px] bg-[#e1f3ef] text-[#10b981] flex items-center justify-center">
                   <Search size={24} />
                 </span>
                 <span className="flex-1 text-left">
-                  <span className="block text-[16px] leading-[20px] font-black text-slate-900">Browse Exercises</span>
-                  <span className="block mt-1 text-[12px] leading-[16px] text-[#60748f]">Find your next move</span>
+                  <span className="block text-[16px] leading-[20px] font-black text-slate-900">Browse Activities</span>
+                  <span className="block mt-1 text-[12px] leading-[16px] text-[#60748f]">Exercises and wellness activities</span>
                 </span>
                 <ChevronRight size={24} className="text-[#9eb0c6]" />
               </button>
 
+              {/* Set Daily Goals */}
               <button
                 className="w-full rounded-[16px] border border-slate-200 bg-[#f8fafd] px-4 py-3 flex items-center gap-4"
                 onClick={() => navigate('/app/home?focusGoals=1')}
@@ -124,7 +118,10 @@ function QuickActionsScreen() {
               </button>
             </div>
 
-            <button className="mt-5 w-full text-center text-[14px] leading-[18px] font-medium text-[#5f7694]" onClick={() => navigate(-1)}>
+            <button
+              className="mt-5 w-full text-center text-[14px] leading-[18px] font-medium text-[#5f7694]"
+              onClick={() => navigate(-1)}
+            >
               Cancel
             </button>
           </div>
@@ -133,6 +130,7 @@ function QuickActionsScreen() {
         <BottomNav />
       </div>
 
+      {/* Group picker for Create Challenge */}
       {showGroupPicker && (
         <div className="fixed inset-0 z-50 bg-slate-900/55">
           <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-mobile rounded-t-3xl bg-white p-4">
@@ -154,7 +152,49 @@ function QuickActionsScreen() {
                 </button>
               ))}
             </div>
-            <button className="mt-3 w-full h-11 rounded-xl bg-slate-100 text-slate-700 font-semibold" onClick={() => setShowGroupPicker(false)}>
+            <button
+              className="mt-3 w-full h-11 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+              onClick={() => setShowGroupPicker(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Browse Activities picker */}
+      {showActivitiesPicker && (
+        <div className="fixed inset-0 z-50 bg-slate-900/55 flex items-end">
+          <div className="w-full max-w-mobile mx-auto rounded-t-3xl bg-white p-5 pb-8">
+            <div className="mx-auto h-1.5 w-12 rounded-full bg-slate-200 mb-5" />
+            <p className="text-[18px] leading-[22px] font-black text-slate-900">Browse Activities</p>
+            <p className="mt-1 text-[13px] text-slate-500">Choose a library to explore</p>
+            <div className="mt-4 space-y-3">
+              <button
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 flex items-center gap-4 text-left"
+                onClick={() => { setShowActivitiesPicker(false); navigate('/app/exercises'); }}
+              >
+                <span className="h-12 w-12 rounded-xl bg-[#e1f3ef] text-[#10b981] flex items-center justify-center text-[22px]">💪</span>
+                <div>
+                  <p className="text-[15px] font-bold text-slate-900">Exercise Library</p>
+                  <p className="text-[12px] text-slate-500 mt-0.5">Workouts, cardio, strength and more</p>
+                </div>
+              </button>
+              <button
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 flex items-center gap-4 text-left"
+                onClick={() => { setShowActivitiesPicker(false); navigate('/app/wellness-activities'); }}
+              >
+                <span className="h-12 w-12 rounded-xl bg-[#efe9ff] text-[#6d28d9] flex items-center justify-center text-[22px]">🧘</span>
+                <div>
+                  <p className="text-[15px] font-bold text-slate-900">Wellness Activities</p>
+                  <p className="text-[12px] text-slate-500 mt-0.5">Mindfulness, sleep, nutrition and more</p>
+                </div>
+              </button>
+            </div>
+            <button
+              className="mt-4 w-full h-11 rounded-xl bg-slate-100 text-slate-700 font-semibold text-[14px]"
+              onClick={() => setShowActivitiesPicker(false)}
+            >
               Cancel
             </button>
           </div>

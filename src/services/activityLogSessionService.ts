@@ -370,11 +370,16 @@ class ActivityLogSessionService {
 
     const nextCompleted = Math.min(Number(membership.activitiesCompleted ?? 0) + input.entries.length, totalActivities);
     const nextRate = Math.min(100, Math.round((nextCompleted / totalActivities) * 100));
+    // sessionContributionTotal uses summaryEntries — exactly the values written to activity docs.
+    // Absolute write matches workoutService.ts and wellnessLogService.ts behavior (client-engine-owned field).
+    const sessionContributionTotal = summaryEntries.reduce((s, e) => s + Math.max(0, e.value), 0);
+    const nextCumulativeLoggedValue = Math.max(0, Number(membership.cumulativeLoggedValue ?? 0)) + sessionContributionTotal;
     const membershipUpdate: Record<string, unknown> = {
       activitiesCompleted: nextCompleted,
       totalPoints: increment(totalPoints),
       lastActivityAt: serverTimestamp(),
       completionRate: nextRate,
+      cumulativeLoggedValue: nextCumulativeLoggedValue,
     };
     if (nextRate >= 100) {
       membershipUpdate.status = 'completed';

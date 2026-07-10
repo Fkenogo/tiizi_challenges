@@ -279,6 +279,16 @@ class WorkoutService {
     const snap = await getDocs(q);
     return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Workout, 'id'>) }));
   }
+
+  async getWorkoutsByUserSince(userId: string, sinceDate: string): Promise<Workout[]> {
+    const q = query(
+      collection(db, this.collectionName),
+      where('userId', '==', userId),
+      where('date', '>=', sinceDate),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Workout, 'id'>) }));
+  }
 }
 
 export const workoutService = new WorkoutService();

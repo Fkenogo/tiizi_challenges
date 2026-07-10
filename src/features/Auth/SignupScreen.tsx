@@ -21,8 +21,8 @@ function SignupScreen() {
 
   const nextPath = (() => {
     const raw = params.get('next');
-    if (!raw) return '/app/profile/completion';
-    return raw.startsWith('/app') ? raw : '/app/profile/completion';
+    if (!raw) return '/app/onboarding/intro';
+    return raw.startsWith('/app') ? raw : '/app/onboarding/intro';
   })();
 
   useEffect(() => {

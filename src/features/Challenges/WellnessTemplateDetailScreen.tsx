@@ -1,10 +1,34 @@
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Flame, Trophy, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
 import { LoadingSpinner } from '../../components/Layout/LoadingSpinner';
 import { useMyGroups } from '../../hooks/useGroups';
 import { useWellnessTemplate } from '../../hooks/useWellnessTemplates';
+
+const ENGINE = {
+  collective: {
+    emoji: '👥',
+    icon: <Users size={13} />,
+    label: 'Collective',
+    badge: 'bg-blue-100 text-blue-700',
+    description: 'Team works toward a shared goal. Every contribution adds up.',
+  },
+  competitive: {
+    emoji: '🏆',
+    icon: <Trophy size={13} />,
+    label: 'Competitive',
+    badge: 'bg-amber-100 text-amber-700',
+    description: 'Race to hit personal targets. Highest completion wins.',
+  },
+  streak: {
+    emoji: '🔥',
+    icon: <Flame size={13} />,
+    label: 'Streak',
+    badge: 'bg-orange-100 text-orange-700',
+    description: 'Log every required day. Consistency is the winning move.',
+  },
+} as const;
 
 function WellnessTemplateDetailScreen() {
   const navigate = useNavigate();
@@ -60,8 +84,34 @@ function WellnessTemplateDetailScreen() {
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
               <span className="rounded-lg bg-slate-100 px-2 py-1">{template.difficulty}</span>
               <span className="rounded-lg bg-slate-100 px-2 py-1">{template.duration} days</span>
-              <span className="rounded-lg bg-slate-100 px-2 py-1">{template.type}</span>
+              {(() => {
+                const e = ENGINE[template.type as keyof typeof ENGINE] ?? ENGINE.streak;
+                return (
+                  <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-bold ${e.badge}`}>
+                    {e.icon}{e.label}
+                  </span>
+                );
+              })()}
             </div>
+            {/* Engine explanation + engine-specific config */}
+            {(() => {
+              const e = ENGINE[template.type as keyof typeof ENGINE] ?? ENGINE.streak;
+              return (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600">
+                  <p className="font-semibold">{e.emoji} {e.description}</p>
+                  {template.type === 'collective' && template.groupCumulativeTarget != null && template.groupCumulativeTarget > 0 && (
+                    <p className="mt-1">Group target: <span className="font-bold text-slate-800">{template.groupCumulativeTarget.toLocaleString()}</span> cumulative
+                      {template.autoCompleteOnGroupTarget ? ' — auto-completes when reached' : ''}
+                    </p>
+                  )}
+                  {template.type === 'streak' && template.requiredConsecutiveDays != null && template.requiredConsecutiveDays > 0 && (
+                    <p className="mt-1">Required consecutive days: <span className="font-bold text-slate-800">{template.requiredConsecutiveDays}</span>
+                      {template.streakResetOnMiss ? ' — streak resets on a missed day' : ' — streak continues after missed days'}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4">

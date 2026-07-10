@@ -27,6 +27,40 @@ export function useDonationReports() {
   });
 }
 
+export function usePlatformSupportForDetail() {
+  return useQuery({
+    queryKey: ['admin-platform-support-detail'],
+    queryFn: () => adminDonationService.getPlatformSupportForDetail(),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useChallengePledgesAdmin(challengeId: string | null) {
+  return useQuery({
+    queryKey: ['admin-challenge-pledges', challengeId],
+    queryFn: () =>
+      challengeId ? adminDonationService.getChallengePledgesForAdmin(challengeId) : Promise.resolve([]),
+    enabled: !!challengeId,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useUpdateCampaignStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      challengeId,
+      campaignStatus,
+    }: {
+      challengeId: string;
+      campaignStatus: 'active' | 'paused' | 'suspended' | 'completed';
+    }) => adminDonationService.updateCampaignStatus(challengeId, campaignStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-donation-campaigns'] });
+    },
+  });
+}
+
 type PlatformSupportFilter = 'all' | PlatformSupportDonation['status'] | 'flagged';
 
 export function usePlatformSupportSettings() {
