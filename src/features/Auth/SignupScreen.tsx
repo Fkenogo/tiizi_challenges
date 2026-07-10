@@ -144,6 +144,18 @@ function SignupScreen() {
             Log in
           </button>
         </p>
+
+        <p className="mt-4 text-center text-xs text-slate-400 leading-[18px]">
+          By signing up, you agree to our{' '}
+          <button className="font-semibold text-slate-600 underline" onClick={() => navigate('/terms')}>
+            Terms
+          </button>{' '}
+          and{' '}
+          <button className="font-semibold text-slate-600 underline" onClick={() => navigate('/privacy')}>
+            Privacy Policy
+          </button>
+          .
+        </p>
       </div>
     </Screen>
   );

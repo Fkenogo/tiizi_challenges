@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { AdminRoute } from './components/Auth/AdminRoute';
 import { RequireGroupRoute } from './components/Auth/RequireGroupRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { LoadingSpinner } from './components/Mobile';
 import { useAuth } from './hooks/useAuth';
@@ -54,6 +55,9 @@ const LearnTiiziScreen = lazy(() => import('./features/Profile/LearnTiiziScreen'
 const LoginScreen = lazy(() => import('./features/Auth/LoginScreen'));
 const SignupScreen = lazy(() => import('./features/Auth/SignupScreen'));
 const InstallScreen = lazy(() => import('./features/Install/InstallScreen'));
+const TermsScreen = lazy(() => import('./features/Legal/TermsScreen'));
+const PrivacyScreen = lazy(() => import('./features/Legal/PrivacyScreen'));
+const NotFoundScreen = lazy(() => import('./features/NotFound/NotFoundScreen'));
 const GroupDetailScreen = lazy(() => import('./features/Groups/GroupDetailScreen'));
 const GroupFeedScreen = lazy(() => import('./features/Groups/GroupFeedScreen'));
 const GroupMembersScreen = lazy(() => import('./features/Groups/GroupMembersScreen'));
@@ -189,6 +193,7 @@ function App() {
           <BrowserRouter>
             <RouteViewportMode />
             <RouteWarmup />
+            <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner fullScreen label="Loading screen..." />}>
               <Routes>
                 {import.meta.env.DEV && <Route path="/mockups" element={<MockupCatalogScreen />} />}
@@ -203,6 +208,8 @@ function App() {
                 ))}
 
                 <Route path="/install" element={<InstallScreen />} />
+                <Route path="/terms" element={<TermsScreen />} />
+                <Route path="/privacy" element={<PrivacyScreen />} />
                 <Route path="/app/login" element={<LoginScreen />} />
                 <Route path="/app/signup" element={<SignupScreen />} />
                 <Route path="/app/flow" element={<ProtectedRoute><FlowHubScreen /></ProtectedRoute>} />
@@ -302,9 +309,10 @@ function App() {
                 <Route path="/app" element={<Navigate to="/app/welcome" replace />} />
 
                 <Route path="/" element={<Navigate to="/app/welcome" replace />} />
-                <Route path="*" element={<Navigate to="/app/flow" replace />} />
+                <Route path="*" element={<NotFoundScreen />} />
               </Routes>
             </Suspense>
+            </ErrorBoundary>
           </BrowserRouter>
         </ToastProvider>
       </AuthProvider>

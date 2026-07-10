@@ -25,8 +25,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     logError(error, errorInfo);
   }
 
-  private handleReset = () => {
-    this.setState({ hasError: false });
+  private handleReload = () => {
+    window.location.reload();
+  };
+
+  private handleGoHome = () => {
+    window.location.href = '/app/welcome';
   };
 
   render() {
@@ -41,14 +45,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               We could not load this screen.
             </h1>
             <p className="mt-3 text-[14px] leading-[20px] text-slate-600">
-              Try again, and if this keeps happening, come back in a moment.
+              Something unexpected happened. Reloading the app usually fixes this.
             </p>
             <button
               type="button"
-              className="mt-6 h-11 w-full rounded-lg bg-primary px-4 text-sm font-bold text-white"
-              onClick={this.handleReset}
+              className="mt-6 h-11 w-full rounded-lg bg-primary px-4 text-sm font-bold text-white active:opacity-80"
+              onClick={this.handleReload}
             >
-              Try again
+              Reload app
+            </button>
+            <button
+              type="button"
+              className="mt-3 h-11 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 active:opacity-70"
+              onClick={this.handleGoHome}
+            >
+              Go home
             </button>
           </section>
         </main>
