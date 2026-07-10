@@ -1,0 +1,31 @@
+- generic [ref=e8]:
+  - heading "Help & Feedback" [level=3] [ref=e10]
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - img [ref=e13]
+      - paragraph [ref=e16]: Support Center
+    - paragraph [ref=e17]: Browse pilot help topics or contact support.
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - paragraph [ref=e20]: How do I join a group?
+      - paragraph [ref=e21]: Open Groups, choose Invites, then enter a secure invite code. Some private groups may require owner or moderator approval.
+    - generic [ref=e22]:
+      - paragraph [ref=e23]: How do I track challenge activity?
+      - paragraph [ref=e24]: Open a challenge and use Log Activity to record the required workout or wellness activities. Multi-activity challenges are saved together.
+    - generic [ref=e25]:
+      - paragraph [ref=e26]: Why is my donation pending?
+      - paragraph [ref=e27]: Support and challenge donations are manually verified. A payment reference is not counted as confirmed until an admin reviews it.
+    - generic [ref=e28]:
+      - paragraph [ref=e29]: Who can see my activity?
+      - paragraph [ref=e30]: Relevant group members may see safe summaries such as feed items, progress, and leaderboards. Use Profile Settings to manage supported privacy preferences.
+    - generic [ref=e31]:
+      - paragraph [ref=e32]: How do I report a problem?
+      - paragraph [ref=e33]: Email support with the group, challenge, or payment reference involved. Do not include passwords or private PINs.
+  - generic [ref=e34]:
+    - link "Email Support" [ref=e35] [cursor=pointer]:
+      - /url: mailto:support@tiizi.app?subject=Tiizi%20pilot%20feedback&body=Hi%20Tiizi%20team%2C%0A%0AI%20need%20help%20with%3A%0A%0A
+      - img [ref=e36]
+      - text: Email Support
+    - paragraph [ref=e39]: We will reply at the email address you send from.
+    - paragraph [ref=e40]: For disputes, include the group or challenge name and any payment reference. Never send your password or mobile money PIN.
+    - button "Back to Profile" [ref=e41] [cursor=pointer]

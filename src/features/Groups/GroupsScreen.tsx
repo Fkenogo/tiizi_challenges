@@ -65,7 +65,7 @@ function GroupCard({
               <span className="text-[12px] text-slate-400">{group.memberCount.toLocaleString()} members</span>
               {(group.activeChallenges ?? 0) > 0 && (
                 <span className="text-[12px] font-semibold text-primary">
-                  {group.activeChallenges} active
+                  {group.activeChallenges} Ongoing Challenge{group.activeChallenges === 1 ? '' : 's'}
                 </span>
               )}
             </div>

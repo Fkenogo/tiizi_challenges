@@ -1,0 +1,43 @@
+- generic [ref=e125] [box=353,-515,480,1434]:
+  - generic [ref=e126] [box=353,-515,480,1434]:
+    - banner [ref=e127] [box=353,-515,480,90]:
+      - generic [ref=e129] [box=369,-499,133,24]:
+        - generic [ref=e130] [box=369,-499,16,24]: ◉
+        - heading "Your Groups" [level=1] [ref=e131] [box=393,-498,109,22]
+      - generic [ref=e132] [box=369,-463,448,29]:
+        - button "My Groups" [ref=e133] [cursor=pointer] [box=369,-463,73,28]
+        - button "Discover" [ref=e134] [cursor=pointer] [box=462,-463,59,28]
+        - button "Invites" [ref=e135] [cursor=pointer] [box=541,-463,44,28]
+    - main [ref=e136] [box=353,-425,480,1248]:
+      - article [ref=e137] [box=369,-413,448,300]:
+        - button "Early Birds Kenya Active Now Early Birds Kenya Morning consistency group for accountability and fitness streaks. 👥 15 🏆 8 Challenges View" [ref=e138] [cursor=pointer] [box=370,-412,446,298]:
+          - generic [ref=e139] [box=370,-412,446,168]
+          - generic [ref=e142] [box=370,-244,446,130]
+      - article [ref=e151] [box=369,-101,448,300]:
+        - button "Hydration Crew Active Now Hydration Crew Daily hydration and wellness tracking accountability group. 👥 13 🏆 2 Challenges View" [ref=e152] [cursor=pointer] [box=370,-100,446,298]:
+          - generic [ref=e153] [box=370,-100,446,168]
+          - generic [ref=e156] [box=370,68,446,130]
+      - article [ref=e165] [box=369,211,448,300]:
+        - button "Trail Seekers Active Now Trail Seekers Outdoor runs, hikes, and weekly distance goals. 👥 12 🏆 2 Challenges View" [ref=e166] [cursor=pointer] [box=370,212,446,298]:
+          - generic [ref=e167] [box=370,212,446,168]
+          - generic [ref=e170] [box=370,380,446,130]
+      - article [ref=e179] [box=369,523,448,300]:
+        - button "Fit 50s Active Now Fit 50s 50+ youngies who refuse to look 50 👥 1 🏆 2 Challenges View" [ref=e180] [cursor=pointer] [box=370,524,446,298]:
+          - generic [ref=e181] [box=370,524,446,168]
+          - generic [ref=e184] [box=370,692,446,130]
+  - navigation [ref=e193] [box=353,854,480,65]:
+    - generic [ref=e194] [box=365,865,456,44]:
+      - button "Home" [ref=e195] [cursor=pointer] [box=365,865,64,44]:
+        - img [ref=e196] [box=387,870,20,20]
+        - generic [ref=e199] [box=382,892,29,13]: Home
+      - button "Groups" [ref=e200] [cursor=pointer] [box=465,865,64,44]:
+        - img [ref=e201] [box=487,870,20,20]
+        - generic [ref=e206] [box=477,892,39,13]: Groups
+      - button [ref=e208] [cursor=pointer] [box=565,853,56,56]:
+        - img [ref=e209] [box=579,867,28,28]
+      - button "Challenges" [ref=e210] [cursor=pointer] [box=657,865,64,44]:
+        - img [ref=e211] [box=679,870,20,20]
+        - generic [ref=e217] [box=661,892,55,13]: Challenges
+      - button "Profile" [ref=e218] [cursor=pointer] [box=757,865,64,44]:
+        - img [ref=e219] [box=779,870,20,20]
+        - generic [ref=e222] [box=773,892,31,13]: Profile

@@ -1,0 +1,39 @@
+- generic [ref=e8]:
+  - banner [ref=e9]:
+    - button [ref=e10] [cursor=pointer]:
+      - img [ref=e11]
+    - heading "Privacy Policy" [level=1] [ref=e13]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - paragraph [ref=e16]: Tiizi uses your account, profile, group, challenge, activity, notification, invite, and support information to provide the member experience during the pilot. Your privacy settings control what other members can see in supported profile surfaces.
+      - paragraph [ref=e17]: This pilot privacy notice is product guidance, not final legal advice.
+    - generic [ref=e18]:
+      - heading "Information used in the app" [level=2] [ref=e19]
+      - paragraph [ref=e20]: Tiizi stores account identifiers, profile details, privacy preferences, group memberships, private invite and join request records, challenge participation, workout logs, wellness logs, notification items, and support or donation intents needed to run the app.
+      - heading "Member visibility" [level=2] [ref=e21]
+      - paragraph [ref=e22]: Members in the same group may see safe summaries such as display name, group activity feed items, member stats, rankings, challenge progress, and leaderboard totals. Private group content is intended for approved members only.
+      - heading "Admin and moderator access" [level=2] [ref=e23]
+      - paragraph [ref=e24]: Tiizi administrators and authorized group managers may review records needed for safety, moderation, invite management, challenge approval, membership approval, support, and manual payment verification.
+      - heading "Activity and leaderboard data" [level=2] [ref=e25]
+      - paragraph [ref=e26]: Raw workout and wellness activity writes are used to generate server-owned summaries for progress and leaderboards. Those summaries may be visible to relevant group members, while raw records are not intended for broad public browsing.
+      - heading "Support and payments" [level=2] [ref=e27]
+      - paragraph [ref=e28]: Support and donation references are used for manual admin review. Confirmed public support totals do not include donor identities or transaction details.
+      - heading "Your choices" [level=2] [ref=e29]
+      - paragraph [ref=e30]: You can update profile and privacy settings in the app. For account, data, payment-reference, or dispute questions, contact support from the Help screen.
+    - paragraph [ref=e32]: To ask about your data or account, contact support from the Help screen.
+  - navigation [ref=e33]:
+    - generic [ref=e34]:
+      - button "Home" [ref=e35] [cursor=pointer]:
+        - img [ref=e36]
+        - generic [ref=e39]: Home
+      - button "Groups" [ref=e40] [cursor=pointer]:
+        - img [ref=e41]
+        - generic [ref=e46]: Groups
+      - button [ref=e48] [cursor=pointer]:
+        - img [ref=e49]
+      - button "Challenges" [ref=e50] [cursor=pointer]:
+        - img [ref=e51]
+        - generic [ref=e57]: Challenges
+      - button "Profile" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+        - generic [ref=e62]: Profile

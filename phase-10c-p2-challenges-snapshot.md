@@ -1,0 +1,63 @@
+- generic [ref=e709] [box=353,0,480,1200]:
+  - generic [ref=e710] [box=353,0,480,1200]:
+    - banner [ref=e711] [box=353,0,480,69]:
+      - generic [ref=e712] [box=369,16,448,44]:
+        - heading "Challenges" [level=1] [ref=e713] [box=369,28,89,21]
+        - button [ref=e714] [cursor=pointer] [box=773,16,44,44]:
+          - img [ref=e715] [box=784,27,22,22]
+    - main [ref=e718] [box=353,69,480,1035]:
+      - generic [ref=e719] [box=369,69,448,243]:
+        - generic [ref=e720] [box=369,69,448,19]:
+          - heading "Suggested Templates" [level=2] [ref=e721] [box=369,69,151,19]
+          - button "View All" [ref=e722] [cursor=pointer] [box=764,70,53,18]
+        - generic [ref=e724] [box=369,100,448,212]:
+          - article [ref=e725] [box=369,100,270,212]
+          - article [ref=e733] [box=651,100,270,212]
+          - article [ref=e741] [box=933,100,270,212]
+          - article [ref=e749] [box=1215,100,270,212]
+          - article [ref=e757] [box=1497,100,270,212]
+      - generic [ref=e765] [box=369,336,448,195]:
+        - generic [ref=e766] [box=369,336,448,19]:
+          - heading "Wellness Templates" [level=2] [ref=e767] [box=369,336,139,19]
+          - button "View All" [ref=e768] [cursor=pointer] [box=764,337,53,18]
+        - generic [ref=e770] [box=369,367,448,164]:
+          - article [ref=e771] [box=369,367,220,164]
+          - article [ref=e779] [box=601,367,220,164]
+          - article [ref=e787] [box=833,367,220,164]
+          - article [ref=e795] [box=1065,367,220,164]
+          - article [ref=e803] [box=1297,367,220,164]
+          - article [ref=e811] [box=1529,367,220,164]
+          - article [ref=e819] [box=1761,367,220,164]
+          - article [ref=e827] [box=1993,367,220,164]
+      - generic [ref=e835] [box=369,555,448,361]:
+        - generic [ref=e836] [box=369,555,448,19]:
+          - heading "Ongoing Challenges" [level=2] [ref=e837] [box=369,555,143,19]
+          - button "View All" [ref=e838] [cursor=pointer] [box=764,556,53,18]
+        - generic [ref=e839] [box=369,586,448,330]:
+          - article [ref=e840] [box=369,586,448,102]
+          - article [ref=e849] [box=369,700,448,102]
+          - article [ref=e858] [box=369,814,448,102]
+      - generic [ref=e867] [box=369,940,448,72]:
+        - generic [ref=e868] [box=369,940,448,19]:
+          - heading "Browse Challenges" [level=2] [ref=e869] [box=369,940,136,19]
+          - button "View All" [ref=e870] [cursor=pointer] [box=764,941,53,18]
+        - article [ref=e871] [box=369,971,448,41]: No public challenges available to browse yet.
+      - button "Browse Exercise Library Master your technique before you participate" [ref=e873] [cursor=pointer] [box=369,1032,448,72]:
+        - generic [ref=e874] [box=385,1048,416,20]: Browse Exercise Library
+        - generic [ref=e875] [box=385,1072,416,16]: Master your technique before you participate
+  - navigation [ref=e876] [box=353,854,480,65]:
+    - generic [ref=e877] [box=365,865,456,44]:
+      - button "Home" [ref=e878] [cursor=pointer] [box=365,865,64,44]:
+        - img [ref=e879] [box=387,870,20,20]
+        - generic [ref=e882] [box=382,892,29,13]: Home
+      - button "Groups" [ref=e883] [cursor=pointer] [box=465,865,64,44]:
+        - img [ref=e884] [box=487,870,20,20]
+        - generic [ref=e889] [box=478,892,36,13]: Groups
+      - button [ref=e891] [cursor=pointer] [box=565,853,56,56]:
+        - img [ref=e892] [box=579,867,28,28]
+      - button "Challenges" [ref=e893] [cursor=pointer] [box=657,865,64,44]:
+        - img [ref=e894] [box=679,870,20,20]
+        - generic [ref=e900] [box=659,892,59,13]: Challenges
+      - button "Profile" [ref=e901] [cursor=pointer] [box=757,865,64,44]:
+        - img [ref=e902] [box=779,870,20,20]
+        - generic [ref=e905] [box=773,892,31,13]: Profile

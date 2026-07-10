@@ -1,0 +1,66 @@
+- generic [ref=e528] [box=360,0,480,919]:
+  - generic [ref=e529] [box=360,0,480,919]:
+    - banner [ref=e530] [box=360,0,480,73]:
+      - generic [ref=e531] [box=376,16,448,40]:
+        - button [ref=e532] [cursor=pointer] [box=376,16,40,40]:
+          - img [ref=e533] [box=384,24,24,24]
+        - heading "Group Detail" [level=1] [ref=e535] [box=546,25,108,22]
+        - button "Report group" [ref=e536] [cursor=pointer] [box=784,16,40,40]:
+          - img [ref=e537] [box=793,25,22,22]
+    - generic [ref=e542] [box=376,89,448,97]:
+      - img "Early Birds Kenya" [ref=e600] [box=376,89,96,96]
+      - generic [ref=e544] [box=488,89,336,97]:
+        - generic [ref=e545] [box=488,89,336,21]:
+          - heading "Early Birds Kenya" [level=2] [ref=e601] [box=488,89,137,21]
+          - img [ref=e546] [box=633,92,16,16]
+        - paragraph [ref=e549] [box=488,114,336,20]: 15 Members • Official Group
+        - generic [ref=e602] [box=488,146,336,40]:
+          - button "✓ Joined" [ref=e603] [cursor=pointer] [box=488,146,104,40]
+          - button "Leave" [ref=e604] [cursor=pointer] [box=600,146,74,40]
+    - generic [ref=e553] [box=376,208,448,56]:
+      - button "Feed" [ref=e554] [cursor=pointer] [box=376,208,112,56]
+      - button "Challenges" [ref=e555] [cursor=pointer] [box=488,208,112,56]
+      - button "Members" [ref=e556] [cursor=pointer] [box=600,208,112,56]
+      - button "Leaderboard" [ref=e557] [cursor=pointer] [box=712,208,112,56]
+    - main [ref=e558] [box=360,265,480,470]:
+      - generic [ref=e559] [box=376,289,448,279]:
+        - heading "Active Challenges" [level=3] [ref=e560] [box=376,289,448,21]
+        - article [ref=e561] [box=376,322,448,246]:
+          - generic [ref=e605] [box=397,343,406,42]:
+            - generic [ref=e606] [box=397,343,254,42]:
+              - paragraph [ref=e607] [box=397,343,254,22]: 7 day squat + Pushup madness
+              - paragraph [ref=e608] [box=397,365,254,20]: streak
+            - generic [ref=e609] [box=713,343,90,22]: Enrolled
+          - generic [ref=e610] [box=397,409,406,20]:
+            - paragraph [ref=e611] [box=397,409,132,20]: Current Progress
+            - paragraph [ref=e612] [box=667,409,136,20]: 0 reps of 700 reps
+          - generic [ref=e614] [box=397,473,406,44]:
+            - paragraph [ref=e615] [box=397,486,81,18]:
+              - img [ref=e616] [box=397,487,16,16]
+              - text: Final day
+            - button "Continue" [ref=e620] [cursor=pointer] [box=690,473,113,44]
+          - paragraph [ref=e621] [box=397,529,406,18]: 0 personal logs in this challenge
+      - generic [ref=e564] [box=376,596,448,139]:
+        - heading "Upcoming Challenges" [level=3] [ref=e565] [box=376,596,448,21]
+        - article [ref=e566] [box=376,629,448,106]:
+          - generic [ref=e623] [box=397,650,238,64]:
+            - img "8-Hour Sleep Streak" [ref=e624] [box=397,650,64,64]
+            - generic [ref=e625] [box=473,659,162,46]:
+              - paragraph [ref=e626] [box=473,659,162,22]: 8-Hour Sleep Streak
+              - paragraph [ref=e627] [box=473,685,162,20]: Starts in 0 day(s)
+  - navigation [ref=e568] [box=360,854,480,65]:
+    - generic [ref=e569] [box=372,865,456,44]:
+      - button "Home" [ref=e570] [cursor=pointer] [box=372,865,64,44]:
+        - img [ref=e571] [box=394,870,20,20]
+        - generic [ref=e574] [box=389,892,29,13]: Home
+      - button "Groups" [ref=e575] [cursor=pointer] [box=472,865,64,44]:
+        - img [ref=e576] [box=494,870,20,20]
+        - generic [ref=e581] [box=484,892,39,13]: Groups
+      - button [ref=e583] [cursor=pointer] [box=572,853,56,56]:
+        - img [ref=e584] [box=586,867,28,28]
+      - button "Challenges" [ref=e585] [cursor=pointer] [box=664,865,64,44]:
+        - img [ref=e586] [box=686,870,20,20]
+        - generic [ref=e592] [box=668,892,55,13]: Challenges
+      - button "Profile" [ref=e593] [cursor=pointer] [box=764,865,64,44]:
+        - img [ref=e594] [box=786,870,20,20]
+        - generic [ref=e597] [box=780,892,31,13]: Profile

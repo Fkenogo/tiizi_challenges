@@ -1,0 +1,89 @@
+- generic [ref=e549] [box=353,0,480,1819]:
+  - generic [ref=e550] [box=353,0,480,1819]:
+    - banner [ref=e551] [box=353,0,480,73]:
+      - generic [ref=e552] [box=369,16,448,40]:
+        - button [ref=e553] [cursor=pointer] [box=369,16,40,40]:
+          - img [ref=e554] [box=377,24,24,24]
+        - heading "Early Birds Kenya" [level=1] [ref=e556] [box=507,24,171,24]
+    - generic [ref=e558] [box=353,73,480,220]:
+      - img "Early Birds Kenya" [ref=e559] [box=353,73,480,220]
+      - generic [ref=e561] [box=369,233,448,44]:
+        - generic [ref=e562] [box=369,233,162,44]:
+          - heading "Top Performers" [level=2] [ref=e563] [box=369,233,162,26]
+          - paragraph [ref=e564] [box=369,259,162,18]: Overall group rankings
+        - button "Group Details" [ref=e565] [cursor=pointer] [box=693,237,124,40]
+    - generic [ref=e568] [box=369,294,448,56]:
+      - button "Feed" [ref=e569] [cursor=pointer] [box=369,294,112,56]
+      - button "Challenges" [ref=e570] [cursor=pointer] [box=481,294,112,56]
+      - button "Members" [ref=e571] [cursor=pointer] [box=593,294,112,56]
+      - button "Leaderboard" [ref=e572] [cursor=pointer] [box=705,294,112,56]
+    - main [ref=e573] [box=353,351,480,1372]:
+      - generic [ref=e575] [box=382,388,422,52]:
+        - button "Overall" [ref=e576] [cursor=pointer] [box=386,392,203,44]
+        - button "Challenge" [ref=e577] [cursor=pointer] [box=597,392,203,44]
+      - generic [ref=e579] [box=390,494,406,164]:
+        - generic [ref=e580] [box=550,494,96,164]:
+          - paragraph [ref=e582] [box=550,598,96,20]: Fred Kenogo
+          - paragraph [ref=e583] [box=550,618,96,16]: 795 pts
+          - generic [ref=e584] [box=567,638,63,20]: 1st place
+        - generic [ref=e585] [box=425,526,109,132]:
+          - paragraph [ref=e587] [box=425,598,109,20]: Jordan Mwangi
+          - paragraph [ref=e588] [box=425,618,109,16]: 518 pts
+          - generic [ref=e589] [box=462,638,36,20]: 2nd
+        - generic [ref=e590] [box=662,526,98,132]:
+          - paragraph [ref=e592] [box=662,598,98,20]: Sophie Okoth
+          - paragraph [ref=e593] [box=662,618,98,16]: 490 pts
+          - generic [ref=e594] [box=695,638,33,20]: 3rd
+      - generic [ref=e595] [box=369,703,448,1020]:
+        - article [ref=e596] [box=369,703,448,74]:
+          - generic [ref=e597] [box=386,720,181,40]
+          - paragraph [ref=e601] [box=746,727,53,27]: 474XP
+        - article [ref=e602] [box=369,789,448,74]:
+          - generic [ref=e603] [box=386,806,200,40]
+          - paragraph [ref=e607] [box=746,813,53,27]: 466XP
+        - article [ref=e608] [box=369,875,448,74]:
+          - generic [ref=e609] [box=386,892,174,40]
+          - paragraph [ref=e613] [box=746,899,53,27]: 436XP
+        - article [ref=e614] [box=369,961,448,74]:
+          - generic [ref=e615] [box=386,978,177,40]
+          - paragraph [ref=e619] [box=746,985,53,27]: 386XP
+        - article [ref=e620] [box=369,1047,448,74]:
+          - generic [ref=e621] [box=386,1064,175,40]
+          - paragraph [ref=e625] [box=746,1071,53,27]: 356XP
+        - article [ref=e626] [box=369,1133,448,74]:
+          - generic [ref=e627] [box=386,1150,201,40]
+          - paragraph [ref=e631] [box=746,1157,53,27]: 310XP
+        - article [ref=e632] [box=369,1219,448,74]:
+          - generic [ref=e633] [box=386,1236,197,40]
+          - paragraph [ref=e637] [box=746,1243,53,27]: 224XP
+        - article [ref=e638] [box=369,1305,448,74]:
+          - generic [ref=e639] [box=386,1322,183,40]
+          - paragraph [ref=e643] [box=768,1329,31,27]: 0XP
+        - article [ref=e644] [box=369,1391,448,74]:
+          - generic [ref=e645] [box=386,1408,161,40]
+          - paragraph [ref=e649] [box=768,1415,31,27]: 0XP
+        - article [ref=e650] [box=369,1477,448,74]:
+          - generic [ref=e651] [box=386,1494,149,40]
+          - paragraph [ref=e655] [box=768,1501,31,27]: 0XP
+        - article [ref=e656] [box=369,1563,448,74]:
+          - generic [ref=e657] [box=386,1580,134,40]
+          - paragraph [ref=e661] [box=768,1587,31,27]: 0XP
+        - article [ref=e662] [box=369,1649,448,74]:
+          - generic [ref=e663] [box=386,1666,145,40]
+          - paragraph [ref=e667] [box=768,1673,31,27]: 0XP
+  - navigation [ref=e668] [box=353,854,480,65]:
+    - generic [ref=e669] [box=365,865,456,44]:
+      - button "Home" [ref=e670] [cursor=pointer] [box=365,865,64,44]:
+        - img [ref=e671] [box=387,870,20,20]
+        - generic [ref=e674] [box=382,892,29,13]: Home
+      - button "Groups" [ref=e675] [cursor=pointer] [box=465,865,64,44]:
+        - img [ref=e676] [box=487,870,20,20]
+        - generic [ref=e681] [box=477,892,39,13]: Groups
+      - button [ref=e683] [cursor=pointer] [box=565,853,56,56]:
+        - img [ref=e684] [box=579,867,28,28]
+      - button "Challenges" [ref=e685] [cursor=pointer] [box=657,865,64,44]:
+        - img [ref=e686] [box=679,870,20,20]
+        - generic [ref=e692] [box=661,892,55,13]: Challenges
+      - button "Profile" [ref=e693] [cursor=pointer] [box=757,865,64,44]:
+        - img [ref=e694] [box=779,870,20,20]
+        - generic [ref=e697] [box=773,892,31,13]: Profile

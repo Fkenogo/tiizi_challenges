@@ -1,0 +1,35 @@
+- generic [ref=e219] [box=413,0,375,919]:
+  - button [ref=e221] [cursor=pointer] [box=429,16,40,40]:
+    - img [ref=e222] [box=435,22,28,28]
+  - generic [ref=e224] [box=429,64,343,24]:
+    - paragraph [ref=e225] [box=429,64,91,24]: Step 1 of 3
+    - paragraph [ref=e226] [box=735,64,36,24]: 33%
+  - heading "Complete Your Profile" [level=1] [ref=e229] [box=429,140,343,32]
+  - generic [ref=e230] [box=429,196,343,214]:
+    - button "Add profile picture" [ref=e231] [cursor=pointer] [box=512,196,176,176]:
+      - button [ref=e233] [box=621,305,56,56]:
+        - img [ref=e234] [box=638,322,22,22]
+    - paragraph [ref=e237] [box=498,388,204,22]: Tap to add a profile picture
+  - generic [ref=e238] [box=429,442,343,290]:
+    - generic [ref=e239] [box=429,442,343,83]:
+      - paragraph [ref=e240] [box=429,442,343,19]: Full Name
+      - textbox "John Doe" [ref=e241] [box=429,469,343,56]: Pilot Smoke User
+    - generic [ref=e242] [box=429,545,343,83]:
+      - paragraph [ref=e243] [box=429,545,343,19]: Birthday
+      - generic [ref=e244] [box=429,573,343,56]:
+        - textbox [ref=e245] [box=429,573,343,56]:
+          - /placeholder: DD/MM/YYYY
+        - img [ref=e246] [box=732,589,24,24]
+    - generic [ref=e248] [box=429,649,343,83]:
+      - generic [ref=e249] [box=429,649,166,83]:
+        - paragraph [ref=e250] [box=429,649,166,19]: Weight
+        - generic [ref=e251] [box=429,676,166,56]:
+          - combobox [ref=e252] [box=429,676,166,56]
+          - generic [ref=e253] [box=562,693,16,21]: kg
+      - generic [ref=e254] [box=606,649,166,83]:
+        - paragraph [ref=e255] [box=606,649,166,19]: Height
+        - generic [ref=e256] [box=606,676,166,56]:
+          - combobox [ref=e257] [box=606,676,166,56]
+          - generic [ref=e258] [box=735,693,20,21]: cm
+  - button "Next Step →" [ref=e259] [cursor=pointer] [box=429,764,343,56]
+  - paragraph [ref=e260] [box=429,836,343,18]: By continuing, you agree to Tiizi's Terms of Service.

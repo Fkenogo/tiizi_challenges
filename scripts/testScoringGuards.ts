@@ -5950,11 +5950,12 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     '18I-5G-2: challengeProgressResolver.ts must export safeNum',
   );
 
-  // 18I-5G-3 (updated 18I-5H): resolver derives groupTotal from Firestore aggregate, floored by user
-  // contribution (stale-aggregate guard added in 18I-5H). sessionDelta is never added.
+  // 18I-5G-3 (updated Phase 1 guard triage): resolver derives groupTotal as the max of all known
+  // floor sources (activity summary, member sum, log sum, prior team total) — never a single
+  // source overriding the others. sessionDelta is never added.
   assert.ok(
-    resolverSrc.includes('storedGroupTotal') && resolverSrc.includes('Math.max(storedGroupTotal'),
-    '18I-5G-3: resolver must derive groupTotal from storedGroupTotal, floored by userContributionTotal',
+    resolverSrc.includes('const groupTotal = Math.max(') && resolverSrc.includes('activitySummaryFloor'),
+    '18I-5G-3: resolver must derive groupTotal via Math.max() over all floor sources (activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor)',
   );
 
   // 18I-5G-4: sessionDelta is clearly documented as display-only (not added to totals)
@@ -6024,15 +6025,19 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     assert.ok(!r.primaryLabel.includes('NaN'), `18I-5G-13c: primaryLabel must not contain NaN — got "${r.primaryLabel}"`);
   }
 
-  // 18I-5G-14: collective resolver shows contribution label when userContributionTotal > 0
+  // 18I-5G-14 (updated Phase 1 guard triage): collective resolver shows contribution label when
+  // userContributionTotal > 0. The resolver never reads challenge.groupCurrentTotal on its own —
+  // priorTeamTotal is a distinct, caller-supplied input (see resolver header doc) — so it must be
+  // passed explicitly here to floor groupTotal, matching the real call contract every screen uses.
   {
     const { resolveChallengeProgress: resolve } = await import('../src/features/Challenges/challengeProgressResolver');
     const r = resolve({
       challenge: { challengeType: 'collective', groupCurrentTotal: 350, groupCumulativeTarget: 5000, activities: [{ unit: 'reps', targetValue: 5000 }] },
       membership: { cumulativeLoggedValue: 200 },
+      priorTeamTotal: 350,
     });
     assert.ok(r.userContributionTotal === 200, `18I-5G-14: userContributionTotal must equal membership.cumulativeLoggedValue — got ${r.userContributionTotal}`);
-    assert.ok(r.groupTotal === 350, `18I-5G-14b: groupTotal must equal challenge.groupCurrentTotal — got ${r.groupTotal}`);
+    assert.ok(r.groupTotal === 350, `18I-5G-14b: groupTotal must equal priorTeamTotal when no other floor source is higher — got ${r.groupTotal}`);
     assert.ok(r.secondaryLabel?.includes('200'), `18I-5G-14c: secondaryLabel must include user contribution (200) — got "${r.secondaryLabel}"`);
   }
 
@@ -6050,12 +6055,14 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     assert.ok(!r.isCurrentUserLeading, '18I-5G-15c: isCurrentUserLeading must be false when another user leads');
   }
 
-  // 18I-5G-16: no double-count — sessionDelta not reflected in groupTotal
+  // 18I-5G-16 (updated Phase 1 guard triage): no double-count — sessionDelta not reflected in
+  // groupTotal. priorTeamTotal passed explicitly per the resolver's real call contract.
   {
     const { resolveChallengeProgress: resolve } = await import('../src/features/Challenges/challengeProgressResolver');
     const r = resolve({
       challenge: { challengeType: 'collective', groupCurrentTotal: 350, groupCumulativeTarget: 5000, activities: [{ unit: 'reps', targetValue: 5000 }] },
       membership: { cumulativeLoggedValue: 200 },
+      priorTeamTotal: 350,
       sessionDelta: 150, // user just logged 150
     });
     assert.ok(r.groupTotal === 350, `18I-5G-16: groupTotal must be authoritative Firestore value (350), not 350 + 150 — got ${r.groupTotal}`);
@@ -6084,11 +6091,12 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     '18I-5H-2: resolveChallengeProgress must produce leaderLabel for competitive challenges',
   );
 
-  // 18I-5H-3 (updated 18I-5I): resolver floors groupTotal by userContributionTotal (and now also
-  // memberSumFloor / logSumFloor — see 18I-5I-3 for the full multi-source check)
+  // 18I-5H-3 (updated Phase 1 guard triage, was 18I-5I): resolver floors groupTotal using
+  // Math.max over all known sources (activitySummaryFloor, memberSumFloor, logSumFloor,
+  // optimisticTeamFloor) to guard stale aggregates — see 18I-5G-3/18I-5I-3 for the full check.
   assert.ok(
-    resolverSrc.includes('userContributionTotal') && resolverSrc.includes('Math.max(storedGroupTotal'),
-    '18I-5H-3: resolver must floor groupTotal using Math.max(..., userContributionTotal) to guard stale aggregates',
+    resolverSrc.includes('const groupTotal = Math.max(') && resolverSrc.includes('activitySummaryFloor'),
+    '18I-5H-3: resolver must floor groupTotal via Math.max(...) over all floor sources to guard stale aggregates',
   );
 
   // 18I-5H-4: displaySrc shim threads isUserCompleted through
@@ -6138,12 +6146,15 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     assert.ok(r.primaryLabel.startsWith('100'), `18I-5H-10b: label must start with "100" when stale aggregate is 0 and contribution=100, got "${r.primaryLabel}"`);
   }
 
-  // 18I-5H-11: no double-count — groupCurrentTotal=350, sessionDelta=150 stays 350
+  // 18I-5H-11 (updated Phase 1 guard triage): no double-count — groupCurrentTotal=350,
+  // sessionDelta=150 stays 350. priorTeamTotal passed explicitly per the resolver's real
+  // call contract (it never reads challenge.groupCurrentTotal on its own).
   {
     const { resolveChallengeProgress: resolve } = await import('../src/features/Challenges/challengeProgressResolver');
     const r = resolve({
       challenge: { challengeType: 'collective', groupCurrentTotal: 350, groupCumulativeTarget: 5000, activities: [{ unit: 'reps', targetValue: 5000 }] },
       membership: { cumulativeLoggedValue: 200 },
+      priorTeamTotal: 350,
       sessionDelta: 150,
     });
     assert.ok(r.groupTotal === 350, `18I-5H-11: groupTotal must stay 350, not 500 — got ${r.groupTotal}`);
@@ -6209,10 +6220,11 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     '18I-5I-2: resolver must accept logSumValue and derive logSumFloor from it',
   );
 
-  // 18I-5I-3: resolver collective formula uses max of all four sources
+  // 18I-5I-3 (updated Phase 1 guard triage): resolver collective formula uses max of all four
+  // current floor sources (activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor).
   assert.ok(
-    resolverSrc.includes('Math.max(storedGroupTotal, memberSumFloor, logSumFloor, userContributionTotal)'),
-    '18I-5I-3: resolver collective groupTotal must be max(storedGroupTotal, memberSumFloor, logSumFloor, userContributionTotal)',
+    resolverSrc.includes('const groupTotal = Math.max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor)'),
+    '18I-5I-3: resolver collective groupTotal must be max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor)',
   );
 
   // 18I-5I-4: audit script requires --confirm alongside --execute (accidental-write guard)

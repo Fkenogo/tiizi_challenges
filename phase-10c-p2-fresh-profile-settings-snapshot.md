@@ -1,0 +1,58 @@
+- generic [ref=e8]:
+  - banner [ref=e9]:
+    - button [ref=e10] [cursor=pointer]:
+      - img [ref=e11]
+    - heading "Settings" [level=1] [ref=e13]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - heading "Preferences" [level=2] [ref=e16]
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: Profile searchable
+          - button "ON" [ref=e20] [cursor=pointer]
+        - generic [ref=e21]:
+          - generic [ref=e22]: Allow direct messages
+          - button "ON" [ref=e23] [cursor=pointer]
+        - generic [ref=e24]:
+          - generic [ref=e25]: Show activity in profile
+          - button "ON" [ref=e26] [cursor=pointer]
+    - generic [ref=e27]:
+      - heading "Account" [level=2] [ref=e28]
+      - generic [ref=e29]:
+        - button "Personal Information" [ref=e30] [cursor=pointer]:
+          - text: Personal Information
+          - img [ref=e31]
+        - button "Reports & Analytics" [ref=e33] [cursor=pointer]:
+          - text: Reports & Analytics
+          - img [ref=e34]
+        - button "Contributions & Donations" [ref=e36] [cursor=pointer]:
+          - text: Contributions & Donations
+          - img [ref=e37]
+        - button "Support Center" [ref=e39] [cursor=pointer]:
+          - text: Support Center
+          - img [ref=e40]
+        - button "Terms & Conditions" [ref=e42] [cursor=pointer]:
+          - text: Terms & Conditions
+          - img [ref=e43]
+        - button "Privacy Policy" [ref=e45] [cursor=pointer]:
+          - text: Privacy Policy
+          - img [ref=e46]
+      - generic [ref=e48]:
+        - button "Delete Account" [ref=e49] [cursor=pointer]
+        - button "Sign Out" [ref=e50] [cursor=pointer]
+  - navigation [ref=e51]:
+    - generic [ref=e52]:
+      - button "Home" [ref=e53] [cursor=pointer]:
+        - img [ref=e54]
+        - generic [ref=e57]: Home
+      - button "Groups" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+        - generic [ref=e64]: Groups
+      - button [ref=e66] [cursor=pointer]:
+        - img [ref=e67]
+      - button "Challenges" [ref=e68] [cursor=pointer]:
+        - img [ref=e69]
+        - generic [ref=e75]: Challenges
+      - button "Profile" [ref=e76] [cursor=pointer]:
+        - img [ref=e77]
+        - generic [ref=e80]: Profile

@@ -1,0 +1,54 @@
+- generic [ref=e549] [box=360,0,480,919]:
+  - generic [ref=e550] [box=360,0,480,919]:
+    - banner [ref=e551] [box=360,0,480,73]:
+      - generic [ref=e552] [box=376,16,448,40]:
+        - button [ref=e553] [cursor=pointer] [box=376,16,40,40]:
+          - img [ref=e554] [box=384,24,24,24]
+        - heading "Early Birds Kenya" [level=1] [ref=e556] [box=514,24,171,24]
+    - generic [ref=e558] [box=360,73,480,220]:
+      - img "Early Birds Kenya" [ref=e559] [box=360,73,480,220]
+      - generic [ref=e561] [box=376,233,448,44]:
+        - generic [ref=e562] [box=376,233,197,44]:
+          - heading "Top Performers" [level=2] [ref=e563] [box=376,233,197,26]
+          - paragraph [ref=e564] [box=376,259,197,18]: 7 day squat + Pushup madness
+        - button "Group Details" [ref=e565] [cursor=pointer] [box=700,237,124,40]
+    - generic [ref=e568] [box=376,294,448,56]:
+      - button "Feed" [ref=e569] [cursor=pointer] [box=376,294,112,56]
+      - button "Challenges" [ref=e570] [cursor=pointer] [box=488,294,112,56]
+      - button "Members" [ref=e571] [cursor=pointer] [box=600,294,112,56]
+      - button "Leaderboard" [ref=e572] [cursor=pointer] [box=712,294,112,56]
+    - main [ref=e573] [box=360,351,480,432]:
+      - generic [ref=e574] [box=376,375,448,138]:
+        - generic [ref=e575] [box=389,388,422,52]:
+          - button "Overall" [ref=e576] [cursor=pointer] [box=393,392,203,44]
+          - button "Challenge" [active] [ref=e577] [cursor=pointer] [box=604,392,203,44]
+        - combobox "Select challenge leaderboard" [ref=e698] [box=389,452,422,48]:
+          - option "7 day squat + Pushup madness" [selected] [box=0,0,0,0]
+          - option "8-Hour Sleep Streak" [box=0,0,0,0]
+          - option "30-Day Pushup Duel" [box=0,0,0,0]
+          - option "Pushup mania2" [box=0,0,0,0]
+          - option "14-day squats marathon" [box=0,0,0,0]
+          - option "16-Hour Daily Fast (Beginner Friendly)" [box=0,0,0,0]
+          - option "Early Pushup Duel" [box=0,0,0,0]
+          - option "Early 30-Day Core Blast" [box=0,0,0,0]
+      - generic [ref=e699] [box=552,554,96,164]:
+        - paragraph [ref=e701] [box=552,658,96,20]: Fred Kenogo
+        - paragraph [ref=e702] [box=552,678,96,16]: 100 pts
+        - generic [ref=e703] [box=568,698,63,20]: 1st place
+      - paragraph [ref=e704] [box=376,763,448,20]: More member rankings will appear after activity is logged.
+  - navigation [ref=e668] [box=360,854,480,65]:
+    - generic [ref=e669] [box=372,865,456,44]:
+      - button "Home" [ref=e670] [cursor=pointer] [box=372,865,64,44]:
+        - img [ref=e671] [box=394,870,20,20]
+        - generic [ref=e674] [box=389,892,29,13]: Home
+      - button "Groups" [ref=e675] [cursor=pointer] [box=472,865,64,44]:
+        - img [ref=e676] [box=494,870,20,20]
+        - generic [ref=e681] [box=484,892,39,13]: Groups
+      - button [ref=e683] [cursor=pointer] [box=572,853,56,56]:
+        - img [ref=e684] [box=586,867,28,28]
+      - button "Challenges" [ref=e685] [cursor=pointer] [box=664,865,64,44]:
+        - img [ref=e686] [box=686,870,20,20]
+        - generic [ref=e692] [box=668,892,55,13]: Challenges
+      - button "Profile" [ref=e693] [cursor=pointer] [box=764,865,64,44]:
+        - img [ref=e694] [box=786,870,20,20]
+        - generic [ref=e697] [box=780,892,31,13]: Profile

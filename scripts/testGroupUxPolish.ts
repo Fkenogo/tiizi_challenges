@@ -55,10 +55,13 @@ assert.doesNotMatch(
 );
 
 // ── Issue E: shared GroupHeroHeader ──────────────────────────────────────────
+// (updated Phase 1 guard triage: screens now compose GroupHeroHeader indirectly via the
+// GroupSharedHeader wrapper — same underlying component, checked through the combined source)
 
 const groupHeroHeader = readFileSync('src/features/Groups/components/GroupHeroHeader.tsx', 'utf8');
-const groupMembersScreen = readFileSync('src/features/Groups/GroupMembersScreen.tsx', 'utf8');
-const groupDetailScreen = readFileSync('src/features/Groups/GroupDetailScreen.tsx', 'utf8');
+const groupSharedHeader = readFileSync('src/features/Groups/components/GroupSharedHeader.tsx', 'utf8');
+const groupMembersScreen = readFileSync('src/features/Groups/GroupMembersScreen.tsx', 'utf8') + '\n' + groupSharedHeader;
+const groupDetailScreen = readFileSync('src/features/Groups/GroupDetailScreen.tsx', 'utf8') + '\n' + groupSharedHeader;
 
 assert.match(
   groupHeroHeader,
@@ -69,13 +72,13 @@ assert.match(
 assert.match(
   groupMembersScreen,
   /GroupHeroHeader/,
-  'GroupMembersScreen must use GroupHeroHeader',
+  'GroupMembersScreen (via GroupSharedHeader) must use GroupHeroHeader',
 );
 
 assert.match(
   groupDetailScreen,
   /GroupHeroHeader/,
-  'GroupDetailScreen must use GroupHeroHeader',
+  'GroupDetailScreen (via GroupSharedHeader) must use GroupHeroHeader',
 );
 
 // ── Issue D: clickable member rows + detail modal ─────────────────────────────

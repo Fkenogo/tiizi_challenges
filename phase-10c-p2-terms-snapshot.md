@@ -1,0 +1,41 @@
+- generic [ref=e8]:
+  - banner [ref=e9]:
+    - button [ref=e10] [cursor=pointer]:
+      - img [ref=e11]
+    - heading "Terms of Service" [level=1] [ref=e13]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - paragraph [ref=e16]: Tiizi is a pilot fitness challenge app for creating an account, completing a profile, joining groups, participating in challenges, logging workouts or wellness activities, viewing progress and leaderboards, receiving notifications, and submitting optional support or donation references.
+      - paragraph [ref=e17]: This pilot notice is practical product guidance, not final legal advice.
+    - generic [ref=e18]:
+      - heading "Accounts and profile setup" [level=2] [ref=e19]
+      - paragraph [ref=e20]: You must use accurate account information and keep your login secure. Profile setup and privacy settings help Tiizi personalize the member experience and control supported profile visibility.
+      - heading "Groups, invites, and challenges" [level=2] [ref=e21]
+      - paragraph [ref=e22]: Groups may be public or private. Private groups can require secure invites or approval. Challenge access, activity logging, and leaderboards depend on valid group and challenge membership.
+      - heading "Member responsibilities" [level=2] [ref=e23]
+      - paragraph [ref=e24]: You are responsible for the activity logs, group content, invite codes, join requests, and payment references you submit. Do not submit false activity, inflated scores, misleading payment references, abusive content, or content that violates another member's privacy.
+      - heading "Progress, rankings, and moderation" [level=2] [ref=e25]
+      - paragraph [ref=e26]: Progress and leaderboards are generated from activity logs and server summaries. Group owners, moderators, and Tiizi administrators may review, remove, reject, or suspend content, challenges, memberships, or records that appear unsafe, fraudulent, or inconsistent with pilot rules.
+      - heading "Payments and donations" [level=2] [ref=e27]
+      - paragraph [ref=e28]: Support and challenge donations are manual/direct for now. Tiizi does not automatically verify payment. A submitted payment reference remains pending until an admin reviews and confirms it.
+      - heading "Acceptable use" [level=2] [ref=e29]
+      - paragraph [ref=e30]: Do not harass members, share harmful content, attempt to bypass private group access, manipulate scores, misuse invite codes, or interfere with Tiizi systems. Access may be limited during the pilot if needed to protect members and data.
+      - heading "Pilot status" [level=2] [ref=e31]
+      - paragraph [ref=e32]: Tiizi is currently preparing for pilot use. Features may change as feedback is reviewed and safety checks are improved.
+    - paragraph [ref=e34]: Questions about these terms? Contact support from the Help screen.
+  - navigation [ref=e35]:
+    - generic [ref=e36]:
+      - button "Home" [ref=e37] [cursor=pointer]:
+        - img [ref=e38]
+        - generic [ref=e41]: Home
+      - button "Groups" [ref=e42] [cursor=pointer]:
+        - img [ref=e43]
+        - generic [ref=e48]: Groups
+      - button [ref=e50] [cursor=pointer]:
+        - img [ref=e51]
+      - button "Challenges" [ref=e52] [cursor=pointer]:
+        - img [ref=e53]
+        - generic [ref=e59]: Challenges
+      - button "Profile" [ref=e60] [cursor=pointer]:
+        - img [ref=e61]
+        - generic [ref=e64]: Profile

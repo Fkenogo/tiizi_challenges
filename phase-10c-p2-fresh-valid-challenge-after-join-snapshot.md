@@ -1,0 +1,35 @@
+- generic [ref=e2]:
+  - generic [ref=e8]:
+    - heading "Challenge Detail" [level=3] [ref=e10]
+    - generic [ref=e11]:
+      - paragraph [ref=e12]: "Challenge: 30-Day Pushup Duel"
+      - paragraph [ref=e13]: Competitive pushup ladder challenge.
+      - paragraph [ref=e14]: "Status: Ongoing • 20 days left"
+      - paragraph [ref=e15]: "Starts: 6/6/2026"
+      - paragraph [ref=e16]: "Ends: 7/5/2026"
+      - paragraph [ref=e17]: "Duration: 30 days"
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - paragraph [ref=e20]: My Logs
+          - paragraph [ref=e21]: "0"
+        - generic [ref=e22]:
+          - paragraph [ref=e23]: Total Logs
+          - paragraph [ref=e24]: "0"
+        - generic [ref=e25]:
+          - paragraph [ref=e26]: Participants
+          - paragraph [ref=e27]: "1"
+      - generic [ref=e28]:
+        - paragraph [ref=e29]: Activities
+        - list [ref=e30]:
+          - listitem [ref=e31]: "• Modified Push-Up: target 1200 reps"
+          - listitem [ref=e32]: "• Bear Crawl Hold: target 1000 seconds"
+      - generic [ref=e33]:
+        - paragraph [ref=e34]: Leaderboard Snapshot
+        - paragraph [ref=e35]: No leaderboard activity yet.
+      - paragraph [ref=e36]: Linked to selected group
+      - generic [ref=e37]:
+        - button "Log Workout" [ref=e42] [cursor=pointer]
+        - button "Leave Challenge" [ref=e43] [cursor=pointer]
+        - button "Back to Challenges" [ref=e39] [cursor=pointer]
+        - button "Back to Group" [ref=e40] [cursor=pointer]
+  - generic [ref=e45]: Joined challenge.

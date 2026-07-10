@@ -1,0 +1,29 @@
+- generic [active] [ref=e1] [box=0,0,1200,919]:
+  - generic [ref=e5] [box=360,0,480,919]:
+    - banner [ref=e6] [box=360,0,480,93]:
+      - generic [ref=e7] [box=376,20,448,56]:
+        - generic [ref=e8] [box=376,20,176,56]
+        - button [ref=e13] [cursor=pointer] [box=780,26,44,44]
+    - main [ref=e18] [box=360,93,480,704]:
+      - generic [ref=e19] [box=376,113,448,262]:
+        - generic [ref=e20] [box=376,113,448,16]
+        - generic [ref=e24] [box=376,141,448,234]
+      - generic [ref=e64] [box=376,407,448,86]:
+        - article [ref=e65] [box=376,407,144,86]
+        - article [ref=e69] [box=528,407,144,86]
+        - article [ref=e73] [box=680,407,144,86]
+      - generic [ref=e77] [box=376,525,448,158]:
+        - heading "Today's Goals" [level=3] [ref=e78] [box=376,525,448,15]
+        - article [ref=e79] [box=376,552,448,131]
+      - generic [ref=e86] [box=376,715,448,82]:
+        - generic [ref=e87] [box=376,715,448,18]
+        - article [ref=e90] [box=376,745,448,52]: No trending challenges available yet.
+    - navigation [ref=e91] [box=360,854,480,65]:
+      - generic [ref=e92] [box=372,865,456,44]:
+        - button "Home" [ref=e93] [cursor=pointer] [box=372,865,64,44]
+        - button "Groups" [ref=e98] [cursor=pointer] [box=472,865,64,44]
+        - button [ref=e106] [cursor=pointer] [box=572,853,56,56]
+        - button "Challenges" [ref=e108] [cursor=pointer] [box=664,865,64,44]
+        - button "Profile" [ref=e116] [cursor=pointer] [box=764,865,64,44]
+  - iframe [ref=e121] [box=0,-100,1,1]:
+    

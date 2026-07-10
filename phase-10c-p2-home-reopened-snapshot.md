@@ -1,0 +1,70 @@
+- generic [ref=e8] [box=360,0,480,919]:
+  - banner [ref=e9] [box=360,0,480,93]:
+    - generic [ref=e10] [box=376,20,448,56]:
+      - generic [ref=e11] [box=376,20,176,56]:
+        - img "Fred Kenogo" [ref=e12] [box=376,20,56,56]
+        - generic [ref=e13] [box=444,30,108,37]:
+          - paragraph [ref=e14] [box=444,30,108,16]: Welcome back,
+          - heading "Fred Kenogo!" [level=1] [ref=e15] [box=444,46,108,21]
+      - button [ref=e16] [cursor=pointer] [box=780,26,44,44]:
+        - img [ref=e17] [box=791,37,22,22]
+  - main [ref=e21] [box=360,93,480,704]:
+    - generic [ref=e22] [box=376,113,448,262]:
+      - generic [ref=e23] [box=376,113,448,16]:
+        - heading "Active Challenges" [level=2] [ref=e24] [box=376,114,142,15]
+        - generic [ref=e25] [box=780,113,44,16]: 3 active
+      - generic [ref=e27] [box=376,141,448,234]:
+        - article [ref=e29] [box=376,141,292,216]:
+          - generic [ref=e30] [box=397,162,250,44]
+          - paragraph [ref=e36] [box=397,218,250,20]: 0 of 1 activity
+          - button "Log Activity" [ref=e38] [cursor=pointer] [box=397,280,250,56]
+        - article [ref=e42] [box=680,141,292,216]:
+          - generic [ref=e43] [box=701,162,250,44]
+          - paragraph [ref=e49] [box=701,218,250,20]: 0 of 2 activities
+          - button "Log Workout" [ref=e51] [cursor=pointer] [box=701,280,250,56]
+        - article [ref=e55] [box=984,141,292,234]:
+          - generic [ref=e56] [box=1005,162,250,62]
+          - paragraph [ref=e62] [box=1005,236,250,20]: 0 of 2 activities
+          - button "Log Workout" [ref=e64] [cursor=pointer] [box=1005,298,250,56]
+    - generic [ref=e67] [box=376,407,448,86]:
+      - article [ref=e68] [box=376,407,144,86]:
+        - paragraph [ref=e69] [box=389,420,118,14]: Streak
+        - paragraph [ref=e70] [box=389,438,118,24]: "0"
+        - paragraph [ref=e71] [box=389,466,118,14]: days
+      - article [ref=e72] [box=528,407,144,86]:
+        - paragraph [ref=e73] [box=541,420,118,14]: Active
+        - paragraph [ref=e74] [box=541,438,118,24]: "3"
+        - paragraph [ref=e75] [box=541,466,118,14]: challenges
+      - article [ref=e76] [box=680,407,144,86]:
+        - paragraph [ref=e77] [box=693,420,118,14]: Recent
+        - paragraph [ref=e78] [box=693,438,118,24]: "6"
+        - paragraph [ref=e79] [box=693,466,118,14]: activities
+    - generic [ref=e80] [box=376,525,448,158]:
+      - heading "Today's Goals" [level=3] [ref=e81] [box=376,525,448,15]
+      - article [ref=e82] [box=376,552,448,131]:
+        - generic [ref=e83] [box=393,569,414,44]:
+          - textbox "Write your goal for today..." [ref=e84] [box=393,569,351,44]
+          - button "Add" [disabled] [ref=e85] [box=752,569,55,44]
+        - paragraph [ref=e86] [box=393,621,414,15]: Up to 3 goals per day.
+        - paragraph [ref=e88] [box=393,648,414,18]: No goals yet. Add up to 3 goals for today.
+    - generic [ref=e89] [box=376,715,448,82]:
+      - generic [ref=e90] [box=376,715,448,18]:
+        - heading "Trending Challenges" [level=3] [ref=e91] [box=376,718,161,15]
+        - button "See All →" [ref=e92] [cursor=pointer] [box=760,715,64,18]
+      - article [ref=e93] [box=376,745,448,52]: No trending challenges available yet.
+  - navigation [ref=e94] [box=360,854,480,65]:
+    - generic [ref=e95] [box=372,865,456,44]:
+      - button "Home" [ref=e96] [cursor=pointer] [box=372,865,64,44]:
+        - img [ref=e97] [box=394,870,20,20]
+        - generic [ref=e100] [box=389,892,31,13]: Home
+      - button "Groups" [ref=e101] [cursor=pointer] [box=472,865,64,44]:
+        - img [ref=e102] [box=494,870,20,20]
+        - generic [ref=e107] [box=486,892,36,13]: Groups
+      - button [ref=e109] [cursor=pointer] [box=572,853,56,56]:
+        - img [ref=e110] [box=586,867,28,28]
+      - button "Challenges" [ref=e111] [cursor=pointer] [box=664,865,64,44]:
+        - img [ref=e112] [box=686,870,20,20]
+        - generic [ref=e118] [box=668,892,55,13]: Challenges
+      - button "Profile" [ref=e119] [cursor=pointer] [box=764,865,64,44]:
+        - img [ref=e120] [box=786,870,20,20]
+        - generic [ref=e123] [box=780,892,31,13]: Profile

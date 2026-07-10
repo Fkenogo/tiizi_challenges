@@ -1,0 +1,41 @@
+- generic [ref=e157] [box=413,0,375,919]:
+  - generic [ref=e158] [box=429,16,343,97]:
+    - banner [ref=e159] [box=429,16,343,32]:
+      - button [ref=e160] [cursor=pointer] [box=429,16,32,32]:
+        - img [ref=e161] [box=435,22,20,20]
+      - heading "Sign Up" [level=1] [ref=e163] [box=574,22,53,21]
+    - generic [ref=e164] [box=429,64,343,40]:
+      - button "Sign Up" [ref=e165] [cursor=pointer] [box=429,64,172,40]
+      - button "Login" [ref=e166] [cursor=pointer] [box=600,64,172,40]
+  - generic [ref=e167] [box=429,129,343,272]:
+    - generic [ref=e168] [box=429,129,343,59]:
+      - paragraph [ref=e169] [box=429,129,343,15]: Full Name
+      - generic [ref=e170] [box=429,148,343,40]:
+        - img [ref=e171] [box=441,159,18,18]
+        - textbox "Enter your full name" [ref=e174] [box=429,148,343,40]
+    - generic [ref=e175] [box=429,200,343,59]:
+      - paragraph [ref=e176] [box=429,200,343,15]: Email Address
+      - generic [ref=e177] [box=429,219,343,40]:
+        - img [ref=e178] [box=441,230,18,18]
+        - textbox "Enter your email" [ref=e181] [box=429,219,343,40]
+    - generic [ref=e182] [box=429,271,343,59]:
+      - paragraph [ref=e183] [box=429,271,343,15]: Password
+      - generic [ref=e184] [box=429,290,343,40]:
+        - img [ref=e185] [box=441,301,18,18]
+        - textbox "Enter password" [ref=e188] [box=429,290,343,40]
+        - button [ref=e189] [cursor=pointer] [box=742,301,18,18]:
+          - img [ref=e190] [box=742,301,18,18]
+    - generic [ref=e193] [box=429,342,343,59]:
+      - paragraph [ref=e194] [box=429,342,343,15]: Confirm Password
+      - generic [ref=e195] [box=429,361,343,40]:
+        - img [ref=e196] [box=441,372,18,18]
+        - textbox "Confirm password" [ref=e199] [box=429,361,343,40]
+        - button [ref=e200] [cursor=pointer] [box=742,372,18,18]:
+          - img [ref=e201] [box=742,372,18,18]
+  - button "Create Account" [disabled] [ref=e204] [box=429,425,343,40]
+  - paragraph [ref=e207] [box=551,489,98,15]: Or Continue With
+  - button "Google" [ref=e210] [cursor=pointer] [box=429,520,343,48]
+  - paragraph [ref=e211] [box=429,576,343,15]: Apple sign-in is not available during this pilot.
+  - paragraph [ref=e212] [box=429,615,343,18]:
+    - text: Already have an account?
+    - button "Log in" [ref=e213] [cursor=pointer] [box=653,615,36,18]

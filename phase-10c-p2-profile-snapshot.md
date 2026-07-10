@@ -1,0 +1,70 @@
+- generic [ref=e8] [box=353,0,480,1247]:
+  - banner [ref=e9] [box=353,0,480,69]:
+    - generic [ref=e10] [box=369,16,448,40]:
+      - button [ref=e11] [cursor=pointer] [box=369,16,40,40]:
+        - img [ref=e12] [box=378,25,22,22]
+      - heading "Profile" [level=1] [ref=e15] [box=567,26,52,21]
+  - main [ref=e17] [box=353,69,480,1082]:
+    - generic [ref=e18] [box=369,77,448,238]:
+      - generic [ref=e19] [box=513,77,160,160]:
+        - img "Fred Kenogo" [ref=e20] [box=513,77,160,160]
+        - generic [ref=e21] [box=526,197,134,48]: Top 5% Contributor
+      - heading "Fred Kenogo" [level=2] [ref=e22] [box=369,268,448,19]
+      - paragraph [ref=e23] [box=369,295,448,20]: Community Leader • Member since 2026
+    - generic [ref=e24] [box=369,339,448,83]:
+      - article [ref=e25] [box=369,339,141,83]:
+        - paragraph [ref=e26] [box=435,360,9,20]: "5"
+        - paragraph [ref=e27] [box=407,384,64,17]: Groups
+      - article [ref=e28] [box=522,339,141,83]:
+        - paragraph [ref=e29] [box=584,360,18,20]: "12"
+        - paragraph [ref=e30] [box=573,384,39,17]: Wins
+      - article [ref=e31] [box=675,339,141,83]:
+        - paragraph [ref=e32] [box=741,360,9,20]: "0"
+        - paragraph [ref=e33] [box=715,384,61,17]: Streak
+    - generic [ref=e34] [box=369,446,448,46]:
+      - paragraph [ref=e35] [box=382,459,120,18]:
+        - text: "Goal completion:"
+        - generic [ref=e36] [box=483,461,19,15]: 0%
+      - button "View details" [ref=e37] [cursor=pointer] [box=729,459,74,20]
+    - generic [ref=e38] [box=369,515,448,262]:
+      - generic [ref=e39] [box=390,536,406,56]:
+        - generic [ref=e40] [box=390,536,56,56]: ❤
+        - generic [ref=e41] [box=458,536,338,44]:
+          - paragraph [ref=e42] [box=458,536,338,24]: Support Tiizi
+          - paragraph [ref=e43] [box=458,560,338,20]: Tiizi stays free thanks to voluntary member support.
+      - generic [ref=e44] [box=390,608,406,20]:
+        - generic [ref=e45] [box=390,608,137,20]: KES 0 of KES 10,000
+        - generic [ref=e46] [box=775,608,20,20]: 0%
+      - paragraph [ref=e48] [box=390,664,406,20]: Tiizi remains free for everyone. Support is optional.
+      - button "Keep Tiizi Free" [ref=e49] [cursor=pointer] [box=390,700,406,56]
+    - generic [ref=e50] [box=369,801,448,278]:
+      - generic [ref=e51] [box=369,801,448,20]:
+        - heading "My Groups" [level=3] [ref=e52] [box=369,802,77,19]
+        - button "View All" [ref=e53] [cursor=pointer] [box=760,801,57,20]
+      - generic [ref=e54] [box=369,833,448,246]:
+        - article [ref=e55] [box=369,833,448,74]:
+          - generic [ref=e56] [box=386,846,184,48]
+          - button "Open Early Birds Kenya" [ref=e61] [cursor=pointer] [box=782,861,18,18]
+        - article [ref=e64] [box=369,919,448,74]:
+          - generic [ref=e65] [box=386,932,167,48]
+          - button "Open Hydration Crew" [ref=e70] [cursor=pointer] [box=782,947,18,18]
+        - article [ref=e73] [box=369,1005,448,74]:
+          - generic [ref=e74] [box=386,1018,149,48]
+          - button "Open Trail Seekers" [ref=e79] [cursor=pointer] [box=782,1033,18,18]
+    - button "Sign Out" [ref=e83] [cursor=pointer] [box=369,1103,448,48]
+  - navigation [ref=e84] [box=353,854,480,65]:
+    - generic [ref=e85] [box=365,865,456,44]:
+      - button "Home" [ref=e86] [cursor=pointer] [box=365,865,64,44]:
+        - img [ref=e87] [box=387,870,20,20]
+        - generic [ref=e90] [box=382,892,29,13]: Home
+      - button "Groups" [ref=e91] [cursor=pointer] [box=465,865,64,44]:
+        - img [ref=e92] [box=487,870,20,20]
+        - generic [ref=e97] [box=478,892,36,13]: Groups
+      - button [ref=e99] [cursor=pointer] [box=565,853,56,56]:
+        - img [ref=e100] [box=579,867,28,28]
+      - button "Challenges" [ref=e101] [cursor=pointer] [box=657,865,64,44]:
+        - img [ref=e102] [box=679,870,20,20]
+        - generic [ref=e108] [box=661,892,55,13]: Challenges
+      - button "Profile" [ref=e109] [cursor=pointer] [box=757,865,64,44]:
+        - img [ref=e110] [box=779,870,20,20]
+        - generic [ref=e113] [box=771,892,34,13]: Profile

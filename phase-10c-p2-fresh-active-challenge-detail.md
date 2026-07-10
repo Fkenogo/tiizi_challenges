@@ -1,0 +1,32 @@
+- generic [ref=e630] [box=376,16,448,601]:
+  - heading "Challenge Detail" [level=3] [ref=e632] [box=380,16,108,15]
+  - generic [ref=e633] [box=376,43,448,574]:
+    - paragraph [ref=e634] [box=393,60,414,18]: "Challenge: 7 day squat + Pushup madness"
+    - paragraph [ref=e635] [box=393,86,414,30]: 100 squats per day, 7-days nonstop. Accumulate the 100 squats in one session or several sessions across the day
+    - paragraph [ref=e636] [box=393,124,414,15]: "Status: Completed"
+    - paragraph [ref=e637] [box=393,139,414,15]: "Starts: 6/8/2026"
+    - paragraph [ref=e638] [box=393,154,414,15]: "Ends: 6/14/2026"
+    - paragraph [ref=e639] [box=393,169,414,15]: "Duration: 7 days"
+    - generic [ref=e640] [box=393,196,414,54]:
+      - generic [ref=e641] [box=393,196,133,54]:
+        - paragraph [ref=e642] [box=402,205,115,15]: My Logs
+        - paragraph [ref=e643] [box=402,220,115,21]: "0"
+      - generic [ref=e644] [box=534,196,133,54]:
+        - paragraph [ref=e645] [box=543,205,115,15]: Total Logs
+        - paragraph [ref=e646] [box=543,220,115,21]: "2"
+      - generic [ref=e647] [box=674,196,133,54]:
+        - paragraph [ref=e648] [box=683,205,115,15]: Participants
+        - paragraph [ref=e649] [box=683,220,115,21]: "1"
+    - generic [ref=e650] [box=393,262,414,83]:
+      - paragraph [ref=e651] [box=406,275,388,15]: Activities
+      - list [ref=e652] [box=406,298,388,34]:
+        - listitem [ref=e653] [box=406,298,388,15]: "• Squats: target 700 reps"
+        - listitem [ref=e654] [box=406,317,388,15]: "• Push-Ups: target 700 reps"
+    - generic [ref=e655] [box=393,357,414,60]:
+      - paragraph [ref=e656] [box=406,370,388,15]: Leaderboard Snapshot
+      - paragraph [ref=e657] [box=406,389,388,15]: No leaderboard activity yet.
+    - paragraph [ref=e658] [box=393,421,414,15]: Linked to selected group
+    - generic [ref=e659] [box=393,452,414,148]:
+      - button "Join Challenge" [ref=e660] [cursor=pointer] [box=393,452,414,44]
+      - button "Back to Challenges" [ref=e661] [cursor=pointer] [box=393,504,414,44]
+      - button "Back to Group" [ref=e662] [cursor=pointer] [box=393,556,414,44]

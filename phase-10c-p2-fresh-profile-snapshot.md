@@ -1,0 +1,68 @@
+- generic [ref=e268]:
+  - banner [ref=e269]:
+    - generic [ref=e270]:
+      - button [ref=e271] [cursor=pointer]:
+        - img [ref=e272]
+      - heading "Profile" [level=1] [ref=e275]
+  - main [ref=e277]:
+    - generic [ref=e278]:
+      - generic [ref=e279]:
+        - generic [ref=e280]: P
+        - generic [ref=e281]: Top 5% Contributor
+      - heading "Pilot Smoke User" [level=2] [ref=e282]
+      - paragraph [ref=e283]: Community Leader • Member since 2026
+    - generic [ref=e284]:
+      - article [ref=e285]:
+        - paragraph [ref=e286]: "1"
+        - paragraph [ref=e287]: Groups
+      - article [ref=e288]:
+        - paragraph [ref=e289]: "1"
+        - paragraph [ref=e290]: Wins
+      - article [ref=e291]:
+        - paragraph [ref=e292]: "1"
+        - paragraph [ref=e293]: Streak
+    - generic [ref=e294]:
+      - paragraph [ref=e295]:
+        - text: "Goal completion:"
+        - generic [ref=e296]: 0%
+      - button "View details" [ref=e297] [cursor=pointer]
+    - generic [ref=e298]:
+      - generic [ref=e299]:
+        - generic [ref=e300]: ❤
+        - generic [ref=e301]:
+          - paragraph [ref=e302]: Support Tiizi
+          - paragraph [ref=e303]: Tiizi stays free thanks to voluntary member support.
+      - generic [ref=e304]:
+        - generic [ref=e305]: KES 0 of KES 10,000
+        - generic [ref=e306]: 0%
+      - paragraph [ref=e308]: Tiizi remains free for everyone. Support is optional.
+      - button "Keep Tiizi Free" [ref=e309] [cursor=pointer]
+    - generic [ref=e310]:
+      - generic [ref=e311]:
+        - heading "My Groups" [level=3] [ref=e312]
+        - button "View All" [ref=e313] [cursor=pointer]
+      - article [ref=e315]:
+        - generic [ref=e316]:
+          - img "Early Birds Kenya" [ref=e317]
+          - generic [ref=e318]:
+            - paragraph [ref=e319]: Early Birds Kenya
+            - paragraph [ref=e320]: 16 members
+        - button "Open Early Birds Kenya" [ref=e321] [cursor=pointer]:
+          - img [ref=e322]
+    - button "Sign Out" [ref=e325] [cursor=pointer]
+  - navigation [ref=e326]:
+    - generic [ref=e327]:
+      - button "Home" [ref=e328] [cursor=pointer]:
+        - img [ref=e329]
+        - generic [ref=e332]: Home
+      - button "Groups" [ref=e333] [cursor=pointer]:
+        - img [ref=e334]
+        - generic [ref=e339]: Groups
+      - button [ref=e341] [cursor=pointer]:
+        - img [ref=e342]
+      - button "Challenges" [ref=e343] [cursor=pointer]:
+        - img [ref=e344]
+        - generic [ref=e350]: Challenges
+      - button "Profile" [ref=e351] [cursor=pointer]:
+        - img [ref=e352]
+        - generic [ref=e355]: Profile
