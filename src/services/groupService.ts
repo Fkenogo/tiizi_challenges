@@ -7,6 +7,7 @@ import {
   getDocs,
   increment,
   limit,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -68,8 +69,28 @@ class GroupService {
   private collectionName = 'groups';
   private membershipsCollection = 'groupMembers';
 
-  async getGroups(): Promise<Group[]> {
-    const snap = await getDocs(collection(db, this.collectionName));
+  /**
+   * Public group discovery. Filters server-side on status == 'active',
+   * isPrivate == false, and visibility == 'public' so private, inactive, or
+   * moderated-out groups never come back from Firestore for browsing —
+   * client-side filtering alone would still transmit that data to the client.
+   * isPrivate and visibility are redundant by design (visibility is derived
+   * from isPrivate) — requiring both is defense-in-depth in case the two ever
+   * drift. moderationStatus is still checked client-side via isGroupActive().
+   * Requires a composite index on (status ASC, isPrivate ASC, visibility ASC,
+   * createdAt DESC); see firestore.indexes.json.
+   */
+  async getGroupsPage(): Promise<Group[]> {
+    const snap = await getDocs(
+      query(
+        collection(db, this.collectionName),
+        where('status', '==', 'active'),
+        where('isPrivate', '==', false),
+        where('visibility', '==', 'public'),
+        orderBy('createdAt', 'desc'),
+        limit(100),
+      ),
+    );
     return snap.docs
       .map((d) => {
         const data = d.data() as Omit<Group, 'id'>;
@@ -219,19 +240,6 @@ class GroupService {
     return { group, status };
   }
 
-  async joinGroupByInviteCode(inviteCode: string, userId: string): Promise<GroupJoinResult | null> {
-    const normalized = inviteCode.trim().toUpperCase();
-    if (!normalized) return null;
-
-    const groupSnap = await getDocs(
-      query(collection(db, this.collectionName), where('inviteCode', '==', normalized), limit(1)),
-    );
-    if (groupSnap.empty) return null;
-
-    const groupDoc = groupSnap.docs[0];
-    return this.joinGroup(groupDoc.id, userId);
-  }
-
   async getMembershipStatus(groupId: string, userId: string): Promise<GroupMembership['status'] | 'none'> {
     const group = await this.getGroupById(groupId);
     if (group?.ownerId === userId) {
@@ -287,7 +295,13 @@ class GroupService {
     if (patch.name !== undefined) payload.name = patch.name;
     if (patch.description !== undefined) payload.description = patch.description;
     if (patch.coverImageUrl !== undefined) payload.coverImageUrl = patch.coverImageUrl;
-    if (patch.isPrivate !== undefined) payload.isPrivate = patch.isPrivate;
+    if (patch.isPrivate !== undefined) {
+      payload.isPrivate = patch.isPrivate;
+      // Keep the denormalized visibility field in sync so discovery queries
+      // (which filter on visibility, not isPrivate) never leak a group whose
+      // privacy was flipped via edit. See getGroupsPage().
+      payload.visibility = patch.isPrivate ? 'private' : 'public';
+    }
     if (patch.requireAdminApproval !== undefined) payload.requireAdminApproval = patch.requireAdminApproval;
     if (patch.allowMemberChallenges !== undefined) payload.allowMemberChallenges = patch.allowMemberChallenges;
     if (patch.groupType !== undefined) payload.groupType = patch.groupType;

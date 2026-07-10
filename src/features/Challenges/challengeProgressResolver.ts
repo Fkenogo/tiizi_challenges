@@ -183,7 +183,12 @@ export function resolveChallengeProgress(input: ProgressInput): ResolvedProgress
   // floor. It may already include the current log (if the client engine wrote it) or may be the
   // pre-log value. It NEVER overrides activitySummaryTotal — Math.max ensures that.
   const optimisticTeamFloor = safeNum(priorTeamTotal);
-  const groupTotal = Math.max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor);
+  // groupTotal must never read lower than what the current user can already see they've
+  // contributed (userContributionTotal) — otherwise a fresh collective challenge can show
+  // "0 / target" immediately after the user's own first log, before the CF-maintained
+  // activitySummaryTotal has caught up. The group total is always >= any single member's
+  // contribution, so this floor is always safe.
+  const groupTotal = Math.max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor, userContributionTotal);
   const groupTarget = safeNum(challenge?.groupCumulativeTarget);
   const groupRemaining = Math.max(0, groupTarget - groupTotal);
   const groupPercent = groupTarget > 0 ? clamp((groupTotal / groupTarget) * 100) : 0;

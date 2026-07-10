@@ -167,9 +167,48 @@ service cloud.firestore {
       allow create, update, delete: if canManageExercises();
     }
 
+    // Top-level fields a user may write on their own /users/{uid} document.
+    // 'role' is intentionally excluded — it is the sole source of truth for
+    // hasUserRole() privilege checks and must only ever be set by an admin
+    // (canManageUsers()/canManageAdminUsers() branch below). Allowing 'role'
+    // here would let any authenticated user self-promote to admin.
+    function userSelfWritableFields() {
+      return [
+        'uid', 'email', 'displayName', 'photoURL', 'status', 'emailVerified',
+        'createdAt', 'lastActive', 'profile', 'stats', 'lastWorkoutAt',
+        'lastChallengeJoinedAt', 'notifications', 'dailyGoals', 'dailyGoalsAnalytics',
+      ];
+    }
+
+    // 'profile.role' backs hasProfileRole() the same way top-level 'role' backs
+    // hasUserRole() — block it from self-writes even though 'profile' itself is
+    // otherwise self-writable (onboarding/profile-setup writes the whole map).
+    function hasNoSelfWrittenProfileRole() {
+      return !('profile' in request.resource.data) || !('role' in request.resource.data.profile);
+    }
+
+    // resource.data does not exist yet on create, so keys() (not diff()) is used.
+    function isValidUserSelfCreate() {
+      return request.resource.data.keys().hasOnly(userSelfWritableFields())
+        && hasNoSelfWrittenProfileRole();
+    }
+
+    function isValidUserSelfUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(userSelfWritableFields())
+        && hasNoSelfWrittenProfileRole();
+    }
+
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (request.auth.uid == userId || canManageUsers() || canManageAdminUsers());
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == userId && isValidUserSelfCreate())
+        || canManageUsers() || canManageAdminUsers()
+      );
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == userId && isValidUserSelfUpdate())
+        || canManageUsers() || canManageAdminUsers()
+      );
+      allow delete: if isAuthenticated() && (canManageUsers() || canManageAdminUsers());
     }
 
     match /groups/{groupId} {
@@ -336,6 +375,26 @@ service cloud.firestore {
     match /groupReports/{reportId} {
       allow read: if canManageGroups();
       allow write: if canModerateGroups();
+    }
+
+    // groupInvites, groupJoinRequests, and groupAuditLogs are written exclusively by the
+    // Cloud Functions in functions/src/groupInviteBackend.ts (Admin SDK, bypasses these
+    // rules). All client writes are denied here by design — default-deny.
+    match /groupInvites/{inviteId} {
+      allow read: if false;
+      allow create, update, delete: if false;
+    }
+
+    match /groupJoinRequests/{requestId} {
+      // Read is used by groupInviteService.listGroupJoinRequests() for group managers
+      // reviewing pending requests; all writes happen via the Cloud Functions above.
+      allow read: if isAuthenticated();
+      allow create, update, delete: if false;
+    }
+
+    match /groupAuditLogs/{auditId} {
+      allow read: if false;
+      allow create, update, delete: if false;
     }
 
     match /donationCampaigns/{campaignId} {

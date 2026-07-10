@@ -6,7 +6,7 @@ export function useGroups() {
   const { user } = useAuth();
   return useQuery({
     queryKey: ['groups', user?.uid],
-    queryFn: () => groupService.getGroups(),
+    queryFn: () => groupService.getGroupsPage(),
     enabled: !!user?.uid,
     staleTime: 5 * 60 * 1000,
   });
@@ -64,7 +64,7 @@ export function useCreateGroup() {
     mutationFn: (input: CreateGroupInput) => groupService.createGroup(input),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ['groups'] });
-      const previous = queryClient.getQueryData<Awaited<ReturnType<typeof groupService.getGroups>>>(['groups']);
+      const previous = queryClient.getQueryData<Awaited<ReturnType<typeof groupService.getGroupsPage>>>(['groups']);
 
       const optimistic = {
         id: `optimistic-${Date.now()}`,
@@ -104,12 +104,14 @@ export function useJoinGroup() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ groupId, inviteCode }: { groupId?: string; inviteCode?: string }) => {
+    // Legacy plaintext invite-code join was removed — it bypassed the secure Cloud Function
+    // invite backend (functions/src/groupInviteBackend.ts), which enforces hashed tokens,
+    // expiry, use-count limits, and audit logging. Invite-based joining now happens
+    // exclusively through groupInviteService.redeemGroupInvite.
+    mutationFn: async ({ groupId }: { groupId?: string }) => {
       if (!user?.uid) throw new Error('User required');
-      let result;
-      if (groupId) result = await groupService.joinGroup(groupId, user.uid);
-      else if (inviteCode) result = await groupService.joinGroupByInviteCode(inviteCode, user.uid);
-      else throw new Error('Group identifier required');
+      if (!groupId) throw new Error('Group identifier required');
+      const result = await groupService.joinGroup(groupId, user.uid);
       if (!result) throw new Error('Group not found or not active');
       return result;
     },

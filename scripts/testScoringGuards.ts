@@ -6220,11 +6220,13 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     '18I-5I-2: resolver must accept logSumValue and derive logSumFloor from it',
   );
 
-  // 18I-5I-3 (updated Phase 1 guard triage): resolver collective formula uses max of all four
-  // current floor sources (activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor).
+  // 18I-5I-3 (updated Phase 3 data safety fix): resolver collective formula uses max of all five
+  // current floor sources (activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor,
+  // userContributionTotal — added so groupTotal can never read lower than the current user's own
+  // visible contribution; see resolveChallengeProgress()).
   assert.ok(
-    resolverSrc.includes('const groupTotal = Math.max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor)'),
-    '18I-5I-3: resolver collective groupTotal must be max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor)',
+    resolverSrc.includes('const groupTotal = Math.max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor, userContributionTotal)'),
+    '18I-5I-3: resolver collective groupTotal must be max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor, userContributionTotal)',
   );
 
   // 18I-5I-4: audit script requires --confirm alongside --execute (accidental-write guard)

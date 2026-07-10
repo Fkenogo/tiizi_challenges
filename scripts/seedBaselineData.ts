@@ -27,6 +27,9 @@ if (!getApps().length) {
 const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+const applyMode = process.argv.includes('--apply');
+const mode = applyMode ? 'apply' : 'dry-run';
+
 type DocWithId = Record<string, unknown> & { id: string };
 
 const exerciseInterests = [
@@ -185,6 +188,31 @@ async function run() {
     seedTag,
     updatedAt: nowIso,
   }));
+
+  const plannedCatalogCount = (catalogExercisesSource as { documents?: unknown[] }).documents?.length ?? 0;
+
+  console.log(`\nBaseline Data Seed — ${new Date().toISOString()} [${mode}]`);
+  console.log(
+    JSON.stringify(
+      {
+        projectId,
+        seedTag,
+        catalogExercisesToLoad: plannedCatalogCount,
+        exerciseInterests: interestDocs.length,
+        wellnessGoals: goalDocs.length,
+        onboardingContent: onboardingContent.length,
+        notificationTemplates: notificationTemplates.length,
+        settings: appSettings.length,
+      },
+      null,
+      2,
+    ),
+  );
+
+  if (!applyMode) {
+    console.log('\nDry-run only. No writes were made. Re-run with --apply to commit these changes.');
+    return;
+  }
 
   const catalogCount = await ensureCatalogExercisesLoaded();
   await setDocs('exerciseInterests', interestDocs);

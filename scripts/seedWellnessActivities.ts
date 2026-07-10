@@ -23,6 +23,9 @@ if (!getApps().length) {
 const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+const applyMode = process.argv.includes('--apply');
+const mode = applyMode ? 'apply' : 'dry-run';
+
 type Op = (batch: WriteBatch) => void;
 
 async function commitOps(ops: Op[]): Promise<void> {
@@ -75,11 +78,16 @@ async function run() {
     ops.push((batch) => batch.set(ref, payload, { merge: true }));
   }
 
-  console.log(`\nWellness Activities Seed — ${new Date().toISOString()}`);
+  console.log(`\nWellness Activities Seed — ${new Date().toISOString()} [${mode}]`);
   console.log(`  Deletions queued : ${deletedCount}`);
   console.log(`  Creates queued   : ${createdCount}`);
   console.log(`  Updates queued   : ${updatedCount}`);
   console.log(`  Total ops        : ${ops.length}`);
+
+  if (!applyMode) {
+    console.log('\nDry-run only. No writes were made. Re-run with --apply to commit these changes.');
+    return;
+  }
 
   await commitOps(ops);
 

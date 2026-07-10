@@ -151,25 +151,12 @@ function GroupsScreen() {
     navigate(`/app/group/${group.id}`);
   };
 
-  const handleInviteJoin = async () => {
+  // Plaintext invite-code joining was disabled (security fix) — it bypassed the secure
+  // Cloud Function invite backend (hashed tokens, expiry, use-count limits, audit logging).
+  // Joining by invite code will return once wired to groupInviteService.redeemGroupInvite.
+  const handleInviteJoin = () => {
     if (!inviteCode.trim()) return;
-    try {
-      const result = await joinGroup.mutateAsync({ inviteCode: inviteCode.trim().toUpperCase() });
-      if (!result) {
-        showToast('Invite code not found.', 'error');
-        return;
-      }
-      setActiveGroupId(result.group.id);
-      if (result.status === 'pending') {
-        showToast('Request submitted. Waiting for admin approval.', 'success');
-        return;
-      }
-      showToast('Joined via invite.', 'success');
-      navigate(`/app/group/${result.group.id}`);
-    } catch (error) {
-      console.warn('Invite join failed:', error);
-      showToast('Could not process invite code.', 'error');
-    }
+    showToast('Invite code joining is temporarily unavailable. Ask the group owner to add you directly.', 'error');
   };
 
   return (

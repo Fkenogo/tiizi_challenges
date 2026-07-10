@@ -26,6 +26,9 @@ if (!getApps().length) {
 const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+const applyMode = process.argv.includes('--apply');
+const mode = applyMode ? 'apply' : 'dry-run';
+
 type RawTemplate = {
   id?: string;
   category?: string;
@@ -93,6 +96,16 @@ async function run() {
       updatedAt: new Date().toISOString(),
     }, { merge: true });
   });
+
+  console.log(`\nWellness Templates Seed — ${new Date().toISOString()} [${mode}]`);
+  console.log(`  Creates queued : ${createdCount}`);
+  console.log(`  Updates queued : ${updatedCount}`);
+
+  if (!applyMode) {
+    console.log('\nDry-run only. No writes were made. Re-run with --apply to commit these changes.');
+    return;
+  }
+
   await batch.commit();
 
   const snapshot = await db.collection('wellnessTemplates').get();

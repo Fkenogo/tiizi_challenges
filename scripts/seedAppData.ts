@@ -29,6 +29,9 @@ if (!getApps().length) {
 const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+const applyMode = process.argv.includes('--apply');
+const mode = applyMode ? 'apply' : 'dry-run';
+
 type SeedUser = {
   id: string;
   displayName: string;
@@ -1138,7 +1141,7 @@ async function seedStaticContent() {
 }
 
 async function main() {
-  console.log(`\nSeeding Tiizi data set (${seedTag})...`);
+  console.log(`\nSeeding Tiizi data set (${seedTag}) [${mode}]...`);
   console.log(`Project: ${projectId}`);
   if (primaryUid) {
     console.log(`Primary UID: ${primaryUid}`);
@@ -1165,15 +1168,8 @@ async function main() {
     'settings',
   ];
 
-  for (const collectionName of cleanupCollections) {
-    const deleted = await deleteSeededDocs(collectionName);
-    if (deleted > 0) {
-      console.log(`Removed ${deleted} existing seeded docs from ${collectionName}`);
-    }
-  }
-
-  await ensureCatalogExercisesLoaded();
-
+  // Pure, read-only computation — safe to run in dry-run mode so the reported
+  // counts are accurate without touching Firestore.
   const exercisePool = await getExercisePool();
   const users = buildUsers();
   const groups = buildGroups(users);
@@ -1206,15 +1202,8 @@ async function main() {
     memberCount: groupMemberCounts.get(group.id) ?? 1,
   }));
 
-  await setDocs('users', users);
-  await setDocs('groups', groupsWithCounts);
-  await setDocs('groupMembers', memberships);
-  await setDocs('challengeMembers', challengeMembers);
-  await setDocs('challenges', challengesWithCounts);
-  await setDocs('workouts', workouts);
-  await seedStaticContent();
-
   const summary = {
+    cleanupCollections,
     users: users.length,
     groups: groupsWithCounts.length,
     memberships: memberships.length,
@@ -1222,6 +1211,33 @@ async function main() {
     challenges: challengesWithCounts.length,
     workouts: workouts.length,
   };
+
+  console.log('\nPlanned seed summary:');
+  console.log(JSON.stringify(summary, null, 2));
+
+  if (!applyMode) {
+    console.log('\nDry-run only. No writes were made — existing seeded docs were not deleted, no');
+    console.log('documents were written. Re-run with --apply to delete existing seeded docs in the');
+    console.log('collections above and commit this data set.');
+    return;
+  }
+
+  for (const collectionName of cleanupCollections) {
+    const deleted = await deleteSeededDocs(collectionName);
+    if (deleted > 0) {
+      console.log(`Removed ${deleted} existing seeded docs from ${collectionName}`);
+    }
+  }
+
+  await ensureCatalogExercisesLoaded();
+
+  await setDocs('users', users);
+  await setDocs('groups', groupsWithCounts);
+  await setDocs('groupMembers', memberships);
+  await setDocs('challengeMembers', challengeMembers);
+  await setDocs('challenges', challengesWithCounts);
+  await setDocs('workouts', workouts);
+  await seedStaticContent();
 
   console.log('\nSeed complete.');
   console.log(JSON.stringify(summary, null, 2));
