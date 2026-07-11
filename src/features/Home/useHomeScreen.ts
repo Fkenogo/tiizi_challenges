@@ -1,10 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { collection, documentId, getDocs, query, where } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
 import { challengeService } from '../../services/challengeService';
 import { groupService } from '../../services/groupService';
 import { userProfileService } from '../../services/userProfileService';
-import { db } from '../../lib/firebase';
 import { Challenge } from '../../types';
 import { isChallengeOngoing, isChallengeCompletedOrExpired } from '../../utils/challengeLifecycle';
 import { buildChallengeProgress } from '../Challenges/challengeProgressDisplay';
@@ -103,20 +101,7 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
   const membershipChallengeIds = Array.from(membershipSummaries.keys()).filter(Boolean);
   const missingMembershipIds = membershipChallengeIds.filter((id) => !existingIds.has(id));
   if (missingMembershipIds.length > 0) {
-    const chunks: string[][] = [];
-    for (let i = 0; i < missingMembershipIds.length; i += 10) {
-      chunks.push(missingMembershipIds.slice(i, i + 10));
-    }
-    const missingSnaps = await Promise.all(
-      chunks.map((chunk) =>
-        getDocs(
-          query(collection(db, 'challenges'), where(documentId(), 'in', chunk)),
-        ),
-      ),
-    ).catch(() => []);
-    const loadedMissing = missingSnaps.flatMap((snap) =>
-      snap.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<Challenge, 'id'>) })),
-    );
+    const loadedMissing = await challengeService.getChallengesByIds(missingMembershipIds).catch(() => []);
     if (loadedMissing.length > 0) {
       allChallenges = [...allChallenges, ...loadedMissing];
     }
@@ -166,52 +151,14 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
     .filter((c) => c.challengeType === 'competitive' && c.engineVersion === 'v2')
     .map((c) => c.id);
 
-  const competitiveLeaderboards = new Map<string, Array<{ userId: string; score: number }>>();
-  if (competitiveChallengeIds.length > 0) {
-    await Promise.all(
-      competitiveChallengeIds.map(async (cId) => {
-        const snap = await getDocs(
-          query(collection(db, 'challengeMembers'), where('challengeId', '==', cId)),
-        ).catch(() => null);
-        if (!snap) return;
-        const rows = snap.docs
-          .map((d) => {
-            const data = d.data() as { userId?: string; cumulativeLoggedValue?: number };
-            return { userId: data.userId ?? '', score: Math.max(0, Number(data.cumulativeLoggedValue ?? 0)) };
-          })
-          .filter((r) => r.userId)
-          .sort((a, b) => b.score - a.score);
-        competitiveLeaderboards.set(cId, rows);
-      }),
-    );
-  }
+  const competitiveLeaderboards = await challengeService.getCompetitiveLeaderboards(competitiveChallengeIds);
 
   // Read challengeActivitySummaries (CF-maintained canonical collective team totals) for all
   // member challenges. This read happens before card-building so the team total is available
   // without a second pass. Missing docs (first log ever or CF delayed) leave the map empty;
   // the resolver falls back to userContribFloor (cumulativeLoggedValue) as a lower bound.
   const memberChallengeIds = ongoingMemberChallenges.map((c) => c.id).filter(Boolean);
-  const memberActivitySummaryMap = new Map<string, { totalValue: number }>();
-  if (memberChallengeIds.length > 0) {
-    const chunks: string[][] = [];
-    for (let i = 0; i < memberChallengeIds.length; i += 10) {
-      chunks.push(memberChallengeIds.slice(i, i + 10));
-    }
-    const summarySnaps = await Promise.all(
-      chunks.map((chunk) =>
-        getDocs(
-          query(collection(db, 'challengeActivitySummaries'), where(documentId(), 'in', chunk)),
-        ).catch(() => null),
-      ),
-    );
-    for (const snap of summarySnaps) {
-      if (!snap) continue;
-      for (const doc of snap.docs) {
-        const data = doc.data() as { totalValue?: number };
-        memberActivitySummaryMap.set(doc.id, { totalValue: Math.max(0, Number(data.totalValue ?? 0)) });
-      }
-    }
-  }
+  const memberActivitySummaryMap = await challengeService.getChallengeActivitySummaries(memberChallengeIds);
 
   // Build base cards synchronously, then enrich the first card with live progress.
   const myChallengeCards: HomeScreenData['myChallenges'] = ongoingMemberChallenges.map((c) => {
@@ -290,27 +237,7 @@ export async function fetchHomeScreenData(uid: string): Promise<HomeScreenData> 
   // Maintained by Cloud Functions on every workout + wellness log. Missing docs → totalLogs = 0.
   const ongoingCandidates = allChallenges.filter((challenge) => isChallengeOngoing(challenge, nowMs));
   const candidateIds = ongoingCandidates.map((c) => c.id).filter(Boolean);
-  const activitySummaryMap = new Map<string, { totalLogs: number }>();
-  if (candidateIds.length > 0) {
-    const chunks: string[][] = [];
-    for (let i = 0; i < candidateIds.length; i += 10) {
-      chunks.push(candidateIds.slice(i, i + 10));
-    }
-    const snaps = await Promise.all(
-      chunks.map((chunk) =>
-        getDocs(
-          query(collection(db, 'challengeActivitySummaries'), where(documentId(), 'in', chunk)),
-        ).catch(() => null),
-      ),
-    );
-    for (const snap of snaps) {
-      if (!snap) continue;
-      for (const doc of snap.docs) {
-        const data = doc.data() as { totalLogs?: number };
-        activitySummaryMap.set(doc.id, { totalLogs: Math.max(0, Number(data.totalLogs ?? 0)) });
-      }
-    }
-  }
+  const activitySummaryMap = await challengeService.getChallengeActivitySummaries(candidateIds);
 
   const mostActiveOngoing: HomeScreenData['mostActiveOngoing'] = ongoingCandidates
     .sort((a, b) => {

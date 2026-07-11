@@ -133,10 +133,13 @@ assert(
 // ── Phase 18I-6I: Most Active section ────────────────────────────────────
 
 {
-  // Guard: useHomeScreen reads challengeActivitySummaries for Most Active ranking
+  // Guard: Home reads challengeActivitySummaries for Most Active ranking. Phase 6 moved this
+  // read into challengeService.getChallengeActivitySummaries() (service-layer cleanup) —
+  // checked against the combined source since useHomeScreen.ts now calls the service instead
+  // of querying Firestore directly.
   assert(
-    homeHook.includes("'challengeActivitySummaries'"),
-    'useHomeScreen must read challengeActivitySummaries collection for Most Active ranking',
+    homeHook.includes('challengeService.getChallengeActivitySummaries') && challengeService.includes("'challengeActivitySummaries'"),
+    'Home (useHomeScreen + challengeService) must read challengeActivitySummaries collection for Most Active ranking',
   );
 
   // Guard: sorts by totalLogs before participantCount
@@ -161,16 +164,18 @@ assert(
     'useHomeScreen must limit mostActiveOngoing to 5',
   );
 
-  // Guard: uses chunked in-query (no unbounded challengeActivitySummaries read)
+  // Guard: uses chunked in-query (no unbounded challengeActivitySummaries read).
+  // Lives in challengeService.getChallengeActivitySummaries() post Phase 6 service-layer cleanup.
   assert(
-    homeHook.includes("documentId(), 'in'") || homeHook.includes('documentId(), "in"'),
-    'useHomeScreen challengeActivitySummaries read must use documentId() in-query (chunked, not unbounded)',
+    challengeService.includes("documentId(), 'in'") || challengeService.includes('documentId(), "in"'),
+    'challengeService challengeActivitySummaries read must use documentId() in-query (chunked, not unbounded)',
   );
 
-  // Guard: missing summary treated as totalLogs = 0 (not excluded)
+  // Guard: missing summary treated as totalLogs = 0 (not excluded).
+  // Lives in challengeService.getChallengeActivitySummaries() post Phase 6 service-layer cleanup.
   assert(
-    homeHook.includes('totalLogs ?? 0') || homeHook.includes("totalLogs ?? 0"),
-    'useHomeScreen Most Active must treat missing challengeActivitySummaries as totalLogs = 0',
+    challengeService.includes('totalLogs ?? 0'),
+    'challengeService Most Active summaries must treat missing challengeActivitySummaries as totalLogs = 0',
   );
 
   // Guard: stat label shows "logs" when totalLogs > 0

@@ -418,6 +418,79 @@ class ChallengeService {
     return index;
   }
 
+  /** Fetches challenges by id in chunks of 10 (Firestore `in` query limit). */
+  async getChallengesByIds(challengeIds: string[]): Promise<Challenge[]> {
+    const uniqueIds = Array.from(new Set(challengeIds)).filter(Boolean);
+    if (uniqueIds.length === 0) return [];
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < uniqueIds.length; i += 10) {
+      chunks.push(uniqueIds.slice(i, i + 10));
+    }
+    const snaps = await Promise.all(
+      chunks.map((chunk) =>
+        getDocs(query(collection(db, this.collectionName), where(documentId(), 'in', chunk))),
+      ),
+    );
+    return snaps.flatMap((snap) =>
+      snap.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<Challenge, 'id'>) })),
+    );
+  }
+
+  /** Lightweight per-challenge member leaderboard (all members, sorted by score desc) for competitive v2 challenges. */
+  async getCompetitiveLeaderboards(challengeIds: string[]): Promise<Map<string, Array<{ userId: string; score: number }>>> {
+    const leaderboards = new Map<string, Array<{ userId: string; score: number }>>();
+    if (challengeIds.length === 0) return leaderboards;
+
+    await Promise.all(
+      challengeIds.map(async (challengeId) => {
+        const snap = await getDocs(
+          query(collection(db, this.challengeMembersCollection), where('challengeId', '==', challengeId)),
+        ).catch(() => null);
+        if (!snap) return;
+        const rows = snap.docs
+          .map((item) => {
+            const data = item.data() as { userId?: string; cumulativeLoggedValue?: number };
+            return { userId: data.userId ?? '', score: Math.max(0, Number(data.cumulativeLoggedValue ?? 0)) };
+          })
+          .filter((row) => row.userId)
+          .sort((a, b) => b.score - a.score);
+        leaderboards.set(challengeId, rows);
+      }),
+    );
+    return leaderboards;
+  }
+
+  /** Cloud-Function-maintained per-challenge activity totals (totalValue, totalLogs), chunked by id. */
+  async getChallengeActivitySummaries(challengeIds: string[]): Promise<Map<string, { totalValue: number; totalLogs: number }>> {
+    const summaries = new Map<string, { totalValue: number; totalLogs: number }>();
+    const uniqueIds = Array.from(new Set(challengeIds)).filter(Boolean);
+    if (uniqueIds.length === 0) return summaries;
+
+    const chunks: string[][] = [];
+    for (let i = 0; i < uniqueIds.length; i += 10) {
+      chunks.push(uniqueIds.slice(i, i + 10));
+    }
+    const snaps = await Promise.all(
+      chunks.map((chunk) =>
+        getDocs(
+          query(collection(db, 'challengeActivitySummaries'), where(documentId(), 'in', chunk)),
+        ).catch(() => null),
+      ),
+    );
+    for (const snap of snaps) {
+      if (!snap) continue;
+      for (const item of snap.docs) {
+        const data = item.data() as { totalValue?: number; totalLogs?: number };
+        summaries.set(item.id, {
+          totalValue: Math.max(0, Number(data.totalValue ?? 0)),
+          totalLogs: Math.max(0, Number(data.totalLogs ?? 0)),
+        });
+      }
+    }
+    return summaries;
+  }
+
   async getUserAccessibleChallenges(userId: string): Promise<Challenge[]> {
     const membersSnap = await getDocs(
       query(

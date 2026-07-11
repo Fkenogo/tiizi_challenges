@@ -146,6 +146,13 @@ function ProfileScreen() {
             </button>
           </section>
 
+          <button
+            className="text-[13px] font-semibold text-primary self-start"
+            onClick={() => navigate('/app/challenges/history')}
+          >
+            View completed challenges →
+          </button>
+
           <section className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm flex items-center justify-between">
             <p className="text-[13px] leading-[18px] text-slate-600">
               Activity this month: <span className="font-bold text-primary">{analytics?.totalLogsLast30d ?? 0} logs</span>

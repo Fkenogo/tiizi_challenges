@@ -63,23 +63,22 @@ assert.doesNotMatch(
 // (updated Phase 1 guard triage: these render via the shared GroupSharedHeader component now,
 // not inline in GroupDetailScreen — checked against the combined source below)
 assert.match(groupDetailCombined, /line-clamp-1|line-clamp-2|description.*preview|description.*line-clamp/, 'GroupDetailScreen (via GroupSharedHeader) must show a description preview');
-// KNOWN GAP (Phase 1 guard triage, deferred to Phase 4 UI cleanup — see docs/reports/pre-beta-phase-1-guard-triage.md):
-// the groupType quick tag was present in the compact summary before the header-unification
-// refactor and is no longer rendered there (it still appears on GroupsScreen cards and inside
-// GroupDetailsModal's full "Type" row). Left asserted-and-failing intentionally so this guard
-// keeps flagging the gap until a product decision restores it or formally drops the requirement.
-assert.match(groupDetailCombined, /group\.groupType/, 'GroupDetailScreen (via GroupSharedHeader) compact summary must reference groupType for quick tag — KNOWN GAP, see Phase 1 guard triage report');
+// Phase 6: groupType quick tag restored to the compact summary (subtle pill next to the
+// "Group since" date) — resolves the Phase 1 guard triage KNOWN GAP.
+assert.match(groupDetailCombined, /group\.groupType/, 'GroupDetailScreen (via GroupSharedHeader) compact summary must reference groupType for quick tag');
 assert.match(groupDetailCombined, /Group since|createdAt/, 'GroupDetailScreen (via GroupSharedHeader) compact summary must show created date');
 assert.match(groupDetailCombined, /View Group Details/, 'GroupDetailScreen (via GroupSharedHeader) must have a "View Group Details" link/button');
 
 // Edit Group gated to owner — must check ownerId
+// (Phase 6: this gate now lives in GroupSharedHeader post-header-unification refactor,
+// same as the other compact-summary fields above — checked against the combined source.)
 assert.match(groupDetailCombined, /Edit Group/, 'GroupDetailScreen (via GroupSharedHeader) must show Edit Group button label');
-assert.match(groupDetail, /ownerId.*user\?\.uid|group\?\.ownerId.*uid/, 'GroupDetailScreen must gate Edit Group to owner');
-assert.match(groupDetail, /\/app\/group\/.*\/edit/, 'GroupDetailScreen Edit Group must navigate to edit route');
+assert.match(groupDetailCombined, /ownerId.*user\?\.uid|group\?\.ownerId.*uid/, 'GroupDetailScreen (via GroupSharedHeader) must gate Edit Group to owner');
+assert.match(groupDetailCombined, /\/app\/group\/.*\/edit/, 'GroupDetailScreen (via GroupSharedHeader) Edit Group must navigate to edit route');
 
-// Modal wired
-assert.match(groupDetail, /GroupDetailsModal/, 'GroupDetailScreen must render GroupDetailsModal');
-assert.match(groupDetail, /showDetails|setShowDetails/, 'GroupDetailScreen must have showDetails state to control modal');
+// Modal wired (rendered from GroupSharedHeader post-header-unification refactor)
+assert.match(groupDetailCombined, /GroupDetailsModal/, 'GroupDetailScreen (via GroupSharedHeader) must render GroupDetailsModal');
+assert.match(groupDetailCombined, /showDetails|setShowDetails/, 'GroupDetailScreen (via GroupSharedHeader) must have showDetails state to control modal');
 
 // ── GroupDetailsModal: full metadata in sections ──────────────────────────────
 assert.match(groupDetailsModal, /GroupDetailsModal/, 'GroupDetailsModal component must exist');

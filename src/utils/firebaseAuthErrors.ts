@@ -33,3 +33,12 @@ export function normalizeFirebaseAuthError(error: unknown): string {
   }
   return AUTH_ERROR_MESSAGES[code] ?? 'Could not sign in. Check your credentials and try again.';
 }
+
+/**
+ * Password reset must never reveal whether an account exists for a given email.
+ * Only user-actionable input/rate-limit errors are shown; everything else
+ * (including "no account found") is treated as success from the UI's perspective.
+ */
+export function isPasswordResetVisibleError(code: string): boolean {
+  return code === 'auth/invalid-email' || code === 'auth/too-many-requests';
+}

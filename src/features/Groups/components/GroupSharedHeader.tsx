@@ -77,6 +77,11 @@ export function GroupSharedHeader({ groupId, active }: Props) {
         ) : null}
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
+          {group.groupType && (
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">
+              {group.groupType}
+            </span>
+          )}
           {group.createdAt && (
             <span className="flex items-center gap-1 text-[12px] text-slate-500">
               <CalendarClock size={12} className="text-slate-400 shrink-0" />

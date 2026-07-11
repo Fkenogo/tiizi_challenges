@@ -3,7 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { mockupAliases } from './data/mockupAliases';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute } from './components/Auth/ProtectedRoute';
+import { RequireOnboardedRoute } from './components/Auth/RequireOnboardedRoute';
+import { RequireOnboardingRoute } from './components/Auth/RequireOnboardingRoute';
 import { AdminRoute } from './components/Auth/AdminRoute';
 import { RequireGroupRoute } from './components/Auth/RequireGroupRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -38,6 +39,7 @@ const CollectiveChallengeScreen = lazy(() => import('./features/Challenges/Colle
 const StreakChallengeScreen = lazy(() => import('./features/Challenges/StreakChallengeScreen'));
 const ChallengeLeaderboardScreen = lazy(() => import('./features/Challenges/ChallengeLeaderboardScreen'));
 const ChallengeCompletedScreen = lazy(() => import('./features/Challenges/ChallengeCompletedScreen'));
+const CompletedChallengesScreen = lazy(() => import('./features/Challenges/CompletedChallengesScreen'));
 const ProfileScreen = lazy(() => import('./features/Profile/ProfileScreen'));
 const EditProfileScreen = lazy(() => import('./features/Profile/EditProfileScreen'));
 const EditGroupScreen = lazy(() => import('./features/Groups/EditGroupScreen'));
@@ -212,15 +214,15 @@ function App() {
                 <Route path="/privacy" element={<PrivacyScreen />} />
                 <Route path="/app/login" element={<LoginScreen />} />
                 <Route path="/app/signup" element={<SignupScreen />} />
-                <Route path="/app/flow" element={<ProtectedRoute><FlowHubScreen /></ProtectedRoute>} />
-                <Route path="/app/quick-actions" element={<ProtectedRoute><QuickActionsScreen /></ProtectedRoute>} />
+                <Route path="/app/flow" element={<RequireOnboardedRoute><FlowHubScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/quick-actions" element={<RequireOnboardedRoute><QuickActionsScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/welcome" element={<WelcomeScreen />} />
-                <Route path="/app/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
-                <Route path="/app/help" element={<ProtectedRoute><HelpScreen /></ProtectedRoute>} />
-                <Route path="/app/share" element={<ProtectedRoute><ShareScreen /></ProtectedRoute>} />
-                <Route path="/app/donate" element={<ProtectedRoute><DonateScreen /></ProtectedRoute>} />
-                <Route path="/app/library" element={<ProtectedRoute><BooksLibraryScreen /></ProtectedRoute>} />
-                <Route path="/app/library/:id" element={<ProtectedRoute><BookReaderScreen /></ProtectedRoute>} />
+                <Route path="/app/notifications" element={<RequireOnboardedRoute><NotificationsScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/help" element={<RequireOnboardedRoute><HelpScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/share" element={<RequireOnboardedRoute><ShareScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/donate" element={<RequireOnboardedRoute><DonateScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/library" element={<RequireOnboardedRoute><BooksLibraryScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/library/:id" element={<RequireOnboardedRoute><BookReaderScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/admin/dashboard" element={<AdminRoute><AdminDashboardScreen /></AdminRoute>} />
                 <Route path="/app/admin/challenges/pending" element={<AdminRoute><AdminPendingChallengesScreen /></AdminRoute>} />
                 <Route path="/app/admin/challenges/approved" element={<AdminRoute><AdminApprovedChallengesScreen /></AdminRoute>} />
@@ -261,51 +263,52 @@ function App() {
                 <Route path="/app/admin/settings" element={<AdminRoute><AppSettingsScreen /></AdminRoute>} />
                 <Route path="/app/admin/settings/admin-users" element={<AdminRoute><AdminUsersSettingsScreen /></AdminRoute>} />
                 <Route path="/app/admin/settings/logs" element={<AdminRoute><SystemLogsScreen /></AdminRoute>} />
-                <Route path="/app/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
-                <Route path="/app/exercises" element={<ProtectedRoute><ExerciseLibraryScreen /></ProtectedRoute>} />
-                <Route path="/app/wellness-activities" element={<ProtectedRoute><WellnessActivitiesLibraryScreen /></ProtectedRoute>} />
-                <Route path="/app/wellness-activities/:id" element={<ProtectedRoute><WellnessActivityDetailScreen /></ProtectedRoute>} />
-                <Route path="/app/exercises/:id" element={<ProtectedRoute><ExerciseDetailScreen /></ProtectedRoute>} />
-                <Route path="/app/workouts/log" element={<ProtectedRoute><RequireGroupRoute><LogWorkoutScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/workouts/log-wellness" element={<ProtectedRoute><RequireGroupRoute><LogWellnessActivityScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/workouts/select-activity" element={<ProtectedRoute><RequireGroupRoute><SelectChallengeActivityScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/workouts/choose-challenge" element={<ProtectedRoute><ChooseChallengeToLogScreen /></ProtectedRoute>} />
-                <Route path="/app/workouts/success" element={<ProtectedRoute><RequireGroupRoute><WorkoutLoggedScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/groups" element={<ProtectedRoute><GroupsScreen /></ProtectedRoute>} />
-                <Route path="/app/group/:id" element={<ProtectedRoute><GroupDetailScreen /></ProtectedRoute>} />
-                <Route path="/app/group/:id/edit" element={<ProtectedRoute><EditGroupScreen /></ProtectedRoute>} />
-                <Route path="/app/group/:id/feed" element={<ProtectedRoute><GroupFeedScreen /></ProtectedRoute>} />
-                <Route path="/app/group/:id/members" element={<ProtectedRoute><GroupMembersScreen /></ProtectedRoute>} />
-                <Route path="/app/group/:id/leaderboard" element={<ProtectedRoute><GroupLeaderboardScreen /></ProtectedRoute>} />
-                <Route path="/app/group/:id/challenges/highlighted" element={<ProtectedRoute><GroupChallengesHighlightedScreen /></ProtectedRoute>} />
-                <Route path="/app/create-group" element={<ProtectedRoute><CreateGroupScreen /></ProtectedRoute>} />
-                <Route path="/app/join-group" element={<ProtectedRoute><JoinGroupScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges" element={<ProtectedRoute><ChallengesScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges/wellness" element={<ProtectedRoute><WellnessTemplateGalleryScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges/wellness/:id" element={<ProtectedRoute><WellnessTemplateDetailScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges/browse" element={<ProtectedRoute><BrowseChallengesScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges/suggested" element={<ProtectedRoute><SuggestedChallengesScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges/preview" element={<ProtectedRoute><ChallengePreviewScreen /></ProtectedRoute>} />
-                <Route path="/app/challenges/competitive" element={<ProtectedRoute><RequireGroupRoute><CompetitiveChallengeScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenges/collective" element={<ProtectedRoute><RequireGroupRoute><CollectiveChallengeScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenges/streak" element={<ProtectedRoute><RequireGroupRoute><StreakChallengeScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenges/leaderboard" element={<ProtectedRoute><RequireGroupRoute><ChallengeLeaderboardScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenges/completed" element={<ProtectedRoute><RequireGroupRoute><ChallengeCompletedScreen /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/challenge/:id" element={<ProtectedRoute><ChallengeDetailScreen /></ProtectedRoute>} />
-                <Route path="/app/create-challenge" element={<ProtectedRoute><RequireGroupRoute><CreateChallengeWizard /></RequireGroupRoute></ProtectedRoute>} />
-                <Route path="/app/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/edit" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/settings" element={<ProtectedRoute><ProfileSettingsScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/settings/analytics" element={<ProtectedRoute><ProfileAnalyticsScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/personal-info" element={<ProtectedRoute><ProfilePersonalInfoScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/privacy-settings" element={<ProtectedRoute><ProfilePrivacySettingsScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/completion" element={<ProtectedRoute><ProfileCompletionScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/interests" element={<ProtectedRoute><ProfileInterestsScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/wellness-interests" element={<ProtectedRoute><ProfileWellnessInterestsScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/health-goals" element={<ProtectedRoute><ProfileHealthGoalsScreen /></ProtectedRoute>} />
-                <Route path="/app/profile/setup-finish" element={<ProtectedRoute><ProfileSetupFinishScreen /></ProtectedRoute>} />
-                <Route path="/app/onboarding/intro" element={<ProtectedRoute><OnboardingSlides /></ProtectedRoute>} />
-                <Route path="/app/profile/learn-tiizi" element={<ProtectedRoute><LearnTiiziScreen /></ProtectedRoute>} />
+                <Route path="/app/home" element={<RequireOnboardedRoute><HomeScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/exercises" element={<RequireOnboardedRoute><ExerciseLibraryScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/wellness-activities" element={<RequireOnboardedRoute><WellnessActivitiesLibraryScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/wellness-activities/:id" element={<RequireOnboardedRoute><WellnessActivityDetailScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/exercises/:id" element={<RequireOnboardedRoute><ExerciseDetailScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/workouts/log" element={<RequireOnboardedRoute><RequireGroupRoute><LogWorkoutScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/workouts/log-wellness" element={<RequireOnboardedRoute><RequireGroupRoute><LogWellnessActivityScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/workouts/select-activity" element={<RequireOnboardedRoute><RequireGroupRoute><SelectChallengeActivityScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/workouts/choose-challenge" element={<RequireOnboardedRoute><ChooseChallengeToLogScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/workouts/success" element={<RequireOnboardedRoute><RequireGroupRoute><WorkoutLoggedScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/groups" element={<RequireOnboardedRoute><GroupsScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/group/:id" element={<RequireOnboardedRoute><GroupDetailScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/group/:id/edit" element={<RequireOnboardedRoute><EditGroupScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/group/:id/feed" element={<RequireOnboardedRoute><GroupFeedScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/group/:id/members" element={<RequireOnboardedRoute><GroupMembersScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/group/:id/leaderboard" element={<RequireOnboardedRoute><GroupLeaderboardScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/group/:id/challenges/highlighted" element={<RequireOnboardedRoute><GroupChallengesHighlightedScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/create-group" element={<RequireOnboardedRoute><CreateGroupScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/join-group" element={<RequireOnboardedRoute><JoinGroupScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges" element={<RequireOnboardedRoute><ChallengesScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/wellness" element={<RequireOnboardedRoute><WellnessTemplateGalleryScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/wellness/:id" element={<RequireOnboardedRoute><WellnessTemplateDetailScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/browse" element={<RequireOnboardedRoute><BrowseChallengesScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/suggested" element={<RequireOnboardedRoute><SuggestedChallengesScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/preview" element={<RequireOnboardedRoute><ChallengePreviewScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/competitive" element={<RequireOnboardedRoute><RequireGroupRoute><CompetitiveChallengeScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/collective" element={<RequireOnboardedRoute><RequireGroupRoute><CollectiveChallengeScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/streak" element={<RequireOnboardedRoute><RequireGroupRoute><StreakChallengeScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/leaderboard" element={<RequireOnboardedRoute><RequireGroupRoute><ChallengeLeaderboardScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/completed" element={<RequireOnboardedRoute><RequireGroupRoute><ChallengeCompletedScreen /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/history" element={<RequireOnboardedRoute><CompletedChallengesScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenge/:id" element={<RequireOnboardedRoute><ChallengeDetailScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/create-challenge" element={<RequireOnboardedRoute><RequireGroupRoute><CreateChallengeWizard /></RequireGroupRoute></RequireOnboardedRoute>} />
+                <Route path="/app/profile" element={<RequireOnboardedRoute><ProfileScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/profile/edit" element={<RequireOnboardedRoute><EditProfileScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/profile/settings" element={<RequireOnboardedRoute><ProfileSettingsScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/profile/settings/analytics" element={<RequireOnboardedRoute><ProfileAnalyticsScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/profile/personal-info" element={<RequireOnboardedRoute><ProfilePersonalInfoScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/profile/privacy-settings" element={<RequireOnboardingRoute><ProfilePrivacySettingsScreen /></RequireOnboardingRoute>} />
+                <Route path="/app/profile/completion" element={<RequireOnboardingRoute><ProfileCompletionScreen /></RequireOnboardingRoute>} />
+                <Route path="/app/profile/interests" element={<RequireOnboardingRoute><ProfileInterestsScreen /></RequireOnboardingRoute>} />
+                <Route path="/app/profile/wellness-interests" element={<RequireOnboardingRoute><ProfileWellnessInterestsScreen /></RequireOnboardingRoute>} />
+                <Route path="/app/profile/health-goals" element={<RequireOnboardingRoute><ProfileHealthGoalsScreen /></RequireOnboardingRoute>} />
+                <Route path="/app/profile/setup-finish" element={<RequireOnboardingRoute><ProfileSetupFinishScreen /></RequireOnboardingRoute>} />
+                <Route path="/app/onboarding/intro" element={<RequireOnboardingRoute><OnboardingSlides /></RequireOnboardingRoute>} />
+                <Route path="/app/profile/learn-tiizi" element={<RequireOnboardedRoute><LearnTiiziScreen /></RequireOnboardedRoute>} />
                 <Route path="/app" element={<Navigate to="/app/welcome" replace />} />
 
                 <Route path="/" element={<Navigate to="/app/welcome" replace />} />

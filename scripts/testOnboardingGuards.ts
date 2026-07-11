@@ -121,4 +121,66 @@ assert.match(appTsx, /\/app\/profile\/wellness-interests.*ProfileWellnessInteres
 assert.match(signupScreen, /\/app\/onboarding\/intro/, 'SignupScreen default nextPath must be /app/onboarding/intro');
 assert.doesNotMatch(signupScreen, /return '\/app\/profile\/completion'/, "SignupScreen must not default to /app/profile/completion");
 
+// ─── Phase 6: onboarding gate wiring ─────────────────────────────────────────
+const requireProfileSetup = read('src/components/Auth/RequireProfileSetup.tsx');
+const requireOnboardedRoute = read('src/components/Auth/RequireOnboardedRoute.tsx');
+const requireOnboardingRoute = read('src/components/Auth/RequireOnboardingRoute.tsx');
+
+// RequireOnboardedRoute composes ProtectedRoute + RequireProfileSetup(mode="completed")
+assert.match(requireOnboardedRoute, /<ProtectedRoute>/, 'RequireOnboardedRoute must wrap children in ProtectedRoute (auth check)');
+assert.match(requireOnboardedRoute, /mode="completed"/, 'RequireOnboardedRoute must use RequireProfileSetup mode="completed"');
+
+// RequireOnboardingRoute composes ProtectedRoute + RequireProfileSetup(mode="onboarding")
+assert.match(requireOnboardingRoute, /<ProtectedRoute>/, 'RequireOnboardingRoute must wrap children in ProtectedRoute (auth check)');
+assert.match(requireOnboardingRoute, /mode="onboarding"/, 'RequireOnboardingRoute must use RequireProfileSetup mode="onboarding"');
+
+// /app/home must be gated by RequireOnboardedRoute — incomplete users must not bypass onboarding
+assert.match(appTsx, /path="\/app\/home"[^/]*RequireOnboardedRoute/, '/app/home route must be wrapped in RequireOnboardedRoute so incomplete users are redirected');
+
+// All 5 onboarding step routes (+ intro) must remain registered and use RequireOnboardingRoute
+for (const path of [
+  '/app/profile/completion',
+  '/app/profile/interests',
+  '/app/profile/wellness-interests',
+  '/app/profile/health-goals',
+  '/app/profile/privacy-settings',
+]) {
+  const escaped = path.replace(/\//g, '\\/');
+  const pattern = new RegExp(`path="${escaped}"[^/]*RequireOnboardingRoute`);
+  assert.match(appTsx, pattern, `${path} route must remain registered and wrapped in RequireOnboardingRoute`);
+}
+assert.match(appTsx, /path="\/app\/onboarding\/intro"[^/]*RequireOnboardingRoute/, '/app/onboarding/intro must be wrapped in RequireOnboardingRoute');
+
+// Admin routes must remain wrapped in AdminRoute, not the onboarding gate (no regression)
+assert.match(appTsx, /path="\/app\/admin\/dashboard"[^/]*AdminRoute/, 'Admin routes must remain wrapped in AdminRoute, not RequireOnboardedRoute');
+assert.doesNotMatch(appTsx, /path="\/app\/admin\/dashboard"[^/]*RequireOnboardedRoute/, 'Admin routes must not be wrapped in RequireOnboardedRoute');
+
+// Public routes must remain unwrapped (no auth/onboarding gate)
+for (const path of ['/app/login', '/app/signup', '/app/welcome', '/install', '/terms', '/privacy']) {
+  const escaped = path.replace(/\//g, '\\/');
+  const routeLine = appTsx.split('\n').find((l) => l.includes(`path="${path}"`));
+  assert.ok(!!routeLine, `Public route ${path} must exist`);
+  assert.ok(
+    !!routeLine && !routeLine.includes('RequireOnboardedRoute') && !routeLine.includes('RequireOnboardingRoute') && !routeLine.includes('AdminRoute'),
+    `Public route ${path} must not be wrapped in any auth/onboarding gate`,
+  );
+}
+
+// isOnboardingPath must exclude gate loops: onboarding routes should never wrap themselves
+// in RequireOnboardedRoute (that would create a redirect loop with mode="completed").
+for (const path of [
+  '/app/profile/completion',
+  '/app/profile/interests',
+  '/app/profile/wellness-interests',
+  '/app/profile/health-goals',
+  '/app/profile/privacy-settings',
+  '/app/onboarding/intro',
+]) {
+  const routeLine = appTsx.split('\n').find((l) => l.includes(`path="${path}"`));
+  assert.ok(
+    !!routeLine && !routeLine.includes('RequireOnboardedRoute'),
+    `Onboarding route ${path} must use RequireOnboardingRoute, not RequireOnboardedRoute (would loop)`,
+  );
+}
+
 console.log('✅ All onboarding guards passed.');
