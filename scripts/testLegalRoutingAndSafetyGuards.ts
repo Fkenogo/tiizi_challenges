@@ -105,6 +105,25 @@ assert(
   /legal review|not.*legally certified|lawyer/i.test(privacyScreen),
 );
 
+// ── 3b: Support email is real, not a placeholder (Phase 7B) ──────────────────
+console.log('\n[3b] Legal screens show a real support email, no placeholder wording');
+assert(
+  'TermsScreen shows support@tiizichallenges.com',
+  /support@tiizichallenges\.com/.test(termsScreen),
+);
+assert(
+  'PrivacyScreen shows support@tiizichallenges.com',
+  /support@tiizichallenges\.com/.test(privacyScreen),
+);
+assert(
+  'TermsScreen does not contain placeholder support wording',
+  !/placeholder|update this email|update.*support contact/i.test(termsScreen),
+);
+assert(
+  'PrivacyScreen does not contain placeholder support wording',
+  !/placeholder|update this email|update.*support contact/i.test(privacyScreen),
+);
+
 // ── 4: Catch-all no longer redirects to /app/flow ─────────────────────────────
 console.log('\n[4] Catch-all route behavior');
 const catchAllLine = appTsx.split('\n').find((l) => l.includes('path="*"'));

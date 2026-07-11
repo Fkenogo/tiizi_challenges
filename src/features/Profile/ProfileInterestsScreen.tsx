@@ -65,8 +65,8 @@ function ProfileInterestsScreen() {
   };
 
   const handleNext = async () => {
-    if (selected.length < 1) {
-      showToast('Choose at least one activity.', 'error');
+    if (selected.length < 3) {
+      showToast('Choose at least 3 activities.', 'error');
       return;
     }
     if (!user?.uid) {
@@ -137,7 +137,7 @@ function ProfileInterestsScreen() {
               </div>
             </div>
             <p className="st-heading-lg mt-4">Activities You Enjoy</p>
-            <p className="st-text-lg mt-2">Pick up to 10 activities. Choose at least 1 to personalise your experience.</p>
+            <p className="st-text-lg mt-2">Choose 3 to 10 activities to personalise your experience.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {selectedNames.slice(0, 2).map((name) => (
                 <span key={name} className="st-chip bg-primary text-white">{name} ×</span>
@@ -154,7 +154,7 @@ function ProfileInterestsScreen() {
 
         <div className="st-form-max mt-6 grid grid-cols-[1fr_1.55fr] gap-3">
           <button className="st-btn-secondary" onClick={() => navigate('/app/profile/completion')}>Previous</button>
-          <button className="st-btn-primary" onClick={handleNext} disabled={saveProfileSetup.isPending}>
+          <button className="st-btn-primary" onClick={handleNext} disabled={saveProfileSetup.isPending || selected.length < 3}>
             {saveProfileSetup.isPending ? 'Saving...' : 'Next Step →'}
           </button>
         </div>

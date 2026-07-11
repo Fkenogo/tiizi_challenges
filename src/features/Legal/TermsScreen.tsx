@@ -125,8 +125,7 @@ function TermsScreen() {
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <p className="text-[13px] leading-[20px] text-slate-500">
               Questions about these Terms? Contact support from the Help screen, or reach us at{' '}
-              <span className="font-semibold text-slate-700">support@tiizichallenges.com</span> (placeholder — update
-              with your real support contact before public launch).
+              <span className="font-semibold text-slate-700">support@tiizichallenges.com</span>.
             </p>
           </section>
         </main>

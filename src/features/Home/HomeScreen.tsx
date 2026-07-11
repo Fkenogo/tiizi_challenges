@@ -122,6 +122,10 @@ function HomeScreen() {
       ? data.mostActiveOngoing
       : fallbackMostActive;
 
+  const joinedGroupCount = data?.myGroupsCount ?? 0;
+  const activeChallengeCount = effectiveMyChallenges.length;
+  const showActivationCard = joinedGroupCount === 0 && activeChallengeCount === 0;
+
   useEffect(() => {
     hasRetriedEmptyHomeRef.current = false;
   }, [user?.uid]);
@@ -205,6 +209,31 @@ function HomeScreen() {
         </header>
 
         <main className="px-4 pt-5 space-y-7">
+          {showActivationCard && (
+            <section>
+              <article className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-base font-black text-slate-900">Start your Tiizi journey</p>
+                <p className="mt-1.5 text-sm text-slate-600">
+                  Join a group or create your first challenge to start building healthy habits together.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    className="h-10 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900"
+                    onClick={() => navigate('/app/groups', { state: { tab: 'discover' } })}
+                  >
+                    Explore Groups
+                  </button>
+                  <button
+                    className="h-10 rounded-xl bg-primary text-sm font-bold text-white"
+                    onClick={() => navigate('/app/create-challenge')}
+                  >
+                    Create Challenge
+                  </button>
+                </div>
+              </article>
+            </section>
+          )}
+
           <section>
             <h2 className="st-section-label mb-3">My Challenges</h2>
             {effectiveMyChallenges.length > 0 ? (
@@ -219,7 +248,8 @@ function HomeScreen() {
               </div>
             ) : (
               <article className="rounded-2xl border border-slate-200 bg-white px-3 py-4">
-                <p className="text-sm text-slate-600">No ongoing challenges yet.</p>
+                <p className="text-sm font-bold text-slate-900">Get Started</p>
+                <p className="mt-1 text-sm text-slate-600">Your active challenges will appear here once you join or create one.</p>
                 {data?.myGroupsCount ? (
                   <button className="mt-3 h-10 rounded-xl bg-primary px-5 text-sm font-bold text-white" onClick={() => navigate('/app/challenges')}>
                     Browse Challenges

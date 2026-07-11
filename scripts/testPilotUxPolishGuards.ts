@@ -106,16 +106,19 @@ assert.doesNotMatch(
   'ProfileInterestsScreen must not cap the number of interests or goals a user can select',
 );
 
+// Phase 6B founder decision: minimum 3 activities, maximum remains 10.
+// Updated to match ProfileInterestsScreen's actual state variable (`selected`)
+// and the approved copy ("Choose at least 3 activities.").
 assert.match(
   interestsScreen,
-  /selectedInterests\.length < 3/,
+  /selected\.length < 3/,
   'ProfileInterestsScreen must require at least 3 interests before proceeding',
 );
 
 assert.match(
   interestsScreen,
-  /Select at least 3 interests/,
-  'ProfileInterestsScreen must show "Select at least 3 interests" validation message',
+  /Choose at least 3 activities/,
+  'ProfileInterestsScreen must show "Choose at least 3 activities." validation message',
 );
 
 // ── P3B: Home activation card ────────────────────────────────────────────────
@@ -128,16 +131,19 @@ assert.match(
   'HomeScreen must show an activation card when user has no groups or no active challenges',
 );
 
+// Phase 7B: copy finalized as "Start your Tiizi journey" / "Explore Groups"
+// + "Create Challenge" (superseding the earlier, never-implemented P3B
+// wording below), matching the founder-approved activation-card content.
 assert.match(
   homeScreen,
-  /Welcome to Tiizi|Begin your wellness journey/i,
+  /Start your Tiizi journey/i,
   'HomeScreen activation card must include a welcome message for new users',
 );
 
 assert.match(
   homeScreen,
-  /Join a Group.*Join a Challenge|Join a Challenge.*Join a Group/s,
-  'HomeScreen activation card must guide the user to join a group and join a challenge',
+  /Explore Groups.*Create Challenge|Create Challenge.*Explore Groups/s,
+  'HomeScreen activation card must guide the user to explore groups and create a challenge',
 );
 
 assert.match(
