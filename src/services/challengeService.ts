@@ -92,6 +92,17 @@ type CreateChallengeInput = {
 
 const ACTIVE_GROUP_MEMBER_STATUSES = ['joined', 'active'];
 
+/**
+ * Legacy (v1) challenges were removed in Phase 5 (pre-beta legacy cleanup) — only
+ * engineVersion === 'v2' challenges are supported. Obsolete records are excluded
+ * from all user-facing lists rather than rendered with stale/legacy calculations;
+ * ChallengeDetailScreen/ChallengeCompletedScreen/ChallengeLeaderboardScreen show a
+ * "no longer supported" state if one is opened directly (e.g. via a stale link).
+ */
+function isSupportedChallengeEngine(challenge: { engineVersion?: string }): boolean {
+  return challenge.engineVersion === 'v2';
+}
+
 function removeUndefinedDeep<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map((item) => removeUndefinedDeep(item)) as T;
@@ -450,6 +461,7 @@ class ChallengeService {
 
     const sorted = all
       .filter((item) => item.status === 'active' || (item.createdBy === userId && item.status === 'draft'))
+      .filter(isSupportedChallengeEngine)
       .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
     const counts = await this.getChallengeParticipantCounts(sorted.map((item) => item.id));
 
@@ -494,9 +506,9 @@ class ChallengeService {
         snap!.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<Challenge, 'id'>) })),
       );
 
-    const deduped = Array.from(new Map(all.map((c) => [c.id, c])).values()).sort(
-      (a, b) => Date.parse(b.startDate) - Date.parse(a.startDate),
-    );
+    const deduped = Array.from(new Map(all.map((c) => [c.id, c])).values())
+      .filter(isSupportedChallengeEngine)
+      .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
     const counts = await this.getChallengeParticipantCounts(deduped.map((c) => c.id));
     return deduped.map((c) => ({ ...c, participantCount: counts.get(c.id) ?? Number(c.participantCount ?? 0) }));
   }
@@ -505,6 +517,7 @@ class ChallengeService {
     const snap = await getDocs(collection(db, this.collectionName));
     return snap.docs
       .map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) }))
+      .filter(isSupportedChallengeEngine)
       .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
   }
 
@@ -518,6 +531,7 @@ class ChallengeService {
     );
     return snap.docs
       .map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) }))
+      .filter(isSupportedChallengeEngine)
       .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
   }
 
@@ -584,7 +598,9 @@ class ChallengeService {
 
     const deduped = Array.from(
       new Map(results.map((item) => [item.id, item])).values(),
-    ).sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
+    )
+      .filter(isSupportedChallengeEngine)
+      .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
     const counts = await this.getChallengeParticipantCounts(deduped.map((item) => item.id));
     const withCounts = deduped.map((item) => ({
       ...item,
@@ -616,6 +632,7 @@ class ChallengeService {
     );
     return snap.docs
       .map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) } as Challenge))
+      .filter(isSupportedChallengeEngine)
       .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
   }
 
@@ -631,7 +648,9 @@ class ChallengeService {
       where('status', '==', 'active'),
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) }));
+    return snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<Challenge, 'id'>) }))
+      .filter(isSupportedChallengeEngine);
   }
 
   async createChallenge(input: CreateChallengeInput): Promise<Challenge> {
@@ -780,7 +799,7 @@ class ChallengeService {
     const challengeMap = new Map(challengeDocs.map((d) => [d.id, { id: d.id, ...(d.data() as Omit<Challenge, 'id'>) } as Challenge]));
     return memberships.flatMap((membership) => {
       const challenge = challengeMap.get(membership.challengeId);
-      return challenge ? [{ challenge, membership }] : [];
+      return challenge && isSupportedChallengeEngine(challenge) ? [{ challenge, membership }] : [];
     });
   }
 
@@ -858,6 +877,7 @@ class ChallengeService {
     }
 
     const deduped = Array.from(new Map(results.map((item) => [item.id, item])).values())
+      .filter(isSupportedChallengeEngine)
       .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate))
       .slice(0, pageSize);
     return {

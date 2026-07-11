@@ -188,11 +188,16 @@ assert.match(screen, /myContributionPct > 0/, 'RECAP: Collective "Your Share" mu
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RULE: Share Achievement button present on all v2 types (collective, competitive, streak)
+// (updated Phase 5 legacy removal): the "Share Achievement" text renders once, via the
+// shared RecapNavActions component — each v2 branch must invoke it, not duplicate the
+// button inline. A literal string count is fragile (comments/legacy code can inflate it);
+// counting <RecapNavActions invocations is the real signal that all three types share it.
 // ─────────────────────────────────────────────────────────────────────────────
-const shareButtonMatches = (screen.match(/Share Achievement/g) ?? []).length;
+assert.match(screen, /Share Achievement/, 'RECAP: Share Achievement button text must exist (in RecapNavActions)');
+const recapNavActionsUsages = (screen.match(/<RecapNavActions/g) ?? []).length;
 assert.ok(
-  shareButtonMatches >= 3,
-  `RECAP: Share Achievement button must appear at least 3 times (one per v2 type), got ${shareButtonMatches}`,
+  recapNavActionsUsages >= 3,
+  `RECAP: RecapNavActions (which renders Share Achievement) must be used at least 3 times (one per v2 type), got ${recapNavActionsUsages}`,
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

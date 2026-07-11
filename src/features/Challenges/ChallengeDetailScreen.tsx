@@ -202,7 +202,6 @@ function ChallengeDetailScreen() {
   const modeLabel = resolvedChallenge
     ? (resolvedChallenge.category === 'fitness' ? 'Fitness' : 'Wellness')
     : '';
-  const isMultiActivity = (resolvedChallenge?.activities?.length ?? 0) > 1;
   const isV2 = resolvedChallenge?.engineVersion === 'v2';
 
   useEffect(() => {
@@ -267,6 +266,24 @@ function ChallengeDetailScreen() {
         </div>
         <BottomNav active="challenges" />
       </Screen>
+    );
+  }
+
+  if (!isV2) {
+    return (
+      <EmptyState
+        icon={<Trophy size={32} className="text-primary" />}
+        title="This challenge is no longer supported"
+        message="This challenge was created on an older version of Tiizi and is no longer available."
+        action={(
+          <button
+            className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-bold"
+            onClick={() => navigate(backToChallengesPath)}
+          >
+            Back to Challenges
+          </button>
+        )}
+      />
     );
   }
 
@@ -596,61 +613,6 @@ function ChallengeDetailScreen() {
               )}
             </div>
           </div>
-        )}
-
-        {/* Legacy / v1 challenges: keep Daily Targets and How Points Work */}
-        {!isV2 && (
-          <>
-            <div className="mx-4 mt-4">
-              <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-4 pt-4 pb-1 flex items-center gap-2">
-                  <Zap size={14} className="text-primary" />
-                  <p className="st-section-label">Daily Targets</p>
-                </div>
-                {resolvedChallenge.activities && resolvedChallenge.activities.length > 0 ? (
-                  <div className="divide-y divide-slate-100">
-                    {resolvedChallenge.activities.map((activity, idx) => {
-                      const freqLabel = activity.frequency
-                        ? { daily: '/day', weekly: '/week', '2x-week': '2×/wk', '3x-week': '3×/wk', '5x-week': '5×/wk', custom: '' }[activity.frequency] ?? ''
-                        : '';
-                      return (
-                        <div key={`${activity.exerciseId ?? idx}-${activity.exerciseName ?? idx}`}
-                          className="flex items-center justify-between px-4 py-3">
-                          <p className="text-[14px] font-semibold text-slate-800">
-                            {activity.exerciseName || activity.exerciseId || `Activity ${idx + 1}`}
-                          </p>
-                          <p className="text-[13px] font-bold text-primary">
-                            {activity.targetValue} {activity.unit}{freqLabel ? ` ${freqLabel}` : ''}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="px-4 pb-4 pt-2 text-[13px] text-slate-400">No activities configured yet.</p>
-                )}
-              </div>
-            </div>
-
-            <div className="mx-4 mt-3">
-              <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-4 py-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy size={14} className="text-primary" />
-                  <p className="st-section-label">How Points Work</p>
-                </div>
-                <p className="text-[13px] leading-[19px] text-slate-600">
-                  Each activity can earn up to <span className="font-bold text-slate-800">100 points</span> per log.
-                  Hitting the daily target earns 100 points. Log part of the target and earn proportional points.
-                  {' '}Example: daily target is 100 reps, you log 50 — you earn 50 points.
-                </p>
-                {isMultiActivity && (
-                  <p className="mt-2 text-[12px] text-slate-500">
-                    For multi-activity challenges, each activity is scored separately.
-                  </p>
-                )}
-              </div>
-            </div>
-          </>
         )}
 
         {/* ── Fitness + Cause section ──────────────────────────────────── */}

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
+import { EmptyState } from '../../components/Mobile';
 import { useChallenge, useChallengeMembership, useChallengeSummary } from '../../hooks/useChallenges';
 import { useAuth } from '../../hooks/useAuth';
 import { useChallengeWorkouts } from '../../hooks/useWorkouts';
@@ -90,15 +91,18 @@ function useFinalRank(challengeId: string, userId: string | undefined, engineVer
 
       const memberSumContribution = rows.reduce((s, r) => s + r.cumulativeLoggedValue, 0);
 
-      let sorted: Row[];
+      // v2 only — non-v2/unsupported challenges never render a rank (see the !isV2
+      // early return in ChallengeCompletedScreen), so no legacy sort is computed here.
+      let sorted: Row[] | null = null;
       if (engineVersion === 'v2' && challengeType === 'collective') {
         sorted = rows.slice().sort((a, b) => b.cumulativeLoggedValue - a.cumulativeLoggedValue);
       } else if (engineVersion === 'v2' && challengeType === 'competitive') {
         sorted = rows.slice().sort((a, b) => b.completionRate !== a.completionRate ? b.completionRate - a.completionRate : b.totalPoints - a.totalPoints);
       } else if (engineVersion === 'v2' && challengeType === 'streak') {
         sorted = rows.slice().sort((a, b) => b.currentStreak - a.currentStreak);
-      } else {
-        sorted = rows.slice().sort((a, b) => b.totalPoints - a.totalPoints);
+      }
+      if (!sorted) {
+        return { rank: null, total: rows.length, memberSumContribution };
       }
       const idx = sorted.findIndex((r) => r.userId === userId);
       return { rank: idx >= 0 ? idx + 1 : null, total: sorted.length, memberSumContribution };
@@ -204,12 +208,6 @@ function ChallengeCompletedScreen() {
     return [...myWorkouts].sort((a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt))[0];
   }, [myWorkouts]);
 
-  // Legacy
-  const totalValue = useMemo(() => myWorkouts.reduce((sum, item) => sum + Math.max(0, Number(item.value || 0)), 0), [myWorkouts]);
-  const averageValue = myWorkouts.length > 0 ? totalValue / myWorkouts.length : 0;
-  const intensity = averageValue >= 40 ? 'High' : averageValue >= 20 ? 'Medium' : 'Light';
-  const tier = completionRate >= 100 ? 'Gold Tier' : completionRate >= 75 ? 'Silver Tier' : 'Bronze Tier';
-
   // Build enriched share URL for each challenge type so ShareScreen can compose
   // achievement-based copy instead of generic invite text.
   const baseShare = `/app/share?challengeId=${challengeId}${groupId ? `&groupId=${groupId}` : ''}`;
@@ -248,6 +246,24 @@ function ChallengeCompletedScreen() {
       </div>
     </section>
   );
+
+  if (!isV2) {
+    return (
+      <EmptyState
+        icon={<Trophy size={32} className="text-primary" />}
+        title="This challenge is no longer supported"
+        message="This challenge was created on an older version of Tiizi and is no longer available."
+        action={(
+          <button
+            className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-bold"
+            onClick={() => navigate(toChallenges)}
+          >
+            Back to Challenges
+          </button>
+        )}
+      />
+    );
+  }
 
   // --- Collective recap ---
   if (isV2 && challengeType === 'collective') {
@@ -596,84 +612,24 @@ function ChallengeCompletedScreen() {
     );
   }
 
-  // --- Legacy v1 completion (unchanged) ---
-  const legacyCompletionPct = Math.max(0, Math.min(100, Math.round((uniqueDays / Math.max(totalDays, 1)) * 100)));
-
+  // Safety net: isV2 is guaranteed true past the early return above, and challengeType
+  // always resolves to one of the three branches handled above — this should be
+  // unreachable, but avoids ever falling through to legacy calculations for any
+  // malformed/unexpected record shape.
   return (
-    <Screen noPadding noBottomPadding className="st-page">
-      <div className="st-frame st-bottom-safe pb-[108px]">
-        <header className="st-form-max flex items-center justify-between">
-          <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(-1)}>
-            <X size={26} className="text-[#3b4d67]" />
-          </button>
-          <p className="text-[12px] leading-[14px] tracking-[0.18em] uppercase font-black text-primary">Congratulations!</p>
-          <button className="h-10 w-10 flex items-center justify-center">
-            <EllipsisVertical size={22} className="text-[#3b4d67]" />
-          </button>
-        </header>
-
-        <main className="st-form-max mt-5">
-          <h1 className="text-center text-[40px] leading-[40px] tracking-[-0.03em] font-light text-primary">Challenge<br />Completed!</h1>
-          <p className="mt-3 text-center text-[14px] leading-[22px] font-medium text-[#4f6785]">
-            You've reached the finish line of the {title}
-          </p>
-
-          <div className="mt-6 rounded-full border-[5px] border-[#f5cdb8] bg-[#fff8f4] h-[278px] flex items-center justify-center shadow-[0_14px_30px_rgba(255,111,0,0.15)]">
-            <div className="text-center">
-              <div className="text-[72px] leading-none text-primary">🏆</div>
-              <div className="mx-auto mt-3 inline-flex rounded-full bg-primary px-4 py-2 text-[14px] leading-[14px] tracking-[0.08em] uppercase font-black text-white">
-                {tier}
-              </div>
-            </div>
-          </div>
-
-          <section className="st-card mt-7 p-5">
-            <p className="text-[16px] leading-[20px] tracking-[0.12em] uppercase font-black text-[#8ca0ba]">Your Achievements</p>
-            <div className="mt-4 grid grid-cols-2 gap-y-5 gap-x-4">
-              <div>
-                <p className="text-[12px] leading-[14px] tracking-[0.08em] uppercase font-bold text-primary">Total</p>
-                <p className="mt-2 text-[22px] leading-[26px] font-black text-slate-900">{cumulativeLoggedValue.toLocaleString()}</p>
-                <p className="mt-1 text-[14px] leading-[18px] font-medium text-emerald-600">{legacyCompletionPct}% completion</p>
-              </div>
-              <div>
-                <p className="text-[12px] leading-[14px] tracking-[0.08em] uppercase font-bold text-primary">Days Active</p>
-                <p className="mt-2 text-[22px] leading-[26px] font-black text-slate-900">{uniqueDays}/{totalDays}</p>
-                <p className="mt-1 text-[14px] leading-[18px] font-medium text-emerald-600">{uniqueDays >= totalDays ? 'Perfect Streak!' : 'Keep pushing!'}</p>
-              </div>
-              <div>
-                <p className="text-[12px] leading-[14px] tracking-[0.08em] uppercase font-bold text-primary">Avg Intensity</p>
-                <p className="mt-2 text-[22px] leading-[26px] font-black text-slate-900">{intensity}</p>
-              </div>
-            </div>
-          </section>
-
-          <button className="st-btn-primary mt-6" onClick={() => navigate(toShare)}>Share Achievement</button>
-          <button className="st-btn-secondary mt-3" onClick={() => navigate(toChallenges)}>Find Next Challenge</button>
-          {groupId && (
-            <button className="st-btn-secondary mt-3" onClick={() => navigate(toGroup)}>Back to Group</button>
-          )}
-
-          <section className="mt-4 rounded-2xl border border-primary/20 bg-[#fff4eb] px-4 py-4">
-            <p className="text-[16px] leading-[20px] font-black text-slate-900">Nice work finishing the challenge</p>
-            <p className="mt-2 text-[13px] leading-[19px] text-slate-600">
-              If Tiizi helped you stay consistent, you can support its growth. This is optional.
-            </p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <button className="h-10 rounded-xl bg-primary text-white text-[12px] font-bold" onClick={() => navigate(`/app/donate?trigger=challenge_completion&challengeId=${challengeId}`)}>
-                Support Tiizi
-              </button>
-              <button className="h-10 rounded-xl bg-slate-100 text-slate-700 text-[12px] font-semibold" onClick={() => navigate(toHome)}>Maybe later</button>
-              <button className="h-10 rounded-xl bg-slate-100 text-slate-700 text-[12px] font-semibold" onClick={() => navigate(toHome)}>Skip</button>
-            </div>
-          </section>
-          <button className="st-btn-secondary mt-3 border-primary/30 text-primary" onClick={() => navigate(toHome)}>
-            Go to Home
-          </button>
-        </main>
-      </div>
-
-      <BottomNav active="challenges" />
-    </Screen>
+    <EmptyState
+      icon={<Trophy size={32} className="text-primary" />}
+      title="This challenge is no longer supported"
+      message="This challenge type could not be displayed."
+      action={(
+        <button
+          className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-bold"
+          onClick={() => navigate(toChallenges)}
+        >
+          Back to Challenges
+        </button>
+      )}
+    />
   );
 }
 

@@ -16,8 +16,6 @@ function WorkoutLoggedScreen() {
   const exerciseName = params.get('exerciseName') ?? 'Workout';
   const unit = params.get('unit') ?? '';
   const value = Number(params.get('value') || 0);
-  const points = Number(params.get('points') ?? 0);
-  const metTarget = params.get('metTarget') === 'true';
   const scoringMethod = params.get('scoringMethod') ?? undefined;
 
   const { user } = useAuth();
@@ -76,16 +74,6 @@ function WorkoutLoggedScreen() {
   const requiredDays = resolved.streakTargetDays;
   const daysRemaining = requiredDays > 0 ? Math.max(0, requiredDays - currentStreak) : null;
   const streakComplete = requiredDays > 0 && currentStreak >= requiredDays;
-
-  // legacy: total computed from workouts (kept for v1 challenges)
-  const totalDays = useMemo(() => {
-    if (!challenge) return 15;
-    const start = new Date(challenge.startDate).getTime();
-    const end = new Date(challenge.endDate).getTime();
-    return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
-  }, [challenge]);
-  const legacyTarget = Number(params.get('target') || totalDays);
-  const legacyCompletion = membership?.completionRate ?? 0;
 
   void user;
   void scoringMethod;
@@ -256,37 +244,10 @@ function WorkoutLoggedScreen() {
             </section>
           )}
 
-          {/* Legacy v1 progress */}
-          {!isV2 && (
-            <section className="mt-6 st-card p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-[15px] leading-[19px] tracking-[-0.01em] font-black text-[#1c120d]">{challenge?.name ?? 'Group Challenge'}</p>
-                <span className="rounded-full bg-[#fff3e8] px-3 py-2 text-[13px] leading-[13px] font-black text-primary">Level Up!</span>
-              </div>
-              <div className="mt-3 h-6 rounded-full bg-[#e8edf5] p-[5px]">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${legacyCompletion}%` }} />
-              </div>
-              <div className="mt-4 flex items-end justify-between">
-                <p className="text-[18px] leading-[22px] font-black text-primary">
-                  {membership?.activitiesCompleted ?? 0}
-                  <span className="text-[#a3a6ad]"> / {legacyTarget}{unit ? ` ${unit}` : ''}</span>
-                </p>
-                <div className="text-right">
-                  <p className="text-[12px] leading-[14px] tracking-[0.14em] uppercase font-black text-[#9597a0]">Completion</p>
-                  <p className="mt-1 text-[22px] leading-[22px] font-black text-[#1c120d]">{legacyCompletion}%</p>
-                </div>
-              </div>
-              <p className="mt-2 text-[13px] leading-[17px] text-[#7f746c]">Latest entry: {exerciseName}</p>
-              {value > 0 && <p className="mt-1 text-[12px] leading-[15px] text-[#7f746c]">Current entry: {value}</p>}
-              {metTarget && (
-                <p className="mt-2 text-[12px] leading-[15px] font-semibold text-[#27ae60]">Target met.</p>
-              )}
-              {points === 0 && !metTarget && (
-                <p className="mt-2 text-[12px] leading-[15px] font-semibold text-[#c0392b]">Target not met.</p>
-              )}
-              {points > 0 && !metTarget && (
-                <p className="mt-2 text-[12px] leading-[15px] font-semibold text-[#e67e22]">Partial points earned.</p>
-              )}
+          {/* Unsupported/obsolete challenge record — no v2 engine data to display */}
+          {!isV2 && challenge && (
+            <section className="mt-6 st-card p-4 text-center">
+              <p className="text-[14px] leading-[20px] text-[#7f746c]">This challenge is no longer supported.</p>
             </section>
           )}
 

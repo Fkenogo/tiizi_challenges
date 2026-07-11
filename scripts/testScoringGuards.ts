@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import {
   SCORING_CONSTANTS,
   computeActivityScore,
   computeSessionScore,
 } from '../src/services/scoringConfig';
-import { LegacyEngine, StreakEngine, CompetitiveEngine, CollectiveEngine, selectEngine } from '../src/services/challengeEngine';
+import { StreakEngine, CompetitiveEngine, CollectiveEngine, selectEngine } from '../src/services/challengeEngine';
 import { computeGroupTransition } from '../src/utils/collectiveGroupTransition';
 import { buildChallengeProgress, safeNum } from '../src/features/Challenges/challengeProgressDisplay';
 
@@ -404,30 +404,14 @@ assert.doesNotMatch(
   'WorkoutLoggedScreen must not fall back to 10 when points is falsy',
 );
 
-// 0-point explanation copy: P6D uses "Target not met." (not "Below minimum effort")
-assert.match(
-  workoutLoggedScreen,
-  /Target not met\./,
-  'WorkoutLoggedScreen must show "Target not met." when 0 points earned (P6D)',
-);
+// (Phase 5 legacy removal) The legacy points-explanation copy ("Target not met.",
+// "Target met.", "Partial points earned.") lived only in WorkoutLoggedScreen's v1
+// fallback UI, which was removed — v2 recap screens use engine-specific progress
+// displays (team/competitive/streak progress), not a points-explanation string.
 assert.doesNotMatch(
   workoutLoggedScreen,
   /Below minimum effort for points/,
   'P6D: "Below minimum effort" copy must be gone — replaced by proportional scoring',
-);
-
-// Target-met explanation copy must exist
-assert.match(
-  workoutLoggedScreen,
-  /Target met\./,
-  'WorkoutLoggedScreen must show "Target met." when target was reached',
-);
-
-// Partial-points explanation copy must exist
-assert.match(
-  workoutLoggedScreen,
-  /Partial points earned\./,
-  'WorkoutLoggedScreen must show "Partial points earned." for partial scoring',
 );
 
 // Leaderboard must not use "XP" label
@@ -443,12 +427,9 @@ assert.doesNotMatch(
   'GroupLeaderboardScreen must not use "XP" label — use "pts"',
 );
 
-// ChallengeDetail must include scoring explanation
-assert.match(
-  challengeDetailScreen,
-  /How Points Work/,
-  'ChallengeDetailScreen must include a "How Points Work" section',
-);
+// (Phase 5 legacy removal) "How Points Work" was the legacy v1 scoring-explanation
+// section in ChallengeDetailScreen, removed with the rest of the v1 UI branch — v2
+// screens explain progress per challenge type (team/competitive/streak) instead.
 
 // Leaderboard helper text must be present
 assert.match(
@@ -624,19 +605,9 @@ assert.match(
   'WorkoutLoggedScreen must read scoringMethod from URL params',
 );
 
-// P6D: 0-point with metTarget=false shows "Target not met." (no streak_binary branch needed)
-assert.match(
-  workoutLoggedSrc,
-  /Target not met\./,
-  'WorkoutLoggedScreen must show "Target not met." for 0-point non-met logs',
-);
-
-// P6D: "Partial points earned." must appear for partial logs
-assert.match(
-  workoutLoggedSrc,
-  /Partial points earned\./,
-  'WorkoutLoggedScreen must show "Partial points earned." for partial logs',
-);
+// (Phase 5 legacy removal) "Target not met."/"Partial points earned." were legacy v1
+// fallback copy, removed along with the rest of the v1 UI branch — see the equivalent
+// note earlier in this file.
 
 // P6D: streak_binary branch must be gone — scoring is now purely proportional_capped
 assert.doesNotMatch(
@@ -1469,11 +1440,8 @@ assert.ok(
     /streak_binary/,
     'P6D: WorkoutLoggedScreen must not reference streak_binary',
   );
-  assert.match(
-    workoutLoggedSrc,
-    /Partial points earned\./,
-    'P6D: WorkoutLoggedScreen must show "Partial points earned." for partial logs',
-  );
+  // (Phase 5 legacy removal) "Partial points earned." was legacy v1 fallback copy,
+  // removed along with the rest of the v1 UI branch.
 }
 
 // 23F: Both scoringConfig copies are aligned on proportional_capped
@@ -1576,7 +1544,6 @@ assert.ok(
 {
   const engineFiles = [
     'src/services/challengeEngine/types.ts',
-    'src/services/challengeEngine/legacyEngine.ts',
     'src/services/challengeEngine/streakEngine.ts',
     'src/services/challengeEngine/competitiveEngine.ts',
     'src/services/challengeEngine/collectiveEngine.ts',
@@ -1586,20 +1553,30 @@ assert.ok(
     const src = readFileSync(file, 'utf8');
     assert.ok(src.length > 0, `Phase 11B: ${file} must exist and be non-empty`);
   }
+  assert.ok(
+    !existsSync('src/services/challengeEngine/legacyEngine.ts'),
+    'Phase 5: legacyEngine.ts must be removed — legacy v1 challenges are no longer supported',
+  );
 }
 
-// 25B: selectEngine must route v1 (undefined engineVersion) to LegacyEngine
+// 25B (updated Phase 5 legacy removal): selectEngine must throw for non-v2 engineVersion,
+// never silently fall back to legacy behavior.
 {
   const indexSrc = readFileSync('src/services/challengeEngine/index.ts', 'utf8');
   assert.match(
     indexSrc,
     /engineVersion\s*!==\s*'v2'/,
-    'Phase 11B: selectEngine must route non-v2 engineVersion to LegacyEngine',
+    'Phase 5: selectEngine must check engineVersion !== \'v2\'',
   );
   assert.match(
     indexSrc,
+    /engineVersion\s*!==\s*'v2'\)\s*{\s*throw/,
+    'Phase 5: selectEngine must throw (not silently fall back) for non-v2 engineVersion',
+  );
+  assert.doesNotMatch(
+    indexSrc,
     /LegacyEngine/,
-    'Phase 11B: selectEngine must reference LegacyEngine',
+    'Phase 5: selectEngine must not reference LegacyEngine — it was removed',
   );
 }
 
@@ -1675,21 +1652,6 @@ assert.ok(
     wellnessSrc,
     /selectEngine/,
     'Phase 11C: wellnessLogService must import and call selectEngine (wired in Phase 11C)',
-  );
-}
-
-// 25H: LegacyEngine must implement the ChallengeEngine interface (structural check)
-{
-  const legacySrc = readFileSync('src/services/challengeEngine/legacyEngine.ts', 'utf8');
-  assert.match(
-    legacySrc,
-    /implements ChallengeEngine/,
-    'Phase 11B: LegacyEngine must declare "implements ChallengeEngine"',
-  );
-  assert.match(
-    legacySrc,
-    /computeUpdate/,
-    'Phase 11B: LegacyEngine must define computeUpdate method',
   );
 }
 
@@ -1820,91 +1782,17 @@ assert.ok(
   assert.doesNotMatch(collectiveSrc, /Engine not wired yet/, 'Phase 11F: CollectiveEngine must NOT throw "not wired yet" (wired in Phase 11F)');
 }
 
-// 26.9: LegacyEngine produces byte-for-byte identical outputs to previous inline implementation
+// 26.9 (updated Phase 5 legacy removal): selectEngine throws for non-v2 challenges —
+// no LegacyEngine instance to construct any more.
 {
-  const engine = new LegacyEngine();
-
-  const baseContext = {
-    challengeId: 'test-challenge',
-    challengeType: 'collective' as const,
-    engineVersion: 'v1' as const,
-    targetType: 'daily' as const,
-    durationDays: 30,
-    activities: [],
-    startDate: '2026-06-01',
-    endDate: '2026-06-30',
-  };
-
-  // Fixture A: 5 of 30 logs complete, 75 pts earned
-  {
-    const membership = { userId: 'u1', challengeId: 'c1', status: 'active' as const, activitiesCompleted: 5, totalActivities: 30, completionRate: 17, totalPoints: 375 };
-    const logEvent = { userId: 'u1', challengeId: 'c1', activityId: 'ex1', value: 40, unit: 'reps', date: '2026-06-06', loggedAt: new Date(), pointsEarned: 75 };
-
-    // Previous inline calculation:
-    const prevNextCompleted = Math.min((membership.activitiesCompleted ?? 0) + 1, membership.totalActivities);
-    const prevNextRate = Math.min(100, Math.round((prevNextCompleted / membership.totalActivities) * 100));
-
-    const result = engine.computeUpdate(baseContext, membership, logEvent);
-
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, prevNextCompleted,
-      'Phase 11C 26.9A: LegacyEngine activitiesCompleted matches inline calculation');
-    assert.strictEqual(result.membershipUpdate.completionRate, prevNextRate,
-      'Phase 11C 26.9A: LegacyEngine completionRate matches inline calculation');
-    assert.strictEqual(result.isCompleted, prevNextRate >= 100,
-      'Phase 11C 26.9A: LegacyEngine isCompleted matches inline calculation');
-  }
-
-  // Fixture B: final log — 29 of 30 complete, triggers completion
-  {
-    const membership = { userId: 'u1', challengeId: 'c1', status: 'active' as const, activitiesCompleted: 29, totalActivities: 30, completionRate: 97, totalPoints: 2900 };
-    const logEvent = { userId: 'u1', challengeId: 'c1', activityId: 'ex1', value: 50, unit: 'reps', date: '2026-06-30', loggedAt: new Date(), pointsEarned: 100 };
-
-    const prevNextCompleted = Math.min((membership.activitiesCompleted ?? 0) + 1, membership.totalActivities);
-    const prevNextRate = Math.min(100, Math.round((prevNextCompleted / membership.totalActivities) * 100));
-
-    const result = engine.computeUpdate(baseContext, membership, logEvent);
-
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, prevNextCompleted,
-      'Phase 11C 26.9B: LegacyEngine final log — activitiesCompleted matches');
-    assert.strictEqual(result.membershipUpdate.completionRate, prevNextRate,
-      'Phase 11C 26.9B: LegacyEngine final log — completionRate = 100');
-    assert.strictEqual(result.isCompleted, true,
-      'Phase 11C 26.9B: LegacyEngine final log — isCompleted = true');
-    assert.strictEqual(result.membershipUpdate.status, 'completed',
-      'Phase 11C 26.9B: LegacyEngine final log — status = completed');
-  }
-
-  // Fixture C: already-at-cap (activitiesCompleted === totalActivities) — no overflow
-  {
-    const membership = { userId: 'u1', challengeId: 'c1', status: 'active' as const, activitiesCompleted: 30, totalActivities: 30, completionRate: 100, totalPoints: 3000 };
-    const logEvent = { userId: 'u1', challengeId: 'c1', activityId: 'ex1', value: 50, unit: 'reps', date: '2026-07-01', loggedAt: new Date(), pointsEarned: 100 };
-
-    const prevNextCompleted = Math.min((membership.activitiesCompleted ?? 0) + 1, membership.totalActivities);
-    const result = engine.computeUpdate(baseContext, membership, logEvent);
-
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, prevNextCompleted,
-      'Phase 11C 26.9C: LegacyEngine at-cap — activitiesCompleted does not overflow');
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, 30,
-      'Phase 11C 26.9C: LegacyEngine at-cap — activitiesCompleted capped at totalActivities');
-  }
-
-  // Fixture D: single-activity 1-day challenge (edge case: totalActivities = 1)
-  {
-    const membership = { userId: 'u1', challengeId: 'c1', status: 'active' as const, activitiesCompleted: 0, totalActivities: 1, completionRate: 0, totalPoints: 0 };
-    const logEvent = { userId: 'u1', challengeId: 'c1', activityId: 'ex1', value: 100, unit: 'reps', date: '2026-06-01', loggedAt: new Date(), pointsEarned: 100 };
-
-    const prevNextCompleted = Math.min((membership.activitiesCompleted ?? 0) + 1, membership.totalActivities);
-    const prevNextRate = Math.min(100, Math.round((prevNextCompleted / membership.totalActivities) * 100));
-
-    const result = engine.computeUpdate(baseContext, membership, logEvent);
-
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, 1,
-      'Phase 11C 26.9D: LegacyEngine 1-day challenge — activitiesCompleted = 1');
-    assert.strictEqual(result.membershipUpdate.completionRate, prevNextRate,
-      'Phase 11C 26.9D: LegacyEngine 1-day challenge — completionRate = 100');
-    assert.strictEqual(result.isCompleted, true,
-      'Phase 11C 26.9D: LegacyEngine 1-day challenge — isCompleted = true on first log');
-  }
+  assert.throws(
+    () => selectEngine({ engineVersion: undefined, challengeType: 'collective' }),
+    'Phase 5: selectEngine must throw for missing engineVersion, not silently compute legacy scoring',
+  );
+  assert.throws(
+    () => selectEngine({ engineVersion: 'v1', challengeType: 'collective' }),
+    'Phase 5: selectEngine must throw for engineVersion "v1"',
+  );
 }
 
 // ── Section 27: Phase 11D — StreakEngine v2 fixture tests ────────────────────
@@ -2045,20 +1933,13 @@ assert.ok(
       'Phase 11D 27.7b: new streak (6) > longestStreak (5) → longestStreak updates to 6');
   }
 
-  // 27.8: Legacy challenge unchanged — v1 streak uses LegacyEngine (no streak fields)
+  // 27.8 (updated Phase 5 legacy removal): v1 streak challenge is rejected, not routed
+  // to a legacy engine.
   {
-    const legacyEngine = selectEngine({ engineVersion: undefined, challengeType: 'streak' });
-    const legacyCtx = { ...s27ctx, engineVersion: 'v1' as const };
-    const mem = { ...s27baseMem, activitiesCompleted: 5, totalActivities: 7 };
-    const result = legacyEngine.computeUpdate(legacyCtx, mem, s27baseLog);
-    assert.strictEqual(result.membershipUpdate.currentStreak, undefined,
-      'Phase 11D 27.8: v1 streak challenge → LegacyEngine used, no currentStreak field');
-    assert.strictEqual(result.membershipUpdate.lastLogDate, undefined,
-      'Phase 11D 27.8: v1 streak challenge → LegacyEngine used, no lastLogDate field');
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, 6,
-      'Phase 11D 27.8: v1 streak → LegacyEngine activitiesCompleted = 6 (5+1)');
-    assert.strictEqual(result.isCompleted, false,
-      'Phase 11D 27.8: v1 streak 6/7 → not completed');
+    assert.throws(
+      () => selectEngine({ engineVersion: undefined, challengeType: 'streak' }),
+      'Phase 5 27.8: v1 (undefined engineVersion) streak challenge must be rejected by selectEngine',
+    );
   }
 
   // 27.9: Competitive now active — Phase 11E wired CompetitiveEngine (updated from Phase 11D)
@@ -2227,17 +2108,13 @@ assert.ok(
       'Phase 11E 28.5: cumulativeLoggedValue reflects actual total (uncapped)');
   }
 
-  // 28.6: Legacy routing — v1 competitive uses LegacyEngine (no cumulative fields)
+  // 28.6 (updated Phase 5 legacy removal): v1 competitive challenge is rejected, not
+  // routed to a legacy engine.
   {
-    const legacyEngine = selectEngine({ engineVersion: undefined, challengeType: 'competitive' });
-    const legacyCtx = { ...s28ctx, engineVersion: 'v1' as const };
-    const result = legacyEngine.computeUpdate(legacyCtx, s28baseMem, s28baseLog);
-    assert.strictEqual(result.membershipUpdate.cumulativeValues, undefined,
-      'Phase 11E 28.6: v1 → LegacyEngine, no cumulativeValues field');
-    assert.strictEqual(result.membershipUpdate.cumulativeLoggedValue, undefined,
-      'Phase 11E 28.6: v1 → LegacyEngine, no cumulativeLoggedValue field');
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, 1,
-      'Phase 11E 28.6: v1 → LegacyEngine activitiesCompleted increments normally');
+    assert.throws(
+      () => selectEngine({ engineVersion: undefined, challengeType: 'competitive' }),
+      'Phase 5 28.6: v1 (undefined engineVersion) competitive challenge must be rejected by selectEngine',
+    );
   }
 
   // 28.7: Streak routing — v2 + streak → StreakEngine (not CompetitiveEngine)
@@ -2380,17 +2257,13 @@ assert.ok(
       'Phase 13B-1A (updated 11F 29.6): collective writes cumulativeLoggedValue to enable per-member leaderboard ranking');
   }
 
-  // 29.7: Legacy routing — v1 collective uses LegacyEngine (no challengeUpdate)
+  // 29.7 (updated Phase 5 legacy removal): v1 collective challenge is rejected, not
+  // routed to a legacy engine.
   {
-    const engine = selectEngine({ engineVersion: undefined, challengeType: 'collective' });
-    const result = engine.computeUpdate(
-      { ...s29ctx, engineVersion: 'v1' as const },
-      s29baseMem,
-      s29baseLog,
-      { groupCurrentTotal: 0 },
+    assert.throws(
+      () => selectEngine({ engineVersion: undefined, challengeType: 'collective' }),
+      'Phase 5 29.7: v1 (undefined engineVersion) collective challenge must be rejected by selectEngine',
     );
-    assert.strictEqual(result.challengeUpdate, undefined,
-      'Phase 11F 29.7: v1 → LegacyEngine, no challengeUpdate (no group pool update)');
   }
 
   // 29.8: Streak routing — v2 + streak → StreakEngine (not CollectiveEngine)
@@ -2465,17 +2338,13 @@ assert.ok(
   // ── 30.1: All engines accept challengeSnapshot (4th arg) without error ───────
   // Services always pass challengeSnapshot now; non-collective engines must ignore it.
 
-  // 30.1a: LegacyEngine (via selectEngine interface) ignores challengeSnapshot
+  // 30.1a (updated Phase 5 legacy removal): v1 (undefined engineVersion) is rejected by
+  // selectEngine — no engine is ever constructed for it.
   {
-    // selectEngine returns ChallengeEngine interface which declares the optional 4th param.
-    // This verifies the service's pattern of always passing challengeSnapshot works for v1 challenges.
-    const engine = selectEngine({ engineVersion: undefined, challengeType: 'collective' });
-    const ctx = { ...s30ctx, engineVersion: 'v1' as const };
-    const result = engine.computeUpdate(ctx, s30baseMem, s30baseLog, { groupCurrentTotal: 99999 });
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, 1,
-      'Phase 11G 30.1a: LegacyEngine accepts 4th arg and ignores it — activitiesCompleted = 1');
-    assert.strictEqual(result.challengeUpdate, undefined,
-      'Phase 11G 30.1a: LegacyEngine never returns challengeUpdate');
+    assert.throws(
+      () => selectEngine({ engineVersion: undefined, challengeType: 'collective' }),
+      'Phase 5 30.1a: v1 (undefined engineVersion) must be rejected by selectEngine',
+    );
   }
 
   // 30.1b: StreakEngine (via selectEngine interface) ignores challengeSnapshot
@@ -2573,21 +2442,6 @@ assert.ok(
       'Phase 11G 30.5: status absent from membershipUpdate when not completed (no spurious status writes)');
     assert.strictEqual(result.membershipUpdate.completedAt, undefined,
       'Phase 11G 30.5: completedAt absent from membershipUpdate when not completed');
-  }
-
-  // ── 30.6: LegacyEngine — engineVersion field NOT written (v1 field hygiene) ──
-  {
-    const engine = new LegacyEngine();
-    const ctx = { ...s30ctx, engineVersion: 'v1' as const };
-    const result = engine.computeUpdate(ctx, s30baseMem, s30baseLog);
-    assert.strictEqual(result.membershipUpdate.engineVersion, undefined,
-      'Phase 11G 30.6: LegacyEngine does not write engineVersion (v1 challenges stay clean)');
-    assert.strictEqual(result.membershipUpdate.currentStreak, undefined,
-      'Phase 11G 30.6: LegacyEngine does not write currentStreak');
-    assert.strictEqual(result.membershipUpdate.cumulativeValues, undefined,
-      'Phase 11G 30.6: LegacyEngine does not write cumulativeValues');
-    assert.strictEqual(result.membershipUpdate.cumulativeLoggedValue, undefined,
-      'Phase 11G 30.6: LegacyEngine does not write cumulativeLoggedValue');
   }
 
   // ── 30.7: Competitive — multiple logs on same activity accumulate correctly ───
@@ -2740,9 +2594,12 @@ assert.ok(
 }
 
 {
-  // 12A-4: Legacy engine (v1) ignores requiredConsecutiveDays — engine routing unaffected.
-  const engine = selectEngine({ engineVersion: undefined, challengeType: 'collective' });
-  assert.ok(engine instanceof LegacyEngine, 'Phase 12A-4: v1 challenge still routes to LegacyEngine regardless of streak fields');
+  // 12A-4 (updated Phase 5 legacy removal): v1 challenge is rejected by selectEngine,
+  // regardless of streak fields present on the input.
+  assert.throws(
+    () => selectEngine({ engineVersion: undefined, challengeType: 'collective' }),
+    'Phase 5 12A-4: v1 challenge must be rejected by selectEngine',
+  );
 }
 
 {
@@ -3094,11 +2951,10 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     { totalPoints: 700, completionRate: 60, currentStreak: 1, longestStreak: 5, cumulativeLoggedValue: 100 },
   ];
 
-  // Legacy / v1: sort by totalPoints DESC → [700, 500, 300]
+  // (Phase 5 legacy removal) v1/non-v2 rows are returned unsorted — no legacy
+  // totalPoints ranking is computed, since v1 challenges are never rendered.
   const legacySorted = sortFn(members, 'v1', 'collective');
-  assert.equal(legacySorted[0].totalPoints, 700, '13B-1C Legacy: first place must have highest totalPoints (700)');
-  assert.equal(legacySorted[1].totalPoints, 500, '13B-1C Legacy: second place must have totalPoints 500');
-  assert.equal(legacySorted[2].totalPoints, 300, '13B-1C Legacy: third place must have totalPoints 300');
+  assert.deepStrictEqual(legacySorted, members, '13B-1C Legacy: v1 rows returned unsorted (input order preserved)');
 
   // Competitive: sort by completionRate DESC → [95, 80, 60]
   const compSorted = sortFn(members, 'v2', 'competitive');
@@ -4991,7 +4847,8 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     assert.strictEqual(sorted[2].cumulativeLoggedValue, 50, '18I-2C-S6b: v2 collective sort — lowest cumulativeLoggedValue last');
   }
 
-  // 18I-2C-S7: behavioral — legacy (v1 or unknown type) sorts by totalPoints DESC
+  // 18I-2C-S7 (updated Phase 5 legacy removal): legacy (v1 or unknown type) rows are
+  // returned unsorted — no legacy totalPoints ranking is computed.
   {
     const { sortLeaderboardRows: sort } = await import('../src/utils/leaderboardSort.js');
     const rows = [
@@ -4999,7 +4856,7 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
       { totalPoints: 800, completionRate: 0.9, currentStreak: 1, longestStreak: 1, cumulativeLoggedValue: 0 },
     ];
     const sortedLegacy = sort(rows, 'v1', 'competitive');
-    assert.strictEqual(sortedLegacy[0].totalPoints, 800, '18I-2C-S7: legacy (v1) sort — totalPoints DESC regardless of challengeType');
+    assert.deepStrictEqual(sortedLegacy, rows, '18I-2C-S7: legacy (v1) rows returned unsorted (input order preserved)');
   }
 }
 

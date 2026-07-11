@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
+import { EmptyState } from '../../components/Mobile';
 import { useChallenge } from '../../hooks/useChallenges';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
@@ -140,6 +141,24 @@ function ChallengeLeaderboardScreen() {
   const toChallenges = `/app/challenges${groupId ? `?groupId=${groupId}` : ''}`;
 
   if (!challengeId) return <Navigate to="/app/challenges" replace />;
+
+  if (challenge && !isV2) {
+    return (
+      <EmptyState
+        icon={<Trophy size={32} className="text-primary" />}
+        title="This challenge is no longer supported"
+        message="This challenge was created on an older version of Tiizi and is no longer available."
+        action={(
+          <button
+            className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-bold"
+            onClick={() => navigate(toChallenges)}
+          >
+            Back to Challenges
+          </button>
+        )}
+      />
+    );
+  }
 
   // Engine-specific header stat cards (my stats)
   const renderMyStatCard = () => {

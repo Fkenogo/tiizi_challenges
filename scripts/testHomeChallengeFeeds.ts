@@ -94,10 +94,12 @@ assert(
   'ChallengeDetailScreen must show ended message instead of Join for expired non-members',
 );
 
-// Guard: activity target display includes frequency label
+// Guard: activity target display includes a cadence label (v2 uses targetType —
+// 'daily'/'weekly'/'monthly'/'cumulative' — via targetLabel(); the legacy
+// 'frequency' field/freqLabel variable was removed in Phase 5).
 assert(
-  challengeDetail.includes('freqLabel') || challengeDetail.includes('frequency'),
-  'ChallengeDetailScreen activity list must render frequency label where available',
+  challengeDetail.includes('targetLabel') && challengeDetail.includes('targetType'),
+  'ChallengeDetailScreen activity list must render a cadence label via targetLabel()/targetType',
 );
 
 // ── Phase 18I-6I: My Challenges relevance sort ────────────────────────────

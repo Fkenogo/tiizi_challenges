@@ -10,10 +10,14 @@ export interface SortableLeaderboardRow {
  * Engine-specific leaderboard sort — identical rules used by both
  * ChallengeLeaderboardScreen and the mini-leaderboard in ChallengeDetailScreen.
  *
- * Legacy:      totalPoints DESC
+ * v2 only:
  * Competitive: completionRate DESC → totalPoints DESC
  * Streak:      currentStreak DESC → longestStreak DESC → totalPoints DESC
  * Collective:  cumulativeLoggedValue DESC
+ *
+ * Non-v2/unsupported challenges are never rendered (see the "not supported"
+ * states in ChallengeDetailScreen/ChallengeLeaderboardScreen) — rows are
+ * returned unsorted rather than computing a legacy points-based ranking.
  */
 export function sortLeaderboardRows<T extends SortableLeaderboardRow>(
   rows: T[],
@@ -41,5 +45,5 @@ export function sortLeaderboardRows<T extends SortableLeaderboardRow>(
           : b.totalPoints - a.totalPoints,
     );
   }
-  return [...rows].sort((a, b) => b.totalPoints - a.totalPoints);
+  return rows;
 }

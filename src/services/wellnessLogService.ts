@@ -121,6 +121,10 @@ class WellnessLogService {
         })
       : {};
 
+    if (challengeData.engineVersion !== 'v2') {
+      throw new Error('This challenge is no longer supported and cannot accept new activity logs.');
+    }
+
     const activityCount = Math.max(1, challengeData.activities?.length ?? 1);
     const totalActivities = computeRequiredLogs(challengeData.durationDays, activityCount);
 
@@ -170,7 +174,7 @@ class WellnessLogService {
     const context: ChallengeContext = {
       challengeId: input.challengeId,
       challengeType: (challengeData.challengeType ?? 'collective') as 'collective' | 'competitive' | 'streak',
-      engineVersion: challengeData.engineVersion === 'v2' ? 'v2' : 'v1',
+      engineVersion: 'v2',
       targetType: activityConfig?.targetType ?? 'daily',
       durationDays: challengeData.durationDays ?? 1,
       activities: (challengeData.activities ?? []).map((a) => ({

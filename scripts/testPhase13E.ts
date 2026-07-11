@@ -1,11 +1,11 @@
 /**
  * Phase 13E — Production Verification Suite
  *
- * End-to-end deterministic simulation of all four challenge engines.
+ * End-to-end deterministic simulation of the three v2 challenge engines.
  * No Firestore required — every import here is a pure function.
  *
  * Sections:
- *   1.  Legacy engine
+ *   1.  Legacy engine removal (Phase 5) — confirms v1 is rejected, not simulated
  *   2.  Streak engine
  *   3.  Competitive engine
  *   4.  Collective engine
@@ -19,7 +19,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { LegacyEngine } from '../src/services/challengeEngine/legacyEngine.js';
+import { selectEngine } from '../src/services/challengeEngine/index.js';
 import { StreakEngine } from '../src/services/challengeEngine/streakEngine.js';
 import { CompetitiveEngine } from '../src/services/challengeEngine/competitiveEngine.js';
 import { CollectiveEngine } from '../src/services/challengeEngine/collectiveEngine.js';
@@ -101,46 +101,39 @@ function addDays(dateStr: string, n: number): string {
   return d.toISOString().split('T')[0];
 }
 
-// ─── 1. Legacy Engine ─────────────────────────────────────────────────────────
+// ─── 1. Legacy Engine Removal (Phase 5) ──────────────────────────────────────
 
-section('1. Legacy Engine');
+section('1. Legacy Engine Removal');
 
-const legacy = new LegacyEngine();
-const legacyCtx = context({ challengeType: 'collective', engineVersion: 'v1', durationDays: 5 });
-
-// First log
-const leg1 = legacy.computeUpdate(legacyCtx, membership({ totalActivities: 5 }), logEvent('2024-01-01', 10, 20));
-check('Legacy: first log increments activitiesCompleted to 1', leg1.membershipUpdate.activitiesCompleted === 1);
-check('Legacy: first log adds points', leg1.membershipUpdate.totalPoints === 20);
-check('Legacy: first log sets completionRate=20 (1/5*100)', leg1.membershipUpdate.completionRate === 20);
-check('Legacy: first log isCompleted=false', !leg1.isCompleted);
-check('Legacy: no challengeUpdate (not collective v2)', leg1.challengeUpdate === undefined);
-
-// Complete on final log
-let legState = membership({ totalActivities: 5 });
-for (let i = 0; i < 4; i++) {
-  const r = legacy.computeUpdate(legacyCtx, legState, logEvent(`2024-01-0${i + 1}`, 10, 10));
-  legState = { ...legState, ...r.membershipUpdate };
+// The v1 legacy engine was removed in Phase 5 (pre-beta legacy cleanup). Only
+// v2 challenges are supported; selectEngine must reject anything else rather
+// than silently falling back to legacy scoring.
+let legacyRejected = false;
+try {
+  selectEngine({ engineVersion: undefined, challengeType: 'collective' });
+} catch {
+  legacyRejected = true;
 }
-const legFinal = legacy.computeUpdate(legacyCtx, legState, logEvent('2024-01-05', 10, 10));
-check('Legacy: 5th log completes (isCompleted=true)', legFinal.isCompleted);
-check('Legacy: 5th log sets completionRate=100', legFinal.membershipUpdate.completionRate === 100);
-check('Legacy: 5th log sets status=completed', legFinal.membershipUpdate.status === 'completed');
-check('Legacy: completionReason is set', typeof legFinal.completionReason === 'string');
+check('selectEngine rejects undefined engineVersion (no legacy fallback)', legacyRejected);
 
-// Beyond completion — extra log should not overflow
-const legBeyond = legacy.computeUpdate(legacyCtx, { ...legState, ...legFinal.membershipUpdate }, logEvent('2024-01-06', 10, 10));
-check('Legacy: log beyond totalActivities does not exceed cap', legBeyond.membershipUpdate.activitiesCompleted === 5);
-check('Legacy: log beyond still has completionRate=100', legBeyond.membershipUpdate.completionRate === 100);
+let legacyV1Rejected = false;
+try {
+  selectEngine({ engineVersion: 'v1', challengeType: 'collective' });
+} catch {
+  legacyV1Rejected = true;
+}
+check('selectEngine rejects engineVersion "v1" (no legacy fallback)', legacyV1Rejected);
 
-// Leaderboard sort — legacy sorts by totalPoints DESC
+// Leaderboard sort — non-v2/unmatched combos return rows unsorted, not
+// sorted by a legacy totalPoints ranking.
 const legRows = [
   { totalPoints: 100, completionRate: 50, currentStreak: 0, longestStreak: 0, cumulativeLoggedValue: 0 },
   { totalPoints: 300, completionRate: 20, currentStreak: 0, longestStreak: 0, cumulativeLoggedValue: 0 },
   { totalPoints: 200, completionRate: 80, currentStreak: 0, longestStreak: 0, cumulativeLoggedValue: 0 },
 ];
 const legSorted = sortLeaderboardRows(legRows, 'v1', 'collective');
-check('Legacy leaderboard: sorted by totalPoints DESC', legSorted[0].totalPoints === 300 && legSorted[2].totalPoints === 100);
+check('Leaderboard sort: non-v2 rows returned unsorted (no legacy points ranking)',
+  legSorted[0].totalPoints === 100 && legSorted[1].totalPoints === 300 && legSorted[2].totalPoints === 200);
 
 // ─── 2. Streak Engine ─────────────────────────────────────────────────────────
 
@@ -643,10 +636,11 @@ check('Streak sim 30 days miss+no-reset: longestStreak=29 (higher than reset=tru
 section('8. Edge Cases');
 
 // Zero-value activity log
-const zeroLog = legacy.computeUpdate(
-  legacyCtx,
+const zeroLog = coll.computeUpdate(
+  collCtx,
   membership({ totalActivities: 5 }),
   { ...logEvent('2024-01-01', 0, 0) },
+  { groupCurrentTotal: 0 },
 );
 check('Edge: zero-value log still counts as an activity (activitiesCompleted++)', zeroLog.membershipUpdate.activitiesCompleted === 1);
 check('Edge: zero-value log adds zero points', zeroLog.membershipUpdate.totalPoints === 0);
@@ -689,18 +683,20 @@ check('Edge: same-day log is idempotent (streak stays at 3)', streakGap.membersh
 
 // Inactive membership — engine doesn't check status (service layer guards this)
 // Verify engine produces valid output regardless
-const inactiveResult = legacy.computeUpdate(
-  legacyCtx,
+const inactiveResult = coll.computeUpdate(
+  collCtx,
   { ...membership(), status: 'abandoned' },
   logEvent('2024-01-01'),
+  { groupCurrentTotal: 0 },
 );
 check('Edge: engine produces valid output for abandoned membership (service guards entry)', inactiveResult.membershipUpdate.activitiesCompleted === 1);
 
 // Completed membership — extra log beyond completion
-const completedResult = legacy.computeUpdate(
-  legacyCtx,
+const completedResult = coll.computeUpdate(
+  collCtx,
   { ...membership({ totalActivities: 1 }), activitiesCompleted: 1, completionRate: 100, status: 'completed' },
   logEvent('2024-01-02'),
+  { groupCurrentTotal: 0 },
 );
 check('Edge: extra log on completed membership caps activitiesCompleted at totalActivities', completedResult.membershipUpdate.activitiesCompleted <= 1);
 

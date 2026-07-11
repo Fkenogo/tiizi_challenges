@@ -23,6 +23,7 @@
     "audit:smoke": "tsx scripts/auditSmoke.ts",
     "audit:data-flow": "node scripts/auditDataFlow.cjs",
     "audit:secrets": "node scripts/scanSecrets.mjs",
+    "audit:legacy-challenges": "tsx scripts/auditLegacyV1Challenges.ts",
     "cleanup:seed-group-memberships": "tsx scripts/cleanupSeedGroupMemberships.ts",
     "cleanup:seed-group-memberships:apply": "tsx scripts/cleanupSeedGroupMemberships.ts --apply",
     "reset:all-data": "tsx scripts/resetAllData.ts",

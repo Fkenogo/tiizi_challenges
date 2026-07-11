@@ -1,14 +1,11 @@
 /**
  * Challenge Engine — Entry Point
  *
- * selectEngine() routes to the correct engine based on challenge.engineVersion
- * and challenge.challengeType. All v1 challenges (engineVersion undefined or
- * not 'v2') use LegacyEngine.
- *
- * Phase 11C: wired into workoutService + wellnessLogService (LegacyEngine for all v1).
- * Phase 11D: StreakEngine active for v2 + streak challenges.
- * Phase 11E: CompetitiveEngine active for v2 + competitive challenges.
- * Phase 11F: CollectiveEngine active for v2 + collective challenges.
+ * selectEngine() routes to the correct engine based on challenge.challengeType.
+ * Only engineVersion === 'v2' challenges are supported — the legacy v1 engine
+ * was removed in Phase 5 (pre-beta legacy cleanup). Callers must check
+ * challenge.engineVersion === 'v2' before invoking selectEngine(); it throws
+ * for anything else rather than silently falling back to legacy behavior.
  *
  * Usage:
  *   const engine = selectEngine(challengeDoc);
@@ -19,7 +16,6 @@
  */
 
 import type { ChallengeEngine } from './types';
-import { LegacyEngine } from './legacyEngine';
 import { StreakEngine } from './streakEngine';
 import { CompetitiveEngine } from './competitiveEngine';
 import { CollectiveEngine } from './collectiveEngine';
@@ -34,15 +30,17 @@ interface EngineSelector {
  * Select the appropriate engine for a challenge.
  *
  * Decision table:
- *   engineVersion !== 'v2'          → LegacyEngine  (all existing challenges)
- *   v2 + challengeType === 'streak'      → StreakEngine       (Phase 11D — active)
- *   v2 + challengeType === 'competitive' → CompetitiveEngine  (Phase 11E — active)
- *   v2 + challengeType === 'collective'  → CollectiveEngine   (Phase 11F — active)
- *   v2 + unknown type                    → throws loud error (no silent fallback)
+ *   challengeType === 'streak'      → StreakEngine
+ *   challengeType === 'competitive' → CompetitiveEngine
+ *   challengeType === 'collective'  → CollectiveEngine
+ *   engineVersion !== 'v2', or unknown challengeType → throws loud error (no silent fallback)
  */
 export function selectEngine(challenge: EngineSelector): ChallengeEngine {
   if (challenge.engineVersion !== 'v2') {
-    return new LegacyEngine();
+    throw new Error(
+      'selectEngine: this challenge is not on the v2 engine and is no longer supported. ' +
+      'Legacy (v1) challenges cannot be logged against.',
+    );
   }
 
   switch (challenge.challengeType) {
@@ -55,13 +53,12 @@ export function selectEngine(challenge: EngineSelector): ChallengeEngine {
     default:
       throw new Error(
         `selectEngine: unknown v2 challengeType "${challenge.challengeType}". ` +
-        'Set engineVersion to v1 or use a supported type (streak, competitive, collective).',
+        'Use a supported type (streak, competitive, collective).',
       );
   }
 }
 
 export type { ChallengeEngine, ChallengeContext, MembershipSnapshot, LogEvent, EngineResult, EngineVersion, ChallengeType, TargetType } from './types';
-export { LegacyEngine } from './legacyEngine';
 export { StreakEngine } from './streakEngine';
 export { CompetitiveEngine } from './competitiveEngine';
 export { CollectiveEngine } from './collectiveEngine';

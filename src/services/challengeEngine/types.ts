@@ -1,13 +1,14 @@
 /**
  * Challenge Engine — Shared Types
  *
- * Framework-only file. Not yet integrated into any logging service.
- * Integration target: workoutService.createWorkout + wellnessLogService.writeLog (Phase 11C+).
+ * Integrated into workoutService.createWorkout + wellnessLogService.writeLog.
+ * Only the v2 engine is supported — legacy (v1) challenges were removed in
+ * Phase 5 (pre-beta legacy cleanup) and are rejected before an engine is selected.
  *
  * See: docs/architecture/challenge-engine-spec.md
  */
 
-export type EngineVersion = 'v1' | 'v2';
+export type EngineVersion = 'v2';
 
 export type ChallengeType = 'collective' | 'competitive' | 'streak';
 
