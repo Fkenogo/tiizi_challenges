@@ -16,6 +16,8 @@ function AdminPendingChallengesScreen() {
   const approveMutation = useApproveChallenge();
   const requestChangesMutation = useRequestChallengeChanges();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [noteTargetId, setNoteTargetId] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
 
   if (isLoading) return <LoadingSpinner fullScreen label="Loading pending challenges..." />;
 
@@ -29,13 +31,18 @@ function AdminPendingChallengesScreen() {
     }
   };
 
-  const onRequestChanges = async (challengeId: string) => {
-    if (!user?.uid) return;
-    const note = window.prompt('Add moderation note for required changes:', 'Please refine challenge description and targets.');
-    if (!note) return;
+  const onRequestChanges = (challengeId: string) => {
+    setNoteTargetId(challengeId);
+    setNoteText('');
+  };
+
+  const onSubmitNote = async () => {
+    if (!user?.uid || !noteTargetId || !noteText.trim()) return;
     try {
-      await requestChangesMutation.mutateAsync({ challengeId, moderatorUid: user.uid, note });
+      await requestChangesMutation.mutateAsync({ challengeId: noteTargetId, moderatorUid: user.uid, note: noteText.trim() });
       showToast('Change request sent.', 'success');
+      setNoteTargetId(null);
+      setNoteText('');
     } catch {
       showToast('Could not request changes.', 'error');
     }
@@ -58,7 +65,7 @@ function AdminPendingChallengesScreen() {
             (pending ?? []).map((item) => (
             <Card key={item.id} variant="flat">
               <p className="text-sm font-bold text-slate-900">{item.name}</p>
-              <p className="text-xs text-slate-600 mt-1">Owner: {item.createdBy.slice(0, 8)} • Status: {item.status}</p>
+              <p className="text-xs text-slate-600 mt-1">UID: {item.createdBy.slice(0, 12)}… • Status: {item.status}</p>
               {item.donation?.enabled ? (
                 <p className="mt-1 text-xs text-amber-700 font-semibold">
                   Fitness + Cause challenge • Requires super admin approval before active
@@ -75,7 +82,7 @@ function AdminPendingChallengesScreen() {
               {expandedId === item.id ? (
                 <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 space-y-1">
                   <p><span className="font-bold text-slate-900">Description:</span> {item.description || 'No description'}</p>
-                  <p><span className="font-bold text-slate-900">Timeline:</span> {item.startDate} to {item.endDate}</p>
+                  <p><span className="font-bold text-slate-900">Timeline:</span> {new Date(item.startDate).toLocaleDateString()} to {new Date(item.endDate).toLocaleDateString()}</p>
                   <p><span className="font-bold text-slate-900">Type:</span> {item.challengeType || 'collective'}</p>
                   <p><span className="font-bold text-slate-900">Group:</span> {item.groupId || 'N/A'}</p>
                   <p><span className="font-bold text-slate-900">Activities:</span> {(item.activities ?? []).length}</p>
@@ -85,26 +92,78 @@ function AdminPendingChallengesScreen() {
                     </p>
                   ))}
                   {item.donation?.enabled ? (
-                    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2">
-                      <p className="font-bold text-amber-900">Social Cause Details</p>
+                    <div className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-2 space-y-1">
+                      <p className="font-bold text-amber-900">⚠ Donation Details — Verify Before Approving</p>
+                      <p className="text-[11px] text-amber-800 leading-[16px]">
+                        Confirm phone number and payment channels are legitimate before approval. These details will become visible to all challenge participants once approved.
+                      </p>
                       <p><span className="font-semibold">Cause:</span> {item.donation.causeName || 'N/A'}</p>
                       <p><span className="font-semibold">Description:</span> {item.donation.causeDescription || 'N/A'}</p>
-                      <p><span className="font-semibold">Target:</span> KES {(item.donation.targetAmountKes ?? 0).toLocaleString()}</p>
-                      <p><span className="font-semibold">Contribution window:</span> {item.donation.contributionStartDate || '-'} to {item.donation.contributionEndDate || '-'}</p>
-                      <p><span className="font-semibold">Mobile:</span> {item.donation.contributionPhoneNumber || 'N/A'}</p>
-                      <p><span className="font-semibold">Card URL:</span> {item.donation.contributionCardUrl || 'N/A'}</p>
+                      <p><span className="font-semibold">Target:</span> {item.donation.currency ?? 'RWF'} {(item.donation.targetAmountKes ?? 0).toLocaleString()}</p>
+                      <p><span className="font-semibold">Window:</span> {item.donation.contributionStartDate || '-'} → {item.donation.contributionEndDate || '-'}</p>
+                      <p>
+                        <span className="font-semibold">Mobile number:</span>{' '}
+                        <span className={item.donation.contributionPhoneNumber ? 'font-bold text-slate-900' : 'text-slate-400'}>
+                          {item.donation.contributionPhoneNumber || 'Not provided'}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-semibold">Card URL:</span>{' '}
+                        <span className={item.donation.contributionCardUrl ? 'font-bold text-slate-900 break-all' : 'text-slate-400'}>
+                          {item.donation.contributionCardUrl || 'Not provided'}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-semibold">Donation approval status:</span>{' '}
+                        <span className="font-bold text-amber-700">{item.donation.approvalStatus ?? 'pending'}</span>
+                      </p>
                     </div>
                   ) : null}
                 </div>
               ) : null}
-              <div className="mt-3 flex gap-2">
-                <button className="h-9 px-3 rounded-lg bg-primary text-white text-xs font-bold disabled:opacity-50" disabled={!permissions.canApproveChallenges || approveMutation.isPending || requestChangesMutation.isPending} onClick={() => onApprove(item.id)}>
-                  Approve
-                </button>
-                <button className="h-9 px-3 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold disabled:opacity-50" disabled={!permissions.canRequestChallengeChanges || approveMutation.isPending || requestChangesMutation.isPending} onClick={() => onRequestChanges(item.id)}>
-                  Request Changes
-                </button>
-              </div>
+              {noteTargetId === item.id ? (
+                <div className="mt-3 space-y-2">
+                  <textarea
+                    className="w-full h-20 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 resize-none"
+                    placeholder="Describe what needs to change before this challenge can be approved…"
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      className="h-9 px-3 rounded-lg bg-amber-600 text-white text-xs font-bold disabled:opacity-50"
+                      disabled={!noteText.trim() || requestChangesMutation.isPending}
+                      onClick={onSubmitNote}
+                    >
+                      {requestChangesMutation.isPending ? 'Sending…' : 'Send Request'}
+                    </button>
+                    <button
+                      className="h-9 px-3 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold"
+                      onClick={() => { setNoteTargetId(null); setNoteText(''); }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    className="h-9 px-3 rounded-lg bg-primary text-white text-xs font-bold disabled:opacity-50"
+                    disabled={!permissions.canApproveChallenges || approveMutation.isPending || requestChangesMutation.isPending}
+                    onClick={() => onApprove(item.id)}
+                  >
+                    {approveMutation.isPending ? 'Approving…' : 'Approve'}
+                  </button>
+                  <button
+                    className="h-9 px-3 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold disabled:opacity-50"
+                    disabled={!permissions.canRequestChallengeChanges || approveMutation.isPending || requestChangesMutation.isPending}
+                    onClick={() => onRequestChanges(item.id)}
+                  >
+                    Request Changes
+                  </button>
+                </div>
+              )}
             </Card>
             ))
           )}

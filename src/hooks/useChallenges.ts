@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { challengeService } from '../services/challengeService';
 import type { CreateChallengeInput } from '../services/challengeService';
 import { useAuth } from './useAuth';
@@ -58,6 +60,25 @@ export function useChallengeMembership(challengeId: string | undefined) {
     enabled: !!challengeId && !!user?.uid,
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  });
+}
+
+/**
+ * Reads challengeActivitySummaries.totalValue — the CF-maintained canonical collective team total.
+ * Use for collective challenge team progress display. Invalidated after every log mutation.
+ */
+export function useChallengeSummary(challengeId: string | undefined) {
+  return useQuery({
+    queryKey: ['challenge-activity-summary', challengeId],
+    queryFn: async () => {
+      if (!challengeId) return null;
+      const snap = await getDoc(doc(db, 'challengeActivitySummaries', challengeId));
+      if (!snap.exists()) return null;
+      const data = snap.data() as { totalValue?: number };
+      return { totalValue: Math.max(0, Number(data.totalValue ?? 0)) };
+    },
+    enabled: !!challengeId,
+    staleTime: 30 * 1000,
   });
 }
 
@@ -159,6 +180,17 @@ export function useCreateChallenge() {
       queryClient.invalidateQueries({ queryKey: ['home-screen-data', user?.uid] });
       queryClient.invalidateQueries({ queryKey: ['my-groups', user?.uid] });
     },
+  });
+}
+
+export function useCompletedChallengesForUser(maxResults?: number) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['completed-challenges', user?.uid, maxResults],
+    queryFn: () =>
+      user?.uid ? challengeService.getCompletedChallengesForUser(user.uid, maxResults) : Promise.resolve([]),
+    enabled: !!user?.uid,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

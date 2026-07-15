@@ -1,0 +1,59 @@
+- generic [ref=e188]:
+  - banner [ref=e189]:
+    - generic [ref=e190]:
+      - generic [ref=e191]:
+        - generic [ref=e192]: P
+        - generic [ref=e193]:
+          - paragraph [ref=e194]: Welcome back,
+          - heading "pilot.smoke.20260615.1100!" [level=1] [ref=e195]
+      - button [ref=e196] [cursor=pointer]:
+        - img [ref=e197]
+  - main [ref=e201]:
+    - generic [ref=e202]:
+      - heading "Active Challenges" [level=2] [ref=e204]
+      - article [ref=e205]:
+        - paragraph [ref=e206]: No active challenges yet
+        - paragraph [ref=e207]: Join a challenge to start tracking your progress here.
+        - button "Browse Challenges" [ref=e208] [cursor=pointer]
+    - generic [ref=e209]:
+      - article [ref=e210]:
+        - paragraph [ref=e211]: Streak
+        - paragraph [ref=e212]: "1"
+        - paragraph [ref=e213]: day
+      - article [ref=e214]:
+        - paragraph [ref=e215]: Active
+        - paragraph [ref=e216]: "0"
+        - paragraph [ref=e217]: challenges
+      - article [ref=e218]:
+        - paragraph [ref=e219]: Recent
+        - paragraph [ref=e220]: "2"
+        - paragraph [ref=e221]: activities
+    - generic [ref=e222]:
+      - heading "Today's Goals" [level=3] [ref=e223]
+      - article [ref=e224]:
+        - generic [ref=e225]:
+          - textbox "Write your goal for today..." [ref=e226]
+          - button "Add" [disabled] [ref=e227]
+        - paragraph [ref=e228]: Up to 3 goals per day.
+        - paragraph [ref=e230]: No goals yet. Add up to 3 goals for today.
+    - generic [ref=e231]:
+      - generic [ref=e232]:
+        - heading "Trending Challenges" [level=3] [ref=e233]
+        - button "See All →" [ref=e234] [cursor=pointer]
+      - article [ref=e235]: No trending challenges available yet.
+  - navigation [ref=e236]:
+    - generic [ref=e237]:
+      - button "Home" [ref=e238] [cursor=pointer]:
+        - img [ref=e239]
+        - generic [ref=e242]: Home
+      - button "Groups" [ref=e243] [cursor=pointer]:
+        - img [ref=e244]
+        - generic [ref=e249]: Groups
+      - button [ref=e251] [cursor=pointer]:
+        - img [ref=e252]
+      - button "Challenges" [ref=e253] [cursor=pointer]:
+        - img [ref=e254]
+        - generic [ref=e260]: Challenges
+      - button "Profile" [ref=e261] [cursor=pointer]:
+        - img [ref=e262]
+        - generic [ref=e265]: Profile

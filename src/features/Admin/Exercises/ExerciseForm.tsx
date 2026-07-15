@@ -115,11 +115,11 @@ export function ExerciseForm({ value, onChange }: Props) {
         className="w-full min-h-20 rounded-xl border border-slate-200 p-3 text-sm"
       />
 
-      <textarea
-        value={arrayToLines(value.breathing)}
-        onChange={(e) => onChange({ ...value, breathing: linesToArray(e.target.value) })}
-        placeholder="Breathing notes (one per line)"
-        className="w-full min-h-20 rounded-xl border border-slate-200 p-3 text-sm"
+      <input
+        value={value.breathing?.pattern ?? ''}
+        onChange={(e) => onChange({ ...value, breathing: { ...(value.breathing ?? { inhale: '', exhale: '' }), pattern: e.target.value } })}
+        placeholder="Breathing pattern (e.g. Breathe steadily — never hold your breath)"
+        className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm"
       />
 
       <input

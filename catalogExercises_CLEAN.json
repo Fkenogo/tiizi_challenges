@@ -1,6 +1,4 @@
 {
-  "version": "2.0",
-  "description": "Tiizi Exercise Catalog - 113 unique exercises with complete schema compliance",
   "documents": [
     {
       "id": "plank-forearm-plank",
@@ -79,10 +77,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "15–20 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–40 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "side-plank-left",
@@ -161,10 +164,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "side-plank-right",
@@ -243,10 +251,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "kneeling-side-plank-left",
@@ -324,10 +337,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "15–20 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–40 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "kneeling-side-plank-right",
@@ -405,10 +423,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "15–20 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–40 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "leg-up-side-plank-left",
@@ -488,9 +511,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "leg-up-side-plank-right",
@@ -570,9 +598,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "left-side-plank-with-arm-raised",
@@ -650,10 +683,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "right-side-plank-with-arm-raised",
@@ -731,10 +769,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "side-plank-with-left-leg-raised",
@@ -813,9 +856,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "side-plank-with-right-leg-raised",
@@ -894,9 +942,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "knee-plank",
@@ -973,10 +1026,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "15–20 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–40 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "straight-arm-knee-plank",
@@ -1053,10 +1111,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "15–20 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–40 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "straight-arm-plank-high-plank",
@@ -1134,10 +1197,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "15–20 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–40 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "wide-arm-plank",
@@ -1214,10 +1282,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "plank-with-left-arm-lift",
@@ -1304,10 +1377,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "plank-with-right-arm-lift",
@@ -1394,10 +1472,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "single-left-leg-plank",
@@ -1474,10 +1557,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "single-right-leg-plank",
@@ -1554,10 +1642,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "leg-raised-plank-left",
@@ -1634,10 +1727,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "leg-raised-plank-right",
@@ -1714,10 +1812,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "diagonal-plank-hold-left",
@@ -1796,9 +1899,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "diagonal-plank-hold-right",
@@ -1877,9 +1985,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "plank-and-reach-left",
@@ -1959,7 +2072,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": false
     },
     {
       "id": "plank-and-reach-right",
@@ -2039,7 +2157,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": false
     },
     {
       "id": "reverse-plank",
@@ -2116,10 +2239,15 @@
         "Don't hold breath - breathe continuously"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "reverse-plank-with-left-leg-raised",
@@ -2197,9 +2325,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "reverse-plank-with-right-leg-raised",
@@ -2277,9 +2410,14 @@
       ],
       "recommendedVolume": {
         "beginner": "Not recommended - build foundation first",
-        "intermediate": "2-3 sets of 8-12 reps or 20-30 seconds",
-        "advanced": "3-5 sets of 12-15 reps or 30-60 seconds"
-      }
+        "intermediate": "20–30 sec",
+        "advanced": "30–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "abdominal-crunches",
@@ -2359,7 +2497,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "reverse-crunches",
@@ -2439,7 +2582,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "bicycle-crunches",
@@ -2520,7 +2668,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "russian-twist",
@@ -2601,7 +2754,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "crossover-crunch",
@@ -2681,7 +2839,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "oblique-crunch-reach",
@@ -2761,7 +2924,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "reclined-oblique-twist",
@@ -2841,7 +3009,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "sit-ups",
@@ -2921,7 +3094,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "heel-touch",
@@ -3001,7 +3179,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "toe-tap",
@@ -3081,7 +3264,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "dead-bug",
@@ -3161,7 +3349,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "bird-dog",
@@ -3242,7 +3435,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "mountain-climber",
@@ -3264,7 +3462,7 @@
         "Athletic Performance"
       ],
       "metric": {
-        "type": "time",
+        "type": "reps",
         "unit": "reps",
         "allowCustomUnit": true,
         "metricOptions": [
@@ -3333,7 +3531,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "slow-mountain-climber",
@@ -3414,7 +3617,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "leg-raises",
@@ -3494,7 +3702,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "single-leg-drops",
@@ -3574,7 +3787,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "kick-crunch",
@@ -3654,7 +3872,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "high-knee-with-twist",
@@ -3676,7 +3899,7 @@
         "Athletic Performance"
       ],
       "metric": {
-        "type": "time",
+        "type": "reps",
         "unit": "reps",
         "allowCustomUnit": true,
         "metricOptions": [
@@ -3745,7 +3968,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "standing-bicycle-crunches",
@@ -3825,7 +4053,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "squats",
@@ -3907,7 +4140,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "tags": [
+        "isotonic"
+      ],
+      "movementType": "isotonic",
+      "holdBased": false
     },
     {
       "id": "lunges",
@@ -3988,7 +4226,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "side-lunges",
@@ -4069,7 +4312,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "wall-sit",
@@ -4146,10 +4394,15 @@
         "Warm up thoroughly before starting"
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "15–20 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–40 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "butt-bridge",
@@ -4171,7 +4424,7 @@
         "Endurance"
       ],
       "metric": {
-        "type": "time",
+        "type": "reps",
         "unit": "reps",
         "allowCustomUnit": true,
         "metricOptions": [
@@ -4240,7 +4493,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "step-up-onto-chair",
@@ -4321,7 +4579,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "calf-raises",
@@ -4400,7 +4663,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "glute-kickbacks",
@@ -4480,7 +4748,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "donkey-kicks",
@@ -4560,7 +4833,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "fire-hydrants",
@@ -4640,7 +4918,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "bulgarian-split-squats",
@@ -4721,7 +5004,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "reverse-lunges",
@@ -4802,7 +5090,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "jumping-jacks",
@@ -4823,7 +5116,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "seconds",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -4891,7 +5184,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "high-stepping",
@@ -4914,7 +5212,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "seconds",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -4982,7 +5280,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "butt-kicks",
@@ -5005,7 +5308,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "seconds",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -5073,7 +5376,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "skater-jump",
@@ -5154,7 +5462,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "side-hop",
@@ -5177,7 +5490,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "seconds",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -5245,7 +5558,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "burpees",
@@ -5324,7 +5642,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "tags": [
+        "isotonic"
+      ],
+      "movementType": "isotonic",
+      "holdBased": false
     },
     {
       "id": "skipping-without-rope",
@@ -5346,7 +5669,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "seconds",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -5414,7 +5737,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "side-step-jacks",
@@ -5436,7 +5764,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "seconds",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -5504,7 +5832,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "jump-squats",
@@ -5585,7 +5918,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "running",
@@ -5607,7 +5945,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "minutes",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -5675,7 +6013,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "walking",
@@ -5697,7 +6040,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "minutes",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -5765,7 +6108,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "push-ups",
@@ -5847,7 +6195,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "tags": [
+        "isotonic"
+      ],
+      "movementType": "isotonic",
+      "holdBased": false
     },
     {
       "id": "modified-push-up",
@@ -5928,7 +6281,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "push-up-hold",
@@ -6007,10 +6365,15 @@
         "Listen to your body's signals"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "modified-push-up-low-hold",
@@ -6088,10 +6451,15 @@
         "Listen to your body's signals"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "push-up-&-rotation",
@@ -6173,7 +6541,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "inchworms",
@@ -6254,7 +6627,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "triceps-dips",
@@ -6335,7 +6713,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "alternating-hooks",
@@ -6357,7 +6740,7 @@
         "Athletic Performance"
       ],
       "metric": {
-        "type": "time",
+        "type": "reps",
         "unit": "reps",
         "allowCustomUnit": true,
         "metricOptions": [
@@ -6426,7 +6809,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "cross-touch-and-reach",
@@ -6507,7 +6895,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "plank-shoulder-taps",
@@ -6587,7 +6980,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "hollow-body-hold",
@@ -6597,7 +6995,8 @@
       "difficulty": "Intermediate",
       "musclesTargeted": [
         "Abs",
-        "Hip Flexors"
+        "Hip Flexors",
+        "Core"
       ],
       "equipment": [
         "Bodyweight"
@@ -6612,19 +7011,16 @@
         "unit": "seconds",
         "allowCustomUnit": false
       },
-      "description": "A strength exercise targeting Abs, Hip Flexors for intermediate-level fitness enthusiasts. This core movement focuses on strength development.",
+      "description": "A strength exercise targeting the entire core for intermediate to advanced fitness enthusiasts. This full-body tension hold builds the foundation for advanced core control and gymnastics-style movements.",
       "setup": [
-        "Start in proper starting position",
-        "Ensure safe, stable surface",
-        "Warm up muscles if needed",
-        "Engage core and maintain posture"
+        "Lie flat on your back.",
+        "Press lower back firmly into the floor.",
+        "Extend arms overhead."
       ],
       "execution": [
-        "Perform movement with controlled tempo",
-        "Maintain proper form throughout",
-        "Complete full range of motion",
-        "Breathe steadily throughout",
-        "Repeat for designated volume"
+        "Lift shoulders and legs off the floor simultaneously, forming a shallow banana shape.",
+        "Keep lower back pinned to the floor throughout.",
+        "Hold the position without letting the back arch."
       ],
       "breathing": {
         "inhale": "Take steady breaths in through your nose",
@@ -6632,18 +7028,14 @@
         "pattern": "Maintain steady, rhythmic breathing throughout the hold - never hold your breath"
       },
       "formCues": [
-        "Engage core by pulling navel to spine",
-        "Keep lower back pressed to floor",
-        "Move with control, not momentum",
-        "Focus on quality over quantity",
-        "Maintain steady breathing"
+        "Keep lower back glued to the floor.",
+        "Point toes, squeeze legs together.",
+        "Breathe steadily, don't hold your breath."
       ],
       "commonMistakes": [
-        "Using momentum instead of control",
-        "Compromising form for more reps",
-        "Holding breath during exertion",
-        "Moving too quickly",
-        "Not maintaining proper alignment"
+        "Lower back arching off the floor.",
+        "Lifting legs too high, losing tension.",
+        "Holding breath during the hold."
       ],
       "progressions": [
         "Reduce range of motion",
@@ -6658,16 +7050,18 @@
         "Combine with other movements"
       ],
       "safetyNotes": [
-        "Stop immediately if you feel sharp pain",
-        "Avoid if you have recent shoulder injuries",
-        "Modify if experiencing lower back pain",
-        "Don't hold breath - breathe continuously"
+        "Stop if you feel sharp lower back pain — regress to bent knees."
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "10–15 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–45 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "superman-hold",
@@ -6693,19 +7087,13 @@
         "unit": "seconds",
         "allowCustomUnit": false
       },
-      "description": "A strength exercise targeting Lower Back, Glutes for beginner-level fitness enthusiasts. This core movement focuses on strength development.",
+      "description": "A strength exercise targeting the lower back, glutes, and shoulders. Builds posterior chain endurance and counters the effects of prolonged sitting.",
       "setup": [
-        "Start in proper starting position",
-        "Ensure safe, stable surface",
-        "Warm up muscles if needed",
-        "Engage core and maintain posture"
+        "Lie face down, arms extended overhead, legs straight."
       ],
       "execution": [
-        "Perform movement with controlled tempo",
-        "Maintain proper form throughout",
-        "Complete full range of motion",
-        "Breathe steadily throughout",
-        "Repeat for designated volume"
+        "Lift arms, chest, and legs off the floor at the same time.",
+        "Hold at the top with glutes and lower back engaged."
       ],
       "breathing": {
         "inhale": "Take steady breaths in through your nose",
@@ -6713,18 +7101,14 @@
         "pattern": "Maintain steady, rhythmic breathing throughout the hold - never hold your breath"
       },
       "formCues": [
-        "Engage core by pulling navel to spine",
-        "Keep lower back pressed to floor",
-        "Move with control, not momentum",
-        "Focus on quality over quantity",
-        "Maintain steady breathing"
+        "Squeeze glutes throughout.",
+        "Reach long through fingers and toes.",
+        "Keep neck neutral, look at the floor."
       ],
       "commonMistakes": [
-        "Using momentum instead of control",
-        "Compromising form for more reps",
-        "Holding breath during exertion",
-        "Moving too quickly",
-        "Not maintaining proper alignment"
+        "Craning the neck up.",
+        "Bouncing instead of holding still.",
+        "Shrugging shoulders toward ears."
       ],
       "progressions": [
         "Reduce range of motion",
@@ -6739,16 +7123,18 @@
         "Combine with other movements"
       ],
       "safetyNotes": [
-        "Stop immediately if you feel sharp pain",
-        "Avoid if you have recent shoulder injuries",
-        "Modify if experiencing lower back pain",
-        "Don't hold breath - breathe continuously"
+        "Ease off if lower back discomfort occurs; reduce range of lift."
       ],
       "recommendedVolume": {
-        "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
-        "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+        "beginner": "10–15 sec",
+        "intermediate": "20–30 sec",
+        "advanced": "30–45 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "plank-jacks",
@@ -6770,7 +7156,7 @@
         "Athletic Performance"
       ],
       "metric": {
-        "type": "time",
+        "type": "reps",
         "unit": "reps",
         "allowCustomUnit": true,
         "metricOptions": [
@@ -6838,7 +7224,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "swimmer-&-superman",
@@ -6919,7 +7310,12 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "squat-reach-ups",
@@ -7000,7 +7396,12 @@
         "beginner": "1-2 sets of 8-10 reps or 15-20 seconds",
         "intermediate": "2-3 sets of 10-12 reps or 20-30 seconds",
         "advanced": "3-4 sets of 12-15 reps or 30-40 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
     },
     {
       "id": "cobra-stretch",
@@ -7425,7 +7826,7 @@
       ],
       "metric": {
         "type": "time",
-        "unit": "reps",
+        "unit": "seconds",
         "allowCustomUnit": true,
         "metricOptions": [
           {
@@ -9177,10 +9578,15 @@
         "Listen to your body's signals"
       ],
       "recommendedVolume": {
-        "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
-        "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
-        "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+        "beginner": "20–30 sec",
+        "intermediate": "30–45 sec",
+        "advanced": "45–60 sec"
+      },
+      "tags": [
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     },
     {
       "id": "crab-walk",
@@ -9202,7 +9608,7 @@
         "Endurance"
       ],
       "metric": {
-        "type": "time",
+        "type": "reps",
         "unit": "reps",
         "allowCustomUnit": true,
         "metricOptions": [
@@ -9271,7 +9677,2665 @@
         "beginner": "2-3 sets of 10-12 reps or 20-30 seconds",
         "intermediate": "3-4 sets of 12-15 reps or 30-45 seconds",
         "advanced": "4-5 sets of 15-20 reps or 45-60 seconds"
-      }
+      },
+      "movementType": "isotonic",
+      "tags": [
+        "isotonic"
+      ],
+      "holdBased": false
+    },
+    {
+      "id": "bear-hold",
+      "name": "Bear Hold",
+      "tier_1": "Full Body",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Core",
+        "Shoulders",
+        "Quadriceps"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the core, shoulders, and quads for intermediate fitness enthusiasts. Builds full-body tension and is a foundational position for bear crawl progressions.",
+      "setup": [
+        "Start on hands and knees, hands under shoulders, knees under hips."
+      ],
+      "execution": [
+        "Lift knees an inch off the floor, hovering.",
+        "Hold the position with a flat back."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep back flat, don't round or arch.",
+        "Keep knees hovering low, not lifted high.",
+        "Distribute weight evenly through hands and toes."
+      ],
+      "commonMistakes": [
+        "Hips rising too high, turning it into a downward-dog shape.",
+        "Rounding the back.",
+        "Holding breath during the hold."
+      ],
+      "progressions": [
+        "Dead Bug Hold",
+        "Bird Dog Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Keep wrists aligned under shoulders to reduce strain."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "20 sec",
+        "advanced": "25 sec"
+      },
+      "tags": [
+        "Full Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "bird-dog-hold-left",
+      "name": "Bird Dog Hold Left",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Core",
+        "Lower Back",
+        "Glutes"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the core and back for beginner to intermediate fitness enthusiasts. Builds anti-rotation strength and spinal stability.",
+      "setup": [
+        "Start on hands and knees, hands under shoulders, knees under hips."
+      ],
+      "execution": [
+        "Extend one arm forward and the opposite leg back until both are parallel to the floor.",
+        "Hold without letting hips or shoulders rotate."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips square to the floor.",
+        "Brace core like expecting a light punch.",
+        "Reach through the extended hand and heel."
+      ],
+      "commonMistakes": [
+        "Hips rotating open.",
+        "Lower back sagging.",
+        "Rushing into position instead of controlled extension."
+      ],
+      "progressions": [
+        "Dead Bug Hold"
+      ],
+      "advancedVariations": [
+        "Weighted Bird Dog Hold"
+      ],
+      "safetyNotes": [
+        "Stop if you feel instability or pain in the supporting wrist or knee."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "Balance",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "bird-dog-hold-right",
+      "name": "Bird Dog Hold Right",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Core",
+        "Lower Back",
+        "Glutes"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the core and back for beginner to intermediate fitness enthusiasts. Builds anti-rotation strength and spinal stability.",
+      "setup": [
+        "Start on hands and knees, hands under shoulders, knees under hips."
+      ],
+      "execution": [
+        "Extend one arm forward and the opposite leg back until both are parallel to the floor.",
+        "Hold without letting hips or shoulders rotate."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips square to the floor.",
+        "Brace core like expecting a light punch.",
+        "Reach through the extended hand and heel."
+      ],
+      "commonMistakes": [
+        "Hips rotating open.",
+        "Lower back sagging.",
+        "Rushing into position instead of controlled extension."
+      ],
+      "progressions": [
+        "Dead Bug Hold"
+      ],
+      "advancedVariations": [
+        "Weighted Bird Dog Hold"
+      ],
+      "safetyNotes": [
+        "Stop if you feel instability or pain in the supporting wrist or knee."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "Balance",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "calf-raise-hold",
+      "name": "Calf Raise Hold",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Calves",
+        "Gastrocnemius",
+        "Soleus"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the calf muscles for beginner fitness enthusiasts. Builds calf endurance and ankle stability.",
+      "setup": [
+        "Stand with feet hip-width apart."
+      ],
+      "execution": [
+        "Rise onto the balls of your feet as high as possible.",
+        "Hold at the top without lowering."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep the hold as high as possible on the toes.",
+        "Keep knees straight but not locked.",
+        "Use a wall for balance if needed."
+      ],
+      "commonMistakes": [
+        "Rocking forward and backward instead of holding still.",
+        "Not rising high enough onto the toes.",
+        "Losing balance and dropping the heels early."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Single Leg Calf Raise Hold"
+      ],
+      "safetyNotes": [
+        "Hold onto a wall or chair if balance is unsteady."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "25 sec",
+        "advanced": "30 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "chair-dip-hold-bottom",
+      "name": "Chair Dip Hold Bottom",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Triceps",
+        "Shoulders"
+      ],
+      "equipment": [
+        "Chair"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the triceps and shoulders for intermediate fitness enthusiasts. Builds strength in the bottom range of a dip, a common sticking point.",
+      "setup": [
+        "Sit on the edge of a chair, hands beside hips, feet extended forward."
+      ],
+      "execution": [
+        "Lower into the bottom of a dip with elbows bent, and hold that position without pressing back up."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep elbows pointing backward, not flaring out.",
+        "Keep shoulders down, away from ears.",
+        "Keep hips close to the chair, not drifting forward."
+      ],
+      "commonMistakes": [
+        "Elbows flaring outward.",
+        "Shoulders creeping up toward the ears.",
+        "Hips drifting too far from the chair, adding shoulder strain."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Reduce the depth of the hold if shoulder discomfort occurs."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "12 sec",
+        "advanced": "15 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "clamshell-hold-left",
+      "name": "Clamshell Hold Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Glute Medius",
+        "Hip Stabilizers"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glute medius and hip stabilizers for beginner fitness enthusiasts. Commonly used for hip and knee injury prevention.",
+      "setup": [
+        "Lie on your side, knees bent at roughly 45 degrees, feet stacked together."
+      ],
+      "execution": [
+        "Keeping feet touching, lift the top knee open as far as comfortable.",
+        "Hold at end range without rotating your hips back."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips stacked, don't roll backward.",
+        "Keep feet together throughout.",
+        "Focus on the outer hip doing the work."
+      ],
+      "commonMistakes": [
+        "Rolling the hips backward to gain range.",
+        "Feet separating during the movement.",
+        "Using momentum instead of a controlled hold."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Fire Hydrant Hold"
+      ],
+      "safetyNotes": [
+        "Reduce range if hip discomfort occurs."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "clamshell-hold-right",
+      "name": "Clamshell Hold Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Glute Medius",
+        "Hip Stabilizers"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glute medius and hip stabilizers for beginner fitness enthusiasts. Commonly used for hip and knee injury prevention.",
+      "setup": [
+        "Lie on your side, knees bent at roughly 45 degrees, feet stacked together."
+      ],
+      "execution": [
+        "Keeping feet touching, lift the top knee open as far as comfortable.",
+        "Hold at end range without rotating your hips back."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips stacked, don't roll backward.",
+        "Keep feet together throughout.",
+        "Focus on the outer hip doing the work."
+      ],
+      "commonMistakes": [
+        "Rolling the hips backward to gain range.",
+        "Feet separating during the movement.",
+        "Using momentum instead of a controlled hold."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Fire Hydrant Hold"
+      ],
+      "safetyNotes": [
+        "Reduce range if hip discomfort occurs."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "copenhagen-plank-hold-left",
+      "name": "Copenhagen Plank Hold Left",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Adductors",
+        "Core",
+        "Obliques"
+      ],
+      "equipment": [
+        "Bench"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the inner thigh (adductors) and core for advanced fitness enthusiasts. Highly effective for groin injury prevention.",
+      "setup": [
+        "Lie on your side, top leg resting on a bench or chair, propped up on your forearm."
+      ],
+      "execution": [
+        "Lift your bottom leg and hips off the floor.",
+        "Hold your body in a straight line supported by the top leg and forearm."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips lifted and squared.",
+        "Engage the inner thigh of the supporting leg.",
+        "Start with the bent-knee regression if full extension is too difficult."
+      ],
+      "commonMistakes": [
+        "Letting hips sag toward the floor.",
+        "Rotating the torso forward.",
+        "Attempting the full straight-leg version too soon."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Regress to a bent-knee variation if you feel strain in the groin."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "12 sec",
+        "advanced": "15 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "copenhagen-plank-hold-right",
+      "name": "Copenhagen Plank Hold Right",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Adductors",
+        "Core",
+        "Obliques"
+      ],
+      "equipment": [
+        "Bench"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the inner thigh (adductors) and core for advanced fitness enthusiasts. Highly effective for groin injury prevention.",
+      "setup": [
+        "Lie on your side, top leg resting on a bench or chair, propped up on your forearm."
+      ],
+      "execution": [
+        "Lift your bottom leg and hips off the floor.",
+        "Hold your body in a straight line supported by the top leg and forearm."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips lifted and squared.",
+        "Engage the inner thigh of the supporting leg.",
+        "Start with the bent-knee regression if full extension is too difficult."
+      ],
+      "commonMistakes": [
+        "Letting hips sag toward the floor.",
+        "Rotating the torso forward.",
+        "Attempting the full straight-leg version too soon."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Regress to a bent-knee variation if you feel strain in the groin."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "12 sec",
+        "advanced": "15 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "crab-hold",
+      "name": "Crab Hold",
+      "tier_1": "Full Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Triceps",
+        "Glutes",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the triceps, glutes, and core for beginner to intermediate fitness enthusiasts. Works the posterior chain and shoulders from a reverse-facing position.",
+      "setup": [
+        "Sit on the floor, hands behind you fingers pointing toward feet, knees bent."
+      ],
+      "execution": [
+        "Lift hips off the floor into a tabletop position.",
+        "Hold, keeping the body flat from knees to shoulders."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Squeeze glutes to lift hips fully.",
+        "Keep fingers pointing toward the feet.",
+        "Keep head neutral, don't drop it back."
+      ],
+      "commonMistakes": [
+        "Hips not lifted high enough, sagging mid-hold.",
+        "Wrists positioned incorrectly, causing strain.",
+        "Shoulders shrugged up toward ears."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Stop if you feel wrist strain; adjust hand position or reduce hold time."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Full Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "dead-bug-hold-left",
+      "name": "Dead Bug Hold Left",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Deep Core",
+        "Hip Flexors",
+        "Abs"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the deep core and hip flexors for beginner fitness enthusiasts. A safe, back-friendly way to build core control.",
+      "setup": [
+        "Lie on your back, arms extended toward ceiling, knees bent at 90 degrees."
+      ],
+      "execution": [
+        "Extend one arm overhead and the opposite leg straight out, hovering just above the floor.",
+        "Hold without letting your lower back lift off the ground."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Press lower back into the floor.",
+        "Move slowly into position, then hold still.",
+        "Keep extended limbs just off the floor."
+      ],
+      "commonMistakes": [
+        "Lower back arching up.",
+        "Letting the extended leg touch the floor.",
+        "Holding breath."
+      ],
+      "progressions": [
+        "Bird Dog Hold",
+        "Hollow Body Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Reduce the hold height if lower back lifts off the floor."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "dead-bug-hold-right",
+      "name": "Dead Bug Hold Right",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Deep Core",
+        "Hip Flexors",
+        "Abs"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the deep core and hip flexors for beginner fitness enthusiasts. A safe, back-friendly way to build core control.",
+      "setup": [
+        "Lie on your back, arms extended toward ceiling, knees bent at 90 degrees."
+      ],
+      "execution": [
+        "Extend one arm overhead and the opposite leg straight out, hovering just above the floor.",
+        "Hold without letting your lower back lift off the ground."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Press lower back into the floor.",
+        "Move slowly into position, then hold still.",
+        "Keep extended limbs just off the floor."
+      ],
+      "commonMistakes": [
+        "Lower back arching up.",
+        "Letting the extended leg touch the floor.",
+        "Holding breath."
+      ],
+      "progressions": [
+        "Bird Dog Hold",
+        "Hollow Body Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Reduce the hold height if lower back lifts off the floor."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "doorway-chest-press-hold",
+      "name": "Doorway Chest Press Hold",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Chest",
+        "Front Shoulders"
+      ],
+      "equipment": [
+        "Doorway"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the chest and front shoulders for beginner fitness enthusiasts. Builds isometric pressing strength using just a doorway.",
+      "setup": [
+        "Stand in a doorway, forearms placed against the frame at shoulder height."
+      ],
+      "execution": [
+        "Press forearms into the frame as if trying to push the frame outward, and hold the tension."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep core braced and stance stable.",
+        "Press evenly with both arms.",
+        "Keep shoulders relaxed, not shrugged."
+      ],
+      "commonMistakes": [
+        "Leaning the body weight instead of actively pressing.",
+        "Uneven pressure between the two arms.",
+        "Shrugging shoulders toward the ears."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Stop if you feel any shoulder joint discomfort."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "fire-hydrant-hold-left",
+      "name": "Fire Hydrant Hold Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Glute Medius",
+        "Hip Abductors"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glute medius and hip abductors for beginner to intermediate fitness enthusiasts. Improves hip stability for running and lateral movement.",
+      "setup": [
+        "Start on hands and knees, hands under shoulders, knees under hips."
+      ],
+      "execution": [
+        "Lift one bent knee out to the side to hip height, keeping the knee bent at 90 degrees.",
+        "Hold."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips square, don't rotate the torso.",
+        "Lift only to hip height, not higher.",
+        "Keep supporting core engaged."
+      ],
+      "commonMistakes": [
+        "Rotating the torso to gain height.",
+        "Arching the lower back.",
+        "Lifting the knee too high, losing form."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Keep the supporting wrist aligned under the shoulder to avoid strain."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "fire-hydrant-hold-right",
+      "name": "Fire Hydrant Hold Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Glute Medius",
+        "Hip Abductors"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glute medius and hip abductors for beginner to intermediate fitness enthusiasts. Improves hip stability for running and lateral movement.",
+      "setup": [
+        "Start on hands and knees, hands under shoulders, knees under hips."
+      ],
+      "execution": [
+        "Lift one bent knee out to the side to hip height, keeping the knee bent at 90 degrees.",
+        "Hold."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips square, don't rotate the torso.",
+        "Lift only to hip height, not higher.",
+        "Keep supporting core engaged."
+      ],
+      "commonMistakes": [
+        "Rotating the torso to gain height.",
+        "Arching the lower back.",
+        "Lifting the knee too high, losing form."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Keep the supporting wrist aligned under the shoulder to avoid strain."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "glute-bridge-hold",
+      "name": "Glute Bridge Hold",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Glutes",
+        "Hamstrings",
+        "Lower Back"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glutes, hamstrings, and lower back for beginner fitness enthusiasts. A foundational hip-strengthening hold, ideal for beginners and rehab contexts.",
+      "setup": [
+        "Lie on your back, knees bent, feet flat on the floor hip-width apart."
+      ],
+      "execution": [
+        "Lift hips toward the ceiling until knees, hips, and shoulders form a straight line.",
+        "Hold at the top, squeezing the glutes."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Squeeze glutes hard at the top.",
+        "Avoid overextending the lower back.",
+        "Keep feet flat and knees tracking forward."
+      ],
+      "commonMistakes": [
+        "Overarching the lower back instead of using glutes.",
+        "Feet too far from or too close to the hips.",
+        "Letting hips sag mid-hold."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Single Leg Glute Bridge Hold"
+      ],
+      "safetyNotes": [
+        "Stop if you feel lower back pain rather than glute engagement."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "30 sec",
+        "advanced": "40 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "handstand-hold-wall-supported",
+      "name": "Handstand Hold Wall Supported",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Shoulders",
+        "Core",
+        "Triceps"
+      ],
+      "equipment": [
+        "Wall"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the shoulders, core, and full-body stability for advanced fitness enthusiasts. Builds inverted body control and shoulder strength.",
+      "setup": [
+        "Place hands on the floor near a wall, kick up one leg at a time until feet rest against the wall in an inverted position."
+      ],
+      "execution": [
+        "Hold the inverted position with arms fully extended and core braced."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep core tight and body in a straight line.",
+        "Press firmly through the palms.",
+        "Keep breathing steady throughout the hold."
+      ],
+      "commonMistakes": [
+        "Over-arching the lower back.",
+        "Holding breath during the hold.",
+        "Kicking up too forcefully, losing control."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Practice near a spotter or soft surface until confident; come down immediately if you feel unstable."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "Full Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "hollow-rock-hold",
+      "name": "Hollow Rock Hold",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Abs",
+        "Hip Flexors",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the entire core for advanced fitness enthusiasts. An intensified hollow hold that increases the lever arm for greater core demand.",
+      "setup": [
+        "Lie flat on your back, lower back pressed to the floor."
+      ],
+      "execution": [
+        "Lift shoulders and legs into the hollow position, then extend arms fully overhead past your head.",
+        "Hold with maximum body tension."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Squeeze entire body tight, like a plank on your back.",
+        "Keep lower back pinned down.",
+        "Extend arms fully for the full lever effect."
+      ],
+      "commonMistakes": [
+        "Arching the lower back.",
+        "Losing tension in the extended arms.",
+        "Attempting this before mastering the basic hollow hold."
+      ],
+      "progressions": [
+        "Hollow Body Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Master the basic Hollow Body Hold first before progressing to this variation."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "isometric-push-up-hold-mid",
+      "name": "Isometric Push-Up Hold Mid",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Chest",
+        "Shoulders",
+        "Triceps"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the chest, shoulders, and triceps for intermediate fitness enthusiasts. Builds strength through the sticking point of a push-up.",
+      "setup": [
+        "Lower from a high plank to the halfway point of a push-up, elbows around 90 degrees."
+      ],
+      "execution": [
+        "Hold the midpoint position without sinking lower or pressing back up."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep elbows at roughly 45 degrees from the body.",
+        "Keep core and glutes braced.",
+        "Maintain a straight body line."
+      ],
+      "commonMistakes": [
+        "Hips sagging below shoulder line.",
+        "Elbows flaring out to 90 degrees.",
+        "Sinking gradually lower during the hold."
+      ],
+      "progressions": [
+        "Isometric Push-Up Hold Top"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Perform on knees if shoulder fatigue causes form breakdown."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "isometric-push-up-hold-top",
+      "name": "Isometric Push-Up Hold Top",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Shoulders",
+        "Triceps",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the shoulders, core, and triceps for beginner to intermediate fitness enthusiasts. Builds the lockout strength and core bracing needed for full push-ups.",
+      "setup": [
+        "Start in a high plank / top push-up position, arms fully extended."
+      ],
+      "execution": [
+        "Hold the top position without sagging hips or rounding the upper back."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep body in a straight line from head to heels.",
+        "Engage core and glutes throughout.",
+        "Keep shoulders away from ears."
+      ],
+      "commonMistakes": [
+        "Hips sagging toward the floor.",
+        "Head dropping forward.",
+        "Locking elbows too aggressively."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Isometric Push-Up Hold Mid"
+      ],
+      "safetyNotes": [
+        "Drop to knees if wrist or shoulder discomfort occurs."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "20 sec",
+        "advanced": "30 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "low-squat-hold-malasana",
+      "name": "Low Squat Hold Malasana",
+      "tier_1": "Full Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Hips",
+        "Ankles",
+        "Adductors",
+        "Quadriceps"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength and mobility exercise targeting the hips, ankles, and adductors for beginner fitness enthusiasts. Improves deep squat mobility while building isometric leg endurance.",
+      "setup": [
+        "Stand with feet slightly wider than hip-width, toes turned slightly out."
+      ],
+      "execution": [
+        "Lower into a deep squat, heels down if possible.",
+        "Bring hands together at chest in a prayer position.",
+        "Use elbows to gently press knees outward and hold."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep chest lifted, spine long.",
+        "Try to keep heels grounded.",
+        "Use elbows to encourage knees to track outward."
+      ],
+      "commonMistakes": [
+        "Heels lifting off the floor.",
+        "Rounding the lower back.",
+        "Knees caving inward."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Place a rolled towel under the heels if they can't stay grounded comfortably."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "30 sec",
+        "advanced": "40 sec"
+      },
+      "tags": [
+        "Full Body",
+        "Mobility",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "overhead-arm-hold",
+      "name": "Overhead Arm Hold",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Shoulders",
+        "Rotator Cuff",
+        "Trapezius"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting shoulder endurance for beginner fitness enthusiasts. Builds shoulder stability and postural endurance for overhead tasks.",
+      "setup": [
+        "Stand or sit tall, arms extended straight overhead."
+      ],
+      "execution": [
+        "Hold arms overhead without shrugging shoulders or arching the lower back."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep ribs down, avoid arching the back.",
+        "Keep shoulders away from the ears.",
+        "Keep arms fully extended and active, not passive."
+      ],
+      "commonMistakes": [
+        "Arching the lower back to compensate for tight shoulders.",
+        "Letting arms drift forward instead of staying overhead.",
+        "Shrugging shoulders upward."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Reduce hold time if shoulder impingement discomfort occurs."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "25 sec",
+        "advanced": "30 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "pistol-squat-hold-left",
+      "name": "Pistol Squat Hold Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Quadriceps",
+        "Glutes",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the quads, glutes, and balance for advanced fitness enthusiasts. A challenging progression exercise toward the full pistol squat.",
+      "setup": [
+        "Stand on one leg, other leg extended forward off the floor."
+      ],
+      "execution": [
+        "Lower into a single-leg squat as far as control allows.",
+        "Hold that position. Use a wall or chair for light assistance if needed."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep the extended leg off the floor throughout.",
+        "Keep chest lifted and core braced.",
+        "Only go as deep as you can control."
+      ],
+      "commonMistakes": [
+        "Losing balance and touching the extended leg down.",
+        "Rounding the back to reach greater depth.",
+        "Attempting full depth before building base strength."
+      ],
+      "progressions": [
+        "Single Leg Wall Sit",
+        "Static Squat Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Use assisted support (wall/chair) until balance and strength are sufficient for the unassisted hold."
+      ],
+      "recommendedVolume": {
+        "beginner": "5 sec",
+        "intermediate": "10 sec",
+        "advanced": "15 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "pistol-squat-hold-right",
+      "name": "Pistol Squat Hold Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Quadriceps",
+        "Glutes",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the quads, glutes, and balance for advanced fitness enthusiasts. A challenging progression exercise toward the full pistol squat.",
+      "setup": [
+        "Stand on one leg, other leg extended forward off the floor."
+      ],
+      "execution": [
+        "Lower into a single-leg squat as far as control allows.",
+        "Hold that position. Use a wall or chair for light assistance if needed."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep the extended leg off the floor throughout.",
+        "Keep chest lifted and core braced.",
+        "Only go as deep as you can control."
+      ],
+      "commonMistakes": [
+        "Losing balance and touching the extended leg down.",
+        "Rounding the back to reach greater depth.",
+        "Attempting full depth before building base strength."
+      ],
+      "progressions": [
+        "Single Leg Wall Sit",
+        "Static Squat Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Use assisted support (wall/chair) until balance and strength are sufficient for the unassisted hold."
+      ],
+      "recommendedVolume": {
+        "beginner": "5 sec",
+        "intermediate": "10 sec",
+        "advanced": "15 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "reverse-snow-angel-hold",
+      "name": "Reverse Snow Angel Hold",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Upper Back",
+        "Rear Deltoids",
+        "Rhomboids"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the upper back and rear shoulders for beginner fitness enthusiasts. Counters rounded-shoulder posture from desk work.",
+      "setup": [
+        "Lie face down, arms out to the sides in a \"T\" shape, palms facing down."
+      ],
+      "execution": [
+        "Lift arms and chest slightly off the floor, squeezing shoulder blades together.",
+        "Hold."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Squeeze shoulder blades together throughout.",
+        "Keep neck neutral, don't crane upward.",
+        "Lift only a few inches, focus on the squeeze."
+      ],
+      "commonMistakes": [
+        "Lifting the neck instead of the chest.",
+        "Shrugging shoulders up toward the ears.",
+        "Lifting too high, using momentum instead of a controlled hold."
+      ],
+      "progressions": [
+        "Superman Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Keep the lift low and controlled to avoid lower back strain."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "Back",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "single-leg-calf-raise-hold-left",
+      "name": "Single Leg Calf Raise Hold Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Calves",
+        "Gastrocnemius",
+        "Soleus"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the calf muscles unilaterally for intermediate fitness enthusiasts. Builds ankle stability and corrects calf strength imbalances.",
+      "setup": [
+        "Stand on one foot, optionally near a wall for balance."
+      ],
+      "execution": [
+        "Rise onto the ball of the standing foot.",
+        "Hold at the top."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep the non-working foot relaxed, not pressing on the ground.",
+        "Keep the standing ankle stable, avoid wobbling.",
+        "Rise as high as comfortably possible."
+      ],
+      "commonMistakes": [
+        "Letting the ankle roll outward or inward.",
+        "Using the resting foot to assist balance.",
+        "Not holding the top position long enough."
+      ],
+      "progressions": [
+        "Calf Raise Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Use wall support to avoid ankle rolling."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "Balance",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "single-leg-calf-raise-hold-right",
+      "name": "Single Leg Calf Raise Hold Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Calves",
+        "Gastrocnemius",
+        "Soleus"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the calf muscles unilaterally for intermediate fitness enthusiasts. Builds ankle stability and corrects calf strength imbalances.",
+      "setup": [
+        "Stand on one foot, optionally near a wall for balance."
+      ],
+      "execution": [
+        "Rise onto the ball of the standing foot.",
+        "Hold at the top."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep the non-working foot relaxed, not pressing on the ground.",
+        "Keep the standing ankle stable, avoid wobbling.",
+        "Rise as high as comfortably possible."
+      ],
+      "commonMistakes": [
+        "Letting the ankle roll outward or inward.",
+        "Using the resting foot to assist balance.",
+        "Not holding the top position long enough."
+      ],
+      "progressions": [
+        "Calf Raise Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Use wall support to avoid ankle rolling."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "Balance",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "single-leg-glute-bridge-hold-left",
+      "name": "Single Leg Glute Bridge Hold Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Glutes",
+        "Hamstrings",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glutes unilaterally for intermediate fitness enthusiasts. Builds single-leg hip strength and corrects side-to-side imbalances.",
+      "setup": [
+        "Lie on your back in bridge position, then extend one leg straight out."
+      ],
+      "execution": [
+        "Lift hips off the floor keeping both sides level.",
+        "Hold the position on the single grounded leg."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips level, avoid tilting to one side.",
+        "Drive through the heel of the grounded foot.",
+        "Keep extended leg in line with your torso."
+      ],
+      "commonMistakes": [
+        "Hips tilting toward the lifted leg.",
+        "Overarching lower back to compensate.",
+        "Extended leg dropping below hip height."
+      ],
+      "progressions": [
+        "Glute Bridge Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Master the two-leg bridge hold first if you feel any hip or lower back strain."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "single-leg-glute-bridge-hold-right",
+      "name": "Single Leg Glute Bridge Hold Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Glutes",
+        "Hamstrings",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glutes unilaterally for intermediate fitness enthusiasts. Builds single-leg hip strength and corrects side-to-side imbalances.",
+      "setup": [
+        "Lie on your back in bridge position, then extend one leg straight out."
+      ],
+      "execution": [
+        "Lift hips off the floor keeping both sides level.",
+        "Hold the position on the single grounded leg."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips level, avoid tilting to one side.",
+        "Drive through the heel of the grounded foot.",
+        "Keep extended leg in line with your torso."
+      ],
+      "commonMistakes": [
+        "Hips tilting toward the lifted leg.",
+        "Overarching lower back to compensate.",
+        "Extended leg dropping below hip height."
+      ],
+      "progressions": [
+        "Glute Bridge Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Master the two-leg bridge hold first if you feel any hip or lower back strain."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "single-leg-wall-sit-left",
+      "name": "Single Leg Wall Sit Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "equipment": [
+        "Wall"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the quads and glutes unilaterally for advanced fitness enthusiasts. An intensified progression from the standard Wall Sit.",
+      "setup": [
+        "Start in a standard wall sit position with thighs parallel to the floor."
+      ],
+      "execution": [
+        "Lift one foot slightly off the floor.",
+        "Hold your body weight on the standing leg."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips level, don't drop to one side.",
+        "Keep the lifted foot relaxed, not pointed.",
+        "Maintain 90-degree knee angle on the standing leg."
+      ],
+      "commonMistakes": [
+        "Hips dropping toward the lifted leg side.",
+        "Knee of the standing leg caving inward.",
+        "Rising up out of position to compensate for fatigue."
+      ],
+      "progressions": [
+        "Wall Sit"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Master a full wall sit hold of 30+ seconds before attempting the single-leg version."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "12 sec",
+        "advanced": "15 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "single-leg-wall-sit-right",
+      "name": "Single Leg Wall Sit Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Quadriceps",
+        "Glutes"
+      ],
+      "equipment": [
+        "Wall"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the quads and glutes unilaterally for advanced fitness enthusiasts. An intensified progression from the standard Wall Sit.",
+      "setup": [
+        "Start in a standard wall sit position with thighs parallel to the floor."
+      ],
+      "execution": [
+        "Lift one foot slightly off the floor.",
+        "Hold your body weight on the standing leg."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips level, don't drop to one side.",
+        "Keep the lifted foot relaxed, not pointed.",
+        "Maintain 90-degree knee angle on the standing leg."
+      ],
+      "commonMistakes": [
+        "Hips dropping toward the lifted leg side.",
+        "Knee of the standing leg caving inward.",
+        "Rising up out of position to compensate for fatigue."
+      ],
+      "progressions": [
+        "Wall Sit"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Master a full wall sit hold of 30+ seconds before attempting the single-leg version."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "12 sec",
+        "advanced": "15 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "standing-hip-abduction-hold-left",
+      "name": "Standing Hip Abduction Hold Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Glute Medius",
+        "Hip Abductors"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glute medius for beginner fitness enthusiasts. Builds standing hip stability and single-leg balance.",
+      "setup": [
+        "Stand tall, optionally holding a wall for balance."
+      ],
+      "execution": [
+        "Lift one leg out to the side, keeping it straight.",
+        "Hold at end range without leaning the torso."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep standing leg slightly soft, not locked.",
+        "Avoid leaning the torso toward the standing side.",
+        "Keep hips facing forward throughout."
+      ],
+      "commonMistakes": [
+        "Leaning the torso to lift the leg higher.",
+        "Turning the lifted leg's toes upward instead of forward.",
+        "Losing balance and rushing the hold."
+      ],
+      "progressions": [
+        "Clamshell Hold",
+        "Fire Hydrant Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Use wall support if balance is a challenge."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "Balance",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "standing-hip-abduction-hold-right",
+      "name": "Standing Hip Abduction Hold Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Glute Medius",
+        "Hip Abductors"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the glute medius for beginner fitness enthusiasts. Builds standing hip stability and single-leg balance.",
+      "setup": [
+        "Stand tall, optionally holding a wall for balance."
+      ],
+      "execution": [
+        "Lift one leg out to the side, keeping it straight.",
+        "Hold at end range without leaning the torso."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep standing leg slightly soft, not locked.",
+        "Avoid leaning the torso toward the standing side.",
+        "Keep hips facing forward throughout."
+      ],
+      "commonMistakes": [
+        "Leaning the torso to lift the leg higher.",
+        "Turning the lifted leg's toes upward instead of forward.",
+        "Losing balance and rushing the hold."
+      ],
+      "progressions": [
+        "Clamshell Hold",
+        "Fire Hydrant Hold"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Use wall support if balance is a challenge."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "Balance",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "star-plank-hold-left",
+      "name": "Star Plank Hold Left",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Obliques",
+        "Shoulders",
+        "Hip Abductors"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the obliques, shoulders, and hip abductors for advanced fitness enthusiasts. Adds a balance challenge to the standard side plank.",
+      "setup": [
+        "Start in a side plank position on your forearm."
+      ],
+      "execution": [
+        "Extend the top arm and top leg outward simultaneously to form a star shape.",
+        "Hold the position while keeping hips lifted."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips high throughout.",
+        "Extend limbs fully for maximum stretch and tension.",
+        "Stack shoulders directly over the supporting elbow."
+      ],
+      "commonMistakes": [
+        "Hips dropping toward the floor.",
+        "Rotating the torso forward or backward.",
+        "Rushing to extend limbs before hips are stable."
+      ],
+      "progressions": [
+        "Side Plank Left",
+        "Side Plank Right"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Master a standard side plank hold before attempting this variation."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "star-plank-hold-right",
+      "name": "Star Plank Hold Right",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Advanced",
+      "musclesTargeted": [
+        "Obliques",
+        "Shoulders",
+        "Hip Abductors"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the obliques, shoulders, and hip abductors for advanced fitness enthusiasts. Adds a balance challenge to the standard side plank.",
+      "setup": [
+        "Start in a side plank position on your forearm."
+      ],
+      "execution": [
+        "Extend the top arm and top leg outward simultaneously to form a star shape.",
+        "Hold the position while keeping hips lifted."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep hips high throughout.",
+        "Extend limbs fully for maximum stretch and tension.",
+        "Stack shoulders directly over the supporting elbow."
+      ],
+      "commonMistakes": [
+        "Hips dropping toward the floor.",
+        "Rotating the torso forward or backward.",
+        "Rushing to extend limbs before hips are stable."
+      ],
+      "progressions": [
+        "Side Plank Left",
+        "Side Plank Right"
+      ],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Master a standard side plank hold before attempting this variation."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "static-lunge-hold-left",
+      "name": "Static Lunge Hold Left",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Quadriceps",
+        "Glutes",
+        "Hamstrings"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the quads, glutes, and hamstrings for beginner to intermediate fitness enthusiasts. Builds single-leg endurance and knee stability.",
+      "setup": [
+        "Step one leg forward into a lunge stance, back knee hovering just above the floor."
+      ],
+      "execution": [
+        "Hold the bottom lunge position without pulsing or rising."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep front knee tracking over the ankle, not past the toes.",
+        "Keep torso upright.",
+        "Distribute weight evenly between both legs."
+      ],
+      "commonMistakes": [
+        "Front knee collapsing inward.",
+        "Leaning the torso too far forward.",
+        "Back knee slamming into the floor."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Static Split Squat Hold"
+      ],
+      "safetyNotes": [
+        "Use a folded towel under the back knee if floor contact causes discomfort."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "25 sec",
+        "advanced": "30 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "static-lunge-hold-right",
+      "name": "Static Lunge Hold Right",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Quadriceps",
+        "Glutes",
+        "Hamstrings"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the quads, glutes, and hamstrings for beginner to intermediate fitness enthusiasts. Builds single-leg endurance and knee stability.",
+      "setup": [
+        "Step one leg forward into a lunge stance, back knee hovering just above the floor."
+      ],
+      "execution": [
+        "Hold the bottom lunge position without pulsing or rising."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep front knee tracking over the ankle, not past the toes.",
+        "Keep torso upright.",
+        "Distribute weight evenly between both legs."
+      ],
+      "commonMistakes": [
+        "Front knee collapsing inward.",
+        "Leaning the torso too far forward.",
+        "Back knee slamming into the floor."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Static Split Squat Hold"
+      ],
+      "safetyNotes": [
+        "Use a folded towel under the back knee if floor contact causes discomfort."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "25 sec",
+        "advanced": "30 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "static-squat-hold",
+      "name": "Static Squat Hold",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Quadriceps",
+        "Glutes",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the quads, glutes, and core for beginner to intermediate fitness enthusiasts. Builds lower-body endurance without equipment.",
+      "setup": [
+        "Stand with feet shoulder-width apart."
+      ],
+      "execution": [
+        "Lower into a squat until thighs are roughly parallel to the floor.",
+        "Hold that position without rising or sinking further."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep chest lifted and back flat.",
+        "Push knees slightly outward, in line with toes.",
+        "Keep weight balanced through the whole foot."
+      ],
+      "commonMistakes": [
+        "Knees caving inward.",
+        "Weight shifting onto toes.",
+        "Rounding the lower back."
+      ],
+      "progressions": [
+        "Wall Sit"
+      ],
+      "advancedVariations": [
+        "Single Leg Wall Sit",
+        "Pistol Squat Hold"
+      ],
+      "safetyNotes": [
+        "Reduce depth if you feel knee discomfort."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "30 sec",
+        "advanced": "40 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "sumo-squat-hold",
+      "name": "Sumo Squat Hold",
+      "tier_1": "Lower Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Adductors",
+        "Glutes",
+        "Quadriceps"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the inner thighs, glutes, and quads for beginner to intermediate fitness enthusiasts. Emphasizes the adductors more than a standard squat hold.",
+      "setup": [
+        "Stand with feet wider than shoulder-width, toes turned out."
+      ],
+      "execution": [
+        "Lower into a wide squat.",
+        "Hold, keeping knees tracking over the toes."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep chest lifted throughout.",
+        "Push knees out in line with the toes.",
+        "Keep weight centered, not shifted forward."
+      ],
+      "commonMistakes": [
+        "Knees collapsing inward.",
+        "Leaning the torso too far forward.",
+        "Stance too narrow, reducing inner-thigh engagement."
+      ],
+      "progressions": [],
+      "advancedVariations": [],
+      "safetyNotes": [
+        "Reduce depth if knee or hip discomfort occurs."
+      ],
+      "recommendedVolume": {
+        "beginner": "20 sec",
+        "intermediate": "25 sec",
+        "advanced": "30 sec"
+      },
+      "tags": [
+        "Lower Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "v-sit-hold",
+      "name": "V-Sit Hold",
+      "tier_1": "Core",
+      "tier_2": "Strength",
+      "difficulty": "Intermediate",
+      "musclesTargeted": [
+        "Abs",
+        "Hip Flexors",
+        "Core"
+      ],
+      "equipment": [
+        "Bodyweight"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the core and hip flexors for intermediate to advanced fitness enthusiasts. Builds the balance and core strength used in advanced bodyweight skills.",
+      "setup": [
+        "Sit on the floor, knees bent, feet flat."
+      ],
+      "execution": [
+        "Lean back slightly, lift feet off the floor, and extend arms forward for balance.",
+        "Hold the balanced V position."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Keep chest lifted, don't round the back.",
+        "Engage core to stay balanced.",
+        "Start with bent knees before progressing to straight legs."
+      ],
+      "commonMistakes": [
+        "Rounding the lower back.",
+        "Holding breath while balancing.",
+        "Progressing to straight-leg version too early."
+      ],
+      "progressions": [
+        "Hollow Body Hold"
+      ],
+      "advancedVariations": [
+        "Straight-Leg V-Sit Hold"
+      ],
+      "safetyNotes": [
+        "Keep knees bent if you feel strain in the lower back or hip flexors."
+      ],
+      "recommendedVolume": {
+        "beginner": "10 sec",
+        "intermediate": "15 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Core",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
+    },
+    {
+      "id": "wall-push-isometric-hold",
+      "name": "Wall Push Isometric Hold",
+      "tier_1": "Upper Body",
+      "tier_2": "Strength",
+      "difficulty": "Beginner",
+      "musclesTargeted": [
+        "Chest",
+        "Shoulders",
+        "Triceps"
+      ],
+      "equipment": [
+        "Wall"
+      ],
+      "trainingGoals": [
+        "Strength",
+        "Endurance"
+      ],
+      "metric": {
+        "type": "time",
+        "unit": "seconds",
+        "allowCustomUnit": false
+      },
+      "description": "A strength exercise targeting the chest, shoulders, and triceps for beginner fitness enthusiasts. A joint-friendly way to build pressing strength without full bodyweight load.",
+      "setup": [
+        "Stand facing a wall, arm's length away, palms flat against it at chest height."
+      ],
+      "execution": [
+        "Press palms into the wall as hard as possible without your hands sliding, and hold the tension."
+      ],
+      "breathing": {
+        "inhale": "Take steady breaths in through the nose",
+        "exhale": "Breathe out through the mouth",
+        "pattern": "Maintain steady, rhythmic breathing throughout the hold — never hold your breath"
+      },
+      "formCues": [
+        "Press evenly through both palms.",
+        "Keep core braced, avoid arching the back.",
+        "Keep shoulders down, away from ears."
+      ],
+      "commonMistakes": [
+        "Locking elbows without engaging the chest.",
+        "Leaning the whole body instead of pressing.",
+        "Holding breath during the push."
+      ],
+      "progressions": [],
+      "advancedVariations": [
+        "Isometric Push-Up Hold Top"
+      ],
+      "safetyNotes": [
+        "Keep wrists in a neutral, flat position to avoid strain."
+      ],
+      "recommendedVolume": {
+        "beginner": "15 sec",
+        "intermediate": "18 sec",
+        "advanced": "20 sec"
+      },
+      "tags": [
+        "Upper Body",
+        "isometric"
+      ],
+      "movementType": "isometric",
+      "holdBased": true
     }
   ]
 }

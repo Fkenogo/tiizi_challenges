@@ -13,10 +13,15 @@ const categoryOptions = new Set<WellnessCategory>([
   'habits',
   'stress',
   'social',
+  'movement',
+  'health-monitoring',
 ]);
 
 const difficultyOptions = new Set<WellnessDifficulty>(['beginner', 'intermediate', 'advanced', 'expert']);
-const activityTypeOptions = new Set<WellnessActivityType>(['fasting', 'water', 'sleep', 'meditation', 'food', 'habit', 'breathing', 'social']);
+const activityTypeOptions = new Set<WellnessActivityType>([
+  'fasting', 'water', 'sleep', 'meditation', 'food', 'habit', 'breathing', 'social',
+  'steps', 'walking', 'yoga', 'monitoring',
+]);
 
 function slugify(name: string): string {
   return name

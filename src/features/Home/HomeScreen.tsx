@@ -11,6 +11,7 @@ import { TrendingChallenges } from '../../components/Home/TrendingChallenges';
 import { LoadingSpinner } from '../../components/Layout';
 import { useChallenges } from '../../hooks/useChallenges';
 import { challengeService } from '../../services/challengeService';
+import { isChallengeOngoing } from '../../utils/challengeLifecycle';
 
 function HomeScreen() {
   const navigate = useNavigate();
@@ -54,77 +55,57 @@ function HomeScreen() {
     [dailyGoals],
   );
 
-  const fallbackActiveChallenge = useMemo(() => {
+  const fallbackMyChallenges = useMemo(() => {
     const now = Date.now();
-    const candidates = accessibleChallenges
-      .filter((item) => item.status === 'active')
-      .filter((item) => {
+    return accessibleChallenges
+      .filter((item) => isChallengeOngoing(item, now) && membershipIndex.has(item.id))
+      .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate))
+      .slice(0, 3)
+      .map((item) => {
         const start = Date.parse(item.startDate);
         const end = Date.parse(item.endDate);
-        return !Number.isNaN(start) && !Number.isNaN(end) && now >= start && now <= end;
-      })
-      .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate));
-    const selected = candidates.find((item) => {
-      const status = membershipIndex.get(item.id);
-      return status === 'active' || status === 'completed';
-    });
-    if (!selected) return null;
-    const start = Date.parse(selected.startDate);
-    const end = Date.parse(selected.endDate);
-    const oneDay = 1000 * 60 * 60 * 24;
-    const totalDays = Math.max(1, Math.ceil((end - start) / oneDay) + 1);
-    const day = Math.min(totalDays, Math.max(1, Math.floor((now - start) / oneDay) + 1));
-    return {
-      id: selected.id,
-      name: selected.name,
-      season: selected.challengeType ? `${selected.challengeType} challenge` : 'Group challenge',
-      level: 'Active',
-      progress: Math.max(5, Math.round((day / totalDays) * 100)),
-      progressLabel: `${Math.max(5, Math.round((day / totalDays) * 100))}% complete`,
-      day,
-      totalDays,
-      groupId: selected.groupId,
-      challengeType: selected.challengeType ?? 'collective',
-      actionLabel: selected.category && selected.category !== 'fitness' ? 'Log Activity' as const : 'Log Workout' as const,
-    };
+        const oneDay = 1000 * 60 * 60 * 24;
+        const totalDays = Math.max(1, Math.ceil((end - start) / oneDay) + 1);
+        const day = Math.min(totalDays, Math.max(1, Math.floor((now - start) / oneDay) + 1));
+        const progress = Math.max(5, Math.round((day / totalDays) * 100));
+        return {
+          id: item.id,
+          name: item.name,
+          season: item.challengeType ? `${item.challengeType} challenge` : 'Group challenge',
+          level: 'Active',
+          progress,
+          progressLabel: `${progress}% complete`,
+          day,
+          totalDays,
+          groupId: item.groupId,
+          challengeType: item.challengeType ?? 'collective',
+          actionLabel: (item.category && item.category !== 'fitness' ? 'Log Activity' : 'Log Workout') as 'Log Workout' | 'Log Activity',
+          isUserCompleted: false,
+        };
+      });
   }, [accessibleChallenges, membershipIndex]);
 
-  const fallbackTrending = useMemo(() => {
+  const fallbackMostActive = useMemo(() => {
     const now = Date.now();
     const oneDay = 1000 * 60 * 60 * 24;
     return visibleChallenges
-      .filter((item) => item.status === 'active' || item.status === 'completed')
-      .sort((a, b) => {
-        const participantDelta = Number(b.participantCount ?? 0) - Number(a.participantCount ?? 0);
-        if (participantDelta !== 0) return participantDelta;
-        return Date.parse(b.startDate) - Date.parse(a.startDate);
-      })
-      .slice(0, 5)
+      .filter((item) => isChallengeOngoing(item, now))
+      .sort((a, b) => Number(b.participantCount ?? 0) - Number(a.participantCount ?? 0))
+      .slice(0, 3)
       .map((challenge) => {
-        const start = Date.parse(challenge.startDate);
         const end = Date.parse(challenge.endDate);
-        const hasStarted = !Number.isNaN(start) && now >= start;
-        const hasEnded = !Number.isNaN(end) && now > end;
         const remaining = !Number.isNaN(end) ? Math.max(0, Math.ceil((end - now) / oneDay)) : 0;
-        const startsIn = !Number.isNaN(start) ? Math.max(0, Math.ceil((start - now) / oneDay)) : 0;
-        const joined = (membershipIndex.get(challenge.id) === 'active') || (membershipIndex.get(challenge.id) === 'completed');
-        const isCompleted = challenge.status === 'completed' || hasEnded;
+        const joined = membershipIndex.get(challenge.id) === 'active';
         const actionLabel: 'Join' | 'View' | 'Log Workout' | 'Log Activity' = joined
-          ? (isCompleted
-            ? 'View'
-            : hasStarted
-            ? ((challenge.category && challenge.category !== 'fitness')
-              ? 'Log Activity'
-              : 'Log Workout')
-            : 'View')
-          : (isCompleted ? 'View' : 'Join');
+          ? ((challenge.category && challenge.category !== 'fitness') ? 'Log Activity' : 'Log Workout')
+          : 'Join';
         return {
           id: challenge.id,
           name: challenge.name,
           members: `${challenge.participantCount ?? 0}`,
           imageUrl: challenge.coverImageUrl,
           joined,
-          daysLabel: isCompleted ? 'Completed' : (hasStarted ? `${remaining} Days Left` : `Starts in ${startsIn} Days`),
+          daysLabel: `${remaining} Days Left`,
           actionLabel,
           groupId: challenge.groupId,
           challengeType: challenge.challengeType ?? 'collective',
@@ -132,11 +113,18 @@ function HomeScreen() {
       });
   }, [visibleChallenges, membershipIndex]);
 
-  const effectiveActiveChallenge = data?.activeChallenge ?? fallbackActiveChallenge;
-  const effectiveTrendingChallenges =
-    (data?.trendingChallenges && data.trendingChallenges.length > 0)
-      ? data.trendingChallenges
-      : fallbackTrending;
+  const effectiveMyChallenges =
+    (data?.myChallenges && data.myChallenges.length > 0)
+      ? data.myChallenges
+      : fallbackMyChallenges;
+  const effectiveMostActive =
+    (data?.mostActiveOngoing && data.mostActiveOngoing.length > 0)
+      ? data.mostActiveOngoing
+      : fallbackMostActive;
+
+  const joinedGroupCount = data?.myGroupsCount ?? 0;
+  const activeChallengeCount = effectiveMyChallenges.length;
+  const showActivationCard = joinedGroupCount === 0 && activeChallengeCount === 0;
 
   useEffect(() => {
     hasRetriedEmptyHomeRef.current = false;
@@ -144,13 +132,13 @@ function HomeScreen() {
 
   useEffect(() => {
     if (!user?.uid || isLoading || isError || hasRetriedEmptyHomeRef.current) return;
-    if (effectiveActiveChallenge || effectiveTrendingChallenges.length > 0) return;
+    if (effectiveMyChallenges.length > 0 || effectiveMostActive.length > 0) return;
     hasRetriedEmptyHomeRef.current = true;
     const timer = window.setTimeout(() => {
       void refetch();
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [user?.uid, isLoading, isError, effectiveActiveChallenge, effectiveTrendingChallenges.length, refetch]);
+  }, [user?.uid, isLoading, isError, effectiveMyChallenges.length, effectiveMostActive.length, refetch]);
 
   useEffect(() => {
     if (searchParams.get('focusGoals') !== '1') return;
@@ -192,48 +180,82 @@ function HomeScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen pb-[96px] bg-slate-50">
-        <header className="px-4 pt-5 pb-4 border-b border-slate-200 bg-slate-50">
+        <header className="px-4 pt-4 pb-3 border-b border-slate-200/70 bg-slate-50">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               {profilePhoto ? (
                 <img
                   src={profilePhoto}
                   alt={displayName}
-                  className="w-14 h-14 rounded-full object-cover border-[3px] border-[#f6cdb5]"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-[#f6cdb5] flex-shrink-0"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full border-[3px] border-[#f6cdb5] bg-primary/15 text-primary flex items-center justify-center text-lg font-bold">
+                <div className="w-10 h-10 rounded-full border-2 border-[#f6cdb5] bg-primary/10 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-[13px] leading-[16px] text-slate-500">Welcome back,</p>
-                <h1 className="st-page-title truncate">
-                  {displayName}!
+                <p className="text-[11px] leading-[14px] font-medium text-slate-400 uppercase tracking-[0.06em]">Welcome back</p>
+                <h1 className="text-[17px] leading-[22px] font-black text-slate-900 truncate">
+                  {displayName}
                 </h1>
               </div>
             </div>
-            <button className="relative h-11 w-11 flex items-center justify-center text-slate-800" onClick={() => navigate('/app/notifications')}>
-              <Bell size={22} />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
+            <button className="relative h-9 w-9 flex items-center justify-center text-slate-700" onClick={() => navigate('/app/notifications')}>
+              <Bell size={20} />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
             </button>
           </div>
         </header>
 
-        <main className="px-4 pt-5 space-y-8">
+        <main className="px-4 pt-5 space-y-7">
+          {showActivationCard && (
+            <section>
+              <article className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-base font-black text-slate-900">Start your Tiizi journey</p>
+                <p className="mt-1.5 text-sm text-slate-600">
+                  Join a group or create your first challenge to start building healthy habits together.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    className="h-10 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900"
+                    onClick={() => navigate('/app/groups', { state: { tab: 'discover' } })}
+                  >
+                    Explore Groups
+                  </button>
+                  <button
+                    className="h-10 rounded-xl bg-primary text-sm font-bold text-white"
+                    onClick={() => navigate('/app/create-challenge')}
+                  >
+                    Create Challenge
+                  </button>
+                </div>
+              </article>
+            </section>
+          )}
+
           <section>
-            <h2 className="st-section-label mb-3">Active Challenge</h2>
-            {effectiveActiveChallenge ? (
-              <ActiveChallengeCard challenge={effectiveActiveChallenge} />
+            <h2 className="st-section-label mb-3">My Challenges</h2>
+            {effectiveMyChallenges.length > 0 ? (
+              <div className="-mx-4 overflow-x-auto px-4">
+                <div className={effectiveMyChallenges.length > 1 ? 'flex gap-3 pb-1' : ''} style={effectiveMyChallenges.length > 1 ? { width: 'max-content' } : undefined}>
+                  {effectiveMyChallenges.map((challenge) => (
+                    <div key={challenge.id} className={effectiveMyChallenges.length > 1 ? 'w-[300px] shrink-0' : undefined}>
+                      <ActiveChallengeCard challenge={challenge} />
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <article className="rounded-2xl border border-slate-200 bg-white px-3 py-4">
-                <p className="text-sm text-slate-600">No active group challenge yet.</p>
+                <p className="text-sm font-bold text-slate-900">Get Started</p>
+                <p className="mt-1 text-sm text-slate-600">Your active challenges will appear here once you join or create one.</p>
                 {data?.myGroupsCount ? (
-                  <button className="mt-3 h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white" onClick={() => navigate('/app/challenges')}>
+                  <button className="mt-3 h-10 rounded-xl bg-primary px-5 text-sm font-bold text-white" onClick={() => navigate('/app/challenges')}>
                     Browse Challenges
                   </button>
                 ) : (
-                  <button className="mt-3 h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white" onClick={() => navigate('/app/groups')}>
+                  <button className="mt-3 h-10 rounded-xl bg-primary px-5 text-sm font-bold text-white" onClick={() => navigate('/app/groups', { state: { tab: 'discover' } })}>
                     Join a Group
                   </button>
                 )}
@@ -243,42 +265,43 @@ function HomeScreen() {
 
           <section ref={goalsSectionRef}>
             <h3 className="st-section-label mb-3">Today's Goals</h3>
-            <article className="rounded-2xl border border-slate-200 bg-white p-4">
+            <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex gap-2">
                 <input
                   ref={goalInputRef}
-                  className="h-11 flex-1 rounded-xl border border-slate-200 px-3 text-sm"
-                  placeholder="Write your goal for today..."
+                  className="h-10 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[14px] placeholder:text-slate-400"
+                  placeholder="Add a goal for today…"
                   value={goalInput}
                   onChange={(event) => setGoalInput(event.target.value)}
                   disabled={dailyGoals.length >= 3 || saveDailyGoals.isPending}
                 />
                 <button
-                  className="h-11 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-60"
+                  className="h-10 rounded-xl bg-primary px-4 text-[13px] font-bold text-white disabled:opacity-50"
                   onClick={handleAddGoal}
                   disabled={!canAddGoal || saveDailyGoals.isPending}
                 >
                   Add
                 </button>
               </div>
-              <p className="mt-2 text-xs text-slate-500">Up to 3 goals per day.</p>
 
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-1.5">
                 {sortedGoals.map((goal) => (
                   <button
                     key={goal.id}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-left"
+                    className={`w-full flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${goal.completed ? 'border-slate-100 bg-slate-50' : 'border-slate-200 bg-white'}`}
                     onClick={() => toggleGoal(goal.id)}
                     disabled={saveDailyGoals.isPending}
                   >
-                    <span className={`text-sm ${goal.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                      {goal.completed ? '✓ ' : '○ '}
+                    <span className={`text-[15px] leading-none flex-shrink-0 ${goal.completed ? 'text-primary' : 'text-slate-300'}`}>
+                      {goal.completed ? '✓' : '○'}
+                    </span>
+                    <span className={`text-[13px] leading-[18px] ${goal.completed ? 'line-through text-slate-400' : 'text-slate-800 font-medium'}`}>
                       {goal.text}
                     </span>
                   </button>
                 ))}
                 {sortedGoals.length === 0 && (
-                  <p className="text-sm text-slate-500">No goals yet. Add up to 3 goals for today.</p>
+                  <p className="text-[12px] text-slate-400 py-1">Up to 3 goals per day.</p>
                 )}
               </div>
             </article>
@@ -286,16 +309,16 @@ function HomeScreen() {
 
           <section>
             <div className="flex items-end justify-between mb-3">
-              <h3 className="st-section-label">Trending Challenges</h3>
-              <button className="text-[14px] leading-[18px] font-semibold text-primary" onClick={() => navigate('/app/challenges')}>
-                See All →
+              <h3 className="st-section-label">Most Active</h3>
+              <button className="text-[13px] leading-[18px] font-semibold text-primary" onClick={() => navigate('/app/challenges')}>
+                See all
               </button>
             </div>
-            {effectiveTrendingChallenges && (
+            {effectiveMostActive.length > 0 && (
               <TrendingChallenges
-                challenges={effectiveTrendingChallenges}
+                challenges={effectiveMostActive}
                 onSelectChallenge={(challengeId) => {
-                  const selected = effectiveTrendingChallenges.find((item) => item.id === challengeId);
+                  const selected = effectiveMostActive.find((item) => item.id === challengeId);
                   if (!selected) {
                     navigate('/app/challenges');
                     return;
@@ -307,9 +330,9 @@ function HomeScreen() {
                 }}
               />
             )}
-            {(!effectiveTrendingChallenges || effectiveTrendingChallenges.length === 0) && (
+            {effectiveMostActive.length === 0 && (
               <article className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
-                No trending challenges available yet.
+                No ongoing challenges available yet.
               </article>
             )}
           </section>

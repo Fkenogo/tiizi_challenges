@@ -31,11 +31,15 @@ function ProfilePersonalInfoScreen() {
     try {
       await saveProfileSetup.mutateAsync({
         exerciseInterests: setup?.exerciseInterests ?? [],
+        wellnessInterests: setup?.wellnessInterests ?? [],
         customInterests: setup?.customInterests ?? [],
+        customWellnessInterests: setup?.customWellnessInterests ?? [],
+        goals: setup?.goals ?? [],
         primaryGoal: setup?.primaryGoal,
         secondaryGoal: setup?.secondaryGoal,
         customGoals: setup?.customGoals ?? [],
         onboardingCompleted: setup?.onboardingCompleted ?? false,
+        hasSeenIntro: setup?.hasSeenIntro ?? false,
         region: setup?.region ?? 'Kenya',
         privacySettings: setup?.privacySettings ?? {
           isProfilePublic: true,

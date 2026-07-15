@@ -16,10 +16,15 @@ function ProfileCompletionScreen() {
 
   const [fullName, setFullName] = useState('');
   const [birthday, setBirthday] = useState('');
+  const [birthdayError, setBirthdayError] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [heightCm, setHeightCm] = useState('');
+  const [gender, setGender] = useState('');
+  const [genderSelfDescribe, setGenderSelfDescribe] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const GENDER_OPTIONS = ['Female', 'Male', 'Non-binary', 'Prefer not to say', 'Self describe'];
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const weightOptions = Array.from({ length: 171 }, (_, idx) => 30 + idx); // 30kg-200kg
   const heightOptions = Array.from({ length: 121 }, (_, idx) => 120 + idx); // 120cm-240cm
@@ -29,6 +34,8 @@ function ProfileCompletionScreen() {
     setBirthday(setup?.personalInfo?.birthday || '');
     setWeightKg(setup?.personalInfo?.weightKg ? String(setup.personalInfo.weightKg) : '');
     setHeightCm(setup?.personalInfo?.heightCm ? String(setup.personalInfo.heightCm) : '');
+    setGender(setup?.personalInfo?.gender || '');
+    setGenderSelfDescribe(setup?.personalInfo?.genderSelfDescribe || '');
     setPhotoUrl(setup?.personalInfo?.photoURL || user?.photoURL || '');
   }, [setup, profile?.displayName, user?.photoURL]);
 
@@ -69,15 +76,24 @@ function ProfileCompletionScreen() {
       showToast('Please enter your full name.', 'error');
       return;
     }
+    if (!birthday.trim()) {
+      setBirthdayError('Please enter your birthday.');
+      return;
+    }
+    setBirthdayError('');
 
     try {
       await saveProfileSetup.mutateAsync({
         exerciseInterests: setup?.exerciseInterests ?? [],
+        wellnessInterests: setup?.wellnessInterests ?? [],
         customInterests: setup?.customInterests ?? [],
+        customWellnessInterests: setup?.customWellnessInterests ?? [],
+        goals: setup?.goals ?? [],
         primaryGoal: setup?.primaryGoal,
         secondaryGoal: setup?.secondaryGoal,
         customGoals: setup?.customGoals ?? [],
-        onboardingCompleted: false,
+        onboardingCompleted: setup?.onboardingCompleted ?? false,
+        hasSeenIntro: setup?.hasSeenIntro ?? false,
         region: setup?.region ?? 'Kenya',
         privacySettings: setup?.privacySettings ?? {
           isProfilePublic: true,
@@ -96,6 +112,8 @@ function ProfileCompletionScreen() {
           heightCm: Number(heightCm) || undefined,
           displayName: setup?.personalInfo?.displayName ?? fullName.trim(),
           photoURL: photoUrl || undefined,
+          gender: gender || undefined,
+          genderSelfDescribe: gender === 'Self describe' ? genderSelfDescribe.trim() || undefined : undefined,
         },
       });
       navigate('/app/profile/interests');
@@ -113,11 +131,15 @@ function ProfileCompletionScreen() {
     try {
       await saveProfileSetup.mutateAsync({
         exerciseInterests: setup?.exerciseInterests ?? [],
+        wellnessInterests: setup?.wellnessInterests ?? [],
         customInterests: setup?.customInterests ?? [],
+        customWellnessInterests: setup?.customWellnessInterests ?? [],
+        goals: setup?.goals ?? [],
         primaryGoal: setup?.primaryGoal,
         secondaryGoal: setup?.secondaryGoal,
         customGoals: setup?.customGoals ?? [],
-        onboardingCompleted: false,
+        onboardingCompleted: setup?.onboardingCompleted ?? false,
+        hasSeenIntro: setup?.hasSeenIntro ?? false,
         region: setup?.region ?? 'Kenya',
         privacySettings: setup?.privacySettings ?? {
           isProfilePublic: true,
@@ -136,6 +158,8 @@ function ProfileCompletionScreen() {
           heightCm: Number(heightCm) || undefined,
           displayName: setup?.personalInfo?.displayName || fullName.trim() || setup?.personalInfo?.fullName || profile?.displayName || '',
           photoURL: photoUrl || undefined,
+          gender: gender || undefined,
+          genderSelfDescribe: gender === 'Self describe' ? genderSelfDescribe.trim() || undefined : undefined,
         },
       });
     } catch {
@@ -157,12 +181,12 @@ function ProfileCompletionScreen() {
         </div>
 
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-[18px] leading-[24px] font-bold text-slate-500">Step 1 of 3</p>
-          <p className="text-[18px] leading-[24px] font-bold text-primary">33%</p>
+          <p className="text-[18px] leading-[24px] font-bold text-slate-500">Step 1 of 5</p>
+          <p className="text-[18px] leading-[24px] font-bold text-primary">20%</p>
         </div>
 
         <div className="st-progress-track mt-3">
-          <div className="st-progress-fill" style={{ width: '33%' }} />
+          <div className="st-progress-fill" style={{ width: '20%' }} />
         </div>
 
         <h1 className="st-heading-xl mt-6">Complete Your Profile</h1>
@@ -224,11 +248,37 @@ function ProfileCompletionScreen() {
                 type="date"
                 max={new Date().toISOString().slice(0, 10)}
                 value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
+                onChange={(e) => { setBirthday(e.target.value); if (birthdayError) setBirthdayError(''); }}
                 placeholder="DD/MM/YYYY"
               />
               <Calendar size={24} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
+            {!!birthdayError && <p className="mt-1 text-xs text-red-600">{birthdayError}</p>}
+          </div>
+
+          <div>
+            <p className="st-label">Gender <span className="text-slate-400 font-normal">(optional)</span></p>
+            <div className="flex flex-wrap gap-2">
+              {GENDER_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${gender === opt ? 'bg-primary text-white border-primary' : 'bg-white text-slate-700 border-slate-200'}`}
+                  onClick={() => { setGender((prev) => prev === opt ? '' : opt); }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {gender === 'Self describe' && (
+              <input
+                className="st-input mt-3"
+                placeholder="Describe your gender..."
+                value={genderSelfDescribe}
+                maxLength={60}
+                onChange={(e) => setGenderSelfDescribe(e.target.value)}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

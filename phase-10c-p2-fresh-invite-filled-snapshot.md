@@ -1,0 +1,33 @@
+- generic [ref=e467] [box=360,0,480,919]:
+  - generic [ref=e468] [box=360,0,480,919]:
+    - banner [ref=e469] [box=360,0,480,90]:
+      - generic [ref=e471] [box=376,16,133,24]:
+        - generic [ref=e472] [box=376,16,16,24]: ◉
+        - heading "Your Groups" [level=1] [ref=e473] [box=400,17,109,22]
+      - generic [ref=e474] [box=376,52,448,29]:
+        - button "My Groups" [ref=e475] [cursor=pointer] [box=376,52,73,28]
+        - button "Discover" [ref=e476] [cursor=pointer] [box=469,52,59,28]
+        - button "Invites" [ref=e477] [cursor=pointer] [box=548,52,44,28]
+    - main [ref=e478] [box=360,90,480,213]:
+      - generic [ref=e521] [box=376,102,448,201]:
+        - heading "Join with Invite" [level=2] [ref=e522] [box=393,119,414,21]
+        - paragraph [ref=e523] [box=393,144,414,15]: Enter a secure group invite code to join.
+        - textbox "Paste invite code" [active] [ref=e524] [box=393,171,414,40]: EARLY-BIRDS
+        - button "Join Group" [ref=e525] [cursor=pointer] [box=393,223,414,40]
+        - paragraph [ref=e526] [box=393,271,414,15]: Invite access is verified securely before group membership is created.
+  - navigation [ref=e485] [box=360,854,480,65]:
+    - generic [ref=e486] [box=372,865,456,44]:
+      - button "Home" [ref=e487] [cursor=pointer] [box=372,865,64,44]:
+        - img [ref=e488] [box=394,870,20,20]
+        - generic [ref=e491] [box=389,892,29,13]: Home
+      - button "Groups" [ref=e492] [cursor=pointer] [box=472,865,64,44]:
+        - img [ref=e493] [box=494,870,20,20]
+        - generic [ref=e498] [box=484,892,39,13]: Groups
+      - button [ref=e500] [cursor=pointer] [box=572,853,56,56]:
+        - img [ref=e501] [box=586,867,28,28]
+      - button "Challenges" [ref=e502] [cursor=pointer] [box=664,865,64,44]:
+        - img [ref=e503] [box=686,870,20,20]
+        - generic [ref=e509] [box=668,892,55,13]: Challenges
+      - button "Profile" [ref=e510] [cursor=pointer] [box=764,865,64,44]:
+        - img [ref=e511] [box=786,870,20,20]
+        - generic [ref=e514] [box=780,892,31,13]: Profile

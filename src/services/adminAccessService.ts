@@ -167,14 +167,7 @@ class AdminAccessService {
       return { role, permissions: permissionsFromRole(role) };
     }
 
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return { role: 'member', permissions: defaultPermissions };
-
-    const userData = userSnap.data() as { role?: string; profile?: { role?: string } };
-    const legacyRole = (userData.role ?? userData.profile?.role) as AdminRole | undefined;
-    const role: AdminRole = legacyRole ?? 'member';
-    return { role, permissions: permissionsFromRole(role) };
+    return { role: 'member', permissions: defaultPermissions };
   }
 }
 

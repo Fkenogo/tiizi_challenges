@@ -15,6 +15,7 @@ function AdminUsersScreen() {
   const { data, isLoading } = useAdminUsersConfig();
   const upsertMutation = useUpsertAdminUser();
   const [uid, setUid] = useState('');
+  const [uidError, setUidError] = useState('');
   const [role, setRole] = useState<'super_admin' | 'content_manager' | 'moderator' | 'support' | 'admin'>('admin');
   const [status, setStatus] = useState<'active' | 'suspended'>('active');
   const [displayName, setDisplayName] = useState('');
@@ -23,7 +24,12 @@ function AdminUsersScreen() {
   if (isLoading) return <LoadingSpinner fullScreen label="Loading admin users..." />;
 
   const onSave = async () => {
-    if (!user?.uid || !uid.trim()) return;
+    if (!user?.uid) return;
+    if (!uid.trim()) {
+      setUidError('User UID is required.');
+      return;
+    }
+    setUidError('');
     try {
       await upsertMutation.mutateAsync({
         actorUid: user.uid,
@@ -37,6 +43,7 @@ function AdminUsersScreen() {
       });
       showToast('Admin user saved.', 'success');
       setUid('');
+      setUidError('');
       setDisplayName('');
       setEmail('');
     } catch {
@@ -48,7 +55,15 @@ function AdminUsersScreen() {
     <AdminLayout title="Admin User Management" permissions={permissions}>
       <Card>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          <input value={uid} onChange={(e) => setUid(e.target.value)} placeholder="User UID" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+          <div>
+            <input
+              value={uid}
+              onChange={(e) => { setUid(e.target.value); if (e.target.value.trim()) setUidError(''); }}
+              placeholder="User UID (required)"
+              className={`h-10 w-full rounded-lg border px-3 text-sm ${uidError ? 'border-red-400 bg-red-50' : 'border-slate-200'}`}
+            />
+            {uidError ? <p className="mt-1 text-xs text-red-600">{uidError}</p> : null}
+          </div>
           <select value={role} onChange={(e) => setRole(e.target.value as typeof role)} className="h-10 rounded-lg border border-slate-200 px-3 text-sm">
             <option value="super_admin">super_admin</option>
             <option value="content_manager">content_manager</option>
@@ -64,7 +79,7 @@ function AdminUsersScreen() {
           <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (optional)" className="h-10 rounded-lg border border-slate-200 px-3 text-sm md:col-span-2" />
         </div>
         <div className="mt-3 flex gap-2">
-          <button className="h-10 px-4 rounded-lg bg-primary text-white text-sm font-bold disabled:opacity-50" disabled={!permissions.canManageAdminUsers || upsertMutation.isPending} onClick={onSave}>Save Admin User</button>
+          <button className="h-10 px-4 rounded-lg bg-primary text-white text-sm font-bold disabled:opacity-50" disabled={!permissions.canManageAdminUsers || upsertMutation.isPending} onClick={onSave}>{upsertMutation.isPending ? 'Saving…' : 'Save Admin User'}</button>
           <button className="h-10 px-4 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold" onClick={() => navigate('/app/admin/settings')}>Back to App Settings</button>
         </div>
       </Card>
@@ -82,7 +97,11 @@ function AdminUsersScreen() {
               </tr>
             </thead>
             <tbody>
-              {(data ?? []).map((row) => (
+              {(data ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-4 text-sm text-slate-500 text-center">No admin users configured yet.</td>
+                </tr>
+              ) : (data ?? []).map((row) => (
                 <tr key={row.uid} className="border-b border-slate-100">
                   <td className="py-2 pr-3 font-mono text-xs">{row.uid}</td>
                   <td className="py-2 pr-3">{row.role}</td>

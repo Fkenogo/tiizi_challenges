@@ -1,0 +1,42 @@
+- generic [ref=e8]:
+  - banner [ref=e9]:
+    - button [ref=e10] [cursor=pointer]:
+      - img [ref=e11]
+    - heading "Privacy Settings" [level=1] [ref=e13]
+  - heading "Control what other members can see" [level=2] [ref=e14]
+  - paragraph [ref=e15]: Privacy Settings
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - paragraph [ref=e19]: Show weight/height to groups
+        - paragraph [ref=e20]: Only visible in communities you join
+      - button [ref=e21] [cursor=pointer]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - paragraph [ref=e25]: Show birthday to friends
+        - paragraph [ref=e26]: Notify your friends when it’s your day
+      - button [ref=e27] [cursor=pointer]
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - paragraph [ref=e31]: Make profile searchable
+        - paragraph [ref=e32]: Allow others to find you by name
+      - button [ref=e33] [cursor=pointer]
+  - paragraph [ref=e35]: Public Profile Preview
+  - generic [ref=e38]:
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - paragraph [ref=e42]: Pilot Smoke User
+        - paragraph [ref=e43]: "@pilot_smoke_user"
+      - generic [ref=e44]: New Member
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - paragraph [ref=e47]: Height
+        - paragraph [ref=e48]: Not set
+      - generic [ref=e49]:
+        - paragraph [ref=e50]: Weight
+        - paragraph [ref=e51]: Not set
+      - generic [ref=e52]:
+        - paragraph [ref=e53]: Joined
+        - paragraph [ref=e54]: Today
+    - paragraph [ref=e56]: Profile details appear here only when you choose to share them.
+  - button "Save Privacy Settings" [ref=e57] [cursor=pointer]

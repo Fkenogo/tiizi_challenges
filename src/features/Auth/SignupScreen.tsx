@@ -21,8 +21,8 @@ function SignupScreen() {
 
   const nextPath = (() => {
     const raw = params.get('next');
-    if (!raw) return '/app/profile/completion';
-    return raw.startsWith('/app') ? raw : '/app/profile/completion';
+    if (!raw) return '/app/onboarding/intro';
+    return raw.startsWith('/app') ? raw : '/app/onboarding/intro';
   })();
 
   useEffect(() => {
@@ -143,6 +143,18 @@ function SignupScreen() {
           <button className="text-primary font-semibold" onClick={() => navigate(`/app/login${params.get('next') ? `?next=${encodeURIComponent(params.get('next') ?? '')}` : ''}`)}>
             Log in
           </button>
+        </p>
+
+        <p className="mt-4 text-center text-xs text-slate-400 leading-[18px]">
+          By signing up, you agree to our{' '}
+          <button className="font-semibold text-slate-600 underline" onClick={() => navigate('/terms')}>
+            Terms
+          </button>{' '}
+          and{' '}
+          <button className="font-semibold text-slate-600 underline" onClick={() => navigate('/privacy')}>
+            Privacy Policy
+          </button>
+          .
         </p>
       </div>
     </Screen>

@@ -1,0 +1,41 @@
+- generic [ref=e908] [box=369,16,448,859]:
+  - heading "Challenge Detail" [level=3] [ref=e910] [box=373,16,108,15]
+  - generic [ref=e911] [box=369,43,448,832]:
+    - paragraph [ref=e912] [box=386,60,414,18]: "Challenge: 7-day squats marathon"
+    - paragraph [ref=e913] [box=386,86,414,30]: 100 squats a day. You dont have to do all at once. Just ensure you hit at least 100 for the day. Keep going
+    - paragraph [ref=e914] [box=386,124,414,15]: "Status: Ongoing • 1 day left"
+    - paragraph [ref=e915] [box=386,139,414,15]: "Starts: 6/10/2026"
+    - paragraph [ref=e916] [box=386,154,414,15]: "Ends: 6/16/2026"
+    - paragraph [ref=e917] [box=386,169,414,15]: "Duration: 7 days"
+    - generic [ref=e918] [box=386,196,414,54]:
+      - generic [ref=e919] [box=386,196,133,54]:
+        - paragraph [ref=e920] [box=395,205,115,15]: My Logs
+        - paragraph [ref=e921] [box=395,220,115,21]: "2"
+      - generic [ref=e922] [box=526,196,133,54]:
+        - paragraph [ref=e923] [box=535,205,115,15]: Total Logs
+        - paragraph [ref=e924] [box=535,220,115,21]: "2"
+      - generic [ref=e925] [box=667,196,133,54]:
+        - paragraph [ref=e926] [box=676,205,115,15]: Participants
+        - paragraph [ref=e927] [box=676,220,115,21]: "1"
+    - generic [ref=e928] [box=386,262,414,83]:
+      - paragraph [ref=e929] [box=399,275,388,15]: Activities
+      - list [ref=e930] [box=399,298,388,34]:
+        - listitem [ref=e931] [box=399,298,388,15]: "• Squats: target 700 reps"
+        - listitem [ref=e932] [box=399,317,388,15]: "• Abdominal Crunches: target 1 Reps"
+    - generic [ref=e933] [box=386,357,414,194]:
+      - paragraph [ref=e934] [box=399,370,388,15]: Fitness + Cause
+      - paragraph [ref=e935] [box=399,389,388,15]: Wambu medical help
+      - paragraph [ref=e936] [box=399,408,388,15]: HElp wambui to raise money for kidney treatment
+      - paragraph [ref=e937] [box=399,427,388,15]: "Target: KES 100,000"
+      - paragraph [ref=e938] [box=399,446,388,15]: "Contribution window: 2026-06-10 to 2026-06-16"
+      - paragraph [ref=e939] [box=399,465,388,15]: "Manual payment number: +250794003947"
+      - paragraph [ref=e940] [box=399,488,388,50]: Tiizi does not hold or manage funds. Contributions are coordinated by the group. Tiizi does not automatically verify challenge payments; pledges stay pending/unverified until Tiizi review.
+    - generic [ref=e941] [box=386,563,414,60]:
+      - paragraph [ref=e942] [box=399,576,388,15]: Leaderboard Snapshot
+      - paragraph [ref=e943] [box=399,595,388,15]: No leaderboard activity yet.
+    - paragraph [ref=e944] [box=386,627,414,15]: Linked to selected group
+    - generic [ref=e945] [box=386,658,414,200]:
+      - button "Join Challenge" [ref=e946] [cursor=pointer] [box=386,658,414,44]
+      - button "Leave Challenge" [ref=e947] [cursor=pointer] [box=386,710,414,44]
+      - button "Back to Challenges" [ref=e948] [cursor=pointer] [box=386,762,414,44]
+      - button "Back to Group" [ref=e949] [cursor=pointer] [box=386,814,414,44]

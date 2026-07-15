@@ -1,0 +1,70 @@
+- generic [ref=e224] [box=353,0,480,1538]:
+  - generic [ref=e225] [box=353,0,480,1538]:
+    - banner [ref=e226] [box=353,0,480,73]:
+      - generic [ref=e227] [box=369,16,448,40]:
+        - button [ref=e228] [cursor=pointer] [box=369,16,40,40]:
+          - img [ref=e229] [box=377,24,24,24]
+        - heading "Group Detail" [level=1] [ref=e231] [box=538,25,108,22]
+        - button "Report group" [ref=e232] [cursor=pointer] [box=777,16,40,40]:
+          - img [ref=e233] [box=786,25,22,22]
+    - generic [ref=e238] [box=369,89,448,97]:
+      - img "Early Birds Kenya" [ref=e239] [box=369,89,96,96]
+      - generic [ref=e240] [box=481,89,336,97]:
+        - generic [ref=e241] [box=481,89,336,21]:
+          - heading "Early Birds Kenya" [level=2] [ref=e242] [box=481,89,137,21]
+          - img [ref=e243] [box=625,92,16,16]
+        - paragraph [ref=e246] [box=481,114,336,20]: 15 Members • Official Group
+        - generic [ref=e247] [box=481,146,336,40]:
+          - button "✓ Joined" [ref=e248] [cursor=pointer] [box=481,146,104,40]
+          - button "Leave" [ref=e249] [cursor=pointer] [box=592,146,74,40]
+    - generic [ref=e252] [box=369,208,448,56]:
+      - button "Feed" [ref=e253] [cursor=pointer] [box=369,208,112,56]
+      - button "Challenges" [ref=e254] [cursor=pointer] [box=481,208,112,56]
+      - button "Members" [ref=e255] [cursor=pointer] [box=593,208,112,56]
+      - button "Leaderboard" [ref=e256] [cursor=pointer] [box=705,208,112,56]
+    - main [ref=e257] [box=353,265,480,1177]:
+      - generic [ref=e258] [box=369,289,448,679]:
+        - generic [ref=e259] [box=386,306,414,42]:
+          - generic [ref=e260] [box=386,306,270,42]
+          - button "Refresh invites and requests" [ref=e267] [cursor=pointer] [box=764,309,36,36]
+        - generic [ref=e271] [box=386,364,414,285]:
+          - generic [ref=e272] [box=386,364,414,48]
+          - generic [ref=e275] [box=386,424,414,72]
+          - generic [ref=e277] [box=386,508,414,82]
+          - button "Create Invite" [ref=e279] [cursor=pointer] [box=386,601,414,48]
+        - generic [ref=e280] [box=386,669,414,170]:
+          - heading "Invites" [level=4] [ref=e281] [box=386,669,414,18]
+          - generic [ref=e332] [box=386,695,414,144]
+        - generic [ref=e284] [box=386,859,414,44]:
+          - heading "Join Requests" [level=4] [ref=e285] [box=386,859,414,18]
+          - paragraph [ref=e287] [box=386,885,414,18]: No pending requests.
+        - paragraph [ref=e288] [box=386,919,414,32]:
+          - img [ref=e289] [box=386,928,13,14]
+          - text: Invite tokens are hidden after creation. Existing rows never expose token hashes.
+      - generic [ref=e292] [box=369,996,448,279]:
+        - heading "Active Challenges" [level=3] [ref=e293] [box=369,996,448,21]
+        - article [ref=e294] [box=369,1029,448,246]:
+          - generic [ref=e342] [box=390,1050,406,42]
+          - generic [ref=e347] [box=390,1116,406,20]
+          - generic [ref=e351] [box=390,1180,406,44]
+          - paragraph [ref=e358] [box=390,1236,406,18]: 2 personal logs in this challenge
+      - generic [ref=e298] [box=369,1303,448,139]:
+        - heading "Upcoming Challenges" [level=3] [ref=e299] [box=369,1303,448,21]
+        - article [ref=e300] [box=369,1336,448,106]:
+          - generic [ref=e360] [box=390,1357,238,64]
+  - navigation [ref=e302] [box=353,854,480,65]:
+    - generic [ref=e303] [box=365,865,456,44]:
+      - button "Home" [ref=e304] [cursor=pointer] [box=365,865,64,44]:
+        - img [ref=e305] [box=387,870,20,20]
+        - generic [ref=e308] [box=382,892,29,13]: Home
+      - button "Groups" [ref=e309] [cursor=pointer] [box=465,865,64,44]:
+        - img [ref=e310] [box=487,870,20,20]
+        - generic [ref=e315] [box=477,892,39,13]: Groups
+      - button [ref=e317] [cursor=pointer] [box=565,853,56,56]:
+        - img [ref=e318] [box=579,867,28,28]
+      - button "Challenges" [ref=e319] [cursor=pointer] [box=657,865,64,44]:
+        - img [ref=e320] [box=679,870,20,20]
+        - generic [ref=e326] [box=661,892,55,13]: Challenges
+      - button "Profile" [ref=e327] [cursor=pointer] [box=757,865,64,44]:
+        - img [ref=e328] [box=779,870,20,20]
+        - generic [ref=e331] [box=773,892,31,13]: Profile

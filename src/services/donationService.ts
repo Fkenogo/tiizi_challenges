@@ -5,6 +5,7 @@ import type { ChallengeContributionPledge, SupportDonation, SupportDonationPrefe
 type CreateSupportDonationInput = {
   userId: string;
   amountKes: number;
+  currency?: string;
   frequency: SupportDonation['frequency'];
   trigger: SupportDonation['trigger'];
   paymentMethod: SupportDonation['paymentMethod'];
@@ -17,7 +18,9 @@ type CreateChallengeContributionInput = {
   challengeId: string;
   groupId: string;
   userId: string;
-  amountKes: number;
+  pledgedAmount: number;
+  currency?: string;
+  causeName?: string;
   timingStartDate?: string;
   timingEndDate?: string;
   paymentPhoneNumber?: string;
@@ -35,6 +38,7 @@ class DonationService {
       id: ref.id,
       userId: input.userId,
       amountKes: Math.max(0, Math.round(input.amountKes)),
+      currency: input.currency,
       frequency: input.frequency,
       trigger: input.trigger,
       paymentMethod: input.paymentMethod,
@@ -99,23 +103,38 @@ class DonationService {
 
   async createChallengeContribution(input: CreateChallengeContributionInput): Promise<ChallengeContributionPledge> {
     const ref = doc(collection(db, this.challengePledgesCollection));
+    const now = new Date().toISOString();
     const payload: ChallengeContributionPledge = {
       id: ref.id,
       challengeId: input.challengeId,
       groupId: input.groupId,
       userId: input.userId,
-      amountKes: Math.max(0, Math.round(input.amountKes)),
+      pledgedAmount: Math.max(0, Math.round(input.pledgedAmount)),
+      amountKes: Math.max(0, Math.round(input.pledgedAmount)),
+      currency: input.currency,
+      causeName: input.causeName,
       timingStartDate: input.timingStartDate,
       timingEndDate: input.timingEndDate,
       paymentPhoneNumber: input.paymentPhoneNumber,
       status: input.status,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     await setDoc(ref, payload);
     return payload;
   }
 
-  async getUserChallengeContribution(challengeId: string, userId: string): Promise<ChallengeContributionPledge | null> {
+  async confirmChallengeContribution(pledgeId: string, userId: string): Promise<void> {
+    const ref = doc(db, this.challengePledgesCollection, pledgeId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Pledge record not found');
+    const existing = snap.data() as ChallengeContributionPledge;
+    if (existing.userId !== userId) throw new Error('Not allowed to confirm this pledge');
+    const now = new Date().toISOString();
+    await setDoc(ref, { status: 'confirmed', confirmedAt: now, updatedAt: now }, { merge: true });
+  }
+
+  async getUserChallengeContributions(challengeId: string, userId: string): Promise<ChallengeContributionPledge[]> {
     const snap = await getDocs(
       query(
         collection(db, this.challengePledgesCollection),
@@ -123,10 +142,19 @@ class DonationService {
         where('userId', '==', userId),
       ),
     );
-    if (snap.empty) return null;
     const records = snap.docs.map((item) => item.data() as ChallengeContributionPledge);
     records.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-    return records[0] ?? null;
+    return records;
+  }
+
+  async getChallengeTotalRaised(challengeId: string): Promise<number> {
+    const snap = await getDocs(
+      query(collection(db, this.challengePledgesCollection), where('challengeId', '==', challengeId)),
+    );
+    return snap.docs.reduce((sum, d) => {
+      const p = d.data() as ChallengeContributionPledge;
+      return p.status === 'confirmed' ? sum + (p.pledgedAmount ?? p.amountKes ?? 0) : sum;
+    }, 0);
   }
 }
 

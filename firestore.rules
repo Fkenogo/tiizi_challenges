@@ -4,6 +4,18 @@ service cloud.firestore {
     return request.auth != null;
   }
 
+  function configuredChallengeActivityCountFrom(challengeData) {
+    let activityCount = challengeData.get('activities', []).size();
+    let durationDays = challengeData.get('durationDays', 1);
+    let effectiveDays = durationDays < 1 ? 1 : durationDays;
+    return activityCount * effectiveDays;
+  }
+
+  function isValidChallengeMemberCreate(challengeData) {
+    return request.resource.data.totalActivities == 0
+      || request.resource.data.totalActivities == configuredChallengeActivityCountFrom(challengeData);
+  }
+
   function hasUserRole(role) {
     return isAuthenticated()
       && exists(/databases/(default)/documents/users/$(request.auth.uid))
@@ -110,15 +122,93 @@ service cloud.firestore {
       && !(get(/databases/(default)/documents/groups/$(groupId)).data.isPrivate == true);
   }
 
+  // Returns true when the group is active or has no status field (legacy default-open).
+  // Any new collection that links to a group by groupId MUST use this helper on create.
+  function isActiveGroup(groupId) {
+    let g = get(/databases/(default)/documents/groups/$(groupId));
+    return !g.data.keys().hasAll(['status']) || g.data.status != 'inactive';
+  }
+
+  // Returns true when the authenticated user can read a specific groupActivityFeed item.
+  // Used to gate subcollection (reactions, comments, replies) reads.
+  function canReadFeedItem(feedItemId) {
+    let feedItem = get(/databases/(default)/documents/groupActivityFeed/$(feedItemId));
+    return isGroupMember(feedItem.data.groupId)
+        || isPublicGroup(feedItem.data.groupId)
+        || canAccessAdmin();
+  }
+
+  // Returns true when the authenticated user holds an active challengeMembers doc
+  // for the given challenge. Membership ID format: ${challengeId}_${userId}.
+  function isActiveChallengeMember(challengeId) {
+    let membershipId = challengeId + '_' + request.auth.uid;
+    return isAuthenticated()
+      && exists(/databases/(default)/documents/challengeMembers/$(membershipId))
+      && get(/databases/(default)/documents/challengeMembers/$(membershipId)).data.status in ['active', 'joined'];
+  }
+
+  // Returns true when the write is a collective-progress-only update:
+  // only groupCurrentTotal (and optionally status='completed' + completedAt) may change.
+  // Requires the challenge to be an active v2 collective and the writer to be a member.
+  function isActiveCollectiveProgressUpdate(challengeId) {
+    return resource.data.engineVersion == 'v2'
+      && resource.data.challengeType == 'collective'
+      && resource.data.status == 'active'
+      && isActiveChallengeMember(challengeId)
+      && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['groupCurrentTotal', 'status', 'completedAt'])
+      && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+          || request.resource.data.status == 'completed');
+  }
+
   match /databases/{database}/documents {
     match /catalogExercises/{exerciseId} {
       allow read: if true;
       allow create, update, delete: if canManageExercises();
     }
 
+    // Top-level fields a user may write on their own /users/{uid} document.
+    // 'role' is intentionally excluded — it is the sole source of truth for
+    // hasUserRole() privilege checks and must only ever be set by an admin
+    // (canManageUsers()/canManageAdminUsers() branch below). Allowing 'role'
+    // here would let any authenticated user self-promote to admin.
+    function userSelfWritableFields() {
+      return [
+        'uid', 'email', 'displayName', 'photoURL', 'status', 'emailVerified',
+        'createdAt', 'lastActive', 'profile', 'stats', 'lastWorkoutAt',
+        'lastChallengeJoinedAt', 'notifications', 'dailyGoals', 'dailyGoalsAnalytics',
+      ];
+    }
+
+    // 'profile.role' backs hasProfileRole() the same way top-level 'role' backs
+    // hasUserRole() — block it from self-writes even though 'profile' itself is
+    // otherwise self-writable (onboarding/profile-setup writes the whole map).
+    function hasNoSelfWrittenProfileRole() {
+      return !('profile' in request.resource.data) || !('role' in request.resource.data.profile);
+    }
+
+    // resource.data does not exist yet on create, so keys() (not diff()) is used.
+    function isValidUserSelfCreate() {
+      return request.resource.data.keys().hasOnly(userSelfWritableFields())
+        && hasNoSelfWrittenProfileRole();
+    }
+
+    function isValidUserSelfUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(userSelfWritableFields())
+        && hasNoSelfWrittenProfileRole();
+    }
+
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (request.auth.uid == userId || canManageUsers() || canManageAdminUsers());
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == userId && isValidUserSelfCreate())
+        || canManageUsers() || canManageAdminUsers()
+      );
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == userId && isValidUserSelfUpdate())
+        || canManageUsers() || canManageAdminUsers()
+      );
+      allow delete: if isAuthenticated() && (canManageUsers() || canManageAdminUsers());
     }
 
     match /groups/{groupId} {
@@ -133,7 +223,8 @@ service cloud.firestore {
     match /groupMembers/{membershipId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid;
+                    && request.resource.data.userId == request.auth.uid
+                    && isActiveGroup(request.resource.data.groupId);
       allow update, delete: if isAuthenticated()
                             && (
                               resource.data.userId == request.auth.uid
@@ -149,6 +240,7 @@ service cloud.firestore {
       );
       allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid
                     && isGroupMember(request.resource.data.groupId)
+                    && isActiveGroup(request.resource.data.groupId)
                     && (
                       request.resource.data.donation.enabled != true
                       || (
@@ -156,21 +248,54 @@ service cloud.firestore {
                         && request.resource.data.moderationStatus == 'pending'
                       )
                     );
-      allow update, delete: if isAuthenticated() && (
+      // Creator can update non-donation-activation writes, provided moderationStatus is unchanged.
+      // Old rule used !(request.resource.data.moderationStatus == 'approved'), which evaluated
+      // the post-write merged doc and blocked all creator updates to approved challenges (BUG-G6).
+      // Fix: compare against the existing value — moderationStatus may not change via this path.
+      allow update: if isAuthenticated() && (
         (
           resource.data.createdBy == request.auth.uid
           && !(resource.data.donation.enabled == true && request.resource.data.status == 'active')
-          && !(request.resource.data.moderationStatus == 'approved')
+          && request.resource.data.moderationStatus == resource.data.moderationStatus
+        )
+        || isActiveCollectiveProgressUpdate(challengeId)
+        || canModerateChallenges()
+      );
+      // Creator can delete their own challenges unless approved or active-donation.
+      allow delete: if isAuthenticated() && (
+        (
+          resource.data.createdBy == request.auth.uid
+          && !(resource.data.donation.enabled == true && resource.data.status == 'active')
+          && resource.data.moderationStatus != 'approved'
         )
         || canModerateChallenges()
       );
     }
 
     match /challengeMembers/{membershipId} {
-      allow read: if isAuthenticated();
+      // H2 fix: removed vacuous || isAuthenticated() tail clause.
+      // Allows: own membership | same-group member | public-group visitor | moderator.
+      // resource == null / resource.data == null covers the self-heal probe (getDoc on
+      // a non-existent doc must return exists()===false, not a permission error).
+      allow get: if isAuthenticated() && (
+        resource == null
+        || resource.data == null
+        || resource.data.userId == request.auth.uid
+        || isGroupMember(resource.data.groupId)
+        || isPublicGroup(resource.data.groupId)
+        || canModerateChallenges()
+      );
+      // H3: flat-collection design prevents WHERE-clause inspection in rules.
+      // All app queries include a challengeId, userId, or groupId constraint —
+      // broad enumeration is rejected at the application layer, not rules layer.
+      allow list: if isAuthenticated();
       allow create: if isAuthenticated()
                     && request.resource.data.userId == request.auth.uid
-                    && isGroupMember(request.resource.data.groupId);
+                    && isActiveGroup(request.resource.data.groupId)
+                    && (
+                      isGroupMember(request.resource.data.groupId)
+                      || isPublicGroup(request.resource.data.groupId)
+                    );
       allow update: if isAuthenticated()
                     && (
                       resource.data.userId == request.auth.uid
@@ -186,7 +311,11 @@ service cloud.firestore {
     match /workouts/{workoutId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid;
+                    && request.resource.data.userId == request.auth.uid
+                    && (
+                      !('groupId' in request.resource.data)
+                      || isActiveGroup(request.resource.data.groupId)
+                    );
       allow update, delete: if isAuthenticated()
                             && resource.data.userId == request.auth.uid;
     }
@@ -212,10 +341,23 @@ service cloud.firestore {
     }
 
     match /wellnessLogs/{logId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && (request.resource.data.scoringVersion == 'v2'
+                        ? request.resource.data.points >= 0
+                        : request.resource.data.points >= 0)
+                    && (
+                      !('groupId' in request.resource.data)
+                      || isActiveGroup(request.resource.data.groupId)
+                    );
+      // Own logs always readable. Group members can read all logs within their group so that
+      // the group feed (getGroupFeed) can query wellnessLogs where groupId == groupId. Without
+      // this clause the collection query is PERMISSION_DENIED (Firestore evaluates list queries
+      // against the rule body — a userId-only constraint does not cover other members' docs).
       allow read: if isAuthenticated()
                   && (
                     resource.data.userId == request.auth.uid
+                    || isGroupMember(resource.data.groupId)
                     || canAccessAdmin()
                   );
       allow update, delete: if isAuthenticated()
@@ -233,6 +375,26 @@ service cloud.firestore {
     match /groupReports/{reportId} {
       allow read: if canManageGroups();
       allow write: if canModerateGroups();
+    }
+
+    // groupInvites, groupJoinRequests, and groupAuditLogs are written exclusively by the
+    // Cloud Functions in functions/src/groupInviteBackend.ts (Admin SDK, bypasses these
+    // rules). All client writes are denied here by design — default-deny.
+    match /groupInvites/{inviteId} {
+      allow read: if false;
+      allow create, update, delete: if false;
+    }
+
+    match /groupJoinRequests/{requestId} {
+      // Read is used by groupInviteService.listGroupJoinRequests() for group managers
+      // reviewing pending requests; all writes happen via the Cloud Functions above.
+      allow read: if isAuthenticated();
+      allow create, update, delete: if false;
+    }
+
+    match /groupAuditLogs/{auditId} {
+      allow read: if false;
+      allow create, update, delete: if false;
     }
 
     match /donationCampaigns/{campaignId} {
@@ -303,6 +465,13 @@ service cloud.firestore {
       allow write: if isSuperAdmin() || hasAdminRole('content_manager') || hasUserRole('content_manager') || hasAdminRole('moderator') || hasUserRole('moderator');
     }
 
+    match /platformSettings/{settingId} {
+      // Authenticated users may read the public support settings doc only.
+      // Other platform settings docs remain admin-only.
+      allow read: if isAuthenticated() && settingId == "support";
+      allow write: if isSuperAdmin();
+    }
+
     match /admins/{adminId} {
       allow read: if isAuthenticated() && (request.auth.uid == adminId || canManageAdminUsers());
       allow write: if canManageAdminUsers();
@@ -313,6 +482,78 @@ service cloud.firestore {
       allow create: if canAccessAdmin()
                     && request.resource.data.actorUid == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    match /groupActivityFeed/{feedItemId} {
+      // Group members and public-group visitors may read feed items.
+      allow read: if isAuthenticated()
+                  && (
+                    isGroupMember(resource.data.groupId)
+                    || isPublicGroup(resource.data.groupId)
+                    || canAccessAdmin()
+                  );
+      // Feed items are written only by Cloud Functions (service account), not clients.
+      allow create, update, delete: if false;
+
+      match /reactions/{reactionUserId} {
+        // Tightened from Phase 19A-4: reads now follow parent feed item access
+        // rather than any authenticated user.
+        allow read: if isAuthenticated() && canReadFeedItem(feedItemId);
+        // A user may create or update only their own reaction doc,
+        // and only when they are an active group member.
+        allow create, update: if isAuthenticated()
+                              && request.auth.uid == reactionUserId
+                              && request.resource.data.userId == request.auth.uid
+                              && isGroupMember(request.resource.data.groupId);
+        // A user may delete only their own reaction, verified against both
+        // the doc ID and the stored userId field.
+        allow delete: if isAuthenticated()
+                      && request.auth.uid == reactionUserId
+                      && resource.data.userId == request.auth.uid;
+      }
+
+      match /comments/{commentId} {
+        // Users who can read the parent feed item may read comments.
+        allow read: if isAuthenticated() && canReadFeedItem(feedItemId);
+        // Only group members may create comments.
+        // authorName is denormalised client-side; userId ownership is enforced.
+        allow create: if isAuthenticated()
+                      && request.resource.data.userId == request.auth.uid
+                      && isGroupMember(request.resource.data.groupId)
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 500;
+        // Owner may update only text field (not userId, groupId, feedItemId).
+        allow update: if isAuthenticated()
+                      && resource.data.userId == request.auth.uid
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 500
+                      && request.resource.data.userId == resource.data.userId;
+        // Owner may delete their own comment.
+        allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+        match /replies/{replyId} {
+          // Users who can read the parent feed item may read replies.
+          allow read: if isAuthenticated() && canReadFeedItem(feedItemId);
+          // Only group members may create replies.
+          allow create: if isAuthenticated()
+                        && request.resource.data.userId == request.auth.uid
+                        && isGroupMember(request.resource.data.groupId)
+                        && request.resource.data.text is string
+                        && request.resource.data.text.size() > 0
+                        && request.resource.data.text.size() <= 500;
+          // Owner may update only text field.
+          allow update: if isAuthenticated()
+                        && resource.data.userId == request.auth.uid
+                        && request.resource.data.text is string
+                        && request.resource.data.text.size() > 0
+                        && request.resource.data.text.size() <= 500
+                        && request.resource.data.userId == resource.data.userId;
+          // Owner may delete their own reply.
+          allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+        }
+      }
     }
   }
 }

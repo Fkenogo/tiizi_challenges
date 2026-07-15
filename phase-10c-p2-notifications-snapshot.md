@@ -1,0 +1,14 @@
+- generic [ref=e8] [box=376,16,448,290]:
+  - heading "Notifications" [level=3] [ref=e10] [box=380,16,84,15]
+  - generic [ref=e12] [box=393,60,414,36]:
+    - generic [ref=e13] [box=393,69,105,18]:
+      - img [ref=e14] [box=393,69,18,18]
+      - paragraph [ref=e17] [box=419,69,79,18]: Activity Inbox
+    - button "Mark all read" [disabled] [ref=e18] [box=704,60,103,36]:
+      - img [ref=e19] [box=716,71,14,14]
+      - text: Mark all read
+  - generic [ref=e23] [box=376,125,448,91]:
+    - paragraph [ref=e24] [box=377,126,446,18]: No notifications yet
+    - paragraph [ref=e25] [box=377,148,446,15]: Challenge updates, invite decisions, and group activity will appear here.
+    - button "Back to Home" [ref=e26] [cursor=pointer] [box=377,175,99,40]
+  - button "Back to Home" [ref=e28] [cursor=pointer] [box=393,245,414,44]

@@ -22,7 +22,7 @@ export const defaultExerciseInput: AdminExerciseInput = {
   description: '',
   setup: [],
   execution: [],
-  breathing: [],
+  breathing: { inhale: '', exhale: '', pattern: '' },
   formCues: [],
   commonMistakes: [],
   progressions: [],

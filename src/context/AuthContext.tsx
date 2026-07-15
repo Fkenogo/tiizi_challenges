@@ -71,16 +71,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         photoURL: firebaseUser.photoURL ?? null,
         status: 'active',
         emailVerified: firebaseUser.emailVerified ?? false,
-        createdAt: Timestamp.now(),
-        lastActive: Timestamp.now(),
-        stats: {
-          level: 1,
-          totalPoints: 0,
-          totalWorkouts: 0,
-          totalChallenges: 0,
-          challengesCompleted: 0,
-          totalGroups: 0,
-        },
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
       },
       { merge: true },
     );
@@ -129,27 +121,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password?: string) => {
-    if (password) {
-      const credentials = await signInWithEmailAndPassword(auth, email, password);
-      persistProfile(profileFromFirebaseUser(credentials.user));
-      if (shouldSyncUserDocument(credentials.user.uid)) {
-        void ensureUserDocument(credentials.user).catch((error) => {
-          console.error('Failed to bootstrap user document:', error);
-        });
-      }
+    if (!password) {
+      throw new Error('Password is required to sign in.');
+    }
+    const credentials = await signInWithEmailAndPassword(auth, email, password);
+    persistProfile(profileFromFirebaseUser(credentials.user));
+    if (shouldSyncUserDocument(credentials.user.uid)) {
+      void ensureUserDocument(credentials.user).catch((error) => {
+        console.error('Failed to bootstrap user document:', error);
+      });
     }
   };
 
   const signup = async (displayName: string, email: string, password?: string) => {
-    if (password) {
-      const credentials = await createUserWithEmailAndPassword(auth, email, password);
-      const nextProfile = { displayName: displayName || 'Tiizi User', email };
-      persistProfile(nextProfile);
-      if (shouldSyncUserDocument(credentials.user.uid)) {
-        void ensureUserDocument(credentials.user, displayName).catch((error) => {
-          console.error('Failed to bootstrap user document:', error);
-        });
-      }
+    if (!password) {
+      throw new Error('Password is required to create an account.');
+    }
+    const credentials = await createUserWithEmailAndPassword(auth, email, password);
+    const nextProfile = { displayName: displayName || 'Tiizi User', email };
+    persistProfile(nextProfile);
+    if (shouldSyncUserDocument(credentials.user.uid)) {
+      void ensureUserDocument(credentials.user, displayName).catch((error) => {
+        console.error('Failed to bootstrap user document:', error);
+      });
     }
   };
 

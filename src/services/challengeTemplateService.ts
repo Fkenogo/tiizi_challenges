@@ -1,5 +1,7 @@
-import { addDoc, collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+
+export type TemplateStatus = 'draft' | 'published' | 'archived' | 'deleted';
 
 export type SuggestedChallengeTemplate = {
   id: string;
@@ -13,6 +15,25 @@ export type SuggestedChallengeTemplate = {
   tag?: string;
   popularityText?: string;
   activityCount: number;
+  // Lifecycle
+  status: TemplateStatus;
+  isPublished: boolean;
+  isFeatured?: boolean;
+  featuredAt?: string;
+  featuredBy?: string;
+  version: number;
+  usageCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  archivedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  // Engine-specific fields (v2 engines)
+  requiredConsecutiveDays?: number;
+  streakResetOnMiss?: boolean;
+  groupCumulativeTarget?: number;
+  autoCompleteOnGroupTarget?: boolean;
   activities: Array<{
     exerciseId?: string;
     activityId?: string;
@@ -26,9 +47,10 @@ export type SuggestedChallengeTemplate = {
     benefits?: string[];
     guidelines?: string[];
     warnings?: string[];
-    frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
+    frequency?: 'daily' | 'weekly' | '2x-week' | '3x-week' | '5x-week' | 'custom';
     targetValue: number;
     unit: string;
+    targetType?: 'daily' | 'cumulative';
     instructions?: string[];
     pointsPerCompletion?: number;
     dailyFrequency?: number;
@@ -43,9 +65,8 @@ export type SuggestedChallengeTemplate = {
     contributionPhoneNumber?: string;
     contributionCardUrl?: string;
     disclaimer?: string;
+    currency?: string;
   };
-  isPublished: boolean;
-  version: number;
 };
 
 export type CreateSuggestedChallengeTemplateInput = {
@@ -58,6 +79,11 @@ export type CreateSuggestedChallengeTemplateInput = {
   coverImageUrl?: string;
   tag?: string;
   popularityText?: string;
+  // Engine-specific fields (v2 engines)
+  requiredConsecutiveDays?: number;
+  streakResetOnMiss?: boolean;
+  groupCumulativeTarget?: number;
+  autoCompleteOnGroupTarget?: boolean;
   activities: Array<{
     exerciseId?: string;
     activityId?: string;
@@ -71,9 +97,10 @@ export type CreateSuggestedChallengeTemplateInput = {
     benefits?: string[];
     guidelines?: string[];
     warnings?: string[];
-    frequency?: 'daily' | 'weekly' | '3x-week' | 'custom';
+    frequency?: 'daily' | 'weekly' | '2x-week' | '3x-week' | '5x-week' | 'custom';
     targetValue: number;
     unit: string;
+    targetType?: 'daily' | 'cumulative';
     instructions?: string[];
     pointsPerCompletion?: number;
     dailyFrequency?: number;
@@ -90,7 +117,10 @@ export type CreateSuggestedChallengeTemplateInput = {
     disclaimer?: string;
   };
   isPublished?: boolean;
+  createdBy?: string;
 };
+
+export type UpdateTemplateInput = Partial<Omit<CreateSuggestedChallengeTemplateInput, 'createdBy'>>;
 
 function stripUndefinedDeep<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -107,10 +137,19 @@ function stripUndefinedDeep<T>(value: T): T {
   return value;
 }
 
+// Derive status from legacy isPublished if explicit status field is absent.
+function deriveStatus(data: Record<string, unknown>): TemplateStatus {
+  if (data.status === 'draft' || data.status === 'published' || data.status === 'archived' || data.status === 'deleted') {
+    return data.status as TemplateStatus;
+  }
+  return data.isPublished !== false ? 'published' : 'draft';
+}
+
 class ChallengeTemplateService {
   private collectionName = 'challengeTemplates';
 
   private fromDoc(id: string, data: Record<string, unknown>): SuggestedChallengeTemplate {
+    const status = deriveStatus(data);
     return {
       id,
       category: (data.category as SuggestedChallengeTemplate['category']) ?? 'fitness',
@@ -123,6 +162,23 @@ class ChallengeTemplateService {
       tag: data.tag ? String(data.tag) : undefined,
       popularityText: data.popularityText ? String(data.popularityText) : undefined,
       activityCount: Number(data.activityCount ?? 0),
+      status,
+      isPublished: status === 'published',
+      isFeatured: data.isFeatured === true,
+      featuredAt: data.featuredAt ? String(data.featuredAt) : undefined,
+      featuredBy: data.featuredBy ? String(data.featuredBy) : undefined,
+      version: Number(data.version ?? 1),
+      usageCount: Number(data.usageCount ?? 0),
+      createdAt: data.createdAt ? String(data.createdAt) : undefined,
+      updatedAt: data.updatedAt ? String(data.updatedAt) : undefined,
+      publishedAt: data.publishedAt ? String(data.publishedAt) : undefined,
+      archivedAt: data.archivedAt ? String(data.archivedAt) : undefined,
+      createdBy: data.createdBy ? String(data.createdBy) : undefined,
+      updatedBy: data.updatedBy ? String(data.updatedBy) : undefined,
+      requiredConsecutiveDays: data.requiredConsecutiveDays != null ? Number(data.requiredConsecutiveDays) : undefined,
+      streakResetOnMiss: data.streakResetOnMiss != null ? Boolean(data.streakResetOnMiss) : undefined,
+      groupCumulativeTarget: data.groupCumulativeTarget != null ? Number(data.groupCumulativeTarget) : undefined,
+      autoCompleteOnGroupTarget: data.autoCompleteOnGroupTarget != null ? Boolean(data.autoCompleteOnGroupTarget) : undefined,
       activities: Array.isArray(data.activities)
         ? (data.activities as Array<Record<string, unknown>>).map((item) => ({
             exerciseId: item.exerciseId ? String(item.exerciseId) : undefined,
@@ -137,9 +193,10 @@ class ChallengeTemplateService {
             benefits: Array.isArray(item.benefits) ? item.benefits.map((line) => String(line)) : undefined,
             guidelines: Array.isArray(item.guidelines) ? item.guidelines.map((line) => String(line)) : undefined,
             warnings: Array.isArray(item.warnings) ? item.warnings.map((line) => String(line)) : undefined,
-            frequency: item.frequency ? String(item.frequency) as 'daily' | 'weekly' | '3x-week' | 'custom' : undefined,
+            frequency: item.frequency ? String(item.frequency) as 'daily' | 'weekly' | '2x-week' | '3x-week' | '5x-week' | 'custom' : undefined,
             targetValue: Number(item.targetValue ?? 0),
             unit: String(item.unit ?? 'Reps'),
+            targetType: item.targetType === 'daily' || item.targetType === 'cumulative' ? item.targetType : undefined,
             instructions: Array.isArray(item.instructions) ? item.instructions.map((line) => String(line)) : undefined,
             pointsPerCompletion: item.pointsPerCompletion ? Number(item.pointsPerCompletion) : undefined,
             dailyFrequency: item.dailyFrequency ? Number(item.dailyFrequency) : undefined,
@@ -158,20 +215,37 @@ class ChallengeTemplateService {
             contributionPhoneNumber: (data.donation as { contributionPhoneNumber?: string }).contributionPhoneNumber,
             contributionCardUrl: (data.donation as { contributionCardUrl?: string }).contributionCardUrl,
             disclaimer: (data.donation as { disclaimer?: string }).disclaimer,
+            currency: (data.donation as { currency?: string }).currency,
           }
         : undefined,
-      isPublished: data.isPublished !== false,
-      version: Number(data.version ?? 1),
     };
   }
 
+  // User-facing: published templates only (backward-compatible).
   async getPublishedTemplates(category: 'fitness' | 'wellness' | 'all' = 'fitness'): Promise<SuggestedChallengeTemplate[]> {
     const snap = await getDocs(collection(db, this.collectionName));
     return snap.docs
       .map((item) => this.fromDoc(item.id, item.data() as Record<string, unknown>))
-      .filter((template) => template.isPublished !== false)
+      .filter((template) => template.status === 'published')
       .filter((template) => (category === 'all' ? true : (template.category ?? 'fitness') === category))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => {
+        if (a.isFeatured && !b.isFeatured) return -1;
+        if (!a.isFeatured && b.isFeatured) return 1;
+        return a.name.localeCompare(b.name);
+      });
+  }
+
+  // Admin: all non-deleted templates.
+  async getAllTemplatesAdmin(): Promise<SuggestedChallengeTemplate[]> {
+    const snap = await getDocs(collection(db, this.collectionName));
+    return snap.docs
+      .map((item) => this.fromDoc(item.id, item.data() as Record<string, unknown>))
+      .filter((template) => template.status !== 'deleted')
+      .sort((a, b) => {
+        const aTime = a.updatedAt ?? a.createdAt ?? '';
+        const bTime = b.updatedAt ?? b.createdAt ?? '';
+        return bTime.localeCompare(aTime);
+      });
   }
 
   async getTemplateById(templateId: string): Promise<SuggestedChallengeTemplate | null> {
@@ -181,17 +255,140 @@ class ChallengeTemplateService {
   }
 
   async createTemplate(payload: CreateSuggestedChallengeTemplateInput): Promise<string> {
-    const createdAt = new Date().toISOString();
+    const now = new Date().toISOString();
+    const isPublished = payload.isPublished ?? false;
+    const status: TemplateStatus = isPublished ? 'published' : 'draft';
     const result = await addDoc(collection(db, this.collectionName), stripUndefinedDeep({
       ...payload,
       category: payload.category ?? 'fitness',
       activityCount: payload.activities.length,
-      isPublished: payload.isPublished ?? true,
+      status,
+      isPublished,
+      ...(isPublished ? { publishedAt: now } : {}),
       version: 1,
-      createdAt,
-      updatedAt: createdAt,
+      usageCount: 0,
+      createdAt: now,
+      updatedAt: now,
     }));
     return result.id;
+  }
+
+  async updateTemplate(templateId: string, actorUid: string, payload: UpdateTemplateInput): Promise<void> {
+    const now = new Date().toISOString();
+    const ref = doc(db, this.collectionName, templateId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error(`Template ${templateId} not found`);
+    const existing = snap.data() as Record<string, unknown>;
+    const nextVersion = Number(existing.version ?? 1) + 1;
+    await updateDoc(ref, stripUndefinedDeep({
+      ...payload,
+      ...(payload.activities != null ? { activityCount: payload.activities.length } : {}),
+      updatedAt: now,
+      updatedBy: actorUid,
+      version: nextVersion,
+    }));
+  }
+
+  async publishTemplate(templateId: string, actorUid: string): Promise<void> {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      status: 'published',
+      isPublished: true,
+      publishedAt: now,
+      updatedAt: now,
+      updatedBy: actorUid,
+    });
+  }
+
+  async unpublishTemplate(templateId: string, actorUid: string): Promise<void> {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      status: 'draft',
+      isPublished: false,
+      updatedAt: now,
+      updatedBy: actorUid,
+    });
+  }
+
+  async archiveTemplate(templateId: string, actorUid: string): Promise<void> {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      status: 'archived',
+      isPublished: false,
+      archivedAt: now,
+      updatedAt: now,
+      updatedBy: actorUid,
+    });
+  }
+
+  async restoreTemplate(templateId: string, actorUid: string): Promise<void> {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      status: 'draft',
+      isPublished: false,
+      archivedAt: null,
+      updatedAt: now,
+      updatedBy: actorUid,
+    });
+  }
+
+  // Soft delete — sets status to deleted. Document is retained in Firestore.
+  async deleteTemplate(templateId: string, actorUid: string): Promise<void> {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      status: 'deleted',
+      isPublished: false,
+      updatedAt: now,
+      updatedBy: actorUid,
+    });
+  }
+
+  async duplicateTemplate(templateId: string, actorUid: string): Promise<string> {
+    const source = await this.getTemplateById(templateId);
+    if (!source) throw new Error(`Template ${templateId} not found`);
+    const now = new Date().toISOString();
+    const { id: _id, status: _status, isPublished: _pub, publishedAt: _pa, archivedAt: _aa, usageCount: _uc, createdAt: _ca, updatedAt: _ua, createdBy: _cb, updatedBy: _ub, ...rest } = source;
+    const result = await addDoc(collection(db, this.collectionName), stripUndefinedDeep({
+      ...rest,
+      name: `${source.name} (Copy)`,
+      status: 'draft',
+      isPublished: false,
+      version: 1,
+      usageCount: 0,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: actorUid,
+      updatedBy: actorUid,
+    }));
+    return result.id;
+  }
+
+  async featureTemplate(templateId: string, actorUid: string): Promise<void> {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      isFeatured: true,
+      featuredAt: now,
+      featuredBy: actorUid,
+      updatedAt: now,
+      updatedBy: actorUid,
+    });
+  }
+
+  async unfeatureTemplate(templateId: string, actorUid: string): Promise<void> {
+    const now = new Date().toISOString();
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      isFeatured: false,
+      featuredAt: null,
+      featuredBy: null,
+      updatedAt: now,
+      updatedBy: actorUid,
+    });
+  }
+
+  async incrementUsageCount(templateId: string): Promise<void> {
+    await updateDoc(doc(db, this.collectionName, templateId), {
+      usageCount: Number((await getDoc(doc(db, this.collectionName, templateId))).data()?.usageCount ?? 0) + 1,
+    });
   }
 }
 

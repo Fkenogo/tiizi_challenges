@@ -17,26 +17,12 @@ function JoinGroupScreen() {
 
   const formattedCode = useMemo(() => inviteCode.toUpperCase().replace(/[^A-Z0-9-]/g, ''), [inviteCode]);
 
-  const handleJoin = async () => {
+  // Plaintext invite-code joining was disabled (security fix) — it bypassed the secure
+  // Cloud Function invite backend (hashed tokens, expiry, use-count limits, audit logging).
+  // Joining by invite code will return once wired to groupInviteService.redeemGroupInvite.
+  const handleJoin = () => {
     if (!formattedCode || !previewAccepted) return;
-
-    try {
-      const result = await joinGroup.mutateAsync({ inviteCode: formattedCode });
-      if (!result) {
-        showToast('Invite code not found.', 'error');
-        return;
-      }
-      setActiveGroupId(result.group.id);
-      if (result.status === 'pending') {
-        showToast('Request sent. Waiting for admin approval.', 'success');
-        return;
-      }
-      showToast('Joined group.', 'success');
-      navigate(`/app/group/${result.group.id}`);
-    } catch (error) {
-      console.error('Join group via invite failed:', error);
-      showToast('Could not join group.', 'error');
-    }
+    showToast('Invite code joining is temporarily unavailable. Ask the group owner to add you directly.', 'error');
   };
 
   return (

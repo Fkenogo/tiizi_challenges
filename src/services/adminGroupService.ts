@@ -1,4 +1,5 @@
 import {
+  addDoc,
   collection,
   doc,
   getCountFromServer,
@@ -114,12 +115,30 @@ class AdminGroupService {
     };
   }
 
-  async setGroupModerationStatus(groupId: string, status: AdminGroupStatus, adminUid: string): Promise<void> {
+  async setGroupModerationStatus(groupId: string, status: AdminGroupStatus, adminUid: string, reason?: string): Promise<void> {
+    const newOperationalStatus = status === 'deactivated' ? 'inactive' : 'active';
+    const prevSnap = await getDoc(doc(db, 'groups', groupId));
+    const previousStatus = prevSnap.exists()
+      ? String((prevSnap.data() as Record<string, unknown>).status ?? 'active')
+      : 'unknown';
+
     await updateDoc(doc(db, 'groups', groupId), {
+      status: newOperationalStatus,
       moderationStatus: status,
       moderatedBy: adminUid,
       moderatedAt: new Date().toISOString(),
     });
+
+    addDoc(collection(db, 'groupLifecycleEvents'), {
+      groupId,
+      type: status === 'deactivated' ? 'deactivated' : 'activated',
+      performedBy: adminUid,
+      previousStatus,
+      newStatus: newOperationalStatus,
+      moderationStatus: status,
+      ...(reason ? { reason } : {}),
+      timestamp: new Date().toISOString(),
+    }).catch(console.error);
   }
 
   async setGroupFeatured(groupId: string, isFeatured: boolean, adminUid: string): Promise<void> {
@@ -158,20 +177,14 @@ class AdminGroupService {
     });
   }
 
-  async suspendGroup(groupId: string, adminUid: string): Promise<void> {
-    await updateDoc(doc(db, 'groups', groupId), {
-      moderationStatus: 'deactivated',
-      moderatedBy: adminUid,
-      moderatedAt: new Date().toISOString(),
-    });
+  async suspendGroup(groupId: string, adminUid: string, reason?: string): Promise<void> {
+    await this.setGroupModerationStatus(groupId, 'deactivated', adminUid, reason);
   }
 
   async activateGroup(groupId: string, adminUid: string): Promise<void> {
-    await updateDoc(doc(db, 'groups', groupId), {
-      moderationStatus: 'active',
-      moderatedBy: adminUid,
-      moderatedAt: new Date().toISOString(),
-    });
+    const snap = await getDoc(doc(db, 'groups', groupId));
+    if (!snap.exists()) throw new Error('Group not found — cannot reactivate a deleted group.');
+    await this.setGroupModerationStatus(groupId, 'active', adminUid);
   }
 
   async suspendMemberInGroup(groupId: string, userId: string, adminUid: string): Promise<void> {

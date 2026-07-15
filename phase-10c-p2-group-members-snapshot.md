@@ -1,0 +1,58 @@
+- generic [ref=e366] [box=353,0,480,2023]:
+  - generic [ref=e367] [box=353,0,480,2023]:
+    - banner [ref=e368] [box=353,0,480,131]:
+      - generic [ref=e369] [box=369,16,448,40]:
+        - button [ref=e370] [cursor=pointer] [box=369,16,40,40]:
+          - img [ref=e371] [box=378,25,22,22]
+        - heading "Early Birds Kenya" [level=1] [ref=e373] [box=507,24,171,24]
+      - paragraph [ref=e375] [box=369,64,448,20]: 15 members • Active daily
+      - generic [ref=e376] [box=369,92,129,22]: Community Group
+    - generic [ref=e379] [box=369,132,448,56]:
+      - button "Feed" [ref=e380] [cursor=pointer] [box=369,132,112,56]
+      - button "Challenges" [ref=e381] [cursor=pointer] [box=481,132,112,56]
+      - button "Members" [ref=e382] [cursor=pointer] [box=593,132,112,56]
+      - button "Leaderboard" [ref=e383] [cursor=pointer] [box=705,132,112,56]
+    - main [ref=e384] [box=353,189,480,1738]:
+      - generic [ref=e385] [box=369,213,448,56]:
+        - img [ref=e386] [box=386,231,19,20]
+        - textbox [ref=e389] [box=416,214,383,54]:
+          - /placeholder: Search members...
+      - generic [ref=e390] [box=369,293,448,230]:
+        - heading "Group Managers" [level=2] [ref=e391] [box=369,293,448,22]
+        - generic [ref=e392] [box=369,331,448,192]:
+          - article [ref=e393] [box=369,331,448,90]
+          - article [ref=e402] [box=369,433,448,90]
+      - generic [ref=e411] [box=369,551,448,1376]:
+        - generic [ref=e412] [box=369,551,448,22]:
+          - heading "Community Members" [level=2] [ref=e413] [box=369,551,183,22]
+          - paragraph [ref=e414] [box=771,555,46,18]: 13 total
+        - generic [ref=e415] [box=369,589,448,1314]:
+          - article [ref=e416] [box=369,589,448,90]
+          - article [ref=e422] [box=369,691,448,90]
+          - article [ref=e430] [box=369,793,448,90]
+          - article [ref=e438] [box=369,895,448,90]
+          - article [ref=e446] [box=369,997,448,90]
+          - article [ref=e454] [box=369,1099,448,90]
+          - article [ref=e462] [box=369,1201,448,90]
+          - article [ref=e470] [box=369,1303,448,90]
+          - article [ref=e478] [box=369,1405,448,90]
+          - article [ref=e486] [box=369,1507,448,90]
+          - article [ref=e494] [box=369,1609,448,90]
+          - article [ref=e502] [box=369,1711,448,90]
+          - article [ref=e510] [box=369,1813,448,90]
+  - navigation [ref=e518] [box=353,854,480,65]:
+    - generic [ref=e519] [box=365,865,456,44]:
+      - button "Home" [ref=e520] [cursor=pointer] [box=365,865,64,44]:
+        - img [ref=e521] [box=387,870,20,20]
+        - generic [ref=e524] [box=382,892,29,13]: Home
+      - button "Groups" [ref=e525] [cursor=pointer] [box=465,865,64,44]:
+        - img [ref=e526] [box=487,870,20,20]
+        - generic [ref=e531] [box=477,892,39,13]: Groups
+      - button [ref=e533] [cursor=pointer] [box=565,853,56,56]:
+        - img [ref=e534] [box=579,867,28,28]
+      - button "Challenges" [ref=e535] [cursor=pointer] [box=657,865,64,44]:
+        - img [ref=e536] [box=679,870,20,20]
+        - generic [ref=e542] [box=661,892,55,13]: Challenges
+      - button "Profile" [ref=e543] [cursor=pointer] [box=757,865,64,44]:
+        - img [ref=e544] [box=779,870,20,20]
+        - generic [ref=e547] [box=773,892,31,13]: Profile

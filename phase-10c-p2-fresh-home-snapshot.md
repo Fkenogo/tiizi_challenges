@@ -1,0 +1,62 @@
+- generic [ref=e385] [box=360,0,480,919]:
+  - banner [ref=e386] [box=360,0,480,93]:
+    - generic [ref=e387] [box=376,20,448,56]:
+      - generic [ref=e388] [box=376,20,211,56]:
+        - generic [ref=e389] [box=376,20,56,56]: P
+        - generic [ref=e390] [box=444,30,143,37]:
+          - paragraph [ref=e391] [box=444,30,143,16]: Welcome back,
+          - heading "Pilot Smoke User!" [level=1] [ref=e392] [box=444,46,143,21]
+      - button [ref=e393] [cursor=pointer] [box=780,26,44,44]:
+        - img [ref=e394] [box=791,37,22,22]
+  - main [ref=e398] [box=360,93,480,709]:
+    - generic [ref=e399] [box=376,113,448,82]:
+      - paragraph [ref=e400] [box=393,126,414,20]: Syncing your dashboard...
+      - paragraph [ref=e401] [box=393,150,414,32]: Your activity summaries are syncing. New activity and group updates will refresh this automatically.
+    - generic [ref=e402] [box=376,227,448,153]:
+      - heading "Active Challenges" [level=2] [ref=e404] [box=376,227,142,15]
+      - article [ref=e405] [box=376,254,448,126]:
+        - paragraph [ref=e406] [box=389,271,422,18]: No active challenges yet
+        - paragraph [ref=e407] [box=389,293,422,18]: Join a challenge to start tracking your progress here.
+        - button "Join a Group" [ref=e408] [cursor=pointer] [box=389,323,106,40]
+    - generic [ref=e409] [box=376,412,448,86]:
+      - article [ref=e410] [box=376,412,144,86]:
+        - paragraph [ref=e411] [box=389,425,118,14]: Streak
+        - paragraph [ref=e412] [box=389,443,118,24]: "0"
+        - paragraph [ref=e413] [box=389,471,118,14]: days
+      - article [ref=e414] [box=528,412,144,86]:
+        - paragraph [ref=e415] [box=541,425,118,14]: Active
+        - paragraph [ref=e416] [box=541,443,118,24]: "0"
+        - paragraph [ref=e417] [box=541,471,118,14]: challenges
+      - article [ref=e418] [box=680,412,144,86]:
+        - paragraph [ref=e419] [box=693,425,118,14]: Recent
+        - paragraph [ref=e420] [box=693,443,118,24]: "0"
+        - paragraph [ref=e421] [box=693,471,118,14]: activities
+    - generic [ref=e422] [box=376,530,448,158]:
+      - heading "Today's Goals" [level=3] [ref=e423] [box=376,530,448,15]
+      - article [ref=e424] [box=376,557,448,131]:
+        - generic [ref=e425] [box=393,574,414,44]:
+          - textbox "Write your goal for today..." [ref=e426] [box=393,574,351,44]
+          - button "Add" [disabled] [ref=e427] [box=752,574,55,44]
+        - paragraph [ref=e428] [box=393,626,414,15]: Up to 3 goals per day.
+        - paragraph [ref=e430] [box=393,653,414,18]: No goals yet. Add up to 3 goals for today.
+    - generic [ref=e431] [box=376,720,448,82]:
+      - generic [ref=e432] [box=376,720,448,18]:
+        - heading "Trending Challenges" [level=3] [ref=e433] [box=376,723,161,15]
+        - button "See All →" [ref=e434] [cursor=pointer] [box=760,720,64,18]
+      - article [ref=e435] [box=376,750,448,52]: No trending challenges available yet.
+  - navigation [ref=e436] [box=360,854,480,65]:
+    - generic [ref=e437] [box=372,865,456,44]:
+      - button "Home" [ref=e438] [cursor=pointer] [box=372,865,64,44]:
+        - img [ref=e439] [box=394,870,20,20]
+        - generic [ref=e442] [box=389,892,31,13]: Home
+      - button "Groups" [ref=e443] [cursor=pointer] [box=472,865,64,44]:
+        - img [ref=e444] [box=494,870,20,20]
+        - generic [ref=e449] [box=486,892,36,13]: Groups
+      - button [ref=e451] [cursor=pointer] [box=572,853,56,56]:
+        - img [ref=e452] [box=586,867,28,28]
+      - button "Challenges" [ref=e453] [cursor=pointer] [box=664,865,64,44]:
+        - img [ref=e454] [box=686,870,20,20]
+        - generic [ref=e460] [box=668,892,55,13]: Challenges
+      - button "Profile" [ref=e461] [cursor=pointer] [box=764,865,64,44]:
+        - img [ref=e462] [box=786,870,20,20]
+        - generic [ref=e465] [box=780,892,31,13]: Profile

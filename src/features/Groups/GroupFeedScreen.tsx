@@ -1,22 +1,48 @@
-import { ArrowLeft, Bookmark, MessageSquare, MoreHorizontal, Share2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
 import { useGroupFeed } from '../../hooks/useGroupInsights';
 import { setActiveGroupId } from '../../hooks/useActiveGroup';
-import { useGroup, useGroupMemberCount, useGroupMembershipStatus } from '../../hooks/useGroups';
+import { useGroup, useGroupMembershipStatus } from '../../hooks/useGroups';
 import { GroupBottomNav } from './components/GroupBottomNav';
-import { GroupDetailTabs } from './components/GroupDetailTabs';
+import { GroupSharedHeader } from './components/GroupSharedHeader';
+import { FeedCard } from './FeedCard';
+import { useFeedLiveStats } from '../../hooks/useFeedLiveStats';
+import { useFeedReactions } from '../../hooks/useFeedReactions';
+import type { GroupActivityFeedSummary } from '../../types';
 
-const heroImage = 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=80';
+// Filters backed by real feed data fields:
+//   source: 'workout' | 'wellness'
+//   challengeType: 'collective' | 'competitive' | 'streak'
+// Deferred (no feed data): 'engagement', 'cause_support'
+type FeedFilter = 'all' | 'workout' | 'wellness' | 'collective' | 'competitive' | 'streak' | 'achievements';
+
+const FILTER_CHIPS: { id: FeedFilter; label: string }[] = [
+  { id: 'all',          label: 'All' },
+  { id: 'workout',      label: 'Workouts' },
+  { id: 'wellness',     label: 'Wellness' },
+  { id: 'collective',   label: 'Collective' },
+  { id: 'competitive',  label: 'Competitive' },
+  { id: 'streak',       label: 'Streak' },
+  { id: 'achievements', label: 'Achievements' },
+];
+
+function applyFilter(items: GroupActivityFeedSummary[], filter: FeedFilter): GroupActivityFeedSummary[] {
+  if (filter === 'all') return items;
+  if (filter === 'workout' || filter === 'wellness') return items.filter((i) => i.source === filter);
+  if (filter === 'achievements') return items.filter((i) => i.feedItemType === 'milestone' || i.feedItemType === 'achievement');
+  return items.filter((i) => i.challengeType === filter);
+}
 
 function GroupFeedScreen() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { data: group } = useGroup(id);
-  const { data: memberCount = 0 } = useGroupMemberCount(id);
   const { data: membershipStatus = 'none' } = useGroupMembershipStatus(id);
   const { data: feedItems = [] } = useGroupFeed(id);
+  const { data: statsMap } = useFeedLiveStats(feedItems);
+  const { query: reactionsQuery, setReaction, clearReaction } = useFeedReactions(feedItems);
+  const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
 
   useEffect(() => {
     if (id) setActiveGroupId(id);
@@ -48,86 +74,103 @@ function GroupFeedScreen() {
     );
   }
 
+  const filteredItems = applyFilter(feedItems, activeFilter);
+
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
-        <section className="relative h-[270px]">
-          <img src={group.coverImageUrl || heroImage} alt={group.name} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/70" />
+        <GroupSharedHeader groupId={id} active="feed" />
 
-          <div className="absolute left-4 right-4 top-5 flex items-center justify-between">
-            <button className="h-11 w-11 rounded-full bg-white/25 backdrop-blur text-white flex items-center justify-center" onClick={() => navigate('/app/groups')}><ArrowLeft size={22} /></button>
-          </div>
-
-          <div className="absolute left-4 right-4 bottom-4">
-            <h1 className="text-[20px] leading-[24px] font-black text-white">{group.name}</h1>
-            <div className="mt-2 flex gap-2">
-              <span className="rounded-full border border-white/60 bg-black/35 px-3 py-1 text-[12px] leading-[14px] font-bold uppercase tracking-[0.08em] text-white">{group.isPrivate ? 'Private Group' : 'Public Group'}</span>
-              <span className="rounded-full border border-white/60 bg-black/35 px-3 py-1 text-[12px] leading-[14px] font-bold uppercase tracking-[0.08em] text-white">{memberCount.toLocaleString()} Members</span>
-            </div>
-          </div>
-        </section>
-
-        <GroupDetailTabs groupId={id} active="feed" />
-
-        <main className="px-4 pt-6 space-y-5">
-          <section className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <main className="pt-6 space-y-5">
+          {/* Post composer */}
+          <div className="px-4">
+            <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-full bg-[#fbe9d9] text-primary flex items-center justify-center">🗒️</div>
-              <button className="h-11 flex-1 rounded-full bg-slate-100 text-left px-5 text-[15px] leading-[20px] text-[#61758f] disabled:opacity-60" disabled={!canEngage}>
-                {canEngage ? 'Share an update with the group...' : 'Join group to post updates'}
+                <button className="h-11 flex-1 rounded-full bg-slate-100 text-left px-5 text-[15px] leading-[20px] text-[#61758f] disabled:opacity-60" disabled={!canEngage}>
+                  {canEngage ? 'Share an update with the group...' : 'Join group to post updates'}
+                </button>
+              </div>
+            </section>
+          </div>
+
+          {/* Filter chips */}
+          <div
+            className="flex gap-2 overflow-x-auto px-4 pb-0.5 scrollbar-none"
+            role="tablist"
+            aria-label="Feed filters"
+          >
+            {FILTER_CHIPS.map((chip) => (
+              <button
+                key={chip.id}
+                role="tab"
+                aria-selected={activeFilter === chip.id}
+                className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] leading-[16px] font-bold transition-colors ${
+                  activeFilter === chip.id
+                    ? 'bg-primary text-white'
+                    : 'border border-slate-200 bg-white text-[#4c627e]'
+                }`}
+                onClick={() => setActiveFilter(chip.id)}
+              >
+                {chip.label}
               </button>
-            </div>
-          </section>
+            ))}
+          </div>
 
-          {feedItems.map((item) => (
-            <article key={item.id} className="rounded-[20px] border border-slate-200 bg-white overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-slate-200" />
-                    <div>
-                      <p className="text-[17px] leading-[22px] font-black text-slate-900">{item.author}</p>
-                      <p className="text-[13px] leading-[16px] font-medium text-[#61758f]">◔ {item.time}</p>
-                    </div>
-                  </div>
-                  <button className="h-8 w-8 text-[#9ca9bd]"><MoreHorizontal size={20} /></button>
+          {/* Feed items */}
+          <div className="px-4 space-y-5">
+            {filteredItems.map((item) => (
+              <FeedCard
+                key={item.id}
+                item={item}
+                canEngage={canEngage}
+                stats={statsMap?.get(item.id)}
+                reactionSummary={reactionsQuery.data?.get(item.id)}
+                onSetReaction={(reactionType) =>
+                  setReaction.mutate({ feedItemId: item.id, groupId: item.groupId, reactionType })
+                }
+                onClearReaction={() => clearReaction.mutate({ feedItemId: item.id })}
+              />
+            ))}
+
+            {/* Empty state: full feed is empty (no filter active) */}
+            {feedItems.length === 0 && activeFilter === 'all' && (
+              <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p className="text-[16px] leading-[22px] font-black text-slate-900">Nothing posted yet</p>
+                <p className="mt-2 text-[13px] leading-[18px] text-slate-500">Log an activity or start a challenge to bring this group to life.</p>
+                <div className="mt-4 flex gap-3 flex-wrap">
+                  <button
+                    className="h-10 rounded-xl bg-primary px-4 text-[13px] font-bold text-white"
+                    onClick={() => navigate('/app/challenges')}
+                  >
+                    Browse Challenges
+                  </button>
+                  <button
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-bold text-slate-700"
+                    onClick={() => navigate('/app/home')}
+                  >
+                    Log Activity
+                  </button>
                 </div>
+              </article>
+            )}
 
-                <p className="mt-4 text-[15px] leading-[22px] text-[#171212]">{item.text}</p>
-
-                {item.metric && (
-                  <div className="mt-4 rounded-2xl border border-[#f7d5be] bg-[#fff8f2] p-4">
-                    <p className="text-[11px] leading-[12px] uppercase tracking-[0.08em] font-bold text-primary">
-                      {item.metric.label}
-                    </p>
-                    <p className="mt-1 text-[18px] leading-[22px] font-black text-slate-900">{item.metric.value}</p>
-                  </div>
-                )}
-
-                {item.imageUrl && (
-                  <img src={item.imageUrl} alt="feed media" className="mt-4 h-[220px] w-full rounded-xl object-cover" />
-                )}
-              </div>
-
-              <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between text-[#4c627e]">
-                <div className="flex items-center gap-5">
-                  <button className="inline-flex items-center gap-2 text-[15px] leading-[18px] font-semibold disabled:opacity-60" disabled={!canEngage}><MessageSquare size={16} /> Reply</button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button><Share2 size={18} /></button>
-                  <button><Bookmark size={18} /></button>
-                </div>
-              </div>
-            </article>
-          ))}
-
-          {feedItems.length === 0 && (
-            <article className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <p className="text-[18px] leading-[24px] font-black text-slate-900">No updates yet</p>
-              <p className="mt-2 text-[14px] leading-[20px] text-[#61758f]">Group feed will populate as members log workouts and challenge progress.</p>
-            </article>
-          )}
+            {/* Empty state: filter has no results but feed has items */}
+            {feedItems.length > 0 && filteredItems.length === 0 && (
+              <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p className="text-[16px] leading-[22px] font-black text-slate-900">No results</p>
+                <p className="mt-2 text-[13px] leading-[18px] text-slate-500">
+                  No updates match this filter yet.
+                </p>
+                <button
+                  className="mt-4 h-10 rounded-xl bg-primary px-4 text-[13px] font-bold text-white"
+                  onClick={() => setActiveFilter('all')}
+                >
+                  Clear Filter
+                </button>
+              </article>
+            )}
+          </div>
         </main>
       </div>
 

@@ -16,7 +16,7 @@ export function AdminHeader({ title }: { title: string }) {
         >
           {density === 'compact' ? 'Comfortable' : 'Compact'}
         </button>
-        <button className="h-9 w-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600">
+        <button className="h-9 w-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600" aria-label="Notifications">
           <Bell size={16} />
         </button>
         <div className="text-right">

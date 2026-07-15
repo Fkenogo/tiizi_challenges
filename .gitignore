@@ -15,3 +15,31 @@ Thumbs.db
 !.vscode/extensions.json
 build/
 coverage/
+
+# ── Security hardening added 2026-05-25 ────────────────────────────────
+# === ENVIRONMENT FILES ===
+*.env
+
+# === FIREBASE SERVICE ACCOUNTS ===
+*adminsdk*.json
+service-account*.json
+*service_account*.json
+firebase-credentials.json
+*credentials*.json
+*client_secret*.json
+serviceAccountKey.json
+*serviceAccount*.json
+
+# === PLAYWRIGHT MCP ===
+.playwright-mcp/
+
+# === SECRETS ===
+*.pem
+*.key
+*.p12
+secrets.json
+
+# === BUILD OUTPUTS ===
+.next/
+out/
+

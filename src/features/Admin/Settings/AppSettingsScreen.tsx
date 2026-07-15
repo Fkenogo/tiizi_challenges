@@ -56,16 +56,16 @@ function AppSettingsScreen() {
           <input value={form.supportEmail} onChange={(e) => setForm({ ...form, supportEmail: e.target.value })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Support email" />
           <input value={form.termsUrl} onChange={(e) => setForm({ ...form, termsUrl: e.target.value })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Terms URL" />
           <input value={form.privacyUrl} onChange={(e) => setForm({ ...form, privacyUrl: e.target.value })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Privacy URL" />
-          <input type="number" value={form.maxChallengesPerUser} onChange={(e) => setForm({ ...form, maxChallengesPerUser: Number(e.target.value) || 0 })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Max challenges/user" />
-          <input type="number" value={form.maxGroupsPerUser} onChange={(e) => setForm({ ...form, maxGroupsPerUser: Number(e.target.value) || 0 })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Max groups/user" />
-          <input type="number" value={form.maxWorkoutLogsPerDay} onChange={(e) => setForm({ ...form, maxWorkoutLogsPerDay: Number(e.target.value) || 0 })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Max workout logs/day" />
+          <input type="number" min="1" value={form.maxChallengesPerUser} onChange={(e) => setForm({ ...form, maxChallengesPerUser: Math.max(1, Number(e.target.value) || 1) })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Max challenges/user" />
+          <input type="number" min="1" value={form.maxGroupsPerUser} onChange={(e) => setForm({ ...form, maxGroupsPerUser: Math.max(1, Number(e.target.value) || 1) })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Max groups/user" />
+          <input type="number" min="1" value={form.maxWorkoutLogsPerDay} onChange={(e) => setForm({ ...form, maxWorkoutLogsPerDay: Math.max(1, Number(e.target.value) || 1) })} className="h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="Max workout logs/day" />
           <label className="h-10 rounded-lg border border-slate-200 px-3 text-sm flex items-center justify-between">
             <span>Maintenance mode</span>
             <input type="checkbox" checked={form.maintenanceMode} onChange={(e) => setForm({ ...form, maintenanceMode: e.target.checked })} />
           </label>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button className="h-10 px-4 rounded-lg bg-primary text-white text-sm font-bold disabled:opacity-50" disabled={!permissions.canManageAppSettings || saveMutation.isPending} onClick={onSave}>Save Settings</button>
+          <button className="h-10 px-4 rounded-lg bg-primary text-white text-sm font-bold disabled:opacity-50" disabled={!permissions.canManageAppSettings || saveMutation.isPending} onClick={onSave}>{saveMutation.isPending ? 'Saving…' : 'Save Settings'}</button>
           <button className="h-10 px-4 rounded-lg border border-slate-200 text-slate-700 text-sm font-bold disabled:opacity-50" disabled={!permissions.canManageAppSettings} onClick={onResetAdminPreferences}>Reset All Admin Prefs</button>
           <button className="h-10 px-4 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold disabled:opacity-50" disabled={!permissions.canManageAdminUsers} onClick={() => navigate('/app/admin/settings/admin-users')}>Admin Users</button>
           <button className="h-10 px-4 rounded-lg bg-slate-100 text-slate-700 text-sm font-bold disabled:opacity-50" disabled={!permissions.canViewSystemLogs} onClick={() => navigate('/app/admin/settings/logs')}>System Logs</button>

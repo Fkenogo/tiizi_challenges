@@ -29,6 +29,9 @@ if (!getApps().length) {
 const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+const applyMode = process.argv.includes('--apply');
+const mode = applyMode ? 'apply' : 'dry-run';
+
 type SeedUser = {
   id: string;
   displayName: string;
@@ -71,8 +74,12 @@ type SeedGroup = {
   allowMemberChallenges: boolean;
   inviteCode: string;
   activeChallenges: number;
+  status: 'active' | 'inactive';
   moderationStatus: 'active' | 'flagged' | 'deactivated';
+  visibility: 'public' | 'private';
   isFeatured: boolean;
+  isVerified: boolean;
+  reviewStatus: 'pending' | 'verified';
   seedTag: string;
 };
 
@@ -104,8 +111,11 @@ type SeedChallenge = {
   }>;
   donation?: {
     enabled: boolean;
+    causeName?: string;
     causeDescription?: string;
-    targetAmount?: number;
+    targetAmountKes?: number;
+    currency?: string;
+    approvalStatus?: string;
   };
   startDate: string;
   endDate: string;
@@ -417,8 +427,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'EARLY-BIRDS',
       activeChallenges: 2,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: true,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -434,8 +448,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'ZEN-YOGA',
       activeChallenges: 1,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'private',
       isFeatured: true,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -451,8 +469,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'STRONG-CLUB',
       activeChallenges: 2,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: false,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -468,8 +490,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'SQUAD-254',
       activeChallenges: 2,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: true,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -485,8 +511,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: false,
       inviteCode: 'TRAIL-TEAM',
       activeChallenges: 1,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'private',
       isFeatured: false,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
     {
@@ -502,8 +532,12 @@ function buildGroups(users: SeedUser[]): SeedGroup[] {
       allowMemberChallenges: true,
       inviteCode: 'HYDRATE-NOW',
       activeChallenges: 1,
+      status: 'active',
       moderationStatus: 'active',
+      visibility: 'public',
       isFeatured: false,
+      isVerified: true,
+      reviewStatus: 'verified',
       seedTag,
     },
   ];
@@ -635,8 +669,11 @@ function buildChallenges(
           template.type === 'collective'
             ? {
                 enabled: true,
+                causeName: 'Community Clean Water Initiative',
                 causeDescription: 'Community clean water initiative',
-                targetAmount: 50000 + challengeIndex * 4000,
+                targetAmountKes: 50000 + challengeIndex * 4000,
+                currency: 'KES',
+                approvalStatus: 'approved',
               }
             : { enabled: false },
         startDate,
@@ -1104,7 +1141,7 @@ async function seedStaticContent() {
 }
 
 async function main() {
-  console.log(`\nSeeding Tiizi data set (${seedTag})...`);
+  console.log(`\nSeeding Tiizi data set (${seedTag}) [${mode}]...`);
   console.log(`Project: ${projectId}`);
   if (primaryUid) {
     console.log(`Primary UID: ${primaryUid}`);
@@ -1131,15 +1168,8 @@ async function main() {
     'settings',
   ];
 
-  for (const collectionName of cleanupCollections) {
-    const deleted = await deleteSeededDocs(collectionName);
-    if (deleted > 0) {
-      console.log(`Removed ${deleted} existing seeded docs from ${collectionName}`);
-    }
-  }
-
-  await ensureCatalogExercisesLoaded();
-
+  // Pure, read-only computation — safe to run in dry-run mode so the reported
+  // counts are accurate without touching Firestore.
   const exercisePool = await getExercisePool();
   const users = buildUsers();
   const groups = buildGroups(users);
@@ -1172,15 +1202,8 @@ async function main() {
     memberCount: groupMemberCounts.get(group.id) ?? 1,
   }));
 
-  await setDocs('users', users);
-  await setDocs('groups', groupsWithCounts);
-  await setDocs('groupMembers', memberships);
-  await setDocs('challengeMembers', challengeMembers);
-  await setDocs('challenges', challengesWithCounts);
-  await setDocs('workouts', workouts);
-  await seedStaticContent();
-
   const summary = {
+    cleanupCollections,
     users: users.length,
     groups: groupsWithCounts.length,
     memberships: memberships.length,
@@ -1188,6 +1211,33 @@ async function main() {
     challenges: challengesWithCounts.length,
     workouts: workouts.length,
   };
+
+  console.log('\nPlanned seed summary:');
+  console.log(JSON.stringify(summary, null, 2));
+
+  if (!applyMode) {
+    console.log('\nDry-run only. No writes were made — existing seeded docs were not deleted, no');
+    console.log('documents were written. Re-run with --apply to delete existing seeded docs in the');
+    console.log('collections above and commit this data set.');
+    return;
+  }
+
+  for (const collectionName of cleanupCollections) {
+    const deleted = await deleteSeededDocs(collectionName);
+    if (deleted > 0) {
+      console.log(`Removed ${deleted} existing seeded docs from ${collectionName}`);
+    }
+  }
+
+  await ensureCatalogExercisesLoaded();
+
+  await setDocs('users', users);
+  await setDocs('groups', groupsWithCounts);
+  await setDocs('groupMembers', memberships);
+  await setDocs('challengeMembers', challengeMembers);
+  await setDocs('challenges', challengesWithCounts);
+  await setDocs('workouts', workouts);
+  await seedStaticContent();
 
   console.log('\nSeed complete.');
   console.log(JSON.stringify(summary, null, 2));

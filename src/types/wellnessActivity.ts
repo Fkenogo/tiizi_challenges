@@ -6,7 +6,9 @@ export type WellnessCategory =
   | 'nutrition'
   | 'habits'
   | 'stress'
-  | 'social';
+  | 'social'
+  | 'movement'
+  | 'health-monitoring';
 
 export type WellnessDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
@@ -18,7 +20,11 @@ export type WellnessActivityType =
   | 'food'
   | 'habit'
   | 'breathing'
-  | 'social';
+  | 'social'
+  | 'steps'
+  | 'walking'
+  | 'yoga'
+  | 'monitoring';
 
 export interface WellnessActivity {
   id: string;
@@ -32,6 +38,7 @@ export interface WellnessActivity {
   activityType: WellnessActivityType;
   defaultMetricUnit: string;
   defaultTargetValue: number;
+  targetType?: 'daily' | 'cumulative' | 'weekly' | 'monthly';
   suggestedFrequency: number;
   protocolSteps?: string[];
   fastingProtocol?: {
@@ -78,4 +85,3 @@ export interface WellnessActivity {
   createdAt?: string;
   updatedAt?: string;
 }
-

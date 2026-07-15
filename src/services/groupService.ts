@@ -1,11 +1,14 @@
 import {
   addDoc,
   collection,
+  deleteField,
   doc,
   documentId,
   getDoc,
   getDocs,
+  increment,
   limit,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -13,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Group } from '../types';
+import { buildGroupDefaults, isGroupActive } from '../utils/groupLifecycle';
 
 type CreateGroupInput = {
   name: string;
@@ -22,6 +26,12 @@ type CreateGroupInput = {
   isPrivate?: boolean;
   requireAdminApproval?: boolean;
   allowMemberChallenges?: boolean;
+  groupType?: string;
+  activityInterests?: string[];
+  wellnessTopics?: string[];
+  groupGoals?: string[];
+  locationScope?: string;
+  groupRules?: string[];
 };
 
 type GroupJoinResult = {
@@ -60,13 +70,34 @@ class GroupService {
   private collectionName = 'groups';
   private membershipsCollection = 'groupMembers';
 
-  async getGroups(): Promise<Group[]> {
-    const snap = await getDocs(collection(db, this.collectionName));
+  /**
+   * Public group discovery. Filters server-side on status == 'active',
+   * isPrivate == false, and visibility == 'public' so private, inactive, or
+   * moderated-out groups never come back from Firestore for browsing —
+   * client-side filtering alone would still transmit that data to the client.
+   * isPrivate and visibility are redundant by design (visibility is derived
+   * from isPrivate) — requiring both is defense-in-depth in case the two ever
+   * drift. moderationStatus is still checked client-side via isGroupActive().
+   * Requires a composite index on (status ASC, isPrivate ASC, visibility ASC,
+   * createdAt DESC); see firestore.indexes.json.
+   */
+  async getGroupsPage(): Promise<Group[]> {
+    const snap = await getDocs(
+      query(
+        collection(db, this.collectionName),
+        where('status', '==', 'active'),
+        where('isPrivate', '==', false),
+        where('visibility', '==', 'public'),
+        orderBy('createdAt', 'desc'),
+        limit(100),
+      ),
+    );
     return snap.docs
       .map((d) => {
         const data = d.data() as Omit<Group, 'id'>;
         return { id: d.id, ...data };
       })
+      .filter((g) => isGroupActive(g))
       .map((group) => ({ ...group, memberCount: group.memberCount ?? 0 }))
       .sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0));
   }
@@ -84,7 +115,8 @@ class GroupService {
 
     if (groupIds.length === 0) return [];
 
-    return this.getGroupsByIds(groupIds);
+    const groups = await this.getGroupsByIds(groupIds);
+    return groups.filter((g) => isGroupActive(g));
   }
 
   async getGroupById(id: string): Promise<Group | null> {
@@ -125,18 +157,30 @@ class GroupService {
 
   async createGroup(input: CreateGroupInput): Promise<Group> {
     const inviteCodeBase = normalizeInviteCode(input.name || 'GROUP');
-    const payload: Omit<Group, 'id'> = {
+    const defaults = buildGroupDefaults({
       name: input.name,
       description: input.description,
       ownerId: input.ownerId,
-      memberCount: 1,
-      createdAt: new Date().toISOString(),
       coverImageUrl: input.coverImageUrl,
-      isPrivate: !!input.isPrivate,
-      requireAdminApproval: !!input.requireAdminApproval,
-      allowMemberChallenges: input.allowMemberChallenges ?? true,
+      isPrivate: input.isPrivate,
+      requireAdminApproval: input.requireAdminApproval,
+      allowMemberChallenges: input.allowMemberChallenges,
       inviteCode: `${inviteCodeBase}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-      activeChallenges: 0,
+    });
+    // buildGroupDefaults's GroupDefaultsInput/return type only covers the
+    // lifecycle-critical fields; it does not know about these optional
+    // metadata fields, so they must be spread onto the payload here rather
+    // than passed into buildGroupDefaults (where they were previously
+    // silently dropped — excess properties in a conditional spread aren't
+    // caught by the type checker, so this went unnoticed).
+    const payload: Omit<Group, 'id'> = {
+      ...defaults,
+      ...(input.groupType && { groupType: input.groupType as Group['groupType'] }),
+      ...(input.activityInterests?.length && { activityInterests: input.activityInterests }),
+      ...(input.wellnessTopics?.length && { wellnessTopics: input.wellnessTopics }),
+      ...(input.groupGoals?.length && { groupGoals: input.groupGoals }),
+      ...(input.locationScope && { locationScope: input.locationScope as Group['locationScope'] }),
+      ...(input.groupRules?.length && { groupRules: input.groupRules }),
     };
     const ref = await addDoc(collection(db, this.collectionName), payload);
 
@@ -156,6 +200,9 @@ class GroupService {
   async joinGroup(groupId: string, userId: string): Promise<GroupJoinResult | null> {
     const group = await this.getGroupById(groupId);
     if (!group) return null;
+    if (!isGroupActive(group)) {
+      throw new Error('This group is no longer active and cannot be joined.');
+    }
 
     const memberRef = doc(db, this.membershipsCollection, `${groupId}_${userId}`);
     const memberSnap = await getDoc(memberRef);
@@ -188,29 +235,19 @@ class GroupService {
     } satisfies GroupMembership);
 
     if (status === 'active') {
+      await updateDoc(doc(db, this.collectionName, groupId), {
+        memberCount: increment(1),
+      });
       return {
         group: {
           ...group,
-          memberCount: Math.max(1, group.memberCount || 0),
+          memberCount: Math.max(1, (group.memberCount || 0) + 1),
         },
         status: 'joined',
       };
     }
 
     return { group, status };
-  }
-
-  async joinGroupByInviteCode(inviteCode: string, userId: string): Promise<GroupJoinResult | null> {
-    const normalized = inviteCode.trim().toUpperCase();
-    if (!normalized) return null;
-
-    const groupSnap = await getDocs(
-      query(collection(db, this.collectionName), where('inviteCode', '==', normalized), limit(1)),
-    );
-    if (groupSnap.empty) return null;
-
-    const groupDoc = groupSnap.docs[0];
-    return this.joinGroup(groupDoc.id, userId);
   }
 
   async getMembershipStatus(groupId: string, userId: string): Promise<GroupMembership['status'] | 'none'> {
@@ -256,6 +293,45 @@ class GroupService {
       status: 'left',
       leftAt: new Date().toISOString(),
     });
+    await updateDoc(doc(db, this.collectionName, groupId), {
+      memberCount: increment(-1),
+    });
+  }
+
+  async updateGroup(groupId: string, patch: UpdateGroupInput): Promise<void> {
+    const ref = doc(db, this.collectionName, groupId);
+    const payload: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+
+    if (patch.name !== undefined) payload.name = patch.name;
+    if (patch.description !== undefined) payload.description = patch.description;
+    // Same null-to-clear contract as the 6 metadata fields below: `null`
+    // means the owner explicitly removed the cover image and it must be
+    // deleted from Firestore, not merely omitted (which would leave the old
+    // cover in place — the same stale-field bug fixed for metadata).
+    if (patch.coverImageUrl !== undefined) payload.coverImageUrl = patch.coverImageUrl === null ? deleteField() : patch.coverImageUrl;
+    if (patch.isPrivate !== undefined) {
+      payload.isPrivate = patch.isPrivate;
+      // Keep the denormalized visibility field in sync so discovery queries
+      // (which filter on visibility, not isPrivate) never leak a group whose
+      // privacy was flipped via edit. See getGroupsPage().
+      payload.visibility = patch.isPrivate ? 'private' : 'public';
+    }
+    if (patch.requireAdminApproval !== undefined) payload.requireAdminApproval = patch.requireAdminApproval;
+    if (patch.allowMemberChallenges !== undefined) payload.allowMemberChallenges = patch.allowMemberChallenges;
+    // These 6 fields are optional metadata that an owner can clear via Edit.
+    // `undefined` means "not part of this patch, leave untouched"; `null` is
+    // the explicit clear sentinel and must translate to Firestore's
+    // deleteField() — never a literal `undefined` (which addDoc/updateDoc
+    // reject) and never silently dropped (which would leave stale data, the
+    // exact regression this guards against).
+    if (patch.groupType !== undefined) payload.groupType = patch.groupType === null ? deleteField() : patch.groupType;
+    if (patch.activityInterests !== undefined) payload.activityInterests = patch.activityInterests === null ? deleteField() : patch.activityInterests;
+    if (patch.wellnessTopics !== undefined) payload.wellnessTopics = patch.wellnessTopics === null ? deleteField() : patch.wellnessTopics;
+    if (patch.groupGoals !== undefined) payload.groupGoals = patch.groupGoals === null ? deleteField() : patch.groupGoals;
+    if (patch.locationScope !== undefined) payload.locationScope = patch.locationScope === null ? deleteField() : patch.locationScope;
+    if (patch.groupRules !== undefined) payload.groupRules = patch.groupRules === null ? deleteField() : patch.groupRules;
+
+    await updateDoc(ref, payload);
   }
 
   async reportGroup(input: ReportGroupInput): Promise<string> {
@@ -278,4 +354,22 @@ class GroupService {
 }
 
 export const groupService = new GroupService();
+
+export type UpdateGroupInput = {
+  name?: string;
+  description?: string;
+  isPrivate?: boolean;
+  requireAdminApproval?: boolean;
+  allowMemberChallenges?: boolean;
+  // `null` explicitly clears the field (translated to Firestore's
+  // deleteField() by updateGroup); `undefined`/omitted leaves it untouched.
+  coverImageUrl?: string | null;
+  groupType?: string | null;
+  activityInterests?: string[] | null;
+  wellnessTopics?: string[] | null;
+  groupGoals?: string[] | null;
+  locationScope?: string | null;
+  groupRules?: string[] | null;
+};
+
 export type { CreateGroupInput, GroupJoinResult, ReportGroupInput };

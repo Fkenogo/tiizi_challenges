@@ -1,0 +1,12 @@
+- generic [ref=e365] [box=413,0,375,919]:
+  - banner [ref=e366] [box=429,16,343,40]:
+    - button [ref=e367] [cursor=pointer] [box=429,16,40,40]:
+      - img [ref=e368] [box=435,22,28,28]
+  - heading "Let’s get you set up." [level=1] [ref=e370] [box=429,88,343,32]
+  - generic [ref=e371] [box=429,152,343,164]:
+    - paragraph [ref=e372] [box=450,173,301,18]: Display Name
+    - generic [ref=e373] [box=450,203,301,56]:
+      - textbox "Enter your name" [ref=e374] [box=450,203,301,56]: Pilot Smoke User
+      - img [ref=e375] [box=713,220,22,22]
+    - paragraph [ref=e378] [box=450,275,301,20]: This is how your group members will see you.
+  - button "Finish Setup ✓" [ref=e379] [cursor=pointer] [box=429,348,343,56]

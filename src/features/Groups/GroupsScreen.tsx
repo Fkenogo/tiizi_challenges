@@ -1,6 +1,6 @@
 import { Bell, Search, Users as UsersIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -8,6 +8,7 @@ import { useChallenges } from '../../hooks/useChallenges';
 import { useGroups, useJoinGroup, useMyGroups } from '../../hooks/useGroups';
 import { getStoredActiveGroupId, setActiveGroupId } from '../../hooks/useActiveGroup';
 import type { Group } from '../../types';
+import { isChallengeOngoing } from '../../utils/challengeLifecycle';
 import { GroupBottomNav } from './components/GroupBottomNav';
 
 const fallbackImage =
@@ -26,45 +27,49 @@ function GroupCard({
 }) {
   const [coverSrc, setCoverSrc] = useState(group.coverImageUrl || fallbackImage);
   return (
-    <article className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+    <article className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
       <button className="w-full text-left" onClick={() => onCta(group)}>
-        <div className="relative overflow-hidden" style={{ height: 168, minHeight: 168, maxHeight: 168 }}>
+        <div className="relative h-[148px] overflow-hidden">
           <img
             src={coverSrc}
             alt={group.name}
             className="h-full w-full object-cover"
-            style={{ display: 'block' }}
             onError={() => setCoverSrc(fallbackImage)}
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           {!!group.activeChallenges && (
-            <span className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-[11px] leading-[11px] font-black tracking-[0.08em] uppercase text-white">
-              Active Now
+            <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[10px] leading-[10px] font-black tracking-[0.06em] uppercase text-white">
+              Active
             </span>
           )}
         </div>
 
-        <div className="p-4 min-h-[130px]">
+        <div className="p-4">
           <div className="flex items-start justify-between gap-2">
-            <h2 className="min-w-0 flex-1 truncate text-[14px] leading-[19px] font-black text-slate-900">
+            <h2 className="min-w-0 flex-1 text-[14px] leading-[19px] font-black text-slate-900 line-clamp-1">
               {group.name}
             </h2>
-            <span className="text-slate-400">•••</span>
+            {group.groupType && (
+              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500 capitalize">
+                {group.groupType.replace(/-/g, ' ')}
+              </span>
+            )}
           </div>
 
-            <p className="mt-2 line-clamp-2 text-[12px] leading-[18px] text-slate-600">
-              {group.description || 'Join the community and stay consistent together.'}
-            </p>
+          <p className="mt-1.5 line-clamp-2 text-[12px] leading-[17px] text-slate-500">
+            {group.description || 'Stay consistent together.'}
+          </p>
 
           <div className="mt-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-4">
-                <span className="text-[13px] leading-[18px] text-slate-500">
-                  👥 {group.memberCount.toLocaleString()}
+            <div className="flex items-center gap-3">
+              <span className="text-[12px] text-slate-400">{group.memberCount.toLocaleString()} members</span>
+              {(group.activeChallenges ?? 0) > 0 && (
+                <span className="text-[12px] font-semibold text-primary">
+                  {group.activeChallenges} Ongoing Challenge{group.activeChallenges === 1 ? '' : 's'}
                 </span>
-                <span className="text-[13px] leading-[18px] font-semibold text-primary">
-                  🏆 {group.activeChallenges ?? 0} {group.activeChallenges === 1 ? 'Challenge' : 'Challenges'}
-                </span>
-              </div>
-            <span className="h-9 rounded-full bg-[#fff2e8] px-4 text-[13px] font-bold text-primary inline-flex items-center">
+              )}
+            </div>
+            <span className="h-8 rounded-full bg-primary/10 px-3.5 text-[12px] font-bold text-primary inline-flex items-center">
               {ctaLabel}
             </span>
           </div>
@@ -76,30 +81,57 @@ function GroupCard({
 
 function GroupsScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const { user } = useAuth();
-  const [tab, setTab] = useState<GroupTab>('my');
   const [inviteCode, setInviteCode] = useState('');
 
   const { data: allGroups = [], isLoading } = useGroups();
   const { data: myGroups = [] } = useMyGroups();
+
+  const requestedTab = (location.state as { tab?: GroupTab } | null)?.tab;
+  // Start on requested tab if provided; otherwise 'my' until data loads
+  const [tab, setTab] = useState<GroupTab>(requestedTab ?? 'my');
+  // Once myGroups first resolves (not loading), auto-switch to discover if empty
+  const [tabAutoSet, setTabAutoSet] = useState(!!requestedTab);
+  useEffect(() => {
+    if (isLoading || tabAutoSet) return;
+    setTabAutoSet(true);
+    if (!requestedTab) setTab(myGroups.length === 0 ? 'discover' : 'my');
+  }, [isLoading, myGroups.length, requestedTab, tabAutoSet]);
   const { data: challenges = [] } = useChallenges();
   const joinGroup = useJoinGroup();
 
   const normalizedGroups = useMemo(() => {
     const challengeCountByGroup = new Map<string, number>();
     challenges.forEach((challenge) => {
-      if (!challenge.groupId || challenge.status === 'completed') return;
+      // Use isChallengeOngoing (same logic as GroupDetailScreen "Ongoing" tab):
+      // must be within its date window AND not completed/expired/draft.
+      // status === 'active' alone is insufficient — stale Firestore docs can have
+      // status 'active' with an endDate already in the past.
+      if (!challenge.groupId || !isChallengeOngoing(challenge)) return;
       challengeCountByGroup.set(challenge.groupId, (challengeCountByGroup.get(challenge.groupId) ?? 0) + 1);
     });
-    return allGroups.map((group) => ({
+    const enrich = (group: Group) => ({
       ...group,
       activeChallenges: challengeCountByGroup.get(group.id) ?? 0,
-    }));
+    });
+    return allGroups.map(enrich);
   }, [allGroups, challenges]);
 
+  // Build a parallel enriched list for myGroups so both tabs use the same
+  // active-only counts. myGroups comes from useMyGroups() and carries raw
+  // Firestore activeChallenges (historical total) — never render it directly.
+  const normalizedMyGroups = useMemo(() => {
+    const byId = new Map(normalizedGroups.map((g) => [g.id, g]));
+    return myGroups.map((group) => byId.get(group.id) ?? { ...group, activeChallenges: 0 });
+  }, [myGroups, normalizedGroups]);
+
+  const [discoverFilter, setDiscoverFilter] = useState<string>('all');
   const myGroupIds = new Set(myGroups.map((group) => group.id));
-  const discoverGroups = normalizedGroups.filter((group) => !myGroupIds.has(group.id));
+  const discoverGroups = normalizedGroups
+    .filter((group) => !myGroupIds.has(group.id))
+    .filter((group) => discoverFilter === 'all' || group.groupType === discoverFilter);
 
   useEffect(() => {
     if (myGroups.length === 0) return;
@@ -119,50 +151,36 @@ function GroupsScreen() {
     navigate(`/app/group/${group.id}`);
   };
 
-  const handleInviteJoin = async () => {
+  // Plaintext invite-code joining was disabled (security fix) — it bypassed the secure
+  // Cloud Function invite backend (hashed tokens, expiry, use-count limits, audit logging).
+  // Joining by invite code will return once wired to groupInviteService.redeemGroupInvite.
+  const handleInviteJoin = () => {
     if (!inviteCode.trim()) return;
-    try {
-      const result = await joinGroup.mutateAsync({ inviteCode: inviteCode.trim().toUpperCase() });
-      if (!result) {
-        showToast('Invite code not found.', 'error');
-        return;
-      }
-      setActiveGroupId(result.group.id);
-      if (result.status === 'pending') {
-        showToast('Request submitted. Waiting for admin approval.', 'success');
-        return;
-      }
-      showToast('Joined via invite.', 'success');
-      navigate(`/app/group/${result.group.id}`);
-    } catch (error) {
-      console.error('Invite join failed:', error);
-      showToast('Could not process invite code.', 'error');
-    }
+    showToast('Invite code joining is temporarily unavailable. Ask the group owner to add you directly.', 'error');
   };
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
-        <header className="px-4 pt-4 pb-2 border-b border-slate-200 bg-slate-50 sticky top-0 z-20">
-          <div className="flex items-center justify-between">
+        <header className="px-4 pt-4 pb-0 border-b border-slate-200/70 bg-slate-50 sticky top-0 z-20">
+          <div className="flex items-center justify-between pb-3">
             <div className="flex items-center gap-2">
-              <span className="text-primary text-lg">◉</span>
-              <h1 className="text-[18px] leading-[22px] font-black text-slate-900">Your Groups</h1>
+              <UsersIcon size={18} className="text-primary" />
+              <h1 className="st-page-title">Groups</h1>
             </div>
             <div className="flex items-center gap-1">
-              <button className="h-8 w-8 flex items-center justify-center text-slate-800"><Search size={16} /></button>
-              <button className="h-8 w-8 flex items-center justify-center text-slate-800"><Bell size={16} /></button>
+              <button className="h-9 w-9 flex items-center justify-center text-slate-600 rounded-full bg-slate-100"><Search size={16} /></button>
             </div>
           </div>
 
-          <div className="mt-3 flex items-end gap-5 border-b border-slate-200">
-            <button className={`pb-2 text-[14px] leading-[18px] font-semibold border-b-2 ${tab === 'my' ? 'text-primary border-primary' : 'text-slate-500 border-transparent'}`} onClick={() => setTab('my')}>My Groups</button>
-            <button className={`pb-2 text-[14px] leading-[18px] font-semibold border-b-2 ${tab === 'discover' ? 'text-primary border-primary' : 'text-slate-500 border-transparent'}`} onClick={() => setTab('discover')}>Discover</button>
-            <button className={`pb-2 text-[14px] leading-[18px] font-semibold border-b-2 ${tab === 'invites' ? 'text-primary border-primary' : 'text-slate-500 border-transparent'}`} onClick={() => setTab('invites')}>Invites</button>
+          <div className="flex items-end gap-6">
+            <button className={`pb-2.5 text-[13px] leading-[16px] font-semibold border-b-2 transition-colors ${tab === 'my' ? 'text-primary border-primary' : 'text-slate-400 border-transparent'}`} onClick={() => setTab('my')}>My Groups</button>
+            <button className={`pb-2.5 text-[13px] leading-[16px] font-semibold border-b-2 transition-colors ${tab === 'discover' ? 'text-primary border-primary' : 'text-slate-400 border-transparent'}`} onClick={() => setTab('discover')}>Discover</button>
+            <button className={`pb-2.5 text-[13px] leading-[16px] font-semibold border-b-2 transition-colors ${tab === 'invites' ? 'text-primary border-primary' : 'text-slate-400 border-transparent'}`} onClick={() => setTab('invites')}>Invites</button>
           </div>
         </header>
 
-        <main className="px-4 pt-3 space-y-3">
+        <main className="px-4 pt-4 space-y-3">
           {isLoading && (
             <div className="space-y-3">
               {Array.from({ length: 2 }).map((_, index) => (
@@ -183,7 +201,7 @@ function GroupsScreen() {
                   </div>
                 </div>
               ) : (
-                myGroups.map((group) => (
+                normalizedMyGroups.map((group) => (
                   <GroupCard key={group.id} group={group} ctaLabel="View" onCta={openGroup} />
                 ))
               )}
@@ -192,6 +210,31 @@ function GroupsScreen() {
 
           {!isLoading && tab === 'discover' && (
             <>
+              {/* Type filter chips */}
+              <div className="-mx-4 overflow-x-auto px-4 pb-1">
+                <div className="flex gap-2 pb-1" style={{ width: 'max-content' }}>
+                  {[
+                    { id: 'all', label: 'All' },
+                    { id: 'fitness', label: '💪 Fitness' },
+                    { id: 'wellness', label: '🧘 Wellness' },
+                    { id: 'mixed', label: '🌀 Mixed' },
+                    { id: 'cause-based', label: '❤️ Cause-based' },
+                    { id: 'workplace', label: '🏢 Workplace' },
+                    { id: 'school', label: '🎓 School' },
+                    { id: 'friends-family', label: '👨‍👩‍👧 Friends/Family' },
+                    { id: 'community', label: '🏘️ Community' },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      className={`h-8 rounded-full px-4 text-[13px] font-bold border shrink-0 transition ${discoverFilter === f.id ? 'bg-primary text-white border-primary' : 'bg-white text-slate-700 border-slate-200'}`}
+                      onClick={() => setDiscoverFilter(f.id)}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {discoverGroups.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-[20px] p-5">
                   <p className="text-[16px] leading-[22px] text-slate-700">No other groups available right now.</p>

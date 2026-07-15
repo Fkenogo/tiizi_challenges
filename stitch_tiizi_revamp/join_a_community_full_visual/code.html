@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tiizi - Join a Community</title>
+<!-- Material Symbols for Iconography -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Plus Jakarta Sans for Typography -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "surface-container-lowest": "#ffffff",
+                  "primary-fixed": "#ffdbcc",
+                  "tertiary-container": "#8a9ab2",
+                  "inverse-on-surface": "#eff1f3",
+                  "on-tertiary": "#ffffff",
+                  "on-primary-fixed-variant": "#7a3000",
+                  "tertiary": "#505f76",
+                  "secondary": "#545f73",
+                  "on-tertiary-container": "#223246",
+                  "on-primary-fixed": "#351000",
+                  "surface": "#f7f9fb",
+                  "surface-container": "#eceef0",
+                  "secondary-fixed": "#d8e3fb",
+                  "on-error-container": "#93000a",
+                  "inverse-surface": "#2d3133",
+                  "error": "#ba1a1a",
+                  "surface-container-highest": "#e0e3e5",
+                  "on-primary": "#ffffff",
+                  "background": "#f7f9fb",
+                  "primary": "#a04100",
+                  "on-secondary-container": "#586377",
+                  "on-tertiary-fixed": "#0b1c30",
+                  "on-background": "#191c1e",
+                  "surface-bright": "#f7f9fb",
+                  "surface-dim": "#d8dadc",
+                  "secondary-fixed-dim": "#bcc7de",
+                  "surface-container-high": "#e6e8ea",
+                  "secondary-container": "#d5e0f8",
+                  "tertiary-fixed-dim": "#b7c8e1",
+                  "primary-container": "#ff6b00",
+                  "error-container": "#ffdad6",
+                  "on-secondary": "#ffffff",
+                  "inverse-primary": "#ffb693",
+                  "on-tertiary-fixed-variant": "#38485d",
+                  "on-secondary-fixed-variant": "#3c475a",
+                  "tertiary-fixed": "#d3e4fe",
+                  "outline": "#8e7164",
+                  "on-surface": "#191c1e",
+                  "on-secondary-fixed": "#111c2d",
+                  "outline-variant": "#e2bfb0",
+                  "on-surface-variant": "#5a4136",
+                  "on-error": "#ffffff",
+                  "surface-container-low": "#f2f4f6",
+                  "primary-fixed-dim": "#ffb693",
+                  "on-primary-container": "#572000",
+                  "surface-tint": "#a04100",
+                  "surface-variant": "#e0e3e5"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "stack-gap": "0.75rem",
+                  "page-margin": "1.5rem",
+                  "section-gap": "1.5rem",
+                  "card-padding": "1rem",
+                  "touch-target": "3rem"
+          },
+          "fontFamily": {
+                  "title-sm": ["Plus Jakarta Sans"],
+                  "headline-md": ["Plus Jakarta Sans"],
+                  "label-caps": ["Plus Jakarta Sans"],
+                  "body-md": ["Plus Jakarta Sans"],
+                  "display-lg": ["Plus Jakarta Sans"],
+                  "body-sm": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+                  "title-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                  "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                  "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                  "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                  "display-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .text-shadow-sm {
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen overflow-hidden">
+<!-- Full Bleed Onboarding Screen -->
+<main class="relative h-screen w-full flex flex-col justify-end">
+<!-- Background Image with DataStore Placeholder -->
+<div class="absolute inset-0 z-0 h-full w-full">
+<img alt="Join a Community Background" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE4NFK2GvPatdL_CG5usDpcSyBzdhRc9FLtaLZZifiYSL9tP134Ki8iwZeT3rsBrCOpHSnLudqWoKpf9P1BfYuzqaVaVhd1gnEXxAJpApXrMutYG7BizyHVQTInMbhRrxbHTMmcN6eE3Yg1T-NTJlz2VFZ-JDiq3vCN5MtbaH4V20p9nx25jGcHqQCB6KbTwrot5SorMvklf0hKabecZRumQuq1LBd0Bufb5XnZeXknQ20DPvFFb-ZWtmUWThlgq1ypYsl5Ds5Gxxw"/>
+<!-- Dark Overlay Gradient -->
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20 z-10"></div>
+</div>
+<!-- Content Layer -->
+<div class="relative z-20 px-page-margin pb-16 w-full max-w-xl mx-auto flex flex-col gap-6">
+<!-- Progress Indicator -->
+<div class="flex gap-2 mb-2">
+<div class="h-1 w-8 rounded-full bg-surface-container-highest/30"></div>
+<div class="h-1 w-12 rounded-full bg-primary-container"></div>
+<div class="h-1 w-8 rounded-full bg-surface-container-highest/30"></div>
+</div>
+<!-- Text Content -->
+<div class="flex flex-col gap-4">
+<h1 class="font-display-lg text-display-lg text-white text-shadow-sm">
+          Join a Community
+        </h1>
+<p class="font-body-md text-body-md text-white/90 leading-relaxed max-w-md">
+          Everything in Tiizi begins with a group. Join friends, workplaces, schools, churches or local communities that motivate one another every day.
+        </p>
+</div>
+<!-- Action Area -->
+<div class="flex flex-col gap-stack-gap mt-4">
+<button class="w-full h-touch-target bg-primary-container text-white font-bold rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2 group">
+<span class="font-title-sm text-title-sm">Next</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="w-full h-touch-target text-white/80 font-title-sm text-title-sm hover:text-white transition-colors">
+          Skip intro
+        </button>
+</div>
+<!-- Feature Badges (Subtle hints of what's inside) -->
+<div class="flex flex-wrap gap-2 pt-4 opacity-60">
+<div class="flex items-center gap-1.5 glass-effect px-3 py-1.5 rounded-full border border-white/10">
+<span class="material-symbols-outlined text-[16px] text-white">group</span>
+<span class="text-[10px] uppercase font-bold tracking-widest text-white">Groups</span>
+</div>
+<div class="flex items-center gap-1.5 glass-effect px-3 py-1.5 rounded-full border border-white/10">
+<span class="material-symbols-outlined text-[16px] text-white">emoji_events</span>
+<span class="text-[10px] uppercase font-bold tracking-widest text-white">Challenges</span>
+</div>
+<div class="flex items-center gap-1.5 glass-effect px-3 py-1.5 rounded-full border border-white/10">
+<span class="material-symbols-outlined text-[16px] text-white">bolt</span>
+<span class="text-[10px] uppercase font-bold tracking-widest text-white">Goals</span>
+</div>
+</div>
+</div>
+<!-- Decorative Top Bar (Static, non-functional for onboarding) -->
+<div class="absolute top-0 left-0 w-full p-page-margin z-30 flex justify-between items-center pointer-events-none">
+<div class="text-white font-black text-2xl tracking-tighter opacity-90">Tiizi.</div>
+<div class="glass-effect rounded-full px-3 py-1 border border-white/10">
+<span class="text-[10px] font-bold text-white uppercase tracking-tighter">Step 2 of 3</span>
+</div>
+</div>
+</main>
+<script>
+    // Micro-interaction for the primary button
+    const nextBtn = document.querySelector('button');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            // Placeholder logic for navigation
+            console.log('Navigating to next onboarding step...');
+        });
+    }
+
+    // Interactive hover effect for background subtly shifting
+    document.addEventListener('mousemove', (e) => {
+        const bg = document.querySelector('img');
+        const x = (e.clientX / window.innerWidth - 0.5) * 10;
+        const y = (e.clientY / window.innerHeight - 0.5) * 10;
+        if(bg) {
+            bg.style.transform = `scale(1.1) translate(${x}px, ${y}px)`;
+        }
+    });
+  </script>
+<style>
+      /* Ensure the background image has a subtle scale to allow for the movement effect */
+      img {
+          transition: transform 0.2s ease-out;
+          transform: scale(1.1);
+      }
+  </style>
+</body></html>

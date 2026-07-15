@@ -1,6 +1,29 @@
 import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
+async function getWellnessLogDates(
+  userId: string,
+  threshold: string,
+  challengeId?: string,
+): Promise<string[]> {
+  const constraints = [
+    where('userId', '==', userId),
+    where('date', '>=', threshold),
+  ];
+  if (challengeId) constraints.push(where('challengeId', '==', challengeId));
+  try {
+    const snap = await getDocs(query(collection(db, 'wellnessLogs'), ...constraints));
+    return snap.docs
+      .map((d) => {
+        const data = d.data() as { date?: string; loggedAt?: unknown };
+        return data.date ?? toDateOnly(String(data.loggedAt ?? '')) ?? '';
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 type StreakStats = { current: number; longest: number };
 
 function toIsoDate(date: Date) {
@@ -70,6 +93,7 @@ export const streakService = {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const threshold = toIsoDate(thirtyDaysAgo);
 
+    let workoutDates: string[] = [];
     try {
       const q = query(
         collection(db, 'workouts'),
@@ -78,13 +102,12 @@ export const streakService = {
         orderBy('date', 'desc'),
       );
       const snapshot = await getDocs(q);
-      const workoutDates = snapshot.docs
+      workoutDates = snapshot.docs
         .map((item) => {
           const data = item.data() as { date?: string; completedAt?: string };
           return data.date ?? toDateOnly(data.completedAt ?? '') ?? '';
         })
         .filter(Boolean);
-      return this.calculateStreakFromDates(workoutDates);
     } catch {
       const fallback = await getDocs(
         query(
@@ -93,15 +116,17 @@ export const streakService = {
           orderBy('completedAt', 'desc'),
         ),
       );
-      const workoutDates = fallback.docs
+      workoutDates = fallback.docs
         .slice(0, 120)
         .map((item) => {
           const data = item.data() as { date?: string; completedAt?: string };
           return data.date ?? toDateOnly(data.completedAt ?? '') ?? '';
         })
         .filter(Boolean);
-      return this.calculateStreakFromDates(workoutDates);
     }
+
+    const wellnessDates = await getWellnessLogDates(userId, threshold);
+    return this.calculateStreakFromDates([...workoutDates, ...wellnessDates]);
   },
 
   async calculateChallengeStreak(userId: string, challengeId: string): Promise<StreakStats> {
@@ -109,6 +134,7 @@ export const streakService = {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const threshold = toIsoDate(thirtyDaysAgo);
 
+    let workoutDates: string[] = [];
     try {
       const q = query(
         collection(db, 'workouts'),
@@ -119,13 +145,12 @@ export const streakService = {
       );
 
       const snapshot = await getDocs(q);
-      const workoutDates = snapshot.docs
+      workoutDates = snapshot.docs
         .map((item) => {
           const data = item.data() as { date?: string; completedAt?: string };
           return data.date ?? toDateOnly(data.completedAt ?? '') ?? '';
         })
         .filter(Boolean);
-      return this.calculateStreakFromDates(workoutDates);
     } catch {
       const fallback = await getDocs(
         query(
@@ -135,15 +160,17 @@ export const streakService = {
           orderBy('completedAt', 'desc'),
         ),
       );
-      const workoutDates = fallback.docs
+      workoutDates = fallback.docs
         .slice(0, 120)
         .map((item) => {
           const data = item.data() as { date?: string; completedAt?: string };
           return data.date ?? toDateOnly(data.completedAt ?? '') ?? '';
         })
         .filter(Boolean);
-      return this.calculateStreakFromDates(workoutDates);
     }
+
+    const wellnessDates = await getWellnessLogDates(userId, threshold, challengeId);
+    return this.calculateStreakFromDates([...workoutDates, ...wellnessDates]);
   },
 };
 

@@ -1,0 +1,38 @@
+- generic [ref=e307] [box=405,0,375,1085]:
+  - banner [ref=e308] [box=421,16,343,40]:
+    - button [ref=e309] [cursor=pointer] [box=421,16,40,40]:
+      - img [ref=e310] [box=427,22,28,28]
+    - paragraph [ref=e312] [box=513,26,158,20]: Profile Setup
+  - generic [ref=e313] [box=421,72,343,24]:
+    - paragraph [ref=e314] [box=421,72,91,24]: Step 2 of 3
+    - paragraph [ref=e315] [box=644,72,120,24]: 66% complete
+  - heading "What moves you?" [level=1] [ref=e318] [box=421,148,343,32]
+  - paragraph [ref=e319] [box=421,192,343,39]: Tell us about your activity preferences and health objectives.
+  - generic [ref=e320] [box=421,255,343,714]:
+    - button "Exercise Interests Choose the activities you enjoy most Running × Walking × +6 more" [ref=e321] [cursor=pointer] [box=421,255,343,250]:
+      - generic [ref=e322] [box=438,272,309,48]:
+        - img [ref=e324] [box=451,285,22,22]
+        - img [ref=e330] [box=725,272,22,22]
+      - paragraph [ref=e332] [box=438,336,309,26]: Exercise Interests
+      - paragraph [ref=e333] [box=438,371,309,20]: Choose the activities you enjoy most
+      - generic [ref=e334] [box=438,406,309,82]:
+        - generic [ref=e335] [box=438,406,107,36]: Running ×
+        - generic [ref=e336] [box=553,406,103,36]: Walking ×
+        - generic [ref=e337] [box=438,450,92,38]: +6 more
+    - button "Wellness Goals What do you want to achieve? Weight Loss × +2 more" [ref=e338] [cursor=pointer] [box=421,521,343,206]:
+      - generic [ref=e339] [box=438,538,309,48]:
+        - img [ref=e341] [box=451,551,22,22]
+        - img [ref=e347] [box=725,538,22,22]
+      - paragraph [ref=e349] [box=438,602,309,26]: Wellness Goals
+      - paragraph [ref=e350] [box=438,637,309,20]: What do you want to achieve?
+      - generic [ref=e351] [box=438,672,309,38]:
+        - generic [ref=e352] [box=438,672,137,38]: Weight Loss ×
+        - generic [ref=e353] [box=583,672,92,38]: +2 more
+    - generic [ref=e354] [box=421,743,343,226]:
+      - img "Daily inspiration" [ref=e355] [box=422,744,341,224]
+      - generic [ref=e357] [box=438,908,147,45]:
+        - paragraph [ref=e358] [box=438,908,147,17]: Daily Inspiration
+        - paragraph [ref=e359] [box=438,932,147,20]: Every move counts
+  - generic [ref=e360] [box=421,993,343,68]:
+    - button "Previous" [ref=e361] [cursor=pointer] [box=421,993,130,68]
+    - button "Next Step →" [ref=e362] [cursor=pointer] [box=563,993,201,56]

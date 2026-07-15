@@ -1,0 +1,29 @@
+- generic [ref=e98]:
+  - generic [ref=e99]:
+    - banner [ref=e100]:
+      - button [ref=e101] [cursor=pointer]:
+        - img [ref=e102]
+      - heading "Login" [level=1] [ref=e104]
+    - generic [ref=e105]:
+      - button "Sign Up" [ref=e106] [cursor=pointer]
+      - button "Login" [ref=e107] [cursor=pointer]
+  - generic [ref=e108]:
+    - generic [ref=e109]:
+      - paragraph [ref=e110]: Email Address
+      - generic [ref=e111]:
+        - img [ref=e112]
+        - textbox "Enter your email" [ref=e115]
+    - generic [ref=e116]:
+      - paragraph [ref=e117]: Password
+      - generic [ref=e118]:
+        - img [ref=e119]
+        - textbox "Enter password" [ref=e122]
+        - button [ref=e123] [cursor=pointer]:
+          - img [ref=e124]
+  - button "Continue" [disabled] [ref=e127]
+  - paragraph [ref=e130]: Or Continue With
+  - button "Google" [ref=e133] [cursor=pointer]
+  - paragraph [ref=e134]: Apple sign-in is not available during this pilot.
+  - paragraph [ref=e135]:
+    - text: No account?
+    - button "Sign up" [ref=e136] [cursor=pointer]

@@ -3,11 +3,16 @@ import { db } from '../lib/firebase';
 
 export type UserProfileSetup = {
   exerciseInterests: string[];
+  wellnessInterests: string[];
   customInterests: string[];
+  /** Custom "Other wellness topic" text, mirroring customInterests (exercise) and customGoals (goals). */
+  customWellnessInterests: string[];
+  goals: string[];
   primaryGoal?: string;
   secondaryGoal?: string;
   customGoals: string[];
   onboardingCompleted: boolean;
+  hasSeenIntro: boolean;
   region: string;
   personalInfo?: {
     fullName: string;
@@ -18,6 +23,8 @@ export type UserProfileSetup = {
     heightCm?: number;
     displayName?: string;
     photoURL?: string;
+    gender?: string;
+    genderSelfDescribe?: string;
   };
   privacySettings?: {
     isProfilePublic: boolean;
@@ -27,6 +34,21 @@ export type UserProfileSetup = {
     showBirthdayToFriends?: boolean;
     isProfileSearchable?: boolean;
   };
+  /**
+   * True only once the user has explicitly gone through the privacy-settings
+   * onboarding step (step 5) and pressed Continue there. Distinct from
+   * `privacySettings` itself, which every earlier onboarding step also writes
+   * with default values — so `privacySettings` existing can't be used to
+   * tell whether step 5 was actually reached.
+   */
+  privacySettingsCompleted?: boolean;
+  /**
+   * True once the user has passed through the wellness-topics onboarding
+   * step (step 3) via Next or Skip. Wellness topics are optional, so an
+   * empty `wellnessInterests` array is a valid, completed state — it can't
+   * be used on its own to tell whether step 3 was ever reached.
+   */
+  wellnessInterestsCompleted?: boolean;
 };
 
 class UserProfileService {
@@ -54,13 +76,23 @@ class UserProfileService {
     const data = snap.data() as { profile?: Partial<UserProfileSetup> };
     const profile = data.profile;
     if (!profile) return null;
+    // goals[]: read stored array; fall back to primaryGoal/secondaryGoal for old records
+    const storedGoals = (profile as unknown as { goals?: string[] }).goals;
+    const derivedGoals = storedGoals?.length
+      ? storedGoals
+      : [profile.primaryGoal, profile.secondaryGoal].filter(Boolean) as string[];
+
     return {
       exerciseInterests: profile.exerciseInterests ?? [],
+      wellnessInterests: (profile as unknown as { wellnessInterests?: string[] }).wellnessInterests ?? [],
       customInterests: profile.customInterests ?? [],
+      customWellnessInterests: (profile as unknown as { customWellnessInterests?: string[] }).customWellnessInterests ?? [],
+      goals: derivedGoals,
       primaryGoal: profile.primaryGoal,
       secondaryGoal: profile.secondaryGoal,
       customGoals: profile.customGoals ?? [],
       onboardingCompleted: profile.onboardingCompleted ?? false,
+      hasSeenIntro: (profile as unknown as { hasSeenIntro?: boolean }).hasSeenIntro ?? false,
       region: profile.region ?? 'Kenya',
       personalInfo: {
         fullName: profile.personalInfo?.fullName ?? '',
@@ -71,6 +103,8 @@ class UserProfileService {
         heightCm: profile.personalInfo?.heightCm ?? undefined,
         displayName: profile.personalInfo?.displayName ?? '',
         photoURL: profile.personalInfo?.photoURL ?? '',
+        gender: (profile.personalInfo as { gender?: string })?.gender ?? undefined,
+        genderSelfDescribe: (profile.personalInfo as { genderSelfDescribe?: string })?.genderSelfDescribe ?? undefined,
       },
       privacySettings: {
         isProfilePublic: profile.privacySettings?.isProfilePublic ?? true,
@@ -80,6 +114,8 @@ class UserProfileService {
         showBirthdayToFriends: profile.privacySettings?.showBirthdayToFriends ?? true,
         isProfileSearchable: profile.privacySettings?.isProfileSearchable ?? true,
       },
+      privacySettingsCompleted: (profile as unknown as { privacySettingsCompleted?: boolean }).privacySettingsCompleted ?? false,
+      wellnessInterestsCompleted: (profile as unknown as { wellnessInterestsCompleted?: boolean }).wellnessInterestsCompleted ?? false,
     };
   }
 
@@ -118,6 +154,8 @@ class UserProfileService {
       weightKg: input.personalInfo?.weightKg ?? null,
       heightCm: input.personalInfo?.heightCm ?? null,
       displayName: input.personalInfo?.displayName ?? '',
+      gender: input.personalInfo?.gender ?? null,
+      genderSelfDescribe: input.personalInfo?.genderSelfDescribe ?? null,
     };
 
     // Preserve existing profile photo unless caller explicitly sends one.
@@ -127,9 +165,13 @@ class UserProfileService {
 
     const profilePayload: Record<string, unknown> = {
       exerciseInterests: input.exerciseInterests,
+      wellnessInterests: input.wellnessInterests,
       customInterests: input.customInterests,
+      customWellnessInterests: input.customWellnessInterests,
+      goals: input.goals,
       customGoals: input.customGoals,
       onboardingCompleted: input.onboardingCompleted,
+      hasSeenIntro: input.hasSeenIntro,
       region: input.region,
       personalInfo: personalInfoPayload,
       privacySettings: {
@@ -142,8 +184,23 @@ class UserProfileService {
       },
     };
 
-    if (input.primaryGoal) profilePayload.primaryGoal = input.primaryGoal;
-    if (input.secondaryGoal) profilePayload.secondaryGoal = input.secondaryGoal;
+    // Only the privacy-settings onboarding step (step 5) sets this explicitly.
+    // Omit it otherwise so `{ merge: true }` preserves whatever value is
+    // already on the document instead of clobbering it back to undefined.
+    if (input.privacySettingsCompleted !== undefined) {
+      profilePayload.privacySettingsCompleted = input.privacySettingsCompleted;
+    }
+    // Only the wellness-topics onboarding step (step 3) sets this explicitly,
+    // same reasoning as privacySettingsCompleted above.
+    if (input.wellnessInterestsCompleted !== undefined) {
+      profilePayload.wellnessInterestsCompleted = input.wellnessInterestsCompleted;
+    }
+
+    // Derive backwards-compat scalar fields from goals[]
+    const primaryGoal = input.goals[0] || input.primaryGoal || '';
+    const secondaryGoal = input.goals[1] || input.secondaryGoal || '';
+    if (primaryGoal) profilePayload.primaryGoal = primaryGoal;
+    if (secondaryGoal) profilePayload.secondaryGoal = secondaryGoal;
 
     const rootPayload: Record<string, unknown> = { profile: profilePayload };
     if (input.personalInfo?.photoURL) {

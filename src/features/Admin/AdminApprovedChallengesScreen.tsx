@@ -25,8 +25,13 @@ function AdminApprovedChallengesScreen() {
             (approved ?? []).map((item) => (
             <Card key={item.id} variant="flat">
               <p className="text-sm font-bold text-slate-900">{item.name}</p>
-              <p className="text-xs text-slate-600 mt-1">
-                Approved {item.moderatedAt ? new Date(item.moderatedAt).toLocaleString() : 'previously'}
+              <p className="text-xs text-slate-600 mt-1 capitalize">
+                {(item as { challengeType?: string }).challengeType ?? 'challenge'}
+                {' · '}
+                {Number((item as { participantCount?: number }).participantCount ?? 0).toLocaleString()} participant{Number((item as { participantCount?: number }).participantCount ?? 0) !== 1 ? 's' : ''}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Approved {item.moderatedAt ? new Date(item.moderatedAt).toLocaleDateString() : 'previously'}
               </p>
             </Card>
             ))

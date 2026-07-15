@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { groupInsightsService } from '../services/groupInsightsService';
+import { memberActivitySummaryService } from '../services/memberActivitySummaryService';
 import { useAuth } from './useAuth';
 
 export function useGroupFeed(groupId: string | undefined) {
   const { user } = useAuth();
   return useQuery({
     queryKey: ['group-feed', groupId, user?.uid],
-    queryFn: () => (groupId ? groupInsightsService.getGroupFeed(groupId) : Promise.resolve([])),
+    queryFn: () => (groupId ? memberActivitySummaryService.getGroupFeed(groupId) : Promise.resolve([])),
     enabled: !!groupId && !!user?.uid,
     staleTime: 30 * 1000,
   });

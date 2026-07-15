@@ -29,11 +29,15 @@ function ProfileSettingsScreen() {
     try {
       await saveProfileSetup.mutateAsync({
         exerciseInterests: setup?.exerciseInterests ?? [],
+        wellnessInterests: setup?.wellnessInterests ?? [],
         customInterests: setup?.customInterests ?? [],
+        customWellnessInterests: setup?.customWellnessInterests ?? [],
+        goals: setup?.goals ?? [],
         primaryGoal: setup?.primaryGoal,
         secondaryGoal: setup?.secondaryGoal,
         customGoals: setup?.customGoals ?? [],
         onboardingCompleted: setup?.onboardingCompleted ?? true,
+        hasSeenIntro: setup?.hasSeenIntro ?? true,
         region: setup?.region ?? 'Kenya',
         personalInfo: setup?.personalInfo ?? {
           fullName: '',

@@ -2,6 +2,7 @@ import { Search } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Screen, BottomNav } from '../../components/Layout';
+import { LearnMoreLink } from '../../components/LearnMoreLink';
 import { useChallenges } from '../../hooks/useChallenges';
 import { useJoinChallenge } from '../../hooks/useChallenges';
 import { useChallengeTemplates } from '../../hooks/useChallengeTemplates';
@@ -12,6 +13,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useGroups, useMyGroups } from '../../hooks/useGroups';
 import { useWellnessTemplates } from '../../hooks/useWellnessTemplates';
+import { isChallengeOngoing } from '../../utils/challengeLifecycle';
 
 type ChallengeCardType = 'collective' | 'competitive' | 'streak';
 
@@ -43,14 +45,14 @@ function ChallengesScreen() {
   const { data: templateData = [], isLoading: isLoadingTemplates } = useChallengeTemplates();
   const { data: wellnessTemplateData = [], isLoading: isLoadingWellnessTemplates } = useWellnessTemplates();
   const visibleChallenges = useMemo(
-    () => challengeData.filter((challenge) => challenge.status === 'active' && (!effectiveGroupId || challenge.groupId === effectiveGroupId)),
+    () => challengeData.filter((challenge) => isChallengeOngoing(challenge) && (!effectiveGroupId || challenge.groupId === effectiveGroupId)),
     [challengeData, effectiveGroupId],
   );
   const browseChallenges = useMemo(() => {
     const groupIndex = new Map(groups.map((group) => [group.id, group]));
     const myGroupIds = new Set(myGroups.map((group) => group.id));
     return allChallenges
-      .filter((challenge) => challenge.status === 'active')
+      .filter((challenge) => isChallengeOngoing(challenge))
       .filter((challenge) => !myGroupIds.has(challenge.groupId))
       .filter((challenge) => {
         const challengeGroup = groupIndex.get(challenge.groupId);
@@ -120,12 +122,11 @@ function ChallengesScreen() {
   }, [browseChallenges]);
   const querySuffix = effectiveGroupId ? `?groupId=${effectiveGroupId}` : '';
 
-  const handleJoinChallenge = async (challengeId: string, challengeType: ChallengeCardType) => {
+  const handleJoinChallenge = async (challengeId: string, _challengeType: ChallengeCardType) => {
     try {
       await joinChallenge.mutateAsync(challengeId);
-      const query = new URLSearchParams({ challengeId });
-      if (effectiveGroupId) query.set('groupId', effectiveGroupId);
-      navigate(`/app/challenges/${challengeType}?${query.toString()}`);
+      const qs = effectiveGroupId ? `?groupId=${effectiveGroupId}` : '';
+      navigate(`/app/challenge/${challengeId}${qs}`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Could not join challenge.';
       showToast(msg, 'error');
@@ -139,59 +140,61 @@ function ChallengesScreen() {
   return (
     <Screen noPadding noBottomPadding className="st-page">
       <div className="mx-auto max-w-mobile min-h-screen bg-slate-50 pb-[96px]">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50 px-4 pt-4 pb-2">
+        <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-slate-50 px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
-            <h1 className="st-page-title">Challenges</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="st-page-title">Challenges</h1>
+              <LearnMoreLink section="challenges" />
+            </div>
             <button
-              className="h-11 w-11 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center"
+              className="h-9 w-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center"
               onClick={() => navigate(`/app/challenges/suggested${querySuffix}`)}
             >
-              <Search size={22} />
+              <Search size={18} />
             </button>
           </div>
         </header>
 
-        <main className="px-4">
+        <main className="px-4 pt-5 space-y-7">
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="st-section-title">Suggested Templates</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="st-section-title">Fitness Challenges</h2>
               <button
-                className="text-[14px] leading-[18px] font-semibold text-primary"
+                className="text-[13px] font-semibold text-primary"
                 onClick={() => navigate(`/app/challenges/suggested${querySuffix}`)}
               >
-                View All
+                See all
               </button>
             </div>
 
-            <div className="mt-3 -mx-4 overflow-x-auto px-4 hide-scrollbar">
-              <div className="flex gap-3">
+            <div className="-mx-4 overflow-x-auto px-4 hide-scrollbar">
+              <div className="flex gap-3 pb-1">
                 {templateData.slice(0, 6).map((item) => {
                   const challengeTypeLabel =
                     item.tag?.trim()
                     || (item.challengeType ? item.challengeType.toUpperCase() : 'TEMPLATE');
                   return (
-                  <article key={item.id} className="w-[270px] shrink-0 rounded-[18px] border border-slate-200 bg-white overflow-hidden">
-                      <div className="relative" style={{ height: 210, minHeight: 210, maxHeight: 210 }}>
+                  <article key={item.id} className="w-[240px] shrink-0 rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm">
+                      <div className="relative h-[152px]">
                         {isValidHttpImage(item.coverImageUrl) ? (
                           <img
                             src={item.coverImageUrl}
                             alt={item.name}
                             className="h-full w-full object-cover"
-                            style={{ display: 'block' }}
                           />
                         ) : (
-                          <div className="h-full w-full bg-slate-200 flex items-center justify-center text-slate-500 text-[12px] font-semibold">
-                            No cover image
+                          <div className="h-full w-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-slate-400 text-[12px] font-semibold">
+                            No image
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/15 to-transparent" />
-                        <span className="absolute left-3 top-3 rounded-lg border border-primary/50 bg-primary/15 px-3 py-1 text-[11px] leading-[11px] tracking-[0.08em] font-bold uppercase text-primary">
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/75 via-slate-900/20 to-transparent" />
+                        <span className="absolute left-3 top-3 rounded-full bg-primary/90 px-2.5 py-1 text-[10px] leading-[10px] tracking-[0.06em] font-bold uppercase text-white">
                           {challengeTypeLabel}
                         </span>
                         <div className="absolute inset-x-3 bottom-3">
-                          <p className="text-[16px] leading-[20px] font-black text-white">{item.name}</p>
+                          <p className="text-[14px] leading-[18px] font-black text-white">{item.name}</p>
                           <button
-                            className="mt-2 h-11 w-full rounded-xl border border-white/40 bg-white/10 text-white text-[14px] font-semibold"
+                            className="mt-2 h-9 w-full rounded-xl border border-white/30 bg-white/15 backdrop-blur-sm text-white text-[12px] font-semibold"
                             onClick={() =>
                               navigate(
                                 `/app/challenges/suggested?previewTemplateId=${item.id}${
@@ -200,7 +203,7 @@ function ChallengesScreen() {
                               )
                             }
                           >
-                            Preview Template
+                            Preview
                           </button>
                         </div>
                       </div>
@@ -216,34 +219,43 @@ function ChallengesScreen() {
             )}
           </section>
 
-          <section className="mt-6">
-            <div className="flex items-center justify-between mb-2">
+          <section>
+            <div className="flex items-center justify-between mb-3">
               <h2 className="st-section-title">Wellness Templates</h2>
               <button
-                className="text-[14px] leading-[18px] font-semibold text-primary"
+                className="text-[13px] font-semibold text-primary"
                 onClick={() => navigate(`/app/challenges/wellness${querySuffix}`)}
               >
-                View All
+                See all
               </button>
             </div>
 
-            <div className="mt-3 -mx-4 overflow-x-auto px-4 hide-scrollbar">
-              <div className="flex gap-3">
+            <div className="-mx-4 overflow-x-auto px-4 hide-scrollbar">
+              <div className="flex gap-3 pb-1">
                 {wellnessTemplateData.slice(0, 8).map((item) => (
-                  <article key={item.id} className="w-[220px] shrink-0 rounded-[18px] border border-slate-200 bg-white p-3">
+                  <article key={item.id} className="w-[200px] shrink-0 rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm">
                     <button
                       className="w-full text-left"
                       onClick={() => navigate(`/app/challenges/wellness/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`)}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xl">{item.icon ?? '✨'}</span>
-                        <span className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-600">{item.category}</span>
+                      {isValidHttpImage(item.coverImage) ? (
+                        <div className="relative h-[112px] overflow-hidden">
+                          <img src={item.coverImage} alt={item.name} className="h-full w-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
+                          <span className="absolute left-2.5 bottom-2 rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-bold uppercase text-white/90">{item.category}</span>
+                        </div>
+                      ) : (
+                        <div className="h-[80px] flex items-center justify-center bg-slate-100">
+                          <span className="text-2xl">{item.icon ?? '✨'}</span>
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <p className="text-[13px] leading-[17px] font-black text-slate-900">{item.name}</p>
+                        <p className="mt-0.5 text-[11px] leading-[14px] text-slate-400">{item.duration} days · {item.difficulty}</p>
+                        <span className="mt-2.5 inline-flex h-8 min-w-[80px] items-center justify-center rounded-lg bg-primary px-3 text-[11px] font-bold text-white">
+                          Preview
+                        </span>
                       </div>
-                      <p className="mt-2 text-[14px] leading-[18px] font-black text-slate-900">{item.name}</p>
-                      <p className="mt-1 text-[11px] leading-[15px] text-slate-500">{item.duration} days • {item.difficulty}</p>
-                      <span className="mt-3 inline-flex h-9 min-w-[96px] items-center justify-center rounded-lg bg-primary px-3 text-[12px] font-bold text-white">
-                        Preview
-                      </span>
                     </button>
                   </article>
                 ))}
@@ -251,27 +263,27 @@ function ChallengesScreen() {
             </div>
 
             {wellnessTemplateData.length === 0 && (
-              <article className="mt-2 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500">
+              <article className="rounded-xl border border-slate-100 bg-white p-3 text-[12px] text-slate-400 shadow-sm">
                 No wellness templates published yet.
               </article>
             )}
           </section>
 
-          <section className="mt-6">
-            <div className="flex items-center justify-between mb-2">
+          <section>
+            <div className="flex items-center justify-between mb-3">
               <h2 className="st-section-title">Ongoing Challenges</h2>
               <button
-                className="text-[14px] leading-[18px] font-semibold text-primary"
-                onClick={() => navigate(`/app/challenges/suggested${querySuffix}`)}
+                className="text-[13px] font-semibold text-primary"
+                onClick={() => navigate(`/app/challenges/browse${querySuffix}`)}
               >
-                View All
+                See all
               </button>
             </div>
 
-            <div className="mt-3 space-y-3">
+            <div className="space-y-2.5">
               {ongoingCards.slice(0, 3).map((item) => {
                 return (
-                  <article key={item.id} className="rounded-[18px] border border-slate-200 bg-white p-3 overflow-hidden">
+                  <article key={item.id} className="rounded-2xl border border-slate-100 bg-white p-3 overflow-hidden shadow-sm">
                     <div className="flex items-center gap-3">
                       <button
                         className="min-w-0 flex flex-1 items-center gap-3 text-left"
@@ -281,25 +293,19 @@ function ChallengesScreen() {
                           <img
                             src={item.imageUrl}
                             alt={item.name}
-                            className="h-[76px] w-[76px] rounded-[12px] object-cover flex-shrink-0"
-                            style={{ minWidth: 76, minHeight: 76 }}
+                            className="h-16 w-16 rounded-xl object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div
-                            className="h-[76px] w-[76px] rounded-[12px] border border-slate-200 bg-slate-100 text-[10px] text-slate-500 flex items-center justify-center flex-shrink-0"
-                            style={{ minWidth: 76, minHeight: 76 }}
-                          >
-                            No image
-                          </div>
+                          <div className="h-16 w-16 rounded-xl bg-slate-100 flex-shrink-0" />
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] leading-[18px] font-black text-slate-900">{item.name || 'Challenge'}</p>
-                          <p className="mt-1 truncate text-[11px] leading-[15px] text-[#61758f]">👥 {item.participants.toLocaleString()} Participants</p>
-                          <p className="mt-1 text-[12px] leading-[15px] text-primary font-semibold">{item.daysLabel}</p>
+                          <p className="truncate text-[13px] leading-[18px] font-bold text-slate-900">{item.name || 'Challenge'}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-slate-400">{item.participants.toLocaleString()} participants</p>
+                          <p className="mt-0.5 text-[11px] font-semibold text-primary">{item.daysLabel}</p>
                         </div>
                       </button>
                       <button
-                        className="h-10 min-w-[86px] rounded-xl bg-primary px-0 text-white text-[14px] font-bold flex-shrink-0"
+                        className="h-9 min-w-[88px] rounded-xl bg-primary px-3 text-white text-[12px] font-bold flex-shrink-0 whitespace-nowrap"
                         onClick={() => {
                           if (item.isJoined) {
                             if (item.hasStarted) {
@@ -308,16 +314,12 @@ function ChallengesScreen() {
                               navigate(`/app/workouts/select-activity?${qs.toString()}`);
                               return;
                             }
-                            navigate(`/app/challenge/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`);
-                            return;
                           }
-                          handleJoinChallenge(item.id, item.challengeType);
+                          navigate(`/app/challenge/${item.id}${effectiveGroupId ? `?groupId=${effectiveGroupId}` : ''}`);
                         }}
                         disabled={joinChallenge.isPending}
                       >
-                        {joinChallenge.isPending
-                          ? 'Joining...'
-                          : item.isJoined
+                        {item.isJoined
                           ? (item.hasStarted ? (item.isWellness ? 'Log Activity' : 'Log Workout') : 'View')
                           : 'Join'}
                       </button>
@@ -327,26 +329,26 @@ function ChallengesScreen() {
               })}
             </div>
             {ongoingCards.length === 0 && (
-              <article className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500">
+              <article className="rounded-xl border border-slate-100 bg-white p-3 text-[12px] text-slate-400 shadow-sm">
                 No active challenges for your group yet.
               </article>
             )}
           </section>
 
-          <section className="mt-6">
-            <div className="flex items-center justify-between mb-2">
+          <section>
+            <div className="flex items-center justify-between mb-3">
               <h2 className="st-section-title">Browse Challenges</h2>
               <button
-                className="text-[14px] leading-[18px] font-semibold text-primary"
+                className="text-[13px] font-semibold text-primary"
                 onClick={() => navigate('/app/challenges/browse')}
               >
-                View All
+                See all
               </button>
             </div>
 
-            <div className="mt-3 space-y-3">
+            <div className="space-y-2.5">
               {browseCards.map((item) => (
-                <article key={item.id} className="rounded-[18px] border border-slate-200 bg-white p-3 overflow-hidden">
+                <article key={item.id} className="rounded-2xl border border-slate-100 bg-white p-3 overflow-hidden shadow-sm">
                   <div className="flex items-center gap-3">
                     <button
                       className="min-w-0 flex flex-1 items-center gap-3 text-left"
@@ -356,25 +358,19 @@ function ChallengesScreen() {
                         <img
                           src={item.imageUrl}
                           alt={item.name}
-                          className="h-[76px] w-[76px] rounded-[12px] object-cover flex-shrink-0"
-                          style={{ minWidth: 76, minHeight: 76 }}
+                          className="h-16 w-16 rounded-xl object-cover flex-shrink-0"
                         />
                       ) : (
-                        <div
-                          className="h-[76px] w-[76px] rounded-[12px] border border-slate-200 bg-slate-100 text-[10px] text-slate-500 flex items-center justify-center flex-shrink-0"
-                          style={{ minWidth: 76, minHeight: 76 }}
-                        >
-                          No image
-                        </div>
+                        <div className="h-16 w-16 rounded-xl bg-slate-100 flex-shrink-0" />
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] leading-[18px] font-black text-slate-900">{item.name || 'Challenge'}</p>
-                        <p className="mt-1 truncate text-[11px] leading-[15px] text-[#61758f]">👥 {item.participants.toLocaleString()} Participants</p>
-                        <p className="mt-1 text-[12px] leading-[15px] text-primary font-semibold">{item.daysLabel}</p>
+                        <p className="truncate text-[13px] leading-[18px] font-bold text-slate-900">{item.name || 'Challenge'}</p>
+                        <p className="mt-0.5 truncate text-[11px] text-slate-400">{item.participants.toLocaleString()} participants</p>
+                        <p className="mt-0.5 text-[11px] font-semibold text-primary">{item.daysLabel}</p>
                       </div>
                     </button>
                     <button
-                      className="h-10 min-w-[86px] rounded-xl bg-primary px-0 text-white text-[14px] font-bold flex-shrink-0"
+                      className="h-9 min-w-[56px] rounded-xl bg-slate-100 px-4 text-slate-700 text-[12px] font-bold flex-shrink-0"
                       onClick={() => navigate(`/app/challenge/${item.id}`)}
                     >
                       View
@@ -385,19 +381,35 @@ function ChallengesScreen() {
             </div>
 
             {browseCards.length === 0 && (
-              <article className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500">
-                No public challenges available to browse yet.
+              <article className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+                <button
+                  className="w-full text-left text-[12px] text-primary font-semibold"
+                  onClick={() => navigate(`/app/challenges/browse${querySuffix}`)}
+                >
+                  Browse all available challenges →
+                </button>
               </article>
             )}
           </section>
 
-          <section className="mt-5">
-            <button className="w-full rounded-[18px] bg-primary px-4 py-4 text-white text-center" onClick={() => navigate('/app/exercises')}>
-              <span className="block text-[16px] leading-[20px] font-bold">Browse Exercise Library</span>
-              <span className="block text-[12px] leading-[16px] text-white/85 mt-1">
-                Master your technique before you participate
-              </span>
-            </button>
+          <section>
+            <h2 className="st-section-title mb-3">Activities Library</h2>
+            <div className="flex gap-3">
+              <button
+                className="flex-1 rounded-2xl bg-primary/8 border border-primary/15 px-4 py-3.5 text-left"
+                onClick={() => navigate('/app/exercises')}
+              >
+                <span className="block text-[13px] leading-[17px] font-bold text-slate-900">Exercise Library</span>
+                <span className="block text-[11px] leading-[15px] text-slate-500 mt-0.5">Technique &amp; form</span>
+              </button>
+              <button
+                className="flex-1 rounded-2xl bg-primary/8 border border-primary/15 px-4 py-3.5 text-left"
+                onClick={() => navigate('/app/wellness-activities')}
+              >
+                <span className="block text-[13px] leading-[17px] font-bold text-slate-900">Wellness Library</span>
+                <span className="block text-[11px] leading-[15px] text-slate-500 mt-0.5">Mindfulness &amp; habits</span>
+              </button>
+            </div>
           </section>
         </main>
       </div>

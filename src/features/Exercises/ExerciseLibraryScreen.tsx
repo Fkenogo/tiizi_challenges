@@ -43,6 +43,7 @@ function ExerciseLibraryScreen() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] = useState('All');
+  const [movementTypeFilter, setMovementTypeFilter] = useState<'all' | 'isometric' | 'isotonic'>('all');
   const shouldSearch = searchTerm.trim().length >= 2;
   const allExercisesQuery = useExercises();
   const browseQuery = useExercises(tierFilter !== 'All' ? { tier1: tierFilter } : undefined);
@@ -53,17 +54,27 @@ function ExerciseLibraryScreen() {
   const categoryExercises = browseQuery.data ?? [];
   const allExercises = allExercisesQuery.data ?? [];
   const fallbackToAllByTier = !shouldSearch && tierFilter !== 'All' && categoryExercises.length === 0 && allExercises.length > 0;
-  const exercises = shouldSearch ? (searchQuery.data ?? []) : (fallbackToAllByTier ? allExercises : categoryExercises);
+  const rawExercises = shouldSearch ? (searchQuery.data ?? []) : (fallbackToAllByTier ? allExercises : categoryExercises);
+  const exercises = movementTypeFilter === 'all'
+    ? rawExercises
+    : rawExercises.filter((ex) =>
+        ex.movementType === movementTypeFilter ||
+        (ex.tags ?? []).includes(movementTypeFilter),
+      );
   const fallbackSuggestions = useMemo(() => (allExercisesQuery.data ?? []).slice(0, 8), [allExercisesQuery.data]);
   const isLoading = shouldSearch ? searchQuery.isLoading : (browseQuery.isLoading || allExercisesQuery.isLoading);
   const error = shouldSearch ? searchQuery.error : browseQuery.error;
 
-  const handleExerciseClick = (exerciseId: string, exerciseName: string, exerciseUnit: string) => {
+  const handleExerciseClick = (exerciseId: string, exerciseName: string, exerciseUnit: string, holdBased?: boolean, movementType?: string) => {
     if (selectionMode) {
       const query = new URLSearchParams();
       query.set('selectedExerciseId', exerciseId);
       query.set('selectedExerciseName', exerciseName);
-      query.set('selectedExerciseUnit', exerciseUnit);
+      const isIsometric = holdBased === true || movementType === 'isometric';
+      const resolvedUnit = isIsometric
+        ? (exerciseUnit === 'minutes' ? 'Minutes' : 'Seconds')
+        : (exerciseUnit ? exerciseUnit.charAt(0).toUpperCase() + exerciseUnit.slice(1) : 'Reps');
+      query.set('selectedExerciseUnit', resolvedUnit);
       query.set('selectedRow', selectedRow);
       if (groupId) query.set('groupId', groupId);
       if (templateId) query.set('templateId', templateId);
@@ -119,6 +130,22 @@ function ExerciseLibraryScreen() {
               {tier}
             </button>
           ))}
+        </div>
+
+        <div className="px-3 mt-1 flex gap-2 overflow-x-auto pb-1">
+          {(['all', 'isometric', 'isotonic'] as const).map((mt) => {
+            const label = mt === 'all' ? 'All Types' : mt === 'isometric' ? 'Isometric' : 'Isotonic';
+            const active = movementTypeFilter === mt;
+            return (
+              <button
+                key={mt}
+                className={`h-8 px-3 rounded-full text-[11px] font-semibold whitespace-nowrap ${active ? 'bg-violet-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}
+                onClick={() => setMovementTypeFilter(mt)}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="px-3 mt-2 space-y-2">
@@ -181,7 +208,7 @@ function ExerciseLibraryScreen() {
             <button
               key={exercise.id}
               className="w-full bg-white border border-slate-200 rounded-xl p-2 text-left"
-              onClick={() => handleExerciseClick(exercise.id, exercise.name, exercise.metric.unit)}
+              onClick={() => handleExerciseClick(exercise.id, exercise.name, exercise.metric.unit, exercise.holdBased, exercise.movementType)}
             >
               <div className="flex items-start gap-2">
                 <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">

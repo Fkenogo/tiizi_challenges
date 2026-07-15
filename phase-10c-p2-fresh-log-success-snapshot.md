@@ -1,0 +1,43 @@
+- generic [ref=e124]:
+  - main [ref=e126]:
+    - img [ref=e129]
+    - heading "Activity Logged!" [level=1] [ref=e131]
+    - paragraph [ref=e132]: Your progress has been shared with the group. Keep the momentum going!
+    - generic [ref=e133]:
+      - generic [ref=e134]:
+        - paragraph [ref=e135]: 30-Day Pushup Duel
+        - generic [ref=e136]: Level Up!
+      - generic [ref=e139]:
+        - paragraph [ref=e140]:
+          - text: "40"
+          - generic [ref=e141]: / 40 total
+        - generic [ref=e142]:
+          - paragraph [ref=e143]: Completion
+          - paragraph [ref=e144]: 100%
+      - generic [ref=e145]:
+        - paragraph [ref=e146]: Logged activities
+        - generic [ref=e147]:
+          - generic [ref=e148]: Modified Push-Up
+          - generic [ref=e149]: 10 reps
+        - generic [ref=e150]:
+          - generic [ref=e151]: Bear Crawl Hold
+          - generic [ref=e152]: 30 seconds
+      - paragraph [ref=e153]: "Points earned: 20"
+    - button "Go to Feed →" [ref=e154] [cursor=pointer]
+    - button "View Completion" [ref=e155] [cursor=pointer]
+  - navigation [ref=e156]:
+    - generic [ref=e157]:
+      - button "Home" [ref=e158] [cursor=pointer]:
+        - img [ref=e159]
+        - generic [ref=e162]: Home
+      - button "Groups" [ref=e163] [cursor=pointer]:
+        - img [ref=e164]
+        - generic [ref=e169]: Groups
+      - button [ref=e171] [cursor=pointer]:
+        - img [ref=e172]
+      - button "Challenges" [ref=e173] [cursor=pointer]:
+        - img [ref=e174]
+        - generic [ref=e180]: Challenges
+      - button "Profile" [ref=e181] [cursor=pointer]:
+        - img [ref=e182]
+        - generic [ref=e185]: Profile

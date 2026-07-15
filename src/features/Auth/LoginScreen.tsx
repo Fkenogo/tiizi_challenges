@@ -1,9 +1,96 @@
-import { ArrowLeft, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Lock, Mail, Eye, EyeOff, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../lib/firebaseAuth';
+import { getFirebaseAuthErrorCode, isPasswordResetVisibleError, normalizeFirebaseAuthError } from '../../utils/firebaseAuthErrors';
+
+const EMAIL_PATTERN = /\S+@\S+\.\S+/;
+
+function ForgotPasswordModal({ initialEmail, onClose }: { initialEmail: string; onClose: () => void }) {
+  const [email, setEmail] = useState(initialEmail);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  const isValidEmail = EMAIL_PATTERN.test(email.trim());
+
+  const handleSend = async () => {
+    setError('');
+    if (!isValidEmail) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    setSending(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setSent(true);
+    } catch (err) {
+      const code = getFirebaseAuthErrorCode(err);
+      if (isPasswordResetVisibleError(code)) {
+        setError(normalizeFirebaseAuthError(err));
+      } else {
+        // Do not reveal whether the account exists — show the same success
+        // state as a real send for "no account found" and anything else.
+        setSent(true);
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/45 flex items-end sm:items-center sm:justify-center">
+      <div className="w-full max-w-mobile mx-auto rounded-t-3xl sm:rounded-3xl bg-white p-5 pb-7">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[18px] font-black text-slate-900">Reset your password</h2>
+          <button className="h-9 w-9 flex items-center justify-center text-slate-400" onClick={onClose} aria-label="Close">
+            <X size={20} />
+          </button>
+        </div>
+
+        {sent ? (
+          <div className="mt-4">
+            <p className="text-sm leading-[20px] text-slate-600">
+              Check your email for a password reset link.
+            </p>
+            <button className="mt-5 w-full h-11 rounded-lg bg-primary text-white text-sm font-semibold" onClick={onClose}>
+              Done
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4">
+            <p className="text-sm leading-[20px] text-slate-600">
+              Enter the email address on your account and we'll send you a link to reset your password.
+            </p>
+            <div className="relative mt-4">
+              <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                className="w-full h-11 rounded-lg border border-slate-200 pl-10 pr-3 text-sm"
+                type="email"
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+              />
+            </div>
+            {error && <p className="mt-2 text-xs font-medium text-red-600">{error}</p>}
+            <button
+              className="mt-5 w-full h-11 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-60"
+              onClick={handleSend}
+              disabled={sending || !isValidEmail}
+            >
+              {sending ? 'Sending...' : 'Send reset link'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function LoginScreen() {
   const navigate = useNavigate();
@@ -15,6 +102,7 @@ function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const nextPath = (() => {
     const raw = params.get('next');
@@ -92,6 +180,13 @@ function LoginScreen() {
                 {showPassword ? <EyeOff size={18} className="text-slate-400" /> : <Eye size={18} className="text-slate-400" />}
               </button>
             </div>
+            <button
+              type="button"
+              className="mt-1.5 text-xs font-semibold text-primary"
+              onClick={() => setShowForgotPassword(true)}
+            >
+              Forgot password?
+            </button>
           </div>
         </div>
 
@@ -119,6 +214,10 @@ function LoginScreen() {
           </button>
         </p>
       </div>
+
+      {showForgotPassword && (
+        <ForgotPasswordModal initialEmail={email} onClose={() => setShowForgotPassword(false)} />
+      )}
     </Screen>
   );
 }

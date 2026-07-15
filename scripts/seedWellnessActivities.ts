@@ -1,19 +1,17 @@
 import 'dotenv/config';
 import { applicationDefault, getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, type WriteBatch } from 'firebase-admin/firestore';
 import { WELLNESS_ACTIVITIES_CATALOG } from '../src/data/wellnessActivitiesCatalog';
 
 const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.VITE_FIREBASE_PROJECT_ID;
-const requiredEnvKeys = ['GOOGLE_APPLICATION_CREDENTIALS'] as const;
 
 if (!projectId) {
   throw new Error('Missing FIREBASE_PROJECT_ID (or fallback VITE_FIREBASE_PROJECT_ID) env var.');
 }
-for (const key of requiredEnvKeys) {
-  if (!process.env[key]) {
-    throw new Error(`Missing required env var: ${key}`);
-  }
-}
+
+// GOOGLE_APPLICATION_CREDENTIALS is optional when Application Default Credentials
+// (ADC) are already configured via `gcloud auth application-default login`.
+// applicationDefault() finds ADC automatically in either case.
 
 if (!getApps().length) {
   initializeApp({
@@ -25,16 +23,46 @@ if (!getApps().length) {
 const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+const applyMode = process.argv.includes('--apply');
+const mode = applyMode ? 'apply' : 'dry-run';
+
+type Op = (batch: WriteBatch) => void;
+
+async function commitOps(ops: Op[]): Promise<void> {
+  const BATCH_SIZE = 499; // Firestore max is 500 ops per batch
+  for (let i = 0; i < ops.length; i += BATCH_SIZE) {
+    const batch = db.batch();
+    ops.slice(i, i + BATCH_SIZE).forEach((op) => op(batch));
+    await batch.commit();
+    console.log(`  committed batch [${i + 1}–${Math.min(i + BATCH_SIZE, ops.length)}] of ${ops.length} total ops`);
+  }
+}
+
 async function run() {
-  const refs = WELLNESS_ACTIVITIES_CATALOG.map((activity) => db.collection('wellnessActivities').doc(activity.id));
-  const existing = await db.getAll(...refs);
-  const existingIds = new Set(existing.filter((item) => item.exists).map((item) => item.id));
+  // 1. Read all current Firestore documents
+  const allSnapshot = await db.collection('wellnessActivities').get();
+  const allCurrentIds = new Set(allSnapshot.docs.map((d) => d.id));
+  const catalogIds = new Set(WELLNESS_ACTIVITIES_CATALOG.map((a) => a.id));
+
+  // 2. Identify retired docs to delete (in Firestore but not in the new catalog)
+  const toDelete = [...allCurrentIds].filter((id) => !catalogIds.has(id));
+
+  // 3. Identify which catalog docs already exist (update) vs are new (create)
+  const existingIds = new Set([...allCurrentIds].filter((id) => catalogIds.has(id)));
 
   const nowIso = new Date().toISOString();
-  const batch = db.batch();
+  const ops: Op[] = [];
   let createdCount = 0;
   let updatedCount = 0;
+  const deletedCount = toDelete.length;
 
+  // Queue deletions first
+  for (const id of toDelete) {
+    const ref = db.collection('wellnessActivities').doc(id);
+    ops.push((batch) => batch.delete(ref));
+  }
+
+  // Queue upserts
   for (const activity of WELLNESS_ACTIVITIES_CATALOG) {
     const ref = db.collection('wellnessActivities').doc(activity.id);
     if (existingIds.has(activity.id)) {
@@ -42,19 +70,28 @@ async function run() {
     } else {
       createdCount += 1;
     }
-    batch.set(
-      ref,
-      {
-        ...activity,
-        createdAt: activity.createdAt ?? nowIso,
-        updatedAt: nowIso,
-      },
-      { merge: true },
-    );
+    const payload = {
+      ...activity,
+      createdAt: activity.createdAt ?? nowIso,
+      updatedAt: nowIso,
+    };
+    ops.push((batch) => batch.set(ref, payload, { merge: true }));
   }
 
-  await batch.commit();
+  console.log(`\nWellness Activities Seed — ${new Date().toISOString()} [${mode}]`);
+  console.log(`  Deletions queued : ${deletedCount}`);
+  console.log(`  Creates queued   : ${createdCount}`);
+  console.log(`  Updates queued   : ${updatedCount}`);
+  console.log(`  Total ops        : ${ops.length}`);
 
+  if (!applyMode) {
+    console.log('\nDry-run only. No writes were made. Re-run with --apply to commit these changes.');
+    return;
+  }
+
+  await commitOps(ops);
+
+  // Post-seed count
   const snapshot = await db.collection('wellnessActivities').get();
   const countsByCategory = snapshot.docs.reduce<Record<string, number>>((acc, item) => {
     const category = String((item.data() as { category?: string }).category ?? 'unknown');
@@ -69,6 +106,7 @@ async function run() {
         seededActivities: WELLNESS_ACTIVITIES_CATALOG.length,
         createdCount,
         updatedCount,
+        deletedCount,
         totalActivitiesInCollection: snapshot.size,
         countsByCategory,
       },

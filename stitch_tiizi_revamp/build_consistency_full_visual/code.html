@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Build Consistency - Onboarding</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600;1,700;1,800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#ffffff",
+            "primary-fixed": "#ffdbcc",
+            "tertiary-container": "#8a9ab2",
+            "inverse-on-surface": "#eff1f3",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed-variant": "#7a3000",
+            "tertiary": "#505f76",
+            "secondary": "#545f73",
+            "on-tertiary-container": "#223246",
+            "on-primary-fixed": "#351000",
+            "surface": "#f7f9fb",
+            "surface-container": "#eceef0",
+            "secondary-fixed": "#d8e3fb",
+            "on-error-container": "#93000a",
+            "inverse-surface": "#2d3133",
+            "error": "#ba1a1a",
+            "surface-container-highest": "#e0e3e5",
+            "on-primary": "#ffffff",
+            "background": "#f7f9fb",
+            "primary": "#a04100",
+            "on-secondary-container": "#586377",
+            "on-tertiary-fixed": "#0b1c30",
+            "on-background": "#191c1e",
+            "surface-bright": "#f7f9fb",
+            "surface-dim": "#d8dadc",
+            "secondary-fixed-dim": "#bcc7de",
+            "surface-container-high": "#e6e8ea",
+            "secondary-container": "#d5e0f8",
+            "tertiary-fixed-dim": "#b7c8e1",
+            "primary-container": "#ff6b00",
+            "error-container": "#ffdad6",
+            "on-secondary": "#ffffff",
+            "inverse-primary": "#ffb693",
+            "on-tertiary-fixed-variant": "#38485d",
+            "on-secondary-fixed-variant": "#3c475a",
+            "tertiary-fixed": "#d3e4fe",
+            "outline": "#8e7164",
+            "on-surface": "#191c1e",
+            "on-secondary-fixed": "#111c2d",
+            "outline-variant": "#e2bfb0",
+            "on-surface-variant": "#5a4136",
+            "on-error": "#ffffff",
+            "surface-container-low": "#f2f4f6",
+            "primary-fixed-dim": "#ffb693",
+            "on-primary-container": "#572000",
+            "surface-tint": "#a04100",
+            "surface-variant": "#e0e3e5"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "stack-gap": "0.75rem",
+            "page-margin": "1.5rem",
+            "section-gap": "1.5rem",
+            "card-padding": "1rem",
+            "touch-target": "3rem"
+          },
+          "fontFamily": {
+            "title-sm": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "label-caps": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "display-lg": ["Plus Jakarta Sans"],
+            "body-sm": ["Plus Jakarta Sans"]
+          },
+          "fontSize": {
+            "title-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+            "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+            "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "display-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    
+    .animate-pulse-soft {
+      animation: pulse-soft 3s ease-in-out infinite;
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md overflow-hidden">
+<!-- Onboarding Content Canvas -->
+<main class="relative flex-grow h-screen w-full overflow-hidden flex flex-col">
+<!-- Background Image with Overlay -->
+<div class="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[20s] scale-110 hover:scale-100" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDHDv46_gGRYsmLE3arKEkz9x18eew8pj7oz3Iavy8ZOmSR8p_MrMB-xwiUqsUNWhXFpN22hKxQ4dWw5_v07FR4i-2Yqf1CTXNKvnXoOa0tcpVd562DICHOQcKhjVvgEPC238ijDeF00IEfcYBAbtIufe-Xp7MCPrFM8Aulcl8nFWacrs8VNZs669ZKAYbsXMdNJgS2hfPpuzYMZXPJaqzS9eSRzDRCiDt3kfBCXJYcigvKbtivNiUk46wbf1hz7zUQUKao2N2TQRea');">
+<!-- Dark Multi-Layer Overlay -->
+<div class="absolute inset-0 bg-black/40"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+</div>
+<!-- Navigation Suppressed: Onboarding is a focused journey. No TopAppBar or BottomNavBar. -->
+<!-- Content Layer -->
+<div class="relative z-10 flex flex-col justify-end h-full px-page-margin pb-12">
+<!-- Logo/Identity Anchor (Top Left) -->
+<div class="absolute top-12 left-page-margin">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<span class="font-display-lg text-white tracking-tight">KINETIC</span>
+</div>
+</div>
+<!-- Main Text Group -->
+<div class="space-y-4 fade-in-up" style="animation-delay: 0.2s;">
+<h1 class="text-white font-display-lg leading-none">
+          Build Consistency
+        </h1>
+<p class="text-white/90 font-body-md max-w-[85%] leading-relaxed">
+          Stay active every day. Track streaks, celebrate milestones and create habits that last.
+        </p>
+</div>
+<!-- Pagination Indicators -->
+<div class="flex gap-2 mt-8 fade-in-up" style="animation-delay: 0.4s;">
+<div class="h-1.5 w-8 bg-primary-container rounded-full transition-all duration-300"></div>
+<div class="h-1.5 w-1.5 bg-white/30 rounded-full"></div>
+<div class="h-1.5 w-1.5 bg-white/30 rounded-full"></div>
+</div>
+<!-- Action Buttons -->
+<div class="mt-12 flex flex-col gap-4 fade-in-up" style="animation-delay: 0.6s;">
+<button class="w-full h-14 bg-primary-container text-white font-title-sm rounded-xl shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 hover:brightness-110">
+          Next
+          <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="w-full h-14 bg-white/10 backdrop-blur-md text-white font-title-sm rounded-xl border border-white/20 active:scale-95 transition-all duration-200 hover:bg-white/20">
+          Skip intro
+        </button>
+</div>
+<!-- Legal/Micro-copy anchor -->
+<p class="text-white/40 font-label-caps text-center mt-8 uppercase tracking-widest">
+        Step 1 of 3 • Motivation Awaits
+      </p>
+</div>
+<!-- Decorative Elements -->
+<div class="absolute top-1/4 -right-12 w-64 h-64 bg-primary-container/20 blur-[100px] rounded-full"></div>
+<div class="absolute bottom-1/4 -left-12 w-48 h-48 bg-secondary-container/10 blur-[80px] rounded-full"></div>
+</main>
+<script>
+    // Micro-interaction: Subtle parallax on mouse move or device orientation
+    const canvas = document.querySelector('main');
+    const bg = canvas.querySelector('.absolute.inset-0.z-0');
+
+    canvas.addEventListener('mousemove', (e) => {
+      const { clientX, clientY } = e;
+      const xPos = (clientX / window.innerWidth - 0.5) * 20;
+      const yPos = (clientY / window.innerHeight - 0.5) * 20;
+      bg.style.transform = `translate(${xPos}px, ${yPos}px) scale(1.1)`;
+    });
+
+    // Reset on mouse leave
+    canvas.addEventListener('mouseleave', () => {
+      bg.style.transform = `translate(0, 0) scale(1.1)`;
+    });
+  </script>
+</body></html>
