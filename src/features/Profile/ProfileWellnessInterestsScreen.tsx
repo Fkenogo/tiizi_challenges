@@ -43,6 +43,7 @@ function ProfileWellnessInterestsScreen() {
   useEffect(() => {
     if (!setup || hydrated) return;
     setSelectedWellness(setup.wellnessInterests ?? []);
+    setCustomWellness(setup.customWellnessInterests?.[0] ?? '');
     setHydrated(true);
   }, [setup, hydrated]);
 
@@ -63,6 +64,7 @@ function ProfileWellnessInterestsScreen() {
     exerciseInterests: setup?.exerciseInterests ?? [],
     wellnessInterests: selectedWellness,
     customInterests: setup?.customInterests ?? [],
+    customWellnessInterests: customWellness.trim() ? [customWellness.trim()] : (setup?.customWellnessInterests ?? []),
     // Preserve existing goals — they are saved on the next step
     goals: setup?.goals ?? [],
     primaryGoal: setup?.primaryGoal,
@@ -80,23 +82,28 @@ function ProfileWellnessInterestsScreen() {
       showBirthdayToFriends: true,
       isProfileSearchable: true,
     },
+    // Wellness topics are optional — Next and Skip both mark this step
+    // complete regardless of whether any topics were selected.
+    wellnessInterestsCompleted: true,
   });
 
-  const handleNext = async () => {
+  // Shared by Next and Skip: both must persist wellnessInterestsCompleted
+  // before advancing, and both must stay on Step 3 with a visible error if
+  // the save fails — Skip is not an escape hatch from the guard's
+  // requirements, it just allows an empty selection.
+  const saveAndContinue = async () => {
     if (!user?.uid) { navigate('/app/login'); return; }
     try {
       await saveProfileSetup.mutateAsync(buildPayload());
       navigate('/app/profile/health-goals');
-    } catch {
+    } catch (error) {
+      console.error('Profile setup save failed (step 3):', error);
       showToast('Could not save your selections.', 'error');
     }
   };
 
-  const handleSkip = async () => {
-    if (!user?.uid) { navigate('/app/profile/health-goals'); return; }
-    try { await saveProfileSetup.mutateAsync(buildPayload()); } catch { /* non-blocking */ }
-    navigate('/app/profile/health-goals');
-  };
+  const handleNext = () => saveAndContinue();
+  const handleSkip = () => saveAndContinue();
 
   return (
     <Screen noPadding noBottomPadding className="st-page">
@@ -157,10 +164,11 @@ function ProfileWellnessInterestsScreen() {
         </div>
 
         <button
-          className="st-form-max mt-4 w-full text-center text-[16px] leading-[22px] font-semibold text-slate-400"
+          className="st-form-max mt-4 w-full text-center text-[16px] leading-[22px] font-semibold text-slate-400 disabled:opacity-60"
           onClick={handleSkip}
+          disabled={saveProfileSetup.isPending}
         >
-          Skip this step
+          {saveProfileSetup.isPending ? 'Saving...' : 'Skip this step'}
         </button>
       </div>
 

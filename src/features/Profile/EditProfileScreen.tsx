@@ -170,6 +170,7 @@ function EditProfileScreen() {
         exerciseInterests: selectedActivities,
         wellnessInterests: selectedWellness,
         customInterests: setup?.customInterests ?? [],
+        customWellnessInterests: setup?.customWellnessInterests ?? [],
         goals: selectedGoals,
         primaryGoal: setup?.primaryGoal,
         secondaryGoal: setup?.secondaryGoal,

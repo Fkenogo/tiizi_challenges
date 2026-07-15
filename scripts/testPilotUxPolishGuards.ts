@@ -108,11 +108,19 @@ assert.doesNotMatch(
 
 // Phase 6B founder decision: minimum 3 activities, maximum remains 10.
 // Updated to match ProfileInterestsScreen's actual state variable (`selected`)
-// and the approved copy ("Choose at least 3 activities.").
+// and the approved copy ("Choose at least 3 activities."). Phase 7D: the
+// numeric threshold now comes from the shared MIN_EXERCISE_INTERESTS constant
+// (also used by getOnboardingPath) instead of a literal 3, so this checks the
+// constant reference rather than a hardcoded number.
 assert.match(
   interestsScreen,
-  /selected\.length < 3/,
-  'ProfileInterestsScreen must require at least 3 interests before proceeding',
+  /selected\.length < MIN_EXERCISE_INTERESTS/,
+  'ProfileInterestsScreen must require at least MIN_EXERCISE_INTERESTS interests before proceeding',
+);
+assert.match(
+  interestsScreen,
+  /import\s*\{[^}]*MIN_EXERCISE_INTERESTS[^}]*\}\s*from\s*['"]\.\.\/\.\.\/hooks\/useProfileSetup['"]/,
+  'ProfileInterestsScreen must import MIN_EXERCISE_INTERESTS from useProfileSetup (single source of truth with the route guard)',
 );
 
 assert.match(

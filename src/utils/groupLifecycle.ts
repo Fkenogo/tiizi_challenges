@@ -61,7 +61,10 @@ export function buildGroupDefaults(input: GroupDefaultsInput): {
     name: input.name,
     description: input.description,
     ownerId: input.ownerId,
-    coverImageUrl: input.coverImageUrl,
+    // Firestore's addDoc() rejects any field explicitly set to `undefined`
+    // (distinct from the key being absent) — omit the key entirely rather
+    // than assigning `coverImageUrl: undefined` when no cover was provided.
+    ...(input.coverImageUrl !== undefined && { coverImageUrl: input.coverImageUrl }),
     isPrivate,
     requireAdminApproval: !!input.requireAdminApproval,
     allowMemberChallenges: input.allowMemberChallenges ?? true,

@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteField,
   doc,
   documentId,
   getDoc,
@@ -156,7 +157,7 @@ class GroupService {
 
   async createGroup(input: CreateGroupInput): Promise<Group> {
     const inviteCodeBase = normalizeInviteCode(input.name || 'GROUP');
-    const payload: Omit<Group, 'id'> = buildGroupDefaults({
+    const defaults = buildGroupDefaults({
       name: input.name,
       description: input.description,
       ownerId: input.ownerId,
@@ -165,13 +166,22 @@ class GroupService {
       requireAdminApproval: input.requireAdminApproval,
       allowMemberChallenges: input.allowMemberChallenges,
       inviteCode: `${inviteCodeBase}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+    });
+    // buildGroupDefaults's GroupDefaultsInput/return type only covers the
+    // lifecycle-critical fields; it does not know about these optional
+    // metadata fields, so they must be spread onto the payload here rather
+    // than passed into buildGroupDefaults (where they were previously
+    // silently dropped — excess properties in a conditional spread aren't
+    // caught by the type checker, so this went unnoticed).
+    const payload: Omit<Group, 'id'> = {
+      ...defaults,
       ...(input.groupType && { groupType: input.groupType as Group['groupType'] }),
       ...(input.activityInterests?.length && { activityInterests: input.activityInterests }),
       ...(input.wellnessTopics?.length && { wellnessTopics: input.wellnessTopics }),
       ...(input.groupGoals?.length && { groupGoals: input.groupGoals }),
       ...(input.locationScope && { locationScope: input.locationScope as Group['locationScope'] }),
       ...(input.groupRules?.length && { groupRules: input.groupRules }),
-    });
+    };
     const ref = await addDoc(collection(db, this.collectionName), payload);
 
     const ownerMembershipRef = doc(db, this.membershipsCollection, `${ref.id}_${input.ownerId}`);
@@ -294,7 +304,11 @@ class GroupService {
 
     if (patch.name !== undefined) payload.name = patch.name;
     if (patch.description !== undefined) payload.description = patch.description;
-    if (patch.coverImageUrl !== undefined) payload.coverImageUrl = patch.coverImageUrl;
+    // Same null-to-clear contract as the 6 metadata fields below: `null`
+    // means the owner explicitly removed the cover image and it must be
+    // deleted from Firestore, not merely omitted (which would leave the old
+    // cover in place — the same stale-field bug fixed for metadata).
+    if (patch.coverImageUrl !== undefined) payload.coverImageUrl = patch.coverImageUrl === null ? deleteField() : patch.coverImageUrl;
     if (patch.isPrivate !== undefined) {
       payload.isPrivate = patch.isPrivate;
       // Keep the denormalized visibility field in sync so discovery queries
@@ -304,12 +318,18 @@ class GroupService {
     }
     if (patch.requireAdminApproval !== undefined) payload.requireAdminApproval = patch.requireAdminApproval;
     if (patch.allowMemberChallenges !== undefined) payload.allowMemberChallenges = patch.allowMemberChallenges;
-    if (patch.groupType !== undefined) payload.groupType = patch.groupType;
-    if (patch.activityInterests !== undefined) payload.activityInterests = patch.activityInterests;
-    if (patch.wellnessTopics !== undefined) payload.wellnessTopics = patch.wellnessTopics;
-    if (patch.groupGoals !== undefined) payload.groupGoals = patch.groupGoals;
-    if (patch.locationScope !== undefined) payload.locationScope = patch.locationScope;
-    if (patch.groupRules !== undefined) payload.groupRules = patch.groupRules;
+    // These 6 fields are optional metadata that an owner can clear via Edit.
+    // `undefined` means "not part of this patch, leave untouched"; `null` is
+    // the explicit clear sentinel and must translate to Firestore's
+    // deleteField() — never a literal `undefined` (which addDoc/updateDoc
+    // reject) and never silently dropped (which would leave stale data, the
+    // exact regression this guards against).
+    if (patch.groupType !== undefined) payload.groupType = patch.groupType === null ? deleteField() : patch.groupType;
+    if (patch.activityInterests !== undefined) payload.activityInterests = patch.activityInterests === null ? deleteField() : patch.activityInterests;
+    if (patch.wellnessTopics !== undefined) payload.wellnessTopics = patch.wellnessTopics === null ? deleteField() : patch.wellnessTopics;
+    if (patch.groupGoals !== undefined) payload.groupGoals = patch.groupGoals === null ? deleteField() : patch.groupGoals;
+    if (patch.locationScope !== undefined) payload.locationScope = patch.locationScope === null ? deleteField() : patch.locationScope;
+    if (patch.groupRules !== undefined) payload.groupRules = patch.groupRules === null ? deleteField() : patch.groupRules;
 
     await updateDoc(ref, payload);
   }
@@ -338,16 +358,18 @@ export const groupService = new GroupService();
 export type UpdateGroupInput = {
   name?: string;
   description?: string;
-  coverImageUrl?: string;
   isPrivate?: boolean;
   requireAdminApproval?: boolean;
   allowMemberChallenges?: boolean;
-  groupType?: string;
-  activityInterests?: string[];
-  wellnessTopics?: string[];
-  groupGoals?: string[];
-  locationScope?: string;
-  groupRules?: string[];
+  // `null` explicitly clears the field (translated to Firestore's
+  // deleteField() by updateGroup); `undefined`/omitted leaves it untouched.
+  coverImageUrl?: string | null;
+  groupType?: string | null;
+  activityInterests?: string[] | null;
+  wellnessTopics?: string[] | null;
+  groupGoals?: string[] | null;
+  locationScope?: string | null;
+  groupRules?: string[] | null;
 };
 
 export type { CreateGroupInput, GroupJoinResult, ReportGroupInput };

@@ -1,4 +1,4 @@
-import { CalendarClock, Plus, User } from 'lucide-react';
+import { CalendarClock, MapPin, Plus, User } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +7,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useAuth } from '../../../hooks/useAuth';
 import { useGroup, useGroupMemberCount, useGroupMembershipStatus, useJoinGroup, useLeaveGroup } from '../../../hooks/useGroups';
 import { db } from '../../../lib/firebase';
+import { getGroupTypeLabel, getLocationScopeLabel } from '../groupOptionLabels';
 import { GroupHeroHeader } from './GroupHeroHeader';
 import { GroupDetailsModal } from './GroupDetailsModal';
 import { GroupDetailTabs } from './GroupDetailTabs';
@@ -77,9 +78,15 @@ export function GroupSharedHeader({ groupId, active }: Props) {
         ) : null}
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
-          {group.groupType && (
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">
-              {group.groupType}
+          {getGroupTypeLabel(group.groupType) && (
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 max-w-full truncate">
+              {getGroupTypeLabel(group.groupType)}
+            </span>
+          )}
+          {getLocationScopeLabel(group.locationScope) && (
+            <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 max-w-full truncate">
+              <MapPin size={11} className="text-slate-400 shrink-0" />
+              {getLocationScopeLabel(group.locationScope)}
             </span>
           )}
           {group.createdAt && (
@@ -169,6 +176,7 @@ export function GroupSharedHeader({ groupId, active }: Props) {
           group={group}
           ownerDisplayName={ownerDisplayName ?? undefined}
           onClose={() => setShowDetails(false)}
+          isOwner={group.ownerId === user?.uid}
         />
       )}
     </>

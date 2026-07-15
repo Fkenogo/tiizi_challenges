@@ -6,8 +6,12 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useGroup, useUpdateGroup } from '../../hooks/useGroups';
 import { isLikelyDirectImageUrl, isPersistableImageSource, isValidImageUrl, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
+import { ACTIVITY_OPTIONS, GROUP_GOALS, GROUP_TYPES, LOCATION_SCOPES, WELLNESS_OPTIONS } from './groupOptions';
+import { normalizeGroupGoals } from './groupGoalNormalization';
+import { MAX_GROUP_DESCRIPTION_LENGTH, MAX_GROUP_NAME_LENGTH, isValidGroupDraft } from './groupValidation';
+import { DEFAULT_GROUP_RULES, getCustomGroupRules, isDuplicateGroupRule } from './groupRules';
 
-function ToggleRow({ title, subtitle, value, onToggle }: { title: string; subtitle: string; value: boolean; onToggle: () => void }) {
+function ToggleRow({ title, subtitle, value, onToggle, disabled }: { title: string; subtitle: string; value: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
     <div className="py-4 border-b border-slate-100 last:border-b-0">
       <div className="flex items-center justify-between gap-4">
@@ -15,7 +19,12 @@ function ToggleRow({ title, subtitle, value, onToggle }: { title: string; subtit
           <p className="text-[16px] leading-[22px] font-bold text-slate-900">{title}</p>
           <p className="mt-1 text-[14px] leading-[20px] text-[#60748f]">{subtitle}</p>
         </div>
-        <button type="button" className={`h-8 w-14 rounded-full p-1 transition ${value ? 'bg-primary' : 'bg-slate-200'}`} onClick={onToggle}>
+        <button
+          type="button"
+          disabled={disabled}
+          className={`h-8 w-14 rounded-full p-1 transition ${value ? 'bg-primary' : 'bg-slate-200'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          onClick={onToggle}
+        >
           <span className={`block h-6 w-6 rounded-full bg-white transition ${value ? 'translate-x-6' : ''}`} />
         </button>
       </div>
@@ -23,83 +32,6 @@ function ToggleRow({ title, subtitle, value, onToggle }: { title: string; subtit
   );
 }
 
-const GROUP_TYPES = [
-  { id: 'fitness', label: 'Fitness', icon: '💪' },
-  { id: 'wellness', label: 'Wellness', icon: '🧘' },
-  { id: 'mixed', label: 'Mixed', icon: '🌀' },
-  { id: 'cause-based', label: 'Cause-based', icon: '❤️' },
-  { id: 'workplace', label: 'Workplace', icon: '🏢' },
-  { id: 'school', label: 'School', icon: '🎓' },
-  { id: 'friends-family', label: 'Friends / Family', icon: '👨‍👩‍👧' },
-  { id: 'community', label: 'Community', icon: '🏘️' },
-];
-
-const ACTIVITY_OPTIONS = [
-  { id: 'running', name: 'Running', icon: '🏃' },
-  { id: 'walking', name: 'Walking', icon: '🚶' },
-  { id: 'gym-weightlifting', name: 'Gym / Weightlifting', icon: '💪' },
-  { id: 'home-workouts', name: 'Home Workouts', icon: '🏠' },
-  { id: 'yoga', name: 'Yoga', icon: '🧘' },
-  { id: 'swimming', name: 'Swimming', icon: '🏊' },
-  { id: 'cycling', name: 'Cycling', icon: '🚴' },
-  { id: 'football', name: 'Football (Soccer)', icon: '⚽' },
-  { id: 'basketball', name: 'Basketball', icon: '🏀' },
-  { id: 'hiking', name: 'Hiking', icon: '⛰️' },
-  { id: 'group-fitness', name: 'Group Fitness', icon: '👥' },
-  { id: 'martial-arts', name: 'Martial Arts', icon: '🥋' },
-  { id: 'dance', name: 'Dance', icon: '💃' },
-  { id: 'crossfit', name: 'CrossFit / HIIT', icon: '🔥' },
-  { id: 'tennis', name: 'Tennis / Racket', icon: '🎾' },
-  { id: 'outdoors', name: 'Outdoor Adventures', icon: '🌿' },
-  { id: 'sports-general', name: 'Team Sports', icon: '🏅' },
-  { id: 'other', name: 'Other', icon: '➕' },
-];
-
-const WELLNESS_OPTIONS = [
-  { id: 'mindfulness', name: 'Mindfulness', icon: '🧠' },
-  { id: 'sleep', name: 'Sleep', icon: '😴' },
-  { id: 'hydration', name: 'Hydration', icon: '💧' },
-  { id: 'nutrition', name: 'Nutrition', icon: '🥗' },
-  { id: 'fasting', name: 'Fasting', icon: '⏱️' },
-  { id: 'stress', name: 'Stress & Recovery', icon: '🌊' },
-  { id: 'social', name: 'Social Wellness', icon: '🤝' },
-  { id: 'habits', name: 'Habits', icon: '✅' },
-  { id: 'health-monitoring', name: 'Health Monitoring', icon: '📊' },
-  { id: 'movement', name: 'Daily Movement', icon: '🚶' },
-  { id: 'breathwork', name: 'Breathwork', icon: '🌬️' },
-  { id: 'journaling', name: 'Journaling', icon: '📓' },
-  { id: 'gratitude', name: 'Gratitude Practice', icon: '🙏' },
-];
-
-const GROUP_GOALS = [
-  { id: 'consistency', label: 'Build Consistency', icon: '📅' },
-  { id: 'weightloss', label: 'Weight Loss / Toning', icon: '⚖️' },
-  { id: 'strength', label: 'Build Strength', icon: '💪' },
-  { id: 'mindfulness', label: 'Mindfulness', icon: '🧘' },
-  { id: 'social', label: 'Social Connection', icon: '🤝' },
-  { id: 'charity', label: 'Charity / Fundraising', icon: '❤️' },
-  { id: 'workplace-wellness', label: 'Workplace Wellness', icon: '🏢' },
-  { id: 'athletic-performance', label: 'Athletic Performance', icon: '🏅' },
-  { id: 'healthy-lifestyle', label: 'Healthy Lifestyle', icon: '🌿' },
-  { id: 'accountability', label: 'Accountability', icon: '✅' },
-];
-
-const LOCATION_SCOPES = [
-  { id: 'online', label: 'Online — anyone can join', icon: '🌐' },
-  { id: 'local', label: 'Local community', icon: '📍' },
-  { id: 'workplace', label: 'Workplace only', icon: '🏢' },
-  { id: 'school', label: 'School / campus', icon: '🎓' },
-  { id: 'private-circle', label: 'Private circle (invite only)', icon: '🔒' },
-];
-
-const DEFAULT_RULES = [
-  'Be respectful and supportive',
-  'No spam or self-promotion',
-  'Keep activity logs honest',
-  'Support fellow members',
-  'Stay on topic',
-  'Have fun and stay consistent',
-];
 
 function EditGroupScreen() {
   const { id } = useParams<{ id: string }>();
@@ -113,6 +45,13 @@ function EditGroupScreen() {
   const [description, setDescription] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [coverPreview, setCoverPreview] = useState('');
+  // Tracks an explicit "Remove cover image" action, distinct from merely
+  // having an empty coverImageUrl string (which could also mean "no cover
+  // was ever set" or "user hasn't touched this field"). Only this flag
+  // triggers deleting the Firestore field — clearing the URL input in some
+  // other indirect way, or pasting invalid text, must not silently delete a
+  // valid existing cover.
+  const [coverRemoved, setCoverRemoved] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [requireAdminApproval, setRequireAdminApproval] = useState(false);
   const [allowMemberChallenges, setAllowMemberChallenges] = useState(true);
@@ -141,7 +80,7 @@ function EditGroupScreen() {
     setGroupType(group.groupType ?? '');
     setActivityInterests(group.activityInterests ?? []);
     setWellnessTopics(group.wellnessTopics ?? []);
-    setGroupGoals(group.groupGoals ?? []);
+    setGroupGoals(normalizeGroupGoals(group.groupGoals ?? []));
     setLocationScope(group.locationScope ?? '');
     setGroupRules(group.groupRules ?? []);
     setHydrated(true);
@@ -163,14 +102,57 @@ function EditGroupScreen() {
   const handleCoverChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const dataUrl = await readFileAsDataUrl(file);
-    setCoverPreview(dataUrl);
+
+    // Snapshot the pre-replacement state so a failed, non-persistable
+    // upload can fully roll back — otherwise the preview would keep
+    // showing the failed replacement image while Save would actually
+    // preserve a different (the old stored) cover, a misleading mismatch.
+    const previousCoverImageUrl = coverImageUrl;
+    const previousCoverPreview = coverPreview;
+    const previousCoverRemoved = coverRemoved;
+
     try {
-      const url = await uploadImageFile(file, `groups/${Date.now()}_${file.name}`);
-      setCoverImageUrl(url);
+      const dataUrl = await readFileAsDataUrl(file);
+
+      // Only clear the "removed" flag once the file has actually been read
+      // successfully — if reading fails below, the existing stored cover
+      // must remain in effect, not be treated as replaced.
+      setCoverRemoved(false);
+      setCoverPreview(dataUrl);
+
+      try {
+        const uploadedUrl = await uploadImageFile(file, `groups/${Date.now()}_${file.name}`);
+        setCoverImageUrl(uploadedUrl);
+      } catch {
+        // Only fall back to the local data URL if it's actually persistable
+        // (Firestore has a document size limit) — otherwise leave
+        // coverImageUrl untouched so handleSave's resolution preserves the
+        // existing stored cover rather than submitting something invalid.
+        if (isPersistableImageSource(dataUrl)) {
+          setCoverImageUrl(dataUrl);
+          showToast('Using local image preview.', 'info');
+        } else {
+          // Roll back the preview/removed-flag we optimistically set above —
+          // without this, the screen would show the failed replacement
+          // image while Save would actually preserve the previous cover.
+          setCoverImageUrl(previousCoverImageUrl);
+          setCoverPreview(previousCoverPreview);
+          setCoverRemoved(previousCoverRemoved);
+          showToast('Image upload failed. Choose a smaller image or try again.', 'error');
+        }
+      }
     } catch {
-      setCoverImageUrl(dataUrl);
+      showToast('Could not read selected image.', 'error');
+    } finally {
+      // Reset the input so selecting the same file again re-fires onChange.
+      e.target.value = '';
     }
+  };
+
+  const handleRemoveCover = () => {
+    setCoverImageUrl('');
+    setCoverPreview('');
+    setCoverRemoved(true);
   };
 
   const toggleActivity = (id: string) => {
@@ -199,20 +181,41 @@ function EditGroupScreen() {
 
   const addCustomRule = () => {
     const trimmed = customRule.trim();
-    if (trimmed && !groupRules.includes(trimmed)) {
+    if (trimmed && !isDuplicateGroupRule(trimmed, groupRules)) {
       setGroupRules((prev) => [...prev, trimmed]);
       setCustomRule('');
     }
   };
 
+  const removeRule = (rule: string) => {
+    setGroupRules((prev) => prev.filter((r) => r !== rule));
+  };
+
   const handleSave = async () => {
     if (!id) return;
-    if (!name.trim()) { showToast('Group name is required.', 'error'); return; }
-    const resolvedCover = isPersistableImageSource(coverImageUrl)
-      ? coverImageUrl
-      : isValidImageUrl(coverImageUrl) && isLikelyDirectImageUrl(coverImageUrl)
+    if (!isValidGroupDraft(name, description)) {
+      showToast(`Group name needs 3+ characters and description needs 10+ characters.`, 'error');
+      return;
+    }
+    // `null` = owner explicitly clicked "Remove cover image" → delete the
+    // Firestore field. Otherwise resolve to a persistable value if one
+    // exists, or `undefined` ("don't touch this field") if the current
+    // input isn't a usable image — this deliberately does NOT delete an
+    // existing valid cover just because the text field currently holds
+    // something invalid/unrecognized; only the explicit Remove action does.
+    const resolvedCover: string | null | undefined = coverRemoved
+      ? null
+      : isPersistableImageSource(coverImageUrl)
         ? coverImageUrl
-        : undefined;
+        : isValidImageUrl(coverImageUrl) && isLikelyDirectImageUrl(coverImageUrl)
+          ? coverImageUrl
+          : undefined;
+
+    // Private groups always require approval to join (groupService.joinGroup
+    // treats isPrivate as needsApproval regardless of this flag) — force the
+    // persisted value to match so the toggle never misrepresents actual join
+    // behavior, mirroring CreateGroupScreen's identical rule.
+    const resolvedRequireAdminApproval = isPrivate ? true : requireAdminApproval;
 
     try {
       await updateGroup.mutateAsync({
@@ -222,19 +225,26 @@ function EditGroupScreen() {
           description: description.trim(),
           ...(resolvedCover !== undefined && { coverImageUrl: resolvedCover }),
           isPrivate,
-          requireAdminApproval,
+          requireAdminApproval: resolvedRequireAdminApproval,
           allowMemberChallenges,
-          groupType: groupType || undefined,
-          activityInterests: activityInterests.length ? activityInterests : undefined,
-          wellnessTopics: wellnessTopics.length ? wellnessTopics : undefined,
-          groupGoals: groupGoals.length ? groupGoals : undefined,
-          locationScope: locationScope || undefined,
-          groupRules: groupRules.length ? groupRules : undefined,
+          // `null` explicitly clears the field (deleted in Firestore via
+          // updateGroup) — omitting it or sending `undefined` would leave
+          // the previous value in place, which is not what "cleared this
+          // selection in the UI and saved" should mean.
+          groupType: groupType || null,
+          activityInterests: activityInterests.length ? activityInterests : null,
+          wellnessTopics: wellnessTopics.length ? wellnessTopics : null,
+          groupGoals: groupGoals.length ? groupGoals : null,
+          locationScope: locationScope || null,
+          groupRules: groupRules.length ? groupRules : null,
         },
       });
       showToast('Group updated.', 'success');
       navigate(`/app/group/${id}`);
     } catch {
+      // The mutation's onError (useGroups.ts useUpdateGroup) already logs
+      // the underlying error to the console — this screen stays free of
+      // raw console/Firebase diagnostics per the pilot UX polish guard.
       showToast('Could not save changes.', 'error');
     }
   };
@@ -253,7 +263,7 @@ function EditGroupScreen() {
           <button
             className="h-9 px-5 rounded-full bg-primary text-white text-[14px] font-bold disabled:opacity-60"
             onClick={handleSave}
-            disabled={updateGroup.isPending || !name.trim()}
+            disabled={updateGroup.isPending || !isValidGroupDraft(name, description)}
           >
             {updateGroup.isPending ? 'Saving…' : 'Save'}
           </button>
@@ -278,6 +288,16 @@ function EditGroupScreen() {
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
             </div>
+            {coverPreview && (
+              <button
+                type="button"
+                className="mt-2 text-[13px] font-bold text-red-600"
+                onClick={handleRemoveCover}
+                aria-label="Remove cover image"
+              >
+                Remove cover image
+              </button>
+            )}
           </div>
 
           {/* Basic info */}
@@ -287,7 +307,7 @@ function EditGroupScreen() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                maxLength={60}
+                maxLength={MAX_GROUP_NAME_LENGTH}
                 placeholder="e.g. Nairobi Morning Runners"
                 className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[15px] text-slate-900"
               />
@@ -297,7 +317,7 @@ function EditGroupScreen() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                maxLength={300}
+                maxLength={MAX_GROUP_DESCRIPTION_LENGTH}
                 rows={3}
                 placeholder="What is your group about?"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px] text-slate-900 resize-none"
@@ -396,7 +416,7 @@ function EditGroupScreen() {
               <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide">Community Rules</p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
-              {DEFAULT_RULES.map((rule) => (
+              {DEFAULT_GROUP_RULES.map((rule) => (
                 <label key={rule} className="flex items-center gap-3 px-4 py-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -408,6 +428,31 @@ function EditGroupScreen() {
                 </label>
               ))}
             </div>
+            {/* Rules this group already had that aren't part of the canonical
+                checkbox list above (owner-typed custom rules, or rules from
+                before taxonomy consolidation) — shown so they remain visible
+                and removable rather than silently disappearing from the UI
+                while still being saved. */}
+            {getCustomGroupRules(groupRules).length > 0 && (
+              <div className="mt-3">
+                <p className="text-[12px] font-bold text-slate-500 uppercase tracking-wide mb-2">Existing custom rules</p>
+                <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+                  {getCustomGroupRules(groupRules).map((rule) => (
+                    <div key={rule} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <span className="text-[14px] text-slate-700">{rule}</span>
+                      <button
+                        type="button"
+                        className="text-[12px] font-bold text-red-600"
+                        onClick={() => removeRule(rule)}
+                        aria-label={`Remove rule: ${rule}`}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mt-3 flex gap-2">
               <input
                 value={customRule}
@@ -438,9 +483,10 @@ function EditGroupScreen() {
               />
               <ToggleRow
                 title="Require admin approval"
-                subtitle="New members need approval to join"
-                value={requireAdminApproval}
+                subtitle={isPrivate ? 'Always on for private groups' : 'New members need approval to join'}
+                value={isPrivate ? true : requireAdminApproval}
                 onToggle={() => setRequireAdminApproval((v) => !v)}
+                disabled={isPrivate}
               />
               <ToggleRow
                 title="Members can create challenges"

@@ -8,8 +8,11 @@ import { setActiveGroupId } from '../../hooks/useActiveGroup';
 import { useCreateGroup } from '../../hooks/useGroups';
 import { isLikelyDirectImageUrl, isPersistableImageSource, isValidImageUrl, readFileAsDataUrl, uploadImageFile } from '../../services/imageUploadService';
 import { GroupBottomNav } from './components/GroupBottomNav';
+import { ACTIVITY_OPTIONS, GROUP_GOALS, GROUP_TYPES, LOCATION_SCOPES, WELLNESS_OPTIONS } from './groupOptions';
+import { MAX_GROUP_DESCRIPTION_LENGTH, MAX_GROUP_NAME_LENGTH, isValidGroupDraft } from './groupValidation';
+import { DEFAULT_GROUP_RULES, INITIAL_SELECTED_RULES, isDuplicateGroupRule } from './groupRules';
 
-function ToggleRow({ title, subtitle, value, onToggle }: { title: string; subtitle: string; value: boolean; onToggle: () => void }) {
+function ToggleRow({ title, subtitle, value, onToggle, disabled }: { title: string; subtitle: string; value: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
     <div className="py-4 border-b border-slate-100 last:border-b-0">
       <div className="flex items-center justify-between gap-4">
@@ -17,91 +20,18 @@ function ToggleRow({ title, subtitle, value, onToggle }: { title: string; subtit
           <p className="text-[16px] leading-[22px] font-bold text-slate-900">{title}</p>
           <p className="mt-1 text-[14px] leading-[20px] text-[#60748f]">{subtitle}</p>
         </div>
-        <button type="button" className={`h-8 w-14 rounded-full p-1 transition ${value ? 'bg-primary' : 'bg-slate-200'}`} onClick={onToggle}>
+        <button
+          type="button"
+          disabled={disabled}
+          className={`h-8 w-14 rounded-full p-1 transition ${value ? 'bg-primary' : 'bg-slate-200'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          onClick={onToggle}
+        >
           <span className={`block h-6 w-6 rounded-full bg-white transition ${value ? 'translate-x-6' : ''}`} />
         </button>
       </div>
     </div>
   );
 }
-
-const GROUP_TYPES = [
-  { id: 'fitness', label: 'Fitness', icon: '💪' },
-  { id: 'wellness', label: 'Wellness', icon: '🧘' },
-  { id: 'mixed', label: 'Mixed', icon: '🌀' },
-  { id: 'cause-based', label: 'Cause-based', icon: '❤️' },
-  { id: 'workplace', label: 'Workplace', icon: '🏢' },
-  { id: 'school', label: 'School', icon: '🎓' },
-  { id: 'friends-family', label: 'Friends / Family', icon: '👨‍👩‍👧' },
-  { id: 'community', label: 'Community', icon: '🏘️' },
-];
-
-const ACTIVITY_OPTIONS = [
-  { id: 'running', name: 'Running', icon: '🏃' },
-  { id: 'walking', name: 'Walking', icon: '🚶' },
-  { id: 'gym-weightlifting', name: 'Gym / Weightlifting', icon: '💪' },
-  { id: 'home-workouts', name: 'Home Workouts', icon: '🏠' },
-  { id: 'yoga', name: 'Yoga', icon: '🧘' },
-  { id: 'swimming', name: 'Swimming', icon: '🏊' },
-  { id: 'cycling', name: 'Cycling', icon: '🚴' },
-  { id: 'football', name: 'Football (Soccer)', icon: '⚽' },
-  { id: 'basketball', name: 'Basketball', icon: '🏀' },
-  { id: 'hiking', name: 'Hiking', icon: '⛰️' },
-  { id: 'group-fitness', name: 'Group Fitness', icon: '👥' },
-  { id: 'hiit-circuit', name: 'HIIT / Circuit', icon: '⚡' },
-  { id: 'pilates', name: 'Pilates', icon: '🤸' },
-  { id: 'dancing', name: 'Dancing', icon: '💃' },
-  { id: 'martial-arts', name: 'Martial Arts / Boxing', icon: '🥊' },
-  { id: 'jump-rope', name: 'Jump Rope', icon: '🪢' },
-  { id: 'stretching-mobility', name: 'Stretching / Mobility', icon: '🙆' },
-  { id: 'other', name: 'Other', icon: '✍️' },
-];
-
-const WELLNESS_OPTIONS = [
-  { id: 'mental-health', name: 'Mental Health', icon: '💙' },
-  { id: 'sleep', name: 'Sleep & Recovery', icon: '😴' },
-  { id: 'nutrition', name: 'Nutrition & Diet', icon: '🥗' },
-  { id: 'hydration', name: 'Hydration', icon: '💧' },
-  { id: 'meditation', name: 'Meditation', icon: '☮️' },
-  { id: 'stress-management', name: 'Stress Management', icon: '🌿' },
-  { id: 'weight-management', name: 'Weight Management', icon: '⚖️' },
-  { id: 'chronic-condition', name: 'Chronic Condition Support', icon: '🏥' },
-  { id: 'energy', name: 'Energy & Vitality', icon: '⚡' },
-  { id: 'posture', name: 'Posture & Mobility', icon: '🙆' },
-  { id: 'social', name: 'Social Connection', icon: '🤝' },
-  { id: 'habits', name: 'Healthy Habits', icon: '✅' },
-  { id: 'other', name: 'Other', icon: '✍️' },
-];
-
-const GROUP_GOALS = [
-  'Keep Fit Together',
-  'Lose Weight',
-  'Build Strength',
-  'Improve Mental Health',
-  'Stay Consistent',
-  'Train for an Event',
-  'Support a Cause',
-  'Build Workplace Wellness',
-  'Family / Friends Accountability',
-  'Other',
-];
-
-const LOCATION_SCOPES = [
-  { id: 'local', label: 'Local' },
-  { id: 'online', label: 'Online' },
-  { id: 'workplace', label: 'Workplace' },
-  { id: 'school', label: 'School' },
-  { id: 'private-circle', label: 'Private Circle' },
-];
-
-const DEFAULT_RULES = [
-  'Be respectful',
-  'No spam',
-  'Encourage others',
-  'Log honestly',
-  'Keep health information private',
-  'No unsafe advice',
-];
 
 const MAX_INTERESTS = 10;
 
@@ -129,13 +59,13 @@ function CreateGroupScreen() {
   const [wellnessTopics, setWellnessTopics] = useState<string[]>([]);
   const [groupGoals, setGroupGoals] = useState<string[]>([]);
   const [locationScope, setLocationScope] = useState('');
-  const [enabledRules, setEnabledRules] = useState<string[]>(DEFAULT_RULES.slice(0, 3));
+  const [enabledRules, setEnabledRules] = useState<string[]>([...INITIAL_SELECTED_RULES]);
   const [customRule, setCustomRule] = useState('');
 
   const [openModal, setOpenModal] = useState<ModalType>(null);
 
   const canSubmit = useMemo(
-    () => !!name.trim() && name.trim().length >= 3 && description.trim().length >= 10 && !!user?.uid && !createGroup.isPending,
+    () => isValidGroupDraft(name, description) && !!user?.uid && !createGroup.isPending,
     [name, description, user?.uid, createGroup.isPending],
   );
 
@@ -146,7 +76,10 @@ function CreateGroupScreen() {
     if (normalizedCover && !persistableCover) {
       showToast('Cover image not saved — use a URL or upload a smaller file.', 'info');
     }
-    const allRules = customRule.trim() ? [...enabledRules, customRule.trim()] : enabledRules;
+    const trimmedCustomRule = customRule.trim();
+    const allRules = trimmedCustomRule && !isDuplicateGroupRule(trimmedCustomRule, enabledRules)
+      ? [...enabledRules, trimmedCustomRule]
+      : enabledRules;
     try {
       const created = await createGroup.mutateAsync({
         name: name.trim(),
@@ -167,6 +100,9 @@ function CreateGroupScreen() {
       showToast('Group created successfully.', 'success');
       navigate(`/app/group/${created.id}`);
     } catch {
+      // The mutation's onError (useGroups.ts useCreateGroup) already logs
+      // the underlying error to the console — this screen stays free of
+      // raw console/Firebase diagnostics per the pilot UX polish guard.
       showToast('Could not create group.', 'error');
     }
   };
@@ -226,15 +162,15 @@ function CreateGroupScreen() {
             <div className="relative">
               <input
                 value={name}
-                onChange={(e) => setName(e.target.value.slice(0, 50))}
+                onChange={(e) => setName(e.target.value.slice(0, MAX_GROUP_NAME_LENGTH))}
                 placeholder="e.g., Morning Runners"
                 className="w-full h-14 rounded-2xl border border-[#f9c6a7] bg-white px-4 pr-16 text-[16px] text-[#496284]"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-[#8da0ba]">{name.length}/50</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] text-[#8da0ba]">{name.length}/{MAX_GROUP_NAME_LENGTH}</span>
             </div>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value.slice(0, 240))}
+              onChange={(e) => setDescription(e.target.value.slice(0, MAX_GROUP_DESCRIPTION_LENGTH))}
               placeholder="What is this group about? Who is it for?"
               className="mt-3 w-full h-32 rounded-3xl border border-[#f9c6a7] bg-white px-4 py-4 text-[16px] leading-[22px] text-[#496284]"
             />
@@ -331,12 +267,12 @@ function CreateGroupScreen() {
             <div className="flex flex-wrap gap-2">
               {GROUP_GOALS.map((goal) => (
                 <button
-                  key={goal}
+                  key={goal.id}
                   type="button"
-                  className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${groupGoals.includes(goal) ? 'bg-primary text-white border-primary' : 'bg-white text-slate-700 border-slate-200'}`}
-                  onClick={() => toggleGoal(goal)}
+                  className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${groupGoals.includes(goal.id) ? 'bg-primary text-white border-primary' : 'bg-white text-slate-700 border-slate-200'}`}
+                  onClick={() => toggleGoal(goal.id)}
                 >
-                  {goal}
+                  {goal.icon} {goal.label}
                 </button>
               ))}
             </div>
@@ -379,14 +315,15 @@ function CreateGroupScreen() {
             />
             <ToggleRow
               title="Require Admin Approval"
-              subtitle="New members must be vetted before joining"
-              value={requireAdminApproval}
+              subtitle={isPrivate ? 'Always on for private groups' : 'New members must be vetted before joining'}
+              value={isPrivate ? true : requireAdminApproval}
               onToggle={() => setRequireAdminApproval((prev) => !prev)}
+              disabled={isPrivate}
             />
 
             <p className="text-[13px] font-bold text-slate-700 mt-5 mb-2">Community Rules</p>
             <div className="space-y-2">
-              {DEFAULT_RULES.map((rule) => (
+              {DEFAULT_GROUP_RULES.map((rule) => (
                 <label key={rule} className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"

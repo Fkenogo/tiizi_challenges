@@ -71,6 +71,7 @@ function ProfileHealthGoalsScreen() {
     exerciseInterests: setup?.exerciseInterests ?? [],
     wellnessInterests: setup?.wellnessInterests ?? [],
     customInterests: setup?.customInterests ?? [],
+    customWellnessInterests: setup?.customWellnessInterests ?? [],
     goals: selectedGoals,
     primaryGoal: selectedGoals[0],
     secondaryGoal: selectedGoals[1],

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
-import { useProfileSetup, useSaveProfileSetup } from '../../hooks/useProfileSetup';
+import { MIN_EXERCISE_INTERESTS, useProfileSetup, useSaveProfileSetup } from '../../hooks/useProfileSetup';
 
 type InterestOption = { id: string; name: string; icon: string };
 
@@ -65,7 +65,7 @@ function ProfileInterestsScreen() {
   };
 
   const handleNext = async () => {
-    if (selected.length < 3) {
+    if (selected.length < MIN_EXERCISE_INTERESTS) {
       showToast('Choose at least 3 activities.', 'error');
       return;
     }
@@ -78,6 +78,7 @@ function ProfileInterestsScreen() {
         exerciseInterests: selected,
         wellnessInterests: profileSetup?.wellnessInterests ?? [],
         customInterests: customInterest.trim() ? [customInterest.trim()] : [],
+        customWellnessInterests: profileSetup?.customWellnessInterests ?? [],
         goals: profileSetup?.goals ?? [],
         primaryGoal: profileSetup?.primaryGoal,
         secondaryGoal: profileSetup?.secondaryGoal,
@@ -154,7 +155,7 @@ function ProfileInterestsScreen() {
 
         <div className="st-form-max mt-6 grid grid-cols-[1fr_1.55fr] gap-3">
           <button className="st-btn-secondary" onClick={() => navigate('/app/profile/completion')}>Previous</button>
-          <button className="st-btn-primary" onClick={handleNext} disabled={saveProfileSetup.isPending || selected.length < 3}>
+          <button className="st-btn-primary" onClick={handleNext} disabled={saveProfileSetup.isPending || selected.length < MIN_EXERCISE_INTERESTS}>
             {saveProfileSetup.isPending ? 'Saving...' : 'Next Step →'}
           </button>
         </div>

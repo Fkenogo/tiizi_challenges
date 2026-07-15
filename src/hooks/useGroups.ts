@@ -87,7 +87,12 @@ export function useCreateGroup() {
 
       return { previous };
     },
-    onError: (_error, _input, context) => {
+    onError: (error, _input, context) => {
+      // Logged here (not in CreateGroupScreen) so the user-facing screen
+      // stays free of raw console/Firebase diagnostics per this project's
+      // pilot UX polish guard, while the actual error is still retained for
+      // debugging.
+      console.error('Failed to create group', error);
       if (context?.previous) {
         queryClient.setQueryData(['groups'], context.previous);
       }
@@ -156,6 +161,9 @@ export function useUpdateGroup() {
   return useMutation({
     mutationFn: ({ groupId, patch }: { groupId: string; patch: UpdateGroupInput }) =>
       groupService.updateGroup(groupId, patch),
+    onError: (error) => {
+      console.error('Failed to update group', error);
+    },
     onSuccess: (_result, { groupId }) => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       queryClient.invalidateQueries({ queryKey: ['groups'] });

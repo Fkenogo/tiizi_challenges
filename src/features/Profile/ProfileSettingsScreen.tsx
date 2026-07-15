@@ -31,6 +31,7 @@ function ProfileSettingsScreen() {
         exerciseInterests: setup?.exerciseInterests ?? [],
         wellnessInterests: setup?.wellnessInterests ?? [],
         customInterests: setup?.customInterests ?? [],
+        customWellnessInterests: setup?.customWellnessInterests ?? [],
         goals: setup?.goals ?? [],
         primaryGoal: setup?.primaryGoal,
         secondaryGoal: setup?.secondaryGoal,
