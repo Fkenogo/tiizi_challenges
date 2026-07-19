@@ -1,0 +1,12 @@
+Audit start: 2026-07-18 Africa/Bujumbura
+Branch: main
+Commit: 9dd1b4ccbc968afa782e93f582bc64afbd8dd435
+Node: v20.20.0
+npm: 11.11.0
+Initial worktree: dirty (pre-existing changes; see 02-REPOSITORY-BASELINE.md)
+Explicit App.tsx route evidence rows: 110
+Markdown documentation files: 334
+Surface files: 115
+Service/hook files: 92
+Cloud Function source files: 10
+Script files: 101

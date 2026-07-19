@@ -1,0 +1,30 @@
+# Commands and validation evidence
+
+Audit date: 2026-07-18 (Africa/Bujumbura)
+
+## Repository inspection
+
+- `git branch --show-current` → `main`
+- `git rev-parse HEAD` → `9dd1b4ccbc968afa782e93f582bc64afbd8dd435`
+- `git status --short` → dirty pre-existing worktree plus this new report directory
+- `rg --files`, `rg -n`, `sed`, Node read-only inventory scripts
+- `git diff --stat` → baseline tracked changes remain 33 files, 1389 insertions, 1398 deletions
+- `git diff --check` → exit 0, no output
+
+## Build and guards
+
+| Command | Result |
+|---|---|
+| `npm run build` | PASS; TypeScript + Vite, 1905 modules; one >500 kB chunk warning |
+| `npm --prefix functions run build` | PASS |
+| `npm run audit:smoke` | PASS; 7/7 |
+| `npm run test:challenge-creation-backend` | PASS |
+| `npm run test:group-lifecycle` | PASS on sandbox-escalated local rerun; 64/64 |
+| `npm run test:onboarding-guards` | PASS on sandbox-escalated local rerun |
+| `npm run test:scoring-guards` | PASS on sandbox-escalated local rerun |
+
+The first group/onboarding/scoring attempts failed before test execution because the sandbox denied a local `tsx` IPC socket (`EPERM`). They were rerun outside the sandbox with user approval; all passed. No command contacted production, seeded, migrated, deployed or wrote Firestore.
+
+## Evidence-pack validation
+
+A Node read-only validator checks all 18 required Markdown files are present and non-empty and resolves every relative link in the index. Final result is recorded in the task output.
