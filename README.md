@@ -1,5 +1,11 @@
 # Tiizi Fitness PWA
 
+## Governance & Programme Documentation
+
+- [Tiizi V2 Master Programme](docs/programme/TIIZI-V2-MASTER-PROGRAMME.md) — single authoritative source of Tiizi programme state
+- [FEF Alignment Profile](docs/governance/FEF-ALIGNMENT.md) — project alignment with the Founder Engineering Framework baseline
+- [Constitutional Foundation Index](docs/governance/platform/00-CONSTITUTIONAL-FOUNDATION-INDEX.md) — Tiizi constitutional foundation and precedence
+
 ## Run
 
 ```bash
