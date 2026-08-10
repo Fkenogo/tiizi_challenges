@@ -20,10 +20,11 @@ The pack incorporates the Founder Governance Session 1 approvals dated 2026-07-1
 6. [Entity Ownership Foundation](06-ENTITY-OWNERSHIP-FOUNDATION.md)
 7. [Constitutional Glossary](07-CONSTITUTIONAL-GLOSSARY.md)
 8. [Validation Report](VALIDATION-REPORT.md)
+9. [CGP-01 — Constitutional Governance Principles](../principles/02-CGP-01-CONSTITUTIONAL-GOVERNANCE-PRINCIPLES.md) — Approved Constitutional Baseline
 
 ## Reading order
 
-Read the Constitution first. The Principles explain its tests. The Terminology Standard and Glossary establish canonical language. The Launch Scope separates current commitments from future possibilities. The Capability Map expresses the platform in business terms. The Entity Ownership Foundation governs authority without creating the full entity register.
+Read the Constitution first. The Platform Principles explain its tests. The Terminology Standard and Glossary establish canonical language. The Launch Scope separates current commitments from future possibilities. The Capability Map expresses the platform in business terms. The Entity Ownership Foundation governs authority without creating the full entity register. CGP-01 provides the approved platform-wide constitutional governance philosophy within its stated precedence boundary.
 
 ## Precedence
 

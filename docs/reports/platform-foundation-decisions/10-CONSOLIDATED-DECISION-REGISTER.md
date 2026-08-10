@@ -49,3 +49,213 @@ This register contains each of the 37 decisions exactly once. The linked detaile
 - P1-linked decisions: 33 decisions carry a P1 classification or direct P1 risk link.
 - All 20 discovery open questions are represented; OQ-14 and OQ-18 intentionally span more than one domain.
 - Every detailed entry identifies blocked documents and affected implementation areas.
+
+## Entity Ownership Governance phase register
+
+This supplemental register records later Entity Ownership Governance phases. It does not alter the original 37-decision count or the status of any decision in the founder decision pack above.
+
+| Phase | Title | Status | Approval date | Authoritative approval record |
+|---|---|---|---|---|
+| EOG-01 | Platform Accountability Framework | Approved | 2026-07-19 | [EOG-01 Founder Approval Record](../../governance/ownership/05-EOG-01-FOUNDER-APPROVAL-RECORD.md) |
+| EOG-02 | Constitutional Accountability for Groups | Approved | 2026-07-20 | [EOG-02 Founder Approval Record](../../governance/ownership/07-EOG-02-FOUNDER-APPROVAL-RECORD.md) |
+| EOG-03 | Constitutional Governance of Platform Knowledge | Approved | [Founder to complete] | [EOG-03 Founder Approval Record](../../governance/ownership/14-EOG-03-FOUNDER-APPROVAL-RECORD.md) |
+| EOG-04 | Constitutional Governance of Challenges | Approved | 2026-07-20 | [EOG-04 Founder Approval Record](../../governance/ownership/20-EOG-04-FOUNDER-APPROVAL-RECORD.md) |
+| EOG-05 | Entity Ownership Register | Approved | 2026-07-21 | [EOG-05 Founder Approval Record](../../governance/ownership/27-EOG-05-FOUNDER-APPROVAL-RECORD.md) |
+
+### EOG-02 approved-principle disposition
+
+The following EOG-02 principles moved from recommendation or pending review to **Approved**:
+
+- Groups are created, not proposed; creation establishes existence, identity and founding purpose.
+- The creator becomes the first Member and first Accountable Steward.
+- Every Group has exactly one Accountable Steward relationship at a time; stewardship may later be reassigned or voluntarily relinquished through approved governance.
+- A Stewardship Council may support but never replace the Accountable Steward relationship.
+- Membership, governance, participation and Group existence remain distinct.
+- A Group may exist without participation and may be inactive without being constitutionally unhealthy.
+- Group Governance Health is recognised as future governance, and Governance Maturity as a future conceptual distinction.
+- A Group Charter is a Governed Subject.
+- Administration and Custody remain separate from Accountable Stewardship.
+- Moderation derives from existing constitutional relationships.
+
+### EOG-02 deferred-decision disposition
+
+Approval of the phase does not approve its deferred decisions. Their status is **Deferred**:
+
+| EOG-02 decision area | Status | Deferred scope |
+|---|---|---|
+| Group creation authentication | Deferred | Platform Authority authenticating Group creation |
+| Stewardship continuity | Deferred | Reassignment, voluntary relinquishment, succession and failure governance |
+| Group Governance Body governance (Stewardship Council alias) | Deferred | Composition, appointment, decision-making, responsibilities and operational titles |
+| Group Charter governance | Deferred | Form, amendment, binding effect and historical governance |
+| Group information custody | Deferred | Allocation and shared-custody treatment |
+| Group administration | Deferred | Allocation and scope of administrative action |
+| Moderation | Deferred | Authority basis, accountability and later governance |
+| Membership | Deferred | States, transitions, inactivity treatment and lifecycle governance |
+| Roles and permissions | Deferred | Canonical roles, permissions and security controls |
+| Governance Health and Maturity | Deferred | Any standard, model, metric, score or implementation |
+
+## GRP Foundation Closure decision register
+
+This supplemental register records the founder decisions issued in the [Founder Decision Record](../../governance/ownership/34-GRP-FOUNDATION-CLOSURE-FOUNDER-DECISION-RECORD.md). The GFC decision issuance did not alter the original 37-decision count, amend EOG-01, EOG-02 or EOG-05, allocate a relationship or resolve CG-08. CG-08 was subsequently resolved through the separately approved [EOG-05 Constitutional Amendment](../../governance/ownership/36-EOG-05-CG-08-CONSTITUTIONAL-AMENDMENT.md).
+
+| Decision | Approved model | Status | Approval date | Authoritative approval record |
+|---|---|---|---|---|
+| GFC-01 | GFC-01-B — creation-only Administrative Authority authentication | Approved | 2026-07-21 | [Issued Constitutional Approval Record](../../governance/ownership/34-GRP-FOUNDATION-CLOSURE-CONSTITUTIONAL-APPROVAL-RECORD.md) |
+| GFC-02 | GFC-02-B — successor-continuous reassignment plus Charter-governed exceptional succession | Approved | 2026-07-21 | [Issued Constitutional Approval Record](../../governance/ownership/34-GRP-FOUNDATION-CLOSURE-CONSTITUTIONAL-APPROVAL-RECORD.md) |
+| GFC-03 | GFC-03-A — founding binding Charter | Approved | 2026-07-21 | [Issued Constitutional Approval Record](../../governance/ownership/34-GRP-FOUNDATION-CLOSURE-CONSTITUTIONAL-APPROVAL-RECORD.md) |
+| GFC-04 | GFC-04-B — Stewardship Council capable of later bounded Assignments of Responsibility | Approved | 2026-07-21 | [Issued Constitutional Approval Record](../../governance/ownership/34-GRP-FOUNDATION-CLOSURE-CONSTITUTIONAL-APPROVAL-RECORD.md) |
+| GFC-05 | GFC-05-A — permanent independent C-GRP-08 inventory treatment direction | Approved | 2026-07-21 | [Issued Constitutional Approval Record](../../governance/ownership/34-GRP-FOUNDATION-CLOSURE-CONSTITUTIONAL-APPROVAL-RECORD.md) |
+
+### GRP Foundation Closure retained conditions and deferrals
+
+- GFC-01 approval is limited to creation-event authentication and does not establish continuing Administrative Authority over Group truth.
+- GFC-02 approval preserves that the Charter supplies a succession rule, not Authority; exceptional reassignment Authority remains deferred.
+- GFC-03 approval leaves Charter content, interpretation, amendment, historical mechanism and lifecycle governance deferred.
+- GFC-04 approval preserves that Council responsibility is not shared stewardship and allocates no responsibility.
+- GFC-05 approval established constitutional direction only. The separately approved EOG-05 amendment has now been executed and CG-08 is resolved. Inventory remains distinct from allocation, and no relationship is allocated.
+
+### EOG-05 CG-08 amendment trace
+
+| Amendment | Status | Approval date | Constitutional effect | Authoritative record |
+|---|---|---|---|---|
+| C-GRP-08 Group Governance Body | Approved and applied | 2026-07-21 | Permanent independent inventory treatment; CG-08 resolved; no EOG-01 relationship allocated | [EOG-05 CG-08 Constitutional Amendment](../../governance/ownership/36-EOG-05-CG-08-CONSTITUTIONAL-AMENDMENT.md) |
+
+## Constitutional Governance Principles work-package register
+
+This supplemental register records attributable approval status for bounded CGP work packages. It does not alter the original 37-decision count. Founder approval is recorded separately from adoption and constitutional effect.
+
+| Work package | Title | Approval status | Approval date | Adoption status | Constitutional effect | Authoritative approval record | Approved instrument |
+|---|---|---|---|---|---|---|---|
+| CGP-02C.4 | Adoption and Constitutional Effect | Founder Approved | 2026-07-23 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/14-CGP-02C-4-ADOPTION-AND-CONSTITUTIONAL-EFFECT-FOUNDER-APPROVAL-CANDIDATE.md) | [Founder Approved Constitutional Instrument](../../governance/principles/15-CGP-02C-4-ADOPTION-AND-CONSTITUTIONAL-EFFECT-FOUNDER-APPROVED.md) |
+| CGP-02C.5 | Amendment Traceability Requirements | Founder Approved for candidate | 2026-07-24 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/16-CGP-02C-5-AMENDMENT-TRACEABILITY-REQUIREMENTS-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+| CGP-02C.6 | Dependent-Governance Impact Review | Founder Approved for candidate | 2026-07-24 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/18-CGP-02C-6-DEPENDENT-GOVERNANCE-IMPACT-REVIEW-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+| CGP-02C.7 | Conflict Review and Escalation | Founder Approved for candidate | 2026-07-24 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/20-CGP-02C-7-CONFLICT-REVIEW-AND-ESCALATION-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+| CGP-02C.8 | Supersession Rules | Founder Approved for candidate | 2026-07-24 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/22-CGP-02C-8-SUPERSESSION-RULES-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+| CGP-02C.9 | Retirement, Withdrawal and Rejection Rules | Founder Approved for candidate | 2026-07-24 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/24-CGP-02C-9-RETIREMENT-WITHDRAWAL-AND-REJECTION-RULES-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+| CGP-02C.10 | Historical Preservation | Founder Approved for candidate | 2026-07-24 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/26-CGP-02C-10-HISTORICAL-PRESERVATION-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+| CGP-02C.11 | Governance Index and Status Integrity | Founder Approved for candidate | 2026-07-25 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/28-CGP-02C-11-GOVERNANCE-INDEX-AND-STATUS-INTEGRITY-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+| CGP-02C.12 | Validation Rules | Founder Approved for candidate | 2026-07-25 | Not adopted | None | [Founder Approval Candidate](../../governance/principles/30-CGP-02C-12-VALIDATION-RULES-FOUNDER-APPROVAL-CANDIDATE.md) | None — bounded work-package candidate only |
+
+### CGP-02C.4 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| ACFQ-01 | Option A with amendment — Approved with amendment | ACE-01–ACE-04 |
+| ACFQ-02 | Option A with amendment — Approved with amendment | ACE-09–ACE-10 |
+| ACFQ-03 | Option A with amendment — Approved with amendment | ACE-05–ACE-08 |
+| ACFQ-04 | Option A with amendment — Approved with amendment | ACE-12–ACE-16 |
+| ACFQ-05 | Option A with amendment — Approved with amendment | ACE-11 |
+| ACFQ-06 | Option A with amendment — Approved with amendment | Constitutional Anti-Inference Principle; ACE-04, ACE-08 and ACE-17–ACE-21 |
+| ACFQ-07 | Option A with amendment — Approved with amendment | Scope and deferred-governance boundary |
+
+### CGP-02C.5 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| ATQ-01 | Option A — Approved | ATR-01–ATR-04 |
+| ATQ-02 | Option A — Approved | ATR-05–ATR-12 |
+| ATQ-03 | Option A — Approved | ATR-04, ATR-11, ATR-18–ATR-20 |
+| ATQ-04 | Option A — Approved | ATR-02–ATR-03, ATR-06–ATR-10, ATR-22 |
+| ATQ-05 | Option A — Approved | ATR-12–ATR-17 |
+| ATQ-06 | Option A — Approved | ATR-05, ATR-09, ATR-20 |
+| ATQ-07 | Option A — Approved | ATR-09, ATR-11, ATR-19 |
+| ATQ-08 | Option A — Approved | ATR-04, ATR-10, ATR-13–ATR-21, ATR-24 |
+| ATQ-09 | Option A — Approved | ATR-23–ATR-24; deferred-governance boundary |
+
+### CGP-02C.6 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| DIQ-01 | Option A — Approved | DGI-01–DGI-05 |
+| DIQ-02 | Option A — Approved | DGI-02, DGI-06, DGI-08 |
+| DIQ-03 | Option A — Approved | DGI-03–DGI-04, DGI-07 |
+| DIQ-04 | Option A — Approved | DGI-09–DGI-13, DGI-23 |
+| DIQ-05 | Option A — Approved | DGI-14–DGI-18 |
+| DIQ-06 | Option A — Approved | DGI-05, DGI-13, DGI-20–DGI-24 |
+| DIQ-07 | Option A — Approved | DGI-14, DGI-19–DGI-20 |
+| DIQ-08 | Option A — Approved | DGI-04, DGI-15, DGI-21 |
+| DIQ-09 | Option A — Approved | DGI-08, DGI-12, DGI-21, DGI-24; deferred-governance boundary |
+
+### CGP-02C.7 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| CRQ-01 | Option A — Approved | CRE-01–CRE-05 |
+| CRQ-02 | Option A — Approved | CRE-03, CRE-06–CRE-09, CRE-23 |
+| CRQ-03 | Option A — Approved | CRE-04, CRE-09–CRE-13 |
+| CRQ-04 | Option A — Approved | CRE-05, CRE-12–CRE-13, CRE-17 |
+| CRQ-05 | Option A — Approved | CRE-06–CRE-07, CRE-10, CRE-14–CRE-16, CRE-20 |
+| CRQ-06 | Option A — Approved | CRE-17–CRE-18 |
+| CRQ-07 | Option A — Approved | CRE-08, CRE-12, CRE-19–CRE-21 |
+| CRQ-08 | Option A — Approved | CRE-04–CRE-05, CRE-09, CRE-13, CRE-18–CRE-24 |
+| CRQ-09 | Option A — Approved | CRE-18, CRE-21, CRE-24; deferred-governance boundary |
+
+### CGP-02C.8 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| SSQ-01 | Option A — Approved | SSR-01–SSR-05 |
+| SSQ-02 | Option A — Approved | SSR-05–SSR-07, SSR-13, SSR-21 |
+| SSQ-03 | Option A — Approved | SSR-05, SSR-08, SSR-13, SSR-21 |
+| SSQ-04 | Option A — Approved | SSR-05, SSR-09, SSR-13, SSR-21 |
+| SSQ-05 | Option A — Approved | SSR-05, SSR-10; deferred-governance boundary |
+| SSQ-06 | Option A — Approved | SSR-01, SSR-03, SSR-11–SSR-13, SSR-19 |
+| SSQ-07 | Option A — Approved | SSR-14–SSR-17, SSR-20 |
+| SSQ-08 | Option A — Approved | SSR-02, SSR-04, SSR-14, SSR-18–SSR-21, SSR-23–SSR-24 |
+| SSQ-09 | Option A — Approved | SSR-03, SSR-10, SSR-12, SSR-16–SSR-17, SSR-22–SSR-24; deferred-governance boundary |
+
+### CGP-02C.9 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| RWQ-01 | Option A — Approved | RWR-01–RWR-02 |
+| RWQ-02 | Option A — Approved | RWR-03–RWR-04 |
+| RWQ-03 | Option A — Approved | RWR-05–RWR-06 |
+| RWQ-04 | Option A — Approved | RWR-07 |
+| RWQ-05 | Option A — Approved | RWR-08–RWR-09 |
+| RWQ-06 | Option A — Approved | RWR-10–RWR-11 |
+| RWQ-07 | Option A — Approved | RWR-12, RWR-23 |
+| RWQ-08 | Option A — Approved | RWR-13–RWR-20 |
+| RWQ-09 | Option A — Approved | RWR-21–RWR-24; deferred-governance boundary |
+
+### CGP-02C.10 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| HPQ-01 | Option A — Approved | HPR-01–HPR-03 |
+| HPQ-02 | Option A — Approved | HPR-04–HPR-06, HPR-14–HPR-16 |
+| HPQ-03 | Option A — Approved | HPR-07–HPR-09 |
+| HPQ-04 | Option A — Approved | HPR-10–HPR-11 |
+| HPQ-05 | Option A — Approved | HPR-12–HPR-13 |
+| HPQ-06 | Option A — Approved | HPR-17–HPR-18 |
+| HPQ-07 | Option A — Approved | HPR-19–HPR-20 |
+| HPQ-08 | Option A — Approved | HPR-16, HPR-21–HPR-23 |
+| HPQ-09 | Option A — Approved | HPR-24; deferred-governance boundary |
+
+### CGP-02C.11 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| GIQ-01 | Option A — Approved | GSI-01–GSI-03 |
+| GIQ-02 | Option A — Approved | GSI-04–GSI-09 |
+| GIQ-03 | Option A — Approved | GSI-10–GSI-12 |
+| GIQ-04 | Option A — Approved | GSI-13–GSI-15 |
+| GIQ-05 | Option A — Approved | GSI-08, GSI-16–GSI-18 |
+| GIQ-06 | Option A — Approved | GSI-19–GSI-21 |
+| GIQ-07 | Option A — Approved | GSI-21 |
+| GIQ-08 | Option A — Approved | GSI-22–GSI-23 |
+| GIQ-09 | Option A — Approved | GSI-24; deferred-governance boundary |
+
+### CGP-02C.12 approved-decision disposition
+
+| Decision | Founder disposition | Affected constitutional treatment |
+|---|---|---|
+| VLQ-01 | Option A — Approved | VLR-01–VLR-03 |
+| VLQ-02 | Option A — Approved | VLR-04–VLR-06 |
+| VLQ-03 | Option A — Approved | VLR-07–VLR-09 |
+| VLQ-04 | Option B — Approved with amendment to VLR-11 | VLR-10–VLR-13 |
+| VLQ-05 | Option A — Approved | VLR-14–VLR-15 |
+| VLQ-06 | Option A — Approved | VLR-16–VLR-18 |
+| VLQ-07 | Option A — Approved | VLR-19–VLR-20 |
+| VLQ-08 | Option A — Approved | VLR-21–VLR-22 |
+| VLQ-09 | Option B — Approved with amendment to VLR-23 | VLR-23–VLR-24; deferred-governance boundary |
