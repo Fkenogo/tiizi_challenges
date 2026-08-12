@@ -2,17 +2,17 @@
 
 ## Document Control
 
-| Field | Value |
-|---|---|
-| Programme | Tiizi Version 2 |
-| Work package | CGP-02C.13 — Whole-Instrument Consolidation |
-| Execution phase | Phase 2E — Founder Disposition Recording |
-| Source observations | [Constitutional Observation Register](CGP-02C-13-CONSTITUTIONAL-OBSERVATION-REGISTER.md) |
-| Source register SHA-256 | `fd004e6ec262d70d8fc34085d946f2b38d528501731741fd3493fb4e58f541ed` |
-| Preparation timestamp | `2026-07-25T17:48:56+02:00` |
-| Status | Prepared for Founder Review — All Dispositions Unresolved |
-| Batches | 6 |
-| Observations | 45 |
+| Field                   | Value                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| Programme               | Tiizi Version 2                                                                          |
+| Work package            | CGP-02C.13 — Whole-Instrument Consolidation                                              |
+| Execution phase         | Phase 2E — Founder Disposition Recording                                                 |
+| Source observations     | [Constitutional Observation Register](CGP-02C-13-CONSTITUTIONAL-OBSERVATION-REGISTER.md) |
+| Source register SHA-256 | `fd004e6ec262d70d8fc34085d946f2b38d528501731741fd3493fb4e58f541ed`                       |
+| Preparation timestamp   | `2026-07-25T17:48:56+02:00`                                                              |
+| Status                  | Founder Review In Progress — Batch A Dispositions Recorded (CRA-001–CRA-010)             |
+| Batches                 | 6                                                                                        |
+| Observations            | 45                                                                                       |
 
 ## 1. Register Boundary
 
@@ -22,738 +22,738 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 
 ## 2. Batch A — Partial overlaps
 
-| Batch field | Value |
-|---|---|
-| Classification | Partial overlaps |
-| Observation IDs | CRA-001; CRA-002; CRA-003; CRA-004; CRA-005; CRA-006; CRA-007; CRA-008; CRA-009; CRA-010 |
-| Observation count | 10 |
+| Batch field       | Value                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| Classification    | Partial overlaps                                                                         |
+| Observation IDs   | CRA-001; CRA-002; CRA-003; CRA-004; CRA-005; CRA-006; CRA-007; CRA-008; CRA-009; CRA-010 |
+| Observation count | 10                                                                                       |
 
 ### 2.1 CRA-001
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-001 |
-| Classification | Partial overlap |
-| Proposition IDs | GVR-03; RTP-07 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2C — Review Triggers and Proportionality |
-| Neutral summary | RTP-07 restates the consequence-based proportionality treatment with document length added to the listed non-determinants. |
-| Supporting evidence | Both state that review formality, assurance and burden are proportionate to constitutional consequence and reject organisation size, membership, popularity and administrative workload as independent determinants. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                             |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-001                                                                                                                                                                                                                                                                                                                     |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                                             |
+| Proposition IDs                      | GVR-03; RTP-07                                                                                                                                                                                                                                                                                                              |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2C — Review Triggers and Proportionality                                                                                                                                                                                                             |
+| Neutral summary                      | RTP-07 restates the consequence-based proportionality treatment with document length added to the listed non-determinants.                                                                                                                                                                                                  |
+| Supporting evidence                  | Both state that review formality, assurance and burden are proportionate to constitutional consequence and reject organisation size, membership, popularity and administrative workload as independent determinants.                                                                                                        |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                      |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects intentional reinforcement of the consequence-based proportionality treatment across the constitutional foundation and the review-triggers standard. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                                     |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                             |
 
 ### 2.2 CRA-002
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-002 |
-| Classification | Partial overlap |
-| Proposition IDs | GVR-04; RTP-09 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2C — Review Triggers and Proportionality |
-| Neutral summary | RTP-09 expresses the same minimum-preservation boundary with additional references to purpose, scope and historical intelligibility. |
-| Supporting evidence | Both state that proportionality cannot remove applicable constitutional minima and preserve Authority, attribution, precedence and constitutional meaning. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-002                                                                                                                                                                                                                                                                                                       |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                               |
+| Proposition IDs                      | GVR-04; RTP-09                                                                                                                                                                                                                                                                                                |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2C — Review Triggers and Proportionality                                                                                                                                                                                               |
+| Neutral summary                      | RTP-09 expresses the same minimum-preservation boundary with additional references to purpose, scope and historical intelligibility.                                                                                                                                                                          |
+| Supporting evidence                  | Both state that proportionality cannot remove applicable constitutional minima and preserve Authority, attribution, precedence and constitutional meaning.                                                                                                                                                    |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                        |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects intentional reinforcement of the minimum-preservation boundary across the constitutional foundation and the review-triggers standard. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                       |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                               |
 
 ### 2.3 CRA-003
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-003 |
-| Classification | Partial overlap |
-| Proposition IDs | APV-04; ACE-02 |
-| Source documents | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect |
-| Neutral summary | The shared Authority structure is applied separately to approval and adoption. |
-| Supporting evidence | Each identifies Governance Authority as the approved Platform Authority exercised for the relevant act, rejects a separate subject-specific Authority and rejects extension, transfer or redistribution. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                              |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-003                                                                                                                                                                                                                                                                      |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                              |
+| Proposition IDs                      | APV-04; ACE-02                                                                                                                                                                                                                                                               |
+| Source documents                     | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect                                                                                                                                                                                              |
+| Neutral summary                      | The shared Authority structure is applied separately to approval and adoption.                                                                                                                                                                                               |
+| Supporting evidence                  | Each identifies Governance Authority as the approved Platform Authority exercised for the relevant act, rejects a separate subject-specific Authority and rejects extension, transfer or redistribution.                                                                     |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                       |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects distinct subject-specific application of the Governance Authority boundary to approval and adoption. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                      |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                              |
 
 ### 2.4 CRA-004
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-004 |
-| Classification | Partial overlap |
-| Proposition IDs | APV-03; ACE-03 |
-| Source documents | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect |
-| Neutral summary | The shared bounded-scope structure is applied separately to approval and adoption. |
-| Supporting evidence | Both bound a constitutional act to identified content and declared scope and reject expansion to another matter through association or shared documentation. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                       |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-004                                                                                                                                                                                                                                                               |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                       |
+| Proposition IDs                      | APV-03; ACE-03                                                                                                                                                                                                                                                        |
+| Source documents                     | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect                                                                                                                                                                                       |
+| Neutral summary                      | The shared bounded-scope structure is applied separately to approval and adoption.                                                                                                                                                                                    |
+| Supporting evidence                  | Both bound a constitutional act to identified content and declared scope and reject expansion to another matter through association or shared documentation.                                                                                                          |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects distinct subject-specific application of the bounded-scope boundary to approval and adoption. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                               |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                       |
 
 ### 2.5 CRA-005
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-005 |
-| Classification | Partial overlap |
-| Proposition IDs | SSR-21; RWR-20 |
-| Source documents | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules |
-| Neutral summary | RWR-20 includes supersession records in the same evidence-reference structure used by SSR-21. |
-| Supporting evidence | Both permit evidence to reference related approval, adoption, amendment-trace, dependent-impact and conflict-disposition records while stating that reference does not replace a record, create status or enlarge scope. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-005                                                                                                                                                                                                                                                                                                       |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                               |
+| Proposition IDs                      | SSR-21; RWR-20                                                                                                                                                                                                                                                                                                |
+| Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules                                                                                                                                                                                                                        |
+| Neutral summary                      | RWR-20 includes supersession records in the same evidence-reference structure used by SSR-21.                                                                                                                                                                                                                 |
+| Supporting evidence                  | Both permit evidence to reference related approval, adoption, amendment-trace, dependent-impact and conflict-disposition records while stating that reference does not replace a record, create status or enlarge scope.                                                                                      |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                        |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects intentional reinforcement of the evidence-reference boundary with subject-specific extension to retirement, withdrawal and rejection. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                       |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                               |
 
 ### 2.6 CRA-006
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-006 |
-| Classification | Partial overlap |
-| Proposition IDs | SSR-22; RWR-21; HPR-22 |
-| Source documents | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation |
-| Neutral summary | The same anti-inference form is applied to supersession, retirement or withdrawal or rejection, and historical meaning or status. |
-| Supporting evidence | Each rejects labels, status fields, repository or publication actions, implementation and repeated practice as independent sources of the relevant constitutional treatment or status. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-006                                                                                                                                                                                                                                                                                                                                |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                                                        |
+| Proposition IDs                      | SSR-22; RWR-21; HPR-22                                                                                                                                                                                                                                                                                                                 |
+| Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation                                                                                                                                                                                                           |
+| Neutral summary                      | The same anti-inference form is applied to supersession, retirement or withdrawal or rejection, and historical meaning or status.                                                                                                                                                                                                      |
+| Supporting evidence                  | Each rejects labels, status fields, repository or publication actions, implementation and repeated practice as independent sources of the relevant constitutional treatment or status.                                                                                                                                                 |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                                 |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects distinct subject-specific application of the anti-inference boundary to supersession, retirement or withdrawal or rejection, and historical meaning or status. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                                                |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                        |
 
 ### 2.7 CRA-007
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-007 |
-| Classification | Partial overlap |
-| Proposition IDs | SSR-11; RWR-13 |
-| Source documents | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules |
-| Neutral summary | The shared Authority boundary is applied to different constitutional status treatments. |
-| Supporting evidence | Both require an explicit attributable act within existing Governance Authority and reject creation of a separate treatment-specific Authority. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-007                                                                                                                                                                                                                                                                                             |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                     |
+| Proposition IDs                      | SSR-11; RWR-13                                                                                                                                                                                                                                                                                      |
+| Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules                                                                                                                                                                                                              |
+| Neutral summary                      | The shared Authority boundary is applied to different constitutional status treatments.                                                                                                                                                                                                             |
+| Supporting evidence                  | Both require an explicit attributable act within existing Governance Authority and reject creation of a separate treatment-specific Authority.                                                                                                                                                      |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                              |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects distinct subject-specific application of the Authority boundary to supersession and to retirement, withdrawal or rejection. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                             |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                     |
 
 ### 2.8 CRA-008
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-008 |
-| Classification | Partial overlap |
-| Proposition IDs | SSR-12; RWR-14; GSI-09 |
-| Source documents | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.11 — Governance Index and Status Integrity |
-| Neutral summary | Administrative activity is separated from constitutional Authority across treatment and representation subjects. |
-| Supporting evidence | Each states that drafting, recording, indexing, publishing, presenting or administering information does not confer Governance Authority or establish the represented constitutional treatment. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-008                                                                                                                                                                                                                                                                                             |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                     |
+| Proposition IDs                      | SSR-12; RWR-14; GSI-09                                                                                                                                                                                                                                                                              |
+| Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.11 — Governance Index and Status Integrity                                                                                                                                                          |
+| Neutral summary                      | Administrative activity is separated from constitutional Authority across treatment and representation subjects.                                                                                                                                                                                    |
+| Supporting evidence                  | Each states that drafting, recording, indexing, publishing, presenting or administering information does not confer Governance Authority or establish the represented constitutional treatment.                                                                                                     |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                              |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects distinct subject-specific application of the administrative-activity boundary across treatment and representation subjects. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                             |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                     |
 
 ### 2.9 CRA-009
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-009 |
-| Classification | Partial overlap |
-| Proposition IDs | SSR-20; RWR-18 |
-| Source documents | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules |
-| Neutral summary | The same evidentiary limitation structure is applied to supersession and to retirement, withdrawal or rejection. |
-| Supporting evidence | Both require evidence to preserve constitutional basis, rationale, partial or conditional boundaries and unresolved limitations so the record does not overstate the decision. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                   |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-009                                                                                                                                                                                                                                                                                                           |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                                   |
+| Proposition IDs                      | SSR-20; RWR-18                                                                                                                                                                                                                                                                                                    |
+| Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules                                                                                                                                                                                                                            |
+| Neutral summary                      | The same evidentiary limitation structure is applied to supersession and to retirement, withdrawal or rejection.                                                                                                                                                                                                  |
+| Supporting evidence                  | Both require evidence to preserve constitutional basis, rationale, partial or conditional boundaries and unresolved limitations so the record does not overstate the decision.                                                                                                                                    |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                            |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects distinct subject-specific application of the evidentiary limitation structure to supersession and to retirement, withdrawal or rejection. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                           |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                   |
 
 ### 2.10 CRA-010
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-010 |
-| Classification | Partial overlap |
-| Proposition IDs | ACE-21; ATR-24; RWR-24; HPR-24 |
-| Source documents | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation |
-| Neutral summary | The propositions repeat a non-retrospective-inference boundary across four constitutional subjects. |
-| Supporting evidence | Each rejects retrospective assignment or validation of constitutional treatment, date, meaning or status that an attributable historical source did not establish. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-010                                                                                                                                                                                                                                                                                                                                                                         |
+| Classification                       | Partial overlap                                                                                                                                                                                                                                                                                                                                                                 |
+| Proposition IDs                      | ACE-21; ATR-24; RWR-24; HPR-24                                                                                                                                                                                                                                                                                                                                                  |
+| Source documents                     | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation                                                                                                                                                                                   |
+| Neutral summary                      | The propositions repeat a non-retrospective-inference boundary across four constitutional subjects.                                                                                                                                                                                                                                                                             |
+| Supporting evidence                  | Each rejects retrospective assignment or validation of constitutional treatment, date, meaning or status that an attributable historical source did not establish.                                                                                                                                                                                                              |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                                                                          |
+| Founder rationale                    | Accept. The observed overlap is accurate and reflects distinct subject-specific application of the non-retrospective-inference boundary across adoption and effect, amendment traceability, retirement, withdrawal or rejection, and historical preservation. The propositions remain constitutionally useful in their respective contexts. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                                                                                         |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 3. Batch B — Complementary propositions
 
-| Batch field | Value |
-|---|---|
-| Classification | Complementary propositions |
-| Observation IDs | CRA-011; CRA-012; CRA-013; CRA-014; CRA-015; CRA-016; CRA-017; CRA-018; CRA-019; CRA-020; CRA-021; CRA-022; CRA-023 |
-| Observation count | 13 |
+| Batch field       | Value                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Classification    | Complementary propositions                                                                                          |
+| Observation IDs   | CRA-011; CRA-012; CRA-013; CRA-014; CRA-015; CRA-016; CRA-017; CRA-018; CRA-019; CRA-020; CRA-021; CRA-022; CRA-023 |
+| Observation count | 13                                                                                                                  |
 
 ### 3.1 CRA-011
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-011 |
-| Classification | Complementary propositions |
-| Proposition IDs | CHB-01; AMC-09 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification |
-| Neutral summary | The change boundary and the meaning-changing classification describe connected parts of the same change-identification concept. |
-| Supporting evidence | CHB-01 identifies a constitutional change by effect on what exists or why it exists and on listed constitutional elements; AMC-09 uses the same effects to define Meaning-Changing Amendment. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-011                                                                                                                                                                                       |
+| Classification                       | Complementary propositions                                                                                                                                                                    |
+| Proposition IDs                      | CHB-01; AMC-09                                                                                                                                                                                |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification                                                                                          |
+| Neutral summary                      | The change boundary and the meaning-changing classification describe connected parts of the same change-identification concept.                                                               |
+| Supporting evidence                  | CHB-01 identifies a constitutional change by effect on what exists or why it exists and on listed constitutional elements; AMC-09 uses the same effects to define Meaning-Changing Amendment. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                        |
+| Founder rationale                    |                                                                                                                                                                                               |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                       |
+| Future amendment programme reference |                                                                                                                                                                                               |
 
 ### 3.2 CRA-012
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-012 |
-| Classification | Complementary propositions |
-| Proposition IDs | CHB-04; AMC-07; AMC-09 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification |
-| Neutral summary | The propositions supply complementary vocabulary for preserved and changed constitutional meaning. |
-| Supporting evidence | CHB-04 distinguishes clarification preserving meaning from changed meaning; AMC-07 bounds Meaning-Preserving Maintenance and AMC-09 identifies Meaning-Changing Amendment. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-012                                                                                                                                                                    |
+| Classification                       | Complementary propositions                                                                                                                                                 |
+| Proposition IDs                      | CHB-04; AMC-07; AMC-09                                                                                                                                                     |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification                                                                       |
+| Neutral summary                      | The propositions supply complementary vocabulary for preserved and changed constitutional meaning.                                                                         |
+| Supporting evidence                  | CHB-04 distinguishes clarification preserving meaning from changed meaning; AMC-07 bounds Meaning-Preserving Maintenance and AMC-09 identifies Meaning-Changing Amendment. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                     |
+| Founder rationale                    |                                                                                                                                                                            |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                    |
+| Future amendment programme reference |                                                                                                                                                                            |
 
 ### 3.3 CRA-013
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-013 |
-| Classification | Complementary propositions |
-| Proposition IDs | GLC-05; APV-01 |
-| Source documents | CGP-02C.2A — Governance Lifecycle; CGP-02C.3 — Approval Governance |
-| Neutral summary | The lifecycle vocabulary and subject-specific approval treatment occupy different levels of detail. |
-| Supporting evidence | GLC-05 supplies the lifecycle concept of approval while deferring procedure and evidence; APV-01 supplies the detailed constitutional meaning of approval as an explicit attributable Governance Authority decision. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-013                                                                                                                                                                                                              |
+| Classification                       | Complementary propositions                                                                                                                                                                                           |
+| Proposition IDs                      | GLC-05; APV-01                                                                                                                                                                                                       |
+| Source documents                     | CGP-02C.2A — Governance Lifecycle; CGP-02C.3 — Approval Governance                                                                                                                                                   |
+| Neutral summary                      | The lifecycle vocabulary and subject-specific approval treatment occupy different levels of detail.                                                                                                                  |
+| Supporting evidence                  | GLC-05 supplies the lifecycle concept of approval while deferring procedure and evidence; APV-01 supplies the detailed constitutional meaning of approval as an explicit attributable Governance Authority decision. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                               |
+| Founder rationale                    |                                                                                                                                                                                                                      |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                              |
+| Future amendment programme reference |                                                                                                                                                                                                                      |
 
 ### 3.4 CRA-014
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-014 |
-| Classification | Complementary propositions |
-| Proposition IDs | GLC-06; ACE-01; ACE-09 |
-| Source documents | CGP-02C.2A — Governance Lifecycle; CGP-02C.4 — Adoption and Constitutional Effect |
-| Neutral summary | The later adoption propositions provide the subject treatment anticipated by the lifecycle distinction. |
-| Supporting evidence | GLC-06 identifies adoption as distinct and defers its meaning; ACE-01 defines adoption and ACE-09 distinguishes it from approval. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                   |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-014                                                                                                                           |
+| Classification                       | Complementary propositions                                                                                                        |
+| Proposition IDs                      | GLC-06; ACE-01; ACE-09                                                                                                            |
+| Source documents                     | CGP-02C.2A — Governance Lifecycle; CGP-02C.4 — Adoption and Constitutional Effect                                                 |
+| Neutral summary                      | The later adoption propositions provide the subject treatment anticipated by the lifecycle distinction.                           |
+| Supporting evidence                  | GLC-06 identifies adoption as distinct and defers its meaning; ACE-01 defines adoption and ACE-09 distinguishes it from approval. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                            |
+| Founder rationale                    |                                                                                                                                   |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                           |
+| Future amendment programme reference |                                                                                                                                   |
 
 ### 3.5 CRA-015
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-015 |
-| Classification | Complementary propositions |
-| Proposition IDs | APV-01; ACE-09; ACE-10 |
-| Source documents | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect |
-| Neutral summary | The propositions connect approval and adoption while preserving their separate constitutional meanings. |
-| Supporting evidence | APV-01 defines approval; ACE-09 distinguishes approval from adoption; ACE-10 states that approval does not itself establish adoption and adoption does not exceed its attributable approval. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-015                                                                                                                                                                                      |
+| Classification                       | Complementary propositions                                                                                                                                                                   |
+| Proposition IDs                      | APV-01; ACE-09; ACE-10                                                                                                                                                                       |
+| Source documents                     | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect                                                                                                              |
+| Neutral summary                      | The propositions connect approval and adoption while preserving their separate constitutional meanings.                                                                                      |
+| Supporting evidence                  | APV-01 defines approval; ACE-09 distinguishes approval from adoption; ACE-10 states that approval does not itself establish adoption and adoption does not exceed its attributable approval. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                       |
+| Founder rationale                    |                                                                                                                                                                                              |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                      |
+| Future amendment programme reference |                                                                                                                                                                                              |
 
 ### 3.6 CRA-016
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-016 |
-| Classification | Complementary propositions |
-| Proposition IDs | GLC-10; ACE-17; GSI-07 |
-| Source documents | CGP-02C.2A — Governance Lifecycle; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.11 — Governance Index and Status Integrity |
-| Neutral summary | The three propositions address complementary boundaries among lifecycle labels, constitutional effect and documentary representation. |
-| Supporting evidence | GLC-10 distinguishes document status from effect; ACE-17 distinguishes status representation from creation of adoption or effect; GSI-07 distinguishes constitutional status from documentary representation. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-016                                                                                                                                                                                                       |
+| Classification                       | Complementary propositions                                                                                                                                                                                    |
+| Proposition IDs                      | GLC-10; ACE-17; GSI-07                                                                                                                                                                                        |
+| Source documents                     | CGP-02C.2A — Governance Lifecycle; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.11 — Governance Index and Status Integrity                                                                         |
+| Neutral summary                      | The three propositions address complementary boundaries among lifecycle labels, constitutional effect and documentary representation.                                                                         |
+| Supporting evidence                  | GLC-10 distinguishes document status from effect; ACE-17 distinguishes status representation from creation of adoption or effect; GSI-07 distinguishes constitutional status from documentary representation. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                        |
+| Founder rationale                    |                                                                                                                                                                                                               |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                       |
+| Future amendment programme reference |                                                                                                                                                                                                               |
 
 ### 3.7 CRA-017
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-017 |
-| Classification | Complementary propositions |
-| Proposition IDs | ATR-03; DGI-19 |
-| Source documents | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review |
-| Neutral summary | The records have different subjects while connecting through the amendment and its dependent consequences. |
-| Supporting evidence | ATR-03 preserves the relationship among source governance, change, scope, decision and status; DGI-19 distinguishes an impact-review record from that amendment trace. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-017                                                                                                                                                                |
+| Classification                       | Complementary propositions                                                                                                                                             |
+| Proposition IDs                      | ATR-03; DGI-19                                                                                                                                                         |
+| Source documents                     | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review                                                                        |
+| Neutral summary                      | The records have different subjects while connecting through the amendment and its dependent consequences.                                                             |
+| Supporting evidence                  | ATR-03 preserves the relationship among source governance, change, scope, decision and status; DGI-19 distinguishes an impact-review record from that amendment trace. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                 |
+| Founder rationale                    |                                                                                                                                                                        |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                |
+| Future amendment programme reference |                                                                                                                                                                        |
 
 ### 3.8 CRA-018
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-018 |
-| Classification | Complementary propositions |
-| Proposition IDs | DGI-05; CRE-04 |
-| Source documents | CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation |
-| Neutral summary | The propositions apply the analytical-versus-decisional boundary to different review subjects. |
-| Supporting evidence | Both describe their review treatment as analytical and state that it does not itself amend, approve, adopt, supersede or create constitutional effect. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Observation ID                       | CRA-018                                                                                                                                                |
+| Classification                       | Complementary propositions                                                                                                                             |
+| Proposition IDs                      | DGI-05; CRE-04                                                                                                                                         |
+| Source documents                     | CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation                                                             |
+| Neutral summary                      | The propositions apply the analytical-versus-decisional boundary to different review subjects.                                                         |
+| Supporting evidence                  | Both describe their review treatment as analytical and state that it does not itself amend, approve, adopt, supersede or create constitutional effect. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                 |
+| Founder rationale                    |                                                                                                                                                        |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                |
+| Future amendment programme reference |                                                                                                                                                        |
 
 ### 3.9 CRA-019
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-019 |
-| Classification | Complementary propositions |
-| Proposition IDs | CRE-09; SSR-09 |
-| Source documents | CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules |
-| Neutral summary | Conflict identification, conflict disposition and supersession are presented as distinct constitutional treatments. |
-| Supporting evidence | CRE-09 states that conflict identification does not displace governance; SSR-09 states that a conflict disposition establishes supersession only where the attributable decision expressly does so. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-019                                                                                                                                                                                             |
+| Classification                       | Complementary propositions                                                                                                                                                                          |
+| Proposition IDs                      | CRE-09; SSR-09                                                                                                                                                                                      |
+| Source documents                     | CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules                                                                                                                          |
+| Neutral summary                      | Conflict identification, conflict disposition and supersession are presented as distinct constitutional treatments.                                                                                 |
+| Supporting evidence                  | CRE-09 states that conflict identification does not displace governance; SSR-09 states that a conflict disposition establishes supersession only where the attributable decision expressly does so. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                              |
+| Founder rationale                    |                                                                                                                                                                                                     |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                             |
+| Future amendment programme reference |                                                                                                                                                                                                     |
 
 ### 3.10 CRA-020
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-020 |
-| Classification | Complementary propositions |
-| Proposition IDs | SSR-01; RWR-01; RWR-03; RWR-05 |
-| Source documents | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules |
-| Neutral summary | The propositions define four distinct treatments for replacement, retirement, withdrawal and rejection. |
-| Supporting evidence | SSR-01 defines replacement by identified governance; RWR-01 defines ending a current position without replacement; RWR-03 removes pending governance from consideration; RWR-05 records a negative approval decision. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                       |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-020                                                                                                                                                                                                               |
+| Classification                       | Complementary propositions                                                                                                                                                                                            |
+| Proposition IDs                      | SSR-01; RWR-01; RWR-03; RWR-05                                                                                                                                                                                        |
+| Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules                                                                                                                                |
+| Neutral summary                      | The propositions define four distinct treatments for replacement, retirement, withdrawal and rejection.                                                                                                               |
+| Supporting evidence                  | SSR-01 defines replacement by identified governance; RWR-01 defines ending a current position without replacement; RWR-03 removes pending governance from consideration; RWR-05 records a negative approval decision. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                |
+| Founder rationale                    |                                                                                                                                                                                                                       |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                               |
+| Future amendment programme reference |                                                                                                                                                                                                                       |
 
 ### 3.11 CRA-021
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-021 |
-| Classification | Complementary propositions |
-| Proposition IDs | RWR-23; HPR-20 |
-| Source documents | CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation |
-| Neutral summary | The status treatment and its later historical intelligibility are separate but complementary. |
-| Supporting evidence | RWR-23 requires treated governance to remain historically identifiable; HPR-20 states that Historical Preservation retains the meaning and context of those treatments without establishing or changing them. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-021                                                                                                                                                                                                       |
+| Classification                       | Complementary propositions                                                                                                                                                                                    |
+| Proposition IDs                      | RWR-23; HPR-20                                                                                                                                                                                                |
+| Source documents                     | CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation                                                                                                                  |
+| Neutral summary                      | The status treatment and its later historical intelligibility are separate but complementary.                                                                                                                 |
+| Supporting evidence                  | RWR-23 requires treated governance to remain historically identifiable; HPR-20 states that Historical Preservation retains the meaning and context of those treatments without establishing or changing them. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                        |
+| Founder rationale                    |                                                                                                                                                                                                               |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                       |
+| Future amendment programme reference |                                                                                                                                                                                                               |
 
 ### 3.12 CRA-022
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-022 |
-| Classification | Complementary propositions |
-| Proposition IDs | HPR-14; GSI-10; GSI-11 |
-| Source documents | CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity |
-| Neutral summary | Attributable current status and its documentary representation are treated as connected but distinct. |
-| Supporting evidence | HPR-14 identifies current governance through attributable treatment; GSI-10 identifies what a current-baseline representation must distinguish; GSI-11 separates current from listed non-current statuses. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-022                                                                                                                                                                                                    |
+| Classification                       | Complementary propositions                                                                                                                                                                                 |
+| Proposition IDs                      | HPR-14; GSI-10; GSI-11                                                                                                                                                                                     |
+| Source documents                     | CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity                                                                                                                   |
+| Neutral summary                      | Attributable current status and its documentary representation are treated as connected but distinct.                                                                                                      |
+| Supporting evidence                  | HPR-14 identifies current governance through attributable treatment; GSI-10 identifies what a current-baseline representation must distinguish; GSI-11 separates current from listed non-current statuses. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                     |
+| Founder rationale                    |                                                                                                                                                                                                            |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                    |
+| Future amendment programme reference |                                                                                                                                                                                                            |
 
 ### 3.13 CRA-023
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-023 |
-| Classification | Complementary propositions |
-| Proposition IDs | GSI-17; VLR-16 |
-| Source documents | CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
-| Neutral summary | The propositions address different forms of documentary or evidentiary inconsistency while preserving their non-decisional effect. |
-| Supporting evidence | GSI-17 identifies stale, incomplete or inconsistent representation as a documentary defect without constitutional change; VLR-16 preserves contradictory validation evidence and refers constitutional judgment to the conflict boundary. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                           |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-023                                                                                                                                                                                                                                   |
+| Classification                       | Complementary propositions                                                                                                                                                                                                                |
+| Proposition IDs                      | GSI-17; VLR-16                                                                                                                                                                                                                            |
+| Source documents                     | CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules                                                                                                                                                         |
+| Neutral summary                      | The propositions address different forms of documentary or evidentiary inconsistency while preserving their non-decisional effect.                                                                                                        |
+| Supporting evidence                  | GSI-17 identifies stale, incomplete or inconsistent representation as a documentary defect without constitutional change; VLR-16 preserves contradictory validation evidence and refers constitutional judgment to the conflict boundary. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                    |
+| Founder rationale                    |                                                                                                                                                                                                                                           |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                   |
+| Future amendment programme reference |                                                                                                                                                                                                                                           |
 
 ## 4. Batch C — Dependency relationships
 
-| Batch field | Value |
-|---|---|
-| Classification | Dependency relationships |
-| Observation IDs | CRA-024; CRA-025; CRA-026; CRA-027; CRA-028; CRA-029 |
-| Observation count | 6 |
+| Batch field       | Value                                                |
+| ----------------- | ---------------------------------------------------- |
+| Classification    | Dependency relationships                             |
+| Observation IDs   | CRA-024; CRA-025; CRA-026; CRA-027; CRA-028; CRA-029 |
+| Observation count | 6                                                    |
 
 ### 4.1 CRA-024
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-024 |
-| Classification | Dependency relationship |
-| Proposition IDs | ACE-10; APV-01 |
-| Source documents | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.3 — Approval Governance |
-| Neutral summary | The adoption boundary expressly depends on separately established approval. |
-| Supporting evidence | ACE-10 states that adoption does not approve content beyond the attributable approval on which it depends; APV-01 defines that attributable approval decision. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-024                                                                                                                                                        |
+| Classification                       | Dependency relationship                                                                                                                                        |
+| Proposition IDs                      | ACE-10; APV-01                                                                                                                                                 |
+| Source documents                     | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.3 — Approval Governance                                                                                |
+| Neutral summary                      | The adoption boundary expressly depends on separately established approval.                                                                                    |
+| Supporting evidence                  | ACE-10 states that adoption does not approve content beyond the attributable approval on which it depends; APV-01 defines that attributable approval decision. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                         |
+| Founder rationale                    |                                                                                                                                                                |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                        |
+| Future amendment programme reference |                                                                                                                                                                |
 
 ### 4.2 CRA-025
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-025 |
-| Classification | Dependency relationship |
-| Proposition IDs | ATR-09; APV-10 |
-| Source documents | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.3 — Approval Governance |
-| Neutral summary | Amendment-trace content depends on approval evidence where an approval record is applicable. |
-| Supporting evidence | ATR-09 requires an amendment trace to identify an applicable approval reference; APV-10 defines the approval record information that includes that reference and decision evidence. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-025                                                                                                                                                                             |
+| Classification                       | Dependency relationship                                                                                                                                                             |
+| Proposition IDs                      | ATR-09; APV-10                                                                                                                                                                      |
+| Source documents                     | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.3 — Approval Governance                                                                                                    |
+| Neutral summary                      | Amendment-trace content depends on approval evidence where an approval record is applicable.                                                                                        |
+| Supporting evidence                  | ATR-09 requires an amendment trace to identify an applicable approval reference; APV-10 defines the approval record information that includes that reference and decision evidence. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                              |
+| Founder rationale                    |                                                                                                                                                                                     |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                             |
+| Future amendment programme reference |                                                                                                                                                                                     |
 
 ### 4.3 CRA-026
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-026 |
-| Classification | Dependency relationship |
-| Proposition IDs | DGI-14; ATR-01; ATR-03 |
-| Source documents | CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.5 — Amendment Traceability Requirements |
-| Neutral summary | The dependent-impact record expressly depends on an existing amendment trace where one has been established. |
-| Supporting evidence | DGI-14 requires the impact-review record to identify an applicable amendment-trace reference; ATR-01 and ATR-03 define the amendment trace and the relationships it preserves. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Observation ID                       | CRA-026                                                                                                                                                                        |
+| Classification                       | Dependency relationship                                                                                                                                                        |
+| Proposition IDs                      | DGI-14; ATR-01; ATR-03                                                                                                                                                         |
+| Source documents                     | CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.5 — Amendment Traceability Requirements                                                                                |
+| Neutral summary                      | The dependent-impact record expressly depends on an existing amendment trace where one has been established.                                                                   |
+| Supporting evidence                  | DGI-14 requires the impact-review record to identify an applicable amendment-trace reference; ATR-01 and ATR-03 define the amendment trace and the relationships it preserves. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                         |
+| Founder rationale                    |                                                                                                                                                                                |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                        |
+| Future amendment programme reference |                                                                                                                                                                                |
 
 ### 4.4 CRA-027
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-027 |
-| Classification | Dependency relationship |
-| Proposition IDs | VLR-19; APV-22; ATR-03 |
-| Source documents | CGP-02C.12 — Validation Rules; CGP-02C.3 — Approval Governance; CGP-02C.5 — Amendment Traceability Requirements |
-| Neutral summary | A validation conclusion relying on those records depends on their preserved attribution and scope. |
-| Supporting evidence | VLR-19 requires validation to preserve source attribution, scope, status and limitations; APV-22 and ATR-03 define attribution relationships in approval and amendment-trace records. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-027                                                                                                                                                                               |
+| Classification                       | Dependency relationship                                                                                                                                                               |
+| Proposition IDs                      | VLR-19; APV-22; ATR-03                                                                                                                                                                |
+| Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.3 — Approval Governance; CGP-02C.5 — Amendment Traceability Requirements                                                                       |
+| Neutral summary                      | A validation conclusion relying on those records depends on their preserved attribution and scope.                                                                                    |
+| Supporting evidence                  | VLR-19 requires validation to preserve source attribution, scope, status and limitations; APV-22 and ATR-03 define attribution relationships in approval and amendment-trace records. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                |
+| Founder rationale                    |                                                                                                                                                                                       |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                               |
+| Future amendment programme reference |                                                                                                                                                                                       |
 
 ### 4.5 CRA-028
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-028 |
-| Classification | Dependency relationship |
-| Proposition IDs | VLR-20; DGI-03; GSI-05 |
-| Source documents | CGP-02C.12 — Validation Rules; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.11 — Governance Index and Status Integrity |
-| Neutral summary | Validation of dependency integrity relies on separately attributable dependency and status evidence. |
-| Supporting evidence | VLR-20 requires material dependencies to be identified according to attributable status and effect; DGI-03 defines dependency for impact review and GSI-05 bounds represented status to its source. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-028                                                                                                                                                                                             |
+| Classification                       | Dependency relationship                                                                                                                                                                             |
+| Proposition IDs                      | VLR-20; DGI-03; GSI-05                                                                                                                                                                              |
+| Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.11 — Governance Index and Status Integrity                                                                   |
+| Neutral summary                      | Validation of dependency integrity relies on separately attributable dependency and status evidence.                                                                                                |
+| Supporting evidence                  | VLR-20 requires material dependencies to be identified according to attributable status and effect; DGI-03 defines dependency for impact review and GSI-05 bounds represented status to its source. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                              |
+| Founder rationale                    |                                                                                                                                                                                                     |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                             |
+| Future amendment programme reference |                                                                                                                                                                                                     |
 
 ### 4.6 CRA-029
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-029 |
-| Classification | Dependency relationship |
-| Proposition IDs | VLR-21; ATR-03 |
-| Source documents | CGP-02C.12 — Validation Rules; CGP-02C.5 — Amendment Traceability Requirements |
-| Neutral summary | General validation traceability depends on, but does not replace, the amendment-specific trace where applicable. |
-| Supporting evidence | VLR-21 requires an intelligible evidence relationship and states that it supports traceability without replacing Amendment Traceability; ATR-03 defines the amendment-specific relationship. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-029                                                                                                                                                                                      |
+| Classification                       | Dependency relationship                                                                                                                                                                      |
+| Proposition IDs                      | VLR-21; ATR-03                                                                                                                                                                               |
+| Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.5 — Amendment Traceability Requirements                                                                                                               |
+| Neutral summary                      | General validation traceability depends on, but does not replace, the amendment-specific trace where applicable.                                                                             |
+| Supporting evidence                  | VLR-21 requires an intelligible evidence relationship and states that it supports traceability without replacing Amendment Traceability; ATR-03 defines the amendment-specific relationship. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                       |
+| Founder rationale                    |                                                                                                                                                                                              |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                      |
+| Future amendment programme reference |                                                                                                                                                                                              |
 
 ## 5. Batch D — Cross-reference relationships
 
-| Batch field | Value |
-|---|---|
-| Classification | Cross-reference relationships |
-| Observation IDs | CRA-030; CRA-031; CRA-032; CRA-033; CRA-034; CRA-035 |
-| Observation count | 6 |
+| Batch field       | Value                                                |
+| ----------------- | ---------------------------------------------------- |
+| Classification    | Cross-reference relationships                        |
+| Observation IDs   | CRA-030; CRA-031; CRA-032; CRA-033; CRA-034; CRA-035 |
+| Observation count | 6                                                    |
 
 ### 5.1 CRA-030
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-030 |
-| Classification | Cross-reference relationship |
-| Proposition IDs | ATR-11; ACE-12; ACE-13; ACE-14; ACE-15; ACE-16 |
-| Source documents | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.4 — Adoption and Constitutional Effect |
-| Neutral summary | The amendment trace refers to the date concepts established in the adoption and effect treatment. |
-| Supporting evidence | ATR-11 permits only separately established approval, adoption, effective and application dates; ACE-12 through ACE-16 define and distinguish those dates. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                           |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-030                                                                                                                                                   |
+| Classification                       | Cross-reference relationship                                                                                                                              |
+| Proposition IDs                      | ATR-11; ACE-12; ACE-13; ACE-14; ACE-15; ACE-16                                                                                                            |
+| Source documents                     | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.4 — Adoption and Constitutional Effect                                                           |
+| Neutral summary                      | The amendment trace refers to the date concepts established in the adoption and effect treatment.                                                         |
+| Supporting evidence                  | ATR-11 permits only separately established approval, adoption, effective and application dates; ACE-12 through ACE-16 define and distinguish those dates. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                    |
+| Founder rationale                    |                                                                                                                                                           |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                   |
+| Future amendment programme reference |                                                                                                                                                           |
 
 ### 5.2 CRA-031
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-031 |
-| Classification | Cross-reference relationship |
-| Proposition IDs | GSI-18; CRE-12 |
-| Source documents | CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.7 — Conflict Review and Escalation |
-| Neutral summary | Governance-index status integrity expressly cross-refers unresolved constitutional judgment to the conflict boundary. |
-| Supporting evidence | GSI-18 expressly subjects an unresolved representational inconsistency requiring constitutional judgment to the existing Conflict Review and Escalation boundary; CRE-12 defines escalation where incompatible treatments require Governance Authority decision. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                  |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-031                                                                                                                                                                                                                                                          |
+| Classification                       | Cross-reference relationship                                                                                                                                                                                                                                     |
+| Proposition IDs                      | GSI-18; CRE-12                                                                                                                                                                                                                                                   |
+| Source documents                     | CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.7 — Conflict Review and Escalation                                                                                                                                                                   |
+| Neutral summary                      | Governance-index status integrity expressly cross-refers unresolved constitutional judgment to the conflict boundary.                                                                                                                                            |
+| Supporting evidence                  | GSI-18 expressly subjects an unresolved representational inconsistency requiring constitutional judgment to the existing Conflict Review and Escalation boundary; CRE-12 defines escalation where incompatible treatments require Governance Authority decision. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                           |
+| Founder rationale                    |                                                                                                                                                                                                                                                                  |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                          |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                  |
 
 ### 5.3 CRA-032
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-032 |
-| Classification | Cross-reference relationship |
-| Proposition IDs | VLR-16; CRE-12 |
-| Source documents | CGP-02C.12 — Validation Rules; CGP-02C.7 — Conflict Review and Escalation |
-| Neutral summary | Validation Rules expressly refer unresolved constitutional judgment to Conflict Review and Escalation. |
-| Supporting evidence | VLR-16 states that contradictory validation evidence requiring constitutional judgment remains subject to the existing conflict boundary; CRE-12 identifies when unresolved conflict must be escalated. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-032                                                                                                                                                                                                 |
+| Classification                       | Cross-reference relationship                                                                                                                                                                            |
+| Proposition IDs                      | VLR-16; CRE-12                                                                                                                                                                                          |
+| Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.7 — Conflict Review and Escalation                                                                                                                               |
+| Neutral summary                      | Validation Rules expressly refer unresolved constitutional judgment to Conflict Review and Escalation.                                                                                                  |
+| Supporting evidence                  | VLR-16 states that contradictory validation evidence requiring constitutional judgment remains subject to the existing conflict boundary; CRE-12 identifies when unresolved conflict must be escalated. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                  |
+| Founder rationale                    |                                                                                                                                                                                                         |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                 |
+| Future amendment programme reference |                                                                                                                                                                                                         |
 
 ### 5.4 CRA-033
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-033 |
-| Classification | Cross-reference relationship |
-| Proposition IDs | SSR-21; APV-10; ACE-17; ATR-03; DGI-18; CRE-17 |
-| Source documents | CGP-02C.8 — Supersession Rules; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation |
-| Neutral summary | The supersession evidence rule creates explicit reference relationships to five separately defined record classes. |
-| Supporting evidence | SSR-21 expressly permits supersession evidence to reference approval, adoption, amendment-trace, dependent-impact and conflict-disposition records without replacing them. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Observation ID                       | CRA-033                                                                                                                                                                                                                                                      |
+| Classification                       | Cross-reference relationship                                                                                                                                                                                                                                 |
+| Proposition IDs                      | SSR-21; APV-10; ACE-17; ATR-03; DGI-18; CRE-17                                                                                                                                                                                                               |
+| Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation |
+| Neutral summary                      | The supersession evidence rule creates explicit reference relationships to five separately defined record classes.                                                                                                                                           |
+| Supporting evidence                  | SSR-21 expressly permits supersession evidence to reference approval, adoption, amendment-trace, dependent-impact and conflict-disposition records without replacing them.                                                                                   |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                       |
+| Founder rationale                    |                                                                                                                                                                                                                                                              |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                      |
+| Future amendment programme reference |                                                                                                                                                                                                                                                              |
 
 ### 5.5 CRA-034
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-034 |
-| Classification | Cross-reference relationship |
-| Proposition IDs | RWR-20; APV-10; ACE-17; ATR-03; DGI-18; CRE-17; SSR-19 |
-| Source documents | CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules |
-| Neutral summary | The retirement, withdrawal and rejection evidence rule cross-refers six separately defined record classes. |
-| Supporting evidence | RWR-20 expressly permits evidence to reference approval, adoption, amendment-trace, dependent-impact, conflict-disposition and supersession records without replacing them. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-034                                                                                                                                                                                                                                                                                                              |
+| Classification                       | Cross-reference relationship                                                                                                                                                                                                                                                                                         |
+| Proposition IDs                      | RWR-20; APV-10; ACE-17; ATR-03; DGI-18; CRE-17; SSR-19                                                                                                                                                                                                                                                               |
+| Source documents                     | CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules |
+| Neutral summary                      | The retirement, withdrawal and rejection evidence rule cross-refers six separately defined record classes.                                                                                                                                                                                                           |
+| Supporting evidence                  | RWR-20 expressly permits evidence to reference approval, adoption, amendment-trace, dependent-impact, conflict-disposition and supersession records without replacing them.                                                                                                                                          |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                               |
+| Founder rationale                    |                                                                                                                                                                                                                                                                                                                      |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                                              |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                      |
 
 ### 5.6 CRA-035
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-035 |
-| Classification | Cross-reference relationship |
-| Proposition IDs | HPR-17; HPR-18; ATR-03 |
-| Source documents | CGP-02C.10 — Historical Preservation; CGP-02C.5 — Amendment Traceability Requirements |
-| Neutral summary | Historical Preservation expressly refers to Amendment Traceability as a distinct supporting evidence treatment. |
-| Supporting evidence | HPR-17 distinguishes Historical Preservation from amendment traceability; HPR-18 permits an amendment trace to supply evidence without replacement; ATR-03 defines the trace relationship. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Observation ID                       | CRA-035                                                                                                                                                                                    |
+| Classification                       | Cross-reference relationship                                                                                                                                                               |
+| Proposition IDs                      | HPR-17; HPR-18; ATR-03                                                                                                                                                                     |
+| Source documents                     | CGP-02C.10 — Historical Preservation; CGP-02C.5 — Amendment Traceability Requirements                                                                                                      |
+| Neutral summary                      | Historical Preservation expressly refers to Amendment Traceability as a distinct supporting evidence treatment.                                                                            |
+| Supporting evidence                  | HPR-17 distinguishes Historical Preservation from amendment traceability; HPR-18 permits an amendment trace to supply evidence without replacement; ATR-03 defines the trace relationship. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                     |
+| Founder rationale                    |                                                                                                                                                                                            |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                    |
+| Future amendment programme reference |                                                                                                                                                                                            |
 
 ## 6. Batch E — Structural repetition
 
-| Batch field | Value |
-|---|---|
-| Classification | Structural repetition |
-| Observation IDs | CRA-036; CRA-037; CRA-038; CRA-039; CRA-040 |
-| Observation count | 5 |
+| Batch field       | Value                                       |
+| ----------------- | ------------------------------------------- |
+| Classification    | Structural repetition                       |
+| Observation IDs   | CRA-036; CRA-037; CRA-038; CRA-039; CRA-040 |
+| Observation count | 5                                           |
 
 ### 6.1 CRA-036
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-036 |
-| Classification | Structural repetition |
-| Proposition IDs | APV-04; ACE-02; CRE-05; SSR-11; RWR-13; HPR-23; GSI-23; VLR-24 |
-| Source documents | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
-| Neutral summary | A repeated Authority-discipline structure appears across eight constitutional subjects. |
-| Supporting evidence | Each proposition preserves existing Governance Authority and rejects creation of a subject-specific Authority or Authority arising from supporting activity. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-036                                                                                                                                                                                                                                                                                                                                      |
+| Classification                       | Structural repetition                                                                                                                                                                                                                                                                                                                        |
+| Proposition IDs                      | APV-04; ACE-02; CRE-05; SSR-11; RWR-13; HPR-23; GSI-23; VLR-24                                                                                                                                                                                                                                                                               |
+| Source documents                     | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | A repeated Authority-discipline structure appears across eight constitutional subjects.                                                                                                                                                                                                                                                      |
+| Supporting evidence                  | Each proposition preserves existing Governance Authority and rejects creation of a subject-specific Authority or Authority arising from supporting activity.                                                                                                                                                                                 |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                                       |
+| Founder rationale                    |                                                                                                                                                                                                                                                                                                                                              |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                                                                      |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                              |
 
 ### 6.2 CRA-037
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-037 |
-| Classification | Structural repetition |
-| Proposition IDs | APV-10; ATR-06; ATR-08; ATR-09; DGI-14; DGI-15; DGI-16; DGI-18; CRE-14; CRE-15; CRE-16; CRE-17; SSR-19; SSR-20; RWR-17; RWR-18; HPR-10; HPR-11; VLR-10 |
-| Source documents | CGP-02C.3 — Approval Governance; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.12 — Validation Rules |
-| Neutral summary | A minimum-evidence structure recurs across approval, trace, review, disposition, status treatment, preservation and validation records. |
-| Supporting evidence | The propositions repeatedly require identified subject, scope, basis, attribution, date, evidence, conclusion or limitation appropriate to the relevant record. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-037                                                                                                                                                                                                                                                                                                                                   |
+| Classification                       | Structural repetition                                                                                                                                                                                                                                                                                                                     |
+| Proposition IDs                      | APV-10; ATR-06; ATR-08; ATR-09; DGI-14; DGI-15; DGI-16; DGI-18; CRE-14; CRE-15; CRE-16; CRE-17; SSR-19; SSR-20; RWR-17; RWR-18; HPR-10; HPR-11; VLR-10                                                                                                                                                                                    |
+| Source documents                     | CGP-02C.3 — Approval Governance; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | A minimum-evidence structure recurs across approval, trace, review, disposition, status treatment, preservation and validation records.                                                                                                                                                                                                   |
+| Supporting evidence                  | The propositions repeatedly require identified subject, scope, basis, attribution, date, evidence, conclusion or limitation appropriate to the relevant record.                                                                                                                                                                           |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                                    |
+| Founder rationale                    |                                                                                                                                                                                                                                                                                                                                           |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                                                                   |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                           |
 
 ### 6.3 CRA-038
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-038 |
-| Classification | Structural repetition |
-| Proposition IDs | ACE-18; ATR-21; CRE-22; SSR-22; RWR-21; HPR-22; GSI-21; GSI-22; VLR-22; VLR-23 |
-| Source documents | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
-| Neutral summary | A technology-neutral anti-inference structure repeats across eight source documents. |
-| Supporting evidence | Each proposition rejects documentary labels, repositories, implementation, mechanisms or repeated use as independent sources of constitutional status, Authority or effect. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Observation ID                       | CRA-038                                                                                                                                                                                                                                                                                                                                                      |
+| Classification                       | Structural repetition                                                                                                                                                                                                                                                                                                                                        |
+| Proposition IDs                      | ACE-18; ATR-21; CRE-22; SSR-22; RWR-21; HPR-22; GSI-21; GSI-22; VLR-22; VLR-23                                                                                                                                                                                                                                                                               |
+| Source documents                     | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | A technology-neutral anti-inference structure repeats across eight source documents.                                                                                                                                                                                                                                                                         |
+| Supporting evidence                  | Each proposition rejects documentary labels, repositories, implementation, mechanisms or repeated use as independent sources of constitutional status, Authority or effect.                                                                                                                                                                                  |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                                                       |
+| Founder rationale                    |                                                                                                                                                                                                                                                                                                                                                              |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                                                                                      |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                                              |
 
 ### 6.4 CRA-039
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-039 |
-| Classification | Structural repetition |
-| Proposition IDs | AMP-03; APV-03; ACE-03; ATR-13; RWR-16; VLR-13 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.12 — Validation Rules |
-| Neutral summary | A bounded-scope and no-associative-expansion structure recurs across six subjects. |
-| Supporting evidence | Each proposition binds a constitutional act, record, treatment or conclusion to identified content and declared scope and rejects extension by association, analogy or shared documentation. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                        |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-039                                                                                                                                                                                                                                                                                |
+| Classification                       | Structural repetition                                                                                                                                                                                                                                                                  |
+| Proposition IDs                      | AMP-03; APV-03; ACE-03; ATR-13; RWR-16; VLR-13                                                                                                                                                                                                                                         |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | A bounded-scope and no-associative-expansion structure recurs across six subjects.                                                                                                                                                                                                     |
+| Supporting evidence                  | Each proposition binds a constitutional act, record, treatment or conclusion to identified content and declared scope and rejects extension by association, analogy or shared documentation.                                                                                           |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                 |
+| Founder rationale                    |                                                                                                                                                                                                                                                                                        |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                        |
 
 ### 6.5 CRA-040
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-040 |
-| Classification | Structural repetition |
-| Proposition IDs | ACE-20; DGI-08; DGI-12; CRE-08; GSI-12; VLR-15; VLR-16; VLR-17 |
-| Source documents | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
-| Neutral summary | An explicit-uncertainty structure repeats across status, review, conflict, representation and validation subjects. |
-| Supporting evidence | Each proposition requires absent, ambiguous, incomplete, contradictory or unresolved evidence or status to remain explicit rather than be supplied through inference. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                               |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-040                                                                                                                                                                                                                       |
+| Classification                       | Structural repetition                                                                                                                                                                                                         |
+| Proposition IDs                      | ACE-20; DGI-08; DGI-12; CRE-08; GSI-12; VLR-15; VLR-16; VLR-17                                                                                                                                                                |
+| Source documents                     | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | An explicit-uncertainty structure repeats across status, review, conflict, representation and validation subjects.                                                                                                            |
+| Supporting evidence                  | Each proposition requires absent, ambiguous, incomplete, contradictory or unresolved evidence or status to remain explicit rather than be supplied through inference.                                                         |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                        |
+| Founder rationale                    |                                                                                                                                                                                                                               |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                       |
+| Future amendment programme reference |                                                                                                                                                                                                                               |
 
 ## 7. Batch F — Multi-document relationship chains
 
-| Batch field | Value |
-|---|---|
-| Classification | Multi-document relationship chains |
-| Observation IDs | CRA-041; CRA-042; CRA-043; CRA-044; CRA-045 |
-| Observation count | 5 |
+| Batch field       | Value                                       |
+| ----------------- | ------------------------------------------- |
+| Classification    | Multi-document relationship chains          |
+| Observation IDs   | CRA-041; CRA-042; CRA-043; CRA-044; CRA-045 |
+| Observation count | 5                                           |
 
 ### 7.1 CRA-041
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-041 |
-| Classification | Multi-document relationship chain |
-| Proposition IDs | CHB-02; AMC-10; ATR-03; DGI-14; CRE-12 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation |
-| Neutral summary | The propositions form a cross-document chain from change identification through classification, trace, dependent impact and unresolved conflict escalation. |
-| Supporting evidence | CHB-02 identifies change by effect; AMC-10 retains amendment classification despite labels; ATR-03 records the change relationship; DGI-14 connects dependent-impact review to the trace; CRE-12 supplies escalation where incompatible treatments require decision. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-041                                                                                                                                                                                                                                                              |
+| Classification                       | Multi-document relationship chain                                                                                                                                                                                                                                    |
+| Proposition IDs                      | CHB-02; AMC-10; ATR-03; DGI-14; CRE-12                                                                                                                                                                                                                               |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation                    |
+| Neutral summary                      | The propositions form a cross-document chain from change identification through classification, trace, dependent impact and unresolved conflict escalation.                                                                                                          |
+| Supporting evidence                  | CHB-02 identifies change by effect; AMC-10 retains amendment classification despite labels; ATR-03 records the change relationship; DGI-14 connects dependent-impact review to the trace; CRE-12 supplies escalation where incompatible treatments require decision. |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                               |
+| Founder rationale                    |                                                                                                                                                                                                                                                                      |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                              |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                      |
 
 ### 7.2 CRA-042
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-042 |
-| Classification | Multi-document relationship chain |
-| Proposition IDs | GLC-05; GLC-06; APV-01; ACE-01; ACE-05; SSR-01; RWR-01; HPR-12; GSI-11; VLR-20 |
-| Source documents | CGP-02C.2A — Governance Lifecycle; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
-| Neutral summary | A multi-document chain connects constitutional lifecycle acts and status treatments to preservation, representation and validation. |
-| Supporting evidence | The propositions define lifecycle concepts, approval, adoption and effect, later status treatments, historical status context, current-baseline representation and validation of attributable status. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-042                                                                                                                                                                                                                                                                                                                             |
+| Classification                       | Multi-document relationship chain                                                                                                                                                                                                                                                                                                   |
+| Proposition IDs                      | GLC-05; GLC-06; APV-01; ACE-01; ACE-05; SSR-01; RWR-01; HPR-12; GSI-11; VLR-20                                                                                                                                                                                                                                                      |
+| Source documents                     | CGP-02C.2A — Governance Lifecycle; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | A multi-document chain connects constitutional lifecycle acts and status treatments to preservation, representation and validation.                                                                                                                                                                                                 |
+| Supporting evidence                  | The propositions define lifecycle concepts, approval, adoption and effect, later status treatments, historical status context, current-baseline representation and validation of attributable status.                                                                                                                               |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                              |
+| Founder rationale                    |                                                                                                                                                                                                                                                                                                                                     |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                                                             |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                     |
 
 ### 7.3 CRA-043
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-043 |
-| Classification | Multi-document relationship chain |
-| Proposition IDs | GVR-02; RTP-03; RTP-04; RTP-05; DGI-05; CRE-04; VLR-04; VLR-05 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2C — Review Triggers and Proportionality; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.12 — Validation Rules |
-| Neutral summary | The propositions form a review-and-validation chain from general review through triggers and specialized review treatments to validation. |
-| Supporting evidence | GVR-02 defines review considerations; RTP-03 through RTP-05 identify review bases; DGI-05 and CRE-04 define specialized analytical reviews; VLR-04 and VLR-05 distinguish validation while allowing reciprocal evidence relationships. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Observation ID                       | CRA-043                                                                                                                                                                                                                                    |
+| Classification                       | Multi-document relationship chain                                                                                                                                                                                                          |
+| Proposition IDs                      | GVR-02; RTP-03; RTP-04; RTP-05; DGI-05; CRE-04; VLR-04; VLR-05                                                                                                                                                                             |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2C — Review Triggers and Proportionality; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | The propositions form a review-and-validation chain from general review through triggers and specialized review treatments to validation.                                                                                                  |
+| Supporting evidence                  | GVR-02 defines review considerations; RTP-03 through RTP-05 identify review bases; DGI-05 and CRE-04 define specialized analytical reviews; VLR-04 and VLR-05 distinguish validation while allowing reciprocal evidence relationships.     |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                     |
+| Founder rationale                    |                                                                                                                                                                                                                                            |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                    |
+| Future amendment programme reference |                                                                                                                                                                                                                                            |
 
 ### 7.4 CRA-044
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-044 |
-| Classification | Multi-document relationship chain |
-| Proposition IDs | AMP-07; AMC-12; ATR-22; HPR-01; HPR-02; GSI-13; GSI-15 |
-| Source documents | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity |
-| Neutral summary | The propositions form a historical-intelligibility chain from amendment and classification through trace, preservation and representation. |
-| Supporting evidence | AMP-07 and AMC-12 require historical intelligibility; ATR-22 preserves prior and changed positions; HPR-01 and HPR-02 define preservation and its purpose; GSI-13 and GSI-15 retain attributable historical representation context. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                 |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-044                                                                                                                                                                                                                                         |
+| Classification                       | Multi-document relationship chain                                                                                                                                                                                                               |
+| Proposition IDs                      | AMP-07; AMC-12; ATR-22; HPR-01; HPR-02; GSI-13; GSI-15                                                                                                                                                                                          |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity |
+| Neutral summary                      | The propositions form a historical-intelligibility chain from amendment and classification through trace, preservation and representation.                                                                                                      |
+| Supporting evidence                  | AMP-07 and AMC-12 require historical intelligibility; ATR-22 preserves prior and changed positions; HPR-01 and HPR-02 define preservation and its purpose; GSI-13 and GSI-15 retain attributable historical representation context.             |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                          |
+| Founder rationale                    |                                                                                                                                                                                                                                                 |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                         |
+| Future amendment programme reference |                                                                                                                                                                                                                                                 |
 
 ### 7.5 CRA-045
 
-| Field | Review content or Founder entry |
-|---|---|
-| Observation ID | CRA-045 |
-| Classification | Multi-document relationship chain |
-| Proposition IDs | APV-22; ATR-03; DGI-18; CRE-16; SSR-19; RWR-17; HPR-10; GSI-05; VLR-19 |
-| Source documents | CGP-02C.3 — Approval Governance; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
-| Neutral summary | The propositions form an attribution-and-evidence continuity chain across nine bounded constitutional subjects. |
-| Supporting evidence | Each proposition preserves attribution, scope, date, source, status or limitation for a constitutional decision, record, review, treatment, representation or validation conclusion. |
-| Founder disposition | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification |
-| Founder rationale | |
-| Amendment follow-up required | ☐ Yes &nbsp;&nbsp; ☐ No |
-| Future amendment programme reference | |
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-045                                                                                                                                                                                                                                                                                                                                                                                       |
+| Classification                       | Multi-document relationship chain                                                                                                                                                                                                                                                                                                                                                             |
+| Proposition IDs                      | APV-22; ATR-03; DGI-18; CRE-16; SSR-19; RWR-17; HPR-10; GSI-05; VLR-19                                                                                                                                                                                                                                                                                                                        |
+| Source documents                     | CGP-02C.3 — Approval Governance; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules |
+| Neutral summary                      | The propositions form an attribution-and-evidence continuity chain across nine bounded constitutional subjects.                                                                                                                                                                                                                                                                               |
+| Supporting evidence                  | Each proposition preserves attribution, scope, date, source, status or limitation for a constitutional decision, record, review, treatment, representation or validation conclusion.                                                                                                                                                                                                          |
+| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                                                                                        |
+| Founder rationale                    |                                                                                                                                                                                                                                                                                                                                                                                               |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                                                                                                                       |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ## 8. Batch and Disposition Summary
 
-| Batch | Classification | Observations | Accept | Reject | Defer | Needs clarification | Unresolved |
-|---|---|---:|---:|---:|---:|---:|---:|
-| A | Partial overlaps | 10 | 0 | 0 | 0 | 0 | 10 |
-| B | Complementary propositions | 13 | 0 | 0 | 0 | 0 | 13 |
-| C | Dependency relationships | 6 | 0 | 0 | 0 | 0 | 6 |
-| D | Cross-reference relationships | 6 | 0 | 0 | 0 | 0 | 6 |
-| E | Structural repetition | 5 | 0 | 0 | 0 | 0 | 5 |
-| F | Multi-document relationship chains | 5 | 0 | 0 | 0 | 0 | 5 |
-| Total | Six classifications | 45 | 0 | 0 | 0 | 0 | 45 |
+| Batch | Classification                     | Observations | Accept | Reject | Defer | Needs clarification | Unresolved |
+| ----- | ---------------------------------- | -----------: | -----: | -----: | ----: | ------------------: | ---------: |
+| A     | Partial overlaps                   |           10 |     10 |      0 |     0 |                   0 |          0 |
+| B     | Complementary propositions         |           13 |      0 |      0 |     0 |                   0 |         13 |
+| C     | Dependency relationships           |            6 |      0 |      0 |     0 |                   0 |          6 |
+| D     | Cross-reference relationships      |            6 |      0 |      0 |     0 |                   0 |          6 |
+| E     | Structural repetition              |            5 |      0 |      0 |     0 |                   0 |          5 |
+| F     | Multi-document relationship chains |            5 |      0 |      0 |     0 |                   0 |          5 |
+| Total | Six classifications                |           45 |     10 |      0 |     0 |                   0 |         35 |
 
 ## 9. Register Non-Effects
 

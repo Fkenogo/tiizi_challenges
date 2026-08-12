@@ -2,13 +2,13 @@
 
 ## Document Control
 
-| Field | Value |
-|---|---|
-| Work package | CGP-02C.13 — Whole-Instrument Consolidation |
-| Execution phase | Phase 2D — Founder Constitutional Review and Observation Disposition |
-| Review report | [Founder Constitutional Review Report](CGP-02C-13-FOUNDER-CONSTITUTIONAL-REVIEW-REPORT.md) |
-| Disposition register | [Observation Disposition Register](CGP-02C-13-OBSERVATION-DISPOSITION-REGISTER.md) |
-| Status | Ready for Founder Review — 45 Dispositions Unresolved |
+| Field                | Value                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| Work package         | CGP-02C.13 — Whole-Instrument Consolidation                                                |
+| Execution phase      | Phase 2D — Founder Constitutional Review and Observation Disposition                       |
+| Review report        | [Founder Constitutional Review Report](CGP-02C-13-FOUNDER-CONSTITUTIONAL-REVIEW-REPORT.md) |
+| Disposition register | [Observation Disposition Register](CGP-02C-13-OBSERVATION-DISPOSITION-REGISTER.md)         |
+| Status               | Founder Review In Progress — Batch A Dispositions Recorded                                 |
 
 ## 1. Executive Result
 
@@ -16,15 +16,15 @@ The Founder Constitutional Review package presents all 45 validated Phase 2C obs
 
 ## 2. Package State
 
-| Measure | Result |
-|---|---:|
-| Observations represented | 45/45 |
-| Unique Observation IDs | 45/45 |
+| Measure                         |  Result |
+| ------------------------------- | ------: |
+| Observations represented        |   45/45 |
+| Unique Observation IDs          |   45/45 |
 | Proposition citations validated | 188/188 |
-| Founder dispositions recorded | 0 |
-| Unresolved Founder dispositions | 45 |
-| Constitutional wording changes | 0 |
-| Proposition identifier changes | 0 |
+| Founder dispositions recorded   |      10 |
+| Unresolved Founder dispositions |      35 |
+| Constitutional wording changes  |       0 |
+| Proposition identifier changes  |       0 |
 
 ## 3. Disposition Boundary
 
