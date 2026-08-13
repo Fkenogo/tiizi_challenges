@@ -8,7 +8,7 @@
 | Execution phase      | Phase 2D — Founder Constitutional Review and Observation Disposition                       |
 | Review report        | [Founder Constitutional Review Report](CGP-02C-13-FOUNDER-CONSTITUTIONAL-REVIEW-REPORT.md) |
 | Disposition register | [Observation Disposition Register](CGP-02C-13-OBSERVATION-DISPOSITION-REGISTER.md)         |
-| Status               | Validation Passed — Batch A Dispositions Recorded                                          |
+| Status               | Validation Passed — Batches A and B Dispositions Recorded                                  |
 
 ## 1. Validation Result
 
@@ -40,7 +40,7 @@
 | Founder rationale                    | Blank field for every observation          | Pass — 45/45         |
 | Amendment follow-up required         | Unchecked Yes and No for every observation | Pass — 45/45         |
 | Future amendment programme reference | Blank field for every observation          | Pass — 45/45         |
-| Founder dispositions recorded        | None                                       | Pass — 45 unresolved |
+| Founder dispositions recorded        | 23 recorded / 22 unresolved                   | Pass — 23/22        |
 
 ## 4. Constitutional Integrity
 
@@ -81,4 +81,4 @@
 
 ## 7. Validation Conclusion
 
-The package is complete for Founder disposition recording. It contains no recorded Founder decision and creates no constitutional change.
+The package is complete for Founder disposition recording. Batches A and B (CRA-001 through CRA-023) are recorded; Batches C through F (CRA-024 through CRA-045) remain unresolved.

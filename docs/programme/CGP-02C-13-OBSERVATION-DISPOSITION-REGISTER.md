@@ -10,7 +10,7 @@
 | Source observations     | [Constitutional Observation Register](CGP-02C-13-CONSTITUTIONAL-OBSERVATION-REGISTER.md) |
 | Source register SHA-256 | `fd004e6ec262d70d8fc34085d946f2b38d528501731741fd3493fb4e58f541ed`                       |
 | Preparation timestamp   | `2026-07-25T17:33:19+02:00`                                                              |
-| Status                  | Founder Review In Progress — Batch A Dispositions Recorded (CRA-001–CRA-010)             |
+| Status                  | Founder Review In Progress — Batches A and B Dispositions Recorded (CRA-001–CRA-023)         |
 | Observations            | 45                                                                                       |
 
 ## 1. Recording Boundary
@@ -22,6 +22,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 ## 2. Founder Observation Dispositions
 
 ### 2.1 CRA-001
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -38,6 +39,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.2 CRA-002
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-002                                                                                                                                                                                                                                                                                                       |
@@ -52,6 +54,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                                                               |
 
 ### 2.3 CRA-003
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,6 +71,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.4 CRA-004
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                       |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-004                                                                                                                                                                                                                                                               |
@@ -82,6 +86,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                       |
 
 ### 2.5 CRA-005
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -98,6 +103,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.6 CRA-006
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                        |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-006                                                                                                                                                                                                                                                                                                                                |
@@ -112,6 +118,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                        |
 
 ### 2.7 CRA-007
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                     |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -128,6 +135,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.8 CRA-008
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                     |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-008                                                                                                                                                                                                                                                                                             |
@@ -142,6 +150,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                                                     |
 
 ### 2.9 CRA-009
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                   |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -158,6 +167,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.10 CRA-010
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-010                                                                                                                                                                                                                                                                                                                                                                         |
@@ -173,20 +183,22 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.11 CRA-011
 
-| Field                                | Review content or Founder entry                                                                                                                                                               |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Observation ID                       | CRA-011                                                                                                                                                                                       |
-| Classification                       | Complementary propositions                                                                                                                                                                    |
-| Proposition IDs                      | CHB-01; AMC-09                                                                                                                                                                                |
-| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification                                                                                          |
-| Neutral summary                      | The change boundary and the meaning-changing classification describe connected parts of the same change-identification concept.                                                               |
-| Supporting evidence                  | CHB-01 identifies a constitutional change by effect on what exists or why it exists and on listed constitutional elements; AMC-09 uses the same effects to define Meaning-Changing Amendment. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                        |
-| Founder rationale                    |                                                                                                                                                                                               |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                       |
-| Future amendment programme reference |                                                                                                                                                                                               |
+
+| Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observation ID                       | CRA-011                                                                                                                                                                                                                                                                                                                                            |
+| Classification                       | Complementary propositions                                                                                                                                                                                                                                                                                                                         |
+| Proposition IDs                      | CHB-01; AMC-09                                                                                                                                                                                                                                                                                                                                     |
+| Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification                                                                                                                                                                                                                                               |
+| Neutral summary                      | The change boundary and the meaning-changing classification describe connected parts of the same change-identification concept.                                                                                                                                                                                                                    |
+| Supporting evidence                  | CHB-01 identifies a constitutional change by effect on what exists or why it exists and on listed constitutional elements; AMC-09 uses the same effects to define Meaning-Changing Amendment.                                                                                                                                                      |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                                                             |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                                                            |
+| Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                                    |
 
 ### 2.12 CRA-012
+
 
 | Field                                | Review content or Founder entry                                                                                                                                            |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -196,12 +208,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.1 — Constitutional Framework and Amendment Principles; CGP-02C.2B — Amendment Classification                                                                       |
 | Neutral summary                      | The propositions supply complementary vocabulary for preserved and changed constitutional meaning.                                                                         |
 | Supporting evidence                  | CHB-04 distinguishes clarification preserving meaning from changed meaning; AMC-07 bounds Meaning-Preserving Maintenance and AMC-09 identifies Meaning-Changing Amendment. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                     |
-| Founder rationale                    |                                                                                                                                                                            |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                    |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                     |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                    |
 | Future amendment programme reference |                                                                                                                                                                            |
 
 ### 2.13 CRA-013
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                      |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -211,12 +224,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.2A — Governance Lifecycle; CGP-02C.3 — Approval Governance                                                                                                                                                   |
 | Neutral summary                      | The lifecycle vocabulary and subject-specific approval treatment occupy different levels of detail.                                                                                                                  |
 | Supporting evidence                  | GLC-05 supplies the lifecycle concept of approval while deferring procedure and evidence; APV-01 supplies the detailed constitutional meaning of approval as an explicit attributable Governance Authority decision. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                               |
-| Founder rationale                    |                                                                                                                                                                                                                      |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                              |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                               |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                              |
 | Future amendment programme reference |                                                                                                                                                                                                                      |
 
 ### 2.14 CRA-014
+
 
 | Field                                | Review content or Founder entry                                                                                                   |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -226,12 +240,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.2A — Governance Lifecycle; CGP-02C.4 — Adoption and Constitutional Effect                                                 |
 | Neutral summary                      | The later adoption propositions provide the subject treatment anticipated by the lifecycle distinction.                           |
 | Supporting evidence                  | GLC-06 identifies adoption as distinct and defers its meaning; ACE-01 defines adoption and ACE-09 distinguishes it from approval. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                            |
-| Founder rationale                    |                                                                                                                                   |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                           |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                            |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                           |
 | Future amendment programme reference |                                                                                                                                   |
 
 ### 2.15 CRA-015
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                              |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -241,12 +256,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect                                                                                                              |
 | Neutral summary                      | The propositions connect approval and adoption while preserving their separate constitutional meanings.                                                                                      |
 | Supporting evidence                  | APV-01 defines approval; ACE-09 distinguishes approval from adoption; ACE-10 states that approval does not itself establish adoption and adoption does not exceed its attributable approval. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                       |
-| Founder rationale                    |                                                                                                                                                                                              |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                      |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                       |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                      |
 | Future amendment programme reference |                                                                                                                                                                                              |
 
 ### 2.16 CRA-016
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -256,12 +272,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.2A — Governance Lifecycle; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.11 — Governance Index and Status Integrity                                                                         |
 | Neutral summary                      | The three propositions address complementary boundaries among lifecycle labels, constitutional effect and documentary representation.                                                                         |
 | Supporting evidence                  | GLC-10 distinguishes document status from effect; ACE-17 distinguishes status representation from creation of adoption or effect; GSI-07 distinguishes constitutional status from documentary representation. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                        |
-| Founder rationale                    |                                                                                                                                                                                                               |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                       |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                        |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                       |
 | Future amendment programme reference |                                                                                                                                                                                                               |
 
 ### 2.17 CRA-017
+
 
 | Field                                | Review content or Founder entry                                                                                                                                        |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -271,12 +288,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review                                                                        |
 | Neutral summary                      | The records have different subjects while connecting through the amendment and its dependent consequences.                                                             |
 | Supporting evidence                  | ATR-03 preserves the relationship among source governance, change, scope, decision and status; DGI-19 distinguishes an impact-review record from that amendment trace. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                 |
-| Founder rationale                    |                                                                                                                                                                        |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                 |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                |
 | Future amendment programme reference |                                                                                                                                                                        |
 
 ### 2.18 CRA-018
+
 
 | Field                                | Review content or Founder entry                                                                                                                        |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -286,12 +304,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation                                                             |
 | Neutral summary                      | The propositions apply the analytical-versus-decisional boundary to different review subjects.                                                         |
 | Supporting evidence                  | Both describe their review treatment as analytical and state that it does not itself amend, approve, adopt, supersede or create constitutional effect. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                 |
-| Founder rationale                    |                                                                                                                                                        |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                 |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                |
 | Future amendment programme reference |                                                                                                                                                        |
 
 ### 2.19 CRA-019
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                     |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -301,12 +320,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules                                                                                                                          |
 | Neutral summary                      | Conflict identification, conflict disposition and supersession are presented as distinct constitutional treatments.                                                                                 |
 | Supporting evidence                  | CRE-09 states that conflict identification does not displace governance; SSR-09 states that a conflict disposition establishes supersession only where the attributable decision expressly does so. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                              |
-| Founder rationale                    |                                                                                                                                                                                                     |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                             |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                              |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                             |
 | Future amendment programme reference |                                                                                                                                                                                                     |
 
 ### 2.20 CRA-020
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                       |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -316,12 +336,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.9 — Retirement, Withdrawal and Rejection Rules                                                                                                                                |
 | Neutral summary                      | The propositions define four distinct treatments for replacement, retirement, withdrawal and rejection.                                                                                                               |
 | Supporting evidence                  | SSR-01 defines replacement by identified governance; RWR-01 defines ending a current position without replacement; RWR-03 removes pending governance from consideration; RWR-05 records a negative approval decision. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                |
-| Founder rationale                    |                                                                                                                                                                                                                       |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                               |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                |
+| Founder rationale                    | Accept. The observation accurately identifies replacement, retirement, withdrawal and rejection as distinct constitutional treatments with separate functions. Preserving their separate definitions avoids conflation. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                               |
 | Future amendment programme reference |                                                                                                                                                                                                                       |
 
 ### 2.21 CRA-021
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -331,12 +352,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.10 — Historical Preservation                                                                                                                  |
 | Neutral summary                      | The status treatment and its later historical intelligibility are separate but complementary.                                                                                                                 |
 | Supporting evidence                  | RWR-23 requires treated governance to remain historically identifiable; HPR-20 states that Historical Preservation retains the meaning and context of those treatments without establishing or changing them. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                        |
-| Founder rationale                    |                                                                                                                                                                                                               |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                       |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                        |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                       |
 | Future amendment programme reference |                                                                                                                                                                                                               |
 
 ### 2.22 CRA-022
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                            |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -346,12 +368,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.10 — Historical Preservation; CGP-02C.11 — Governance Index and Status Integrity                                                                                                                   |
 | Neutral summary                      | Attributable current status and its documentary representation are treated as connected but distinct.                                                                                                      |
 | Supporting evidence                  | HPR-14 identifies current governance through attributable treatment; GSI-10 identifies what a current-baseline representation must distinguish; GSI-11 separates current from listed non-current statuses. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                     |
-| Founder rationale                    |                                                                                                                                                                                                            |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                    |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                     |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                    |
 | Future amendment programme reference |                                                                                                                                                                                                            |
 
 ### 2.23 CRA-023
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                           |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -361,12 +384,13 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.12 — Validation Rules                                                                                                                                                         |
 | Neutral summary                      | The propositions address different forms of documentary or evidentiary inconsistency while preserving their non-decisional effect.                                                                                                        |
 | Supporting evidence                  | GSI-17 identifies stale, incomplete or inconsistent representation as a documentary defect without constitutional change; VLR-16 preserves contradictory validation evidence and refers constitutional judgment to the conflict boundary. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                    |
-| Founder rationale                    |                                                                                                                                                                                                                                           |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                   |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                    |
+| Founder rationale                    | Accept. The observed relationship is accurate and reflects useful constitutional complementarity or necessary separation of constitutional responsibilities. The propositions perform distinct functions and remain independently useful in their respective contexts. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                   |
 | Future amendment programme reference |                                                                                                                                                                                                                                           |
 
 ### 2.24 CRA-024
+
 
 | Field                                | Review content or Founder entry                                                                                                                                |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -383,6 +407,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.25 CRA-025
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                     |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-025                                                                                                                                                                             |
@@ -397,6 +422,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                     |
 
 ### 2.26 CRA-026
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -413,6 +439,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.27 CRA-027
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                       |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-027                                                                                                                                                                               |
@@ -427,6 +454,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                       |
 
 ### 2.28 CRA-028
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                     |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -443,6 +471,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.29 CRA-029
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                              |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-029                                                                                                                                                                                      |
@@ -457,6 +486,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                              |
 
 ### 2.30 CRA-030
+
 
 | Field                                | Review content or Founder entry                                                                                                                           |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -473,6 +503,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.31 CRA-031
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                  |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-031                                                                                                                                                                                                                                                          |
@@ -487,6 +518,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                  |
 
 ### 2.32 CRA-032
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                         |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -503,6 +535,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.33 CRA-033
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                              |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Observation ID                       | CRA-033                                                                                                                                                                                                                                                      |
@@ -517,6 +550,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                              |
 
 ### 2.34 CRA-034
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                      |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -533,6 +567,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.35 CRA-035
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                            |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Observation ID                       | CRA-035                                                                                                                                                                                    |
@@ -547,6 +582,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                            |
 
 ### 2.36 CRA-036
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -563,6 +599,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.37 CRA-037
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-037                                                                                                                                                                                                                                                                                                                                   |
@@ -577,6 +614,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                                                                                           |
 
 ### 2.38 CRA-038
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -593,6 +631,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.39 CRA-039
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                        |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-039                                                                                                                                                                                                                                                                                |
@@ -607,6 +646,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                                        |
 
 ### 2.40 CRA-040
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                               |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -623,6 +663,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.41 CRA-041
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                      |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-041                                                                                                                                                                                                                                                              |
@@ -637,6 +678,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                                      |
 
 ### 2.42 CRA-042
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                     |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -653,6 +695,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.43 CRA-043
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                            |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Observation ID                       | CRA-043                                                                                                                                                                                                                                    |
@@ -668,6 +711,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 ### 2.44 CRA-044
 
+
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                 |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Observation ID                       | CRA-044                                                                                                                                                                                                                                         |
@@ -682,6 +726,7 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Future amendment programme reference |                                                                                                                                                                                                                                                 |
 
 ### 2.45 CRA-045
+
 
 | Field                                | Review content or Founder entry                                                                                                                                                                                                                                                                                                                                                               |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -700,11 +745,11 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 | Disposition         | Count |
 | ------------------- | ----: |
-| Accept              |    10 |
+| Accept              |    23 |
 | Reject              |     0 |
 | Defer               |     0 |
 | Needs clarification |     0 |
-| Unresolved          |    35 |
+| Unresolved          |    22 |
 
 ## 4. Register Non-Effects
 
