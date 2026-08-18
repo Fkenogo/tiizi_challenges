@@ -10,7 +10,7 @@
 | Source observations     | [Constitutional Observation Register](CGP-02C-13-CONSTITUTIONAL-OBSERVATION-REGISTER.md) |
 | Source register SHA-256 | `fd004e6ec262d70d8fc34085d946f2b38d528501731741fd3493fb4e58f541ed`                       |
 | Preparation timestamp   | `2026-07-25T17:48:56+02:00`                                                              |
-| Status                  | Founder Review In Progress — Batches A, B and C Dispositions Recorded (CRA-001–CRA-029)     |
+| Status                  | Founder Review In Progress — Batches A, B, C and D Dispositions Recorded (CRA-001–CRA-035) |
 | Batches                 | 6                                                                                        |
 | Observations            | 45                                                                                       |
 
@@ -18,7 +18,7 @@
 
 This register organizes the existing 45 observations by relationship classification. It preserves every Observation ID, proposition citation, neutral summary and supporting-evidence statement.
 
-All Founder disposition, rationale, amendment-follow-up and future programme-reference fields remain uncompleted. Batch placement does not rank or constitutionally disposition an observation.
+Dispositions for CRA-001 through CRA-035 have been recorded; CRA-036 through CRA-045 remain unresolved. Future amendment programme references remain blank unless separately established. Batch placement does not rank or constitutionally disposition an observation.
 
 ## 2. Batch A — Partial overlaps
 
@@ -527,9 +527,9 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 | Source documents                     | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.4 — Adoption and Constitutional Effect                                                           |
 | Neutral summary                      | The amendment trace refers to the date concepts established in the adoption and effect treatment.                                                         |
 | Supporting evidence                  | ATR-11 permits only separately established approval, adoption, effective and application dates; ACE-12 through ACE-16 define and distinguish those dates. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                    |
-| Founder rationale                    |                                                                                                                                                           |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                   |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                    |
+| Founder rationale                    | Accept. The cross-reference is accurate, explicit and adequately bounded. The amendment trace records only separately attributable dates and cannot create, supply or reconcile a missing or ambiguous date. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                   |
 | Future amendment programme reference |                                                                                                                                                           |
 
 ### 5.2 CRA-031
@@ -543,9 +543,9 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 | Source documents                     | CGP-02C.11 — Governance Index and Status Integrity; CGP-02C.7 — Conflict Review and Escalation                                                                                                                                                                   |
 | Neutral summary                      | Governance-index status integrity expressly cross-refers unresolved constitutional judgment to the conflict boundary.                                                                                                                                            |
 | Supporting evidence                  | GSI-18 expressly subjects an unresolved representational inconsistency requiring constitutional judgment to the existing Conflict Review and Escalation boundary; CRE-12 defines escalation where incompatible treatments require Governance Authority decision. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                           |
-| Founder rationale                    |                                                                                                                                                                                                                                                                  |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                          |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                           |
+| Founder rationale                    | Accept. The cross-reference accurately routes unresolved constitutional judgment to the existing Conflict Review and Escalation boundary without creating a conflict decision or transferring Governance Authority. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                          |
 | Future amendment programme reference |                                                                                                                                                                                                                                                                  |
 
 ### 5.3 CRA-032
@@ -559,9 +559,9 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 | Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.7 — Conflict Review and Escalation                                                                                                                               |
 | Neutral summary                      | Validation Rules expressly refer unresolved constitutional judgment to Conflict Review and Escalation.                                                                                                  |
 | Supporting evidence                  | VLR-16 states that contradictory validation evidence requiring constitutional judgment remains subject to the existing conflict boundary; CRE-12 identifies when unresolved conflict must be escalated. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                  |
-| Founder rationale                    |                                                                                                                                                                                                         |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                 |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                  |
+| Founder rationale                    | Accept. The cross-reference accurately routes unresolved constitutional judgment to the existing Conflict Review and Escalation boundary without creating a conflict decision or transferring Governance Authority. No constitutional defect is evident and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                 |
 | Future amendment programme reference |                                                                                                                                                                                                         |
 
 ### 5.4 CRA-033
@@ -575,9 +575,9 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 | Source documents                     | CGP-02C.8 — Supersession Rules; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation |
 | Neutral summary                      | The supersession evidence rule creates explicit reference relationships to five separately defined record classes.                                                                                                                                           |
 | Supporting evidence                  | SSR-21 expressly permits supersession evidence to reference approval, adoption, amendment-trace, dependent-impact and conflict-disposition records without replacing them.                                                                                   |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                       |
-| Founder rationale                    |                                                                                                                                                                                                                                                              |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                      |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                       |
+| Founder rationale                    | Accept. The cross-reference accurately permits bounded evidentiary reference to separately defined record classes while expressly preserving their independence, status and scope. Reference does not replace a record, create constitutional status or enlarge scope. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                      |
 | Future amendment programme reference |                                                                                                                                                                                                                                                              |
 
 ### 5.5 CRA-034
@@ -591,9 +591,9 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 | Source documents                     | CGP-02C.9 — Retirement, Withdrawal and Rejection Rules; CGP-02C.3 — Approval Governance; CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.7 — Conflict Review and Escalation; CGP-02C.8 — Supersession Rules |
 | Neutral summary                      | The retirement, withdrawal and rejection evidence rule cross-refers six separately defined record classes.                                                                                                                                                                                                           |
 | Supporting evidence                  | RWR-20 expressly permits evidence to reference approval, adoption, amendment-trace, dependent-impact, conflict-disposition and supersession records without replacing them.                                                                                                                                          |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                               |
-| Founder rationale                    |                                                                                                                                                                                                                                                                                                                      |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                                                                                                                                              |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                                                                                                                                               |
+| Founder rationale                    | Accept. The cross-reference accurately permits bounded evidentiary reference to separately defined record classes while expressly preserving their independence, status and scope. Reference does not replace a record, create constitutional status or enlarge scope. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                                                                                                                                              |
 | Future amendment programme reference |                                                                                                                                                                                                                                                                                                                      |
 
 ### 5.6 CRA-035
@@ -607,9 +607,9 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 | Source documents                     | CGP-02C.10 — Historical Preservation; CGP-02C.5 — Amendment Traceability Requirements                                                                                                      |
 | Neutral summary                      | Historical Preservation expressly refers to Amendment Traceability as a distinct supporting evidence treatment.                                                                            |
 | Supporting evidence                  | HPR-17 distinguishes Historical Preservation from amendment traceability; HPR-18 permits an amendment trace to supply evidence without replacement; ATR-03 defines the trace relationship. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                     |
-| Founder rationale                    |                                                                                                                                                                                            |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                    |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                     |
+| Founder rationale                    | Accept. The cross-reference accurately preserves Historical Preservation and Amendment Traceability as distinct constitutional treatments while permitting bounded evidentiary support between them. Neither treatment replaces the other or creates status absent from attributable sources. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                    |
 | Future amendment programme reference |                                                                                                                                                                                            |
 
 ## 6. Batch E — Structural repetition
@@ -795,11 +795,11 @@ All Founder disposition, rationale, amendment-follow-up and future programme-ref
 | A     | Partial overlaps                   |           10 |     10 |      0 |     0 |                   0 |          0 |
 | B     | Complementary propositions         |           13 |     13 |      0 |     0 |                   0 |          0 |
 | C     | Dependency relationships           |            6 |      6 |      0 |     0 |                   0 |          0 |
-| D     | Cross-reference relationships      |            6 |      0 |      0 |     0 |                   0 |          6 |
+| D     | Cross-reference relationships      |            6 |      6 |      0 |     0 |                   0 |          0 |
 | E     | Structural repetition              |            5 |      0 |      0 |     0 |                   0 |          5 |
 | F     | Multi-document relationship chains |            5 |      0 |      0 |     0 |                   0 |          5 |
-| Total | Six classifications                |           45 |     29 |      0 |     0 |                   0 |         16 |
+| Total | Six classifications                |           45 |     35 |      0 |     0 |                   0 |         10 |
 
 ## 9. Register Non-Effects
 
-This unresolved register creates no Founder decision, constitutional amendment, proposition change, programme update or constitutional effect.
+This register records Founder dispositions for CRA-001 through CRA-035. Recording a disposition creates no constitutional amendment, approval, adoption or effect, modifies no proposition and establishes no future amendment programme.
