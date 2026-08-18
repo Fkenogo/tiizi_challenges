@@ -10,7 +10,7 @@
 | Source observations     | [Constitutional Observation Register](CGP-02C-13-CONSTITUTIONAL-OBSERVATION-REGISTER.md) |
 | Source register SHA-256 | `fd004e6ec262d70d8fc34085d946f2b38d528501731741fd3493fb4e58f541ed`                       |
 | Preparation timestamp   | `2026-07-25T17:33:19+02:00`                                                              |
-| Status                  | Founder Review In Progress — Batches A and B Dispositions Recorded (CRA-001–CRA-023)         |
+| Status                  | Founder Review In Progress — Batches A, B and C Dispositions Recorded (CRA-001–CRA-029)     |
 | Observations            | 45                                                                                       |
 
 ## 1. Recording Boundary
@@ -400,9 +400,9 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.4 — Adoption and Constitutional Effect; CGP-02C.3 — Approval Governance                                                                                |
 | Neutral summary                      | The adoption boundary expressly depends on separately established approval.                                                                                    |
 | Supporting evidence                  | ACE-10 states that adoption does not approve content beyond the attributable approval on which it depends; APV-01 defines that attributable approval decision. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                         |
-| Founder rationale                    |                                                                                                                                                                |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                        |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                         |
+| Founder rationale                    | Accept. The observed dependency is accurate, one-way and adequately bounded by the existing constitutional treatment. It does not create circularity, hidden authority, evidence substitution, status normalization or sequencing ambiguity. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                        |
 | Future amendment programme reference |                                                                                                                                                                |
 
 ### 2.25 CRA-025
@@ -416,9 +416,9 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.5 — Amendment Traceability Requirements; CGP-02C.3 — Approval Governance                                                                                                    |
 | Neutral summary                      | Amendment-trace content depends on approval evidence where an approval record is applicable.                                                                                        |
 | Supporting evidence                  | ATR-09 requires an amendment trace to identify an applicable approval reference; APV-10 defines the approval record information that includes that reference and decision evidence. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                              |
-| Founder rationale                    |                                                                                                                                                                                     |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                             |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                              |
+| Founder rationale                    | Accept. The observed dependency is accurate, one-way and adequately bounded by the existing constitutional treatment. It does not create circularity, hidden authority, evidence substitution, status normalization or sequencing ambiguity. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                             |
 | Future amendment programme reference |                                                                                                                                                                                     |
 
 ### 2.26 CRA-026
@@ -432,9 +432,9 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.5 — Amendment Traceability Requirements                                                                                |
 | Neutral summary                      | The dependent-impact record expressly depends on an existing amendment trace where one has been established.                                                                   |
 | Supporting evidence                  | DGI-14 requires the impact-review record to identify an applicable amendment-trace reference; ATR-01 and ATR-03 define the amendment trace and the relationships it preserves. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                         |
-| Founder rationale                    |                                                                                                                                                                                |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                        |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                         |
+| Founder rationale                    | Accept. The observed dependency is accurate, one-way and adequately bounded by the existing constitutional treatment. It does not create circularity, hidden authority, evidence substitution, status normalization or sequencing ambiguity. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                        |
 | Future amendment programme reference |                                                                                                                                                                                |
 
 ### 2.27 CRA-027
@@ -448,9 +448,9 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.3 — Approval Governance; CGP-02C.5 — Amendment Traceability Requirements                                                                       |
 | Neutral summary                      | A validation conclusion relying on those records depends on their preserved attribution and scope.                                                                                    |
 | Supporting evidence                  | VLR-19 requires validation to preserve source attribution, scope, status and limitations; APV-22 and ATR-03 define attribution relationships in approval and amendment-trace records. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                |
-| Founder rationale                    |                                                                                                                                                                                       |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                               |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                |
+| Founder rationale                    | Accept. The observed dependency is accurate, one-way and adequately bounded by the existing constitutional treatment. It does not create circularity, hidden authority, evidence substitution, status normalization or sequencing ambiguity. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                               |
 | Future amendment programme reference |                                                                                                                                                                                       |
 
 ### 2.28 CRA-028
@@ -464,9 +464,9 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.6 — Dependent-Governance Impact Review; CGP-02C.11 — Governance Index and Status Integrity                                                                   |
 | Neutral summary                      | Validation of dependency integrity relies on separately attributable dependency and status evidence.                                                                                                |
 | Supporting evidence                  | VLR-20 requires material dependencies to be identified according to attributable status and effect; DGI-03 defines dependency for impact review and GSI-05 bounds represented status to its source. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                              |
-| Founder rationale                    |                                                                                                                                                                                                     |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                             |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                              |
+| Founder rationale                    | Accept. The observed relationship is accurate and evidence-supported. Although the alignment between VLR-20 and DGI-03/GSI-05 is conceptual rather than identifier-explicit, VLR-20 remains independently operative and adequately guards against silent dependency or status assumptions. No constitutional defect is evident, and no amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                             |
 | Future amendment programme reference |                                                                                                                                                                                                     |
 
 ### 2.29 CRA-029
@@ -480,9 +480,9 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 | Source documents                     | CGP-02C.12 — Validation Rules; CGP-02C.5 — Amendment Traceability Requirements                                                                                                               |
 | Neutral summary                      | General validation traceability depends on, but does not replace, the amendment-specific trace where applicable.                                                                             |
 | Supporting evidence                  | VLR-21 requires an intelligible evidence relationship and states that it supports traceability without replacing Amendment Traceability; ATR-03 defines the amendment-specific relationship. |
-| Founder disposition                  | ☐ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                       |
-| Founder rationale                    |                                                                                                                                                                                              |
-| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☐ No                                                                                                                                                                      |
+| Founder disposition                  | ☑ Accept &nbsp;&nbsp; ☐ Reject &nbsp;&nbsp; ☐ Defer &nbsp;&nbsp; ☐ Needs clarification                                                                                                       |
+| Founder rationale                    | Accept. The observed dependency is accurate, one-way and adequately bounded by the existing constitutional treatment. It does not create circularity, hidden authority, evidence substitution, status normalization or sequencing ambiguity. No amendment follow-up is required. |
+| Amendment follow-up required         | ☐ Yes &nbsp;&nbsp; ☑ No                                                                                                                                                                      |
 | Future amendment programme reference |                                                                                                                                                                                              |
 
 ### 2.30 CRA-030
@@ -745,11 +745,11 @@ Selecting a disposition records the Founder’s treatment of the observation onl
 
 | Disposition         | Count |
 | ------------------- | ----: |
-| Accept              |    23 |
+| Accept              |    29 |
 | Reject              |     0 |
 | Defer               |     0 |
 | Needs clarification |     0 |
-| Unresolved          |    22 |
+| Unresolved          |    16 |
 
 ## 4. Register Non-Effects
 

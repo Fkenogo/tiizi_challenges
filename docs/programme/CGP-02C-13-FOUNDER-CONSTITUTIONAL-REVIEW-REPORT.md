@@ -9,7 +9,7 @@
 | Phase                 | CGP-02 — Constitutional Amendment & Governance Review Standard       |
 | Work package          | CGP-02C.13 — Whole-Instrument Consolidation                          |
 | Execution phase       | Phase 2D — Founder Constitutional Review and Observation Disposition |
-| Status                | Founder Review In Progress — Batches A and B Dispositions Recorded   |
+| Status                | Founder Review In Progress — Batches A, B and C Dispositions Recorded |
 | Preparation timestamp | `2026-07-25T17:33:19+02:00`                                          |
 
 ## 1. Purpose
@@ -75,13 +75,13 @@ No disposition should be inferred from an unchecked field, silence, document com
 | Measure                | Current |
 | ---------------------- | ------: |
 | Observations presented |      45 |
-| Accepted               |      23 |
+| Accepted               |      29 |
 | Rejected               |       0 |
 | Deferred               |       0 |
 | Needs clarification    |       0 |
-| Unresolved             |      22 |
+| Unresolved             |      16 |
 
-Batches A and B dispositions (CRA-001 through CRA-023) have been recorded as Accepted with no amendment follow-up required. Batches C through F remain unresolved.
+Batches A, B and C dispositions (CRA-001 through CRA-029) have been recorded as Accepted with no amendment follow-up required. Batches D through F remain unresolved.
 
 ## 7. Review Non-Effects
 

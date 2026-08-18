@@ -8,7 +8,7 @@
 | Execution phase      | Phase 2D — Founder Constitutional Review and Observation Disposition                       |
 | Review report        | [Founder Constitutional Review Report](CGP-02C-13-FOUNDER-CONSTITUTIONAL-REVIEW-REPORT.md) |
 | Disposition register | [Observation Disposition Register](CGP-02C-13-OBSERVATION-DISPOSITION-REGISTER.md)         |
-| Status               | Founder Review In Progress — Batches A and B Dispositions Recorded                         |
+| Status               | Founder Review In Progress — Batches A, B and C Dispositions Recorded                     |
 
 ## 1. Executive Result
 
@@ -21,8 +21,8 @@ The Founder Constitutional Review package presents all 45 validated Phase 2C obs
 | Observations represented        |   45/45 |
 | Unique Observation IDs          |   45/45 |
 | Proposition citations validated | 188/188 |
-| Founder dispositions recorded   |      23 |
-| Unresolved Founder dispositions |      22 |
+| Founder dispositions recorded   |      29 |
+| Unresolved Founder dispositions |      16 |
 | Constitutional wording changes  |       0 |
 | Proposition identifier changes  |       0 |
 
