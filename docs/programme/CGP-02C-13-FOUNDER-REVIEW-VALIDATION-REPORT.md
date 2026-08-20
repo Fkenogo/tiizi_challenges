@@ -8,7 +8,7 @@
 | Execution phase      | Phase 2D — Founder Constitutional Review and Observation Disposition                       |
 | Review report        | [Founder Constitutional Review Report](CGP-02C-13-FOUNDER-CONSTITUTIONAL-REVIEW-REPORT.md) |
 | Disposition register | [Observation Disposition Register](CGP-02C-13-OBSERVATION-DISPOSITION-REGISTER.md)         |
-| Status               | Validation Passed — Batches A, B, C and D Dispositions Recorded                          |
+| Status               | Validation Passed — Batches A, B, C, D and E Dispositions Recorded                      |
 
 ## 1. Validation Result
 
@@ -37,10 +37,10 @@
 | Reject option                        | Present for every observation              | Pass — 45/45         |
 | Defer option                         | Present for every observation              | Pass — 45/45         |
 | Needs clarification option           | Present for every observation              | Pass — 45/45         |
-| Founder rationale                    | Recorded for CRA-001–035; blank for CRA-036–045 | Pass — 35/10         |
-| Amendment follow-up required         | No recorded for CRA-001–035; unchecked for CRA-036–045 | Pass — 35/10 |
+| Founder rationale                    | Recorded for CRA-001–040; blank for CRA-041–045 | Pass — 40/5          |
+| Amendment follow-up required         | No recorded for CRA-001–040; unchecked for CRA-041–045 | Pass — 40/5  |
 | Future amendment programme reference | Blank for all observations (none separately established) | Pass — 45/45 |
-| Founder dispositions recorded        | 35 recorded / 10 unresolved                   | Pass — 35/10        |
+| Founder dispositions recorded        | 40 recorded / 5 unresolved                    | Pass — 40/5         |
 
 ## 4. Constitutional Integrity
 
@@ -81,4 +81,4 @@
 
 ## 7. Validation Conclusion
 
-The package is complete for Founder disposition recording. Batches A, B, C and D (CRA-001 through CRA-035) are recorded; Batches E and F (CRA-036 through CRA-045) remain unresolved.
+The package is complete for Founder disposition recording. Batches A, B, C, D and E (CRA-001 through CRA-040) are recorded; Batch F (CRA-041 through CRA-045) remains unresolved.
