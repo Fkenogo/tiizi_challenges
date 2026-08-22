@@ -26,7 +26,7 @@ This record is the project's controlled entry point to FEF. It records the FEF b
 
 Tiizi Version 2 is an active governance programme in **Stage E0 — Governance Architecture** (In Progress). Stage D — Constitutional Foundation is Complete. Stages EK, E1, F, G and H are Not Started and gated by dependency order.
 
-The active phase is **CGP-02 — Constitutional Amendment & Governance Review Standard** (In Progress). CGP-02C.1 through CGP-02C.12 are complete as bounded work packages with Founder Approval Candidates recorded but not adopted or constitutionally effective. CGP-02C.13 — Whole-Instrument Consolidation has begun execution (Phases 1, 2A, 2B, 2C and 2D/2E preparation artefacts exist) but is **not complete**: all 45 Phase 2C constitutional observations remain unresolved pending Founder disposition. CGP-03 is blocked pending completion and approval of CGP-02.
+The active phase is **CGP-02 — Constitutional Amendment & Governance Review Standard** (In Progress). CGP-02C.1 through CGP-02C.12 are complete as bounded work packages with Founder Approval Candidates recorded but not adopted or constitutionally effective. CGP-02C.13 — Whole-Instrument Consolidation has completed all execution phases, Founder disposition (45/45 Accepted), and Blueprint integration deliverables D17–D20. All completion gates are satisfied. The package is **In Progress — ready for separately governed bounded closure**. CGP-03 is blocked pending completion and approval of CGP-02.
 
 ### 2.2 Authoritative Records
 
@@ -53,8 +53,8 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 
 ### 2.4 Major Active Work
 
-- CGP-02C.13 — Whole-Instrument Consolidation (execution begun; Phases 1, 2A, 2B, 2C and 2D/2E preparation complete; 45 Founder dispositions unresolved).
-- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; whole-instrument consolidation incomplete pending Founder disposition).
+- CGP-02C.13 — Whole-Instrument Consolidation (all execution phases complete; Founder disposition closed 45/45 Accepted; D17–D20 complete; all completion gates satisfied; ready for bounded closure).
+- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02C.13 ready for separately governed bounded closure).
 - Pre-deploy engineering work on branch `fix/p0-pre-deploy-blockers` (group metadata onboarding and create/edit flows).
 
 ## 3. Alignment Summary
@@ -67,7 +67,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 | Evidence and validation                      | Aligned           | Validation reports across `docs/governance/platform/`, `docs/governance/domains/`, `docs/governance/principles/`; CGP-02C.x Completion Reports and Milestone Validation Reports; PTRA-01–06 transition assessments; Work Package Authorization Lifecycle §7 evidence chain                                                | Important claims and approvals trace to evidence; validation limitations are disclosed (e.g., bounded completion ≠ adoption). One minor evidence gap exists (see §5).                                         |
 | Lifecycle and gates                          | Aligned           | Master Programme §2, §6, §11 (stage gates, dependency map, completion gates); Work Package Authorization Lifecycle §4 (transition gates); CGP-03 blocked pending CGP-02                                                                                                                                                   | Major transitions are explicitly authorised; work cannot silently skip prerequisites.                                                                                                                         |
 | Repository integrity                         | Partially Aligned | Authoritative records identifiable and internally coherent; historical records preserved; README.md now links to governance records; but worktree not clean (36 modified + 388 untracked files, predominantly governance records); local `main` ahead of `origin/main` by 6; no blanket commit/push authorized by Founder | The authoritative governance baseline is not fully committed or pushed. This remains a genuine evidence-supported gap (see §5).                                                                               |
-| Exceptions and unresolved matters            | Aligned           | Master Programme §6, §11 (CGP-03 blocked; CGP-02C.13 recorded as In Progress with 45 Founder dispositions unresolved); Consolidated Decision Register (Pending statuses for 25+ decisions; EOG-02 deferred decisions explicitly recorded); CHANGE.md remaining risks                                                      | Blockers, pending decisions and deferred matters are visible and not silently resolved.                                                                                                                       |
+| Exceptions and unresolved matters            | Aligned           | Master Programme §6, §11 (CGP-03 blocked; CGP-02C.13 recorded as In Progress with all completion gates satisfied, ready for bounded closure); Consolidated Decision Register (Pending statuses for 25+ decisions; EOG-02 deferred decisions explicitly recorded); CHANGE.md remaining risks                               | Blockers, pending decisions and deferred matters are visible and not silently resolved.                                                                                                                       |
 | Governance proportionality                   | Project-Specific  | The project operates an extensive constitutional governance programme (CGP-01, CGP-02, EOG-01–05, PTRA assessments) by deliberate Founder-approved design; CGP-02C.12 documents explicitly exclude FEF and cross-project controls                                                                                         | The governance weight is the project's own constitutional programme, not FEF-imposed administration. Whether the volume is proportionate for a pre-launch product is a Founder judgement, not an FEF finding. |
 
 ## 4. Existing Strengths
@@ -77,7 +77,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 3. **Separation of decision from implementation authority.** The Work Package Authorization Lifecycle explicitly distinguishes Founder Decision Recorded from Authorized to Begin, and evidence from approval (Master Programme §17 Rule 7).
 4. **Explicit lifecycle gates and dependencies.** Stage gates (D→H), the CGP-02C.x bounded work-package sequence, and the blocked status of CGP-03 demonstrate controlled transitions without silent prerequisite skipping.
 5. **Evidence-bounded validation.** Validation reports, completion reports, milestone validation reports and PTRA transition assessments accompany each governed phase.
-6. **Visible exceptions and deferrals.** Pending decisions, deferred EOG-02 decision areas, and the 45 unresolved CGP-02C.13 Founder dispositions are explicitly visible and reported rather than silently resolved.
+6. **Visible exceptions and deferrals.** Pending decisions, deferred EOG-02 decision areas, and the 9 intentionally deferred CGP-02C.13 constitutional questions (D17) are explicitly visible and reported rather than silently resolved.
 7. **Explicit external-framework boundary.** The project has documented that the developing FEF is a boundary consideration only and not a Tiizi normative source (see §7), preserving project ownership and preventing governance import by assumption.
 
 ## 5. Genuine Gaps
@@ -177,18 +177,18 @@ The Tiizi Version 2 project is **substantially aligned** with the FEF operationa
 
 **FEF relationship (prospective):** FEF is the adopted baseline governance reference for Tiizi. Tiizi's Master Programme remains authoritative for Tiizi programme state. Tiizi's product-specific constitutional doctrine and prior Founder decisions remain project-owned. Historical records are not rewritten merely because FEF has now been adopted. This record does not claim universal or permanent "full FEF compliance."
 
-**CGP-02C.13 programme-state synchronization (resolved):** The Master Programme previously (v1.21) recorded CGP-02C.13 as "authorized to begin... not yet executed" while repository evidence showed execution had begun. On 2026-08-08 the Founder authorized correction of the stale Master Programme state using existing attributable repository evidence. Master Programme **v1.22** now records CGP-02C.13 as **In Progress**: Execution Phase 1 and Phases 2A–2E preparation/review work complete per attributable evidence; the Whole-Instrument Founder Review Draft V0 exists; and 45 constitutional observations await Founder disposition. The package is not complete; no whole-instrument constitutional approval, adoption or effect exists; CGP-02 and Stage E0 remain In Progress; CGP-03 remains blocked; and no successor package is authorized. This synchronization changed no constitutional content, proposition, wording or source status and created no Founder disposition.
+**CGP-02C.13 programme-state synchronization (resolved):** The Master Programme was synchronized through v1.22 and v1.23 to reflect the current CGP-02C.13 state. Master Programme **v1.23** records CGP-02C.13 as **In Progress — all completion gates satisfied; ready for separately governed bounded closure**. All execution phases are complete; Founder disposition is closed (45/45 Accepted, 0 unresolved); Blueprint integration deliverables D17–D20 are complete; all 9 completion gates are satisfied. No whole-instrument constitutional approval, adoption or effect exists; CGP-02 and Stage E0 remain In Progress; CGP-03 remains blocked; and no successor package is authorized.
 
 **Remaining gaps:** (1) repository integrity — the authoritative governance baseline is not fully committed/pushed (no blanket commit/push authorized); (2) EOG-03 approval date — evidence gap retained pending Founder input.
 
-The immediate next governed actions are: **Founder disposition of the 45 CGP-02C.13 constitutional observations**, **Founder confirmation of commit/push scope for classified change sets**, and **Founder provision of the EOG-03 approval date**.
+The immediate next governed actions are: **CGP-02C.13 separately governed bounded closure**, **Founder confirmation of commit/push scope for classified change sets**, and **Founder provision of the EOG-03 approval date**.
 
 ## 13. Review Trigger
 
 This alignment profile should be reviewed again when any of the following occurs:
 
 - Stage E0 completes (CGP-02 approval and adoption) or a new major programme phase begins;
-- CGP-02C.13 completes Founder disposition;
+- CGP-02C.13 bounded closure is recorded;
 - a material Founder decision changes authority or programme scope;
 - a major release or implementation baseline is approved;
 - the project discovers a recurring governance failure;
