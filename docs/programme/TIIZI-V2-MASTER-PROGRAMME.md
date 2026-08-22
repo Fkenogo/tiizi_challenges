@@ -76,7 +76,7 @@ Programme Metrics must be updated with the Programme Dashboard whenever programm
 ### Completion Evidence Required
 
 - [x] Discovery complete
-- [ ] Full constitutional draft complete — all bounded substantive Blueprint subjects through CGP-02C.12 are complete; whole-instrument consolidation remains incomplete
+- [x] Full constitutional draft complete — all bounded substantive Blueprint subjects through CGP-02C.12 are complete; CGP-02C.13 whole-instrument integration deliverables D17–D20 complete; all completion gates satisfied; ready for separately governed bounded closure
 - [ ] Founder Review of the complete CGP-02 standard
 - [ ] Validation
 - [ ] Traceability
@@ -493,7 +493,7 @@ Apply this checklist to each CGP deliverable:
 #### CGP-02 Current Completion Evidence
 
 - [x] Discovery
-- [ ] Full constitutional draft — all bounded substantive Blueprint subjects through CGP-02C.12 are complete; whole-instrument consolidation remains incomplete
+- [x] Full constitutional draft — all bounded substantive Blueprint subjects through CGP-02C.12 are complete; CGP-02C.13 whole-instrument integration deliverables D17–D20 complete; all completion gates satisfied; ready for separately governed bounded closure
 - [ ] Founder Review of the complete CGP-02 standard
 - [ ] Validation
 - [ ] Traceability
@@ -657,7 +657,7 @@ CGP-02C.11 — Governance Index and Status Integrity is Complete as a bounded wo
 
 CGP-02C.12 — Validation Rules is Complete as a bounded work package on 2026-07-25. The [Founder Decision Record](../governance/principles/30-CGP-02C-12-FOUNDER-DECISION-RECORD.md) records VLQ-01 through VLQ-09, the [Founder Approval Candidate](../governance/principles/30-CGP-02C-12-VALIDATION-RULES-FOUNDER-APPROVAL-CANDIDATE.md) preserves all 24 Founder-review-approved propositions, and the [Completion Report](../governance/principles/31-CGP-02C-12-COMPLETION-REPORT.md) records closure. Blueprint Deliverable 16 is complete. The candidate is not adopted or constitutionally effective, the Blueprint is not declared complete, and CGP-02 and Stage E0 remain In Progress.
 
-CGP-02C.13 — Whole-Instrument Consolidation is the authorized bounded work package as of 2026-07-25. FWA-01 through FWA-05 approve its identifier, title, unchanged planning boundary, one-package structure and commencement subject to the validated entry gates. The package is **In Progress**: Execution Phase 1 and Phases 2A–2E preparation/review work are complete per attributable evidence; the [Whole-Instrument Founder Review Draft V0](../governance/principles/33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md) exists; and 45 constitutional observations await Founder disposition in the [Founder Constitutional Review Report](CGP-02C-13-FOUNDER-CONSTITUTIONAL-REVIEW-REPORT.md). The package is **not complete**, no whole-instrument constitutional approval, adoption or effect exists, and no protected proposition, wording or status has changed. CGP-02 and Stage E0 remain In Progress; CGP-03 remains blocked; and no successor package is authorized.
+CGP-02C.13 — Whole-Instrument Consolidation is the authorized bounded work package as of 2026-07-25. FWA-01 through FWA-05 approve its identifier, title, unchanged planning boundary, one-package structure and commencement subject to the validated entry gates. The package is **In Progress — all completion gates satisfied; ready for separately governed bounded closure**. Execution Phase 1 and Phases 2A–2E are complete. The Founder disposition programme is closed: 45/45 observations Accepted, 0 unresolved, amendment follow-up No = 45. Blueprint integration deliverables D17–D20 are complete. The [Whole-Instrument Founder Review Draft V0](../governance/principles/33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md) is assembled (302 propositions, 302 unique identifiers, 0 integrity defects, 0 apparent conflicts). No whole-instrument constitutional approval, adoption or effect exists, and no protected proposition, wording or status has changed. CGP-02 and Stage E0 remain In Progress; CGP-03 remains blocked; and no successor package is authorized.
 
 Stage E0 remains active and incomplete. CGP-03 and CGP-04 remain Not Started. CGP-03 is blocked by its dependency on completion and approval of CGP-02.
 
