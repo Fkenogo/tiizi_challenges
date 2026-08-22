@@ -28,6 +28,6 @@ The Founder Constitutional Review package presents all 45 validated Phase 2C obs
 
 ## 3. Disposition Boundary
 
-Every observation provides Accept, Reject, Defer and Needs clarification choices. Founder rationale, amendment-follow-up and future programme-reference fields remain blank.
+Every observation provides Accept, Reject, Defer and Needs clarification choices. All 45 Founder dispositions are recorded: 45 Accepted, 0 Rejected, 0 Deferred, 0 Needs clarification. Founder rationale is recorded for CRA-001 through CRA-045. Amendment follow-up is No for all 45. Future amendment programme references remain blank (none separately established).
 
-This package records no decision on behalf of the Founder and creates no amendment, approval, adoption or constitutional effect.
+This package records the Founder's disposition of all 45 constitutional observations and creates no amendment, approval, adoption or constitutional effect.
