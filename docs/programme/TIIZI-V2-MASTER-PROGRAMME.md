@@ -619,6 +619,12 @@ Apply this checklist to each CGP deliverable:
 - [x] Blueprint Deliverable 16 completed
 - [x] Programme Updated through CGP-02C.12 bounded completion
 - [x] Dashboard Updated through CGP-02C.12 bounded completion
+- [x] CGP-02C.13 planning and planning validation completed
+- [x] CGP-02C.13 protected-source baseline and dependency verification completed
+- [x] CGP-02C.13 Founder Work Package Authorization recorded
+- [x] CGP-02C.13 authorization checklist and final validation completed
+- [x] Programme Updated for authorized CGP-02C.13 integration
+- [x] Dashboard Updated for authorized CGP-02C.13 integration
 
 ### Completion Gate
 
