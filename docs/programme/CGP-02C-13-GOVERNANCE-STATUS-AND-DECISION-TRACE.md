@@ -8,7 +8,7 @@
 | Work package | CGP-02C.13 — Whole-Instrument Consolidation                          |
 | Blueprint    | CGP-02 Drafting Blueprint — Deliverable 18                           |
 | Status       | Trace Issued — Whole-Instrument Governance Status and Decision Trace |
-| Basis HEAD   | `ff70e8b`                                                            |
+| Basis HEAD   | `8a305b3`                                                            |
 | Branch       | `main`                                                               |
 
 ## 1. Purpose
@@ -63,7 +63,13 @@ No state is inferred from another: assembly does not create approval; observatio
 
 ## 5. Reconciliation Pointer
 
-D18 is reconciled with D17 (Deferred Constitutional Questions): every D17 deferral is represented as "deferred" in this trace (no status manufactured). D18 does not resolve any D17 item. D17 does not reopen any decision attributed here. All 45 CRA dispositions remain closed.
+D18 is reconciled with D17 (Deferred Constitutional Questions) as follows:
+
+- Every final D17 deferral (DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11) originates in a source package represented in the D18 trace above.
+- D18 records no decision or status that silently resolves any retained D17 deferral.
+- D17 does not reopen any decision already attributable in D18.
+- Two former D17 items (DQ-03, DQ-08) were removed by final-state reconciliation as resolved Founder decisions (category C); their resolution is consistent with the package-level decisions recorded in this trace.
+- All 45 CRA dispositions remain closed.
 
 ## 6. Non-Effects
 
