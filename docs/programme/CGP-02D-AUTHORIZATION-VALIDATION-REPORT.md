@@ -10,16 +10,26 @@
 | Document type     | Programme authorization validation report                                         |
 | Status            | Validation Passed — Decision-Ready for Attributable Founder Authorization         |
 | Validation date   | 2026-08-28                                                                        |
-| Basis Commit      | `863123e`                                                                         |
+| Validation pass   | CGP-02D Pre-Authorization Boundary Correction (post-correction re-run)            |
+| Basis Commit      | `d48e815` (pre-correction governed baseline)                                      |
 | Branch            | `main`                                                                            |
 
 ---
 
 ## 1. Purpose
 
-This report validates the planning, dependency, scope, and decision artefacts prepared for **CGP-02D — Whole-Standard Founder Review and Approval Preparation** against the [Founder Authorization Validation Checklist](FOUNDER-WORK-PACKAGE-AUTHORIZATION-VALIDATION-CHECKLIST.md) and [Founder Work Package Authorization Standard](FOUNDER-WORK-PACKAGE-AUTHORIZATION-STANDARD.md).
+This report re-validates the planning, dependency, scope, and decision artefacts prepared for **CGP-02D — Whole-Standard Founder Review and Approval Preparation** after the pre-authorization boundary correction pass correcting:
 
-It confirms whether the proposed package is structurally sound and decision-ready for attributable Founder review.
+- approval-decision boundary (preparation vs exercise of Founder approval authority);
+- D-07 treatment;
+- completion criteria (outcome-flexible);
+- D17 deferred-matter language;
+- FWA-03 / FWA-04 / FWA-05 boundaries;
+- Master Programme live-state parity (Dashboard / Current Focus / §6 / §11 / Change Log).
+
+It applies the [Founder Authorization Validation Checklist](FOUNDER-WORK-PACKAGE-AUTHORIZATION-VALIDATION-CHECKLIST.md) and [Founder Work Package Authorization Standard](FOUNDER-WORK-PACKAGE-AUTHORIZATION-STANDARD.md).
+
+Prior 51/51 Pass score is **not** retained by inertia. Each item is re-assessed against corrected evidence.
 
 ---
 
@@ -37,13 +47,14 @@ It confirms whether the proposed package is structurally sound and decision-read
 ### 2.2 Planning Readiness
 - [x] Purpose is explicit.
 - [x] Included scope is explicit.
-- [x] Exclusions are explicit.
-- [x] Deliverables are explicit (D-01 through D-08).
+- [x] Exclusions are explicit (including no predetermined approval and no D-07 execution by FWA alone).
+- [x] Deliverables are explicit (D-01 through D-08) with D-07 as preparation only.
 - [x] Inputs and dependencies are explicit.
 - [x] Founder questions and blockers are explicit.
 - [x] Entry gates are explicit.
-- [x] Completion evidence is explicit.
+- [x] Completion evidence is explicit and outcome-flexible (Approved / Rejected / Deferred / Amended / Returned).
 - [x] Planning non-effects are explicit.
+- [x] Approval Decision Gate is explicit and separate from package authorization.
 - **Finding:** **Pass.**
 
 ### 2.3 Dependency Verification
@@ -54,24 +65,29 @@ It confirms whether the proposed package is structurally sound and decision-read
 - [x] Every blocking effect is stated.
 - [x] No blocking dependency remains unsatisfied.
 - [x] Deferred matters (9 D17 questions) are preserved without silent resolution.
+- [x] D17 non-blocking distinction is correctly bounded (planning / FWA / review commencement only; Founder retains approval-gate authority; DQ-06 adoption-relevant).
 - [x] No dependency is reinterpreted or amended.
 - **Finding:** **Pass.**
 
 ### 2.4 Programme-State Verification
-- [x] Current Master Programme version recorded (v1.24).
+- [x] Current Master Programme version recorded (v1.25).
 - [x] Active stage (Stage E0) and phase (CGP-02) verified In Progress.
 - [x] Proposed package permitted by programme sequence.
 - [x] Preceding required completion evidence exists (CGP-02C.13 closure).
 - [x] Stage completion gate remains unchanged.
 - [x] No conflicting package occupies the same boundary.
 - [x] Programme synchronization identified as required post-decision entry gate.
+- [x] Dashboard / Current Focus / Next Action parity restored (CGP-02D Proposed / Decision-Ready; FWA decision pending).
+- [x] CGP-02D is **not** marked Authorized, Ready, In Progress, Review, or Approved.
 - **Finding:** **Pass.**
 
 ### 2.5 Decision Structure and Boundary Integrity
 - [x] Decision options (FWA-01 through FWA-05) follow canonical format.
-- [x] Scope matches validated plan.
+- [x] Scope matches validated plan (FWA-03).
+- [x] Package structure distinguishes preparation of approval evidence from exercise of Founder approval authority (FWA-04).
+- [x] FWA-05 authorizes commencement only and expressly does not approve D-03, execute D-07, guarantee Approved, adopt, or create effect.
 - [x] Dependencies, entry gates, and exclusions are preserved.
-- [x] Authorization statement approves no future output.
+- [x] Authorization statement approves no future output and states D-03/D-07 non-effects.
 - [x] Single-package boundary strictly preserved; no transfer by similarity.
 - **Finding:** **Pass.**
 
@@ -81,6 +97,7 @@ It confirms whether the proposed package is structurally sound and decision-read
 - [x] No Platform Authority is created, extended, or redistributed.
 - [x] No accountability relationship, role, or permission is allocated.
 - [x] Existing governance baseline remains unchanged.
+- [x] No D17 deferred question is resolved or reclassified.
 - **Finding:** **Pass.**
 
 ### 2.7 Implementation and Repository Non-Effects
@@ -92,8 +109,11 @@ It confirms whether the proposed package is structurally sound and decision-read
 ### 2.8 Mechanical Validation
 - [x] Required documents exist and relative links resolve.
 - [x] Markdown syntax and structure valid.
-- [x] Trailing whitespace check passed.
-- [x] Git diff check passed.
+- [x] Trailing whitespace / `git diff --check` expected clean on governed files.
+- [x] V0 SHA-256 remains `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675`.
+- [x] 302 propositions remain intact.
+- [x] No approval / adoption / constitutional-effect leakage in authorization artefacts.
+- [x] Master Programme Change Log records v1.25 planning-state transition without authorizing CGP-02D.
 - **Finding:** **Pass.**
 
 ---
@@ -103,20 +123,38 @@ It confirms whether the proposed package is structurally sound and decision-read
 | Category | Checked Items | Result |
 | :--- | :--- | :--- |
 | **Package Identity** | 6 | Pass |
-| **Planning Readiness** | 9 | Pass |
-| **Dependency Verification** | 8 | Pass |
-| **Programme State** | 8 | Pass |
-| **Decision Structure** | 5 | Pass |
-| **Non-Effects** | 8 | Pass |
+| **Planning Readiness** | 10 | Pass |
+| **Dependency Verification** | 9 | Pass |
+| **Programme State** | 9 | Pass |
+| **Decision Structure** | 7 | Pass |
+| **Non-Effects** | 9 | Pass |
 | **Mechanical Validation** | 7 | Pass |
-| **Overall Result** | **51 / 51** | **PASS** |
+| **Overall Result** | **57 / 57** | **PASS** |
 
 ---
 
-## 4. Validation Statement
+## 4. Boundary Corrections Confirmed
 
-All prerequisites, dependency verifications, scope boundaries, and decision structures for **CGP-02D — Whole-Standard Founder Review and Approval Preparation** pass validation without exception.
+| Issue | Corrected Treatment | Evidence |
+| :--- | :--- | :--- |
+| Approval-authority blur | Preparation of approval evidence ≠ exercise of Founder approval authority | Planning Package §2.1, §11; FWA-04; FWA-05 |
+| D-07 | Prepared within CGP-02D; presented after D-01–D-06; executed only by separate attributable Founder decision | Planning Package §11; Definition D-07 row |
+| Completion criteria | Outcome-flexible; Approved is not sole success path | Planning Package §10; Definition §8 |
+| D17 language | Non-blocking for planning/FWA/review start; Founder retains approval-gate authority; DQ-06 adoption-relevant | Planning Package §6; Dependency §3.3 |
+| Master Programme parity | Dashboard matches Current Focus; CGP-02D Proposed / Decision-Ready only; v1.25 change-log entry | Master Programme §2, §3, §4, §6, §11, §23 |
+
+---
+
+## 5. Validation Statement
+
+All prerequisites, dependency verifications, scope boundaries, approval-decision gates, D17 treatments, FWA boundaries, completion criteria, and Master Programme live-state parity for **CGP-02D — Whole-Standard Founder Review and Approval Preparation** pass validation without exception after the pre-authorization boundary correction.
 
 The package is **DECISION-READY** for attributable Founder Work Package Authorization.
 
 Work may commence only after attributable Founder authorization is recorded (FWA-01 through FWA-05) and subsequent Master Programme synchronization is performed.
+
+This validation:
+- does **not** record FWA-01 through FWA-05;
+- does **not** authorize or commence CGP-02D;
+- does **not** approve D-03 or execute D-07;
+- does **not** adopt the instrument or create constitutional effect.

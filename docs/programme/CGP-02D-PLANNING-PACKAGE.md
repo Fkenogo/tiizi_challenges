@@ -10,7 +10,7 @@
 | Document type     | Programme planning package                                                        |
 | Status            | Planning Complete; decision-ready for Founder Work Package Authorization          |
 | Planning date     | 2026-08-28                                                                        |
-| Basis Commit      | `863123e`                                                                         |
+| Basis Commit      | `d48e815`                                                                         |
 | Branch            | `main`                                                                            |
 
 ---
@@ -19,20 +19,22 @@
 
 This planning package defines the programme boundary, inputs, dependencies, deliverables, and completion gates for **CGP-02D — Whole-Standard Founder Review and Approval Preparation**.
 
-It structures the governed sequence by which the assembled [Whole-Instrument Founder Review Draft V0](../governance/principles/33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md) (302 propositions) will be submitted for attributable Founder Constitutional Review, refined into a Founder Approval Candidate, validated across all constitutional dimensions, traced to primary normative sources, and prepared for attributable Founder approval.
+It structures the governed sequence by which the assembled [Whole-Instrument Founder Review Draft V0](../governance/principles/33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md) (302 propositions) will be submitted for attributable Founder Constitutional Review, refined into a Founder Approval Candidate, validated across all constitutional dimensions, traced to primary normative sources, and prepared for a **separate attributable Founder approval decision**.
+
+CGP-02D prepares the approval decision package. It does not itself execute Founder approval of the whole standard merely because the package is authorized or because a draft approval record exists.
 
 ---
 
 ## 2. Programme Position and Lifecycle Sequence
 
-The [Tiizi Version 2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) (v1.24) and [Post-Closure Transition Report](CGP-02C-13-POST-CLOSURE-STATE-AND-TRANSITION-REPORT.md) confirm:
+The [Tiizi Version 2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) (v1.25) and [Post-Closure Transition Report](CGP-02C-13-POST-CLOSURE-STATE-AND-TRANSITION-REPORT.md) confirm:
 - Stage E0 is **In Progress**;
 - CGP-02 is **In Progress**;
 - Full constitutional draft (CGP-02C.1 through CGP-02C.13) is **Complete**;
 - Bounded closure of CGP-02C.13 is recorded and reconciled;
 - Whole-instrument Draft V0 is frozen (SHA-256 `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675`);
 - CGP-03 is **Blocked** pending CGP-02 completion and approval;
-- No successor package is yet authorized.
+- CGP-02D is **Proposed / Decision-Ready** only; it is not yet authorized.
 
 The remaining lifecycle requirements for CGP-02 per Master Programme §11 are:
 1. **Founder Review of the complete CGP-02 standard** [Incomplete]
@@ -41,7 +43,25 @@ The remaining lifecycle requirements for CGP-02 per Master Programme §11 are:
 4. **Approval** [Incomplete]
 5. **Adoption Record** [Incomplete]
 
-CGP-02D governs items 1 through 4. Item 5 (Adoption) represents the subsequent separate adoption milestone.
+CGP-02D governs items 1 through 4 as one bounded package, with item 4 reached only through a **Founder Approval Decision Gate** that is separate from package authorization and from D-07 preparation. Item 5 (Adoption) remains a subsequent separate adoption milestone.
+
+### 2.1 Corrected CGP-02D Internal Lifecycle
+
+```text
+1. Whole-Standard Founder Constitutional Review          (D-01)
+2. Attributable Founder review dispositions              (D-02)
+3. Whole-Standard Founder Approval Candidate             (D-03)
+4. Proposition Traceability                              (D-04)
+5. Cross-Reference / Impact Analysis                     (D-05)
+6. Whole-Standard Validation                             (D-06)
+7. Founder Approval Decision Package / Draft Approval
+   Record prepared                                       (D-07)
+8. [FOUNDER APPROVAL DECISION GATE]
+   Separate attributable Founder approval decision
+   (Approved | Rejected | Deferred | Amended | Returned)
+9. CGP-02D completion / transition recorded according
+   to the actual Founder decision                        (D-08)
+```
 
 ---
 
@@ -54,8 +74,9 @@ If authorized by the Founder, CGP-02D will:
 3. **Formulate Founder Approval Candidate:** Incorporate any directed refinements into a formal Founder Approval Candidate (Draft 1);
 4. **Execute Whole-Standard Validation:** Verify cross-subject integrity, constitutional constraints, and scope boundaries;
 5. **Establish Whole-Standard Traceability:** Map every proposition to primary normative authority or explicit Founder decision;
-6. **Prepare Formal Approval Record:** Provide the attributable vehicle for the Founder to approve the complete standard exercising Governance Authority;
-7. **Maintain Non-Effects:** Preserve the distinction between Approval and Adoption, leaving adoption for separate attributable action.
+6. **Prepare Founder Approval Decision Package:** Prepare the Founder Approval Decision Package and Draft Approval Record as the decision vehicle for a later separate attributable Founder approval decision;
+7. **Record Approval Decision Outcome:** After the Founder Approval Decision Gate is reached and the separate attributable decision is made, record the actual outcome (Approved, Rejected, Deferred, Amended, or Returned);
+8. **Maintain Non-Effects:** Preserve the distinction between package authorization, approval-decision preparation, Founder approval, and Adoption; leave adoption for separate attributable action.
 
 ---
 
@@ -67,8 +88,10 @@ If authorized by the Founder, CGP-02D will:
 4. Preparation of the Whole-Standard Proposition Traceability Report;
 5. Preparation of the Whole-Standard Cross-Reference and Impact Analysis;
 6. Execution of the Whole-Standard Validation Report;
-7. Preparation and execution of the CGP-02 Founder Approval Record;
-8. Compilation of the CGP-02D Completion and Transition Report.
+7. Preparation of the CGP-02 Founder Approval Decision Package and Draft Approval Record (D-07);
+8. Presentation of that package only after D-01 through D-06 gates pass;
+9. Recording of the separate attributable Founder approval decision outcome once the Founder Approval Decision Gate is reached;
+10. Compilation of the CGP-02D Completion and Transition Report according to the actual recorded outcome.
 
 ---
 
@@ -76,6 +99,9 @@ If authorized by the Founder, CGP-02D will:
 
 The package must NOT:
 - alter constitutional wording without attributable Founder review disposition;
+- predetermine, deem executed, or automatically create Founder approval of D-03 or of the whole standard;
+- execute D-07 merely because FWA-05 authorizes CGP-02D;
+- guarantee an Approved outcome as the only valid procedural result;
 - merge Approval with Adoption;
 - create constitutional effect or assign effective dates during review/approval;
 - silently resolve the 9 D17 deferred constitutional questions;
@@ -88,16 +114,19 @@ The package must NOT:
 ## 6. Treatment of D17 Retained Deferrals
 
 The 9 retained deferred constitutional questions from [Deliverable 17](CGP-02C-13-DEFERRED-CONSTITUTIONAL-QUESTIONS.md) (DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11) are treated as follows:
-- **Status:** All 9 are retained as non-blocking genuine deferrals (Category B);
-- **Review Treatment:** Presented in the Founder Review package as companion reference context;
-- **Resolution:** Not required to be resolved for whole-standard Founder Review or Approval;
-- **Adoption Impact:** DQ-06 (whole-instrument adoption procedure) will be addressed at the adoption milestone following approval.
+
+- **Status:** All 9 remain retained as Category-B genuine deferrals; classification is unchanged by this planning package;
+- **Planning / Authorization:** None blocks CGP-02D planning, Founder authorization of CGP-02D, or commencement of whole-standard Founder Review;
+- **Review Treatment:** All remain visible companion context during whole-standard Founder Review;
+- **Approval Decision Authority:** Their existence does not automatically prevent eventual whole-standard approval; however, the Founder retains authority at the separate Founder Approval Decision Gate to determine whether any deferred matter must first be treated before approval may proceed;
+- **Adoption Relevance:** DQ-06 (whole-instrument adoption procedure) is especially relevant to the later separate Adoption milestone and must remain visible through that gate;
+- **Resolution:** No D17 question is resolved, reclassified, or silently closed by CGP-02D planning or by FWA authorization alone.
 
 ---
 
 ## 7. Authoritative Inputs
 
-1. [Tiizi Version 2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) (v1.24)
+1. [Tiizi Version 2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) (v1.25)
 2. [CGP-02 Drafting Blueprint](../governance/principles/04-CGP-02-DRAFTING-BLUEPRINT.md)
 3. [Whole-Instrument Founder Review Draft V0](../governance/principles/33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md)
 4. [D17 Deferred Constitutional Questions](CGP-02C-13-DEFERRED-CONSTITUTIONAL-QUESTIONS.md)
@@ -119,16 +148,18 @@ docs/programme/
   ├── CGP-02D-DEPENDENCY-VERIFICATION.md
   ├── CGP-02D-FOUNDER-AUTHORIZATION-PACKAGE.md
   ├── CGP-02D-AUTHORIZATION-VALIDATION-REPORT.md
-  ├── CGP-02D-FOUNDER-REVIEW-PACKAGE.md                     [Deliverable 1]
-  ├── CGP-02D-FOUNDER-DECISION-RECORD.md                    [Deliverable 2]
-  ├── CGP-02D-COMPLETION-REPORT.md                          [Deliverable 8]
+  ├── CGP-02D-FOUNDER-REVIEW-PACKAGE.md                     [D-01]
+  ├── CGP-02D-FOUNDER-DECISION-RECORD.md                    [D-02]
+  ├── CGP-02D-COMPLETION-REPORT.md                          [D-08]
 
 docs/governance/principles/
-  ├── 34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md [Deliverable 3]
-  ├── 34-CGP-02-PROPOSITION-TRACEABILITY-REPORT.md           [Deliverable 4]
-  ├── 34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md       [Deliverable 5]
-  ├── 34-CGP-02-WHOLE-STANDARD-VALIDATION-REPORT.md          [Deliverable 6]
-  └── 35-CGP-02-FOUNDER-APPROVAL-RECORD.md                   [Deliverable 7]
+  ├── 34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md [D-03]
+  ├── 34-CGP-02-PROPOSITION-TRACEABILITY-REPORT.md           [D-04]
+  ├── 34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md       [D-05]
+  ├── 34-CGP-02-WHOLE-STANDARD-VALIDATION-REPORT.md          [D-06]
+  └── 35-CGP-02-FOUNDER-APPROVAL-DECISION-PACKAGE.md        [D-07]
+      (Draft Approval Record prepared within D-07;
+       executed only by separate attributable Founder decision)
 ```
 
 ---
@@ -137,31 +168,55 @@ docs/governance/principles/
 
 | Gate | Description | Verification Method |
 | :--- | :--- | :--- |
-| **EG-01** | CGP-02C.13 Bounded Closure Complete | Reconciled in Master Programme v1.24 |
+| **EG-01** | CGP-02C.13 Bounded Closure Complete | Reconciled in Master Programme v1.25 |
 | **EG-02** | Whole-Instrument V0 Integrity Verified | SHA-256 matches `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
 | **EG-03** | Planning and Dependency Package Validated | [CGP-02D Authorization Validation Report](CGP-02D-AUTHORIZATION-VALIDATION-REPORT.md) Pass |
-| **EG-04** | Founder Authorization Recorded | [CGP-02D Founder Authorization Package](CGP-02D-FOUNDER-AUTHORIZATION-PACKAGE.md) Approved |
-| **EG-05** | Master Programme Synchronized | Master Programme records CGP-02D as Authorized to Begin |
+| **EG-04** | Founder Authorization Recorded | [CGP-02D Founder Authorization Package](CGP-02D-FOUNDER-AUTHORIZATION-PACKAGE.md) Approved (FWA-01 through FWA-05) |
+| **EG-05** | Master Programme Synchronized | Master Programme records CGP-02D as Authorized to Begin after attributable FWA decision |
 
 ---
 
 ## 10. Completion Criteria
 
-CGP-02D is complete only when:
-1. The Founder Constitutional Review is completed and attributable decisions are recorded;
-2. The CGP-02 Whole-Standard Founder Approval Candidate is compiled and verified;
-3. Whole-Standard Traceability, Cross-Reference Analysis, and Validation reports pass all checks;
-4. The CGP-02 Founder Approval Record is formally executed by the Founder exercising Governance Authority;
-5. The Completion Report is issued and Master Programme is synchronized;
-6. No whole-instrument adoption or constitutional effect is claimed prior to separate adoption governance.
+CGP-02D cannot become Complete merely because an approval form or draft approval record exists.
+
+CGP-02D is complete only when all of the following are satisfied:
+
+1. Whole-standard Founder Constitutional Review (D-01) is completed;
+2. Attributable Founder review dispositions (D-02) are recorded;
+3. Whole-Standard Founder Approval Candidate (D-03) is prepared and verified;
+4. Proposition Traceability (D-04) is completed;
+5. Cross-Reference / Impact Analysis (D-05) is completed;
+6. Whole-Standard Validation (D-06) is completed and gates pass;
+7. Founder Approval Decision Package / Draft Approval Record (D-07) is prepared and the Founder Approval Decision Gate is reached;
+8. A separate attributable Founder approval decision is recorded with one of the legitimate outcomes: **Approved**, **Rejected**, **Deferred**, **Amended**, or **Returned**;
+9. Programme state is synchronized according to the **actual** Founder outcome (not a predetermined Approved path);
+10. Bounded completion evidence (D-08) is issued;
+11. No whole-instrument adoption or constitutional effect is claimed prior to separate adoption governance.
+
+**Outcome-flexibility rule:** An Approved outcome is not the only valid procedural result. Rejected, Deferred, Amended, or Returned outcomes are legitimate completion paths when attributable and correctly synchronized. Completion does not require constitutional effect, adoption, Stage E0 completion, or CGP-03 unblocking.
 
 ---
 
-## 11. Planning Non-Effects
+## 11. D-07 Boundary (Approval Decision Preparation vs Execution)
+
+| Aspect | Treatment |
+| :--- | :--- |
+| **What D-07 is** | Founder Approval Decision Package and Draft Approval Record prepared within CGP-02D |
+| **When presented** | Only after D-01 through D-06 review, traceability, and validation gates pass |
+| **How executed** | Only through a separate attributable Founder approval decision at the Founder Approval Decision Gate |
+| **What FWA-05 does not do** | FWA-05 does not approve D-03, does not approve or execute D-07, and does not guarantee an Approved outcome |
+| **What the record must capture** | The actual Founder outcome: Approved, Rejected, Deferred, Amended, or Returned |
+
+---
+
+## 12. Planning Non-Effects
 
 This planning package:
 - authorizes no work;
-- approves no candidate or draft;
+- approves no candidate, draft, or whole instrument;
+- executes no approval decision;
 - adopts no instrument;
 - creates no constitutional effect;
-- alters no existing governance status.
+- resolves no D17 deferred question;
+- alters no existing governance status by itself.
