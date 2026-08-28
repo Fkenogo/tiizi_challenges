@@ -26,7 +26,7 @@ This record is the project's controlled entry point to FEF. It records the FEF b
 
 Tiizi Version 2 is an active governance programme in **Stage E0 — Governance Architecture** (In Progress). Stage D — Constitutional Foundation is Complete. Stages EK, E1, F, G and H are Not Started and gated by dependency order.
 
-The active phase is **CGP-02 — Constitutional Amendment & Governance Review Standard** (In Progress). CGP-02C.1 through CGP-02C.12 are complete as bounded work packages with Founder Approval Candidates recorded but not adopted or constitutionally effective. CGP-02C.13 — Whole-Instrument Consolidation has completed all execution phases, Founder disposition (45/45 Accepted), and Blueprint integration deliverables D17–D20. All completion gates are satisfied. The package is **In Progress — ready for separately governed bounded closure**. CGP-03 is blocked pending completion and approval of CGP-02.
+The active phase is **CGP-02 — Constitutional Amendment & Governance Review Standard** (In Progress). CGP-02C.1 through CGP-02C.13 are complete as bounded work packages. CGP-02C.1 through CGP-02C.12 have Founder Approval Candidates recorded but are not adopted or constitutionally effective. CGP-02C.13 — Whole-Instrument Consolidation closed as a bounded work package on 2026-08-22. The whole instrument is not Founder-approved, not adopted, and not constitutionally effective. CGP-03 is blocked pending completion and approval of CGP-02.
 
 ### 2.2 Authoritative Records
 
@@ -52,8 +52,8 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 
 ### 2.4 Major Active Work
 
-- CGP-02C.13 — Whole-Instrument Consolidation (all execution phases complete; Founder disposition closed 45/45 Accepted; D17–D20 complete; all completion gates satisfied; ready for bounded closure).
-- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02C.13 ready for separately governed bounded closure).
+- CGP-02C.13 — Whole-Instrument Consolidation (complete as a bounded work package, 2026-08-22; closure evidence issued).
+- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; determine next CGP-02 lifecycle step).
 - Pre-deploy engineering work on branch `fix/p0-pre-deploy-blockers` (group metadata onboarding and create/edit flows).
 
 ## 3. Alignment Summary
@@ -66,7 +66,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 | Evidence and validation                      | Aligned          | Validation reports across `docs/governance/platform/`, `docs/governance/domains/`, `docs/governance/principles/`; CGP-02C.x Completion Reports and Milestone Validation Reports; PTRA-01–06 transition assessments; Work Package Authorization Lifecycle §7 evidence chain                                                    | Important claims and approvals trace to evidence; validation limitations are disclosed (e.g., bounded completion ≠ adoption). One minor evidence gap exists (see §5).                                         |
 | Lifecycle and gates                          | Aligned          | Master Programme §2, §6, §11 (stage gates, dependency map, completion gates); Work Package Authorization Lifecycle §4 (transition gates); CGP-03 blocked pending CGP-02                                                                                                                                                       | Major transitions are explicitly authorised; work cannot silently skip prerequisites.                                                                                                                         |
 | Repository integrity                         | Aligned          | Authoritative records identifiable and internally coherent; historical records preserved; README.md links to governance records; full governance and programme baseline committed and pushed to `origin/main`; HEAD = origin/main (0/0); unrelated engineering worktree remains dirty but does not affect governance baseline | The governance baseline is durably preserved in the remote. Unrelated engineering/source changes in the worktree are not governance artefacts.                                                                |
-| Exceptions and unresolved matters            | Aligned          | Master Programme §6, §11 (CGP-03 blocked; CGP-02C.13 recorded as In Progress with all completion gates satisfied, ready for bounded closure); Consolidated Decision Register (Pending statuses for 25+ decisions; EOG-02 deferred decisions explicitly recorded); CHANGE.md remaining risks                                   | Blockers, pending decisions and deferred matters are visible and not silently resolved.                                                                                                                       |
+| Exceptions and unresolved matters            | Aligned          | Master Programme §6, §11 (CGP-03 blocked; CGP-02C.13 complete as a bounded work package (2026-08-22)); Consolidated Decision Register (Pending statuses for 25+ decisions; EOG-02 deferred decisions explicitly recorded); CHANGE.md remaining risks                                                                          | Blockers, pending decisions and deferred matters are visible and not silently resolved.                                                                                                                       |
 | Governance proportionality                   | Project-Specific | The project operates an extensive constitutional governance programme (CGP-01, CGP-02, EOG-01–05, PTRA assessments) by deliberate Founder-approved design; CGP-02C.12 documents explicitly exclude FEF and cross-project controls                                                                                             | The governance weight is the project's own constitutional programme, not FEF-imposed administration. Whether the volume is proportionate for a pre-launch product is a Founder judgement, not an FEF finding. |
 
 ## 4. Existing Strengths
@@ -174,11 +174,11 @@ The Tiizi Version 2 project is **substantially aligned** with the FEF operationa
 
 **FEF relationship (prospective):** FEF is the adopted baseline governance reference for Tiizi. Tiizi's Master Programme remains authoritative for Tiizi programme state. Tiizi's product-specific constitutional doctrine and prior Founder decisions remain project-owned. Historical records are not rewritten merely because FEF has now been adopted. This record does not claim universal or permanent "full FEF compliance."
 
-**CGP-02C.13 programme-state synchronization (resolved):** The Master Programme was synchronized through v1.22 and v1.23 to reflect the current CGP-02C.13 state. Master Programme **v1.23** records CGP-02C.13 as **In Progress — all completion gates satisfied; ready for separately governed bounded closure**. All execution phases are complete; Founder disposition is closed (45/45 Accepted, 0 unresolved); Blueprint integration deliverables D17–D20 are complete; all 9 completion gates are satisfied. No whole-instrument constitutional approval, adoption or effect exists; CGP-02 and Stage E0 remain In Progress; CGP-03 remains blocked; and no successor package is authorized.
+**CGP-02C.13 bounded closure (completed 2026-08-22):** CGP-02C.13 — Whole-Instrument Consolidation is **Complete as a bounded work package**. Master Programme **v1.24** records closure. All execution phases, Founder disposition (45/45 Accepted), D17–D20, and all 9 completion gates are complete. Closure evidence issued (Completion Report, Package Closure Verification, Completion Validation Report). No whole-instrument constitutional approval, adoption or effect exists; CGP-02 and Stage E0 remain In Progress; CGP-03 remains blocked; and no successor package is authorized.
 
-**Remaining gaps:** (1) EOG-03 approval date — evidence gap retained pending Founder input. Repository integrity gap is resolved: the full governance and programme baseline has been committed and pushed to `origin/main`.
+**Remaining gaps:** (1) EOG-03 approval date — evidence gap retained pending Founder input.
 
-The immediate next governed action is: **CGP-02C.13 separately governed bounded closure**. The EOG-03 approval date remains a standing evidence gap.
+The immediate next governed action is: **determine the next CGP-02 lifecycle step** concerning the complete CGP-02 standard's Founder Review and approval lifecycle. The EOG-03 approval date remains a standing evidence gap.
 
 ## 13. Review Trigger
 

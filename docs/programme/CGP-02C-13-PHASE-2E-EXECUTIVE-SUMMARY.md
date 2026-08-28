@@ -2,13 +2,13 @@
 
 ## Document Control
 
-| Field            | Value                                                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Work package     | CGP-02C.13 — Whole-Instrument Consolidation                                                                                          |
-| Execution phase  | Phase 2E — Founder Disposition Recording                                                                                             |
-| Session guide    | [Founder Review Session Guide](CGP-02C-13-FOUNDER-REVIEW-SESSION-GUIDE.md)                                                           |
-| Batched register | [Batched Observation Review Register](CGP-02C-13-BATCHED-OBSERVATION-REVIEW-REGISTER.md)                                             |
-| Status           | Founder Review In Progress — All Founder Observation Dispositions Recorded (CRA-001–CRA-045); closure pending separate authorization |
+| Field            | Value                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Work package     | CGP-02C.13 — Whole-Instrument Consolidation                                                                                                 |
+| Execution phase  | Phase 2E — Founder Disposition Recording                                                                                                    |
+| Session guide    | [Founder Review Session Guide](CGP-02C-13-FOUNDER-REVIEW-SESSION-GUIDE.md)                                                                  |
+| Batched register | [Batched Observation Review Register](CGP-02C-13-BATCHED-OBSERVATION-REVIEW-REGISTER.md)                                                    |
+| Status           | Founder Review Complete — All Founder Observation Dispositions Recorded (CRA-001–CRA-045); CGP-02C.13 bounded closure recorded (2026-08-22) |
 
 ## 1. Executive Result
 
