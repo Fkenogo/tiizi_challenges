@@ -53,7 +53,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 ### 2.4 Major Active Work
 
 - CGP-02C.13 — Whole-Instrument Consolidation (complete as a bounded work package, 2026-08-22; closure evidence issued).
-- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; determine next CGP-02 lifecycle step).
+- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02D whole-standard Founder Review and approval preparation planned).
 - Pre-deploy engineering work on branch `fix/p0-pre-deploy-blockers` (group metadata onboarding and create/edit flows).
 
 ## 3. Alignment Summary
@@ -77,7 +77,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 4. **Explicit lifecycle gates and dependencies.** Stage gates (D→H), the CGP-02C.x bounded work-package sequence, and the blocked status of CGP-03 demonstrate controlled transitions without silent prerequisite skipping.
 5. **Evidence-bounded validation.** Validation reports, completion reports, milestone validation reports and PTRA transition assessments accompany each governed phase.
 6. **Visible exceptions and deferrals.** Pending decisions, deferred EOG-02 decision areas, and the 9 intentionally deferred CGP-02C.13 constitutional questions (D17) are explicitly visible and reported rather than silently resolved.
-7. **Explicit external-framework boundary.** The project has documented that the developing FEF is a boundary consideration only and not a Tiizi normative source (see §7), preserving project ownership and preventing governance import by assumption.
+7. **Explicit external-framework baseline and project ownership.** The project has adopted the FEF operational baseline as Tiizi's baseline governance reference (see §9 and §10), while preserving Tiizi's project-specific constitutional governance, programme state, decision architecture, and historical records as project-owned without governance import by assumption.
 
 ## 5. Genuine Gaps
 
@@ -178,7 +178,7 @@ The Tiizi Version 2 project is **substantially aligned** with the FEF operationa
 
 **Remaining gaps:** (1) EOG-03 approval date — evidence gap retained pending Founder input.
 
-The immediate next governed action is: **determine the next CGP-02 lifecycle step** concerning the complete CGP-02 standard's Founder Review and approval lifecycle. The EOG-03 approval date remains a standing evidence gap.
+The immediate next governed action is: **record the Founder decision on the CGP-02D Founder Authorization Package** concerning the whole-standard Founder Review and approval preparation. The EOG-03 approval date remains a standing evidence gap.
 
 ## 13. Review Trigger
 
