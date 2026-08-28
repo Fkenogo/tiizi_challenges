@@ -8,10 +8,10 @@
 | Programme stage   | Stage E0 — Governance Architecture                                                |
 | Programme phase   | CGP-02 — Constitutional Amendment & Governance Review Standard                    |
 | Document type     | Programme authorization validation report                                         |
-| Status            | Validation Passed — Decision-Ready for Attributable Founder Authorization         |
-| Validation date   | 2026-08-28                                                                        |
-| Validation pass   | CGP-02D Pre-Authorization Boundary Correction (post-correction re-run)            |
-| Basis Commit      | `d48e815` (pre-correction governed baseline)                                      |
+| Status            | Validation Passed — Founder Authorization Recorded; Authorized to Begin pending Master Programme synchronization |
+| Validation date   | 2026-08-28 (pre-decision pass); 2026-08-28 (post-decision pass)                  |
+| Validation pass   | Pre-Authorization Boundary Correction (§§1–5); Post-Decision Authorization Validation (§6) |
+| Basis Commit      | `d48e815` (pre-correction baseline); `05fbbc8` (pre-decision governed baseline)   |
 | Branch            | `main`                                                                            |
 
 ---
@@ -158,3 +158,66 @@ This validation:
 - does **not** authorize or commence CGP-02D;
 - does **not** approve D-03 or execute D-07;
 - does **not** adopt the instrument or create constitutional effect.
+
+---
+
+## 6. Post-Decision Authorization Validation
+
+**Trigger:** The Founder recorded FWA-01 through FWA-05 on 2026-08-28. This section re-validates the resulting authorization evidence. It does not reuse the §§1–5 pre-decision 57/57 result as proof of the Founder's actual decision.
+
+### 6.1 Decision Attribution and Consistency
+- [x] FWA-01 through FWA-05 are attributable to the Founder with an explicit decision date (2026-08-28).
+- [x] Each FWA selects Option A, matching the recommended options presented in the [Founder Authorization Package](CGP-02D-FOUNDER-AUTHORIZATION-PACKAGE.md).
+- [x] The [Founder Authorization Record](CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md) restates every decision, option, outcome and condition without drift.
+- **Finding:** **Pass.**
+
+### 6.2 Package Identity and Scope Drift Check
+- [x] Approved identifier (`CGP-02D`) and title match the Proposed Work Package Definition exactly.
+- [x] Approved scope and exclusions match the Planning Package exactly; no amendment was directed.
+- [x] Package structure (D-01 through D-08) matches the Planning Package exactly; no decomposition was directed.
+- **Finding:** **Pass — no scope drift.**
+
+### 6.3 D17 and D-07 Boundary Preservation
+- [x] The Founder Authorization Record resolves no D17 deferred constitutional question; all 9 (DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11) remain preserved.
+- [x] FWA-04's attributable note explicitly states preparation of D-07 does not constitute execution of Founder approval.
+- [x] FWA-05's attributable note explicitly states the authorization does not approve D-03, does not approve or execute D-07, and does not guarantee an Approved outcome.
+- **Finding:** **Pass.**
+
+### 6.4 Adoption / Effect Leakage Check
+- [x] No language in the Founder Authorization Record approves a constitutional proposition, adopts the instrument, or creates constitutional effect.
+- [x] No language declares CGP-02 or Stage E0 complete, or CGP-03 unblocked.
+- [x] No language declares substantive Founder Review (D-01) begun.
+- **Finding:** **Pass.**
+
+### 6.5 Post-Decision Entry Gate Status
+- [x] EG-01 CGP-02C.13 Bounded Closure Complete — Pass (unchanged).
+- [x] EG-02 Whole-Instrument V0 Integrity Verified — Pass (SHA-256 unchanged, re-verified below).
+- [x] EG-03 Planning and Dependency Package Validated — Pass (§§1–5 of this report).
+- [x] EG-04 Founder Authorization Recorded — Pass ([Founder Authorization Record](CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md), FWA-01 through FWA-05).
+- [x] EG-05 Master Programme Synchronized — Pass, contingent on the synchronized Master Programme issued in the same governance pass as this validation.
+- **Finding:** **Pass — all 5 entry gates satisfied.**
+
+### 6.6 Mechanical Re-Verification
+- [x] V0 SHA-256 remains `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675`.
+- [x] 302 propositions remain intact; no proposition wording changed.
+- [x] Relative links in the Founder Authorization Record resolve.
+- [x] `git diff --check` clean on all governed files in this pass.
+- **Finding:** **Pass.**
+
+### 6.7 Post-Decision Validation Summary
+
+| Category | Checked Items | Result |
+| :--- | :--- | :--- |
+| Decision Attribution and Consistency | 3 | Pass |
+| Scope Drift Check | 3 | Pass |
+| D17 / D-07 Boundary Preservation | 3 | Pass |
+| Adoption / Effect Leakage Check | 3 | Pass |
+| Entry Gate Status | 5 | Pass |
+| Mechanical Re-Verification | 4 | Pass |
+| **Overall Result** | **21 / 21** | **PASS** |
+
+### 6.8 Post-Decision Validation Statement
+
+FWA-01 through FWA-05 are attributable, internally consistent, and free of scope drift, D17 resolution, D-07 execution, or adoption/effect leakage. All 5 entry gates are satisfied once Master Programme synchronization is issued.
+
+**CGP-02D is Authorized to Begin.** Substantive execution (D-01 — Whole-Standard Founder Constitutional Review Package preparation) has not commenced and is not authorized by this validation. This validation approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package; adopts no instrument; and creates no constitutional effect.

@@ -53,7 +53,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 ### 2.4 Major Active Work
 
 - CGP-02C.13 — Whole-Instrument Consolidation (complete as a bounded work package, 2026-08-22; closure evidence issued).
-- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02D whole-standard Founder Review and approval preparation planned).
+- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02D whole-standard Founder Review and approval preparation authorized to begin 2026-08-28, D-01 not yet commenced).
 - Pre-deploy engineering work on branch `fix/p0-pre-deploy-blockers` (group metadata onboarding and create/edit flows).
 
 ## 3. Alignment Summary
@@ -178,7 +178,9 @@ The Tiizi Version 2 project is **substantially aligned** with the FEF operationa
 
 **Remaining gaps:** (1) EOG-03 approval date — evidence gap retained pending Founder input.
 
-The immediate next governed action is: **record the Founder decision on the CGP-02D Founder Authorization Package** concerning the whole-standard Founder Review and approval preparation. The EOG-03 approval date remains a standing evidence gap.
+**CGP-02D Founder authorization (recorded 2026-08-28):** CGP-02D — Whole-Standard Founder Review and Approval Preparation is **Authorized to Begin**. The [Founder Authorization Record](../programme/CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md) records FWA-01 through FWA-05 as Option A — Approved/Authorized. Master Programme **v1.26** records the synchronization. CGP-02D is not yet In Progress; substantive Founder Review (D-01) has not commenced; this authorization approves no proposition, approves no Founder Approval Candidate (D-03), executes no Founder Approval Decision Package (D-07), adopts no instrument and creates no constitutional effect.
+
+The immediate next governed action is: **commence D-01 — Whole-Standard Founder Constitutional Review Package preparation** within the authorized CGP-02D boundary. The EOG-03 approval date remains a standing evidence gap.
 
 ## 13. Review Trigger
 
