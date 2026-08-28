@@ -35,5 +35,5 @@ All 45 constitutional observations are organized into the six required Founder r
 - Founder rationale is recorded for CRA-001 through CRA-045.
 - Future amendment programme references remain blank (none separately established).
 - The Founder observation-disposition programme is closed.
-- CGP-02C.13 itself remains In Progress pending separately authorized closure and whole-instrument readiness assessment.
+- CGP-02C.13 itself is Complete as a bounded work package (2026-08-22).
 - No constitutional amendment, whole-instrument approval, adoption or constitutional effect has been created.

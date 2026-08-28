@@ -134,7 +134,7 @@ The following Founder decisions were recorded on 2026-08-08:
 **Remaining Founder decisions required:**
 
 - Provide the EOG-03 approval date from attributable evidence.
-- ~~Authorize the required Master Programme synchronization for CGP-02C.13 execution state~~ — **Resolved 2026-08-08.** Master Programme v1.22 now records CGP-02C.13 as In Progress (see §10 and §12).
+- ~~Authorize the required Master Programme synchronization for CGP-02C.13 execution and closure state~~ — **Resolved.** Master Programme v1.24 records CGP-02C.13 bounded closure as Complete (see §10 and §12).
 
 ## 10. Approved Actions and Deviations
 
@@ -185,7 +185,7 @@ The immediate next governed action is: **determine the next CGP-02 lifecycle ste
 This alignment profile should be reviewed again when any of the following occurs:
 
 - Stage E0 completes (CGP-02 approval and adoption) or a new major programme phase begins;
-- CGP-02C.13 bounded closure is recorded;
+- CGP-02 whole-standard Founder review and approval lifecycle begins;
 - a material Founder decision changes authority or programme scope;
 - a major release or implementation baseline is approved;
 - the project discovers a recurring governance failure;
