@@ -110,9 +110,9 @@ Every Layer 3 finding classified FUTURE ALIGNMENT or DEFERRED / GOVERNED ELSEWHE
 | :--- | :--- |
 | Total material findings | 20 |
 | CONSISTENT | 12 |
-| FUTURE ALIGNMENT | 7 |
+| FUTURE ALIGNMENT | 6 |
 | PRE-APPROVAL ACTION REQUIRED | **0** |
-| DEFERRED / GOVERNED ELSEWHERE | 1 (covering all 9 D17 matters as one record; see §4 for the per-matter table) |
+| DEFERRED / GOVERNED ELSEWHERE | 2 (D05A-003 — one consolidated record covering all 9 D17 matters, see §4 for the per-matter table; D05A-014 — Entity Ownership Register family forward cross-reference) |
 | CONFLICT | **0** |
 | Unresolved classification count | 0 |
 | Broken cross-reference count | 0 |
@@ -132,8 +132,8 @@ D-05A discovery found:
 - **zero** findings requiring PRE-APPROVAL ACTION;
 - **zero** findings classified CONFLICT;
 - **no** finding that would prevent constitutional approval of CGP-02;
-- **7** legitimate future administrative-alignment obligations, all downstream/governance-index in nature, none blocking;
-- **1** consolidated DEFERRED / GOVERNED ELSEWHERE record covering the 9 already-known D17 deferred matters, with the DQ-06/DQ-07 controls confirmed and preserved, not weakened or strengthened by new evidence.
+- **6** legitimate future administrative-alignment obligations (D05A-008 through D05A-013), all downstream/governance-index in nature, none blocking;
+- **2** DEFERRED / GOVERNED ELSEWHERE records (D05A-003 — consolidated record covering the 9 already-known D17 deferred matters; D05A-014 — Entity Ownership Register family forward cross-reference), all non-blocking; the DQ-06/DQ-07 controls are confirmed and preserved, not weakened or strengthened by new evidence.
 
 **This is a discovery result, not a Founder decision, and it does not close D-05.** D-05 (the final Whole-Standard Cross-Reference and Impact Analysis at `docs/governance/principles/34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md`) remains unwritten and unclosed pending Founder / ChatGPT review of this discovery artifact.
 
