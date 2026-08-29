@@ -10,8 +10,9 @@
 | Work package | CGP-02D — Whole-Standard Founder Review and Approval Preparation |
 | Deliverable | D-03 — Whole-Standard Founder Approval Candidate |
 | Document type | Whole-Standard Founder Approval Candidate |
-| Status | **Founder Approval Candidate — Not Founder Approved** |
+| Status | **Founder Approval Candidate — Founder Accepted 2026-08-29 — Whole Standard Not Founder Approved** |
 | Candidate date | 2026-08-29 |
+| Founder acceptance date | 2026-08-29 — Founder accepted D-03 as the correct candidate representation of the reviewed corpus. This does not approve, adopt, apply, or give constitutional effect to CGP-02; does not resolve D17; and does not execute the Founder Approval Decision Gate. |
 | Predecessor | [D-02 — Founder Constitutional Review Decision Record](../../programme/CGP-02D-FOUNDER-DECISION-RECORD.md) |
 | Corpus source | [CGP-02C.13 Whole-Instrument Founder Review Draft V0](33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md) |
 | Corpus | 302 propositions / 302 unique proposition IDs |
@@ -996,7 +997,7 @@ Repository recording of this candidate is evidentiary/administrative only.
 ```text
 D-01  Whole-Standard Founder Constitutional Review Package     [PREPARED]
 D-02  Whole-Standard Founder Decision Record                   [COMPLETE]
-D-03  CGP-02 Whole-Standard Founder Approval Candidate          [PREPARED — this document; NOT Founder accepted]
+D-03  CGP-02 Whole-Standard Founder Approval Candidate          [FOUNDER ACCEPTED 2026-08-29 — this document]
 D-04  Whole-Standard Proposition Traceability Report           [NOT STARTED]
 D-05  Whole-Standard Cross-Reference and Impact Analysis       [NOT STARTED]
 D-06  Whole-Standard Validation Report                         [NOT STARTED]
@@ -1009,4 +1010,4 @@ This candidate does not claim readiness to execute the Founder Approval Decision
 
 ## H. Candidate Status Statement
 
-Mechanical preparation of this candidate by controlled document construction does **not** constitute Founder acceptance of D-03. This candidate is presented for Founder review. D-04 (Proposition Traceability Report) does not begin until the Founder has reviewed and accepted this candidate.
+The Founder reviewed and **accepted** this candidate on 2026-08-29 as the correct representation of the D-02-reviewed corpus. This acceptance is bounded: it accepts D-03 as the candidate representation only. It does **not** mean CGP-02 is Founder Approved; does **not** adopt CGP-02; does **not** establish application; does **not** create constitutional effect; does **not** resolve any D17 deferred matter; and does **not** execute the Founder Approval Decision Gate. D-04 (Proposition Traceability Report) proceeds on the basis of this accepted candidate.
