@@ -8,7 +8,7 @@
 | Programme stage   | Stage E0 — Governance Architecture                                                |
 | Programme phase   | CGP-02 — Constitutional Amendment & Governance Review Standard                    |
 | Document type     | Programme authorization validation report                                         |
-| Status            | Validation Passed — Founder Authorization Recorded; Authorized to Begin pending Master Programme synchronization |
+| Status            | Validation Passed — In Progress; D-01 Commenced 2026-08-29; Master Programme v1.27 |
 | Validation date   | 2026-08-28 (pre-decision pass); 2026-08-28 (post-decision pass)                  |
 | Validation pass   | Pre-Authorization Boundary Correction (§§1–5); Post-Decision Authorization Validation (§6) |
 | Basis Commit      | `d48e815` (pre-correction baseline); `05fbbc8` (pre-decision governed baseline)   |
@@ -218,6 +218,6 @@ This validation:
 
 ### 6.8 Post-Decision Validation Statement
 
-FWA-01 through FWA-05 are attributable, internally consistent, and free of scope drift, D17 resolution, D-07 execution, or adoption/effect leakage. All 5 entry gates are satisfied once Master Programme synchronization is issued.
+FWA-01 through FWA-05 are attributable, internally consistent, and free of scope drift, D17 resolution, D-07 execution, or adoption/effect leakage. All 5 entry gates are satisfied. Master Programme synchronized to v1.27 on 2026-08-29.
 
-**CGP-02D is Authorized to Begin.** Substantive execution (D-01 — Whole-Standard Founder Constitutional Review Package preparation) has not commenced and is not authorized by this validation. This validation approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package; adopts no instrument; and creates no constitutional effect.
+**CGP-02D is In Progress.** D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29. D-02 has not commenced. This validation approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package; adopts no instrument; and creates no constitutional effect.

@@ -8,7 +8,7 @@
 
 **Decision authority:** Founder
 
-**Record status:** Founder authorization recorded; commencement subject to entry-gate satisfaction and Master Programme synchronization
+**Record status:** In Progress — D-01 commenced 2026-08-29
 
 **Decision date:** 2026-08-28
 
@@ -167,14 +167,14 @@ This authorization record:
 | CGP-02C.13 bounded closure confirmed Complete | Pass | Master Programme §11; [Completion Report](CGP-02C-13-COMPLETION-REPORT.md) |
 | V0 Draft SHA-256 and 302 propositions verified unchanged | Pass | SHA-256 `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
 | Founder Work Package Authorization recorded (FWA-01 through FWA-05) | Pass | This record |
-| Master Programme synchronized to reflect authorized CGP-02D work package | Pending — performed in the same synchronization pass as this record's issuance | [Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) |
+| Master Programme synchronized to reflect authorized CGP-02D work package | Pass — synchronized 2026-08-29 (v1.27) | [Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) |
 
-The explicit FWA-05 condition is satisfied once Master Programme synchronization completes. Substantive work under CGP-02D (D-01) may begin only within the approved planning scope, dependencies, entry gates and exclusions, and has not yet begun as of this record.
+The explicit FWA-05 condition is satisfied. All entry gates pass. Substantive work under CGP-02D has commenced: D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29.
 
 ---
 
 ## 12. Record Completion
 
-FWA-01 through FWA-05 are attributable and complete. `CGP-02D — Whole-Standard Founder Review and Approval Preparation` is the authorized bounded work package once Master Programme synchronization is performed.
+FWA-01 through FWA-05 are attributable and complete. `CGP-02D — Whole-Standard Founder Review and Approval Preparation` is the authorized bounded work package. Master Programme synchronization was performed on 2026-08-29 (v1.27). D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29.
 
-This record approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package or Draft Approval Record. It does not adopt any instrument or create constitutional effect. It does not resolve any D17 deferred constitutional question. Substantive Founder Review work (D-01) has not begun.
+This record approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package or Draft Approval Record. It does not adopt any instrument or create constitutional effect. It does not resolve any D17 deferred constitutional question.
