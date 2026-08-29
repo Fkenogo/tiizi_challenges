@@ -4,7 +4,7 @@
 
 **Authority boundary:** This guide explains the programme. It does not replace the [Tiizi V2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md), constitutional instruments, Founder decisions, or controlled programme evidence.
 
-**Current governed baseline:** Master Programme v1.30; Stage E0 — Governance Architecture In Progress; CGP-02D In Progress; D-01 prepared; D-02 complete (WRQ-01–WRQ-10, 10/10 Accepted); D-03 Founder Accepted; D-04 Complete — PASS (302/302, 0 exceptions); D-05 not started.
+**Current governed baseline:** Master Programme v1.31; Stage E0 — Governance Architecture In Progress; CGP-02D In Progress; D-01 prepared; D-02 complete (WRQ-01–WRQ-10, 10/10 Accepted); D-03 Founder Accepted; D-04 Complete — PASS (302/302, 0 exceptions); D-05 In Progress (D-05A discovery complete, 0 CONFLICT, 0 PRE-APPROVAL ACTION REQUIRED, awaiting Founder/ChatGPT review).
 
 ---
 
@@ -154,9 +154,10 @@ Its major deliverables are:
 - D-02 — Whole-Standard Founder Decision Record is **Complete** (WRQ-01–WRQ-10, 10/10 Accepted).
 - D-03 — Whole-Standard Founder Approval Candidate is **Founder Accepted** (2026-08-29).
 - D-04 — Whole-Standard Proposition Traceability Report is **Complete — PASS** (302/302 propositions, 0 exceptions).
+- D-05A — Cross-Reference and Impact Discovery is **complete** (0 CONFLICT, 0 PRE-APPROVAL ACTION REQUIRED across 20 findings); D-05 itself is **not yet finalized**.
 - The whole standard is **not yet Founder-approved, adopted or constitutionally effective**.
 
-The immediate governed next step is preparation of D-05 — Whole-Standard Cross-Reference and Impact Analysis.
+The immediate governed next step is Founder/ChatGPT review of D-05A, after which D-05 — Whole-Standard Cross-Reference and Impact Analysis may be finalized.
 
 ---
 
