@@ -4,7 +4,7 @@
 
 **Authority boundary:** This guide explains the programme. It does not replace the [Tiizi V2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md), constitutional instruments, Founder decisions, or controlled programme evidence.
 
-**Current governed baseline:** Master Programme v1.28; Stage E0 — Governance Architecture In Progress; CGP-02D In Progress; D-01 prepared; D-02 complete (WRQ-01–WRQ-10, 10/10 Accepted); D-03 not started.
+**Current governed baseline:** Master Programme v1.29; Stage E0 — Governance Architecture In Progress; CGP-02D In Progress; D-01 prepared; D-02 complete (WRQ-01–WRQ-10, 10/10 Accepted); D-03 mechanically prepared, not Founder accepted; D-04 not started.
 
 ---
 
@@ -151,10 +151,11 @@ Its major deliverables are:
 - CGP-02C.13 Whole-Instrument Consolidation is closed.
 - CGP-02D — Whole-Standard Founder Review and Approval Preparation is **In Progress**.
 - D-01 — Whole-Standard Founder Constitutional Review Package is **Prepared**.
-- D-02 — Whole-Standard Founder Decision Record is **Not Started**.
+- D-02 — Whole-Standard Founder Decision Record is **Complete** (WRQ-01–WRQ-10, 10/10 Accepted).
+- D-03 — Whole-Standard Founder Approval Candidate is **mechanically prepared**; it is **not** Founder accepted.
 - The whole standard is **not yet Founder-approved, adopted or constitutionally effective**.
 
-The immediate governed decision point is the attributable Founder whole-standard review represented by D-01 / D-02.
+The immediate governed decision point is Founder review and acceptance of the D-03 candidate. D-04 does not begin until the Founder accepts D-03.
 
 ---
 
