@@ -167,14 +167,14 @@ This authorization record:
 | CGP-02C.13 bounded closure confirmed Complete | Pass | Master Programme §11; [Completion Report](CGP-02C-13-COMPLETION-REPORT.md) |
 | V0 Draft SHA-256 and 302 propositions verified unchanged | Pass | SHA-256 `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
 | Founder Work Package Authorization recorded (FWA-01 through FWA-05) | Pass | This record |
-| Master Programme synchronized to reflect authorized CGP-02D work package | Pass — synchronized 2026-08-29 (v1.27) | [Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) |
+| Master Programme synchronized to reflect authorized CGP-02D work package | Pass — synchronized 2026-08-29 (v1.28) | [Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) |
 
-The explicit FWA-05 condition is satisfied. All entry gates pass. Substantive work under CGP-02D has commenced: D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29.
+The explicit FWA-05 condition is satisfied. All entry gates pass. Substantive work under CGP-02D has commenced: D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29, and D-02 — Founder Constitutional Review Decision Record is complete (2026-08-29; WRQ-01 through WRQ-10, 10/10 Accepted).
 
 ---
 
 ## 12. Record Completion
 
-FWA-01 through FWA-05 are attributable and complete. `CGP-02D — Whole-Standard Founder Review and Approval Preparation` is the authorized bounded work package. Master Programme synchronization was performed on 2026-08-29 (v1.27). D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29.
+FWA-01 through FWA-05 are attributable and complete. `CGP-02D — Whole-Standard Founder Review and Approval Preparation` is the authorized bounded work package. Master Programme synchronization was performed on 2026-08-29 (v1.28). D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29. D-02 — Founder Constitutional Review Decision Record is complete (2026-08-29; WRQ-01 through WRQ-10, 10/10 Accepted).
 
 This record approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package or Draft Approval Record. It does not adopt any instrument or create constitutional effect. It does not resolve any D17 deferred constitutional question.

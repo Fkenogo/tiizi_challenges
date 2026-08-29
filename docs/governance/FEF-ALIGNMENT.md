@@ -53,7 +53,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 ### 2.4 Major Active Work
 
 - CGP-02C.13 — Whole-Instrument Consolidation (complete as a bounded work package, 2026-08-22; closure evidence issued).
-- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02D whole-standard Founder Review and approval preparation in progress, D-01 prepared 2026-08-29, D-02 not yet commenced).
+- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02D whole-standard Founder Review and approval preparation in progress, D-01 prepared and D-02 Founder Constitutional Review Decision Record complete 2026-08-29, D-03 not yet commenced).
 - Pre-deploy engineering work on branch `fix/p0-pre-deploy-blockers` (group metadata onboarding and create/edit flows).
 
 ## 3. Alignment Summary
@@ -178,9 +178,9 @@ The Tiizi Version 2 project is **substantially aligned** with the FEF operationa
 
 **Remaining gaps:** (1) EOG-03 approval date — evidence gap retained pending Founder input.
 
-**CGP-02D Founder authorization (recorded 2026-08-28) and D-01 commencement (2026-08-29):** CGP-02D — Whole-Standard Founder Review and Approval Preparation is **In Progress**. The [Founder Authorization Record](../programme/CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md) records FWA-01 through FWA-05 as Option A — Approved/Authorized. Master Programme **v1.27** records the synchronization. [D-01 — Whole-Standard Founder Constitutional Review Package](../programme/CGP-02D-FOUNDER-REVIEW-PACKAGE.md) was prepared and issued 2026-08-29; substantive Founder Review (D-02) has not commenced; this authorization and D-01 preparation approve no proposition, approve no Founder Approval Candidate (D-03), execute no Founder Approval Decision Package (D-07), adopt no instrument and create no constitutional effect.
+**CGP-02D Founder authorization (recorded 2026-08-28), D-01 commencement and D-02 completion (2026-08-29):** CGP-02D — Whole-Standard Founder Review and Approval Preparation is **In Progress**. The [Founder Authorization Record](../programme/CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md) records FWA-01 through FWA-05 as Option A — Approved/Authorized. Master Programme **v1.28** records the synchronization. [D-01 — Whole-Standard Founder Constitutional Review Package](../programme/CGP-02D-FOUNDER-REVIEW-PACKAGE.md) was prepared and issued 2026-08-29; the attributable Founder Constitutional Review was completed the same day and is recorded in the [D-02 Founder Constitutional Review Decision Record](../programme/CGP-02D-FOUNDER-DECISION-RECORD.md) (WRQ-01 through WRQ-10, 10/10 Accepted; 0 corrections, 0 clarifications, 0 CRA matters reopened, 0 D17 matters promoted). This authorization, D-01 preparation and D-02 recording approve no proposition, approve no Founder Approval Candidate (D-03), execute no Founder Approval Decision Package (D-07), adopt no instrument and create no constitutional effect.
 
-The immediate next governed action is: **attributable Founder Constitutional Review**, recorded in D-02, using the prepared D-01 package. The EOG-03 approval date remains a standing evidence gap.
+The immediate next governed action is: **prepare D-03 — CGP-02 Whole-Standard Founder Approval Candidate**, preserving all D-02 dispositions and all 9 D17 deferred matters unresolved. The EOG-03 approval date remains a standing evidence gap.
 
 ## 13. Review Trigger
 

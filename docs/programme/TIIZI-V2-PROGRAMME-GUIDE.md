@@ -4,7 +4,7 @@
 
 **Authority boundary:** This guide explains the programme. It does not replace the [Tiizi V2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md), constitutional instruments, Founder decisions, or controlled programme evidence.
 
-**Current governed baseline:** Master Programme v1.27; Stage E0 — Governance Architecture In Progress; CGP-02D In Progress; D-01 prepared; D-02 not started.
+**Current governed baseline:** Master Programme v1.28; Stage E0 — Governance Architecture In Progress; CGP-02D In Progress; D-01 prepared; D-02 complete (WRQ-01–WRQ-10, 10/10 Accepted); D-03 not started.
 
 ---
 

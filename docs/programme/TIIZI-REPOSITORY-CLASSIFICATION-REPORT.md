@@ -4,7 +4,7 @@
 
 **Authority boundary:** This report does not move, delete, supersede, approve or adopt any file. It is an information-architecture classification to support a later controlled cleanup decision.
 
-**Assessment baseline:** GitHub `main`, current V2 programme at Master Programme v1.27 / CGP-02D In Progress.
+**Assessment baseline:** GitHub `main`, current V2 programme at Master Programme v1.28 / CGP-02D In Progress (D-02 complete).
 
 ---
 

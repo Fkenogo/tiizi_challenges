@@ -8,7 +8,7 @@
 | Programme stage   | Stage E0 — Governance Architecture                                                |
 | Programme phase   | CGP-02 — Constitutional Amendment & Governance Review Standard                    |
 | Document type     | Programme authorization validation report                                         |
-| Status            | Validation Passed — In Progress; D-01 Commenced 2026-08-29; Master Programme v1.27 |
+| Status            | Validation Passed — In Progress; D-01 Prepared, D-02 Complete 2026-08-29; Master Programme v1.28 |
 | Validation date   | 2026-08-28 (pre-decision pass); 2026-08-28 (post-decision pass)                  |
 | Validation pass   | Pre-Authorization Boundary Correction (§§1–5); Post-Decision Authorization Validation (§6) |
 | Basis Commit      | `d48e815` (pre-correction baseline); `05fbbc8` (pre-decision governed baseline)   |
@@ -220,4 +220,4 @@ This validation:
 
 FWA-01 through FWA-05 are attributable, internally consistent, and free of scope drift, D17 resolution, D-07 execution, or adoption/effect leakage. All 5 entry gates are satisfied. Master Programme synchronized to v1.27 on 2026-08-29.
 
-**CGP-02D is In Progress.** D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29. D-02 has not commenced. This validation approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package; adopts no instrument; and creates no constitutional effect.
+**CGP-02D is In Progress.** D-01 — Whole-Standard Founder Constitutional Review Package was prepared and issued on 2026-08-29. D-02 — Founder Constitutional Review Decision Record is complete (2026-08-29; WRQ-01 through WRQ-10, 10/10 Accepted). D-03 has not commenced. This validation approves no constitutional proposition, no Founder Approval Candidate, and no Founder Approval Decision Package; adopts no instrument; and creates no constitutional effect.
