@@ -10,7 +10,7 @@
 | Work package | CGP-02D — Whole-Standard Founder Review and Approval Preparation |
 | Deliverable | D-05A — Whole-Standard Cross-Reference and Impact Discovery (bounded supporting artifact for D-05) |
 | Document type | Governance relationship discovery / impact classification |
-| Status | **Discovery Complete — Awaiting Founder / ChatGPT Review. D-05 itself is NOT closed by this document.** |
+| Status | **Discovery Complete — Founder Accepted 2026-08-29 as discovery evidence supporting D-05. D-05 itself is NOT closed by this document.** |
 | Report date | 2026-08-29 |
 | Predecessors | [D-03 — Founder Approval Candidate](34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md) (Founder Accepted 2026-08-29); [D-04 — Proposition Traceability Report](34-CGP-02-PROPOSITION-TRACEABILITY-REPORT.md) (Complete — PASS) |
 | Final D-05 destination | `docs/governance/principles/34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md` — named in the [CGP-02D Planning Package](../../programme/CGP-02D-PLANNING-PACKAGE.md) §8. **Not created by this task.** This document is bounded discovery evidence only. |
@@ -165,12 +165,12 @@ D-01  Whole-Standard Founder Constitutional Review Package     [PREPARED]
 D-02  Whole-Standard Founder Decision Record                   [COMPLETE]
 D-03  CGP-02 Whole-Standard Founder Approval Candidate          [FOUNDER ACCEPTED 2026-08-29]
 D-04  Whole-Standard Proposition Traceability Report            [COMPLETE — PASS]
-D-05A Cross-Reference and Impact Discovery                      [DISCOVERY COMPLETE — this document; NOT Founder/ChatGPT reviewed]
-D-05  Whole-Standard Cross-Reference and Impact Analysis        [NOT COMPLETE — awaiting D-05A review]
+D-05A Cross-Reference and Impact Discovery                      [DISCOVERY COMPLETE — FOUNDER ACCEPTED 2026-08-29]
+D-05  Whole-Standard Cross-Reference and Impact Analysis        [COMPLETE — PASS]
 D-06  Whole-Standard Validation Report                          [NOT STARTED]
 D-07  CGP-02 Founder Approval Decision Package                  [NOT STARTED]
       [FOUNDER APPROVAL DECISION GATE — NOT TAKEN — separate attributable Founder decision]
 D-08  CGP-02D Completion & Stage E0 Transition Report            [NOT STARTED]
 ```
 
-The next governed action is Founder / ChatGPT review of this D-05A discovery artifact. Only after that review may D-05 itself be finalized. D-06 is not begun by this document.
+This discovery artifact was accepted by the Founder on 2026-08-29 as discovery evidence supporting D-05. D-05 — Whole-Standard Cross-Reference and Impact Analysis is recorded as **Complete — PASS** in its own final deliverable; this discovery document alone does not finalize D-05. D-06 is not begun by this document.
