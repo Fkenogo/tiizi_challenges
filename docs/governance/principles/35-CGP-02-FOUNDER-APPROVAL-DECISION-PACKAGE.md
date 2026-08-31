@@ -2,31 +2,31 @@
 
 ## 1. Document Control
 
-| Field | Value |
-|---|---|
-| Programme | Tiizi Version 2 |
-| Stage | Stage E0 — Governance Architecture |
-| Phase | CGP-02 — Constitutional Amendment & Governance Review Standard |
-| Work package | CGP-02D — Whole-Standard Founder Review and Approval Preparation |
-| Deliverable | D-07 — Founder Approval Decision Package |
-| Document type | Bounded decision package placing the validated CGP-02 candidate before the Founder for an attributable approval decision |
-| Preparation status | **Prepared / Decision-Ready** |
-| Preparation date | 2026-08-31 |
-| Governed baseline | `f2661c8` (repository HEAD at D-07 preparation; matched `origin/main`) |
-| Predecessors | [D-01 — Whole-Standard Founder Constitutional Review Package](../../programme/CGP-02D-FOUNDER-REVIEW-PACKAGE.md) (Prepared); [D-02 — Founder Constitutional Review Decision Record](../../programme/CGP-02D-FOUNDER-DECISION-RECORD.md) (Complete; WRQ-01–WRQ-10, 10/10 Accepted); [D-03 — Founder Approval Candidate](34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md) (Founder Accepted 2026-08-29); [D-04 — Proposition Traceability Report](34-CGP-02-PROPOSITION-TRACEABILITY-REPORT.md) (Complete — PASS); [D-05 — Cross-Reference and Impact Analysis](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md) (Complete — PASS); [D-05A — Cross-Reference and Impact Discovery](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-DISCOVERY.md) (Founder Accepted 2026-08-29); [D-06 — Whole-Standard Validation Report](34-CGP-02-WHOLE-STANDARD-VALIDATION-REPORT.md) (Complete — PASS) |
-| Authorization basis | [CGP-02D Planning Package](../../programme/CGP-02D-PLANNING-PACKAGE.md) §4 item 7, §8, §11; [Founder Authorization Record](../../programme/CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md) FWA-01 through FWA-05 (Option A — Approved/Authorized) |
-| Candidate corpus | 302 propositions / 302 unique proposition IDs |
-| V0 SHA-256 | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
-| Approval | **NOT YET DECIDED** — this document prepares the decision; it does not execute it |
-| Adoption | Not established |
-| Application | Not established |
-| Constitutional effect | None |
+| Field                 | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Programme             | Tiizi Version 2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Stage                 | Stage E0 — Governance Architecture                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Phase                 | CGP-02 — Constitutional Amendment & Governance Review Standard                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Work package          | CGP-02D — Whole-Standard Founder Review and Approval Preparation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Deliverable           | D-07 — Founder Approval Decision Package                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Document type         | Bounded decision package placing the validated CGP-02 candidate before the Founder for an attributable approval decision                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Preparation status    | **Prepared / Decision-Ready**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Preparation date      | 2026-08-31                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Governed baseline     | `f2661c8` (repository HEAD at D-07 preparation; matched `origin/main`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Predecessors          | [D-01 — Whole-Standard Founder Constitutional Review Package](../../programme/CGP-02D-FOUNDER-REVIEW-PACKAGE.md) (Prepared); [D-02 — Founder Constitutional Review Decision Record](../../programme/CGP-02D-FOUNDER-DECISION-RECORD.md) (Complete; WRQ-01–WRQ-10, 10/10 Accepted); [D-03 — Founder Approval Candidate](34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md) (Founder Accepted 2026-08-29); [D-04 — Proposition Traceability Report](34-CGP-02-PROPOSITION-TRACEABILITY-REPORT.md) (Complete — PASS); [D-05 — Cross-Reference and Impact Analysis](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md) (Complete — PASS); [D-05A — Cross-Reference and Impact Discovery](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-DISCOVERY.md) (Founder Accepted 2026-08-29); [D-06 — Whole-Standard Validation Report](34-CGP-02-WHOLE-STANDARD-VALIDATION-REPORT.md) (Complete — PASS) |
+| Authorization basis   | [CGP-02D Planning Package](../../programme/CGP-02D-PLANNING-PACKAGE.md) §4 item 7, §8, §11; [Founder Authorization Record](../../programme/CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md) FWA-01 through FWA-05 (Option A — Approved/Authorized)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Candidate corpus      | 302 propositions / 302 unique proposition IDs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| V0 SHA-256            | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Approval              | **NOT YET DECIDED** — this document prepares the decision; it does not execute it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Adoption              | Not established                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Application           | Not established                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Constitutional effect | None                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## 2. Purpose
 
 This document is the bounded Founder Approval Decision Package for CGP-02 — Constitutional Amendment & Governance Review Standard. It places the validated 302-proposition Whole-Standard Founder Approval Candidate (D-03) before the Founder for a separate, attributable approval decision at the Founder Approval Decision Gate.
 
-D-07 is the final deliverable of CGP-02D. It does not make the Founder approval decision. It does not approve, adopt, apply or create constitutional effect for CGP-02. It prepares the decision materials so that the Founder can make an attributable decision with full awareness of:
+D-07 is the final pre-decision preparation deliverable of CGP-02D. It does not make the Founder approval decision. It does not approve, adopt, apply or create constitutional effect for CGP-02. It prepares the decision materials so that the Founder can make an attributable decision with full awareness of:
 
 - what exactly is being placed before them;
 - what assurance evidence supports the decision;
@@ -46,22 +46,22 @@ Whole-Standard Founder Approval Candidate
 
 The candidate is the 302-proposition constitutional corpus reproduced verbatim from the reviewed V0 whole-instrument draft, organized across 16 proposition-prefix families (ACE 21, AMC 12, AMP 9, APV 24, ATR 24, CHB 8, CRE 24, DGI 24, GLC 13, GSI 24, GVR 9, HPR 24, RTP 14, RWR 24, SSR 24, VLR 24 = 302).
 
-The candidate was derived from 14 protected source packages (CGP-02C.2 through CGP-02C.12 Founder-approved constitutional instruments, plus CGP-02C.13 whole-instrument consolidation) and two upstream normative dependencies (PC-01, PAM-01) that are not proposition-structured and are not part of the bounded corpus.
+The candidate was derived from 14 proposition-bearing CGP-02 source packages (CGP-02C.1 through CGP-02C.12, including sub-packages C.2A, C.2B, C.2C) and is supported by 17 protected-source context items in total: three upstream normative dependencies that are not proposition-structured and are not part of the bounded 302-proposition corpus (PC-01 — Tiizi Platform Constitution, PAM-01 — Platform Authority Model, CGP-01 — Constitutional Governance Principles), plus the 14 proposition-bearing packages. CGP-02C.13 — Whole-Instrument Consolidation is the assembly work package that produced V0 from the 14 proposition-bearing sources; it is not itself a proposition-bearing source package. Package-level Founder Approved status is recorded for CGP-02C.4 only; all other proposition-bearing packages retain their actual source/candidate/bounded-work-package statuses as established in D18 and D-04.
 
 ## 4. Candidate Identification
 
-| Attribute | Value |
-|---|---|
-| Candidate document | [34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md](34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md) |
-| Candidate status | Founder Accepted (2026-08-29) as the correct candidate representation |
-| Proposition count | 302 |
-| Unique proposition IDs | 302 |
-| Proposition order | Preserved from V0 |
-| Package order | Preserved from V0 (§2.1–§2.17) |
-| V0 source | [33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md](33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md) |
-| V0 SHA-256 | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
-| V0↔D-03 delta | 0 propositions added, 0 removed, 0 rewritten, 0 reordered |
-| D-02 review outcome | WRQ-01–WRQ-10, 10/10 Accepted; 0 corrections, 0 clarifications |
+| Attribute              | Value                                                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Candidate document     | [34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md](34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md)       |
+| Candidate status       | Founder Accepted (2026-08-29) as the correct candidate representation                                                  |
+| Proposition count      | 302                                                                                                                    |
+| Unique proposition IDs | 302                                                                                                                    |
+| Proposition order      | Preserved from V0                                                                                                      |
+| Package order          | Preserved from V0 (§2.1–§2.17)                                                                                         |
+| V0 source              | [33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md](33-CGP-02C-13-WHOLE-INSTRUMENT-FOUNDER-REVIEW-DRAFT-V0.md) |
+| V0 SHA-256             | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675`                                                     |
+| V0↔D-03 delta          | 0 propositions added, 0 removed, 0 rewritten, 0 reordered                                                              |
+| D-02 review outcome    | WRQ-01–WRQ-10, 10/10 Accepted; 0 corrections, 0 clarifications                                                         |
 
 ## 5. Authority for the Decision
 
@@ -80,19 +80,19 @@ The decision is attributable: it must be recorded as an explicit, attributable F
 
 The following assurance evidence supports the Founder's decision:
 
-| Deliverable | Status | Key Result |
-|---|---|---|
-| D-01 — Founder Constitutional Review Package | Prepared | Whole-standard review package issued 2026-08-29 |
-| D-02 — Founder Constitutional Review Decision Record | Complete | WRQ-01–WRQ-10, 10/10 Accepted; 0 corrections, 0 clarifications, 0 proposition amendments directed |
-| D-03 — Founder Approval Candidate | Founder Accepted | 302 propositions, 302 unique IDs, verbatim from V0; Founder accepted as correct representation (2026-08-29) |
-| D-04 — Proposition Traceability Report | Complete — PASS | 302/302 propositions traced to protected sources; 14/14 packages represented; 17/17 protected sources accounted for; 0 exceptions |
-| D-05 — Cross-Reference and Impact Analysis | Complete — PASS | 20 findings: 12 CONSISTENT, 6 FUTURE ALIGNMENT, 2 DEFERRED / GOVERNED ELSEWHERE, 0 PRE-APPROVAL ACTION REQUIRED, 0 CONFLICT, 0 blocking |
-| D-05A — Cross-Reference and Impact Discovery | Founder Accepted | Discovery evidence accepted 2026-08-29 |
-| D-06 — Whole-Standard Validation Report | Complete — PASS | 61/61 validation checks pass; corpus integrity, structural integrity, traceability integrity, upstream authority conformance, lifecycle/status coherence, D17 preservation, D-02 disposition fidelity, approval-readiness all confirmed |
-| CRA-001–045 | Closed | 45 observations, 45/45 Accepted, 0 unresolved, 0 amendment follow-up |
-| D17 | Preserved | 9 deferred constitutional questions intact (DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11) |
-| D18 | Complete | 14-package governance status and decision trace |
-| D20 | Complete | Self-validation pass: all validated dimensions pass |
+| Deliverable                                          | Status           | Key Result                                                                                                                                                                                                                              |
+| ---------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D-01 — Founder Constitutional Review Package         | Prepared         | Whole-standard review package issued 2026-08-29                                                                                                                                                                                         |
+| D-02 — Founder Constitutional Review Decision Record | Complete         | WRQ-01–WRQ-10, 10/10 Accepted; 0 corrections, 0 clarifications, 0 proposition amendments directed                                                                                                                                       |
+| D-03 — Founder Approval Candidate                    | Founder Accepted | 302 propositions, 302 unique IDs, verbatim from V0; Founder accepted as correct representation (2026-08-29)                                                                                                                             |
+| D-04 — Proposition Traceability Report               | Complete — PASS  | 302/302 propositions traced to protected sources; 14/14 packages represented; 17/17 protected sources accounted for; 0 exceptions                                                                                                       |
+| D-05 — Cross-Reference and Impact Analysis           | Complete — PASS  | 20 findings: 12 CONSISTENT, 6 FUTURE ALIGNMENT, 2 DEFERRED / GOVERNED ELSEWHERE, 0 PRE-APPROVAL ACTION REQUIRED, 0 CONFLICT, 0 blocking                                                                                                 |
+| D-05A — Cross-Reference and Impact Discovery         | Founder Accepted | Discovery evidence accepted 2026-08-29                                                                                                                                                                                                  |
+| D-06 — Whole-Standard Validation Report              | Complete — PASS  | 61/61 validation checks pass; corpus integrity, structural integrity, traceability integrity, upstream authority conformance, lifecycle/status coherence, D17 preservation, D-02 disposition fidelity, approval-readiness all confirmed |
+| CRA-001–045                                          | Closed           | 45 observations, 45/45 Accepted, 0 unresolved, 0 amendment follow-up                                                                                                                                                                    |
+| D17                                                  | Preserved        | 9 deferred constitutional questions intact (DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11)                                                                                                                              |
+| D18                                                  | Complete         | 14-package governance status and decision trace                                                                                                                                                                                         |
+| D20                                                  | Complete         | Self-validation pass: all validated dimensions pass                                                                                                                                                                                     |
 
 ## 7. Corpus Integrity Summary
 
@@ -124,16 +124,16 @@ D-04 established and D-06 independently reconciled:
 
 D-05 established and D-06 confirmed:
 
-| Finding class | Count | Blocking? |
-|---|---|---|
-| CONSISTENT | 12 | No |
-| FUTURE ALIGNMENT | 6 | No (controlled; not executed by D-07) |
-| DEFERRED / GOVERNED ELSEWHERE | 2 | No (already controlled) |
-| PRE-APPROVAL ACTION REQUIRED | 0 | N/A |
-| CONFLICT | 0 | N/A |
-| Blocking findings | 0 | N/A |
+| Finding class                 | Count | Blocking?                             |
+| ----------------------------- | ----- | ------------------------------------- |
+| CONSISTENT                    | 12    | No                                    |
+| FUTURE ALIGNMENT              | 6     | No (controlled; not executed by D-07) |
+| DEFERRED / GOVERNED ELSEWHERE | 2     | No (already controlled)               |
+| PRE-APPROVAL ACTION REQUIRED  | 0     | N/A                                   |
+| CONFLICT                      | 0     | N/A                                   |
+| Blocking findings             | 0     | N/A                                   |
 
-The 6 FUTURE ALIGNMENT findings (D05A-008 through D05A-013) identify downstream synchronization obligations (Master Programme, FEF-ALIGNMENT, Programme Guide, Repository Classification Report, PTRA readiness, Entity Ownership Register cross-reference) that are triggered by future approval/adoption actions, not by D-07 preparation.
+The 6 FUTURE ALIGNMENT findings (D05A-008 through D05A-013) identify downstream synchronization obligations (FEF-ALIGNMENT, Consolidated Decision Register coverage and row synchronization, Master Programme, Programme Guide / Repository Classification Report, PTRA readiness assessments) that are triggered by future approval/adoption actions, not by D-07 preparation.
 
 The 2 DEFERRED / GOVERNED ELSEWHERE findings (D05A-003 consolidating D17 matters; D05A-014 Entity Ownership Register cross-reference) are already controlled by existing governance mechanisms.
 
@@ -143,17 +143,17 @@ The 2 DEFERRED / GOVERNED ELSEWHERE findings (D05A-003 consolidating D17 matters
 
 D-06 validated the following dimensions (all PASS):
 
-| Dimension | Result |
-|---|---|
-| Corpus integrity (302/302, V0 SHA-256 match) | PASS |
-| Structural integrity (headings, links, tables) | PASS |
-| Traceability integrity (D-04 aggregate reconciled) | PASS |
-| Internal constitutional coherence (CRA-001–045, D20) | PASS |
-| Upstream authority conformance (PC-01, PAM-01, CGP-01) | PASS |
-| Lifecycle / status coherence | PASS |
-| D17 preservation (9 matters intact, DQ-06/DQ-07 controlled) | PASS |
-| D-02 disposition fidelity (10/10 Accepted preserved) | PASS |
-| Approval-readiness assessment | PASS — READY FOR D-07 |
+| Dimension                                                   | Result                |
+| ----------------------------------------------------------- | --------------------- |
+| Corpus integrity (302/302, V0 SHA-256 match)                | PASS                  |
+| Structural integrity (headings, links, tables)              | PASS                  |
+| Traceability integrity (D-04 aggregate reconciled)          | PASS                  |
+| Internal constitutional coherence (CRA-001–045, D20)        | PASS                  |
+| Upstream authority conformance (PC-01, PAM-01, CGP-01)      | PASS                  |
+| Lifecycle / status coherence                                | PASS                  |
+| D17 preservation (9 matters intact, DQ-06/DQ-07 controlled) | PASS                  |
+| D-02 disposition fidelity (10/10 Accepted preserved)        | PASS                  |
+| Approval-readiness assessment                               | PASS — READY FOR D-07 |
 
 D-06 also applied one ADMINISTRATIVE correction (stale D-05 narrative in the Master Programme) and a post-validation addendum (§21) corrected additional stale checkboxes and current-objective wording. Neither affected substantive findings.
 
@@ -163,17 +163,17 @@ D-06 also applied one ADMINISTRATIVE correction (stale D-05 narrative in the Mas
 
 The following 9 deferred constitutional questions (D17) remain open and unresolved:
 
-| ID | Question | Blocks approval? | Blocks adoption? | Future treatment |
-|---|---|---|---|---|
-| DQ-01 | Independent Review triggers, thresholds, qualifications | No | No | Later approved governance |
-| DQ-02 | Re-review basis (periodic, trigger-only, or both) | No | No | Later approved governance |
-| DQ-04 | Meaning-preservation procedure and evidence | No | No | Later approved governance |
-| DQ-05 | Full subclass/decision-mechanism table | No | No | Later approved governance |
-| DQ-06 | Whether adoption is required for whole instrument; adoption procedure | No | **Yes** — adoption governance required | Later adoption governance stage |
-| DQ-07 | Meaning, necessity, effect and record form of application | No | **Yes** — application governance required | Later approved governance |
-| DQ-09 | Canonical index designation and inconsistency correction | No | No | Later index/status programme |
-| DQ-10 | Technical preservation/archival mechanisms | No | No | Later approved governance |
-| DQ-11 | Recorder/actor accountability allocation | No | No | Later relationship allocation |
+| ID    | Question                                                              | Blocks approval? | Blocks adoption?                          | Future treatment                |
+| ----- | --------------------------------------------------------------------- | ---------------- | ----------------------------------------- | ------------------------------- |
+| DQ-01 | Independent Review triggers, thresholds, qualifications               | No               | No                                        | Later approved governance       |
+| DQ-02 | Re-review basis (periodic, trigger-only, or both)                     | No               | No                                        | Later approved governance       |
+| DQ-04 | Meaning-preservation procedure and evidence                           | No               | No                                        | Later approved governance       |
+| DQ-05 | Full subclass/decision-mechanism table                                | No               | No                                        | Later approved governance       |
+| DQ-06 | Whether adoption is required for whole instrument; adoption procedure | No               | **Yes** — adoption governance required    | Later adoption governance stage |
+| DQ-07 | Meaning, necessity, effect and record form of application             | No               | **Yes** — application governance required | Later approved governance       |
+| DQ-09 | Canonical index designation and inconsistency correction              | No               | No                                        | Later index/status programme    |
+| DQ-10 | Technical preservation/archival mechanisms                            | No               | No                                        | Later approved governance       |
+| DQ-11 | Recorder/actor accountability allocation                              | No               | No                                        | Later relationship allocation   |
 
 **None of the 9 deferred matters prevent the Founder from deciding approval.** DQ-06 and DQ-07 are expressly controlled before adoption, application or constitutional effect can be recorded. They do not block the approval decision itself.
 
@@ -207,17 +207,17 @@ This section defines what Founder approval of CGP-02 would and would not automat
 
 ### What Founder Approval would NOT automatically create:
 
-| Boundary | Treatment |
-|---|---|
-| **Adoption** | Approval ≠ Adoption. Adoption is a separately governed action requiring its own attributable Founder decision. DQ-06 controls this boundary. |
-| **Application** | Approval ≠ Application. Application is a separately governed action requiring its own attributable Founder decision. DQ-07 controls this boundary. |
-| **Constitutional effect** | Approval ≠ Constitutional effect. No constitutional effect is created by approval alone. |
-| **Effective date** | No effective date is created by approval alone. |
-| **Implementation authority** | Approval does not authorize implementation. Implementation authority requires separate adoption and application governance. |
-| **CGP-03 commencement** | Approval of CGP-02 does not unblock or commence CGP-03. CGP-03 remains blocked pending completion and approval of CGP-02 and further governed actions. |
-| **Stage E0 completion** | Approval does not complete Stage E0. Stage E0 remains In Progress. |
-| **CGP-02D completion** | Approval alone does not complete CGP-02D. CGP-02D completion requires additional steps (programme synchronization, D-08 completion evidence). |
-| **CGP-02 completion** | Approval alone does not complete CGP-02. CGP-02 remains In Progress until adoption, application and effect are separately governed. |
+| Boundary                     | Treatment                                                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Adoption**                 | Approval ≠ Adoption. Adoption is a separately governed action requiring its own attributable Founder decision. DQ-06 controls this boundary.           |
+| **Application**              | Approval ≠ Application. Application is a separately governed action requiring its own attributable Founder decision. DQ-07 controls this boundary.     |
+| **Constitutional effect**    | Approval ≠ Constitutional effect. No constitutional effect is created by approval alone.                                                               |
+| **Effective date**           | No effective date is created by approval alone.                                                                                                        |
+| **Implementation authority** | Approval does not authorize implementation. Implementation authority requires separate adoption and application governance.                            |
+| **CGP-03 commencement**      | Approval of CGP-02 does not unblock or commence CGP-03. CGP-03 remains blocked pending completion and approval of CGP-02 and further governed actions. |
+| **Stage E0 completion**      | Approval does not complete Stage E0. Stage E0 remains In Progress.                                                                                     |
+| **CGP-02D completion**       | Approval alone does not complete CGP-02D. CGP-02D completion requires additional steps (programme synchronization, D-08 completion evidence).          |
+| **CGP-02 completion**        | Approval alone does not complete CGP-02. CGP-02 remains In Progress until adoption, application and effect are separately governed.                    |
 
 These boundaries are established by PC-01, PAM-01, CGP-02C.4 (ACFQ-01 through ACFQ-07), the CGP-02D Planning Package §11, and the D17 deferred questions register.
 
@@ -257,40 +257,40 @@ Reject the current whole-standard candidate.
 
 ## 15. Decision Consequences by Option
 
-| Consequence | A (Approve) | B (Approve + Conditions) | C (Return) | D (Defer) | E (Reject) |
-|---|---|---|---|---|---|
-| Approval recorded | Yes | Yes (with conditions) | No | No | No (rejection recorded) |
-| Adoption created | No | No | No | No | No |
-| Application created | No | No | No | No | No |
-| Constitutional effect | No | No | No | No | No |
-| Effective date | No | No | No | No | No |
-| CGP-03 unblocked | No | No | No | No | No |
-| Stage E0 completed | No | No | No | No | No |
-| CGP-02D completed | No (further steps required) | No (further steps required) | No | No | No |
-| D17 matters resolved | No | No | No | No | No |
-| Candidate preserved | Yes | Yes | Yes (pending correction) | Yes | Yes (as historical) |
-| Revalidation required | No | No | Yes | No | If new candidate proposed |
+| Consequence           | A (Approve)                 | B (Approve + Conditions)    | C (Return)               | D (Defer) | E (Reject)                |
+| --------------------- | --------------------------- | --------------------------- | ------------------------ | --------- | ------------------------- |
+| Approval recorded     | Yes                         | Yes (with conditions)       | No                       | No        | No (rejection recorded)   |
+| Adoption created      | No                          | No                          | No                       | No        | No                        |
+| Application created   | No                          | No                          | No                       | No        | No                        |
+| Constitutional effect | No                          | No                          | No                       | No        | No                        |
+| Effective date        | No                          | No                          | No                       | No        | No                        |
+| CGP-03 unblocked      | No                          | No                          | No                       | No        | No                        |
+| Stage E0 completed    | No                          | No                          | No                       | No        | No                        |
+| CGP-02D completed     | No (further steps required) | No (further steps required) | No                       | No        | No                        |
+| D17 matters resolved  | No                          | No                          | No                       | No        | No                        |
+| Candidate preserved   | Yes                         | Yes                         | Yes (pending correction) | Yes       | Yes (as historical)       |
+| Revalidation required | No                          | No                          | Yes                      | No        | If new candidate proposed |
 
 ## 16. Required Attributable Founder Decision Record
 
 The Founder's decision must be recorded in an attributable Founder Decision Record that captures:
 
-| Field | Description |
-|---|---|
-| Decision identifier | To be assigned (e.g., CGP-02D-FOUNDER-APPROVAL-DECISION) |
-| Decision date | To be recorded at the time of decision |
-| Decision-maker | Founder (attributable) |
-| Candidate identifier | D-03 Whole-Standard Founder Approval Candidate (302 propositions) |
-| Candidate version | V0 SHA-256 `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
-| Decision option | One of: Approved, Approved with Conditions, Returned, Deferred, Rejected |
-| Decision statement | The Founder's explicit attributable statement |
-| Conditions (if any) | Bounded conditions for Option B; none for other options |
-| Deferred matters preserved | DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11 |
-| Adoption status | Not established |
-| Application status | Not established |
-| Constitutional effect status | None |
-| Next authorized action | Determined by the decision outcome |
-| Non-effects | As specified in §17 below |
+| Field                        | Description                                                                   |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| Decision identifier          | To be assigned (e.g., CGP-02D-FOUNDER-APPROVAL-DECISION)                      |
+| Decision date                | To be recorded at the time of decision                                        |
+| Decision-maker               | Founder (attributable)                                                        |
+| Candidate identifier         | D-03 Whole-Standard Founder Approval Candidate (302 propositions)             |
+| Candidate version            | V0 SHA-256 `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
+| Decision option              | One of: Approved, Approved with Conditions, Returned, Deferred, Rejected      |
+| Decision statement           | The Founder's explicit attributable statement                                 |
+| Conditions (if any)          | Bounded conditions for Option B; none for other options                       |
+| Deferred matters preserved   | DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11                 |
+| Adoption status              | Not established                                                               |
+| Application status           | Not established                                                               |
+| Constitutional effect status | None                                                                          |
+| Next authorized action       | Determined by the decision outcome                                            |
+| Non-effects                  | As specified in §17 below                                                     |
 
 **This section is a template. It is not pre-filled. The Founder's decision has not been made.**
 
@@ -323,14 +323,14 @@ D-07 does not:
 
 The Founder Approval Decision Gate is the point at which the Founder makes an attributable approval decision.
 
-| Aspect | Treatment |
-|---|---|
+| Aspect                     | Treatment                                                                 |
+| -------------------------- | ------------------------------------------------------------------------- |
 | **What triggers the gate** | D-07 preparation is complete and the package is placed before the Founder |
-| **What the gate is** | A separate, attributable Founder decision |
-| **What the gate is not** | Automatic, implied, or inferred from D-07 preparation |
-| **Who decides** | The Founder (attributable) |
-| **When** | After D-07 is prepared; timing is the Founder's determination |
-| **How recorded** | In a separate attributable Founder Decision Record |
+| **What the gate is**       | A separate, attributable Founder decision                                 |
+| **What the gate is not**   | Automatic, implied, or inferred from D-07 preparation                     |
+| **Who decides**            | The Founder (attributable)                                                |
+| **When**                   | After D-07 is prepared; timing is the Founder's determination             |
+| **How recorded**           | In a separate attributable Founder Decision Record                        |
 
 The gate has not been reached. D-07 prepares the materials; the Founder's decision is a separate subsequent action.
 
@@ -381,31 +381,31 @@ The gate has not been reached. D-07 prepares the materials; the Founder's decisi
 
 ## Draft Decision Record Template
 
-*The following template is provided for the Founder's decision record. It is unexecuted. No fields are pre-filled. The Founder's decision has not been made.*
+_The following template is provided for the Founder's decision record. It is unexecuted. No fields are pre-filled. The Founder's decision has not been made._
 
 ---
 
 # CGP-02D — Founder Approval Decision Record
 
-| Field | Value |
-|---|---|
-| Decision identifier | [TO BE ASSIGNED] |
-| Decision date | [TO BE RECORDED] |
-| Decision-maker | [FOUNDER — ATTRIBUTABLE] |
-| Work package | CGP-02D — Whole-Standard Founder Review and Approval Preparation |
-| Decision subject | CGP-02 Whole-Standard Founder Approval Candidate (D-03; 302 propositions) |
-| Candidate SHA-256 | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
-| Decision option | [Approved / Approved with Conditions / Returned / Deferred / Rejected] |
-| Decision statement | [FOUNDER'S EXPLICIT ATTRIBUTABLE STATEMENT] |
-| Conditions | [IF OPTION B: BOUNDED CONDITIONS; OTHERWISE: None] |
-| Deferred matters preserved | DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11 |
-| Adoption status | Not established |
-| Application status | Not established |
-| Constitutional effect status | None |
-| Effective date | None created |
-| Next authorized action | [DETERMINED BY OUTCOME] |
-| Non-effects | Approval does not create adoption, application, constitutional effect, effective date, implementation authority, CGP-03 commencement, Stage E0 completion, or CGP-02 completion |
+| Field                        | Value                                                                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Decision identifier          | [TO BE ASSIGNED]                                                                                                                                                                |
+| Decision date                | [TO BE RECORDED]                                                                                                                                                                |
+| Decision-maker               | [FOUNDER — ATTRIBUTABLE]                                                                                                                                                        |
+| Work package                 | CGP-02D — Whole-Standard Founder Review and Approval Preparation                                                                                                                |
+| Decision subject             | CGP-02 Whole-Standard Founder Approval Candidate (D-03; 302 propositions)                                                                                                       |
+| Candidate SHA-256            | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675`                                                                                                              |
+| Decision option              | [Approved / Approved with Conditions / Returned / Deferred / Rejected]                                                                                                          |
+| Decision statement           | [FOUNDER'S EXPLICIT ATTRIBUTABLE STATEMENT]                                                                                                                                     |
+| Conditions                   | [IF OPTION B: BOUNDED CONDITIONS; OTHERWISE: None]                                                                                                                              |
+| Deferred matters preserved   | DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11                                                                                                                   |
+| Adoption status              | Not established                                                                                                                                                                 |
+| Application status           | Not established                                                                                                                                                                 |
+| Constitutional effect status | None                                                                                                                                                                            |
+| Effective date               | None created                                                                                                                                                                    |
+| Next authorized action       | [DETERMINED BY OUTCOME]                                                                                                                                                         |
+| Non-effects                  | Approval does not create adoption, application, constitutional effect, effective date, implementation authority, CGP-03 commencement, Stage E0 completion, or CGP-02 completion |
 
 ---
 
-*End of Draft Decision Record Template. This template is not executed.*
+_End of Draft Decision Record Template. This template is not executed._
