@@ -207,17 +207,17 @@ This section defines what Founder approval of CGP-02 would and would not automat
 
 ### What Founder Approval would NOT automatically create:
 
-| Boundary                     | Treatment                                                                                                                                              |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Adoption**                 | Approval ≠ Adoption. Adoption is a separately governed action requiring its own attributable Founder decision. DQ-06 controls this boundary.           |
-| **Application**              | Approval ≠ Application. Application is a separately governed action requiring its own attributable Founder decision. DQ-07 controls this boundary.     |
-| **Constitutional effect**    | Approval ≠ Constitutional effect. No constitutional effect is created by approval alone.                                                               |
-| **Effective date**           | No effective date is created by approval alone.                                                                                                        |
-| **Implementation authority** | Approval does not authorize implementation. Implementation authority requires separate adoption and application governance.                            |
-| **CGP-03 commencement**      | Approval of CGP-02 does not unblock or commence CGP-03. CGP-03 remains blocked pending completion and approval of CGP-02 and further governed actions. |
-| **Stage E0 completion**      | Approval does not complete Stage E0. Stage E0 remains In Progress.                                                                                     |
-| **CGP-02D completion**       | Approval alone does not complete CGP-02D. CGP-02D completion requires additional steps (programme synchronization, D-08 completion evidence).          |
-| **CGP-02 completion**        | Approval alone does not complete CGP-02. CGP-02 remains In Progress until adoption, application and effect are separately governed.                    |
+| Boundary                     | Treatment                                                                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Adoption**                 | Approval ≠ Adoption. Adoption is a separately governed action requiring its own attributable Founder decision. DQ-06 controls this boundary.                                                                                   |
+| **Application**              | Approval ≠ Application. Application is a separately governed action requiring its own attributable Founder decision. DQ-07 controls this boundary.                                                                             |
+| **Constitutional effect**    | Approval ≠ Constitutional effect. No constitutional effect is created by approval alone.                                                                                                                                       |
+| **Effective date**           | No effective date is created by approval alone.                                                                                                                                                                                |
+| **Implementation authority** | Approval does not authorize implementation. Any later implementation authority must follow whatever post-approval lifecycle and authority treatment is subsequently established through approved governance.                   |
+| **CGP-03 commencement**      | Approval of CGP-02 does not unblock or commence CGP-03. CGP-03 remains blocked pending completion and approval of CGP-02 and further governed actions.                                                                         |
+| **Stage E0 completion**      | Approval does not complete Stage E0. Stage E0 remains In Progress.                                                                                                                                                             |
+| **CGP-02D completion**       | Approval alone does not complete CGP-02D. CGP-02D completion requires additional steps (programme synchronization, D-08 completion evidence).                                                                                  |
+| **CGP-02 completion**        | Approval alone does not complete CGP-02. CGP-02 remains In Progress; the post-approval lifecycle treatment (if any) of adoption, application and effect has not yet been determined through the reserved governance questions. |
 
 These boundaries are established by PC-01, PAM-01, CGP-02C.4 (ACFQ-01 through ACFQ-07), the CGP-02D Planning Package §11, and the D17 deferred questions register.
 
