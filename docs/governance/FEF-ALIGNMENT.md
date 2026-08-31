@@ -53,7 +53,7 @@ The active phase is **CGP-02 — Constitutional Amendment & Governance Review St
 ### 2.4 Major Active Work
 
 - CGP-02C.13 — Whole-Instrument Consolidation (complete as a bounded work package, 2026-08-22; closure evidence issued).
-- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02D whole-standard Founder Review and approval preparation in progress, D-01 prepared, D-02 complete, D-03 Founder Accepted, D-04 Complete — PASS and D-05A discovery complete, all 2026-08-29; D-05 not finalized).
+- CGP-02 — Constitutional Amendment & Governance Review Standard (in progress; CGP-02D whole-standard Founder Review and approval preparation in progress, D-01 prepared, D-02 complete, D-03 Founder Accepted, D-04 Complete — PASS, D-05A discovery complete, D-05 Complete — PASS, all 2026-08-29; D-06 Whole-Standard Validation Report Complete — PASS 2026-08-30; D-07 next, not started).
 - Pre-deploy engineering work on branch `fix/p0-pre-deploy-blockers` (group metadata onboarding and create/edit flows).
 
 ## 3. Alignment Summary

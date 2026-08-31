@@ -2,26 +2,26 @@
 
 ## 1. Document Control
 
-| Field | Value |
-|---|---|
-| Programme | Tiizi Version 2 |
-| Stage | Stage E0 — Governance Architecture |
-| Phase | CGP-02 — Constitutional Amendment & Governance Review Standard |
-| Work package | CGP-02D — Whole-Standard Founder Review and Approval Preparation |
-| Deliverable | D-06 — Whole-Standard Validation Report |
-| Document type | Bounded whole-standard validation of the Founder-accepted D-03 approval candidate |
-| Status | **Complete — PASS** |
-| Report date | 2026-08-30 |
-| Predecessors | [D-01 — Whole-Standard Founder Constitutional Review Package](../../programme/CGP-02D-FOUNDER-REVIEW-PACKAGE.md) (Prepared); [D-02 — Founder Decision Record](../../programme/CGP-02D-FOUNDER-DECISION-RECORD.md) (Complete; WRQ-01–WRQ-10, 10/10 Accepted); [D-03 — Founder Approval Candidate](34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md) (Founder Accepted 2026-08-29); [D-04 — Proposition Traceability Report](34-CGP-02-PROPOSITION-TRACEABILITY-REPORT.md) (Complete — PASS); [D-05A — Cross-Reference and Impact Discovery](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-DISCOVERY.md) (Founder Accepted 2026-08-29 as discovery evidence); [D-05 — Cross-Reference and Impact Analysis](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md) (Complete — PASS) |
-| Assurance basis | D-03; D-04; D-05; D-05A; CRA-001–045; D20; D17; D18; PC-01; PAM-01; CGP-01; Master Programme; CGP-02D Planning Package / authorization evidence; CGP-02D Founder Decision Record |
-| Final destination | Named as the final D-06 deliverable in the [CGP-02D Planning Package](../../programme/CGP-02D-PLANNING-PACKAGE.md) §8 |
-| Corpus examined | 302 propositions / 302 unique proposition IDs (unchanged) |
-| V0 SHA-256 | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675` |
-| Governed baseline verified | `7552e9f` (repository HEAD at D-06 entry; matched `origin/main`) |
-| Approval | Not approved |
-| Adoption | Not established |
-| Application | Not established |
-| Constitutional effect | None |
+| Field                      | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Programme                  | Tiizi Version 2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Stage                      | Stage E0 — Governance Architecture                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Phase                      | CGP-02 — Constitutional Amendment & Governance Review Standard                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Work package               | CGP-02D — Whole-Standard Founder Review and Approval Preparation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Deliverable                | D-06 — Whole-Standard Validation Report                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Document type              | Bounded whole-standard validation of the Founder-accepted D-03 approval candidate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Status                     | **Complete — PASS**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Report date                | 2026-08-30                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Predecessors               | [D-01 — Whole-Standard Founder Constitutional Review Package](../../programme/CGP-02D-FOUNDER-REVIEW-PACKAGE.md) (Prepared); [D-02 — Founder Decision Record](../../programme/CGP-02D-FOUNDER-DECISION-RECORD.md) (Complete; WRQ-01–WRQ-10, 10/10 Accepted); [D-03 — Founder Approval Candidate](34-CGP-02-WHOLE-STANDARD-FOUNDER-APPROVAL-CANDIDATE.md) (Founder Accepted 2026-08-29); [D-04 — Proposition Traceability Report](34-CGP-02-PROPOSITION-TRACEABILITY-REPORT.md) (Complete — PASS); [D-05A — Cross-Reference and Impact Discovery](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-DISCOVERY.md) (Founder Accepted 2026-08-29 as discovery evidence); [D-05 — Cross-Reference and Impact Analysis](34-CGP-02-CROSS-REFERENCE-AND-IMPACT-ANALYSIS.md) (Complete — PASS) |
+| Assurance basis            | D-03; D-04; D-05; D-05A; CRA-001–045; D20; D17; D18; PC-01; PAM-01; CGP-01; Master Programme; CGP-02D Planning Package / authorization evidence; CGP-02D Founder Decision Record                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Final destination          | Named as the final D-06 deliverable in the [CGP-02D Planning Package](../../programme/CGP-02D-PLANNING-PACKAGE.md) §8                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Corpus examined            | 302 propositions / 302 unique proposition IDs (unchanged)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| V0 SHA-256                 | `2a2c03dbc2445be83f34232e08fb45f6f2951588c9078acea83b91be738f2675`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Governed baseline verified | `7552e9f` (repository HEAD at D-06 entry; matched `origin/main`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Approval                   | Not approved                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Adoption                   | Not established                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Application                | Not established                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Constitutional effect      | None                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## 2. Purpose
 
@@ -61,16 +61,16 @@ This dimension is **PASS**.
 
 D-04's own aggregate (§8) was independently re-checked against the current D-03 corpus rather than re-derived from scratch:
 
-| Check | D-04 recorded result | D-06 independent check |
-|---|---|---|
-| D-03 proposition count / trace rows | 302 / 302 | Confirmed (§5 above) |
-| Unique proposition IDs traced | 302 | Confirmed (§5 above) |
-| D-03↔V0 ID/text delta | 0 / 0 | Confirmed (§5 above) |
-| D-03↔protected-source ID/text delta | 0 / 0 | Accepted from D-04; not re-derived line-by-line (would duplicate D-04) |
-| Untraced propositions / duplicate trace rows | 0 / 0 | Consistent with unique-ID result in §5 |
-| Proposition-bearing packages represented | 14 of 14 | Confirmed — 14 distinct source packages named in D-04 §5 match the 14 numbered candidate/approved instrument files present in `docs/governance/principles/` |
-| Protected sources accounted for | 17 of 17 | Confirmed — PC-01, PAM-01, CGP-01 plus the 14 proposition-bearing packages, per D-04 §5 |
-| Package-level Founder Approved status represented | CGP-02C.4 only | Consistent with D18 and with the individual package Founder Decision Records; no other package shows an unsupported status upgrade |
+| Check                                             | D-04 recorded result | D-06 independent check                                                                                                                                      |
+| ------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D-03 proposition count / trace rows               | 302 / 302            | Confirmed (§5 above)                                                                                                                                        |
+| Unique proposition IDs traced                     | 302                  | Confirmed (§5 above)                                                                                                                                        |
+| D-03↔V0 ID/text delta                             | 0 / 0                | Confirmed (§5 above)                                                                                                                                        |
+| D-03↔protected-source ID/text delta               | 0 / 0                | Accepted from D-04; not re-derived line-by-line (would duplicate D-04)                                                                                      |
+| Untraced propositions / duplicate trace rows      | 0 / 0                | Consistent with unique-ID result in §5                                                                                                                      |
+| Proposition-bearing packages represented          | 14 of 14             | Confirmed — 14 distinct source packages named in D-04 §5 match the 14 numbered candidate/approved instrument files present in `docs/governance/principles/` |
+| Protected sources accounted for                   | 17 of 17             | Confirmed — PC-01, PAM-01, CGP-01 plus the 14 proposition-bearing packages, per D-04 §5                                                                     |
+| Package-level Founder Approved status represented | CGP-02C.4 only       | Consistent with D18 and with the individual package Founder Decision Records; no other package shows an unsupported status upgrade                          |
 
 D-04's stated result, **Traceability Complete — PASS**, reconciles with the current repository state. Decision evidence remains attributable (each package's Founder Decision Record is separately identifiable); source-status distinctions are preserved; no repository presence is treated as approval.
 
@@ -109,21 +109,21 @@ This dimension is **PASS**.
 
 All 9 retained D17 deferred constitutional questions (`docs/programme/CGP-02C-13-DEFERRED-CONSTITUTIONAL-QUESTIONS.md`) were checked and are preserved unchanged in status:
 
-| DQ | Subject | Status preserved |
-|---|---|---|
-| DQ-01 | Independent Review triggers/thresholds/reviewer qualifications | Deferred |
-| DQ-02 | Re-review basis (periodic / trigger-only / both) | Deferred |
-| DQ-04 | Procedure/evidence for meaning-preservation at representation change | Boundary established; procedure/evidence deferred |
-| DQ-05 | Full subclass/decision-mechanism table for amendment classification | Minimum boundary only established; remainder deferred |
+| DQ    | Subject                                                                 | Status preserved                                                                        |
+| ----- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| DQ-01 | Independent Review triggers/thresholds/reviewer qualifications          | Deferred                                                                                |
+| DQ-02 | Re-review basis (periodic / trigger-only / both)                        | Deferred                                                                                |
+| DQ-04 | Procedure/evidence for meaning-preservation at representation change    | Boundary established; procedure/evidence deferred                                       |
+| DQ-05 | Full subclass/decision-mechanism table for amendment classification     | Minimum boundary only established; remainder deferred                                   |
 | DQ-06 | Whether adoption is required for the consolidated corpus, and procedure | Definition/distinction/effect resolved; adoption-for-whole-instrument question deferred |
-| DQ-07 | Exact meaning/necessity/effect/record form of "application" | Bounded term established; remainder deferred |
-| DQ-09 | Canonical index / correction mechanism | Doctrine established; no index/mechanism designated |
-| DQ-10 | Technical preservation/archival mechanisms | Doctrine established; mechanisms deliberately deferred |
-| DQ-11 | Recorder/actor accountability allocation | Functional separation established; specific allocation not made |
+| DQ-07 | Exact meaning/necessity/effect/record form of "application"             | Bounded term established; remainder deferred                                            |
+| DQ-09 | Canonical index / correction mechanism                                  | Doctrine established; no index/mechanism designated                                     |
+| DQ-10 | Technical preservation/archival mechanisms                              | Doctrine established; mechanisms deliberately deferred                                  |
+| DQ-11 | Recorder/actor accountability allocation                                | Functional separation established; specific allocation not made                         |
 
 None of the 9 matters is resolved, closed, promoted, demoted, omitted, or incorporated as settled constitutional truth by D-03, D-04, D-05, D-05A, or by this D-06 review.
 
-The DQ-06/DQ-07 control language is confirmed intact and is restated here without modification: *"DQ-06 and DQ-07 may not be silently resolved by ... repository action, or inference. No adoption, application, or constitutional effect may be inferred or recorded until the Founder has expressly determined their required treatment."* D-06 assesses (see §16) that these deferrals are compatible with proceeding to D-07; D-06 does not resolve them.
+The DQ-06/DQ-07 control language is confirmed intact and is restated here without modification: _"DQ-06 and DQ-07 may not be silently resolved by ... repository action, or inference. No adoption, application, or constitutional effect may be inferred or recorded until the Founder has expressly determined their required treatment."_ D-06 assesses (see §16) that these deferrals are compatible with proceeding to D-07; D-06 does not resolve them.
 
 This dimension is **PASS**.
 
@@ -131,18 +131,18 @@ This dimension is **PASS**.
 
 The 10 WRQ dispositions recorded in `docs/programme/CGP-02D-FOUNDER-DECISION-RECORD.md` (§D) were checked against D-03/D-04/D-05/D-06 treatment:
 
-| WRQ | Dimension | Disposition | Fidelity check |
-|---|---|---|---|
-| WRQ-01 | Completeness | Accepted | Preserved |
-| WRQ-02 | Internal Coherence | Accepted | Preserved |
-| WRQ-03 | Authority Boundary Integrity | Accepted | Preserved |
-| WRQ-04 | Lifecycle Coherence | Accepted | Preserved |
-| WRQ-05 | Cross-Subject Relationship Integrity | Accepted | Preserved |
-| WRQ-06 | Amendment and Review Discipline | Accepted | Preserved |
-| WRQ-07 | Traceability Readiness | Accepted | Preserved |
-| WRQ-08 | Adoption and Effect Boundary | Accepted | Preserved |
-| WRQ-09 | D17 Deferred Matters — Review-Stage Treatment | Accepted | Preserved |
-| WRQ-10 | Whole-Standard Approval Readiness (Preliminary Orientation) | Accepted | Preserved |
+| WRQ    | Dimension                                                   | Disposition | Fidelity check |
+| ------ | ----------------------------------------------------------- | ----------- | -------------- |
+| WRQ-01 | Completeness                                                | Accepted    | Preserved      |
+| WRQ-02 | Internal Coherence                                          | Accepted    | Preserved      |
+| WRQ-03 | Authority Boundary Integrity                                | Accepted    | Preserved      |
+| WRQ-04 | Lifecycle Coherence                                         | Accepted    | Preserved      |
+| WRQ-05 | Cross-Subject Relationship Integrity                        | Accepted    | Preserved      |
+| WRQ-06 | Amendment and Review Discipline                             | Accepted    | Preserved      |
+| WRQ-07 | Traceability Readiness                                      | Accepted    | Preserved      |
+| WRQ-08 | Adoption and Effect Boundary                                | Accepted    | Preserved      |
+| WRQ-09 | D17 Deferred Matters — Review-Stage Treatment               | Accepted    | Preserved      |
+| WRQ-10 | Whole-Standard Approval Readiness (Preliminary Orientation) | Accepted    | Preserved      |
 
 Aggregate: **10 Accepted, 0 correction directed, 0 clarification directed, 0 proposition amendments directed, 0 CRA reopenings, 0 D17 matters promoted into mandatory pre-approval correction.** No later document (D-03, D-04, D-05, D-05A, or this D-06 report) alters these dispositions.
 
@@ -152,15 +152,15 @@ This dimension is **PASS**.
 
 D-05's accepted aggregate (§12) is reproduced and confirmed unchanged by any subsequent repository state:
 
-| Metric | D-05 recorded count |
-|---|---|
-| Total material findings | 20 |
-| CONSISTENT | 12 |
-| FUTURE ALIGNMENT | 6 |
+| Metric                        | D-05 recorded count    |
+| ----------------------------- | ---------------------- |
+| Total material findings       | 20                     |
+| CONSISTENT                    | 12                     |
+| FUTURE ALIGNMENT              | 6                      |
 | DEFERRED / GOVERNED ELSEWHERE | 2 (D05A-003, D05A-014) |
-| PRE-APPROVAL ACTION REQUIRED | 0 |
-| CONFLICT | 0 |
-| Blocking findings | 0 |
+| PRE-APPROVAL ACTION REQUIRED  | 0                      |
+| CONFLICT                      | 0                      |
+| Blocking findings             | 0                      |
 
 This matches D-05A's independently stated aggregate exactly. No subsequent document contradicts this result, and D-06 does not execute any of the 6 future-alignment obligations identified in D-05 — they remain open, non-blocking downstream governance/administrative synchronization items.
 
@@ -180,13 +180,13 @@ This dimension is **PASS, with one ADMINISTRATIVE correction applied** (see Exce
 
 ## 15. Exceptions / Observations Register
 
-| # | Observation | Classification | Disposition |
-|---|---|---|---|
-| 1 | Master Programme narrative paragraph (prior line 694) understated D-05 as "In Progress / not finalized" after D-05 was already recorded Complete — PASS elsewhere in the same document | ADMINISTRATIVE | Corrected — paragraph synchronized to match the accepted D-05 Complete — PASS status and to record D-06 Complete — PASS / D-07 Next — Not Started |
-| 2 | V0 Document Control table records a separately labeled "Execution baseline SHA-256" distinct from the "Reviewed V0 SHA-256" field used for cross-document verification | ADMINISTRATIVE (informational only) | No action required — different named fields; the verification-relevant field is confirmed correct |
-| 3 | D-04's own "Next-Step Boundary" table shows D-05/D-06 as "NOT STARTED," reflecting D-04's point-in-time snapshot prior to D-05/D-05A existing | ADMINISTRATIVE (historical snapshot, not a current-state claim) | No action required — D-04 is a dated point-in-time document; superseded by D-05's own later boundary table |
-| 4 | D-05's 6 FUTURE ALIGNMENT and 2 DEFERRED/GOVERNED ELSEWHERE findings remain open, non-blocking downstream obligations | DEFERRED / GOVERNED ELSEWHERE | Already controlled by D-05/D-05A; not executed by D-06 |
-| 5 | 9 D17 deferred constitutional questions (DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11) remain open | DEFERRED / GOVERNED ELSEWHERE | Preserved unresolved; DQ-06/DQ-07 control confirmed intact; compatible with proceeding to D-07 per §16 |
+| #   | Observation                                                                                                                                                                            | Classification                                                  | Disposition                                                                                                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Master Programme narrative paragraph (prior line 694) understated D-05 as "In Progress / not finalized" after D-05 was already recorded Complete — PASS elsewhere in the same document | ADMINISTRATIVE                                                  | Corrected — paragraph synchronized to match the accepted D-05 Complete — PASS status and to record D-06 Complete — PASS / D-07 Next — Not Started |
+| 2   | V0 Document Control table records a separately labeled "Execution baseline SHA-256" distinct from the "Reviewed V0 SHA-256" field used for cross-document verification                 | ADMINISTRATIVE (informational only)                             | No action required — different named fields; the verification-relevant field is confirmed correct                                                 |
+| 3   | D-04's own "Next-Step Boundary" table shows D-05/D-06 as "NOT STARTED," reflecting D-04's point-in-time snapshot prior to D-05/D-05A existing                                          | ADMINISTRATIVE (historical snapshot, not a current-state claim) | No action required — D-04 is a dated point-in-time document; superseded by D-05's own later boundary table                                        |
+| 4   | D-05's 6 FUTURE ALIGNMENT and 2 DEFERRED/GOVERNED ELSEWHERE findings remain open, non-blocking downstream obligations                                                                  | DEFERRED / GOVERNED ELSEWHERE                                   | Already controlled by D-05/D-05A; not executed by D-06                                                                                            |
+| 5   | 9 D17 deferred constitutional questions (DQ-01, DQ-02, DQ-04, DQ-05, DQ-06, DQ-07, DQ-09, DQ-10, DQ-11) remain open                                                                    | DEFERRED / GOVERNED ELSEWHERE                                   | Preserved unresolved; DQ-06/DQ-07 control confirmed intact; compatible with proceeding to D-07 per §16                                            |
 
 No BLOCKING observation was identified. No substantive Founder decision was invented or inferred by D-06.
 
@@ -216,68 +216,88 @@ D-06 is Complete — PASS. D-07 — Founder Approval Decision Package preparatio
 
 ## 20. Required Validation Checklist
 
-| # | Check | Result |
-|---|---|---|
-| 1 | Governed baseline verified (HEAD = origin/main = `7552e9f` at entry) | PASS |
-| 2 | D-03 candidate exists | PASS |
-| 3 | Exactly 302 propositions | PASS |
-| 4 | Exactly 302 unique proposition IDs | PASS |
-| 5 | No added proposition | PASS |
-| 6 | No removed proposition | PASS |
-| 7 | No rewritten proposition | PASS |
-| 8 | Proposition order preserved | PASS |
-| 9 | Package order preserved | PASS |
-| 10 | V0 relationship preserved (SHA-256 match) | PASS |
-| 11 | All 14 proposition-bearing packages accounted for | PASS |
-| 12 | All 17 protected-source context items accounted for | PASS |
-| 13 | All required controlled source files exist | PASS |
-| 14 | Relative links resolve | PASS |
-| 15 | Structural headings coherent | PASS |
-| 16 | Markdown tables structurally valid | PASS |
-| 17 | No malformed proposition blocks | PASS |
-| 18 | D-04 traceability aggregate reconciles | PASS |
-| 19 | Decision evidence attributable | PASS |
-| 20 | Source statuses preserved | PASS |
-| 21 | CRA-001–045 not reopened | PASS |
-| 22 | D20 coherence conclusion preserved | PASS |
-| 23 | No new internal constitutional conflict | PASS |
-| 24 | PC-01 conformance | PASS |
-| 25 | PAM-01 conformance | PASS |
-| 26 | CGP-01 conformance | PASS |
-| 27 | No new authority type created | PASS |
-| 28 | Founder Acceptance ≠ Founder Approval preserved | PASS |
-| 29 | Approval ≠ Adoption preserved | PASS |
-| 30 | Repository presence ≠ authority preserved | PASS |
-| 31 | Technical capability ≠ authority preserved | PASS |
-| 32 | All 9 D17 matters preserved | PASS |
-| 33 | DQ-06 control preserved | PASS |
-| 34 | DQ-07 control preserved | PASS |
-| 35 | All 10 D-02 WRQ dispositions preserved | PASS |
-| 36 | 0 proposition amendments directed remains true | PASS |
-| 37 | D-05 20-finding aggregate preserved | PASS |
-| 38 | D-05 PRE-APPROVAL count = 0 | PASS |
-| 39 | D-05 CONFLICT count = 0 | PASS |
-| 40 | D-05 blocking count = 0 | PASS |
-| 41 | No future alignment obligation prematurely executed | PASS |
-| 42 | D-03 Founder Accepted status preserved | PASS |
-| 43 | D-04 Complete — PASS preserved | PASS |
-| 44 | D-05 Complete — PASS preserved | PASS |
-| 45 | D-07 Not Started preserved | PASS |
-| 46 | Decision Gate untaken | PASS |
-| 47 | CGP-02 not Founder Approved | PASS |
-| 48 | Adoption not established | PASS |
-| 49 | Application not established | PASS |
-| 50 | Constitutional effect none | PASS |
-| 51 | CGP-02D In Progress | PASS |
-| 52 | CGP-02 In Progress | PASS |
-| 53 | Stage E0 In Progress | PASS |
-| 54 | CGP-03 blocked | PASS |
-| 55 | Approval-readiness conclusion evidence-backed | PASS |
-| 56 | All observations classified | PASS |
-| 57 | No blocking observation silently corrected | PASS |
-| 58 | No substantive Founder decision invented | PASS |
-| 59 | `git diff --check` passes | PASS |
-| 60 | No unrelated engineering files included in this deliverable | PASS |
-| 61 | Final working-tree state accurately reported | PASS |
+| #   | Check                                                                | Result |
+| --- | -------------------------------------------------------------------- | ------ |
+| 1   | Governed baseline verified (HEAD = origin/main = `7552e9f` at entry) | PASS   |
+| 2   | D-03 candidate exists                                                | PASS   |
+| 3   | Exactly 302 propositions                                             | PASS   |
+| 4   | Exactly 302 unique proposition IDs                                   | PASS   |
+| 5   | No added proposition                                                 | PASS   |
+| 6   | No removed proposition                                               | PASS   |
+| 7   | No rewritten proposition                                             | PASS   |
+| 8   | Proposition order preserved                                          | PASS   |
+| 9   | Package order preserved                                              | PASS   |
+| 10  | V0 relationship preserved (SHA-256 match)                            | PASS   |
+| 11  | All 14 proposition-bearing packages accounted for                    | PASS   |
+| 12  | All 17 protected-source context items accounted for                  | PASS   |
+| 13  | All required controlled source files exist                           | PASS   |
+| 14  | Relative links resolve                                               | PASS   |
+| 15  | Structural headings coherent                                         | PASS   |
+| 16  | Markdown tables structurally valid                                   | PASS   |
+| 17  | No malformed proposition blocks                                      | PASS   |
+| 18  | D-04 traceability aggregate reconciles                               | PASS   |
+| 19  | Decision evidence attributable                                       | PASS   |
+| 20  | Source statuses preserved                                            | PASS   |
+| 21  | CRA-001–045 not reopened                                             | PASS   |
+| 22  | D20 coherence conclusion preserved                                   | PASS   |
+| 23  | No new internal constitutional conflict                              | PASS   |
+| 24  | PC-01 conformance                                                    | PASS   |
+| 25  | PAM-01 conformance                                                   | PASS   |
+| 26  | CGP-01 conformance                                                   | PASS   |
+| 27  | No new authority type created                                        | PASS   |
+| 28  | Founder Acceptance ≠ Founder Approval preserved                      | PASS   |
+| 29  | Approval ≠ Adoption preserved                                        | PASS   |
+| 30  | Repository presence ≠ authority preserved                            | PASS   |
+| 31  | Technical capability ≠ authority preserved                           | PASS   |
+| 32  | All 9 D17 matters preserved                                          | PASS   |
+| 33  | DQ-06 control preserved                                              | PASS   |
+| 34  | DQ-07 control preserved                                              | PASS   |
+| 35  | All 10 D-02 WRQ dispositions preserved                               | PASS   |
+| 36  | 0 proposition amendments directed remains true                       | PASS   |
+| 37  | D-05 20-finding aggregate preserved                                  | PASS   |
+| 38  | D-05 PRE-APPROVAL count = 0                                          | PASS   |
+| 39  | D-05 CONFLICT count = 0                                              | PASS   |
+| 40  | D-05 blocking count = 0                                              | PASS   |
+| 41  | No future alignment obligation prematurely executed                  | PASS   |
+| 42  | D-03 Founder Accepted status preserved                               | PASS   |
+| 43  | D-04 Complete — PASS preserved                                       | PASS   |
+| 44  | D-05 Complete — PASS preserved                                       | PASS   |
+| 45  | D-07 Not Started preserved                                           | PASS   |
+| 46  | Decision Gate untaken                                                | PASS   |
+| 47  | CGP-02 not Founder Approved                                          | PASS   |
+| 48  | Adoption not established                                             | PASS   |
+| 49  | Application not established                                          | PASS   |
+| 50  | Constitutional effect none                                           | PASS   |
+| 51  | CGP-02D In Progress                                                  | PASS   |
+| 52  | CGP-02 In Progress                                                   | PASS   |
+| 53  | Stage E0 In Progress                                                 | PASS   |
+| 54  | CGP-03 blocked                                                       | PASS   |
+| 55  | Approval-readiness conclusion evidence-backed                        | PASS   |
+| 56  | All observations classified                                          | PASS   |
+| 57  | No blocking observation silently corrected                           | PASS   |
+| 58  | No substantive Founder decision invented                             | PASS   |
+| 59  | `git diff --check` passes                                            | PASS   |
+| 60  | No unrelated engineering files included in this deliverable          | PASS   |
+| 61  | Final working-tree state accurately reported                         | PASS   |
 
 **Aggregate: 61 / 61 PASS. 0 FAIL.**
+
+---
+
+## 21. Post-Validation Administrative Reconciliation (2026-08-31)
+
+Following D-06 completion and prior to Founder acceptance, a post-validation administrative review identified additional stale current-state synchronization defects that D-06 §14 had not captured:
+
+1. **Master Programme §4 "Completion Evidence Required"**: Validation and Traceability checkboxes remained unchecked despite D-06 (Validation) and D-04 (Traceability) both being Complete — PASS.
+
+2. **Master Programme §4 "Current Objective"**: Stated "D-01 through D-05 are complete" without reflecting D-06 completion.
+
+3. **Master Programme §11 "CGP-02 Current Completion Evidence"**: Validation and Traceability checkboxes remained unchecked despite D-06 and D-04 completion.
+
+4. **FEF-ALIGNMENT.md §2.4**: Stated "D-05 not finalized" despite D-05 being Complete — PASS, and did not reference D-06.
+
+**Classification**: All four defects are **ADMINISTRATIVE current-state synchronization defects**, not failures of corpus integrity, constitutional validation, traceability, or cross-reference analysis. They are meaning-preserving corrections that align live status representations with already-recorded, already-Founder-visible completions.
+
+**Disposition**: Corrected via Master Programme v1.34 and FEF-ALIGNMENT.md synchronization (2026-08-31). D-06 substantive findings, validation dimensions, and the **Complete — PASS** disposition are **unchanged**. No proposition, constitutional content, D-04 result, D-05 finding, or D17 matter was altered. D-07 was not begun.
+
+This addendum does not reopen, reclassify, or alter any D-06 validation dimension or observation. It records that current-state hygiene corrections were applied after D-06 closed, consistent with the programme's ongoing synchronization obligations.
