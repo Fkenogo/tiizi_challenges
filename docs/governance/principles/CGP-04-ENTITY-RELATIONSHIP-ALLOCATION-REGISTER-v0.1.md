@@ -1,12 +1,16 @@
 # CGP-04 — Entity Relationship Allocation Register
+
 ## Integrated Founder Review Draft v0.1
 
 **Programme:** Tiizi V2  
 **Stage:** E0 — Governance Architecture  
 **Instrument:** CGP-04  
-**Status:** Founder Review Draft  
-**Founder-authorized commencement:** 2026-09-01  
-**Dependencies:** CGP-02 — Complete; CGP-03 — Complete  
+**Status:** Founder Approved / Constitutionally Effective / Complete — CGP-04-FAD-01, 2026-09-01
+**Founder-authorized commencement:** 2026-09-01
+**Dependencies:** CGP-02 — Complete; CGP-03 — Complete
+**Approval authority:** [CGP-04-FAD-01](../../programme/CGP-04-FOUNDER-APPROVAL-DECISION-CGP-04-FAD-01.md)
+**Approved instrument SHA-256:** `7b0c138ddb23da16ba02f6f2883fbdc40907893094338ee81c1440091c6b93fb`
+**Constitutional effect:** 2026-09-01 (upon attributable recording of CGP-04-FAD-01)
 **Purpose:** Establish the controlled representation of material governance relationships between Tiizi governed entities and subjects without creating authority by inference or prematurely resolving downstream governance.
 
 ---
@@ -178,33 +182,33 @@ The following register consolidates the material relationship allocations establ
 
 It does not convert downstream or deferred matters into Stage E0 decisions.
 
-| Governed Entity / Subject | Relationship | Related Entity / Subject | Allocation / Holder | Authority Basis | Status | Dependency / Boundary |
-|---|---|---|---|---|---|---|
-| Tiizi Governance | Governance Authority | Founder | Founder exercising Governance Authority | Existing constitutional and CGP authority | **ALLOCATED** | No silent transfer through administrative or implementation action |
-| Group | Creation relationship | Creator | Creator establishes Group under existing Group governance | EOG-02 | **ALLOCATED** | Authentication mechanism remains downstream |
-| Group | Accountable Stewardship | Creator / Accountable Steward | Creator becomes first Accountable Steward | EOG-02 | **ALLOCATED** | Subsequent reassignment/relinquishment remains deferred |
-| Group | Accountable Stewardship cardinality | Accountable Steward | One Accountable Steward per Group | EOG-02 | **ALLOCATED** | Does not determine future succession mechanism |
-| Group | Initial Membership | Creator | Creator becomes first Member | EOG-02 | **ALLOCATED** | Membership lifecycle remains deferred |
-| Group Member | Participation / Membership | Group | Membership relationship does not itself confer governance authority | EOG-02 / EOG baseline | **ALLOCATED** | Membership lifecycle remains deferred |
-| Challenge | Governed identity | Challenge | Challenge is a distinct governed subject/product expression of Undertaking | EOG-04 / constitutional ontology | **ALLOCATED** | CHL-01 establishment mechanism remains deferred |
-| Challenge Participant | Participation | Challenge | Participation relationship distinct from membership and governance authority | EOG-04 | **ALLOCATED** | Participation lifecycle/withdrawal remains deferred |
-| Knowledge Authority | Authoritative Meaning | Governed Knowledge Subject | Knowledge Authority holds relationship to Authoritative Meaning where established | EOG baseline | **ALLOCATED** | Specific Knowledge Asset governance remains Stage EK |
-| Participant Authority | Submission Intent | Participant submission | Participant Authority governs Submission Intent | EOG baseline | **ALLOCATED** | Does not establish Evidence eligibility or Truth |
-| Policy Authority | Evidence Eligibility | Evidence / submitted activity | Policy Authority governs Evidence Eligibility | EOG baseline | **ALLOCATED** | Evidence eligibility ≠ Derived Truth |
-| Acceptance Authority | Accepted Activity Event | Submitted activity | Acceptance Authority governs whether activity becomes an Accepted Activity Event | EOG baseline | **ALLOCATED** | Acceptance ≠ Calculation |
-| Calculation Authority | Derived Truth | Accepted evidence | Calculation Authority governs Derived Truth | EOG baseline | **ALLOCATED** | Truth establishment ≠ Recognition |
-| Evidence / Verification subject | Verification Authority | Evidence | Holder not finally allocated in reviewed authority | EOG deferred activity-integrity matters | **DEFERRED** | ACT-03/ACT-04 or applicable downstream governance |
-| Recognition | Recognition Authority | Governed recognition subject | Holder not finally allocated | EOG-05 / MOT-01 | **DEFERRED** | MOT-01 |
-| Group | Stewardship Reassignment | Accountable Steward | Mechanism/authority not finally allocated | EOG-01/EOG-02 | **DEFERRED** | Later governed reassignment decision |
-| Group | Stewardship Relinquishment | Accountable Steward | Mechanism/authority not finally allocated | EOG-01/EOG-02 | **DEFERRED** | Later governed relinquishment decision |
-| Group | Stewardship Succession | Future Accountable Steward | Allocation/mechanism not finally established | EOG evidence | **DEFERRED** | Later governance |
-| Group | Membership Lifecycle | Member | Entry/change/termination governance not finally allocated | EOG evidence | **DEFERRED** | EOG-08 / applicable later governance |
-| Challenge | Establishment Mechanism | Challenge authority | Specific mechanism not finally allocated | EOG-04 | **DEFERRED** | CHL-01 |
-| Challenge | Participation Withdrawal | Participant | Withdrawal governance not finally allocated | EOG-04 | **DEFERRED** | CHL-04 / applicable later governance |
-| Recognition | Qualification / entitlement determination | Participant / governed subject | Not finally allocated | EOG-05 | **DEFERRED** | MOT-01 |
-| Knowledge domain | Canonical Knowledge Asset governance | Exercise / Wellness Activity / related Knowledge Assets | Not allocated by CGP-04 | Stage EK boundary | **DEFERRED** | Must be determined in Stage EK |
-| Knowledge domain | Knowledge modification / canonical identity | Knowledge Assets | Not allocated by CGP-04 | Stage EK boundary | **DEFERRED** | Stage EK |
-| Knowledge domain | Metrics / units governance | Knowledge Assets / challenge composition | Not allocated by CGP-04 | Stage EK boundary | **DEFERRED** | Stage EK |
+| Governed Entity / Subject       | Relationship                                | Related Entity / Subject                                | Allocation / Holder                                                               | Authority Basis                           | Status        | Dependency / Boundary                                              |
+| ------------------------------- | ------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------- | ------------- | ------------------------------------------------------------------ |
+| Tiizi Governance                | Governance Authority                        | Founder                                                 | Founder exercising Governance Authority                                           | Existing constitutional and CGP authority | **ALLOCATED** | No silent transfer through administrative or implementation action |
+| Group                           | Creation relationship                       | Creator                                                 | Creator establishes Group under existing Group governance                         | EOG-02                                    | **ALLOCATED** | Authentication mechanism remains downstream                        |
+| Group                           | Accountable Stewardship                     | Creator / Accountable Steward                           | Creator becomes first Accountable Steward                                         | EOG-02                                    | **ALLOCATED** | Subsequent reassignment/relinquishment remains deferred            |
+| Group                           | Accountable Stewardship cardinality         | Accountable Steward                                     | One Accountable Steward per Group                                                 | EOG-02                                    | **ALLOCATED** | Does not determine future succession mechanism                     |
+| Group                           | Initial Membership                          | Creator                                                 | Creator becomes first Member                                                      | EOG-02                                    | **ALLOCATED** | Membership lifecycle remains deferred                              |
+| Group Member                    | Participation / Membership                  | Group                                                   | Membership relationship does not itself confer governance authority               | EOG-02 / EOG baseline                     | **ALLOCATED** | Membership lifecycle remains deferred                              |
+| Challenge                       | Governed identity                           | Challenge                                               | Challenge is a distinct governed subject/product expression of Undertaking        | EOG-04 / constitutional ontology          | **ALLOCATED** | CHL-01 establishment mechanism remains deferred                    |
+| Challenge Participant           | Participation                               | Challenge                                               | Participation relationship distinct from membership and governance authority      | EOG-04                                    | **ALLOCATED** | Participation lifecycle/withdrawal remains deferred                |
+| Knowledge Authority             | Authoritative Meaning                       | Governed Knowledge Subject                              | Knowledge Authority holds relationship to Authoritative Meaning where established | EOG baseline                              | **ALLOCATED** | Specific Knowledge Asset governance remains Stage EK               |
+| Participant Authority           | Submission Intent                           | Participant submission                                  | Participant Authority governs Submission Intent                                   | EOG baseline                              | **ALLOCATED** | Does not establish Evidence eligibility or Truth                   |
+| Policy Authority                | Evidence Eligibility                        | Evidence / submitted activity                           | Policy Authority governs Evidence Eligibility                                     | EOG baseline                              | **ALLOCATED** | Evidence eligibility ≠ Derived Truth                               |
+| Acceptance Authority            | Accepted Activity Event                     | Submitted activity                                      | Acceptance Authority governs whether activity becomes an Accepted Activity Event  | EOG baseline                              | **ALLOCATED** | Acceptance ≠ Calculation                                           |
+| Calculation Authority           | Derived Truth                               | Accepted evidence                                       | Calculation Authority governs Derived Truth                                       | EOG baseline                              | **ALLOCATED** | Truth establishment ≠ Recognition                                  |
+| Evidence / Verification subject | Verification Authority                      | Evidence                                                | Holder not finally allocated in reviewed authority                                | EOG deferred activity-integrity matters   | **DEFERRED**  | ACT-03/ACT-04 or applicable downstream governance                  |
+| Recognition                     | Recognition Authority                       | Governed recognition subject                            | Holder not finally allocated                                                      | EOG-05 / MOT-01                           | **DEFERRED**  | MOT-01                                                             |
+| Group                           | Stewardship Reassignment                    | Accountable Steward                                     | Mechanism/authority not finally allocated                                         | EOG-01/EOG-02                             | **DEFERRED**  | Later governed reassignment decision                               |
+| Group                           | Stewardship Relinquishment                  | Accountable Steward                                     | Mechanism/authority not finally allocated                                         | EOG-01/EOG-02                             | **DEFERRED**  | Later governed relinquishment decision                             |
+| Group                           | Stewardship Succession                      | Future Accountable Steward                              | Allocation/mechanism not finally established                                      | EOG evidence                              | **DEFERRED**  | Later governance                                                   |
+| Group                           | Membership Lifecycle                        | Member                                                  | Entry/change/termination governance not finally allocated                         | EOG evidence                              | **DEFERRED**  | EOG-08 / applicable later governance                               |
+| Challenge                       | Establishment Mechanism                     | Challenge authority                                     | Specific mechanism not finally allocated                                          | EOG-04                                    | **DEFERRED**  | CHL-01                                                             |
+| Challenge                       | Participation Withdrawal                    | Participant                                             | Withdrawal governance not finally allocated                                       | EOG-04                                    | **DEFERRED**  | CHL-04 / applicable later governance                               |
+| Recognition                     | Qualification / entitlement determination   | Participant / governed subject                          | Not finally allocated                                                             | EOG-05                                    | **DEFERRED**  | MOT-01                                                             |
+| Knowledge domain                | Canonical Knowledge Asset governance        | Exercise / Wellness Activity / related Knowledge Assets | Not allocated by CGP-04                                                           | Stage EK boundary                         | **DEFERRED**  | Must be determined in Stage EK                                     |
+| Knowledge domain                | Knowledge modification / canonical identity | Knowledge Assets                                        | Not allocated by CGP-04                                                           | Stage EK boundary                         | **DEFERRED**  | Stage EK                                                           |
+| Knowledge domain                | Metrics / units governance                  | Knowledge Assets / challenge composition                | Not allocated by CGP-04                                                           | Stage EK boundary                         | **DEFERRED**  | Stage EK                                                           |
 
 ---
 
