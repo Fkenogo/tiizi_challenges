@@ -2,11 +2,14 @@
 
 **Integrated Founder Review Draft v0.1**
 
-**Programme:** Tiizi V2  
-**Stage:** E0 — Governance Architecture  
-**Status:** Founder Accepted for Repository Reconciliation & Validation — 2026-09-01  
-**Authority context:** Tiizi constitutional governance; CGP-02 complete  
+**Programme:** Tiizi V2
+**Stage:** E0 — Governance Architecture
+**Status:** Founder Approved / Constitutionally Effective / Complete — CGP-03-FAD-01, 2026-09-01
+**Authority context:** Tiizi constitutional governance; CGP-02 complete; CGP-03 approved
 **Purpose:** Establish the minimum rules by which Tiizi governance authority, decisions, changes and historical state remain identifiable and traceable.
+**Approval authority:** [CGP-03-FAD-01](../../programme/CGP-03-FOUNDER-APPROVAL-DECISION-CGP-03-FAD-01.md)
+**Origin:** Founder-accepted v0.1 reviewed at reconciliation commit `59e2e3b`
+**Constitutional effect:** 2026-09-01 (upon attributable recording of CGP-03-FAD-01)
 
 ## 1. Purpose
 
