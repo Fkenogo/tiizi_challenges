@@ -7,7 +7,7 @@
 | Programme | Tiizi Version 2 |
 | Stage | Stage EK — Knowledge Governance |
 | Document type | Repository reconciliation and governance-integrity assessment (supporting evidence) |
-| Status | **Complete — PASS WITH CORRECTIONS** (for Founder review/approval; no approval claimed) |
+| Status | **Complete — PASS WITH CORRECTIONS → superseded by §16 bounded follow-up (PASS)** (for Founder review/approval; no approval claimed) |
 | Report date | 2026-09-02 |
 | Reconciliation baseline | `5a012396700fde9aee8aa2b72663a2c7e5564bd3` (origin/main, branch `recon/ekg01-reconciliation`) |
 | Subject instrument | EKG-01 — Tiizi Knowledge Governance Standard & Knowledge Asset Model, Working Draft v0.1 (Founder Review) |
@@ -356,4 +356,76 @@ Rationale against HOLD: D-01 is not a contradiction between enacted authorities 
 
 ---
 
-_End of report — STAGE-EK-EKG-01-REPOSITORY-RECONCILIATION-REPORT.md. Prepared as mechanical reconciliation under CGP-03 `CGP03-P31`; contradictions escalated per `CGP03-P33` to D-01 (§8). Baseline `5a012396700fde9aee8aa2b72663a2c7e5564bd3`._
+## 16. Bounded Correction Follow-Up (2026-09-02)
+
+### 16.1 D-01 Founder resolution
+
+The Founder resolved D-01 in this bounded follow-up. The resolution is recorded substantively in corrected EKG-01 §13/§14 as follows (faithful recording; no reinterpretation):
+
+1. Ultimate authority over Tiizi Platform Knowledge rests with the Founder as the Knowledge Authority.
+2. The Founder may exercise this authority through the Platform's Super Admin administrative capability.
+3. The Super Admin designation is an operational administrative mechanism and does not independently create or confer Knowledge Authority.
+4. Where the Founder holds the Super Admin role, actions taken through that role may operationally exercise the Founder's Knowledge Authority.
+5. The Founder may delegate bounded Knowledge-management capabilities to other Administrators.
+6. Such delegation does not transfer or create independent Knowledge Authority.
+7. Administrative role membership alone does not confer authority over Platform Knowledge.
+8. The Founder is the Accountable Steward for Platform Knowledge unless and until that accountability is explicitly delegated under Tiizi governance.
+
+### 16.2 Corrected instrument
+
+The corrected EKG-01 was prepared at:
+
+`docs/governance/knowledge/EKG-01-TIIZI-KNOWLEDGE-GOVERNANCE-STANDARD-AND-KNOWLEDGE-ASSET-MODEL.md`
+
+Status after correction: **Working Draft v0.1 (corrected) — For Founder Review — NOT Founder Approved**. The corrected file is based on the byte-identical prior Working Draft v0.1 (SHA-256 `aea43818062b834be6e4de71b3a42a52192cdcc8bbac0401e5ab77190806e42c`); the prior `-v0.1.md` working copy remains untouched in the primary worktree.
+
+### 16.3 B corrections applied
+
+| ID | Correction applied |
+| --- | --- |
+| B-01 | §13/§14/§19 reworded: "Super Admin" normalized as an operational administrative capability; canonical PAM-01 "Administrator" language used; the Founder resolution is recorded substantively in §13/§14. |
+| B-02 | §3 diagram node `Exercise Assets / Fitness Activities` → `Exercise Assets`. |
+| B-03 | §8 example `Push-Up → Repetitions → count` → `Push-Up → Repetitions → repetitions`; examples flagged illustrative pending the governed metric/unit catalogues. |
+| B-04 | §5.3 `MVP` → `Version 2 launch` (both occurrences). |
+| B-05 | §6 Yoga example reworded: no implication that Recovery is a separate canonical identity or adopted primary classification. |
+| B-06 | §12 clarified that Knowledge-level challenge-use compatibility constrains legitimate use and does not determine or override Policy eligibility or other governing Challenge authority. |
+
+### 16.4 C corrections applied
+
+| ID | Correction applied |
+| --- | --- |
+| C-01 | Document Control block added (programme, stage, document type, version, status, date, basis, authority constraints, dependencies); embedded relative links resolve. |
+| C-02 | §5.1 traceability to EK-FQ-07/08 and §5.2 traceability to EK-FQ-09; prior 7-domain/19-family Fitness material and the Wellness rationalisation matrix identified as prior candidate/evidence only and not elevated to governing authority; the six-category Fitness and Wellness candidate baselines remain the substantive proposals. |
+| C-03 | §5.3 cross-reference to Wellness rationalisation RESTRICT treatment and the reserved Health Tracking taxonomy; EK-FQ-09. |
+| C-04 | §8 cross-references to EK-FQ-04/EK-FQ-05; metric/unit vocabulary not presented as finally resolved. |
+| C-05 | §13/§14 cross-references to EOG-03 §8 and PAM-01 §7 delegation conditions; EK-FQ-01 resolution recorded. |
+| C-06 | §15 cross-reference to CGP-02 amendment classification (AMC) and review-trigger discipline. |
+| C-07 | §16 cross-reference to CGP-02 Governance Lifecycle and KNW-02/KNW-03 deferrals. |
+| C-08 | §23 closure conditions mapped to EK1–EK5 per the Master Programme dependency order; the EK1–EK5 programme structure is preserved. |
+
+### 16.5 Remaining D findings
+
+**None.** D-01 was the only D finding and is now resolved by the Founder. No new D finding arose from the corrections.
+
+### 16.6 Remaining E findings
+
+E-01…E-07 (§6.5) remain **downstream** and are not resolved by this bounded correction, per the correction boundary.
+
+### 16.7 Disposition after bounded follow-up
+
+**PASS** — the corrected EKG-01 is ready for Founder approval. All B/C corrections are applied; D-01 is resolved; no unresolved D findings remain. Founder approval of EKG-01 is not claimed in this report.
+
+### 16.8 Follow-up git handling
+
+| Item | Value |
+| --- | --- |
+| Worktree | Existing clean linked worktree `/tmp/tiizi-ekg01-recon` (valid and unchanged at follow-up start) |
+| Branch | `recon/ekg01-reconciliation` |
+| Baseline | `5a012396700fde9aee8aa2b72663a2c7e5564bd3` |
+| Files changed | corrected EKG-01 (new path); this report (appended). No index update required — the corrected instrument is not yet approved, so no authority index elevation is warranted; discoverability is provided by this report and the file location. |
+| EKG-01 prior `-v0.1.md` | untouched in primary worktree (still untracked, preserved exactly) |
+| Push status | **NOT pushed** — no auto-push policy identified; exact local branch/commit reported for Founder review |
+
+---
+
+_End of follow-up — section 16 appended to the Stage EK EKG-01 Repository Reconciliation Report under CGP-03 `CGP03-P31`; no historical finding in sections 1–15 was altered. Baseline `5a012396700fde9aee8aa2b72663a2c7e5564bd3`._
