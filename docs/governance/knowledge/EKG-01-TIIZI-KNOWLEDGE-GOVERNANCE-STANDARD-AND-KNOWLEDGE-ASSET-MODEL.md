@@ -1,6 +1,6 @@
 # EKG-01 --- Tiizi Knowledge Governance Standard & Knowledge Asset Model
 
-**Working Draft v0.1 (corrected) --- For Founder Review --- NOT Founder Approved**
+**Founder Approved v0.1 --- Knowledge Governance --- Effective 2026-09-02 --- EKG-01-FAD-01**
 
 ## Document Control
 
@@ -9,12 +9,18 @@
 | Programme | Tiizi Version 2 |
 | Stage | Stage EK --- Knowledge Governance |
 | Document type | Knowledge Governance Standard & Knowledge Asset Model |
-| Version | v0.1 (corrected) --- prepared from Working Draft v0.1 |
-| Status | **Working Draft --- For Founder Review --- NOT Founder Approved** |
-| Date | 2026-09-02 |
-| Basis | Prior EKG-01 Working Draft v0.1; [Stage EK Repository Reconciliation Report](../../programme/STAGE-EK-EKG-01-REPOSITORY-RECONCILIATION-REPORT.md); [Stage EK Knowledge Foundation Audit & Carry-Forward Assessment](../../programme/STAGE-EK-KNOWLEDGE-FOUNDATION-AUDIT-AND-CARRY-FORWARD-ASSESSMENT.md) |
+| Version | v0.1 |
+| Status | **Founder Approved --- Knowledge Governance --- Effective --- Complete --- EKG-01-FAD-01, 2026-09-02** |
+| Approval date | 2026-09-02 |
+| Approving authority | Founder, exercising Governance Authority (PAM-01 §4.K, §5.1; EOG-03 §8) |
+| Approval decision | [EKG-01-FAD-01](../../programme/EKG-01-FOUNDER-APPROVAL-DECISION-EKG-01-FAD-01.md) |
+| Reviewed head | `6008c67b2e398a1b9c339a290527a9ffcdd754cf` (corrected Working Draft v0.1, branch `recon/ekg01-reconciliation`) |
+| Reconciliation basis | [Stage EK EKG-01 Repository Reconciliation Report](../../programme/STAGE-EK-EKG-01-REPOSITORY-RECONCILIATION-REPORT.md) (PASS WITH CORRECTIONS → bounded follow-up PASS, 2026-09-02) |
+| Basis | Prior EKG-01 Working Draft v0.1; [Stage EK Knowledge Foundation Audit & Carry-Forward Assessment](../../programme/STAGE-EK-KNOWLEDGE-FOUNDATION-AUDIT-AND-CARRY-FORWARD-ASSESSMENT.md) |
 | Authority constraints | CGP-02 (Complete, FLD-01); CGP-03 (Complete, CGP-03-FAD-01); CGP-04 (Complete, CGP-04-FAD-01) |
-| Dependencies | EOG-03 (Constitutional Governance of Platform Knowledge); Knowledge Asset Domain Standard; Platform Authority Model (PAM-01); Platform Constitution; Master Programme v1.42 |
+| Dependencies | EOG-03 (Constitutional Governance of Platform Knowledge); Knowledge Asset Domain Standard (05-KNOWLEDGE-ASSET-DOMAIN-STANDARD.md); Platform Authority Model (PAM-01); Platform Constitution; Master Programme v1.42 |
+| Instrument SHA-256 | `77a73debb4bc64770fccbc4ed98a29b875746c2a052731751db535433d950f6d` (reviewed corrected draft at 6008c67; approved instrument is that draft with Document Control approval metadata only) |
+| Constitutional effect | 2026-09-02 (upon attributable recording of EKG-01-FAD-01) |
 
 ## 1. Purpose
 
