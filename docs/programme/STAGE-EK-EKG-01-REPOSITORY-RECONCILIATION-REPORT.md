@@ -429,3 +429,40 @@ E-01…E-07 (§6.5) remain **downstream** and are not resolved by this bounded c
 ---
 
 _End of follow-up — section 16 appended to the Stage EK EKG-01 Repository Reconciliation Report under CGP-03 `CGP03-P31`; no historical finding in sections 1–15 was altered. Baseline `5a012396700fde9aee8aa2b72663a2c7e5564bd3`._
+
+---
+
+## 17. Founder Approval Addendum — EKG-01-FAD-01 (2026-09-02)
+
+### Document Control (addendum)
+
+| Field | Value |
+| --- | --- |
+| Addendum date | 2026-09-02 |
+| Addendum authority | Founder, exercising Governance Authority — EKG-01-FAD-01 |
+| Addendum type | Attributable Founder Approval recording (CGP03-P31 mechanical reconciliation) |
+| Reviewed instrument | EKG-01 — Tiizi Knowledge Governance Standard & Knowledge Asset Model v0.1, corrected draft at `6008c67b2e398a1b9c339a290527a9ffcdd754cf` (SHA-256 `77a73debb4bc64770fccbc4ed98a29b875746c2a052731751db535433d950f6d`) |
+| Approval decision | [EKG-01-FAD-01](EKG-01-FOUNDER-APPROVAL-DECISION-EKG-01-FAD-01.md) |
+| Updated instrument status | **Founder Approved — Knowledge Governance — Effective — Complete — EKG-01-FAD-01, 2026-09-02** (file `docs/governance/knowledge/EKG-01-TIIZI-KNOWLEDGE-GOVERNANCE-STANDARD-AND-KNOWLEDGE-ASSET-MODEL.md`, Document Control updated) |
+
+### 17.1 Recording
+
+The corrected EKG-01 reviewed at head `6008c67b2e398a1b9c339a290527a9ffcdd754cf` was submitted for Founder review. The Founder **approved** EKG-01 v0.1 as the governing Stage EK Knowledge Governance instrument for EK1 — Knowledge Asset Governance via EKG-01-FAD-01 (2026-09-02).
+
+Substantive §§1–23 are unchanged from the reviewed draft; only Document Control approval metadata and strictly necessary approval traceability were updated under CGP03-P31 mechanical reconciliation (no substantive proposition amendment).
+
+### 17.2 Prior disposition preserved
+
+The prior **PASS** disposition (§16.7: corrected EKG-01 ready for Founder approval) remains valid and is now confirmed by attributable approval. Historical reconciliation findings in §§1–16 remain preserved without alteration, per CGP03-P18 historical preservation.
+
+### 17.3 Scope retained
+
+This approval does NOT close Stage EK, finalize controlled Metric/Unit vocabularies (EK-FQ-04/05), approve every candidate Activity, migrate V1 catalogues, modify Firestore, implement Admin UI, or rebuild the Challenge Wizard. Downstream E findings (E-01…E-07) remain bounded as before.
+
+### 17.4 Programme linkage
+
+Master Programme v1.42 → v1.43 reconciliation records EKG-01 Founder Approved, Stage EK In Progress, remaining work Metric/Unit vocabulary and canonical Activity baseline. No Stage E1/F/G/H status change.
+
+---
+
+_End of approval addendum — §17 appended under CGP-03 `CGP03-P31`; no historical finding in §§1–16 was altered. Historical §§1–15 and §16 follow-up remain verbatim._
