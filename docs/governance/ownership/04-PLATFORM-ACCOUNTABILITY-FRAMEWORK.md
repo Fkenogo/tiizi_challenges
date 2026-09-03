@@ -372,7 +372,7 @@ This framework defers:
 
 ### Status
 
-**Status:** Draft for founder review. No accountability relationship is allocated by this framework.
+**Status:** Framework vocabulary approved (EOG-01-FW-01 through EOG-01-FW-08, Founder approval 2026-07-19; 05-EOG-01-FOUNDER-APPROVAL-RECORD). No accountability relationship is allocated by this framework.
 
 ### Precedence
 
