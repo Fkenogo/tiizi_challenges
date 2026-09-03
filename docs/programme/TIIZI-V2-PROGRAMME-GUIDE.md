@@ -27,19 +27,19 @@ COMPLETE
         │
         ▼
 Stage E0 — Governance Architecture
-IN PROGRESS  ← CURRENT
+COMPLETE
         │
         ▼
 Stage EK — Knowledge Governance
-NOT STARTED formally
+COMPLETE
         │
         ▼
 Stage E1 — Entity & Operational Governance
-NOT STARTED
+COMPLETE (2026-09-03)
         │
         ▼
 Stage F — Product & Technical Translation
-NOT STARTED
+NOT STARTED  ← NEXT (when Founder-authorized)
         │
         ▼
 Stage G — Governance-to-Code Alignment
@@ -199,16 +199,19 @@ Likely carry-forward subjects include exercises, wellness activities, activity i
 
 ## 9. Stage E1 — Entity & Operational Governance
 
-**Status: Not Started.**
+**Status: Complete (2026-09-03).**
 
-This stage takes the constitutional concepts and knowledge model into operational governance, including:
+This stage took the constitutional concepts and knowledge model into operational governance, delivered
+as EOG-E1-01 (`docs/governance/ownership/37-EOG-E1-01-TIIZI-ENTITY-AND-OPERATIONAL-GOVERNANCE-STANDARD.md`,
+Founder Approved — Effective 2026-09-03), covering:
 
 - lifecycle standards;
-- roles and permissions;
+- roles and permissions (governance layer);
 - privacy and visibility;
-- security and trust.
+- security and trust (requirements layer; mechanisms downstream).
 
-The existing Entity Ownership Register is an input, but does not itself complete Stage E1.
+FQ-01–FQ-12 governed; ACT-03/ACT-04 and MOT-01 preserved deferred; Reward implementation deferred.
+No implementation was authorized by this closure. Next: Stage F when Founder-authorized.
 
 ---
 
