@@ -10,6 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useChallengeWorkouts } from '../../hooks/useWorkouts';
 import { db } from '../../lib/firebase';
 import { isChallengeOngoing } from '../../utils/challengeLifecycle';
+import { assignFinishingPositions, ordinal } from '../../utils/competitiveFinishing';
 import { resolveChallengeProgress } from './challengeProgressResolver';
 
 // ── Shared navigation CTA block for all v2 recap variants ──────────────────
@@ -80,7 +81,7 @@ function useFinalRank(challengeId: string, userId: string | undefined, engineVer
     queryKey: ['final-rank', challengeId, userId, engineVersion, challengeType],
     queryFn: async () => {
       const snap = await getDocs(query(collection(db, 'challengeMembers'), where('challengeId', '==', challengeId)));
-      type Row = { userId: string; totalPoints: number; completionRate: number; currentStreak: number; cumulativeLoggedValue: number };
+      type Row = { userId: string; totalPoints: number; completionRate: number; currentStreak: number; cumulativeLoggedValue: number; status?: string; completedAt?: unknown };
       const rows: Row[] = snap.docs.map((d) => {
         const data = d.data() as Partial<Row>;
         const cumulativeValues = (d.data().cumulativeValues ?? {}) as Record<string, number>;
@@ -90,6 +91,8 @@ function useFinalRank(challengeId: string, userId: string | undefined, engineVer
           completionRate: Math.max(0, Number(data.completionRate ?? 0)),
           currentStreak: Math.max(0, Number(data.currentStreak ?? 0)),
           cumulativeLoggedValue: Math.max(0, Number(data.cumulativeLoggedValue ?? Object.values(cumulativeValues).reduce((s, v) => s + v, 0))),
+          status: data.status,
+          completedAt: data.completedAt,
         };
       });
 
@@ -97,11 +100,15 @@ function useFinalRank(challengeId: string, userId: string | undefined, engineVer
 
       // v2 only — non-v2/unsupported challenges never render a rank (see the !isV2
       // early return in ChallengeCompletedScreen), so no legacy sort is computed here.
+      // Competitive uses GOVERNED finishing positions (completedAt order, ties
+      // share, non-completers get null) — never a points-based tie-breaker.
+      if (engineVersion === 'v2' && challengeType === 'competitive') {
+        const positions = assignFinishingPositions(rows);
+        return { rank: userId ? (positions.get(userId) ?? null) : null, total: rows.length, memberSumContribution };
+      }
       let sorted: Row[] | null = null;
       if (engineVersion === 'v2' && challengeType === 'collective') {
         sorted = rows.slice().sort((a, b) => b.cumulativeLoggedValue - a.cumulativeLoggedValue);
-      } else if (engineVersion === 'v2' && challengeType === 'competitive') {
-        sorted = rows.slice().sort((a, b) => b.completionRate !== a.completionRate ? b.completionRate - a.completionRate : b.totalPoints - a.totalPoints);
       }
       // V2 streak has NO leaderboard: personal progress only (Days Completed,
       // Current Streak, Best Streak). Never compute a streak rank here.
@@ -399,10 +406,11 @@ function ChallengeCompletedScreen() {
       ? `Here's how you're doing on the ${title}.`
       : `Here's your final performance on the ${title}.`;
 
-    // Leader comparison: show "You are leading" or "X behind [leader]"
-    const myRank = rankData?.rank ?? null;
+    // Governed finishing position (null when this Participant has not finished).
+    // Non-completers see progress only — NO position, never a rank.
+    const myPosition = rankData?.rank ?? null;
     const totalMembers = rankData?.total ?? 0;
-    const isLeading = myRank === 1 && totalMembers > 1;
+    const isLeading = myPosition === 1 && totalMembers > 1;
 
     return (
       <Screen noPadding noBottomPadding className="st-page">
@@ -459,18 +467,18 @@ function ChallengeCompletedScreen() {
                 {isOngoing ? 'Current Standing' : 'Final Results'}
               </p>
               <div className="grid grid-cols-2 gap-3 text-center">
-                {myRank && (
+                {myPosition ? (
                   <div>
                     <p className="text-[11px] tracking-[0.08em] uppercase font-bold text-primary">
-                      {isOngoing ? 'Rank' : 'Position'}
+                      {isOngoing ? 'Finished' : 'Final Position'}
                     </p>
                     <p className="mt-2 text-[22px] leading-[26px] font-black text-slate-900">
-                      #{myRank}
+                      {ordinal(myPosition)}
                       {totalMembers > 0 && <span className="text-[13px] font-normal text-slate-400"> / {totalMembers}</span>}
                     </p>
                   </div>
-                )}
-                <div className={myRank ? 'border-l border-slate-100' : ''}>
+                ) : null}
+                <div className={myPosition ? 'border-l border-slate-100' : 'col-span-2'}>
                   <p className="text-[11px] tracking-[0.08em] uppercase font-bold text-primary">Progress</p>
                   <p className="mt-2 text-[22px] leading-[26px] font-black text-slate-900">
                     {cumulativeLoggedValue.toLocaleString()}

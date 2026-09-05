@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Card, LoadingSpinner } from '../../../components/Mobile';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAdminPermissions } from '../../../hooks/useAdminPermissions';
-import { useAdminWellnessActivities, useDeleteAdminWellnessActivity } from '../../../hooks/useAdminWellnessActivities';
+import { useAdminWellnessActivities, useSetWellnessActivityLifecycleStatus } from '../../../hooks/useAdminWellnessActivities';
+import { lifecycleLabel } from '../../../utils/knowledgeLifecycle';
 import { AdminLayout } from '../layout/AdminLayout';
 
 function WellnessActivityListScreen() {
@@ -11,14 +12,20 @@ function WellnessActivityListScreen() {
   const { user } = useAuth();
   const { permissions } = useAdminPermissions(user?.uid);
   const { data = [], isLoading } = useAdminWellnessActivities();
-  const deleteMutation = useDeleteAdminWellnessActivity();
+  const lifecycleMutation = useSetWellnessActivityLifecycleStatus();
 
   const rows = useMemo(() => [...data].sort((a, b) => a.name.localeCompare(b.name)), [data]);
 
-  const handleDelete = async (id: string, name: string) => {
-    const confirmed = window.confirm(`Delete wellness activity "${name}"? This cannot be undone.`);
+  // Retirement replaces destructive deletion for canonical Knowledge —
+  // retired records stay readable by ID so historical challenges survive.
+  const handleSetStatus = async (id: string, name: string, status: 'draft' | 'published' | 'retired') => {
+    const confirmed = window.confirm(
+      status === 'retired'
+        ? `Retire wellness activity "${name}"? It will no longer be offered for new challenges, but existing challenges keep working.`
+        : `Set wellness activity "${name}" to ${status}?`,
+    );
     if (!confirmed) return;
-    await deleteMutation.mutateAsync(id);
+    await lifecycleMutation.mutateAsync({ id, status });
   };
 
   if (isLoading) return <LoadingSpinner fullScreen label="Loading wellness activities..." />;
@@ -48,6 +55,7 @@ function WellnessActivityListScreen() {
                 <th className="py-2 pr-3">Difficulty</th>
                 <th className="py-2 pr-3">Metric</th>
                 <th className="py-2 pr-3">Popular</th>
+                <th className="py-2 pr-3">Status</th>
                 <th className="py-2">Actions</th>
               </tr>
             </thead>
@@ -59,6 +67,7 @@ function WellnessActivityListScreen() {
                   <td className="py-2 pr-3 text-slate-700 capitalize">{row.difficulty}</td>
                   <td className="py-2 pr-3 text-slate-700">{row.defaultTargetValue} {row.defaultMetricUnit}</td>
                   <td className="py-2 pr-3 text-slate-700">{row.popular ? 'Yes' : 'No'}</td>
+                  <td className="py-2 pr-3 text-slate-700">{lifecycleLabel(row.lifecycleStatus)}</td>
                   <td className="py-2 space-x-2">
                     <button
                       className="text-primary font-bold disabled:opacity-50"
@@ -67,13 +76,34 @@ function WellnessActivityListScreen() {
                     >
                       Edit
                     </button>
-                    <button
-                      className="text-red-600 font-bold disabled:opacity-50"
-                      disabled={!permissions.canModerateChallenges || deleteMutation.isPending}
-                      onClick={() => handleDelete(row.id, row.name)}
-                    >
-                      Delete
-                    </button>
+                    {row.lifecycleStatus === 'retired' ? (
+                      <button
+                        className="text-emerald-600 font-bold disabled:opacity-50"
+                        disabled={!permissions.canModerateChallenges || lifecycleMutation.isPending}
+                        onClick={() => handleSetStatus(row.id, row.name, 'published')}
+                      >
+                        Republish
+                      </button>
+                    ) : (
+                      <>
+                        {row.lifecycleStatus === 'draft' && (
+                          <button
+                            className="text-emerald-600 font-bold disabled:opacity-50"
+                            disabled={!permissions.canModerateChallenges || lifecycleMutation.isPending}
+                            onClick={() => handleSetStatus(row.id, row.name, 'published')}
+                          >
+                            Publish
+                          </button>
+                        )}
+                        <button
+                          className="text-red-600 font-bold disabled:opacity-50"
+                          disabled={!permissions.canModerateChallenges || lifecycleMutation.isPending}
+                          onClick={() => handleSetStatus(row.id, row.name, 'retired')}
+                        >
+                          Retire
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

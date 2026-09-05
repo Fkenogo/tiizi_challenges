@@ -46,15 +46,21 @@ export function useUpdateAdminWellnessActivity() {
   });
 }
 
-export function useDeleteAdminWellnessActivity() {
+export function useSetWellnessActivityLifecycleStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => adminWellnessActivityService.deleteActivity(id),
-    onSuccess: async () => {
+    mutationFn: ({ id, status }: { id: string; status: 'draft' | 'published' | 'retired' }) =>
+      adminWellnessActivityService.setLifecycleStatus(id, status),
+    onSuccess: async (_data, vars) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['admin-wellness-activities'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-wellness-activity', vars.id] }),
         queryClient.invalidateQueries({ queryKey: ['wellness-activities'] }),
       ]);
     },
   });
 }
+
+/* CORR-2: destructive canonical delete hooks removed — retirement
+ * (useSetWellnessActivityLifecycleStatus) is the supported removal mechanism.
+ */

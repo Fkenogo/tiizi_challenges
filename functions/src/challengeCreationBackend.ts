@@ -40,6 +40,7 @@ type ChallengeActivityInput = {
   pointsPerCompletion?: unknown;
   dailyFrequency?: unknown;
   targetType?: unknown;
+  knowledgeVersion?: unknown;
 };
 
 export type CreateChallengeWithCreatorMembershipInput = {
@@ -219,6 +220,9 @@ function normalizeActivities(value: unknown) {
       }),
       dailyFrequency: optionalNumber(activity.dailyFrequency, `activities.${index}.dailyFrequency`, { min: 0, max: 1000 }),
       targetType: normalizeTargetType(activity.targetType),
+      // P1-4: canonical Knowledge version the activity was snapshotted from
+      // (omitted for legacy snapshots that predate version tracking).
+      knowledgeVersion: optionalNumber(activity.knowledgeVersion, `activities.${index}.knowledgeVersion`, { min: 1, max: 1000000 }),
     });
   });
 }

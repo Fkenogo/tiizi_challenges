@@ -1,14 +1,15 @@
 import { db } from '../lib/firebase';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  doc, 
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
   getDoc,
-  QueryConstraint 
+  QueryConstraint
 } from 'firebase/firestore';
 import { CatalogExercise } from '../types';
+import { isPublishedLifecycle } from '../utils/knowledgeLifecycle';
 
 /**
  * Exercise Service - Single source of truth for exercise data
@@ -116,11 +117,15 @@ class ExerciseService {
         : collection(db, this.collectionName);
       
       const snapshot = await getDocs(q);
-      
-      // Map, validate, and filter
+
+      // Map, validate, and filter. P1-3: only published records reach ordinary
+      // runtime consumers (legacy records without status count as published).
+      // By-ID reads (getExerciseById/getExercisesByIds) stay unfiltered so
+      // historical challenges referencing retired activities remain readable.
       const exercises = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as CatalogExercise))
-        .filter(ex => this.validateExercise(ex));
+        .filter(ex => this.validateExercise(ex))
+        .filter(ex => isPublishedLifecycle(ex.lifecycleStatus));
       
       // Sort by name for consistent ordering
       return exercises.sort((a, b) => a.name.localeCompare(b.name));

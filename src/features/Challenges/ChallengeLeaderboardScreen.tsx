@@ -9,6 +9,7 @@ import { useChallenge } from '../../hooks/useChallenges';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
 import { sortLeaderboardRows } from '../../utils/leaderboardSort';
+import { assignFinishingPositions, ordinal, orderCompetitiveDisplay } from '../../utils/competitiveFinishing';
 import { resolveChallengeProgress } from './challengeProgressResolver';
 
 interface LeaderboardRow {
@@ -21,6 +22,10 @@ interface LeaderboardRow {
   cumulativeLoggedValue: number;
   activitiesCompleted: number;
   lastActivityAt?: string;
+  /** Membership status — drives governed finishing positions (competitive). */
+  status?: string;
+  /** Governed target-completion point written by CompetitiveEngine. */
+  completedAt?: unknown;
 }
 
 function useChallengeLeaderboard(challengeId: string) {
@@ -43,6 +48,8 @@ function useChallengeLeaderboard(challengeId: string) {
           cumulativeLoggedValue: Math.max(0, Number(data.cumulativeLoggedValue ?? cumulativeFromValues)),
           activitiesCompleted: Math.max(0, Number(data.activitiesCompleted ?? 0)),
           lastActivityAt: data.lastActivityAt,
+          status: data.status,
+          completedAt: data.completedAt,
         } satisfies LeaderboardRow;
       });
     },
@@ -111,16 +118,32 @@ function ChallengeLeaderboardScreen() {
       ? `You (${namesById.get(userId) ?? 'Me'})`
       : (namesById.get(userId) ?? `Member ${userId.slice(0, 6).toUpperCase()}`);
 
+  // Governed finishing positions for competitive (Derived Truth from completedAt).
+  // Non-completers are absent from the map: they receive NO position.
+  const finishingPositions = useMemo(
+    () => (isV2 && challengeType === 'competitive' ? assignFinishingPositions(rawRows) : new Map<string, number>()),
+    [rawRows, isV2, challengeType],
+  );
+
   const ranking = useMemo(() => {
     const sorted = sortLeaderboardRows(rawRows, engineVersion, challengeType);
 
-    return sorted.slice(0, 20).map((row, idx) => ({
+    const withPositions = sorted.map((row) => ({
+      ...row,
+      position: isV2 && challengeType === 'competitive' ? finishingPositions.get(row.userId) : undefined,
+    }));
+    // Completers first by governed position, then non-completers by live
+    // progress (no inline sort — governed ordering lives in the util).
+    const ordered = isV2 && challengeType === 'competitive'
+      ? orderCompetitiveDisplay(withPositions, finishingPositions)
+      : withPositions;
+    return ordered.slice(0, 20).map((row, idx) => ({
       ...row,
       rank: idx + 1,
       name: displayName(row.userId),
       me: row.userId === user?.uid,
     }));
-  }, [rawRows, isV2, challengeType, user?.uid, namesById]);
+  }, [rawRows, isV2, challengeType, user?.uid, namesById, finishingPositions, engineVersion]);
 
   const podium = ranking.slice(0, 3);
   const listRows = ranking.slice(3, 10);
@@ -182,14 +205,19 @@ function ChallengeLeaderboardScreen() {
     }
 
     if (isV2 && challengeType === 'competitive') {
+      // Governed result: finishers show their finishing position;
+      // non-completers show progress only — NO position, never a rank.
+      const myPosition = myEntry.position;
       return (
         <section className="st-form-max mt-4 rounded-2xl bg-primary text-white px-5 py-4">
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <p className="text-[11px] leading-[13px] tracking-[0.1em] uppercase font-black text-white/90">Your Rank</p>
-              <p className="mt-2 text-[22px] leading-[22px] font-black">#{myEntry.rank}</p>
-            </div>
-            <div className="border-l border-white/30 pl-5 text-right">
+          <div className={`grid gap-5 ${myPosition ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {myPosition ? (
+              <div>
+                <p className="text-[11px] leading-[13px] tracking-[0.1em] uppercase font-black text-white/90">Finished</p>
+                <p className="mt-2 text-[22px] leading-[22px] font-black">{ordinal(myPosition)}</p>
+              </div>
+            ) : null}
+            <div className={myPosition ? 'border-l border-white/30 pl-5 text-right' : 'text-center'}>
               <p className="text-[11px] leading-[13px] tracking-[0.1em] uppercase font-black text-white/90">Progress</p>
               <p className="mt-2 text-[22px] leading-[22px] font-black">{myEntry.cumulativeLoggedValue.toLocaleString()}</p>
               {totalTarget > 0 && (
@@ -312,9 +340,24 @@ function ChallengeLeaderboardScreen() {
     : isV2 && challengeType === 'collective' ? <Users size={14} className="text-primary" />
     : <Trophy size={14} className="text-primary" />;
 
+  // Display badge for a row: governed finishing position for competitive
+  // finishers; live progress order otherwise. Non-completers get NO position.
+  const displayBadge = (entry: { rank: number; position?: number }) => {
+    if (isV2 && challengeType === 'competitive') {
+      return entry.position
+        ? rankBadge(entry.position)
+        : { bg: 'bg-slate-100', text: 'text-slate-400', label: '–' };
+    }
+    return rankBadge(entry.rank);
+  };
+  const displayRank = (entry: { rank: number; position?: number }) =>
+    isV2 && challengeType === 'competitive'
+      ? (entry.position ? ordinal(entry.position) : '–')
+      : `${entry.rank}`;
+
   const rankingLabel =
     isV2 && challengeType === 'collective' ? 'Ranked by total contribution'
-    : isV2 && challengeType === 'competitive' ? 'Ranked by progress · tiebreaker: points'
+    : isV2 && challengeType === 'competitive' ? 'Finish order by target completion · ties share position'
     : isV2 && challengeType === 'streak' ? 'Ranked by current streak · tiebreaker: longest streak'
     : 'Ranked by total points';
 
@@ -369,9 +412,9 @@ function ChallengeLeaderboardScreen() {
           <section className="st-form-max mt-6">
             <div className="flex items-end justify-center gap-4 text-center">
               {podium.map((entry, index) => {
-                const badge = rankBadge(entry.rank);
+                const badge = displayBadge(entry);
                 return (
-                  <div key={entry.rank} className={index === 0 ? 'order-2' : index === 1 ? 'order-1' : 'order-3'}>
+                  <div key={entry.userId} className={index === 0 ? 'order-2' : index === 1 ? 'order-1' : 'order-3'}>
                     <div className={`mx-auto rounded-full border-4 bg-slate-200 ${
                       index === 0 ? 'h-24 w-24 border-primary' : 'h-16 w-16 border-slate-300'
                     } ${entry.me ? 'ring-2 ring-primary ring-offset-2' : ''}`} />
@@ -399,15 +442,15 @@ function ChallengeLeaderboardScreen() {
 
           <div className="mt-4 space-y-3">
             {listRows.map((row) => {
-              const badge = rankBadge(row.rank);
+              const badge = displayBadge(row);
               return (
                 <article
-                  key={row.rank}
+                  key={row.userId}
                   className={`st-card px-4 py-3.5 flex items-center justify-between ${row.me ? 'border-primary/40 bg-[#fff7f1]' : ''}`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0 ${badge.bg} ${badge.text}`}>
-                      {row.rank}
+                      {displayRank(row)}
                     </span>
                     <div className="h-9 w-9 rounded-full bg-slate-200 flex-shrink-0" />
                     <p className={`text-[15px] leading-[19px] font-bold truncate ${row.me ? 'text-primary' : 'text-slate-900'}`}>
@@ -433,7 +476,7 @@ function ChallengeLeaderboardScreen() {
               <article className="st-card border-primary/40 bg-[#fff7f1] px-4 py-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0 bg-primary/10 text-primary">
-                    {myEntry.rank}
+                    {displayRank(myEntry)}
                   </span>
                   <div className="h-9 w-9 rounded-full bg-slate-200 flex-shrink-0" />
                   <p className="text-[15px] leading-[19px] font-bold text-primary truncate">{myEntry.name}</p>

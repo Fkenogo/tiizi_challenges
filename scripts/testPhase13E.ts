@@ -972,6 +972,195 @@ section('13. P0-4 Collective Overshoot Canonical Truth');
   check('P0-4 canonical: resolver groupPercent may exceed 100 (105%)', rp.groupPercent === 105);
 }
 
+// ─── 14. P1-1 Competitive Finishing Positions ─────────────────────────────────
+
+section('14. P1-1 Competitive Finishing Positions');
+
+{
+  const { assignFinishingPositions, ordinal, completionTimeMillis } =
+    await import('../src/utils/competitiveFinishing.js');
+  const fin = (userId: string, completedAt: unknown) => ({ userId, status: 'completed' as const, completedAt });
+  const active = (userId: string) => ({ userId, status: 'active' as const });
+
+  // one finisher → position 1
+  check('P1-1 one finisher gets position 1',
+    assignFinishingPositions([fin('a', '2024-03-01T10:00:00Z')]).get('a') === 1);
+
+  // multiple sequential finishers → 1, 2, 3 (no tie-breaker needed)
+  const seq = assignFinishingPositions([
+    fin('c', '2024-03-03T10:00:00Z'),
+    fin('a', '2024-03-01T10:00:00Z'),
+    fin('b', '2024-03-02T10:00:00Z'),
+  ]);
+  check('P1-1 sequential: earliest finisher is 1st', seq.get('a') === 1);
+  check('P1-1 sequential: second finisher is 2nd', seq.get('b') === 2);
+  check('P1-1 sequential: third finisher is 3rd', seq.get('c') === 3);
+
+  // identical governed completion point → shared position, next skips (1, 1, 3)
+  const tie = assignFinishingPositions([
+    fin('a', '2024-03-01T10:00:00Z'),
+    fin('b', '2024-03-01T10:00:00Z'),
+    fin('c', '2024-03-02T10:00:00Z'),
+  ]);
+  check('P1-1 tie: identical points share 1st', tie.get('a') === 1 && tie.get('b') === 1);
+  check('P1-1 tie: next finisher is 3rd (positions skip)', tie.get('c') === 3);
+
+  // non-completers receive NO position but keep their rows out of the map only
+  const mixed = assignFinishingPositions([
+    fin('a', '2024-03-01T10:00:00Z'),
+    active('b'),
+    { userId: 'c', status: 'abandoned' as const },
+  ]);
+  check('P1-1 non-completer: active member has no position', !mixed.has('b'));
+  check('P1-1 non-completer: abandoned member has no position', !mixed.has('c'));
+  check('P1-1 mixed: finisher still 1st', mixed.get('a') === 1);
+
+  // no finishers → empty map (live race shows progress, no positions)
+  check('P1-1 no finishers: empty position map',
+    assignFinishingPositions([active('a'), active('b')]).size === 0);
+
+  // missing completion point: ordered after timestamped, sharing one position
+  const legacy = assignFinishingPositions([
+    fin('a', '2024-03-01T10:00:00Z'),
+    fin('b', undefined),
+    fin('c', undefined),
+  ]);
+  check('P1-1 legacy: timestamped finisher stays 1st', legacy.get('a') === 1);
+  check('P1-1 legacy: missing-point finishers share next position',
+    legacy.get('b') === 2 && legacy.get('c') === 2);
+
+  // Firestore Timestamp + Date + millis inputs normalize to the same point
+  const stamp = { toMillis: () => Date.parse('2024-03-01T10:00:00Z') };
+  check('P1-1 normalization: Timestamp, Date, ISO string agree', (() => {
+    const t = Date.parse('2024-03-01T10:00:00Z');
+    return completionTimeMillis(stamp) === t
+      && completionTimeMillis(new Date(t)) === t
+      && completionTimeMillis('2024-03-01T10:00:00Z') === t
+      && completionTimeMillis(t) === t;
+  })());
+  check('P1-1 normalization: garbage yields null',
+    completionTimeMillis('not-a-date') === null && completionTimeMillis({}) === null);
+
+  // ordinal labels
+  check('P1-1 ordinals', ordinal(1) === '1st' && ordinal(2) === '2nd'
+    && ordinal(3) === '3rd' && ordinal(4) === '4th' && ordinal(11) === '11th');
+
+  // display ordering: completers by position, then live progress order
+  const { orderCompetitiveDisplay } = await import('../src/utils/competitiveFinishing.js');
+  const board = orderCompetitiveDisplay(
+    [{ userId: 'racer' }, { userId: 'champ' }, { userId: 'tie2' }, { userId: 'tie1' }],
+    new Map([['champ', 1], ['tie1', 2], ['tie2', 2]]),
+  );
+  check('P1-1 board: completers first, then live order',
+    board.map((r) => r.userId).join(',') === 'champ,tie2,tie1,racer');
+
+  // one Participant finishing does not end the Challenge for others (engine level)
+  const compCtx = context({
+    challengeType: 'competitive',
+    durationDays: 30,
+    activities: [{ activityId: 'run', targetValue: 100, unit: 'km' }],
+  });
+  const finisher = comp.computeUpdate(compCtx, membership(), { ...logEvent('2024-03-01', 100, 100, 'run'), unit: 'km' });
+  const stillRacing = comp.computeUpdate(compCtx, membership(), { ...logEvent('2024-03-01', 40, 40, 'run'), unit: 'km' });
+  check('P1-1 race: finisher completes individually', finisher.isCompleted === true);
+  check('P1-1 race: finisher completion point recorded', finisher.membershipUpdate.completedAt !== undefined);
+  check('P1-1 race: other Participant remains active', stillRacing.isCompleted === false
+    && (stillRacing.membershipUpdate.status ?? 'active') !== 'completed');
+}
+
+// ─── 15. P1-3/P1-4 Knowledge Lifecycle + Version ──────────────────────────────
+
+section('15. P1-3/P1-4 Knowledge Lifecycle + Version');
+
+{
+  const { isPublishedLifecycle, normalizeKnowledgeVersion, lifecycleLabel, isLifecycleStatus, nextKnowledgeVersion } =
+    await import('../src/utils/knowledgeLifecycle.js');
+
+  // legacy records without status count as published (catalogue never disappears)
+  check('P1-3 legacy default: missing status is published', isPublishedLifecycle(undefined) === true);
+  check('P1-3 published offered', isPublishedLifecycle('published') === true);
+  check('P1-3 draft hidden from runtime', isPublishedLifecycle('draft') === false);
+  check('P1-3 retired hidden from runtime', isPublishedLifecycle('retired') === false);
+  check('P1-3 status validation', isLifecycleStatus('retired') === true && isLifecycleStatus('archived') === false);
+
+  // legacy records without versions count as version 1
+  check('P1-4 legacy default: missing version is 1', normalizeKnowledgeVersion(undefined) === 1);
+  check('P1-4 invalid version is 1', normalizeKnowledgeVersion(0) === 1 && normalizeKnowledgeVersion('x') === 1);
+  check('P1-4 real versions preserved', normalizeKnowledgeVersion(3) === 3);
+
+  // admin labels
+  check('P1-3 labels', lifecycleLabel(undefined) === 'Published'
+    && lifecycleLabel('draft') === 'Draft' && lifecycleLabel('retired') === 'Retired');
+
+  // wiring: runtime services filter to published; by-ID reads stay open (history)
+  const readSrc = (rel: string) => readFileSync(new URL(rel, import.meta.url).pathname, 'utf8');
+  const exerciseSrc = readSrc('../src/services/exerciseService.ts');
+  const wellnessSrc = readSrc('../src/services/wellnessActivityService.ts');
+  check('P1-3 fitness list filters to published', exerciseSrc.includes('isPublishedLifecycle(ex.lifecycleStatus)'));
+  check('P1-3 wellness list filters to published', wellnessSrc.includes('isPublishedLifecycle(item.lifecycleStatus)'));
+  check('P1-3 wellness fromDoc maps lifecycle fields',
+    wellnessSrc.includes('lifecycleStatus') && wellnessSrc.includes('knowledgeVersion'));
+
+  // wiring: admin lifecycle actions + UI (retire replaces delete)
+  const adminExSrc = readSrc('../src/services/adminExerciseService.ts');
+  const adminWellSrc = readSrc('../src/services/adminWellnessActivityService.ts');
+  check('P1-3 admin fitness exposes setLifecycleStatus', adminExSrc.includes('setLifecycleStatus'));
+  check('P1-3 admin wellness exposes setLifecycleStatus', adminWellSrc.includes('setLifecycleStatus'));
+  const exListSrc = readSrc('../src/features/Admin/Exercises/ExerciseListScreen.tsx');
+  const wellListSrc = readSrc('../src/features/Admin/Wellness/WellnessActivityListScreen.tsx');
+  check('P1-3 fitness list offers Retire, not Delete',
+    exListSrc.includes('Retire') && !exListSrc.includes('useDeleteAdminExercise'));
+  check('P1-3 wellness list offers Retire, not Delete',
+    wellListSrc.includes('Retire') && !wellListSrc.includes('useDeleteAdminWellnessActivity'));
+
+  // wiring: challenge snapshots preserve the knowledge version (P1-4)
+  const wizardSrc = readSrc('../src/features/Challenges/CreateChallengeWizard.tsx');
+  check('P1-4 wizard snapshots knowledgeVersion', wizardSrc.includes('knowledgeVersion'));
+
+  // ── CORR-1: versions must advance on canonical revision ───────────────────
+  // A: new Activities start at version 1 (server-assigned, client value ignored)
+  check('CORR-1 A fitness create stamps version 1',
+    adminExSrc.includes('knowledgeVersion: KNOWLEDGE_VERSION_INITIAL'));
+  const adminWellSrcFull = readSrc('../src/services/adminWellnessActivityService.ts');
+  check('CORR-1 A wellness create stamps version 1',
+    adminWellSrcFull.includes('knowledgeVersion: KNOWLEDGE_VERSION_INITIAL'));
+
+  // C/D: content updates advance monotonically via transaction (no lost updates)
+  check('CORR-1 C fitness update increments in transaction',
+    adminExSrc.includes('runTransaction') && adminExSrc.includes('nextKnowledgeVersion(current)'));
+  check('CORR-1 D wellness update increments in transaction',
+    adminWellSrcFull.includes('runTransaction') && adminWellSrcFull.includes('nextKnowledgeVersion(current)'));
+  check('CORR-1 next() helper: legacy→2, v1→2, v2→3',
+    nextKnowledgeVersion(undefined) === 2
+    && nextKnowledgeVersion(1) === 2 && nextKnowledgeVersion(2) === 3);
+
+  // E: lifecycle-only transitions leave the version untouched
+  const lifecycleBody = (src: string) => {
+    const m = src.match(/async setLifecycleStatus[\s\S]*?\n  \}/);
+    return m ? m[0] : '';
+  };
+  check('CORR-1 E fitness lifecycle transition keeps version',
+    lifecycleBody(adminExSrc) !== '' && !lifecycleBody(adminExSrc).includes('knowledgeVersion'));
+  check('CORR-1 E wellness lifecycle transition keeps version',
+    lifecycleBody(adminWellSrcFull) !== '' && !lifecycleBody(adminWellSrcFull).includes('knowledgeVersion'));
+
+  // F: snapshot retains the SELECTED canonical version (never forced to 1)
+  check('CORR-1 F snapshot keeps selected fitness version',
+    wizardSrc.includes('exerciseById.get(activity.exerciseId)?.knowledgeVersion'));
+  check('CORR-1 F snapshot keeps selected wellness version',
+    wizardSrc.includes("wellnessById.get(activity.activityId ?? '')?.knowledgeVersion"));
+
+  // ── CORR-2: no destructive canonical delete API remains ───────────────────
+  const exHooksSrc = readSrc('../src/hooks/useAdminExercises.ts');
+  const wellHooksSrc = readSrc('../src/hooks/useAdminWellnessActivities.ts');
+  check('CORR-2 G fitness: no deleteExercise in service',
+    !adminExSrc.includes('deleteExercise') && !adminExSrc.includes('deleteDoc'));
+  check('CORR-2 G fitness: no delete hook', !exHooksSrc.includes('useDeleteAdminExercise'));
+  check('CORR-2 H wellness: no deleteActivity in service',
+    !adminWellSrcFull.includes('deleteActivity') && !adminWellSrcFull.includes('deleteDoc'));
+  check('CORR-2 H wellness: no delete hook', !wellHooksSrc.includes('useDeleteAdminWellnessActivity'));
+}
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 const totalChecks = passed + failed;

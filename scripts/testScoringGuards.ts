@@ -4858,6 +4858,25 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     const sortedLegacy = sort(rows, 'v1', 'competitive');
     assert.deepStrictEqual(sortedLegacy, rows, '18I-2C-S7: legacy (v1) rows returned unsorted (input order preserved)');
   }
+
+  // 18I-2C-S8 (P1-1: governed Competitive finishing positions) — screens must
+  // derive competitive positions from completedAt order, never a points tie-break.
+  {
+    const lbSrc = readFileSync('src/features/Challenges/ChallengeLeaderboardScreen.tsx', 'utf8');
+    const doneSrc = readFileSync('src/features/Challenges/ChallengeCompletedScreen.tsx', 'utf8');
+    assert.ok(
+      lbSrc.includes('assignFinishingPositions'),
+      '18I-2C-S8a: ChallengeLeaderboardScreen must use assignFinishingPositions for competitive results',
+    );
+    assert.ok(
+      doneSrc.includes('assignFinishingPositions'),
+      '18I-2C-S8b: ChallengeCompletedScreen must use assignFinishingPositions for competitive final position',
+    );
+    assert.ok(
+      !doneSrc.includes('b.completionRate !== a.completionRate'),
+      '18I-2C-S8c: completed screen must not rank competitive by completionRate/totalPoints tie-break',
+    );
+  }
 }
 
 // ── 18I-2C-D: Display label invariants ───────────────────────────────────────

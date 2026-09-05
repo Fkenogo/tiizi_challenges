@@ -15,6 +15,7 @@ import { useToast } from '../../context/ToastContext';
 import { useChallengeContributions, useChallengeTotalRaised, useCreateChallengeContribution, useConfirmChallengeContribution } from '../../hooks/useDonations';
 import { isChallengeCompletedOrExpired } from '../../utils/challengeLifecycle';
 import { sortLeaderboardRows } from '../../utils/leaderboardSort';
+import { assignFinishingPositions, ordinal } from '../../utils/competitiveFinishing';
 import { resolveChallengeProgress, safeNum } from '../Challenges/challengeProgressResolver';
 import { db } from '../../lib/firebase';
 
@@ -110,6 +111,8 @@ function ChallengeDetailScreen() {
           longestStreak?: number;
           cumulativeLoggedValue?: number;
           cumulativeValues?: Record<string, number>;
+          status?: string;
+          completedAt?: unknown;
         };
         const cumulativeFromValues = Object.values(data.cumulativeValues ?? {}).reduce((s, v) => s + v, 0);
         return {
@@ -119,12 +122,17 @@ function ChallengeDetailScreen() {
           currentStreak: Math.max(0, Number(data.currentStreak ?? 0)),
           longestStreak: Math.max(0, Number(data.longestStreak ?? 0)),
           cumulativeLoggedValue: Math.max(0, Number(data.cumulativeLoggedValue ?? cumulativeFromValues)),
+          status: data.status,
+          completedAt: data.completedAt,
         };
       });
       // Compute memberSum before sorting/slicing so we have the full cross-member total.
       const memberSumContribution = rows.reduce((s, r) => s + r.cumulativeLoggedValue, 0);
       const sorted = sortLeaderboardRows(rows, resolvedChallenge!.engineVersion, resolvedChallenge!.challengeType);
       const ct = resolvedChallenge!.challengeType;
+      // Governed finishing positions for competitive (Derived Truth). Only
+      // completers receive a position; non-completers show progress, no rank.
+      const finishPositions = ct === 'competitive' ? assignFinishingPositions(rows) : new Map<string, number>();
       const entries = sorted
         .slice(0, 5)
         .map((entry, index) => {
@@ -145,7 +153,13 @@ function ChallengeDetailScreen() {
             score = entry.totalPoints;
             scoreLabel = 'pts';
           }
-          return { rank: index + 1, userId: entry.userId, score, scoreLabel };
+          return {
+            rank: index + 1,
+            position: finishPositions.get(entry.userId),
+            userId: entry.userId,
+            score,
+            scoreLabel,
+          };
         });
       return { entries, memberSumContribution };
     },
@@ -704,7 +718,10 @@ function ChallengeDetailScreen() {
                     {totalRaised > 0 && (
                       <>
                         <p className="text-[12px] text-slate-500">
-                          Raised so far: {causeCurrency} {totalRaised.toLocaleString()}
+                          Community-reported contributions: {causeCurrency} {totalRaised.toLocaleString()}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Reported by participants · not verified by Tiizi.
                         </p>
                         {remaining !== null && (
                           <p className="text-[12px] text-slate-500">
@@ -908,16 +925,24 @@ function ChallengeDetailScreen() {
             </div>
             {leaderboard.length > 0 ? (
               <div className="divide-y divide-slate-100">
-                {leaderboard.map((entry) => (
-                  <div key={`${entry.userId}-${entry.rank}`}
+                {leaderboard.map((entry) => {
+                  // Competitive shows governed finishing positions; entries
+                  // without one (non-completers) show progress with NO rank.
+                  const governed = entry.position != null;
+                  const unpositionedCompetitive = entry.position == null
+                    && isV2 && resolvedChallenge.challengeType === 'competitive';
+                  const badgeKey = entry.position ?? entry.rank;
+                  return (
+                  <div key={entry.userId}
                     className="flex items-center gap-3 px-4 py-2.5">
                     <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-black flex-shrink-0 ${
-                      entry.rank === 1 ? 'bg-primary text-white' :
-                      entry.rank === 2 ? 'bg-slate-200 text-slate-700' :
-                      entry.rank === 3 ? 'bg-orange-100 text-orange-700' :
+                      unpositionedCompetitive ? 'bg-slate-100 text-slate-400' :
+                      badgeKey === 1 ? 'bg-primary text-white' :
+                      badgeKey === 2 ? 'bg-slate-200 text-slate-700' :
+                      badgeKey === 3 ? 'bg-orange-100 text-orange-700' :
                       'bg-slate-100 text-slate-500'
                     }`}>
-                      {entry.rank}
+                      {governed ? (entry.position! <= 3 ? ordinal(entry.position!) : `${entry.position}`) : (unpositionedCompetitive ? '–' : entry.rank)}
                     </span>
                     <div className="h-8 w-8 rounded-full bg-slate-200 flex-shrink-0" />
                     <p className="flex-1 text-[13px] font-semibold text-slate-700 truncate">
@@ -929,7 +954,8 @@ function ChallengeDetailScreen() {
                       {entry.score}{entry.scoreLabel ? <span className="text-[11px] font-normal text-slate-400"> {entry.scoreLabel}</span> : null}
                     </p>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="px-4 pb-4 text-[13px] text-slate-400">No activity logged yet. Be the first!</p>

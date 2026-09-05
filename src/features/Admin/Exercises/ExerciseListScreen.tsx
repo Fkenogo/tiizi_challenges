@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Card, LoadingSpinner } from '../../../components/Mobile';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAdminPermissions } from '../../../hooks/useAdminPermissions';
-import { useAdminExercises, useDeleteAdminExercise } from '../../../hooks/useAdminExercises';
+import { useAdminExercises, useSetExerciseLifecycleStatus } from '../../../hooks/useAdminExercises';
 import { useAdminTablePrefs } from '../../../hooks/useAdminTablePrefs';
+import { lifecycleLabel } from '../../../utils/knowledgeLifecycle';
 import { AdminLayout } from '../layout/AdminLayout';
 
 type SortKey = 'name' | 'usageCount';
@@ -14,7 +15,7 @@ function ExerciseListScreen() {
   const { user } = useAuth();
   const { permissions } = useAdminPermissions(user?.uid);
   const { data, isLoading } = useAdminExercises();
-  const deleteMutation = useDeleteAdminExercise();
+  const lifecycleMutation = useSetExerciseLifecycleStatus();
   const { prefs, setPrefs, resetPrefs } = useAdminTablePrefs<{
     searchTerm: string;
     tier1: string;
@@ -61,10 +62,16 @@ function ExerciseListScreen() {
     URL.revokeObjectURL(url);
   };
 
-  const onDelete = async (id: string, name: string) => {
-    const confirmed = window.confirm(`Delete exercise "${name}"? This cannot be undone.`);
+  // Retirement replaces destructive deletion for canonical Knowledge —
+  // retired records stay readable by ID so historical challenges survive.
+  const onSetStatus = async (id: string, name: string, status: 'draft' | 'published' | 'retired') => {
+    const confirmed = window.confirm(
+      status === 'retired'
+        ? `Retire exercise "${name}"? It will no longer be offered for new challenges, but existing challenges keep working.`
+        : `Set exercise "${name}" to ${status}?`,
+    );
     if (!confirmed) return;
-    await deleteMutation.mutateAsync(id);
+    await lifecycleMutation.mutateAsync({ id, status });
   };
 
   if (isLoading) return <LoadingSpinner fullScreen label="Loading admin exercises..." />;
@@ -116,6 +123,7 @@ function ExerciseListScreen() {
                 <th className="py-2 pr-3">Tier 2</th>
                 <th className="py-2 pr-3">Difficulty</th>
                 <th className="py-2 pr-3">Usage</th>
+                <th className="py-2 pr-3">Status</th>
                 <th className="py-2">Actions</th>
               </tr>
             </thead>
@@ -127,9 +135,19 @@ function ExerciseListScreen() {
                   <td className="py-2 pr-3 text-slate-700">{row.tier_2}</td>
                   <td className="py-2 pr-3 text-slate-700">{row.difficulty}</td>
                   <td className="py-2 pr-3 text-slate-700">{row.usageCount}</td>
+                  <td className="py-2 pr-3 text-slate-700">{lifecycleLabel(row.lifecycleStatus)}</td>
                   <td className="py-2 space-x-2">
                     <button className="text-primary font-bold disabled:opacity-50" disabled={!permissions.canEditExercises} onClick={() => navigate(`/app/admin/exercises/${encodeURIComponent(row.id)}/edit`)}>Edit</button>
-                    <button className="text-red-600 font-bold disabled:opacity-50" disabled={!permissions.canDeleteExercises || deleteMutation.isPending} onClick={() => onDelete(row.id, row.name)}>Delete</button>
+                    {row.lifecycleStatus === 'retired' ? (
+                      <button className="text-emerald-600 font-bold disabled:opacity-50" disabled={!permissions.canDeleteExercises || lifecycleMutation.isPending} onClick={() => onSetStatus(row.id, row.name, 'published')}>Republish</button>
+                    ) : (
+                      <>
+                        {row.lifecycleStatus === 'draft' && (
+                          <button className="text-emerald-600 font-bold disabled:opacity-50" disabled={!permissions.canEditExercises || lifecycleMutation.isPending} onClick={() => onSetStatus(row.id, row.name, 'published')}>Publish</button>
+                        )}
+                        <button className="text-red-600 font-bold disabled:opacity-50" disabled={!permissions.canDeleteExercises || lifecycleMutation.isPending} onClick={() => onSetStatus(row.id, row.name, 'retired')}>Retire</button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

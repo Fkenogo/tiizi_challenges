@@ -55,14 +55,19 @@ export function useUpdateAdminExercise() {
   });
 }
 
-export function useDeleteAdminExercise() {
+/* CORR-2: destructive canonical delete hooks removed — retirement
+ * (useSetExerciseLifecycleStatus) is the supported removal mechanism.
+ */
+export function useSetExerciseLifecycleStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => adminExerciseService.deleteExercise(id),
-    onSuccess: async () => {
+    mutationFn: ({ id, status }: { id: string; status: 'draft' | 'published' | 'retired' }) =>
+      adminExerciseService.setLifecycleStatus(id, status),
+    onSuccess: async (_data, vars) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['admin-exercises'] }),
         queryClient.invalidateQueries({ queryKey: ['admin-exercise-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-exercise', vars.id] }),
         queryClient.invalidateQueries({ queryKey: ['exercises'] }),
       ]);
     },
