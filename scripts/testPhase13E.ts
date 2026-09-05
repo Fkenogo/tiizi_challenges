@@ -879,37 +879,55 @@ section('12. P0-1 Streak ALL-Daily-Requirements');
   // 12.1 single requirement success (single-activity challenge completes the day)
   const single1 = streak.computeUpdate(context(), membership(), logEvent('2024-02-01'));
   check('P0-1 single requirement: first log starts streak at 1', single1.membershipUpdate.currentStreak === 1);
+  check('P0-1 single requirement (E): one daily completion increments Days Completed once',
+    single1.membershipUpdate.activitiesCompleted === 1);
+  const single2 = streak.computeUpdate(
+    context(), { ...membership(), ...single1.membershipUpdate }, logEvent('2024-02-01'));
+  check('P0-1 single requirement: repeated log same day does not double-count the day',
+    single2.membershipUpdate.currentStreak === 1 && single2.membershipUpdate.activitiesCompleted === 1);
 
-  // 12.2 multi-requirement partial completion does NOT advance
+  // 12.2 multi-requirement partial completion does NOT advance (A: first requirement)
   let m = membership();
   m = apply(m, '2024-02-01', 'a');
   check('P0-1 partial: 1 of 2 requirements does not advance streak', m.currentStreak === 0);
+  check('P0-1 partial (A): first requirement leaves Days Completed unchanged', m.activitiesCompleted === 0);
   check('P0-1 partial: lastLogDate stays unset (no completed day yet)', m.lastLogDate === undefined);
   // excess quantity on one requirement cannot compensate for the missing one
   m = apply(m, '2024-02-01', 'a');
   check('P0-1 partial: repeated log on same requirement still does not advance', m.currentStreak === 0);
+  check('P0-1 partial: excess quantity gains no completed-day progress', m.activitiesCompleted === 0);
+  check('P0-1 rate (F): partial day gains no completion percentage', m.completionRate === 0);
 
-  // 12.3 all requirements completed advances the day exactly once
+  // 12.3 all requirements completed advances the day exactly once (A: second requirement)
   m = apply(m, '2024-02-01', 'b');
   check('P0-1 all-met: completing every requirement advances streak to 1', m.currentStreak === 1);
+  check('P0-1 all-met (A): final requirement increments Days Completed exactly once', m.activitiesCompleted === 1);
   check('P0-1 all-met: lastLogDate records the completed day', m.lastLogDate === '2024-02-01');
   check('P0-1 all-met: daily set tracks both requirements', hasAll(m));
+  check('P0-1 rate (F): completed day gains progress', m.completionRate === 10);
 
-  // 12.4 repeated logs must not double-advance the same day
+  // 12.4 repeated logs must not double-advance the same day (B)
   m = apply(m, '2024-02-01', 'a');
   m = apply(m, '2024-02-01', 'b');
   check('P0-1 repeat: extra logs same day do not double-advance', m.currentStreak === 1);
+  check('P0-1 repeat (B): extra logs same completed day leave Days Completed unchanged',
+    m.activitiesCompleted === 1);
 
-  // build a 2-day streak, then miss a day
+  // build a 2-day streak, then miss a day (C: two consecutive completed days → +2 total)
   m = apply(m, '2024-02-02', 'a');
   m = apply(m, '2024-02-02', 'b');
   check('P0-1 setup: consecutive full day advances to 2', m.currentStreak === 2);
+  check('P0-1 two days (C): two consecutive completed days total 2 Days Completed',
+    m.activitiesCompleted === 2);
 
-  // 12.5 missed day resets (partial logs on the gap day do not bridge it)
+  // 12.5 missed day resets (partial logs on the gap day do not bridge it) (D)
   let gap = apply({ ...m }, '2024-02-04', 'a'); // skipped 2024-02-03 entirely
   check('P0-1 miss: partial log after a gap does not advance', gap.currentStreak === 2);
+  check('P0-1 miss: partial log after a gap adds no completed day', gap.activitiesCompleted === 2);
   gap = apply(gap, '2024-02-04', 'b');
   check('P0-1 miss: completed day after a gap resets streak to 1', gap.currentStreak === 1);
+  check('P0-1 miss (D): Days Completed does NOT reset with the streak (2 → 3)',
+    gap.activitiesCompleted === 3);
   check('P0-1 miss: longestStreak preserves the pre-reset best (2)', gap.longestStreak === 2);
   check('P0-1 miss: participant status stays active after reset', gap.status === 'active');
 
@@ -917,13 +935,18 @@ section('12. P0-1 Streak ALL-Daily-Requirements');
   gap = apply(gap, '2024-02-05', 'a');
   gap = apply(gap, '2024-02-05', 'b');
   check('P0-1 continue: valid days after reset build a new streak (2)', gap.currentStreak === 2);
+  check('P0-1 continue: next completed day increments Days Completed exactly once (3 → 4)',
+    gap.activitiesCompleted === 4);
 
   // 12.7 late joining does not alter the configured denominator
   const lateJoiner = membership({ totalActivities: 30 });
   const lj1 = streak.computeUpdate(multiCtx, lateJoiner, logEvent('2024-02-01', 10, 10, 'a'));
   const ljState: MembershipSnapshot = { ...lateJoiner, ...lj1.membershipUpdate };
   check('P0-1 late-join: totalActivities denominator unchanged (30)', ljState.totalActivities === 30);
-  check('P0-1 late-join: activitiesCompleted counts logs only (1)', ljState.activitiesCompleted === 1);
+  check('P0-1 late-join: partial log adds no completed day (0)', ljState.activitiesCompleted === 0);
+  const lj2 = streak.computeUpdate(multiCtx, ljState, logEvent('2024-02-01', 10, 10, 'b'));
+  check('P0-1 late-join: completing the day counts exactly one day (1)',
+    lj2.membershipUpdate.activitiesCompleted === 1);
 }
 
 // ─── 13. P0-4 Collective Overshoot Canonical Truth ────────────────────────────

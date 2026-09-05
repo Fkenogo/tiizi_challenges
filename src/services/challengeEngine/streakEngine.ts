@@ -114,8 +114,16 @@ export class StreakEngine implements ChallengeEngine {
     const newLongest = Math.max(prevLongest, newStreak);
     const isCompleted = newStreak >= requiredDays;
 
+    // Days Completed counts COMPLETED Challenge days, not Activity logs.
+    // A completed-day transition exists only when the day just became Done
+    // (allRequirementsMet && !wereAllMetBefore). Partial days, repeated logs
+    // on an already-completed day, and streak resets never move this counter —
+    // it is cumulative and MUST NOT reset when currentStreak resets.
     const alreadyCompleted = membership.activitiesCompleted ?? 0;
-    const nextCompleted = Math.min(alreadyCompleted + 1, membership.totalActivities);
+    const completedDayTransition = allRequirementsMet && !wereAllMetBefore;
+    const nextCompleted = completedDayTransition
+      ? Math.min(alreadyCompleted + 1, membership.totalActivities)
+      : alreadyCompleted;
     const nextRate = Math.min(100, Math.round((nextCompleted / Math.max(1, membership.totalActivities)) * 100));
 
     // lastLogDate advances ONLY on a completed day. On partial days the key is

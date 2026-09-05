@@ -421,8 +421,8 @@ function ChallengeDetailScreen() {
         {/* ── Stats row ────────────────────────────────────────────────── */}
         <div className="mx-4 mt-3 grid grid-cols-3 gap-2">
           {[
-            { label: 'My Logs', value: progress?.myLogs ?? 0 },
-            { label: 'Total Logs', value: progress?.totalLogs ?? 0 },
+            { label: isV2 && resolvedChallenge.challengeType === 'streak' ? 'My Days' : 'My Logs', value: progress?.myLogs ?? 0 },
+            { label: isV2 && resolvedChallenge.challengeType === 'streak' ? 'Total Days' : 'Total Logs', value: progress?.totalLogs ?? 0 },
             { label: 'Participants', value: progress?.uniqueParticipants || resolvedChallenge.participantCount || 0 },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-2xl bg-white border border-slate-100 px-3 py-3 shadow-sm text-center">
@@ -1007,8 +1007,9 @@ function ChallengeDetailScreen() {
             </button>
           )}
 
-          {/* Leave — only for active members with no logs, on ongoing challenge */}
-          {!!membership && membership.status === 'active' && !challengeIsOver && (progress?.myLogs ?? 0) === 0 && (
+          {/* Leave — only for active members with no logs, on ongoing challenge.
+              lastActivityAt covers Streak partial-log days (0 completed days but logged). */}
+          {!!membership && membership.status === 'active' && !challengeIsOver && (progress?.myLogs ?? 0) === 0 && membership.lastActivityAt == null && (
             <button
               className="w-full h-12 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-[14px] font-bold disabled:opacity-60"
               disabled={leaveChallenge.isPending}

@@ -1863,7 +1863,8 @@ assert.ok(
       'Phase 11D 27.2: streak 2 of 7 → not completed');
   }
 
-  // 27.3: Same-day duplicate — streak NOT advanced, activitiesCompleted still increments
+  // 27.3: Same-day duplicate — streak NOT advanced, Days Completed NOT incremented
+  // (P0 correction: activitiesCompleted counts completed days, not logs)
   {
     const mem = { ...s27baseMem, activitiesCompleted: 2, currentStreak: 2, longestStreak: 2, lastLogDate: '2026-06-02' };
     const log = { ...s27baseLog, date: '2026-06-02', pointsEarned: 60 };
@@ -1872,8 +1873,8 @@ assert.ok(
       'Phase 11D 27.3: same-day duplicate → streak NOT advanced (stays 2)');
     assert.strictEqual(result.membershipUpdate.lastLogDate, '2026-06-02',
       'Phase 11D 27.3: same-day duplicate → lastLogDate unchanged');
-    assert.strictEqual(result.membershipUpdate.activitiesCompleted, 3,
-      'Phase 11D 27.3: same-day duplicate → activitiesCompleted still increments');
+    assert.strictEqual(result.membershipUpdate.activitiesCompleted, 2,
+      'Phase 11D 27.3: same-day duplicate → Days Completed unchanged (no double-count)');
     assert.strictEqual(result.isCompleted, false,
       'Phase 11D 27.3: same-day duplicate → not completed');
   }
@@ -4475,9 +4476,11 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
   );
 
   // 18G-2E-3: leaveChallenge still allows leave before logging (guard block is conditional, not unconditional)
+  // (P0 correction: Streak activitiesCompleted counts completed days, so the guard
+  // also blocks on lastActivityAt — members with only partial logs have logged.)
   assert.ok(
-    svc.includes('if ((membership.activitiesCompleted ?? 0) > 0)'),
-    '18G-2E-3: leaveChallenge leave-block must be conditional on activitiesCompleted > 0',
+    svc.includes('if ((membership.activitiesCompleted ?? 0) > 0 || membership.lastActivityAt != null)'),
+    '18G-2E-3: leaveChallenge leave-block must be conditional on logged activity (activitiesCompleted > 0 or lastActivityAt set)',
   );
 
   // 18G-2E-4: participantCount is still not written by client join/leave
