@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { Flame, Heart, MessageSquare, Share2, Sparkles, Star, ThumbsUp, Trophy } from 'lucide-react';
-import { FeedCommentSection } from './FeedCommentSection';
+import { Flame, Heart, Share2, Sparkles, Star, ThumbsUp, Trophy } from 'lucide-react';
 import type { FeedProgressSnapshot, GroupActivityFeedSummary } from '../../types';
 import { formatSummaryRelativeTime } from '../../services/memberActivitySummaryService';
 import type { FeedLiveStats } from '../../services/feedLiveStatsService';
@@ -258,7 +257,6 @@ interface FeedCardProps {
 }
 
 export function FeedCard({ item, canEngage, stats, reactionSummary, onSetReaction, onClearReaction }: FeedCardProps) {
-  const [showComments, setShowComments] = useState(false);
   const days = daysRemaining(item.challengeEndDate);
   const time = formatSummaryRelativeTime(item.createdAt);
   const displayName = item.authorName?.trim() || `Member ${item.userId.slice(0, 6).toUpperCase()}`;
@@ -351,15 +349,6 @@ export function FeedCard({ item, canEngage, stats, reactionSummary, onSetReactio
           );
         })}
         <button
-          className="inline-flex items-center gap-1.5 text-[13px] leading-[16px] font-semibold text-[#4c627e]"
-          onClick={() => setShowComments((v) => !v)}
-          aria-label="Comments"
-          aria-expanded={showComments}
-        >
-          <MessageSquare size={14} />
-          Reply
-        </button>
-        <button
           className="ml-auto inline-flex items-center justify-center text-[#4c627e]"
           onClick={() => handleShare(item)}
           aria-label="Share"
@@ -368,13 +357,6 @@ export function FeedCard({ item, canEngage, stats, reactionSummary, onSetReactio
         </button>
       </div>
 
-      {showComments && (
-        <FeedCommentSection
-          feedItemId={item.id}
-          groupId={item.groupId}
-          canEngage={canEngage}
-        />
-      )}
     </article>
   );
 }

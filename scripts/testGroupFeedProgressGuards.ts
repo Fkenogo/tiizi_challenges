@@ -63,9 +63,8 @@ assert.doesNotMatch(feedCard, /challengeCoverImageUrl.*img|img.*challengeCoverIm
 assert.match(feedCard, /StoryBlock/, 'FeedCard must still render StoryBlock for activity stories');
 assert.match(feedCard, /story\?\.trim\(\)|story&&/, 'FeedCard must still guard StoryBlock on story existence');
 
-// ── Reactions and comments still present ─────────────────────────────────
+// ── Reactions still present ─────────────────────────────────────────────
 assert.match(feedCard, /REACTION_CONFIG/, 'FeedCard must still render reaction buttons');
-assert.match(feedCard, /FeedCommentSection/, 'FeedCard must still render FeedCommentSection');
 
 // ── GroupFeedScreen still uses precomputed feed path ─────────────────────
 assert.match(feedScreen, /useGroupFeed|useGroupInsights|groupActivityFeed/, 'GroupFeedScreen must still use precomputed feed path');

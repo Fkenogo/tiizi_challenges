@@ -161,7 +161,7 @@ function WorkoutLoggedScreen() {
                 {unit ? <span className="text-[16px] font-semibold text-[#7f746c]"> {unit}</span> : null}
               </p>
               <div className="mt-2 h-3 rounded-full bg-[#e8edf5] overflow-hidden">
-                <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${groupPct}%` }} />
+                <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${Math.min(groupPct, 100)}%` }} />
               </div>
               <div className="mt-1 flex justify-between text-[11px] text-[#7f746c]">
                 <span>{groupPct}%</span>

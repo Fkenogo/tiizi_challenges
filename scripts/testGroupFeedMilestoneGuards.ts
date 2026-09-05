@@ -69,9 +69,6 @@ assert.match(feedCard, /feedItemType.*milestone|milestone.*feedItemType/, 'FeedC
 assert.match(feedCard, /REACTION_CONFIG/, 'FeedCard must still render REACTION_CONFIG (reactions work on milestone cards)');
 assert.match(feedCard, /onSetReaction|onClearReaction/, 'FeedCard must still wire reactions');
 
-// ── FeedCard: comments still wired on milestone cards ────────────────────
-assert.match(feedCard, /FeedCommentSection/, 'FeedCard must still render FeedCommentSection (comments work on milestone cards)');
-
 // ── FeedCard: Trophy or Star icon imported ────────────────────────────────
 assert.match(feedCard, /Trophy|Star/, 'FeedCard must import Trophy or Star icon for milestone badge');
 

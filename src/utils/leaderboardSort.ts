@@ -12,8 +12,8 @@ export interface SortableLeaderboardRow {
  *
  * v2 only:
  * Competitive: completionRate DESC → totalPoints DESC
- * Streak:      currentStreak DESC → longestStreak DESC → totalPoints DESC
  * Collective:  cumulativeLoggedValue DESC
+ * Streak challenges do not produce ranked leaderboard rows (personal results only).
  *
  * Non-v2/unsupported challenges are never rendered (see the "not supported"
  * states in ChallengeDetailScreen/ChallengeLeaderboardScreen) — rows are
@@ -34,15 +34,6 @@ export function sortLeaderboardRows<T extends SortableLeaderboardRow>(
       b.completionRate !== a.completionRate
         ? b.completionRate - a.completionRate
         : b.totalPoints - a.totalPoints,
-    );
-  }
-  if (isV2 && challengeType === 'streak') {
-    return [...rows].sort((a, b) =>
-      b.currentStreak !== a.currentStreak
-        ? b.currentStreak - a.currentStreak
-        : b.longestStreak !== a.longestStreak
-          ? b.longestStreak - a.longestStreak
-          : b.totalPoints - a.totalPoints,
     );
   }
   return rows;

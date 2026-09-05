@@ -71,6 +71,10 @@ export interface MembershipSnapshot {
   lastLogDate?: string; // YYYY-MM-DD
   currentStreak?: number;
   longestStreak?: number;
+  /** Set of activity IDs completed on the current streak day. Streak v2 ALL-requirements. */
+  dailyCompletedActivities?: string[];
+  /** The date these daily completions belong to. Resets when date changes. */
+  dailyTargetDate?: string; // YYYY-MM-DD
   engineVersion?: 'v2';
 }
 
@@ -112,6 +116,10 @@ export interface EngineResult {
     currentStreak?: number;
     longestStreak?: number;
     lastLogDate?: string;
+    /** Updated set of activity IDs completed on the current streak day. */
+    dailyCompletedActivities?: string[];
+    /** Date for the daily completion tracking. */
+    dailyTargetDate?: string;
     // Competitive v2 fields
     cumulativeLoggedValue?: number;
     /** Per-activity cumulative values map. Written by CompetitiveEngine v2. */

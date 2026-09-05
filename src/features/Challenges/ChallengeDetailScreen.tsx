@@ -421,8 +421,8 @@ function ChallengeDetailScreen() {
         {/* ── Stats row ────────────────────────────────────────────────── */}
         <div className="mx-4 mt-3 grid grid-cols-3 gap-2">
           {[
-            { label: 'My Logs', value: progress?.myLogs ?? 0 },
-            { label: 'Total Logs', value: progress?.totalLogs ?? 0 },
+            { label: isV2 && resolvedChallenge.challengeType === 'streak' ? 'My Days' : 'My Logs', value: progress?.myLogs ?? 0 },
+            { label: isV2 && resolvedChallenge.challengeType === 'streak' ? 'Total Days' : 'Total Logs', value: progress?.totalLogs ?? 0 },
             { label: 'Participants', value: progress?.uniqueParticipants || resolvedChallenge.participantCount || 0 },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-2xl bg-white border border-slate-100 px-3 py-3 shadow-sm text-center">
@@ -479,7 +479,7 @@ function ChallengeDetailScreen() {
                       </div>
                       <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                         <div className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${rp.groupPercent}%` }} />
+                          style={{ width: `${Math.min(rp.groupPercent, 100)}%` }} />
                       </div>
                     </div>
                     {membership && rp.userContributionTotal > 0 && (
@@ -858,7 +858,39 @@ function ChallengeDetailScreen() {
           );
         })()}
 
-        {/* ── Leaderboard snapshot ──────────────────────────────────────── */}
+        {/* ── Leaderboard snapshot (non-streak) / Personal stats (streak) ── */}
+        {isV2 && resolvedChallenge.challengeType === 'streak' ? (
+          <div className="mx-4 mt-3">
+            <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+              <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                <Flame size={14} className="text-primary" />
+                <p className="st-section-label">My Streak Progress</p>
+              </div>
+              {membership ? (
+                <div className="px-4 pb-4">
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="rounded-xl bg-slate-50 px-3 py-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider leading-tight">Days Completed</p>
+                      <p className="mt-1 text-[20px] leading-[24px] font-black text-slate-900">
+                        {membership.activitiesCompleted ?? 0}{summary?.durationDays ? <span className="text-[13px] font-semibold text-slate-400">/{summary.durationDays}</span> : null}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 px-3 py-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider leading-tight">Best Streak</p>
+                      <p className="mt-1 text-[20px] leading-[24px] font-black text-slate-700">{membership.longestStreak ?? 0}</p>
+                    </div>
+                    <div className="rounded-xl bg-primary/5 px-3 py-3">
+                      <p className="text-[10px] uppercase font-bold text-primary tracking-wider leading-tight">Current Streak</p>
+                      <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{membership.currentStreak ?? 0}🔥</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="px-4 pb-4 text-[13px] text-slate-400">Join the challenge to track your streak.</p>
+              )}
+            </div>
+          </div>
+        ) : (
         <div className="mx-4 mt-3">
           <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-4 pt-4 pb-3">
@@ -904,6 +936,7 @@ function ChallengeDetailScreen() {
             )}
           </div>
         </div>
+        )}
 
         {/* ── CTA area ─────────────────────────────────────────────────── */}
         <div className="mx-4 mt-5 space-y-2">
@@ -974,8 +1007,9 @@ function ChallengeDetailScreen() {
             </button>
           )}
 
-          {/* Leave — only for active members with no logs, on ongoing challenge */}
-          {!!membership && membership.status === 'active' && !challengeIsOver && (progress?.myLogs ?? 0) === 0 && (
+          {/* Leave — only for active members with no logs, on ongoing challenge.
+              lastActivityAt covers Streak partial-log days (0 completed days but logged). */}
+          {!!membership && membership.status === 'active' && !challengeIsOver && (progress?.myLogs ?? 0) === 0 && membership.lastActivityAt == null && (
             <button
               className="w-full h-12 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-[14px] font-bold disabled:opacity-60"
               disabled={leaveChallenge.isPending}

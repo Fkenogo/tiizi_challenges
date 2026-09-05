@@ -21,10 +21,6 @@ assert.doesNotMatch(feedScreen, /collection\(db.*workouts\)|getDocs.*workouts/, 
 assert.doesNotMatch(feedScreen, /collection\(db.*wellnessLogs\)|getDocs.*wellnessLogs/, 'GroupFeedScreen must not query raw wellnessLogs collection');
 assert.doesNotMatch(feedScreen, /collection\(db.*exercises\)|getDocs.*exercises/, 'GroupFeedScreen must not query raw exercises collection');
 
-// ── Performance: comments are lazy (only loaded on demand) ────────────────
-assert.match(feedCard, /showComments/, 'FeedCard must gate comments behind showComments state');
-assert.match(feedCard, /showComments &&|showComments\s*&&/, 'FeedCommentSection must only render when showComments is true');
-
 // ── Story: server-side 280-char cap enforced in CF ────────────────────────
 assert.match(cf, /\.slice\(0,\s*280\)/, 'CF must enforce server-side 280-char story cap via .slice(0, 280)');
 
@@ -37,11 +33,10 @@ assert.match(cf, /if\s*\(input\.story\)\s*feedDoc\.story/, 'CF must only write s
 // ── Reactions path present ────────────────────────────────────────────────
 assert.match(rules, /match \/reactions\/\{reactionUserId\}/, 'firestore.rules must have reactions subcollection rule');
 
-// ── Comments path present ─────────────────────────────────────────────────
-assert.match(rules, /match \/comments\/\{commentId\}/, 'firestore.rules must have comments subcollection rule');
-
-// ── Replies path present ──────────────────────────────────────────────────
-assert.match(rules, /match \/replies\/\{replyId\}/, 'firestore.rules must have replies subcollection rule');
+// ── Comments/replies paths REMOVED (P0-3: V2 social toolkit is View + Kudo/React + Share) ──
+// firestore.rules must NOT contain comment/reply rule paths.
+assert.doesNotMatch(rules, /match \/comments\/\{commentId\}/, 'firestore.rules must NOT have comments subcollection rule (P0-3 removed)');
+assert.doesNotMatch(rules, /match \/replies\/\{replyId\}/, 'firestore.rules must NOT have replies subcollection rule (P0-3 removed)');
 
 // ── Required Firestore indexes exist ─────────────────────────────────────
 assert.match(indexes, /"groupActivityFeed"/, 'firestore.indexes.json must include groupActivityFeed indexes');

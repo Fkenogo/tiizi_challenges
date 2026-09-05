@@ -49,7 +49,7 @@ function CompletedChallengesScreen() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-slate-900 truncate">{challenge.name}</p>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {membership.activitiesCompleted} of {computeRequiredLogs(challenge.durationDays, challenge.activities?.length ?? 0)} logs
+                        {membership.activitiesCompleted} of {computeRequiredLogs(challenge.durationDays, challenge.activities?.length ?? 0)} {challenge.challengeType === 'streak' ? 'days' : 'logs'}
                         {membership.totalPoints > 0 ? ` • ${membership.totalPoints} pts` : ''}
                       </p>
                       <div className="mt-1.5 h-1.5 rounded-full bg-slate-100 overflow-hidden">

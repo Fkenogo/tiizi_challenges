@@ -64,9 +64,8 @@ assert.match(feedCard, /Read more|Show less|expanded/, 'FeedCard StoryBlock must
 // ── FeedCard: left accent styling ────────────────────────────────────────
 assert.match(feedCard, /border-l-|border-primary|pl-3/, 'StoryBlock must have left border accent styling');
 
-// ── FeedCard: reactions/comments/share unaffected ────────────────────────
+// ── FeedCard: reactions/share unaffected ─────────────────────────────────
 assert.match(feedCard, /REACTION_CONFIG/, 'FeedCard must still render reaction buttons');
-assert.match(feedCard, /FeedCommentSection/, 'FeedCard must still render FeedCommentSection');
 assert.match(feedCard, /Share2/, 'FeedCard must still render Share button');
 
 // ── Milestone cards unaffected ────────────────────────────────────────────

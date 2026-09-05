@@ -299,7 +299,9 @@ class ChallengeService {
 
     // Block leave once the member has logged activity — their data is part of the
     // challenge record and removing them would corrupt team totals and leaderboards.
-    if ((membership.activitiesCompleted ?? 0) > 0) {
+    // Note: for Streak challenges activitiesCompleted counts COMPLETED days, so a
+    // member with only partial logs has 0 — lastActivityAt still proves they logged.
+    if ((membership.activitiesCompleted ?? 0) > 0 || membership.lastActivityAt != null) {
       throw new Error(
         'You have already logged activity in this challenge and cannot leave. Contact your group admin if you need to be removed.',
       );

@@ -265,6 +265,10 @@ export interface ChallengeMember {
   currentStreak?: number;
   longestStreak?: number;
   lastLogDate?: string;
+  /** Activity IDs logged on the current streak day (Streak v2 ALL-requirements). */
+  dailyCompletedActivities?: string[];
+  /** Date the dailyCompletedActivities set belongs to (YYYY-MM-DD). */
+  dailyTargetDate?: string;
   cumulativeLoggedValue?: number;
   cumulativeValues?: Record<string, number>;
   engineVersion?: 'v2';

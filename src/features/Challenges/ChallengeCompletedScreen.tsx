@@ -25,7 +25,8 @@ function RecapNavActions({
   onNavigate,
 }: {
   shareUrl: string;
-  toLeaderboard: string;
+  /** Omitted for V2 streak recaps — streak has no leaderboard. */
+  toLeaderboard?: string;
   groupId?: string;
   toGroup: string;
   toHome: string;
@@ -40,24 +41,27 @@ function RecapNavActions({
         Share Achievement
       </button>
 
-      {/* Secondary — side-by-side when both present, full-width when only leaderboard */}
+      {/* Secondary — side-by-side when both present, full-width otherwise.
+          No leaderboard button when toLeaderboard is omitted (V2 streak). */}
       {groupId ? (
         <div className="grid grid-cols-2 gap-3">
-          <button className={secondaryClass} onClick={() => onNavigate(toLeaderboard)}>
-            <Trophy size={14} className="text-slate-400 flex-shrink-0" />
-            View Leaderboard
-          </button>
-          <button className={secondaryClass} onClick={() => onNavigate(toGroup)}>
+          {toLeaderboard ? (
+            <button className={secondaryClass} onClick={() => onNavigate(toLeaderboard)}>
+              <Trophy size={14} className="text-slate-400 flex-shrink-0" />
+              View Leaderboard
+            </button>
+          ) : null}
+          <button className={`${secondaryClass} ${toLeaderboard ? '' : 'col-span-2'}`} onClick={() => onNavigate(toGroup)}>
             <Users size={14} className="text-slate-400 flex-shrink-0" />
             Back to Group
           </button>
         </div>
-      ) : (
+      ) : toLeaderboard ? (
         <button className={`${secondaryClass} w-full`} onClick={() => onNavigate(toLeaderboard)}>
           <Trophy size={14} className="text-slate-400 flex-shrink-0" />
           View Leaderboard
         </button>
-      )}
+      ) : null}
 
       {/* Tertiary */}
       <button
@@ -98,9 +102,9 @@ function useFinalRank(challengeId: string, userId: string | undefined, engineVer
         sorted = rows.slice().sort((a, b) => b.cumulativeLoggedValue - a.cumulativeLoggedValue);
       } else if (engineVersion === 'v2' && challengeType === 'competitive') {
         sorted = rows.slice().sort((a, b) => b.completionRate !== a.completionRate ? b.completionRate - a.completionRate : b.totalPoints - a.totalPoints);
-      } else if (engineVersion === 'v2' && challengeType === 'streak') {
-        sorted = rows.slice().sort((a, b) => b.currentStreak - a.currentStreak);
       }
+      // V2 streak has NO leaderboard: personal progress only (Days Completed,
+      // Current Streak, Best Streak). Never compute a streak rank here.
       if (!sorted) {
         return { rank: null, total: rows.length, memberSumContribution };
       }
@@ -325,7 +329,7 @@ function ChallengeCompletedScreen() {
                 {isOngoing ? 'Team Progress' : 'Final Team Progress'}
               </p>
               <div className="h-5 rounded-full bg-slate-100 p-[3px]">
-                <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${groupPct}%` }} />
+                <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${Math.min(groupPct, 100)}%` }} />
               </div>
               <div className="mt-3 flex items-end justify-between">
                 <div>
@@ -596,9 +600,9 @@ function ChallengeCompletedScreen() {
               </section>
             )}
 
+            {/* V2 streak: no leaderboard CTA — personal progress only. */}
             <RecapNavActions
               shareUrl={streakShare}
-              toLeaderboard={toLeaderboard}
               groupId={groupId}
               toGroup={toGroup}
               toHome={toHome}
