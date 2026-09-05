@@ -271,42 +271,107 @@ function normalizeGroupVisibility(group: GroupRecord): 'public' | 'private' {
   return group.visibility === 'private' || group.isPrivate === true ? 'private' : 'public';
 }
 
+interface CanonicalSnapshot {
+  knowledgeVersion: number;
+  metric?: string;
+  tier1?: string;
+  tier2?: string;
+}
+
+function normalizeCanonicalVersion(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+}
+
 /**
- * P2-1 authoritative canonical gate. Mirrors the client-side
- * isBlockedCanonicalStatus rule (src/utils/knowledgeLifecycle.ts):
- * only explicit draft/retired blocks; missing (legacy) counts as published.
+ * CORR-1/CORR-2 authoritative canonical resolution. A supplied
+ * exerciseId/activityId is a canonical identity claim and MUST resolve:
+ * missing documents plus draft/retired records throw invalid-argument.
+ * Custom entries (no canonical ID) resolve to nothing and pass through.
+ * Returns pinned immutable snapshot fields keyed by `collection/id`.
  */
-async function assertCanonicalActivitiesPublished(
+async function resolveCanonicalSnapshots(
   db: CoreDb,
   activities: Array<{ exerciseId?: string; activityId?: string }>,
-): Promise<void> {
+): Promise<Map<string, CanonicalSnapshot>> {
+  const snapshots = new Map<string, CanonicalSnapshot>();
   for (const activity of activities) {
     const exerciseId = String(activity.exerciseId ?? '').trim();
     if (exerciseId) {
       const snap = await db.collection('catalogExercises').doc(exerciseId).get();
-      const status = snap && snap.exists
-        ? (snap.data() as { lifecycleStatus?: unknown } | undefined)?.lifecycleStatus
+      const data = snap && snap.exists
+        ? (snap.data() as Record<string, unknown> | undefined)
         : undefined;
+      if (!data) {
+        throw new HttpsError(
+          'invalid-argument',
+          `Unknown canonical exercise "${exerciseId}". Custom activities must not carry an exerciseId.`,
+        );
+      }
+      const status = data.lifecycleStatus;
       if (typeof status === 'string' && status !== 'published') {
         throw new HttpsError(
           'invalid-argument',
           `Activity "${exerciseId}" is no longer available for new challenges (retired or draft). Please replace it.`,
         );
       }
+      const metric = data.metric as { type?: unknown } | undefined;
+      snapshots.set(`catalogExercises/${exerciseId}`, {
+        knowledgeVersion: normalizeCanonicalVersion(data.knowledgeVersion),
+        metric: optionalString(metric?.type, 100),
+        tier1: optionalString(data.tier_1, 200),
+        tier2: optionalString(data.tier_2, 200),
+      });
       continue;
     }
     const activityId = String(activity.activityId ?? '').trim();
     if (activityId) {
       const snap = await db.collection('wellnessActivities').doc(activityId).get();
-      const status = snap && snap.exists
-        ? (snap.data() as { lifecycleStatus?: unknown } | undefined)?.lifecycleStatus
+      const data = snap && snap.exists
+        ? (snap.data() as Record<string, unknown> | undefined)
         : undefined;
+      if (!data) {
+        throw new HttpsError(
+          'invalid-argument',
+          `Unknown canonical wellness activity "${activityId}". Custom activities must not carry an activityId.`,
+        );
+      }
+      const status = data.lifecycleStatus;
       if (typeof status === 'string' && status !== 'published') {
         throw new HttpsError(
           'invalid-argument',
           `Activity "${activityId}" is no longer available for new challenges (retired or draft). Please replace it.`,
         );
       }
+      snapshots.set(`wellnessActivities/${activityId}`, {
+        knowledgeVersion: normalizeCanonicalVersion(data.knowledgeVersion),
+      });
+    }
+  }
+  return snapshots;
+}
+
+/**
+ * Overwrites client-supplied canonical snapshot fields with authoritative
+ * values. Fields absent from the record keep their submitted values
+ * (challenge-level customization); knowledgeVersion is always authoritative.
+ */
+function applyCanonicalSnapshots(
+  activities: Array<{ exerciseId?: string; activityId?: string; knowledgeVersion?: number; metric?: string; tier1?: string; tier2?: string }>,
+  snapshots: Map<string, CanonicalSnapshot>,
+): void {
+  for (const activity of activities) {
+    const key = activity.exerciseId
+      ? `catalogExercises/${activity.exerciseId}`
+      : activity.activityId
+        ? `wellnessActivities/${activity.activityId}`
+        : null;
+    const pin = key ? snapshots.get(key) : undefined;
+    if (pin) {
+      activity.knowledgeVersion = pin.knowledgeVersion;
+      if (pin.metric !== undefined) activity.metric = pin.metric;
+      if (pin.tier1 !== undefined) activity.tier1 = pin.tier1;
+      if (pin.tier2 !== undefined) activity.tier2 = pin.tier2;
     }
   }
 }
@@ -396,12 +461,19 @@ export async function createChallengeWithCreatorMembershipCore(
     }
   }
 
-  // Canonical Knowledge gate (P2-1, authoritative): entries referencing a
-  // canonical record must resolve to currently-published Knowledge. Unknown
-  // IDs are treated as custom snapshots (local fallback / manual entries).
-  // Reads happen here, before the transaction opens. Historical challenges
-  // are never re-validated, so retirement cannot break them.
-  await assertCanonicalActivitiesPublished(db, activities);
+  // Canonical Knowledge gate (P2-1/CORR-1, authoritative): every supplied
+  // canonical ID must resolve to a currently-published record. Unknown IDs
+  // are rejected (custom entries must carry no canonical ID). Reads happen
+  // here, before the transaction opens. Historical challenges are never
+  // re-validated, so retirement cannot break them.
+  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities);
+
+  // CORR-2: pin immutable canonical snapshot fields from the authoritative
+  // record — a client cannot falsely claim a different canonical version or
+  // classification. Challenge-specific configuration (targetValue, unit,
+  // frequency, descriptions) stays client-supplied; entries without a
+  // resolvable record keep their submitted snapshot as-is.
+  applyCanonicalSnapshots(activities, canonicalSnapshots);
 
   // Collective: group cumulative target, when provided, must be positive.
   if (challengeType === 'collective' && groupCumulativeTarget !== undefined && groupCumulativeTarget <= 0) {
@@ -558,6 +630,101 @@ function uidFromRequest(request: CallableRequest<unknown>) {
   return uid;
 }
 
+const ADMIN_CREATOR_ROLES = new Set(['super_admin', 'admin', 'moderator']);
+
+/**
+ * CORR-2: trusted server path for admin-created challenges. Mirrors
+ * adminChallengeService.createChallengeFromAdmin semantics (no group
+ * membership requirement, no creator auto-join, approval flow for
+ * donation challenges) with server-side validation: caller must hold an
+ * admin role, activities pass the canonical gate, and canonical snapshot
+ * fields are pinned from authoritative records.
+ */
+export async function createChallengeFromAdminCore(
+  db: CoreDb,
+  input: {
+    actorUid?: unknown;
+    category?: unknown;
+    name?: unknown;
+    description?: unknown;
+    challengeType?: unknown;
+    startDate?: unknown;
+    endDate?: unknown;
+    createdBy?: unknown;
+    coverImageUrl?: unknown;
+    activities?: unknown;
+    donation?: unknown;
+  },
+) {
+  const actorUid = requireString(input.actorUid, 'actorUid', { min: 1, max: 200 });
+  const adminSnap = await db.collection('admins').doc(actorUid).get();
+  const adminRole = String(
+    (adminSnap && adminSnap.exists ? adminSnap.data() as Record<string, unknown> | undefined : undefined)?.role ?? '',
+  ).toLowerCase();
+  if (!ADMIN_CREATOR_ROLES.has(adminRole)) {
+    throw new HttpsError('permission-denied', 'Admin role required to create challenges from admin');
+  }
+
+  const createdBy = requireString(input.createdBy, 'createdBy', { min: 1, max: 200 });
+  const name = requireString(input.name, 'name', { min: 3, max: 120 });
+  const description = requireString(input.description, 'description', { min: 1, max: 2000 });
+  const nowIso = new Date().toISOString();
+  const startDate = normalizeIsoDate(input.startDate, 'startDate', new Date());
+  const endDate = normalizeIsoDate(input.endDate, 'endDate');
+  if (Date.parse(endDate) <= Date.parse(startDate)) {
+    throw new HttpsError('invalid-argument', 'endDate must be after startDate');
+  }
+  const challengeType = normalizeChallengeType(input.challengeType);
+
+  const activities = normalizeActivities(input.activities);
+  if (activities.length === 0) {
+    throw new HttpsError('invalid-argument', 'At least one activity is required');
+  }
+  const seenIds = new Set<string>();
+  for (const activity of activities) {
+    const id = String(activity.exerciseId ?? activity.activityId ?? '').trim();
+    if (id) {
+      if (seenIds.has(id)) {
+        throw new HttpsError('invalid-argument', `Duplicate activity id: ${id}`);
+      }
+      seenIds.add(id);
+    }
+  }
+  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities);
+  applyCanonicalSnapshots(activities, canonicalSnapshots);
+
+  const donation = normalizeDonation(input.donation);
+  const requiresApproval = donation?.enabled === true;
+  const challengeRef = db.collection('challenges').doc();
+  const challengeId = challengeRef.id;
+
+  const payload = removeUndefinedDeep({
+    category: normalizeCategory(input.category),
+    name,
+    description,
+    challengeType,
+    coverImageUrl: optionalString(input.coverImageUrl, 500),
+    activities,
+    durationDays: Math.max(1, Math.floor((Date.parse(endDate) - Date.parse(startDate)) / 86_400_000) + 1),
+    donation: donation?.enabled
+      ? { ...donation, approvalStatus: 'pending' }
+      : donation,
+    startDate,
+    endDate,
+    createdBy,
+    status: requiresApproval ? 'draft' : 'active',
+    progress: 0,
+    participantCount: 0,
+    moderationStatus: requiresApproval ? 'pending' : 'approved',
+    createdAt: nowIso,
+  });
+
+  await db.runTransaction(async (transaction) => {
+    transaction.set(challengeRef, payload);
+  });
+  return { challenge: { id: challengeId } };
+}
+
 export function createChallengeWithCreatorMembershipCallable(db: Firestore) {
   return onCall(
     {
@@ -565,6 +732,20 @@ export function createChallengeWithCreatorMembershipCallable(db: Firestore) {
     },
     async (request) => {
       return createChallengeWithCreatorMembershipCore(db, {
+        ...((request.data ?? {}) as Record<string, unknown>),
+        actorUid: uidFromRequest(request),
+      });
+    },
+  );
+}
+
+export function createChallengeFromAdminCallable(db: Firestore) {
+  return onCall(
+    {
+      region: 'us-central1',
+    },
+    async (request) => {
+      return createChallengeFromAdminCore(db, {
         ...((request.data ?? {}) as Record<string, unknown>),
         actorUid: uidFromRequest(request),
       });

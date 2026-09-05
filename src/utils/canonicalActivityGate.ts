@@ -1,16 +1,14 @@
 /**
- * Creation-boundary canonical Knowledge gate (P2-1).
+ * Creation-boundary canonical Knowledge gate (P2-1, CORR-1).
  *
- * Used by direct-write creation paths (challengeService.createChallenge,
- * adminChallengeService.createChallengeFromAdmin). The Cloud Function backend
- * enforces the same invariant server-side for the callable path.
- *
- * Rule: an activity entry that references a canonical record
- * (catalogExercises / wellnessActivities doc) may only be used for a NEW
- * challenge when that record is published (legacy records without lifecycle
- * state count as published). Entries that resolve to no canonical record
- * (custom/manual entries, local fallback IDs) carry no canonical claim and
- * are preserved as-is — historical snapshots are never re-validated.
+ * A supplied exerciseId/activityId is a canonical identity claim and MUST
+ * resolve to its canonical Firestore document:
+ *   - exerciseId → catalogExercises must exist and be published;
+ *   - activityId → wellnessActivities must exist and be published.
+ * Legacy records without lifecycle state count as published. Custom/manual
+ * entries are permitted ONLY when they carry NO canonical ID — a dangling
+ * ID is never silently converted to custom. Historical snapshots are never
+ * re-validated.
  */
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -22,8 +20,8 @@ export interface CanonicalActivityRef {
 }
 
 /**
- * Returns the referenced canonical IDs that are NOT available for new
- * challenges (draft or retired). Empty array = clear to create.
+ * Returns referenced canonical IDs that must block creation: missing
+ * documents plus draft/retired records. Empty array = clear to create.
  */
 export async function findBlockedCanonicalActivities(
   activities: CanonicalActivityRef[],
@@ -34,7 +32,7 @@ export async function findBlockedCanonicalActivities(
     if (exerciseId) {
       const snap = await getDoc(doc(db, 'catalogExercises', exerciseId));
       if (
-        snap.exists() &&
+        !snap.exists() ||
         isBlockedCanonicalStatus(
           (snap.data() as { lifecycleStatus?: string | null }).lifecycleStatus,
         )
@@ -47,7 +45,7 @@ export async function findBlockedCanonicalActivities(
     if (activityId) {
       const snap = await getDoc(doc(db, 'wellnessActivities', activityId));
       if (
-        snap.exists() &&
+        !snap.exists() ||
         isBlockedCanonicalStatus(
           (snap.data() as { lifecycleStatus?: string | null }).lifecycleStatus,
         )
@@ -69,7 +67,7 @@ export async function assertCanonicalActivitiesAvailable(
   const blocked = await findBlockedCanonicalActivities(activities);
   if (blocked.length > 0) {
     throw new Error(
-      `These activities are no longer available for new challenges (retired or draft): ${blocked.join(', ')}. Please replace them.`,
+      `These activities cannot start a new challenge (missing, retired, or draft canonical record): ${blocked.join(', ')}. Please replace them.`,
     );
   }
 }

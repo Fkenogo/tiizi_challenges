@@ -238,16 +238,11 @@ service cloud.firestore {
         || isPublicGroup(resource.data.groupId)
         || canModerateChallenges()
       );
-      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid
-                    && isGroupMember(request.resource.data.groupId)
-                    && isActiveGroup(request.resource.data.groupId)
-                    && (
-                      request.resource.data.donation.enabled != true
-                      || (
-                        request.resource.data.status == 'draft'
-                        && request.resource.data.moderationStatus == 'pending'
-                      )
-                    );
+      // CORR-2: ordinary Challenge creation routes through the trusted server
+      // callable (createChallengeWithCreatorMembership), which validates
+      // canonical Knowledge server-side. Direct client creates are reserved
+      // for moderation tooling — ordinary clients cannot bypass the gate.
+      allow create: if isAuthenticated() && canModerateChallenges();
       // Creator can update non-donation-activation writes, provided moderationStatus is unchanged.
       // Old rule used !(request.resource.data.moderationStatus == 'approved'), which evaluated
       // the post-write merged doc and blocked all creator updates to approved challenges (BUG-G6).

@@ -1199,11 +1199,11 @@ section('16. P2 Knowledge Runtime Alignment');
       [item('c', 'Gamma', 'retired')] as never, fallback as never);
     return out.length === 0;
   })());
-  check('P2-5 empty collection: resilience fallback (filtered)', (() => {
+  check('P2-5 empty collection: authoritative [] stays [] (no fallback override)', (() => {
     const out = selectPublishedCatalog([], [
       item('f', 'Fallback'), item('r', 'RetiredFb', 'retired'),
     ] as never);
-    return names(out) === 'Fallback';
+    return out.length === 0;
   })());
   check('P2-5 read failure: resilience fallback', (() => {
     const out = selectPublishedCatalog(null, [item('f', 'Fallback')] as never);
@@ -1215,9 +1215,26 @@ section('16. P2 Knowledge Runtime Alignment');
   const backendSrc = readSrc('../functions/src/challengeCreationBackend.ts');
   const svcSrc = readSrc('../src/services/challengeService.ts');
   const adminChSrc = readSrc('../src/services/adminChallengeService.ts');
-  check('P2-1 backend enforces canonical gate', backendSrc.includes('assertCanonicalActivitiesPublished(db, activities)'));
+  check('P2-1 backend resolves canonical snapshots', backendSrc.includes('resolveCanonicalSnapshots(db, activities)'));
+  check('P2-1 backend pins authoritative snapshot', backendSrc.includes('applyCanonicalSnapshots(activities, canonicalSnapshots)'));
   check('P2-1 direct create enforces canonical gate', svcSrc.includes('assertCanonicalActivitiesAvailable(input.activities'));
   check('P2-1 admin create enforces canonical gate', adminChSrc.includes('assertCanonicalActivitiesAvailable(payload.activities'));
+  check('CORR-1 backend rejects unresolvable IDs', backendSrc.includes('Unknown canonical exercise')
+    && backendSrc.includes('Unknown canonical wellness activity'));
+  const gateSrc = readSrc('../src/utils/canonicalActivityGate.ts');
+  check('CORR-1 client gate rejects unresolvable IDs', gateSrc.includes('!snap.exists()'));
+
+  // CORR-2: trusted server boundary (test 9) — rules deny ordinary direct creates
+  const rulesSrc = readSrc('../firestore.rules');
+  check('CORR-2 rules: challenge creates reserved for moderation tooling',
+    rulesSrc.includes('allow create: if isAuthenticated() && canModerateChallenges();'));
+  check('CORR-2 admin callable exists with role check',
+    backendSrc.includes('createChallengeFromAdminCore')
+    && backendSrc.includes("db.collection('admins').doc(actorUid).get()"));
+  const adminHookSrc = readSrc('../src/hooks/useAdminChallenges.ts');
+  check('CORR-2 admin hook uses trusted callable', adminHookSrc.includes("'createChallengeFromAdmin'"));
+  const memberHookSrc = readSrc('../src/hooks/useChallenges.ts');
+  check('CORR-2 member hook uses trusted callable', memberHookSrc.includes("'createChallengeWithCreatorMembership'"));
 
   // P2-2 wiring: fitness snapshot carries immutable canonical fields
   const wizardSrc = readSrc('../src/features/Challenges/CreateChallengeWizard.tsx');

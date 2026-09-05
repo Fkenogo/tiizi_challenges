@@ -79,10 +79,10 @@ class WellnessActivityService {
     // records without status count as published). By-ID reads stay unfiltered
     // so historical challenges referencing retired activities remain readable.
     try {
+      // Authoritative read (possibly empty) → lifecycle applies; fallback
+      // only when the read itself fails (null).
       const items = await this.fromFirestore();
-      if (items.length > 0) {
-        return selectPublishedCatalog(items, this.fallbackCatalog());
-      }
+      return selectPublishedCatalog(items, this.fallbackCatalog());
     } catch (error) {
       if (!isFirestoreReadError(error)) throw error;
       console.warn('wellnessActivities read failed, using local catalog fallback.', error);

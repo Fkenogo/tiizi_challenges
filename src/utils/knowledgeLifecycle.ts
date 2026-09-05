@@ -73,11 +73,12 @@ export function isBlockedCanonicalStatus(status?: string | null): boolean {
  * P2-5: catalogue source selection (pure, unit-tested). Firestore-free so
  * guards can exercise it without emulator dependencies.
  *
- * - Authoritative read containing records → lifecycle applies to those
- *   records. Zero published records is a VALID empty state returned as-is —
- *   never masked by the local fallback.
- * - No authoritative records (empty collection) or read failure (null) →
- *   resilience fallback, itself lifecycle-filtered.
+ * - Authoritative read that SUCCEEDED (array, even empty) → lifecycle applies
+ *   to those records. Empty or all-retired is a VALID empty state returned
+ *   as-is — never masked by the local fallback.
+ * - Authoritative read UNAVAILABLE/failed (null) → resilience fallback,
+ *   itself lifecycle-filtered. Fallback never overrides valid authoritative
+ *   lifecycle state.
  */
 export interface LifecycleRecord {
   name: string;
@@ -90,7 +91,7 @@ export function selectPublishedCatalog<T extends LifecycleRecord>(
 ): T[] {
   const byName = (a: T, b: T) => a.name.localeCompare(b.name);
   const publishedOnly = (items: T[]) => items.filter((item) => isPublishedLifecycle(item.lifecycleStatus));
-  if (authoritativeItems !== null && authoritativeItems.length > 0) {
+  if (authoritativeItems !== null) {
     return publishedOnly(authoritativeItems).sort(byName);
   }
   return publishedOnly(fallbackItems).sort(byName);
