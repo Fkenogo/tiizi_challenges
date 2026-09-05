@@ -473,7 +473,7 @@ Withdrawal or removal MUST NOT silently erase historical participation or Activi
 
 ## §14 Activity Logging and Self-Accountability
 
-> **Disposition: KEEP all as-is. ADD FR-V2-069A (Reconciliation F-A-01).**
+> **Disposition: KEEP all as-is. ADD FR-V2-207 (Reconciliation F-A-01).**
 
 ### FR-V2-064 — Participant Activity
 
@@ -504,7 +504,7 @@ Participant Activity.
 The product SHOULD preserve the ability of Groups to respond to repeated dubious logging
 through valid community governance.
 
-### FR-V2-069A — Challenge-specific Activity logging *(NEW — Reconciliation F-A-01)*
+### FR-V2-207 — Challenge-specific Activity logging *(NEW — Reconciliation F-A-01)*
 
 Activity logging MUST be Challenge-specific. A log made in one Challenge MUST NOT
 automatically exist in, transfer to, or count toward another Challenge. A Participant
@@ -651,7 +651,7 @@ individual contributions are visible.
 ## §18 Competitive Challenge Requirements
 
 > **Disposition: RECONCILIATION APPLIED. FR-V2-101 and FR-V2-102 SUPERSEDED.
-> ADD FR-V2-103A (Reconciliation F-B-01).**
+> ADD FR-V2-208 (Reconciliation F-B-01).**
 
 ### FR-V2-092 — Individual competitive progress
 
@@ -727,7 +727,7 @@ standing.
 
 Competitive Challenges MUST NOT inherit Collective extension behaviour automatically.
 
-### FR-V2-103A — No Highest Performance mode *(NEW — Reconciliation F-B-01)*
+### FR-V2-208 — No Highest Performance mode *(NEW — Reconciliation F-B-01)*
 
 Initial V2 MUST NOT include a Highest Performance Competitive mode. Competitive
 Challenges MUST operate as a race to the configured target.
@@ -744,7 +744,7 @@ Challenges MUST operate as a race to the configured target.
 
 > **Disposition: RECONCILIATION APPLIED. FR-V2-105, FR-V2-107 ALIGNED WORDING.
 > FR-V2-117, FR-V2-118, FR-V2-119 SUPERSEDED.
-> ADD FR-V2-119A, FR-V2-119B, FR-V2-119C (Reconciliation F-C-01, F-C-02).**
+> ADD FR-V2-209, FR-V2-210, FR-V2-211 (Reconciliation F-C-01, F-C-02).**
 
 ### FR-V2-104 — Individual Streak
 
@@ -756,7 +756,7 @@ A Streak Challenge MUST define the daily Activity requirement necessary to maint
 Streak.
 
 > **Alignment note:** Wording aligned to "daily Activity requirement" to reflect that
-> initial V2 supports daily-frequency Streak Challenges only. See FR-V2-119A.
+> initial V2 supports daily-frequency Streak Challenges only. See FR-V2-209.
 
 ### FR-V2-106 — Interval success
 
@@ -769,7 +769,7 @@ Failure to satisfy a required daily interval MUST reset the Participant's Curren
 
 > **Alignment note:** Wording aligned to specify that failure to satisfy a required
 > **daily** interval triggers the reset. Consistent with FR-V2-105 alignment and
-> FR-V2-119A.
+> FR-V2-209.
 
 ### FR-V2-108 — Reset does not remove Participant
 
@@ -854,7 +854,7 @@ Streak Challenges MUST NOT inherit Collective extension behaviour automatically.
 >
 > **Source:** Reconciliation F-C-02; Calculation Model §27.
 
-### FR-V2-119A — Daily-only Streak *(NEW — Reconciliation F-C-01)*
+### FR-V2-209 — Daily-only Streak *(NEW — Reconciliation F-C-01)*
 
 Initial V2 MUST support daily Streak Challenges only. Weekly-frequency Streak
 calculations MUST NOT be included.
@@ -864,7 +864,7 @@ calculations MUST NOT be included.
 > operate on a daily-frequency basis only. Weekly or other non-daily frequency Streak
 > calculations are excluded from initial V2 scope.
 
-### FR-V2-119B — Multi-Activity Streak *(NEW — Calculation Model §24)*
+### FR-V2-210 — Multi-Activity Streak *(NEW — Calculation Model §24)*
 
 Where a Streak Challenge configures multiple daily Activities, ALL configured daily
 requirements MUST be Done for the Challenge day to count as Complete.
@@ -874,7 +874,7 @@ requirements MUST be Done for the Challenge day to count as Complete.
 > Challenge requires multiple distinct daily Activities. The Calculation Model establishes
 > that all configured daily requirements must be satisfied for the day to count.
 
-### FR-V2-119C — No Streak Leaderboard *(NEW — Calculation Model §34; Recognition §16)*
+### FR-V2-211 — No Streak Leaderboard *(NEW — Calculation Model §34; Recognition §16)*
 
 Initial V2 MUST NOT rank Streak Challenge Participants against one another. A Streak
 Challenge MUST NOT produce a Participant leaderboard.
@@ -1010,7 +1010,7 @@ calculation input.
 
 ## §22 Sharing
 
-> **Disposition: KEEP all as-is. ADD FR-V2-137A (Notifications baseline §§14-15).**
+> **Disposition: KEEP all as-is. ADD FR-V2-212 (Notifications baseline §§14-15).**
 
 ### FR-V2-135 — Sharing capability
 
@@ -1025,7 +1025,7 @@ disclosure.
 
 A share action MUST NOT expose information the recipient is not permitted to access.
 
-### FR-V2-137A — Share to Group is explicit *(NEW — Notifications baseline §§14-15)*
+### FR-V2-212 — Share to Group is explicit *(NEW — Notifications baseline §§14-15)*
 
 Personal Activity, milestones, and Recognition MUST NOT automatically enter the Group
 Feed. A Member MUST explicitly choose to Share to Group.
@@ -1595,8 +1595,8 @@ plus any new requirements introduced through reconciliation.
 | FR-V2-098 | Unfinished Participant result | KEEP | §18 | Unchanged | — | — |
 | FR-V2-099 | No false completion | KEEP | §18 | Unchanged | — | — |
 | FR-V2-100 | Finish order | KEEP | §18 | Unchanged | — | — |
-| FR-V2-101 | Tie rules explicit | SUPERSEDED | §18 | Settled: shared position, no artificial tie-break | Reconciliation F-B-02; Calculation §16 | Superseded by settled rule in §18 |
-| FR-V2-102 | Non-completer ordering explicit | SUPERSEDED | §18 | Settled: no position, no label, progress visible | Reconciliation F-B-02; Calculation §17 | Superseded by settled rule in §18 |
+| FR-V2-101 | Tie rules explicit | SUPERSEDED | §18 | Settled: shared position, no artificial tie-break | Reconciliation F-B-02; Calculation §16 | SUPERSEDED — No separate replacement FR. Settled rule embedded in FR-V2-094/FR-V2-100 context: identical completion points share position, no artificial tie-breaker. T1 §K; Calculation §16. |
+| FR-V2-102 | Non-completer ordering explicit | SUPERSEDED | §18 | Settled: no position, no label, progress visible | Reconciliation F-B-02; Calculation §17 | SUPERSEDED — No separate replacement FR. Settled rule embedded in FR-V2-098 context: non-completers receive no finishing position, actual progress visible, never labelled failed. T1 §K; Calculation §17. |
 | FR-V2-103 | No assumed extension | KEEP | §18 | Unchanged | — | — |
 | FR-V2-104 | Individual Streak | KEEP | §19 | Unchanged | — | — |
 | FR-V2-105 | Required interval | ALIGNED WORDING | §19 | Aligned to daily Activity requirement | Calculation Model §20 | Initial V2 is daily only |
@@ -1611,9 +1611,9 @@ plus any new requirements introduced through reconciliation.
 | FR-V2-114 | Best Streak | KEEP | §19 | Unchanged | — | — |
 | FR-V2-115 | Completed intervals | KEEP | §19 | Unchanged | — | — |
 | FR-V2-116 | No assumed extension | KEEP | §19 | Unchanged | — | — |
-| FR-V2-117 | Late-join rule required | SUPERSEDED | §19 | Settled: late join permitted, full period, no shortening | Reconciliation F-C-02; Calculation §§30-31 | Superseded by settled rule in §19 |
-| FR-V2-118 | Late-log rule required | SUPERSEDED | §19 | Settled: no grace period, day must be Done | Reconciliation F-C-02; Calculation §26 | Superseded by settled rule in §19 |
-| FR-V2-119 | Time-boundary rule required | SUPERSEDED | §19 | Settled: one governing timezone, device changes no effect | Reconciliation F-C-02; Calculation §27 | Superseded by settled rule in §19 |
+| FR-V2-117 | Late-join rule required | SUPERSEDED | §19 | Settled: late join permitted, full period, no shortening | Reconciliation F-C-02; Calculation §§30-31 | SUPERSEDED — No separate replacement FR. Settled rule: late joining permitted where eligible, does not change denominator. T1 §L; Calculation §§30-31. |
+| FR-V2-118 | Late-log rule required | SUPERSEDED | §19 | Settled: no grace period, day must be Done | Reconciliation F-C-02; Calculation §26 | SUPERSEDED — No separate replacement FR. Settled rule: no ordinary late-logging grace period. T1 §L; Calculation §26. |
+| FR-V2-119 | Time-boundary rule required | SUPERSEDED | §19 | Settled: one governing timezone, device changes no effect | Reconciliation F-C-02; Calculation §27 | SUPERSEDED — No separate replacement FR. Settled rule: one governing Challenge timezone. T1 §L; Calculation §27. |
 | FR-V2-120 | Type-specific completion | KEEP | §20 | Unchanged | — | — |
 | FR-V2-121 | Finalization | KEEP | §20 | Unchanged | — | — |
 | FR-V2-122 | No same-identity reopening | KEEP | §20 | Unchanged | — | — |
@@ -1622,12 +1622,12 @@ plus any new requirements introduced through reconciliation.
 | FR-V2-125 | New participation | KEEP | §20 | Unchanged | — | — |
 | FR-V2-126 | New progress | KEEP | §20 | Unchanged | — | — |
 | FR-V2-127 | Preserve original | KEEP | §20 | Unchanged | — | — |
-| FR-V2-128 | Challenge Feed | SUPERSEDED | §21 | Settled: Group Feed is single stream, no Home Feed | Reconciliation F-E-01; Notifications baseline §§3,7 | Superseded by settled rule in §21 |
-| FR-V2-129 | Feed events | SUPERSEDED | §21 | Settled: state events + explicit Share only | Reconciliation F-E-01; Notifications baseline §§8-12 | Superseded by settled rule in §21 |
+| FR-V2-128 | Challenge Feed | SUPERSEDED | §21 | Settled: Group Feed is single stream, no Home Feed | Reconciliation F-E-01; Notifications baseline §§3,7 | SUPERSEDED — No active replacement FR. Challenge Feed concept replaced by Group Feed (single community stream) + Challenge view (operational). Home is not a Feed. T1 §§O,P; Notifications baseline §§3,7. |
+| FR-V2-129 | Feed events | SUPERSEDED | §21 | Settled: state events + explicit Share only | Reconciliation F-E-01; Notifications baseline §§8-12 | SUPERSEDED — No active replacement FR. Feed content model replaced by: meaningful automatic state events + explicit Share-to-Group only. T1 §P; Notifications baseline §§8-12. |
 | FR-V2-130 | Feed is not truth source | KEEP | §21 | Unchanged | — | — |
 | FR-V2-131 | Kudos | KEEP | §21 | Unchanged | — | — |
 | FR-V2-132 | Kudos do not affect performance | KEEP | §21 | Unchanged | — | — |
-| FR-V2-133 | Comments/replies | SUPERSEDED | §21 | Settled: no comments/replies in initial V2 | Reconciliation F-E-01; Notifications baseline §20 | Superseded by settled rule in §21 |
+| FR-V2-133 | Comments/replies | SUPERSEDED | §21 | Settled: no comments/replies in initial V2 | Reconciliation F-E-01; Notifications baseline §20 | SUPERSEDED — No active replacement FR. Capability explicitly excluded from initial V2. T1 §Q; Notifications baseline §20. |
 | FR-V2-134 | Social interaction authority boundary | KEEP (updated) | §21 | Updated: removed comments/replies reference | Reconciliation F-E-01 | Kudos and reactions boundary preserved |
 | FR-V2-135 | Sharing capability | KEEP | §22 | Unchanged | — | — |
 | FR-V2-136 | Visibility enforcement | KEEP | §22 | Unchanged | — | — |
@@ -1707,24 +1707,21 @@ plus any new requirements introduced through reconciliation.
 ## New Requirements Introduced Through Reconciliation
 
 The following requirements were **not** present in the Founder Working Baseline and have
-been introduced through reconciliation. They are assigned suffixed identifiers to
-maintain clear traceability to the baseline requirement they supplement.
+been introduced through reconciliation. They are allocated sequential identifiers beginning at FR-V2-207
+to maintain clear traceability while preserving the original 001–206 numbering intact.
 
 | New FR ID | Subject | Disposition | Final T2 Location | Source/Reconciliation Finding |
 |-----------|---------|-------------|-------------------|-------------------------------|
-| FR-V2-069A | Challenge-specific Activity logging | NEW | §14 | Reconciliation F-A-01; Calculation Model §§3, 40(1-2) |
-| FR-V2-103A | No Highest Performance mode | NEW | §18 | Reconciliation F-B-01; Calculation Model |
-| FR-V2-119A | Daily-only Streak | NEW | §19 | Reconciliation F-C-01; Calculation Model §20 |
-| FR-V2-119B | Multi-Activity Streak | NEW | §19 | Calculation Model §24 |
-| FR-V2-119C | No Streak Leaderboard | NEW | §19 | Calculation Model §34; Recognition §16 |
-| FR-V2-137A | Share to Group is explicit | NEW | §22 | Notifications baseline §§14-15 |
+| FR-V2-207 | Challenge-specific Activity logging | NEW | §14 | Reconciliation F-A-01; Calculation Model §§3, 40(1-2) |
+| FR-V2-208 | No Highest Performance mode | NEW | §18 | Reconciliation F-B-01; Calculation Model |
+| FR-V2-209 | Daily-only Streak | NEW | §19 | Reconciliation F-C-01; Calculation Model §20 |
+| FR-V2-210 | Multi-Activity Streak | NEW | §19 | Calculation Model §24 |
+| FR-V2-211 | No Streak Leaderboard | NEW | §19 | Calculation Model §34; Recognition §16 |
+| FR-V2-212 | Share to Group is explicit | NEW | §22 | Notifications baseline §§14-15 |
 
-**Identifier convention:** New requirements use a suffixed identifier (e.g., FR-V2-069A)
-to indicate the baseline requirement after which they are logically positioned. This
-preserves the original 001-206 numbering intact while making the insertion point
-traceable. An alternative sequential numbering (FR-V2-207 through FR-V2-212) was
-considered but rejected because the suffixed form better communicates the logical
-relationship to existing requirements.
+**Identifier convention:** New requirements are allocated sequential identifiers beginning at FR-V2-207
+(FR-V2-207 through FR-V2-212). This preserves the original 001–206 numbering intact while
+providing a clear, sequential range for all new requirements introduced through reconciliation.
 
 ---
 
@@ -1753,10 +1750,10 @@ This DRAFT does **not** authorize:
 - MOT-01 resolution (Recognition Authority);
 - notification trigger catalogue as canonical product behaviour (see FR-V2-141, FR-V2-203);
 - operational cause-review criteria or due diligence procedures (see FR-V2-204);
-- Highest Performance Competitive mode (see FR-V2-103A);
-- weekly-frequency Streak calculations (see FR-V2-119A);
+- Highest Performance Competitive mode (see FR-V2-208);
+- weekly-frequency Streak calculations (see FR-V2-209);
 - comments or reply threads on Feed items (see FR-V2-133 supersession);
-- Streak Participant leaderboard (see FR-V2-119C).
+- Streak Participant leaderboard (see FR-V2-211).
 
 These require their applicable governed stage and authority.
 
@@ -1784,7 +1781,7 @@ in Part 3.
 
 | New Requirements | Count |
 |-----------------|-------|
-| NEW (suffixed identifiers) | 6 |
+| NEW (FR-V2-207 to FR-V2-212) | 6 |
 | **Total requirements in DRAFT** | **212** |
 
 ### Disposition by Section
@@ -1827,7 +1824,7 @@ in Part 3.
 
 This Appendix explains why each new requirement was introduced.
 
-### FR-V2-069A — Challenge-specific Activity logging
+### FR-V2-207 — Challenge-specific Activity logging
 
 **Why needed:** The Founder Working Baseline established the self-accountability model
 (§14) and the evidence/truth chain (§15), but did not explicitly state that Activity
@@ -1843,7 +1840,7 @@ FR-V2-075 (Derived Truth). Does not contradict any existing requirement.
 
 ---
 
-### FR-V2-103A — No Highest Performance mode
+### FR-V2-208 — No Highest Performance mode
 
 **Why needed:** The baseline defined Competitive Challenges in terms of individual
 performance and comparative standing, but did not explicitly exclude a Highest Performance
@@ -1858,7 +1855,7 @@ FR-V2-100 (Finish order). Does not contradict any existing requirement.
 
 ---
 
-### FR-V2-119A — Daily-only Streak
+### FR-V2-209 — Daily-only Streak
 
 **Why needed:** The baseline used the general term "required interval" (FR-V2-105)
 without specifying that initial V2 is daily-frequency only. The Calculation Model
@@ -1872,7 +1869,7 @@ FR-V2-107 (Missed interval reset). Does not contradict any existing requirement.
 
 ---
 
-### FR-V2-119B — Multi-Activity Streak
+### FR-V2-210 — Multi-Activity Streak
 
 **Why needed:** The baseline did not address the case where a Streak Challenge configures
 multiple distinct daily Activities. The Calculation Model establishes that all configured
@@ -1887,7 +1884,7 @@ existing requirement.
 
 ---
 
-### FR-V2-119C — No Streak Leaderboard
+### FR-V2-211 — No Streak Leaderboard
 
 **Why needed:** The baseline did not explicitly state that Streak Challenges do not
 produce a Participant leaderboard. While FR-V2-091 addresses this for Collective
@@ -1903,7 +1900,7 @@ requirement.
 
 ---
 
-### FR-V2-137A — Share to Group is explicit
+### FR-V2-212 — Share to Group is explicit
 
 **Why needed:** The reconciliation of §21 (Reconciliation F-E-01) established that Group
 Feed content comes from state events and explicit Share. However, the Sharing section
@@ -1927,12 +1924,12 @@ This Appendix traces each reconciliation finding back to its governance source.
 
 | Finding ID | Subject | Source Document | Source Section(s) | Requirements Affected |
 |------------|---------|----------------|-------------------|----------------------|
-| F-A-01 | Challenge-specific Activity logging | Stage F Product Definition DRAFT — Calculation Model | §§3, 40(1-2) | FR-V2-069A (new) |
-| F-B-01 | No Highest Performance mode | Stage F Product Definition DRAFT — Calculation Model | Competitive scope | FR-V2-103A (new) |
+| F-A-01 | Challenge-specific Activity logging | Stage F Product Definition DRAFT — Calculation Model | §§3, 40(1-2) | FR-V2-207 (new) |
+| F-B-01 | No Highest Performance mode | Stage F Product Definition DRAFT — Calculation Model | Competitive scope | FR-V2-208 (new) |
 | F-B-02 | Competitive tie and non-completer rules | Stage F Product Definition DRAFT — Calculation Model | §§16, 17 | FR-V2-101 (superseded), FR-V2-102 (superseded), FR-V2-198 (settled), FR-V2-199 (settled) |
-| F-C-01 | Daily-only Streak | Stage F Product Definition DRAFT — Calculation Model | §20 | FR-V2-119A (new) |
+| F-C-01 | Daily-only Streak | Stage F Product Definition DRAFT — Calculation Model | §20 | FR-V2-209 (new) |
 | F-C-02 | Streak late-join, late-log, time boundaries | Stage F Product Definition DRAFT — Calculation Model | §§26, 27, 30-31 | FR-V2-117 (superseded), FR-V2-118 (superseded), FR-V2-119 (superseded), FR-V2-200 (settled), FR-V2-201 (settled), FR-V2-202 (settled) |
-| F-E-01 | Feed and community experience | Stage F Product Definition DRAFT — Notifications baseline | §§3, 7-12, 14-15, 20 | FR-V2-128 (superseded), FR-V2-129 (superseded), FR-V2-133 (superseded), FR-V2-134 (updated), FR-V2-137A (new), FR-V2-143 (updated) |
+| F-E-01 | Feed and community experience | Stage F Product Definition DRAFT — Notifications baseline | §§3, 7-12, 14-15, 20 | FR-V2-128 (superseded), FR-V2-129 (superseded), FR-V2-133 (superseded), FR-V2-134 (updated), FR-V2-212 (new), FR-V2-143 (updated) |
 
 ### Governance Instruments Referenced
 
@@ -1949,23 +1946,23 @@ This Appendix traces each reconciliation finding back to its governance source.
 
 | Section | Subject | Requirements Settled or Affected |
 |---------|---------|--------------------------------|
-| Calculation Model §3 | Challenge-specific Activity | FR-V2-069A |
+| Calculation Model §3 | Challenge-specific Activity | FR-V2-207 |
 | Calculation Model §16 | Competitive tie handling | FR-V2-101, FR-V2-198 |
 | Calculation Model §17 | Non-completer treatment | FR-V2-102, FR-V2-199 |
-| Calculation Model §20 | Daily Streak scope | FR-V2-119A |
-| Calculation Model §24 | Multi-Activity daily Streak | FR-V2-119B |
+| Calculation Model §20 | Daily Streak scope | FR-V2-209 |
+| Calculation Model §24 | Multi-Activity daily Streak | FR-V2-210 |
 | Calculation Model §26 | No late-logging grace | FR-V2-118, FR-V2-201 |
 | Calculation Model §27 | Governing timezone | FR-V2-119, FR-V2-202 |
 | Calculation Model §§30-31 | Late joining | FR-V2-117, FR-V2-200 |
-| Calculation Model §34 | No Streak leaderboard | FR-V2-119C |
-| Calculation Model §§40(1-2) | Challenge-specific logging | FR-V2-069A |
+| Calculation Model §34 | No Streak leaderboard | FR-V2-211 |
+| Calculation Model §§40(1-2) | Challenge-specific logging | FR-V2-207 |
 | Calculation Model rules 1-25 | Deterministic calculation | FR-V2-206 |
 | Notifications baseline §§3, 7 | No Home Feed | FR-V2-128 |
 | Notifications baseline §§8-12 | Feed content rules | FR-V2-129 |
-| Notifications baseline §§14-15 | Explicit Share | FR-V2-137A |
+| Notifications baseline §§14-15 | Explicit Share | FR-V2-212 |
 | Notifications baseline §20 | No comments/replies | FR-V2-133 |
 | Contribution Model §24 | Contribution labelling | FR-V2-205 |
-| Recognition §16 | Streak recognition scope | FR-V2-119C |
+| Recognition §16 | Streak recognition scope | FR-V2-211 |
 
 ---
 
@@ -1982,7 +1979,7 @@ This Appendix traces each reconciliation finding back to its governance source.
 | Reconciliation Branch | recon/stage-f-founder-baselines-001 |
 | Reconciliation Commit | d5f3baf |
 | Total Original FRs | 206 (FR-V2-001 through FR-V2-206) |
-| New FRs | 6 (FR-V2-069A, FR-V2-103A, FR-V2-119A, FR-V2-119B, FR-V2-119C, FR-V2-137A) |
+| New FRs | 6 (FR-V2-207, FR-V2-208, FR-V2-209, FR-V2-210, FR-V2-211, FR-V2-212) |
 | Total Requirements in DRAFT | 212 |
 | Preserved Deferrals | ACT-03, ACT-04, MOT-01, Rewards |
 

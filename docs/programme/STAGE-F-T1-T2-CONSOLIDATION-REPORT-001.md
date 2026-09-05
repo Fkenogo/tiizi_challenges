@@ -147,12 +147,12 @@ All preserved deferrals confirmed present in both T1 and T2:
 
 | ID | Subject | Source |
 |---|---|---|
-| FR-V2-069A | Challenge-specific Activity logging | Reconciliation F-A-01 |
-| FR-V2-103A | No Highest Performance mode | Reconciliation F-B-01 |
-| FR-V2-119A | Daily-only Streak | Reconciliation F-C-01 |
-| FR-V2-119B | Multi-Activity ALL requirement | Calculation §24 |
-| FR-V2-119C | No Streak Leaderboard | Calculation §34; Recognition §16 |
-| FR-V2-137A | Share to Group is explicit | Notifications baseline §§14-15 |
+| FR-V2-207 | Challenge-specific Activity logging | Reconciliation F-A-01 |
+| FR-V2-208 | No Highest Performance mode | Reconciliation F-B-01 |
+| FR-V2-209 | Daily-only Streak | Reconciliation F-C-01 |
+| FR-V2-210 | Multi-Activity ALL requirement | Calculation §24 |
+| FR-V2-211 | No Streak Leaderboard | Calculation §34; Recognition §16 |
+| FR-V2-212 | Share to Group is explicit | Notifications baseline §§14-15 |
 
 ## 9. Validation Results
 
@@ -193,9 +193,9 @@ The Master Programme defines five Stage F deliverables:
 
 | Position | Confirmed in T1 | Confirmed in T2 |
 |---|---|---|
-| Challenge-specific Activity logging | Section G | FR-V2-069A |
-| Race-to-target Competitive (no HP mode) | Section K | FR-V2-103A |
-| Daily-only Streak | Section L | FR-V2-119A |
+| Challenge-specific Activity logging | Section G | FR-V2-207 |
+| Race-to-target Competitive (no HP mode) | Section K | FR-V2-208 |
+| Daily-only Streak | Section L | FR-V2-209 |
 | Collective full crossing contribution | Section J | FR-V2-084/086 aligned |
 | Home ≠ Feed | Section O | FR-V2-128 superseded |
 | No comments/replies | Section Q | FR-V2-133 superseded |
