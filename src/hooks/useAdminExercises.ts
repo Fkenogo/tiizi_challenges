@@ -69,6 +69,22 @@ export function useDeleteAdminExercise() {
   });
 }
 
+export function useSetExerciseLifecycleStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'draft' | 'published' | 'retired' }) =>
+      adminExerciseService.setLifecycleStatus(id, status),
+    onSuccess: async (_data, vars) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-exercises'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-exercise-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-exercise', vars.id] }),
+        queryClient.invalidateQueries({ queryKey: ['exercises'] }),
+      ]);
+    },
+  });
+}
+
 export function useBulkImportAdminExercises() {
   const queryClient = useQueryClient();
   return useMutation({

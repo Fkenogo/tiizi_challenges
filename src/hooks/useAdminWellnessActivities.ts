@@ -46,6 +46,21 @@ export function useUpdateAdminWellnessActivity() {
   });
 }
 
+export function useSetWellnessActivityLifecycleStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'draft' | 'published' | 'retired' }) =>
+      adminWellnessActivityService.setLifecycleStatus(id, status),
+    onSuccess: async (_data, vars) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-wellness-activities'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-wellness-activity', vars.id] }),
+        queryClient.invalidateQueries({ queryKey: ['wellness-activities'] }),
+      ]);
+    },
+  });
+}
+
 export function useDeleteAdminWellnessActivity() {
   const queryClient = useQueryClient();
   return useMutation({

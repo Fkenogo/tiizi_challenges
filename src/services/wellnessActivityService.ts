@@ -2,6 +2,7 @@ import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { WELLNESS_ACTIVITIES_CATALOG } from '../data/wellnessActivitiesCatalog';
 import { db } from '../lib/firebase';
 import type { WellnessActivity, WellnessCategory } from '../types/wellnessActivity';
+import { isPublishedLifecycle } from '../utils/knowledgeLifecycle';
 
 function isFirestoreReadError(error: unknown): boolean {
   const code = String((error as { code?: string } | null)?.code ?? '');
@@ -50,6 +51,14 @@ function fromDoc(id: string, raw: Record<string, unknown>): WellnessActivity {
     tags: Array.isArray(raw.tags) ? raw.tags.map((item) => String(item)) : [],
     createdAt: raw.createdAt ? String(raw.createdAt) : undefined,
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
+    // P1-3/P1-4: passthrough (may be absent on legacy records — consumers
+    // apply isPublishedLifecycle / normalizeKnowledgeVersion defaults).
+    lifecycleStatus: typeof raw.lifecycleStatus === 'string'
+      ? (raw.lifecycleStatus as WellnessActivity['lifecycleStatus'])
+      : undefined,
+    knowledgeVersion: Number.isFinite(Number(raw.knowledgeVersion))
+      ? Number(raw.knowledgeVersion)
+      : undefined,
   };
 }
 
@@ -66,16 +75,21 @@ class WellnessActivityService {
   }
 
   async getAllActivities(): Promise<WellnessActivity[]> {
+    // P1-3: only published records reach ordinary runtime consumers (legacy
+    // records without status count as published). By-ID reads stay unfiltered
+    // so historical challenges referencing retired activities remain readable.
+    const publishedOnly = (items: WellnessActivity[]) =>
+      items.filter((item) => isPublishedLifecycle(item.lifecycleStatus));
     try {
       const items = await this.fromFirestore();
       if (items.length > 0) {
-        return items.sort((a, b) => a.name.localeCompare(b.name));
+        return publishedOnly(items).sort((a, b) => a.name.localeCompare(b.name));
       }
     } catch (error) {
       if (!isFirestoreReadError(error)) throw error;
       console.warn('wellnessActivities read failed, using local catalog fallback.', error);
     }
-    return this.fallbackCatalog().sort((a, b) => a.name.localeCompare(b.name));
+    return publishedOnly(this.fallbackCatalog()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getActivitiesByCategory(category: WellnessCategory): Promise<WellnessActivity[]> {

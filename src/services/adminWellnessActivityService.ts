@@ -91,6 +91,24 @@ class AdminWellnessActivityService {
   async deleteActivity(documentId: string): Promise<void> {
     await deleteDoc(doc(db, this.collectionName, documentId));
   }
+
+  /**
+   * P1-3: move a canonical wellness activity through draft → published → retired.
+   * Retirement replaces destructive deletion for canonical Knowledge —
+   * retired records stay readable by ID so historical challenges survive.
+   */
+  async setLifecycleStatus(
+    documentId: string,
+    lifecycleStatus: 'draft' | 'published' | 'retired',
+  ): Promise<void> {
+    if (lifecycleStatus !== 'draft' && lifecycleStatus !== 'published' && lifecycleStatus !== 'retired') {
+      throw new Error(`Invalid lifecycle status: ${lifecycleStatus}`);
+    }
+    await updateDoc(doc(db, this.collectionName, documentId), {
+      lifecycleStatus,
+      updatedAt: new Date().toISOString(),
+    });
+  }
 }
 
 export const adminWellnessActivityService = new AdminWellnessActivityService();

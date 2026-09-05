@@ -70,6 +70,8 @@ type CreateChallengeInput = {
     pointsPerCompletion?: number;
     dailyFrequency?: number;
     targetType?: 'daily' | 'cumulative';
+    /** P1-4: canonical Knowledge version this activity was snapshotted from. */
+    knowledgeVersion?: number;
   }>;
   donation?: {
     enabled: boolean;

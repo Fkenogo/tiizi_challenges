@@ -101,6 +101,21 @@ class AdminExerciseService {
     await deleteDoc(doc(db, this.collectionName, documentId));
   }
 
+  /**
+   * P1-3: move a canonical exercise through draft → published → retired.
+   * Retirement replaces destructive deletion for canonical Knowledge —
+   * retired records stay readable by ID so historical challenges survive.
+   */
+  async setLifecycleStatus(
+    documentId: string,
+    lifecycleStatus: 'draft' | 'published' | 'retired',
+  ): Promise<void> {
+    if (lifecycleStatus !== 'draft' && lifecycleStatus !== 'published' && lifecycleStatus !== 'retired') {
+      throw new Error(`Invalid lifecycle status: ${lifecycleStatus}`);
+    }
+    await updateDoc(doc(db, this.collectionName, documentId), { lifecycleStatus });
+  }
+
   validateBulkImport(input: unknown): { valid: AdminExerciseInput[]; errors: string[] } {
     if (!Array.isArray(input)) return { valid: [], errors: ['JSON must be an array of exercises.'] };
     const valid: AdminExerciseInput[] = [];

@@ -40,6 +40,16 @@ export interface CatalogExercise {
   tags?: string[];
   movementType?: 'isometric' | 'isotonic';
   holdBased?: boolean;
+  /**
+   * P1-3 lifecycle. Missing (legacy records) is treated as 'published' —
+   * see isPublishedLifecycle in src/utils/knowledgeLifecycle.ts.
+   */
+  lifecycleStatus?: 'draft' | 'published' | 'retired';
+  /**
+   * P1-4 knowledge version. Missing (legacy records) is treated as 1 —
+   * see normalizeKnowledgeVersion in src/utils/knowledgeLifecycle.ts.
+   */
+  knowledgeVersion?: number;
 }
 
 export interface User {

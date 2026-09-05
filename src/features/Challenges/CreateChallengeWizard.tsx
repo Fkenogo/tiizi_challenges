@@ -32,6 +32,7 @@ import {
 } from './utils/challengeFormDefaults';
 import { DONATION_PAYLOAD_DISCLAIMER } from './utils/challengeFormCopy';
 import type { WellnessActivity } from '../../types/wellnessActivity';
+import { normalizeKnowledgeVersion } from '../../utils/knowledgeLifecycle';
 
 type ChallengeType = 'collective' | 'competitive' | 'streak';
 
@@ -327,6 +328,10 @@ function CreateChallengeWizard() {
     () => new Map(exercises.map((exercise) => [exercise.id, exercise])),
     [exercises],
   );
+  const wellnessById = useMemo(
+    () => new Map(wellnessActivities.map((activity) => [activity.id, activity])),
+    [wellnessActivities],
+  );
   const challengeDurationDays = useMemo(
     () => calculateInclusiveDurationDays(startDate, endDate),
     [startDate, endDate],
@@ -593,6 +598,13 @@ function CreateChallengeWizard() {
           exerciseId: activity.exerciseId || undefined,
           activityId: activity.activityId || undefined,
           activityType: activity.activityType || undefined,
+          // P1-4: preserve the canonical Knowledge version this Challenge was
+          // created from (normalized: legacy records without versions count as 1).
+          knowledgeVersion: normalizeKnowledgeVersion(
+            activity.exerciseId
+              ? exerciseById.get(activity.exerciseId)?.knowledgeVersion
+              : wellnessById.get(activity.activityId ?? '')?.knowledgeVersion,
+          ),
           exerciseName: activity.exerciseId ? (exerciseById.get(activity.exerciseId)?.name ?? activity.query) : activity.query,
           description: activity.description,
           category: activity.category,

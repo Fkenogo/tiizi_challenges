@@ -129,6 +129,11 @@ assert.match(challengeDetail, /marked as sent|Contribution marked/i, 'Success co
 assert.match(challengeDetail, /Cause target|cause target/i, 'ChallengeDetailScreen must show "Cause target" label');
 assert.match(challengeDetail, /total/, 'Cause target label must include "total" to clarify campaign scope');
 
+// ── P1-2: self-reported totals labelled community-reported, never "Raised" ───
+assert.doesNotMatch(challengeDetail, /Raised so far/, 'Must not present self-reported pledges as "Raised so far"');
+assert.match(challengeDetail, /Community-reported contributions/, 'Self-reported totals must be labelled "Community-reported contributions"');
+assert.match(challengeDetail, /not verified by Tiizi/, 'Self-reported totals must carry a not-verified-by-Tiizi qualifier');
+
 // ── AdminPendingChallengesScreen: no hardcoded KES ───────────────────────────
 assert.doesNotMatch(adminPending, />\s*KES\s+\{|Target:\s*KES\s/, 'AdminPendingChallengesScreen must not show hardcoded "KES" in donation target');
 
