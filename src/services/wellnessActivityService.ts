@@ -2,7 +2,7 @@ import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { WELLNESS_ACTIVITIES_CATALOG } from '../data/wellnessActivitiesCatalog';
 import { db } from '../lib/firebase';
 import type { WellnessActivity, WellnessCategory } from '../types/wellnessActivity';
-import { isPublishedLifecycle } from '../utils/knowledgeLifecycle';
+import { selectPublishedCatalog } from '../utils/knowledgeLifecycle';
 
 function isFirestoreReadError(error: unknown): boolean {
   const code = String((error as { code?: string } | null)?.code ?? '');
@@ -78,18 +78,16 @@ class WellnessActivityService {
     // P1-3: only published records reach ordinary runtime consumers (legacy
     // records without status count as published). By-ID reads stay unfiltered
     // so historical challenges referencing retired activities remain readable.
-    const publishedOnly = (items: WellnessActivity[]) =>
-      items.filter((item) => isPublishedLifecycle(item.lifecycleStatus));
     try {
+      // Authoritative read (possibly empty) → lifecycle applies; fallback
+      // only when the read itself fails (null).
       const items = await this.fromFirestore();
-      if (items.length > 0) {
-        return publishedOnly(items).sort((a, b) => a.name.localeCompare(b.name));
-      }
+      return selectPublishedCatalog(items, this.fallbackCatalog());
     } catch (error) {
       if (!isFirestoreReadError(error)) throw error;
       console.warn('wellnessActivities read failed, using local catalog fallback.', error);
     }
-    return publishedOnly(this.fallbackCatalog()).sort((a, b) => a.name.localeCompare(b.name));
+    return selectPublishedCatalog(null, this.fallbackCatalog());
   }
 
   async getActivitiesByCategory(category: WellnessCategory): Promise<WellnessActivity[]> {

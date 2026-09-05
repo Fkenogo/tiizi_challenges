@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Challenge, ChallengeMember } from '../types';
+import { assertCanonicalActivitiesAvailable } from '../utils/canonicalActivityGate';
 import { computeRequiredLogs } from './challengeCompletion';
 import { isGroupActive } from '../utils/groupLifecycle';
 
@@ -72,6 +73,10 @@ type CreateChallengeInput = {
     targetType?: 'daily' | 'cumulative';
     /** P1-4: canonical Knowledge version this activity was snapshotted from. */
     knowledgeVersion?: number;
+    /** P2-2: immutable canonical snapshot (fitness classification/metric). */
+    metric?: string;
+    tier1?: string;
+    tier2?: string;
   }>;
   donation?: {
     enabled: boolean;
@@ -751,6 +756,11 @@ class ChallengeService {
         );
       }
     }
+
+    // P2-1: entries referencing draft/retired canonical Knowledge cannot start
+    // a new Challenge (custom entries without a canonical record are kept).
+    // The Cloud Function path enforces the same invariant server-side.
+    await assertCanonicalActivitiesAvailable(input.activities ?? []);
 
     const creatorMembershipRef = doc(db, 'groupMembers', membershipDocId(input.groupId, input.createdBy));
     let creatorMembershipSnap = await getDoc(creatorMembershipRef);

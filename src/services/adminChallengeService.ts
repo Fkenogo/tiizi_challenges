@@ -1,6 +1,7 @@
 import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { Challenge } from '../types';
+import { assertCanonicalActivitiesAvailable } from '../utils/canonicalActivityGate';
 
 export type ModerationStatus = 'pending' | 'approved' | 'needs_changes';
 
@@ -313,6 +314,10 @@ class AdminChallengeService {
       description?: string;
       category?: string;
       difficulty?: string;
+      knowledgeVersion?: number;
+      metric?: string;
+      tier1?: string;
+      tier2?: string;
       icon?: string;
       protocolSteps?: string[];
       benefits?: string[];
@@ -338,6 +343,9 @@ class AdminChallengeService {
     };
   }): Promise<string> {
     this.assertAuth();
+    // P2-1: entries referencing draft/retired canonical Knowledge cannot start
+    // a new Challenge (custom entries without a canonical record are kept).
+    await assertCanonicalActivitiesAvailable(payload.activities ?? []);
     const createdAt = new Date().toISOString();
     const requiresApproval = payload.donation?.enabled === true;
     const result = await addDoc(collection(db, this.collectionName), {

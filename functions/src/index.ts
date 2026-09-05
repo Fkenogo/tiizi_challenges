@@ -36,7 +36,7 @@ import {
   requestGroupJoinCallable,
   revokeGroupInviteCallable,
 } from './groupInviteBackend.js';
-import { createChallengeWithCreatorMembershipCallable } from './challengeCreationBackend.js';
+import { createChallengeFromAdminCallable, createChallengeWithCreatorMembershipCallable } from './challengeCreationBackend.js';
 
 initializeApp();
 
@@ -51,6 +51,7 @@ export const requestGroupJoin = requestGroupJoinCallable(db);
 export const approveGroupJoinRequest = approveGroupJoinRequestCallable(db);
 export const rejectGroupJoinRequest = rejectGroupJoinRequestCallable(db);
 export const createChallengeWithCreatorMembership = createChallengeWithCreatorMembershipCallable(db);
+export const createChallengeFromAdmin = createChallengeFromAdminCallable(db);
 
 export const refreshAdminMetrics = onSchedule(
   {

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app, db } from '../lib/firebase';
 import { challengeService } from '../services/challengeService';
 import type { CreateChallengeInput } from '../services/challengeService';
 import { useAuth } from './useAuth';
@@ -131,7 +132,18 @@ export function useCreateChallenge() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: (input: CreateChallengeInput) => challengeService.createChallenge(input),
+    // CORR-2: ordinary creation routes through the server callable — the
+    // trusted creation boundary. challengeService.createChallenge is retained
+    // only as a rollback surface (it cannot bypass Firestore rules).
+    mutationFn: async (input: CreateChallengeInput) => {
+      if (!user?.uid) throw new Error('Sign in required');
+      const callable = httpsCallable<Record<string, unknown>, { challenge: { id: string } }>(
+        getFunctions(app, 'us-central1'),
+        'createChallengeWithCreatorMembership',
+      );
+      const result = await callable({ ...input, actorUid: user.uid } as Record<string, unknown>);
+      return result.data;
+    },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: ['challenges'] });
       const previous = queryClient.getQueryData<Awaited<ReturnType<typeof challengeService.getChallenges>>>(['challenges']);

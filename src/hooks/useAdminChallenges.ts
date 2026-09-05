@@ -1,6 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '../lib/firebase';
 import { adminChallengeService } from '../services/adminChallengeService';
 import { useAuth } from './useAuth';
+
+/**
+ * CORR-2: admin creation goes through the trusted server callable
+ * (createChallengeFromAdmin), which validates admin role, canonical
+ * availability, and pins snapshot fields server-side.
+ */
+async function createChallengeFromAdminCallable(
+  payload: Record<string, unknown>,
+): Promise<{ challenge: { id: string } }> {
+  const callable = httpsCallable<Record<string, unknown>, { challenge: { id: string } }>(
+    getFunctions(app, 'us-central1'),
+    'createChallengeFromAdmin',
+  );
+  const result = await callable(payload);
+  return result.data;
+}
 
 export function usePendingChallenges() {
   return useQuery({
@@ -85,7 +103,7 @@ export function useCreateAdminChallenge() {
         contributionCardUrl?: string;
         disclaimer?: string;
       };
-    }) => adminChallengeService.createChallengeFromAdmin(payload),
+    }) => createChallengeFromAdminCallable(payload),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['admin-active-challenges'] }),

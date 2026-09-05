@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createChallengeWithCreatorMembershipCore } from '../functions/src/challengeCreationBackend.js';
+import { createChallengeFromAdminCore, createChallengeWithCreatorMembershipCore } from '../functions/src/challengeCreationBackend.js';
 
 class FakeDoc {
   constructor(
@@ -100,6 +100,11 @@ function seedActiveGroup(db: FakeDb, groupId = 'group_1') {
   });
 }
 
+
+function seedPublishedExercise(db: FakeDb, exerciseId = 'pushups') {
+  db.store.set(`catalogExercises/${exerciseId}`, { name: 'Push-Ups', lifecycleStatus: 'published' });
+}
+
 const baseInput = {
   actorUid: 'creator_uid',
   groupId: 'group_1',
@@ -124,6 +129,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1',
       userId: 'creator_uid',
@@ -152,6 +158,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
 
     await assertRejectsWithCode('non-member challenge creation should fail atomically', 'permission-denied', () =>
       createChallengeWithCreatorMembershipCore(db as never, baseInput),
@@ -164,6 +171,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1',
       userId: 'creator_uid',
@@ -179,6 +187,7 @@ async function run() {
   // member of private group → challenge goes to pending moderation
   {
     const db = new FakeDb();
+    seedPublishedExercise(db);
     db.store.set('groups/group_1', {
       ownerId: 'owner_uid',
       status: 'active',
@@ -202,6 +211,7 @@ async function run() {
   // admin of private group → challenge is active/approved immediately
   {
     const db = new FakeDb();
+    seedPublishedExercise(db);
     db.store.set('groups/group_1', {
       ownerId: 'owner_uid',
       status: 'active',
@@ -223,6 +233,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     const result = await createChallengeWithCreatorMembershipCore(db as never, {
       ...baseInput,
       actorUid: 'owner_uid',
@@ -239,6 +250,7 @@ async function run() {
   await assertRejectsWithCode('inactive member must be rejected', 'permission-denied', async () => {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1',
       userId: 'creator_uid',
@@ -251,6 +263,7 @@ async function run() {
   // inactive group rejected
   await assertRejectsWithCode('inactive group must be rejected', 'failed-precondition', async () => {
     const db = new FakeDb();
+    seedPublishedExercise(db);
     db.store.set('groups/group_1', {
       ownerId: 'owner_uid',
       status: 'inactive',
@@ -269,6 +282,7 @@ async function run() {
   // normal member (non-owner) creates challenge successfully
   {
     const db = new FakeDb();
+    seedPublishedExercise(db);
     db.store.set('groups/group_1', {
       ownerId: 'owner_uid',
       status: 'active',
@@ -356,6 +370,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1',
       userId: 'creator_uid',
@@ -452,6 +467,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
     });
@@ -469,6 +485,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
     });
@@ -486,6 +503,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
     });
@@ -508,6 +526,7 @@ async function run() {
   {
     const db = new FakeDb();
     seedActiveGroup(db);
+    seedPublishedExercise(db);
     db.store.set('groupMembers/group_1_creator_uid', {
       groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
     });
@@ -532,6 +551,7 @@ async function run() {
     async () => {
       const db = new FakeDb();
       seedActiveGroup(db);
+      seedPublishedExercise(db);
       db.store.set('groupMembers/group_1_creator_uid', {
         groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
       });
@@ -546,6 +566,270 @@ async function run() {
       });
     },
   );
+
+  // P2-1 canonical gate: retired fitness record blocks creation
+  await assertRejectsWithCode(
+    'retired canonical exercise must block new challenge',
+    'invalid-argument',
+    async () => {
+      const db = new FakeDb();
+      seedActiveGroup(db);
+      db.store.set('groupMembers/group_1_creator_uid', {
+        groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+      });
+      db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'retired' });
+      return createChallengeWithCreatorMembershipCore(db as never, baseInput);
+    },
+  );
+
+  // P2-1 canonical gate: draft wellness record blocks creation
+  await assertRejectsWithCode(
+    'draft canonical wellness activity must block new challenge',
+    'invalid-argument',
+    async () => {
+      const db = new FakeDb();
+      seedActiveGroup(db);
+      db.store.set('groupMembers/group_1_creator_uid', {
+        groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+      });
+      db.store.set('wellnessActivities/sleep-8h', { name: 'Sleep 8h', lifecycleStatus: 'draft' });
+      return createChallengeWithCreatorMembershipCore(db as never, {
+        ...baseInput,
+        activities: [{ activityId: 'sleep-8h', exerciseName: 'Sleep 8h', targetValue: 8, unit: 'hours' }],
+      });
+    },
+  );
+
+  // P2-1 canonical gate: legacy record without lifecycle state counts as published
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    db.store.set('catalogExercises/pushups', { name: 'Push-Ups' });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, baseInput);
+    assert.equal(result.challenge.id, 'generated_1', 'legacy canonical record must allow creation');
+  }
+
+  // P2-1 canonical gate: published record allows creation
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'published' });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, baseInput);
+    assert.equal(result.challenge.id, 'generated_1', 'published canonical record must allow creation');
+  }
+
+  // CORR-1 test 5: missing exerciseId document rejects (dangling IDs never become custom)
+  await assertRejectsWithCode(
+    'missing canonical exercise document must reject',
+    'invalid-argument',
+    async () => {
+      const db = new FakeDb();
+      seedActiveGroup(db);
+      seedPublishedExercise(db);
+      db.store.set('groupMembers/group_1_creator_uid', {
+        groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+      });
+      return createChallengeWithCreatorMembershipCore(db as never, {
+        ...baseInput,
+        activities: [{ exerciseId: 'ghost-move', exerciseName: 'Ghost Move', targetValue: 5, unit: 'reps' }],
+      });
+    },
+  );
+
+  // CORR-1 test 6: missing activityId document rejects
+  await assertRejectsWithCode(
+    'missing canonical wellness document must reject',
+    'invalid-argument',
+    async () => {
+      const db = new FakeDb();
+      seedActiveGroup(db);
+      seedPublishedExercise(db);
+      db.store.set('groupMembers/group_1_creator_uid', {
+        groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+      });
+      return createChallengeWithCreatorMembershipCore(db as never, {
+        ...baseInput,
+        activities: [{ activityId: 'ghost-sleep', exerciseName: 'Ghost Sleep', targetValue: 8, unit: 'hours' }],
+      });
+    },
+  );
+
+  // CORR-1 test 7: custom entries with NO canonical ID remain allowed
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    seedPublishedExercise(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, {
+      ...baseInput,
+      activities: [{ exerciseName: 'Custom Move', targetValue: 5, unit: 'reps' }],
+    });
+    const stored = db.store.get('challenges/generated_1') as { activities?: Array<Record<string, unknown>> };
+    assert.equal(result.challenge.id, 'generated_1', 'ID-free custom entries must allow creation');
+    assert.equal(stored?.activities?.[0]?.exerciseName, 'Custom Move', 'custom snapshot preserved as-is');
+    assert.equal(stored?.activities?.[0]?.exerciseId, undefined, 'no canonical ID fabricated');
+  }
+
+  // P2-2/P1-4: snapshot fields survive backend sanitization
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'published', knowledgeVersion: 3 });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, {
+      ...baseInput,
+      activities: [{
+        exerciseId: 'pushups', exerciseName: 'Push-Ups', targetValue: 10, unit: 'reps',
+        knowledgeVersion: 3, metric: 'reps', tier1: 'Strength', tier2: 'Upper Body',
+      }],
+    });
+    const stored = db.store.get('challenges/generated_1') as { activities?: Array<Record<string, unknown>> };
+    assert.equal(stored?.activities?.[0]?.knowledgeVersion, 3, 'snapshot version must survive sanitization');
+    assert.equal(stored?.activities?.[0]?.metric, 'reps', 'snapshot metric must survive sanitization');
+    assert.equal(stored?.activities?.[0]?.tier1, 'Strength', 'snapshot tier1 must survive sanitization');
+    assert.equal(stored?.activities?.[0]?.tier2, 'Upper Body', 'snapshot tier2 must survive sanitization');
+  }
+
+  // CORR-2 test 8: server pins canonical version/classification from the
+  // authoritative record — false client claims are corrected, not stored
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    seedPublishedExercise(db);
+    db.store.set('catalogExercises/pushups', {
+      name: 'Push-Ups', lifecycleStatus: 'published', knowledgeVersion: 4,
+      metric: { type: 'reps', unit: 'reps' }, tier_1: 'Strength', tier_2: 'Chest',
+    });
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, {
+      ...baseInput,
+      activities: [{
+        exerciseId: 'pushups', exerciseName: 'Push-Ups', targetValue: 10, unit: 'reps',
+        knowledgeVersion: 99, metric: 'minutes', tier1: 'Fake', tier2: 'Fake',
+      }],
+    });
+    const stored = db.store.get('challenges/generated_1') as { activities?: Array<Record<string, unknown>> };
+    assert.equal(result.challenge.id, 'generated_1', 'creation with pinned snapshot must succeed');
+    assert.equal(stored?.activities?.[0]?.knowledgeVersion, 4, 'version pinned to authoritative record');
+    assert.equal(stored?.activities?.[0]?.metric, 'reps', 'metric pinned to authoritative record');
+    assert.equal(stored?.activities?.[0]?.tier1, 'Strength', 'tier1 pinned to authoritative record');
+    assert.equal(stored?.activities?.[0]?.tier2, 'Chest', 'tier2 pinned to authoritative record');
+  }
+
+  // CORR test 13: retirement after creation leaves the historical record intact
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    seedPublishedExercise(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, {
+      ...baseInput,
+      activities: [{
+        exerciseId: 'pushups', exerciseName: 'Push-Ups', targetValue: 10, unit: 'reps', knowledgeVersion: 1,
+      }],
+    });
+    // Canonical record retires later.
+    db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'retired', knowledgeVersion: 1 });
+    const stored = db.store.get(`challenges/${result.challenge.id}`) as { activities?: Array<Record<string, unknown>> };
+    assert.equal(stored?.activities?.[0]?.knowledgeVersion, 1, 'historical snapshot keeps v1 after retirement');
+    assert.equal(stored?.activities?.[0]?.exerciseId, 'pushups', 'historical snapshot keeps canonical ID');
+    // ...while NEW challenges with the retired record are rejected.
+    await assertRejectsWithCode(
+      'retired record blocks new challenges but old one stands',
+      'invalid-argument',
+      () => createChallengeWithCreatorMembershipCore(db as never, baseInput),
+    );
+  }
+
+  // CORR-2 admin callable: non-admin actor rejected
+  await assertRejectsWithCode(
+    'admin callable must require an admin role',
+    'permission-denied',
+    async () => {
+      const db = new FakeDb();
+      return createChallengeFromAdminCore(db as never, {
+        actorUid: 'random_uid',
+        category: 'fitness',
+        name: 'Admin Race',
+        description: 'Created by support staff',
+        challengeType: 'competitive',
+        startDate: '2026-09-01T00:00:00.000Z',
+        endDate: '2026-09-08T00:00:00.000Z',
+        createdBy: 'random_uid',
+        activities: [{ exerciseName: 'Custom Move', targetValue: 5, unit: 'reps' }],
+      });
+    },
+  );
+
+  // CORR-2 admin callable: canonical gate applies (retired rejected)
+  await assertRejectsWithCode(
+    'admin callable must reject retired canonical records',
+    'invalid-argument',
+    async () => {
+      const db = new FakeDb();
+      db.store.set('admins/staff_uid', { role: 'admin' });
+      db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'retired' });
+      return createChallengeFromAdminCore(db as never, {
+        actorUid: 'staff_uid',
+        category: 'fitness',
+        name: 'Admin Race',
+        description: 'Created by support staff',
+        challengeType: 'competitive',
+        startDate: '2026-09-01T00:00:00.000Z',
+        endDate: '2026-09-08T00:00:00.000Z',
+        createdBy: 'staff_uid',
+        activities: [{ exerciseId: 'pushups', exerciseName: 'Push-Ups', targetValue: 10, unit: 'reps' }],
+      });
+    },
+  );
+
+  // CORR-2 admin callable: success mirrors admin service semantics + pins snapshots
+  {
+    const db = new FakeDb();
+    db.store.set('admins/staff_uid', { role: 'moderator' });
+    db.store.set('catalogExercises/pushups', {
+      name: 'Push-Ups', lifecycleStatus: 'published', knowledgeVersion: 2,
+      metric: { type: 'reps' }, tier_1: 'Strength', tier_2: 'Chest',
+    });
+    const result = await createChallengeFromAdminCore(db as never, {
+      actorUid: 'staff_uid',
+      category: 'fitness',
+      name: 'Admin Race',
+      description: 'Created by support staff',
+      challengeType: 'competitive',
+      startDate: '2026-09-01T00:00:00.000Z',
+      endDate: '2026-09-08T00:00:00.000Z',
+      createdBy: 'staff_uid',
+      activities: [{
+        exerciseId: 'pushups', exerciseName: 'Push-Ups', targetValue: 10, unit: 'reps', knowledgeVersion: 42,
+      }],
+    });
+    const stored = db.store.get(`challenges/${result.challenge.id}`) as Record<string, unknown>;
+    assert.equal((stored?.activities as Array<Record<string, unknown>>)?.[0]?.knowledgeVersion, 2,
+      'admin snapshot version pinned to authoritative record');
+    assert.equal(stored?.status, 'active', 'admin challenge active without donation');
+    assert.equal(stored?.moderationStatus, 'approved', 'admin challenge approved without donation');
+    assert.equal(stored?.participantCount, 0, 'admin creation does not auto-join');
+    assert.equal(
+      Array.from(db.store.keys()).some((path) => path.startsWith('challengeMembers/')),
+      false,
+      'admin creation writes no creator membership',
+    );
+  }
 
   console.log('challenge creation backend tests passed');
 }

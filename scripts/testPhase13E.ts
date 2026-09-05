@@ -1097,7 +1097,10 @@ section('15. P1-3/P1-4 Knowledge Lifecycle + Version');
   const exerciseSrc = readSrc('../src/services/exerciseService.ts');
   const wellnessSrc = readSrc('../src/services/wellnessActivityService.ts');
   check('P1-3 fitness list filters to published', exerciseSrc.includes('isPublishedLifecycle(ex.lifecycleStatus)'));
-  check('P1-3 wellness list filters to published', wellnessSrc.includes('isPublishedLifecycle(item.lifecycleStatus)'));
+  check('P1-3 wellness list filters to published', wellnessSrc.includes('selectPublishedCatalog('));
+  const lifecycleSrc = readSrc('../src/utils/knowledgeLifecycle.ts');
+  check('P1-3 catalog selection applies published filter',
+    lifecycleSrc.includes('isPublishedLifecycle(item.lifecycleStatus)'));
   check('P1-3 wellness fromDoc maps lifecycle fields',
     wellnessSrc.includes('lifecycleStatus') && wellnessSrc.includes('knowledgeVersion'));
 
@@ -1159,6 +1162,120 @@ section('15. P1-3/P1-4 Knowledge Lifecycle + Version');
   check('CORR-2 H wellness: no deleteActivity in service',
     !adminWellSrcFull.includes('deleteActivity') && !adminWellSrcFull.includes('deleteDoc'));
   check('CORR-2 H wellness: no delete hook', !wellHooksSrc.includes('useDeleteAdminWellnessActivity'));
+}
+
+// ─── 16. P2 Knowledge Runtime Alignment ───────────────────────────────────────
+
+section('16. P2 Knowledge Runtime Alignment');
+
+{
+  const { isBlockedCanonicalStatus, selectPublishedCatalog } =
+    await import('../src/utils/knowledgeLifecycle.js');
+
+  // P2-1/P2-6: blocked-status rule (legacy missing counts as published)
+  check('P2 blocked: draft blocks', isBlockedCanonicalStatus('draft') === true);
+  check('P2 blocked: retired blocks', isBlockedCanonicalStatus('retired') === true);
+  check('P2 blocked: published allows', isBlockedCanonicalStatus('published') === false);
+  check('P2 blocked: legacy missing allows', isBlockedCanonicalStatus(undefined) === false);
+
+  // P2-5: catalogue source selection (behavioral, no Firestore needed)
+  const item = (id: string, name: string, lifecycleStatus?: string): never => ({
+    id, name, category: 'sleep', metric: 'count', unit: 'count', description: '',
+    defaultPoints: 0, popular: false, medicalSupervisionRequired: false, tags: [],
+    ...(lifecycleStatus === undefined ? {} : { lifecycleStatus }),
+  }) as never;
+  const names = (items: Array<{ name: string }>) => items.map((i) => i.name).join(',');
+  const mixed = [
+    item('a', 'Alpha'),
+    item('b', 'Beta', 'published'),
+    item('c', 'Gamma', 'retired'),
+    item('d', 'Delta', 'draft'),
+  ];
+  check('P2-5 mixed: only published + legacy offered',
+    names(selectPublishedCatalog(mixed as never, [])) === 'Alpha,Beta');
+  check('P2-5 all-retired: valid empty state, NOT fallback', (() => {
+    const fallback = [item('f', 'Fallback')];
+    const out = selectPublishedCatalog(
+      [item('c', 'Gamma', 'retired')] as never, fallback as never);
+    return out.length === 0;
+  })());
+  check('P2-5 empty collection: authoritative [] stays [] (no fallback override)', (() => {
+    const out = selectPublishedCatalog([], [
+      item('f', 'Fallback'), item('r', 'RetiredFb', 'retired'),
+    ] as never);
+    return out.length === 0;
+  })());
+  check('P2-5 read failure: resilience fallback', (() => {
+    const out = selectPublishedCatalog(null, [item('f', 'Fallback')] as never);
+    return names(out) === 'Fallback';
+  })());
+
+  // P2-1 wiring: every creation path gates on canonical availability
+  const readSrc = (rel: string) => readFileSync(new URL(rel, import.meta.url).pathname, 'utf8');
+  const backendSrc = readSrc('../functions/src/challengeCreationBackend.ts');
+  const svcSrc = readSrc('../src/services/challengeService.ts');
+  const adminChSrc = readSrc('../src/services/adminChallengeService.ts');
+  check('P2-1 backend resolves canonical snapshots', backendSrc.includes('resolveCanonicalSnapshots(db, activities)'));
+  check('P2-1 backend pins authoritative snapshot', backendSrc.includes('applyCanonicalSnapshots(activities, canonicalSnapshots)'));
+  check('P2-1 direct create enforces canonical gate', svcSrc.includes('assertCanonicalActivitiesAvailable(input.activities'));
+  check('P2-1 admin create enforces canonical gate', adminChSrc.includes('assertCanonicalActivitiesAvailable(payload.activities'));
+  check('CORR-1 backend rejects unresolvable IDs', backendSrc.includes('Unknown canonical exercise')
+    && backendSrc.includes('Unknown canonical wellness activity'));
+  const gateSrc = readSrc('../src/utils/canonicalActivityGate.ts');
+  check('CORR-1 client gate rejects unresolvable IDs', gateSrc.includes('!snap.exists()'));
+
+  // CORR-2: trusted server boundary (test 9) — rules deny ordinary direct creates
+  const rulesSrc = readSrc('../firestore.rules');
+  check('CORR-2 rules: challenge creates reserved for moderation tooling',
+    rulesSrc.includes('allow create: if isAuthenticated() && canModerateChallenges();'));
+  check('CORR-2 admin callable exists with role check',
+    backendSrc.includes('createChallengeFromAdminCore')
+    && backendSrc.includes("db.collection('admins').doc(actorUid).get()"));
+  const adminHookSrc = readSrc('../src/hooks/useAdminChallenges.ts');
+  check('CORR-2 admin hook uses trusted callable', adminHookSrc.includes("'createChallengeFromAdmin'"));
+  const memberHookSrc = readSrc('../src/hooks/useChallenges.ts');
+  check('CORR-2 member hook uses trusted callable', memberHookSrc.includes("'createChallengeWithCreatorMembership'"));
+
+  // P2-2 wiring: fitness snapshot carries immutable canonical fields
+  const wizardSrc = readSrc('../src/features/Challenges/CreateChallengeWizard.tsx');
+  check('P2-2 wizard snapshots metric/tier', wizardSrc.includes('canonicalFitnessSnapshot(activity.exerciseId)'));
+  check('P2-2 backend accepts snapshot fields',
+    backendSrc.includes('optionalString(activity.metric') && backendSrc.includes('optionalString(activity.tier1'));
+  check('P2-2 client input carries snapshot fields',
+    svcSrc.includes('metric?: string') && svcSrc.includes('tier1?: string'));
+
+  // P2-4 wiring: template/backdoor blocked in UI
+  check('P2-4 wizard derives unavailable rows', wizardSrc.includes('unavailableActivityNames'));
+  check('P2-4 launch blocked with replacement path',
+    wizardSrc.includes('Remove unavailable') && wizardSrc.includes('unavailableActivityNames.length > 0'));
+
+  // P2-5 wiring: admin lifecycle changes invalidate runtime catalogue queries
+  const exHooksSrc = readSrc('../src/hooks/useAdminExercises.ts');
+  const wellHooksSrc = readSrc('../src/hooks/useAdminWellnessActivities.ts');
+  check('P2-5 fitness invalidation covers runtime lists',
+    exHooksSrc.includes("invalidateQueries({ queryKey: ['exercises'] })"));
+  check('P2-5 wellness invalidation covers runtime lists',
+    wellHooksSrc.includes("invalidateQueries({ queryKey: ['wellness-activities'] })"));
+
+  // P2-6: list filtering never mutates canonical records; by-ID stays open
+  const exSvcSrc = readSrc('../src/services/exerciseService.ts');
+  const wellSvcSrc = readSrc('../src/services/wellnessActivityService.ts');
+  check('P2-6 fitness list path is read-only',
+    !exSvcSrc.includes('updateDoc') && !exSvcSrc.includes('setDoc') && !exSvcSrc.includes('deleteDoc'));
+  check('P2-6 wellness list path is read-only',
+    !wellSvcSrc.includes('updateDoc') && !wellSvcSrc.includes('setDoc') && !wellSvcSrc.includes('deleteDoc'));
+  const fnBody = (src: string, name: string) => {
+    const m = src.match(new RegExp(`async ${name}[\\s\\S]*?\\n  \\}`));
+    return m ? m[0] : '';
+  };
+  check('P2-6 by-ID fitness stays open for retired (history)',
+    fnBody(exSvcSrc, 'getExerciseById') !== '' && !fnBody(exSvcSrc, 'getExerciseById').includes('isPublishedLifecycle'));
+  check('P2-6 by-ID wellness stays open for retired (history)',
+    fnBody(wellSvcSrc, 'getActivityById') !== '' && !fnBody(wellSvcSrc, 'getActivityById').includes('isPublishedLifecycle'));
+  check('P2-6 backend version stays positive',
+    backendSrc.includes('knowledgeVersion') && backendSrc.includes('{ min: 1,'));
+  check('P2-6 wizard never forces snapshot version to 1',
+    !wizardSrc.includes('knowledgeVersion: 1'));
 }
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
