@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Screen } from '../../components/Layout';
 import { LearnMoreLink } from '../../components/LearnMoreLink';
@@ -100,6 +100,9 @@ function CreateChallengeWizard() {
     category: wellnessCategoryFilter,
     search: wellnessSearch,
   });
+  // Unfiltered catalogue for the P2-4 availability gate (the picker list
+  // above is category/search-scoped and must not cause false positives).
+  const { data: allWellnessActivities = [], isLoading: isAllWellnessLoading } = useWellnessActivities({});
 
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [coverImageUploadState, setCoverImageUploadState] = useState<'idle' | 'uploading'>('idle');
@@ -332,6 +335,42 @@ function CreateChallengeWizard() {
     () => new Map(wellnessActivities.map((activity) => [activity.id, activity])),
     [wellnessActivities],
   );
+  const allWellnessById = useMemo(
+    () => new Map(allWellnessActivities.map((activity) => [activity.id, activity])),
+    [allWellnessActivities],
+  );
+
+  // P2-4: rows referencing canonical IDs that are no longer published
+  // (retired/draft — e.g. via an older template, or retired mid-composition)
+  // must not launch. Derived from current lists on every render, never
+  // stored; lists still loading flag nothing (backend remains the backstop).
+  // Rows without canonical IDs (custom/manual) are always allowed.
+  const isRowUnavailable = useCallback((row: ActivityRow): boolean => {
+    if (row.exerciseId && !isExercisesLoading && !exerciseById.has(row.exerciseId)) return true;
+    if (!row.exerciseId && row.activityId && !isAllWellnessLoading && !allWellnessById.has(row.activityId)) return true;
+    return false;
+  }, [exerciseById, allWellnessById, isExercisesLoading, isAllWellnessLoading]);
+  const unavailableActivityNames = useMemo(
+    () => activities.filter(isRowUnavailable).map((row) => row.query || row.exerciseId || row.activityId || 'activity'),
+    [activities, isRowUnavailable],
+  );
+  const removeUnavailableActivities = () => {
+    setActivities((prev) => prev.filter((row) => !isRowUnavailable(row)));
+  };
+
+  // P2-2: minimum immutable canonical snapshot for a fitness selection —
+  // canonical ID + metric type + classification, kept separate from the
+  // challenge-specific target/unit configuration. Lets a historical challenge
+  // stay interpretable after renames, edits, or retirement.
+  const canonicalFitnessSnapshot = (exerciseId?: string) => {
+    const record = exerciseId ? exerciseById.get(exerciseId) : undefined;
+    if (!record) return {};
+    return {
+      metric: record.metric?.type ?? undefined,
+      tier1: record.tier_1 ?? undefined,
+      tier2: record.tier_2 ?? undefined,
+    };
+  };
   const challengeDurationDays = useMemo(
     () => calculateInclusiveDurationDays(startDate, endDate),
     [startDate, endDate],
@@ -491,6 +530,14 @@ function CreateChallengeWizard() {
 
   const handleLaunch = async () => {
     if (isLaunching || createChallenge.isPending) return;
+    // P2-4: never launch with retired/draft canonical references (UI gate
+    // mirrors the disabled Launch button; backend re-validates authoritatively).
+    if (unavailableActivityNames.length > 0) {
+      setStepError(
+        `Remove unavailable activities before launch: ${unavailableActivityNames.join(', ')}.`,
+      );
+      return;
+    }
     setIsLaunching(true);
 
     try {
@@ -605,6 +652,8 @@ function CreateChallengeWizard() {
               ? exerciseById.get(activity.exerciseId)?.knowledgeVersion
               : wellnessById.get(activity.activityId ?? '')?.knowledgeVersion,
           ),
+          // P2-2: immutable canonical snapshot (fitness classification/metric).
+          ...canonicalFitnessSnapshot(activity.exerciseId),
           exerciseName: activity.exerciseId ? (exerciseById.get(activity.exerciseId)?.name ?? activity.query) : activity.query,
           description: activity.description,
           category: activity.category,
@@ -1068,6 +1117,23 @@ function CreateChallengeWizard() {
           <p className="st-form-max mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] leading-[18px] text-red-700 font-semibold">{stepError}</p>
         )}
 
+        {unavailableActivityNames.length > 0 && (
+          <div className="st-form-max mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+            <p className="text-[13px] leading-[18px] text-red-700 font-semibold">
+              {unavailableActivityNames.length === 1 ? 'This activity is' : 'These activities are'} no longer
+              available for new challenges (retired or draft): {unavailableActivityNames.join(', ')}. Remove
+              {unavailableActivityNames.length === 1 ? ' it' : ' them'} or pick replacements to launch.
+            </p>
+            <button
+              type="button"
+              className="mt-2 rounded-lg border border-red-300 px-3 py-1.5 text-[13px] font-bold text-red-700"
+              onClick={removeUnavailableActivities}
+            >
+              Remove unavailable {unavailableActivityNames.length === 1 ? 'activity' : 'activities'}
+            </button>
+          </div>
+        )}
+
         {wizardStep < 4 ? (
           <button
             type="button"
@@ -1080,7 +1146,7 @@ function CreateChallengeWizard() {
           <button
             type="button"
             className="st-form-max st-btn-primary mt-6 disabled:opacity-60"
-            disabled={createChallenge.isPending || isLaunching || !activeGroupId}
+            disabled={createChallenge.isPending || isLaunching || !activeGroupId || unavailableActivityNames.length > 0}
             onClick={handleLaunch}
           >
             {(createChallenge.isPending || isLaunching)

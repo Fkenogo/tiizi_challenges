@@ -547,6 +547,101 @@ async function run() {
     },
   );
 
+  // P2-1 canonical gate: retired fitness record blocks creation
+  await assertRejectsWithCode(
+    'retired canonical exercise must block new challenge',
+    'invalid-argument',
+    async () => {
+      const db = new FakeDb();
+      seedActiveGroup(db);
+      db.store.set('groupMembers/group_1_creator_uid', {
+        groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+      });
+      db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'retired' });
+      return createChallengeWithCreatorMembershipCore(db as never, baseInput);
+    },
+  );
+
+  // P2-1 canonical gate: draft wellness record blocks creation
+  await assertRejectsWithCode(
+    'draft canonical wellness activity must block new challenge',
+    'invalid-argument',
+    async () => {
+      const db = new FakeDb();
+      seedActiveGroup(db);
+      db.store.set('groupMembers/group_1_creator_uid', {
+        groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+      });
+      db.store.set('wellnessActivities/sleep-8h', { name: 'Sleep 8h', lifecycleStatus: 'draft' });
+      return createChallengeWithCreatorMembershipCore(db as never, {
+        ...baseInput,
+        activities: [{ activityId: 'sleep-8h', exerciseName: 'Sleep 8h', targetValue: 8, unit: 'hours' }],
+      });
+    },
+  );
+
+  // P2-1 canonical gate: legacy record without lifecycle state counts as published
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    db.store.set('catalogExercises/pushups', { name: 'Push-Ups' });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, baseInput);
+    assert.equal(result.challenge.id, 'generated_1', 'legacy canonical record must allow creation');
+  }
+
+  // P2-1 canonical gate: published record allows creation
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'published' });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, baseInput);
+    assert.equal(result.challenge.id, 'generated_1', 'published canonical record must allow creation');
+  }
+
+  // P2-1 canonical gate: unknown IDs are custom snapshots (local fallback / manual)
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, {
+      ...baseInput,
+      activities: [{ exerciseId: 'custom-local-move', exerciseName: 'Custom Move', targetValue: 5, unit: 'reps' }],
+    });
+    const stored = db.store.get('challenges/generated_1') as { activities?: Array<Record<string, unknown>> };
+    assert.equal(result.challenge.id, 'generated_1', 'unknown IDs must allow creation as custom snapshots');
+    assert.equal(stored?.activities?.[0]?.exerciseId, 'custom-local-move', 'custom snapshot preserved as-is');
+  }
+
+  // P2-2/P1-4: snapshot fields survive backend sanitization
+  {
+    const db = new FakeDb();
+    seedActiveGroup(db);
+    db.store.set('groupMembers/group_1_creator_uid', {
+      groupId: 'group_1', userId: 'creator_uid', role: 'member', status: 'active',
+    });
+    db.store.set('catalogExercises/pushups', { name: 'Push-Ups', lifecycleStatus: 'published', knowledgeVersion: 3 });
+    const result = await createChallengeWithCreatorMembershipCore(db as never, {
+      ...baseInput,
+      activities: [{
+        exerciseId: 'pushups', exerciseName: 'Push-Ups', targetValue: 10, unit: 'reps',
+        knowledgeVersion: 3, metric: 'reps', tier1: 'Strength', tier2: 'Upper Body',
+      }],
+    });
+    const stored = db.store.get('challenges/generated_1') as { activities?: Array<Record<string, unknown>> };
+    assert.equal(stored?.activities?.[0]?.knowledgeVersion, 3, 'snapshot version must survive sanitization');
+    assert.equal(stored?.activities?.[0]?.metric, 'reps', 'snapshot metric must survive sanitization');
+    assert.equal(stored?.activities?.[0]?.tier1, 'Strength', 'snapshot tier1 must survive sanitization');
+    assert.equal(stored?.activities?.[0]?.tier2, 'Upper Body', 'snapshot tier2 must survive sanitization');
+  }
+
   console.log('challenge creation backend tests passed');
 }
 

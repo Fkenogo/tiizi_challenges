@@ -41,6 +41,9 @@ type ChallengeActivityInput = {
   dailyFrequency?: unknown;
   targetType?: unknown;
   knowledgeVersion?: unknown;
+  metric?: unknown;
+  tier1?: unknown;
+  tier2?: unknown;
 };
 
 export type CreateChallengeWithCreatorMembershipInput = {
@@ -223,6 +226,10 @@ function normalizeActivities(value: unknown) {
       // P1-4: canonical Knowledge version the activity was snapshotted from
       // (omitted for legacy snapshots that predate version tracking).
       knowledgeVersion: optionalNumber(activity.knowledgeVersion, `activities.${index}.knowledgeVersion`, { min: 1, max: 1000000 }),
+      // P2-2: immutable canonical snapshot (fitness classification/metric).
+      metric: optionalString(activity.metric, 100),
+      tier1: optionalString(activity.tier1, 200),
+      tier2: optionalString(activity.tier2, 200),
     });
   });
 }
@@ -262,6 +269,46 @@ function isActiveGroupMember(data: MembershipRecord | null) {
 
 function normalizeGroupVisibility(group: GroupRecord): 'public' | 'private' {
   return group.visibility === 'private' || group.isPrivate === true ? 'private' : 'public';
+}
+
+/**
+ * P2-1 authoritative canonical gate. Mirrors the client-side
+ * isBlockedCanonicalStatus rule (src/utils/knowledgeLifecycle.ts):
+ * only explicit draft/retired blocks; missing (legacy) counts as published.
+ */
+async function assertCanonicalActivitiesPublished(
+  db: CoreDb,
+  activities: Array<{ exerciseId?: string; activityId?: string }>,
+): Promise<void> {
+  for (const activity of activities) {
+    const exerciseId = String(activity.exerciseId ?? '').trim();
+    if (exerciseId) {
+      const snap = await db.collection('catalogExercises').doc(exerciseId).get();
+      const status = snap && snap.exists
+        ? (snap.data() as { lifecycleStatus?: unknown } | undefined)?.lifecycleStatus
+        : undefined;
+      if (typeof status === 'string' && status !== 'published') {
+        throw new HttpsError(
+          'invalid-argument',
+          `Activity "${exerciseId}" is no longer available for new challenges (retired or draft). Please replace it.`,
+        );
+      }
+      continue;
+    }
+    const activityId = String(activity.activityId ?? '').trim();
+    if (activityId) {
+      const snap = await db.collection('wellnessActivities').doc(activityId).get();
+      const status = snap && snap.exists
+        ? (snap.data() as { lifecycleStatus?: unknown } | undefined)?.lifecycleStatus
+        : undefined;
+      if (typeof status === 'string' && status !== 'published') {
+        throw new HttpsError(
+          'invalid-argument',
+          `Activity "${activityId}" is no longer available for new challenges (retired or draft). Please replace it.`,
+        );
+      }
+    }
+  }
 }
 
 async function getDocData<T extends Record<string, unknown>>(transaction: any, ref: any): Promise<T | null> {
@@ -348,6 +395,13 @@ export async function createChallengeWithCreatorMembershipCore(
       seenIds.add(id);
     }
   }
+
+  // Canonical Knowledge gate (P2-1, authoritative): entries referencing a
+  // canonical record must resolve to currently-published Knowledge. Unknown
+  // IDs are treated as custom snapshots (local fallback / manual entries).
+  // Reads happen here, before the transaction opens. Historical challenges
+  // are never re-validated, so retirement cannot break them.
+  await assertCanonicalActivitiesPublished(db, activities);
 
   // Collective: group cumulative target, when provided, must be positive.
   if (challengeType === 'collective' && groupCumulativeTarget !== undefined && groupCumulativeTarget <= 0) {

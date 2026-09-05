@@ -61,6 +61,41 @@ export function nextKnowledgeVersion(current?: unknown): number {
   return normalizeKnowledgeVersion(current) + 1;
 }
 
+/**
+ * True when a lifecycle value BLOCKS new Challenge creation (P2-1).
+ * Only explicit draft/retired block; missing (legacy) counts as published.
+ */
+export function isBlockedCanonicalStatus(status?: string | null): boolean {
+  return status != null && status !== 'published';
+}
+
+/**
+ * P2-5: catalogue source selection (pure, unit-tested). Firestore-free so
+ * guards can exercise it without emulator dependencies.
+ *
+ * - Authoritative read containing records → lifecycle applies to those
+ *   records. Zero published records is a VALID empty state returned as-is —
+ *   never masked by the local fallback.
+ * - No authoritative records (empty collection) or read failure (null) →
+ *   resilience fallback, itself lifecycle-filtered.
+ */
+export interface LifecycleRecord {
+  name: string;
+  lifecycleStatus?: string | null;
+}
+
+export function selectPublishedCatalog<T extends LifecycleRecord>(
+  authoritativeItems: T[] | null,
+  fallbackItems: T[],
+): T[] {
+  const byName = (a: T, b: T) => a.name.localeCompare(b.name);
+  const publishedOnly = (items: T[]) => items.filter((item) => isPublishedLifecycle(item.lifecycleStatus));
+  if (authoritativeItems !== null && authoritativeItems.length > 0) {
+    return publishedOnly(authoritativeItems).sort(byName);
+  }
+  return publishedOnly(fallbackItems).sort(byName);
+}
+
 /** Admin display label; legacy (missing) status shows as Published. */
 export function lifecycleLabel(status?: string | null): string {
   if (status === 'draft') return 'Draft';
