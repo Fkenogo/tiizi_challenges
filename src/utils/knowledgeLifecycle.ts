@@ -52,6 +52,15 @@ export function normalizeKnowledgeVersion(value?: unknown): number {
   return Math.floor(n);
 }
 
+/**
+ * Next version after a canonical content revision. Legacy records without a
+ * version normalize to 1 first, so their first revision becomes 2.
+ * Lifecycle-only transitions must NOT call this — meaning is unchanged there.
+ */
+export function nextKnowledgeVersion(current?: unknown): number {
+  return normalizeKnowledgeVersion(current) + 1;
+}
+
 /** Admin display label; legacy (missing) status shows as Published. */
 export function lifecycleLabel(status?: string | null): string {
   if (status === 'draft') return 'Draft';

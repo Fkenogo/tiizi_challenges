@@ -1,6 +1,7 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { WellnessActivity, WellnessCategory, WellnessDifficulty, WellnessActivityType } from '../types/wellnessActivity';
+import { KNOWLEDGE_VERSION_INITIAL, nextKnowledgeVersion } from '../utils/knowledgeLifecycle';
 
 export type AdminWellnessActivityInput = Omit<WellnessActivity, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -77,7 +78,14 @@ class AdminWellnessActivityService {
       candidate = `${idBase}-${suffix}`;
     }
 
-    const payload = { ...input, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const payload = {
+      ...input,
+      // CORR-1: every new canonical record starts at version 1 (any
+      // client-supplied version is ignored — versions are server-assigned).
+      knowledgeVersion: KNOWLEDGE_VERSION_INITIAL,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
     await setDoc(doc(db, this.collectionName, candidate), payload);
     return candidate;
   }
@@ -85,11 +93,22 @@ class AdminWellnessActivityService {
   async updateActivity(documentId: string, input: AdminWellnessActivityInput): Promise<void> {
     const errors = this.validateInput(input);
     if (errors.length > 0) throw new Error(errors.join(' '));
-    await updateDoc(doc(db, this.collectionName, documentId), { ...input, updatedAt: new Date().toISOString() });
-  }
-
-  async deleteActivity(documentId: string): Promise<void> {
-    await deleteDoc(doc(db, this.collectionName, documentId));
+    // CORR-1: a canonical content revision atomically advances the version
+    // (read-current → write-next in a transaction; no lost updates).
+    // Lifecycle-only changes go through setLifecycleStatus and never touch
+    // the version. Any client-supplied knowledgeVersion is ignored.
+    const ref = doc(db, this.collectionName, documentId);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const current = snap.exists()
+        ? (snap.data() as { knowledgeVersion?: unknown }).knowledgeVersion
+        : undefined;
+      tx.update(ref, {
+        ...input,
+        knowledgeVersion: nextKnowledgeVersion(current),
+        updatedAt: new Date().toISOString(),
+      });
+    });
   }
 
   /**

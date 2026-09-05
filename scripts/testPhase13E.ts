@@ -1073,7 +1073,7 @@ section('14. P1-1 Competitive Finishing Positions');
 section('15. P1-3/P1-4 Knowledge Lifecycle + Version');
 
 {
-  const { isPublishedLifecycle, normalizeKnowledgeVersion, lifecycleLabel, isLifecycleStatus } =
+  const { isPublishedLifecycle, normalizeKnowledgeVersion, lifecycleLabel, isLifecycleStatus, nextKnowledgeVersion } =
     await import('../src/utils/knowledgeLifecycle.js');
 
   // legacy records without status count as published (catalogue never disappears)
@@ -1116,6 +1116,49 @@ section('15. P1-3/P1-4 Knowledge Lifecycle + Version');
   // wiring: challenge snapshots preserve the knowledge version (P1-4)
   const wizardSrc = readSrc('../src/features/Challenges/CreateChallengeWizard.tsx');
   check('P1-4 wizard snapshots knowledgeVersion', wizardSrc.includes('knowledgeVersion'));
+
+  // ── CORR-1: versions must advance on canonical revision ───────────────────
+  // A: new Activities start at version 1 (server-assigned, client value ignored)
+  check('CORR-1 A fitness create stamps version 1',
+    adminExSrc.includes('knowledgeVersion: KNOWLEDGE_VERSION_INITIAL'));
+  const adminWellSrcFull = readSrc('../src/services/adminWellnessActivityService.ts');
+  check('CORR-1 A wellness create stamps version 1',
+    adminWellSrcFull.includes('knowledgeVersion: KNOWLEDGE_VERSION_INITIAL'));
+
+  // C/D: content updates advance monotonically via transaction (no lost updates)
+  check('CORR-1 C fitness update increments in transaction',
+    adminExSrc.includes('runTransaction') && adminExSrc.includes('nextKnowledgeVersion(current)'));
+  check('CORR-1 D wellness update increments in transaction',
+    adminWellSrcFull.includes('runTransaction') && adminWellSrcFull.includes('nextKnowledgeVersion(current)'));
+  check('CORR-1 next() helper: legacy→2, v1→2, v2→3',
+    nextKnowledgeVersion(undefined) === 2
+    && nextKnowledgeVersion(1) === 2 && nextKnowledgeVersion(2) === 3);
+
+  // E: lifecycle-only transitions leave the version untouched
+  const lifecycleBody = (src: string) => {
+    const m = src.match(/async setLifecycleStatus[\s\S]*?\n  \}/);
+    return m ? m[0] : '';
+  };
+  check('CORR-1 E fitness lifecycle transition keeps version',
+    lifecycleBody(adminExSrc) !== '' && !lifecycleBody(adminExSrc).includes('knowledgeVersion'));
+  check('CORR-1 E wellness lifecycle transition keeps version',
+    lifecycleBody(adminWellSrcFull) !== '' && !lifecycleBody(adminWellSrcFull).includes('knowledgeVersion'));
+
+  // F: snapshot retains the SELECTED canonical version (never forced to 1)
+  check('CORR-1 F snapshot keeps selected fitness version',
+    wizardSrc.includes('exerciseById.get(activity.exerciseId)?.knowledgeVersion'));
+  check('CORR-1 F snapshot keeps selected wellness version',
+    wizardSrc.includes("wellnessById.get(activity.activityId ?? '')?.knowledgeVersion"));
+
+  // ── CORR-2: no destructive canonical delete API remains ───────────────────
+  const exHooksSrc = readSrc('../src/hooks/useAdminExercises.ts');
+  const wellHooksSrc = readSrc('../src/hooks/useAdminWellnessActivities.ts');
+  check('CORR-2 G fitness: no deleteExercise in service',
+    !adminExSrc.includes('deleteExercise') && !adminExSrc.includes('deleteDoc'));
+  check('CORR-2 G fitness: no delete hook', !exHooksSrc.includes('useDeleteAdminExercise'));
+  check('CORR-2 H wellness: no deleteActivity in service',
+    !adminWellSrcFull.includes('deleteActivity') && !adminWellSrcFull.includes('deleteDoc'));
+  check('CORR-2 H wellness: no delete hook', !wellHooksSrc.includes('useDeleteAdminWellnessActivity'));
 }
 
 // ─── Summary ──────────────────────────────────────────────────────────────────

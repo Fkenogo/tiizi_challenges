@@ -1,6 +1,7 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { CatalogExercise, Challenge } from '../types';
+import { KNOWLEDGE_VERSION_INITIAL, nextKnowledgeVersion } from '../utils/knowledgeLifecycle';
 
 export type AdminExerciseInput = Omit<CatalogExercise, 'id'>;
 
@@ -87,18 +88,34 @@ class AdminExerciseService {
       candidate = `${idBase}-${suffix}`;
     }
 
-    await setDoc(doc(db, this.collectionName, candidate), { ...input, id: candidate });
+    await setDoc(doc(db, this.collectionName, candidate), {
+      ...input,
+      // CORR-1: every new canonical record starts at version 1 (any
+      // client-supplied version is ignored — versions are server-assigned).
+      knowledgeVersion: KNOWLEDGE_VERSION_INITIAL,
+      id: candidate,
+    });
     return candidate;
   }
 
   async updateExercise(documentId: string, input: AdminExerciseInput): Promise<void> {
     const errors = this.validateInput(input);
     if (errors.length > 0) throw new Error(errors.join(' '));
-    await updateDoc(doc(db, this.collectionName, documentId), { ...input });
-  }
-
-  async deleteExercise(documentId: string): Promise<void> {
-    await deleteDoc(doc(db, this.collectionName, documentId));
+    // CORR-1: a canonical content revision atomically advances the version
+    // (read-current → write-next in a transaction; no lost updates).
+    // Lifecycle-only changes go through setLifecycleStatus and never touch
+    // the version. Any client-supplied knowledgeVersion is ignored.
+    const ref = doc(db, this.collectionName, documentId);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const current = snap.exists()
+        ? (snap.data() as { knowledgeVersion?: unknown }).knowledgeVersion
+        : undefined;
+      tx.update(ref, {
+        ...input,
+        knowledgeVersion: nextKnowledgeVersion(current),
+      });
+    });
   }
 
   /**
