@@ -1,0 +1,16 @@
+# Local development only. Production architecture must not depend on Docker.
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tiizi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tiizi}
+      POSTGRES_DB: ${POSTGRES_DB:-tiizi}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - tiizi-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  tiizi-postgres-data:
