@@ -1772,12 +1772,12 @@ in Part 3.
 
 | Disposition | Count | Percentage |
 |-------------|-------|------------|
-| KEEP (unchanged) | 179 | 86.9% |
+| KEEP (unchanged) | 180 | 87.4% |
 | KEEP (updated wording) | 2 | 1.0% |
-| ALIGNED WORDING (substantive sections) | 11 | 5.3% |
-| SUPERSEDED | 9 | 4.4% |
+| ALIGNED WORDING | 14 | 6.8% |
+| SUPERSEDED | 8 | 3.9% |
 | DOWNSTREAM | 2 | 1.0% |
-| **Total original (FR-V2-001 to FR-V2-206)** | **206** *(note: includes 3 updated KEEPs in §21/§24)* | **100%** |
+| **Total original (FR-V2-001 to FR-V2-206)** | **206** | **100%** |
 
 | New Requirements | Count |
 |-----------------|-------|
@@ -1801,13 +1801,13 @@ in Part 3.
 | §15 | Evidence and Truth Chain | 9 | 9 | 0 | 0 | 0 | 0 |
 | §16 | Shared Challenge Progress | 4 | 4 | 0 | 0 | 0 | 0 |
 | §17 | Collective Challenge Requirements | 9 | 6 | 3 | 0 | 0 | 0 |
-| §18 | Competitive Challenge Requirements | 12+1 | 9 | 0 | 2 | 0 | 1 |
-| §19 | Streak Challenge Requirements | 16+3 | 13 | 2 | 3 | 0 | 3 |
+| §18 | Competitive Challenge Requirements | 12+1 | 10 | 0 | 2 | 0 | 1 |
+| §19 | Streak Challenge Requirements | 16+3 | 11 | 2 | 3 | 0 | 3 |
 | §20 | Challenge Completion, Finalization and Reuse | 8 | 8 | 0 | 0 | 0 | 0 |
-| §21 | Home, Feed, and Community Experience | 7 | 3 | 0 | 3 | 0 | 0 |
+| §21 | Home, Feed, and Community Experience | 7 | 4 | 0 | 3 | 0 | 0 |
 | §22 | Sharing | 3+1 | 3 | 0 | 0 | 0 | 1 |
 | §23 | Notifications | 4 | 4 | 0 | 0 | 0 | 0 |
-| §24 | Recognition | 6 | 5 | 0 | 0 | 0 | 0 |
+| §24 | Recognition | 6 | 6 | 0 | 0 | 0 | 0 |
 | §25 | Future Rewards | 3 | 3 | 0 | 0 | 0 | 0 |
 | §26 | Free Platform Principle | 4 | 4 | 0 | 0 | 0 | 0 |
 | §27 | Support Tiizi | 8 | 8 | 0 | 0 | 0 | 0 |

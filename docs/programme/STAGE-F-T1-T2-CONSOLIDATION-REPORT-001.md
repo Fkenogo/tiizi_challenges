@@ -132,13 +132,12 @@ All preserved deferrals confirmed present in both T1 and T2:
 | Original FR-V2 IDs (FR-V2-001 to FR-V2-206) | 206 |
 | New FR IDs added | 6 |
 | Total unique FR IDs in T2 | 212 |
-| KEEP | 163 |
-| ALIGNED WORDING | 18 |
-| CONSOLIDATED | 0 |
-| SUPERSEDED (with replacement pointer) | 8 |
+| KEEP (unchanged) | 180 |
+| KEEP (updated wording) | 2 |
+| ALIGNED WORDING | 14 |
+| SUPERSEDED | 8 |
 | DOWNSTREAM | 2 |
-| PRESERVED DEFERRAL | 9 |
-| NEW (after FR-V2-206) | 6 |
+| NEW (FR-V2-207 to FR-V2-212) | 6 |
 | **Total accounted for** | **206 + 6 = 212** |
 | Missing FR IDs | 0 |
 | Duplicate active FR IDs | 0 |
