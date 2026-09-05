@@ -51,8 +51,8 @@ const ENGINE = {
     headline: 'Show up every day.',
     explanation: 'Consistency is the skill. Log every required day to keep your streak alive — miss one and the clock resets.',
     completionModel: 'Log every required consecutive day',
-    leaderboardModel: 'Ranked by current streak — tiebreaker: longest streak',
-    winnerRule: 'Longest streak wins',
+    leaderboardModel: 'Personal progress — no ranking',
+    winnerRule: 'Beat your own best streak',
   },
 } satisfies Record<EngineType, {
   icon: React.ReactNode;

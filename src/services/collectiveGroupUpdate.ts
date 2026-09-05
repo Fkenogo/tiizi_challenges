@@ -18,8 +18,7 @@ export { computeGroupTransition };
  * conflict; the first writer to commit completion wins; subsequent retries read
  * status='completed' and exit without mutation.
  *
- * groupCurrentTotal is clamped to groupCumulativeTarget — the stored value
- * never exceeds the configured target.
+ * groupCurrentTotal preserves overshoot — the stored value may exceed the target (V2).
  *
  * @param challengeId         - Challenge document ID
  * @param delta               - Raw logged value to add to the group pool
@@ -31,7 +30,7 @@ export async function atomicCollectiveGroupUpdate(
   triggeringMemberRef: DocumentReference,
 ): Promise<{ wasAlreadyCompleted: boolean; nowCompleted: boolean }> {
   const challengeRef = doc(db, 'challenges', challengeId);
-  let result: GroupTransitionResult = { isAlreadyCompleted: false, clampedTotal: 0, shouldComplete: false };
+  let result: GroupTransitionResult = { isAlreadyCompleted: false, actualTotal: 0, shouldComplete: false };
 
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(challengeRef);
@@ -42,7 +41,7 @@ export async function atomicCollectiveGroupUpdate(
     // Already completed — exit without any writes so the transaction is a no-op.
     if (result.isAlreadyCompleted) return;
 
-    const writePayload: Record<string, unknown> = { groupCurrentTotal: result.clampedTotal };
+    const writePayload: Record<string, unknown> = { groupCurrentTotal: result.actualTotal };
     if (result.shouldComplete) {
       writePayload.status = 'completed';
       writePayload.completedAt = Timestamp.now();

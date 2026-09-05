@@ -162,7 +162,7 @@ function LogWellnessActivityScreen() {
                   {groupCurrentTotal.toLocaleString()} / {groupCumulativeTarget.toLocaleString()} {unit} · {groupPct}%
                 </p>
                 <div className="w-full h-1.5 rounded-full bg-primary/20 overflow-hidden">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${groupPct}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(groupPct, 100)}%` }} />
                 </div>
                 <p className="text-[12px] text-primary/70">Every contribution moves the team closer.</p>
                 {_rp.userContributionTotal > 0 && (

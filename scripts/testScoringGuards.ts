@@ -2962,22 +2962,19 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
   assert.equal(compSorted[1].completionRate, 80, '13B-1C Competitive: second place must have completionRate 80');
   assert.equal(compSorted[2].completionRate, 60, '13B-1C Competitive: third place must have completionRate 60');
 
-  // Streak: sort by currentStreak DESC → [10, 3, 1]
+  // (P0-2: no Streak leaderboard) V2 streak rows are returned unsorted —
+  // streak is personal progress only, never ranked. Input order preserved.
   const streakSorted = sortFn(members, 'v2', 'streak');
-  assert.equal(streakSorted[0].currentStreak, 10, '13B-1C Streak: first place must have highest currentStreak (10)');
-  assert.equal(streakSorted[1].currentStreak, 3, '13B-1C Streak: second place must have currentStreak 3');
-  assert.equal(streakSorted[2].currentStreak, 1, '13B-1C Streak: third place must have currentStreak 1');
+  assert.deepStrictEqual(streakSorted, members, '13B-1C Streak: v2 streak rows returned unsorted (no ranking — personal progress only)');
 
-  // Streak tiebreaker: equal currentStreak → longestStreak DESC
+  // Streak "tiebreaker" case: equal currentStreak → still unsorted (no ranking at all)
   const streakTieMembers = [
     { totalPoints: 100, completionRate: 50, currentStreak: 5, longestStreak: 5, cumulativeLoggedValue: 0 },
     { totalPoints: 200, completionRate: 60, currentStreak: 5, longestStreak: 12, cumulativeLoggedValue: 0 },
     { totalPoints: 300, completionRate: 70, currentStreak: 5, longestStreak: 8, cumulativeLoggedValue: 0 },
   ];
   const streakTieSorted = sortFn(streakTieMembers, 'v2', 'streak');
-  assert.equal(streakTieSorted[0].longestStreak, 12, '13B-1C Streak tiebreaker: longest streak (12) must win when currentStreak tied');
-  assert.equal(streakTieSorted[1].longestStreak, 8, '13B-1C Streak tiebreaker: longestStreak 8 second');
-  assert.equal(streakTieSorted[2].longestStreak, 5, '13B-1C Streak tiebreaker: longestStreak 5 third');
+  assert.deepStrictEqual(streakTieSorted, streakTieMembers, '13B-1C Streak: tied streak rows also returned unsorted (no longestStreak tiebreaker ranking)');
 
   // Collective: sort by cumulativeLoggedValue DESC → [500, 200, 100]
   const collectiveSorted = sortFn(members, 'v2', 'collective');
@@ -3157,15 +3154,15 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     { status: 'active', groupCurrentTotal: 980, groupCumulativeTarget: 1000, autoCompleteOnGroupTarget: true },
     20,
   );
-  assert.equal(atTarget.clampedTotal, 1000, '13C-2: clampedTotal must equal target when newTotal == target');
+  assert.equal(atTarget.actualTotal, 1000, '13C-2: actualTotal must equal target when newTotal == target');
   assert.equal(atTarget.shouldComplete, true, '13C-2: shouldComplete must be true when newTotal == target');
 
-  // Overshoot → clamped, not stored as 1020
+  // Overshoot → preserved, stored as 1020 (V2: no clamping)
   const overshoot = computeGroupTransition(
     { status: 'active', groupCurrentTotal: 990, groupCumulativeTarget: 1000, autoCompleteOnGroupTarget: true },
     30,
   );
-  assert.equal(overshoot.clampedTotal, 1000, '13C-2: overshoot must clamp to target, not raw newTotal');
+  assert.equal(overshoot.actualTotal, 1020, '13C-2: overshoot preserved as actual total (V2: no clamping)');
   assert.equal(overshoot.shouldComplete, true, '13C-2: overshoot must still trigger completion');
 
   // Under target → not clamped, not completed
@@ -3173,7 +3170,7 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     { status: 'active', groupCurrentTotal: 500, groupCumulativeTarget: 1000, autoCompleteOnGroupTarget: true },
     200,
   );
-  assert.equal(underTarget.clampedTotal, 700, '13C-2: under-target must store exact newTotal (no clamping needed)');
+  assert.equal(underTarget.actualTotal, 700, '13C-2: under-target must store exact newTotal (no clamping needed)');
   assert.equal(underTarget.shouldComplete, false, '13C-2: under-target must not complete');
 
   // autoCompleteOnGroupTarget=false → total updates but never completes
@@ -3182,7 +3179,7 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     50,
   );
   assert.equal(noAutoComplete.shouldComplete, false, '13C-2: autoComplete=false must never trigger completion');
-  assert.equal(noAutoComplete.clampedTotal, 1000, '13C-2: clamping still applies even when autoComplete=false');
+  assert.equal(noAutoComplete.actualTotal, 1040, '13C-2: total updates even when autoComplete=false (V2: no clamping)');
 
   console.log('  running 13C-3: already-completed challenges exit without mutation');
   const alreadyCompleted = computeGroupTransition(
@@ -3191,7 +3188,7 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
   );
   assert.equal(alreadyCompleted.isAlreadyCompleted, true, '13C-3: isAlreadyCompleted must be true for completed challenges');
   assert.equal(alreadyCompleted.shouldComplete, false, '13C-3: shouldComplete must be false when already completed');
-  assert.equal(alreadyCompleted.clampedTotal, 1000, '13C-3: clampedTotal must be unchanged for already-completed challenges');
+  assert.equal(alreadyCompleted.actualTotal, 1000, '13C-3: actualTotal must be unchanged for already-completed challenges');
 
   console.log('  running 13C-4: completion transition fires exactly once');
   // First log crosses threshold → shouldComplete=true
@@ -3221,7 +3218,7 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     20,
   );
   assert.equal(winnerAttempt1.shouldComplete, false, '13C-5: 970+20=990 must not complete');
-  assert.equal(winnerAttempt1.clampedTotal, 990, '13C-5: winner writes 990');
+  assert.equal(winnerAttempt1.actualTotal, 990, '13C-5: winner writes 990');
 
   // Loser (retry after winner commits 990): reads 990, adds 20 → 1010 >= 1000 → completes.
   const loserRetry = computeGroupTransition(
@@ -3229,7 +3226,7 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     20,
   );
   assert.equal(loserRetry.shouldComplete, true, '13C-5: retry sees 990+20=1010 >= 1000 → must complete');
-  assert.equal(loserRetry.clampedTotal, 1000, '13C-5: retry result clamps to target');
+  assert.equal(loserRetry.actualTotal, 1010, '13C-5: retry overshoots to 1010 (V2: no clamping)');
 
   // Any subsequent log after loser completes → already done, no third completion.
   const thirdConcurrent = computeGroupTransition(
@@ -4808,7 +4805,8 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     '18I-2C-S3: ChallengeLeaderboardScreen must not contain any inline .sort() call — ranking must go through sortLeaderboardRows',
   );
 
-  // 18I-2C-S4: behavioral — sortLeaderboardRows places streak leader first for v2 streak
+  // 18I-2C-S4 (P0-2: no Streak leaderboard): behavioral — sortLeaderboardRows
+  // returns v2 streak rows unsorted (input order preserved, no ranking).
   {
     const { sortLeaderboardRows: sort } = await import('../src/utils/leaderboardSort.js');
     const rows = [
@@ -4817,8 +4815,7 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
       { totalPoints: 300, completionRate: 0.3, currentStreak: 1, longestStreak: 2, cumulativeLoggedValue: 50 },
     ];
     const sorted = sort(rows, 'v2', 'streak');
-    assert.strictEqual(sorted[0].currentStreak, 10, '18I-2C-S4a: v2 streak sort — highest currentStreak first');
-    assert.strictEqual(sorted[2].currentStreak, 1, '18I-2C-S4b: v2 streak sort — lowest currentStreak last');
+    assert.deepStrictEqual(sorted, rows, '18I-2C-S4: v2 streak rows returned unsorted (no ranking — personal progress only)');
   }
 
   // 18I-2C-S5: behavioral — sortLeaderboardRows places highest completionRate first for v2 competitive
@@ -5663,10 +5660,10 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     100,
   );
   assert.ok(
-    Number.isFinite(resultUndefined.clampedTotal),
-    `18I-5F-1: computeGroupTransition must produce a finite clampedTotal when groupCurrentTotal is undefined — got ${resultUndefined.clampedTotal}`,
+    Number.isFinite(resultUndefined.actualTotal),
+    `18I-5F-1: computeGroupTransition must produce a finite actualTotal when groupCurrentTotal is undefined — got ${resultUndefined.actualTotal}`,
   );
-  assert.equal(resultUndefined.clampedTotal, 100, '18I-5F-1b: undefined groupCurrentTotal treated as 0; 0+100=100');
+  assert.equal(resultUndefined.actualTotal, 100, '18I-5F-1b: undefined groupCurrentTotal treated as 0; 0+100=100');
 
   // 18I-5F-2: computeGroupTransition must not produce NaN when groupCurrentTotal is NaN (already stored)
   const resultNaN = computeGroupTransition(
@@ -5674,10 +5671,10 @@ import { chunkArray, MAX_WRITES_PER_BATCH } from '../src/services/collectiveComp
     100,
   );
   assert.ok(
-    Number.isFinite(resultNaN.clampedTotal),
-    `18I-5F-2: computeGroupTransition must produce a finite clampedTotal when groupCurrentTotal is NaN — got ${resultNaN.clampedTotal}`,
+    Number.isFinite(resultNaN.actualTotal),
+    `18I-5F-2: computeGroupTransition must produce a finite actualTotal when groupCurrentTotal is NaN — got ${resultNaN.actualTotal}`,
   );
-  assert.equal(resultNaN.clampedTotal, 100, '18I-5F-2b: NaN groupCurrentTotal treated as 0; 0+100=100');
+  assert.equal(resultNaN.actualTotal, 100, '18I-5F-2b: NaN groupCurrentTotal treated as 0; 0+100=100');
 
   // 18I-5F-3: safeNum must return 0 for undefined, null, and NaN
   assert.equal(safeNum(undefined), 0, '18I-5F-3a: safeNum(undefined) must be 0');

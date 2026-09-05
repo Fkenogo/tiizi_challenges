@@ -202,20 +202,28 @@ function ChallengeLeaderboardScreen() {
     }
 
     if (isV2 && challengeType === 'streak') {
+      const startDate = challenge?.startDate ? new Date(challenge.startDate) : null;
+      const endDate = challenge?.endDate ? new Date(challenge.endDate) : null;
+      const totalDays = startDate && endDate
+        ? Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+        : 0;
+      const daysCompleted = myEntry.activitiesCompleted ?? 0;
       return (
         <section className="st-form-max mt-4 rounded-2xl bg-primary text-white px-5 py-4">
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
-              <p className="text-[10px] leading-[12px] tracking-[0.1em] uppercase font-black text-white/90">Rank</p>
-              <p className="mt-2 text-[20px] leading-[22px] font-black">#{myEntry.rank}</p>
+              <p className="text-[10px] leading-[12px] tracking-[0.1em] uppercase font-black text-white/90">Days Completed</p>
+              <p className="mt-2 text-[20px] leading-[22px] font-black">
+                {daysCompleted}{totalDays > 0 ? <span className="text-[13px] font-bold text-white/70">/{totalDays}</span> : null}
+              </p>
             </div>
             <div className="border-l border-white/30">
-              <p className="text-[10px] leading-[12px] tracking-[0.1em] uppercase font-black text-white/90">Streak</p>
-              <p className="mt-2 text-[20px] leading-[22px] font-black">{myEntry.currentStreak}🔥</p>
-            </div>
-            <div className="border-l border-white/30">
-              <p className="text-[10px] leading-[12px] tracking-[0.1em] uppercase font-black text-white/90">Best</p>
+              <p className="text-[10px] leading-[12px] tracking-[0.1em] uppercase font-black text-white/90">Best Streak</p>
               <p className="mt-2 text-[20px] leading-[22px] font-black">{myEntry.longestStreak}</p>
+            </div>
+            <div className="border-l border-white/30">
+              <p className="text-[10px] leading-[12px] tracking-[0.1em] uppercase font-black text-white/90">Current Streak</p>
+              <p className="mt-2 text-[20px] leading-[22px] font-black">{myEntry.currentStreak}🔥</p>
             </div>
           </div>
         </section>
@@ -334,7 +342,7 @@ function ChallengeLeaderboardScreen() {
             <div className="h-5 rounded-full bg-white border border-primary/20 p-[3px]">
               <div
                 className="h-full rounded-full bg-primary transition-all duration-700"
-                style={{ width: `${groupPct}%` }}
+                style={{ width: `${Math.min(groupPct, 100)}%` }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between">
@@ -356,8 +364,8 @@ function ChallengeLeaderboardScreen() {
           </section>
         )}
 
-        {/* Podium */}
-        {podium.length > 0 && (
+        {/* Podium — not shown for streak challenges (personal results only) */}
+        {podium.length > 0 && !(isV2 && challengeType === 'streak') && (
           <section className="st-form-max mt-6">
             <div className="flex items-end justify-center gap-4 text-center">
               {podium.map((entry, index) => {
@@ -379,7 +387,8 @@ function ChallengeLeaderboardScreen() {
           </section>
         )}
 
-        {/* Rankings list */}
+        {/* Rankings list — not shown for streak challenges (personal results only) */}
+        {!(isV2 && challengeType === 'streak') && (
         <section className="st-form-max mt-6">
           <div className="flex items-center gap-2 mb-1">
             {engineIcon}
@@ -434,6 +443,7 @@ function ChallengeLeaderboardScreen() {
             </div>
           )}
         </section>
+        )}
       </div>
 
       <BottomNav active="challenges" />

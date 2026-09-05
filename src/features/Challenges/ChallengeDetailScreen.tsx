@@ -479,7 +479,7 @@ function ChallengeDetailScreen() {
                       </div>
                       <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                         <div className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${rp.groupPercent}%` }} />
+                          style={{ width: `${Math.min(rp.groupPercent, 100)}%` }} />
                       </div>
                     </div>
                     {membership && rp.userContributionTotal > 0 && (
@@ -858,7 +858,39 @@ function ChallengeDetailScreen() {
           );
         })()}
 
-        {/* ── Leaderboard snapshot ──────────────────────────────────────── */}
+        {/* ── Leaderboard snapshot (non-streak) / Personal stats (streak) ── */}
+        {isV2 && resolvedChallenge.challengeType === 'streak' ? (
+          <div className="mx-4 mt-3">
+            <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+              <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                <Flame size={14} className="text-primary" />
+                <p className="st-section-label">My Streak Progress</p>
+              </div>
+              {membership ? (
+                <div className="px-4 pb-4">
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="rounded-xl bg-slate-50 px-3 py-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider leading-tight">Days Completed</p>
+                      <p className="mt-1 text-[20px] leading-[24px] font-black text-slate-900">
+                        {membership.activitiesCompleted ?? 0}{summary?.durationDays ? <span className="text-[13px] font-semibold text-slate-400">/{summary.durationDays}</span> : null}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 px-3 py-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider leading-tight">Best Streak</p>
+                      <p className="mt-1 text-[20px] leading-[24px] font-black text-slate-700">{membership.longestStreak ?? 0}</p>
+                    </div>
+                    <div className="rounded-xl bg-primary/5 px-3 py-3">
+                      <p className="text-[10px] uppercase font-bold text-primary tracking-wider leading-tight">Current Streak</p>
+                      <p className="mt-1 text-[20px] leading-[24px] font-black text-primary">{membership.currentStreak ?? 0}🔥</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="px-4 pb-4 text-[13px] text-slate-400">Join the challenge to track your streak.</p>
+              )}
+            </div>
+          </div>
+        ) : (
         <div className="mx-4 mt-3">
           <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-4 pt-4 pb-3">
@@ -904,6 +936,7 @@ function ChallengeDetailScreen() {
             )}
           </div>
         </div>
+        )}
 
         {/* ── CTA area ─────────────────────────────────────────────────── */}
         <div className="mx-4 mt-5 space-y-2">

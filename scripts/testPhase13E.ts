@@ -216,7 +216,8 @@ const sTZ2 = streak.computeUpdate(
 );
 check('Streak: timezone boundary — same date string does not advance streak', sTZ2.membershipUpdate.currentStreak === 1);
 
-// Leaderboard sort for streak
+// (P0-2: no Streak leaderboard) streak rows are never ranked —
+// personal progress only. sortLeaderboardRows must preserve input order.
 const streakRows = [
   { totalPoints: 50, completionRate: 30, currentStreak: 5, longestStreak: 5, cumulativeLoggedValue: 0 },
   { totalPoints: 80, completionRate: 60, currentStreak: 3, longestStreak: 7, cumulativeLoggedValue: 0 },
@@ -224,11 +225,10 @@ const streakRows = [
   { totalPoints: 90, completionRate: 50, currentStreak: 5, longestStreak: 5, cumulativeLoggedValue: 0 },
 ];
 const streakSorted = sortLeaderboardRows(streakRows, 'v2', 'streak');
-check('Streak leaderboard: primary sort by currentStreak DESC', streakSorted[0].currentStreak === 5);
-check('Streak leaderboard: tie on currentStreak → secondary sort by longestStreak DESC',
-  streakSorted[0].longestStreak >= streakSorted[1].longestStreak || streakSorted[0].currentStreak > streakSorted[1].currentStreak);
-// All 3 rows with streak=5: longest 8 > 5 > 5; among streak=5+longest=5 tiebreak by totalPoints
-check('Streak leaderboard: streak=3 row is last (lowest currentStreak)', streakSorted[streakSorted.length - 1].currentStreak === 3);
+check('Streak leaderboard removed: v2 streak rows returned in input order (no ranking)',
+  streakSorted.length === 4 &&
+  streakSorted[0].totalPoints === 50 && streakSorted[1].totalPoints === 80 &&
+  streakSorted[2].totalPoints === 60 && streakSorted[3].totalPoints === 90);
 
 // ─── 3. Competitive Engine ───────────────────────────────────────────────────
 
@@ -355,7 +355,7 @@ const trComplete = computeGroupTransition(
   50,
 );
 check('Collective: transaction confirms completion (960+50=1010≥1000)', trComplete.shouldComplete);
-check('Collective: transaction clamps total to 1000', trComplete.clampedTotal === 1000);
+check('Collective: transaction preserves overshoot (V2: actualTotal=1010)', trComplete.actualTotal === 1010);
 
 // Idempotency — already-completed challenge
 const trIdem = computeGroupTransition(
@@ -363,7 +363,7 @@ const trIdem = computeGroupTransition(
   50,
 );
 check('Collective: completed challenge transaction is a no-op (isAlreadyCompleted=true)', trIdem.isAlreadyCompleted);
-check('Collective: completed challenge clampedTotal unchanged', trIdem.clampedTotal === 1000);
+check('Collective: completed challenge actualTotal unchanged', trIdem.actualTotal === 1000);
 check('Collective: completed challenge shouldComplete=false', !trIdem.shouldComplete);
 
 // autoCompleteOnGroupTarget=false — pool updates but never completes
@@ -416,7 +416,7 @@ function simulateConcurrentLogs(opts: {
       opts.delta,
     );
     if (result.isAlreadyCompleted) continue;
-    currentTotal = result.clampedTotal;
+    currentTotal = result.actualTotal;
     if (result.shouldComplete) {
       status = 'completed';
       completionCount++;
@@ -430,7 +430,7 @@ function simulateConcurrentLogs(opts: {
 // Simulated as sequential transaction retries (the losing user sees 990 and crosses 1000)
 const sim2 = simulateConcurrentLogs({ numUsers: 2, delta: 20, initialTotal: 970, target: 1000 });
 check('Concurrency 2 users: exactly one completion', sim2.completionCount === 1);
-check('Concurrency 2 users: finalTotal clamped to 1000', sim2.finalTotal === 1000);
+check('Concurrency 2 users: finalTotal=1010 (V2: overshoot preserved)', sim2.finalTotal === 1010);
 check('Concurrency 2 users: completion fired by user 1 (not user 0 at 990)', sim2.completedByUser === 1);
 
 // 5 users — each logs 100, target=1000, starting at 0 (crosses on 10th, but only 5 users)
@@ -442,7 +442,7 @@ check('Concurrency 5 users: finalTotal=500', sim5.finalTotal === 500);
 const sim5b = simulateConcurrentLogs({ numUsers: 5, delta: 200, initialTotal: 0, target: 500 });
 check('Concurrency 5 users (200 each, target=500): exactly one completion', sim5b.completionCount === 1);
 check('Concurrency 5 users: no further mutations after completion', sim5b.completionCount === 1); // already verified
-check('Concurrency 5 users: finalTotal=500 (clamped)', sim5b.finalTotal === 500);
+check('Concurrency 5 users: finalTotal=600 (V2: overshoot preserved)', sim5b.finalTotal === 600);
 check('Concurrency 5 users: completion fires on 3rd user (idx 2)', sim5b.completedByUser === 2);
 
 // 25 users — each logs 40, target=1000 (crosses at user 25 exactly)
@@ -655,7 +655,7 @@ const clampResult = computeGroupTransition(
   { status: 'active', groupCurrentTotal: 999, groupCumulativeTarget: 1000, autoCompleteOnGroupTarget: true },
   10_000,
 );
-check('Edge: massive overshoot clamped to target', clampResult.clampedTotal === 1000);
+check('Edge: massive overshoot preserved (V2: actualTotal=10999)', clampResult.actualTotal === 10999);
 check('Edge: massive overshoot still triggers completion', clampResult.shouldComplete);
 
 // Competitive: log to activity not in context (no crash, just updates cumulativeValues)
@@ -856,6 +856,98 @@ const perfReport = `
 
 console.log(perfReport);
 check('Performance: collective logging uses exactly 1 transaction (not batch for challenge doc)', collGroupSrc.includes('runTransaction') && !collGroupSrc.includes('writeBatch'));
+
+// ─── 12. P0-1 Streak ALL-Daily-Requirements ───────────────────────────────────
+
+section('12. P0-1 Streak ALL-Daily-Requirements');
+
+{
+  const multiCtx = context({
+    activities: [
+      { activityId: 'a', targetValue: 10, unit: 'reps' },
+      { activityId: 'b', targetValue: 20, unit: 'reps' },
+    ],
+    requiredConsecutiveDays: 3,
+  });
+  const apply = (state: MembershipSnapshot, date: string, activityId: string): MembershipSnapshot => {
+    const r = streak.computeUpdate(multiCtx, state, logEvent(date, 10, 10, activityId));
+    return { ...state, ...r.membershipUpdate };
+  };
+  const hasAll = (s: MembershipSnapshot) =>
+    ['a', 'b'].every((id) => (s.dailyCompletedActivities ?? []).includes(id));
+
+  // 12.1 single requirement success (single-activity challenge completes the day)
+  const single1 = streak.computeUpdate(context(), membership(), logEvent('2024-02-01'));
+  check('P0-1 single requirement: first log starts streak at 1', single1.membershipUpdate.currentStreak === 1);
+
+  // 12.2 multi-requirement partial completion does NOT advance
+  let m = membership();
+  m = apply(m, '2024-02-01', 'a');
+  check('P0-1 partial: 1 of 2 requirements does not advance streak', m.currentStreak === 0);
+  check('P0-1 partial: lastLogDate stays unset (no completed day yet)', m.lastLogDate === undefined);
+  // excess quantity on one requirement cannot compensate for the missing one
+  m = apply(m, '2024-02-01', 'a');
+  check('P0-1 partial: repeated log on same requirement still does not advance', m.currentStreak === 0);
+
+  // 12.3 all requirements completed advances the day exactly once
+  m = apply(m, '2024-02-01', 'b');
+  check('P0-1 all-met: completing every requirement advances streak to 1', m.currentStreak === 1);
+  check('P0-1 all-met: lastLogDate records the completed day', m.lastLogDate === '2024-02-01');
+  check('P0-1 all-met: daily set tracks both requirements', hasAll(m));
+
+  // 12.4 repeated logs must not double-advance the same day
+  m = apply(m, '2024-02-01', 'a');
+  m = apply(m, '2024-02-01', 'b');
+  check('P0-1 repeat: extra logs same day do not double-advance', m.currentStreak === 1);
+
+  // build a 2-day streak, then miss a day
+  m = apply(m, '2024-02-02', 'a');
+  m = apply(m, '2024-02-02', 'b');
+  check('P0-1 setup: consecutive full day advances to 2', m.currentStreak === 2);
+
+  // 12.5 missed day resets (partial logs on the gap day do not bridge it)
+  let gap = apply({ ...m }, '2024-02-04', 'a'); // skipped 2024-02-03 entirely
+  check('P0-1 miss: partial log after a gap does not advance', gap.currentStreak === 2);
+  gap = apply(gap, '2024-02-04', 'b');
+  check('P0-1 miss: completed day after a gap resets streak to 1', gap.currentStreak === 1);
+  check('P0-1 miss: longestStreak preserves the pre-reset best (2)', gap.longestStreak === 2);
+  check('P0-1 miss: participant status stays active after reset', gap.status === 'active');
+
+  // 12.6 continuation after reset starts a new streak
+  gap = apply(gap, '2024-02-05', 'a');
+  gap = apply(gap, '2024-02-05', 'b');
+  check('P0-1 continue: valid days after reset build a new streak (2)', gap.currentStreak === 2);
+
+  // 12.7 late joining does not alter the configured denominator
+  const lateJoiner = membership({ totalActivities: 30 });
+  const lj1 = streak.computeUpdate(multiCtx, lateJoiner, logEvent('2024-02-01', 10, 10, 'a'));
+  const ljState: MembershipSnapshot = { ...lateJoiner, ...lj1.membershipUpdate };
+  check('P0-1 late-join: totalActivities denominator unchanged (30)', ljState.totalActivities === 30);
+  check('P0-1 late-join: activitiesCompleted counts logs only (1)', ljState.activitiesCompleted === 1);
+}
+
+// ─── 13. P0-4 Collective Overshoot Canonical Truth ────────────────────────────
+
+section('13. P0-4 Collective Overshoot Canonical Truth');
+
+{
+  // Canonical example: goal 100, existing 95, new qualifying contribution 10 → 105/100, 105%
+  const crossing = computeGroupTransition(
+    { status: 'active', groupCurrentTotal: 95, groupCumulativeTarget: 100, autoCompleteOnGroupTarget: true },
+    10,
+  );
+  check('P0-4 canonical: 95 + 10 stores full total 105 (not clamped to 100)', crossing.actualTotal === 105);
+  check('P0-4 canonical: crossing the goal completes the challenge', crossing.shouldComplete === true);
+
+  const { resolveChallengeProgress } = await import('../src/features/Challenges/challengeProgressResolver.js');
+  const rp = resolveChallengeProgress({
+    challenge: { challengeType: 'collective', activities: [{ targetValue: 100, unit: 'reps' }], groupCumulativeTarget: 100 },
+    membership: null,
+    activitySummaryTotal: 105,
+  });
+  check('P0-4 canonical: resolver groupTotal preserves overshoot (105)', rp.groupTotal === 105);
+  check('P0-4 canonical: resolver groupPercent may exceed 100 (105%)', rp.groupPercent === 105);
+}
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 

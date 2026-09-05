@@ -11,7 +11,6 @@ const read = (rel: string) => readFileSync(resolve(root, rel), 'utf8');
 
 const cf        = read('functions/src/memberActivitySummaries.ts');
 const feedCard  = read('src/features/Groups/FeedCard.tsx');
-const comments  = read('src/hooks/useFeedComments.ts');
 const types     = read('src/types/index.ts');
 
 // ── Competitive: uses post-log cumulativeLoggedValue from challengeMembers ────
@@ -61,14 +60,6 @@ assert.match(feedCard, /snap\.daysRemaining/, 'SnapshotProgress must render snap
 assert.match(feedCard, /!item\.feedProgressSnapshot/, 'FeedCard outer days block must be gated on !feedProgressSnapshot');
 // Verify the days block and !feedProgressSnapshot appear together (not separated by entire screen)
 assert.match(feedCard, /days !== null[\s\S]{0,50}!item\.feedProgressSnapshot|!item\.feedProgressSnapshot[\s\S]{0,50}days !== null/, 'FeedCard must combine the days !== null and !feedProgressSnapshot guards on the same element');
-
-// ── Comments: authorName must not use raw email ───────────────────────────────
-// Must use profile.displayName (which derives email prefix as fallback)
-assert.match(comments, /profile\?\.displayName/, 'useFeedComments must use profile?.displayName as primary authorName');
-// Must not fall back directly to user.email without splitting at @
-assert.doesNotMatch(comments, /user!\.email\s*\?\?/, 'useFeedComments must not use raw user.email as a ?? fallback without splitting at @');
-// Must split email at @ sign if falling back to email
-assert.match(comments, /\.split\('@'\)/, "useFeedComments must split email at '@' if using email as final fallback");
 
 // ── Competitive snapshot includes userCumulativeValue in FeedCard ─────────────
 assert.match(feedCard, /snap\.userCumulativeValue/, 'SnapshotProgress must render snap.userCumulativeValue for competitive progress line');

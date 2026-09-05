@@ -156,6 +156,8 @@ class WellnessLogService {
       currentStreak: membership.currentStreak,
       longestStreak: membership.longestStreak,
       lastLogDate: membership.lastLogDate,
+      dailyCompletedActivities: membership.dailyCompletedActivities,
+      dailyTargetDate: membership.dailyTargetDate,
       cumulativeLoggedValue: membership.cumulativeLoggedValue,
       cumulativeValues: membership.cumulativeValues,
     };

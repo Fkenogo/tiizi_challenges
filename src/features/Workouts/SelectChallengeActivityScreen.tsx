@@ -380,7 +380,7 @@ function SelectChallengeActivityScreen() {
                   <p className="text-[13px] leading-[16px] font-bold text-primary uppercase tracking-[0.08em]">Team Progress</p>
                 </div>
                 <div className="h-4 rounded-full bg-[#e8edf5] overflow-hidden">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${groupPct}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(groupPct, 100)}%` }} />
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                   <p className="text-[13px] leading-[16px] text-slate-700">

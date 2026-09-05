@@ -191,7 +191,8 @@ export function resolveChallengeProgress(input: ProgressInput): ResolvedProgress
   const groupTotal = Math.max(activitySummaryFloor, memberSumFloor, logSumFloor, optimisticTeamFloor, userContributionTotal);
   const groupTarget = safeNum(challenge?.groupCumulativeTarget);
   const groupRemaining = Math.max(0, groupTarget - groupTotal);
-  const groupPercent = groupTarget > 0 ? clamp((groupTotal / groupTarget) * 100) : 0;
+  // V2: preserve overshoot — groupPercent may exceed 100 (e.g. 105% for 1050/1000)
+  const groupPercent = groupTarget > 0 ? Math.round((groupTotal / groupTarget) * 100) : 0;
 
   // ── Competitive leader ──────────────────────────────────────────────────
   const myLeaderboardScore = leaderboard.find((e) => e.userId === currentUserId)?.score ?? userTotal;

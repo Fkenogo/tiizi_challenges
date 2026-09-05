@@ -9,7 +9,8 @@ export type GroupTransitionInput = {
 /** What the Firestore transaction must write, derived from a pure computation. */
 export type GroupTransitionResult = {
   isAlreadyCompleted: boolean;
-  clampedTotal: number;
+  /** Actual total — may exceed target (overshoot preserved per V2 product contract). */
+  actualTotal: number;
   shouldComplete: boolean;
 };
 
@@ -20,7 +21,7 @@ export type GroupTransitionResult = {
  * transaction should write:
  *
  *   isAlreadyCompleted — challenge is already done; transaction must exit without writes.
- *   clampedTotal       — groupCurrentTotal = min(current + delta, target). Never exceeds target.
+ *   actualTotal        — groupCurrentTotal = current + delta. May exceed target (overshoot).
  *   shouldComplete     — true if this increment crosses the threshold (exactly-once gate).
  */
 export function computeGroupTransition(
@@ -28,16 +29,17 @@ export function computeGroupTransition(
   delta: number,
 ): GroupTransitionResult {
   if (input.status === 'completed') {
-    return { isAlreadyCompleted: true, clampedTotal: input.groupCurrentTotal, shouldComplete: false };
+    return { isAlreadyCompleted: true, actualTotal: input.groupCurrentTotal, shouldComplete: false };
   }
 
   const rawPrev = Number(input.groupCurrentTotal ?? 0);
   const prevTotal = Number.isFinite(rawPrev) ? rawPrev : 0;
   const newTotal = prevTotal + delta;
   const target = Number(input.groupCumulativeTarget ?? 0);
-  const clampedTotal = target > 0 ? Math.min(newTotal, target) : newTotal;
+  // V2: preserve overshoot — actual total may exceed target (e.g. 105/100 = 105%)
+  const actualTotal = newTotal;
   const autoComplete = input.autoCompleteOnGroupTarget ?? true;
   const shouldComplete = autoComplete && target > 0 && newTotal >= target;
 
-  return { isAlreadyCompleted: false, clampedTotal, shouldComplete };
+  return { isAlreadyCompleted: false, actualTotal, shouldComplete };
 }
