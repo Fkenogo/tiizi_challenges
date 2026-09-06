@@ -55,3 +55,50 @@ npm test                        # vitest against in-process PGlite (real Postgre
 - PostgreSQL is a **shadow/read model** for group memberships only.
 - Firestore remains the operational authority. No dual writes.
 - No Challenges, no Activity Events, no engine changes.
+
+## Transitional identity bridge (Phase A2)
+
+During the strangler migration the frontend still holds Firestore group
+document ids (route params, cached queries) while the API owns Tiizi UUID
+identity. Provider ids must not leak into the domain model, so translation
+lives in one explicit seam:
+
+- Domain objects keep the Tiizi UUID as `id` (`/v1/memberships/me` carries
+  no Firestore ids at all).
+- `GET /v1/compat/group-ids?legacyId=…&id=…` resolves UUID ↔ legacy
+  Firestore id in both directions. Authenticated, read-only (resolving never
+  mints UUIDs), capped at 200 ids per request.
+- The frontend adapter is `src/api/groupIdentityBridge.ts` (cached,
+  batching); the only proof consumer is the read-only shadow-parity strip on
+  the Groups "My Groups" tab (`ApiShadowParityStrip`, flag-gated).
+- `groups.legacy_firestore_id` is transitional metadata. The `/v1/compat/`
+  namespace is deprecated from birth: remove it once no caller holds
+  Firestore group ids (target: Phase B+).
+
+UUID stability is enforced by test (`shadowImport.test.ts` — repeated imports
+return identical member and group UUIDs) and must hold before any cutover.
+
+## Auth identity model and signup boundary
+
+- `members.member_id` is the internal Tiizi UUID. Firebase is an external
+  identity mapping: `(auth_provider, auth_subject)`, unique, never a domain
+  key. Request code receives `member_id` only (see `src/auth.ts`).
+- No auto-provisioning: an authenticated Firebase UID with no linked member
+  gets `401 unknown_member`. Signup migration is intentionally out of scope.
+- Intended future boundary (not yet implemented): authentication succeeds →
+  the Tiizi API creates/links the Member row transactionally
+  (`findMemberByAuth` then `createMember` inside one transaction at the auth
+  hook), so the first authenticated request establishes identity exactly
+  once. Documented here so Phase B can implement it without redesign.
+
+## PostgreSQL portability (pgcrypto assessment)
+
+`001_phase_a_foundation.sql` uses `CREATE EXTENSION IF NOT EXISTS "pgcrypto"`
+for `gen_random_uuid()` defaults. Assessment: `pgcrypto` is a contrib
+extension shipped with PostgreSQL itself and enabled on all mainstream managed
+offerings (RDS, Cloud SQL, Azure Database for PostgreSQL, Neon, Supabase,
+AlloyDB, Crunchy Bridge) — it does not constrain provider choice. UUID
+defaults stay in the database (not application-generated) so every writer,
+including SQL CLIs and future services, gets a valid primary key without
+coordinating on a generation library. No change made; re-evaluate only if a
+chosen vendor actually lacks the extension.

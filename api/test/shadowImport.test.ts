@@ -78,4 +78,37 @@ describe('shadow importer', () => {
     expect(report.groupsWritten).toBe(before.groups);
     expect(report.membershipsWritten).toBe(before.memberships);
   });
+
+  it('keeps UUIDs stable across repeated imports (same legacy entity, same UUID)', async () => {
+    const db = testDb();
+    await runShadowImport(db, fakeSource(), { dryRun: false });
+
+    const snapshot = async () => {
+      const members = await db.query<{ auth_subject: string; member_id: string }>(
+        `SELECT auth_subject, member_id FROM members ORDER BY auth_subject`,
+      );
+      const groups = await db.query<{ legacy_firestore_id: string; group_id: string }>(
+        `SELECT legacy_firestore_id, group_id FROM groups ORDER BY legacy_firestore_id`,
+      );
+      return {
+        members: members.rows.map((r) => `${r.auth_subject}=${String(r.member_id)}`),
+        groups: groups.rows.map((r) => `${r.legacy_firestore_id}=${String(r.group_id)}`),
+      };
+    };
+
+    const first = await snapshot();
+    await runShadowImport(db, fakeSource(), { dryRun: false });
+    const second = await snapshot();
+    await runShadowImport(db, fakeSource(), { dryRun: false });
+    const third = await snapshot();
+
+    // Firebase auth identity -> same member UUID every time.
+    expect(second.members).toEqual(first.members);
+    expect(third.members).toEqual(first.members);
+    expect(first.members.length).toBeGreaterThan(0);
+    // Firestore group -> same group UUID every time.
+    expect(second.groups).toEqual(first.groups);
+    expect(third.groups).toEqual(first.groups);
+    expect(first.groups.length).toBeGreaterThan(0);
+  });
 });

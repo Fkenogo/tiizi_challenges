@@ -2,6 +2,7 @@ import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import { requireAuth, type TokenVerifier } from './auth.js';
 import type { Db } from './db.js';
+import { registerGroupIdentityRoutes } from './groupIdentity.js';
 import { registerMembershipRoutes } from './memberships.js';
 
 export interface AppDeps {
@@ -37,5 +38,6 @@ export function buildApp(deps: AppDeps) {
   });
 
   registerMembershipRoutes(app, deps.db);
+  registerGroupIdentityRoutes(app, deps.db);
   return app;
 }

@@ -10,6 +10,7 @@ import { getStoredActiveGroupId, setActiveGroupId } from '../../hooks/useActiveG
 import type { Group } from '../../types';
 import { isChallengeOngoing } from '../../utils/challengeLifecycle';
 import { GroupBottomNav } from './components/GroupBottomNav';
+import { ApiShadowParityStrip } from './components/ApiShadowParityStrip';
 
 const fallbackImage =
   'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80';
@@ -191,6 +192,7 @@ function GroupsScreen() {
 
           {!isLoading && tab === 'my' && (
             <>
+              <ApiShadowParityStrip firestoreGroupIds={myGroups.map((group) => group.id)} />
               {myGroups.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-2xl p-4">
                   <h2 className="text-base font-bold text-slate-900">No groups yet</h2>
