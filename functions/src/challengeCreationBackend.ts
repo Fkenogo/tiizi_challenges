@@ -1,5 +1,6 @@
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import type { KnowledgeAuthorityReader } from './knowledgeAuthority.js';
 
 type CoreDb = {
   collection: (path: string) => any;
@@ -289,15 +290,32 @@ function normalizeCanonicalVersion(value: unknown): number {
  * missing documents plus draft/retired records throw invalid-argument.
  * Custom entries (no canonical ID) resolve to nothing and pass through.
  * Returns pinned immutable snapshot fields keyed by `collection/id`.
+ *
+ * Phase B: when a KnowledgeAuthorityReader is provided, PostgreSQL is
+ * consulted FIRST (authoritative). A PG hit decides from the authoritative
+ * record; a PG miss or PG infrastructure failure falls through to the
+ * transitional Firestore read below (import-lag coverage / safe rollback).
+ * Without a reader the legacy Firestore path runs unchanged.
  */
 async function resolveCanonicalSnapshots(
   db: CoreDb,
   activities: Array<{ exerciseId?: string; activityId?: string }>,
+  authority?: KnowledgeAuthorityReader | null,
 ): Promise<Map<string, CanonicalSnapshot>> {
   const snapshots = new Map<string, CanonicalSnapshot>();
   for (const activity of activities) {
     const exerciseId = String(activity.exerciseId ?? '').trim();
     if (exerciseId) {
+      // Phase B authoritative read: PostgreSQL decides when it knows the ID.
+      if (authority) {
+        const authoritative = await resolveFromAuthority(authority, 'fitness', exerciseId);
+        if (authoritative) {
+          snapshots.set(`catalogExercises/${exerciseId}`, authoritative);
+          continue;
+        }
+      }
+      // TRANSITIONAL Firestore read-through (import lag / rollback window).
+      // Remove once the knowledge import covers all referenced records.
       const snap = await db.collection('catalogExercises').doc(exerciseId).get();
       const data = snap && snap.exists
         ? (snap.data() as Record<string, unknown> | undefined)
@@ -326,6 +344,16 @@ async function resolveCanonicalSnapshots(
     }
     const activityId = String(activity.activityId ?? '').trim();
     if (activityId) {
+      // Phase B authoritative read: PostgreSQL decides when it knows the ID.
+      if (authority) {
+        const authoritative = await resolveFromAuthority(authority, 'wellness', activityId);
+        if (authoritative) {
+          snapshots.set(`wellnessActivities/${activityId}`, authoritative);
+          continue;
+        }
+      }
+      // TRANSITIONAL Firestore read-through (import lag / rollback window).
+      // Remove once the knowledge import covers all referenced records.
       const snap = await db.collection('wellnessActivities').doc(activityId).get();
       const data = snap && snap.exists
         ? (snap.data() as Record<string, unknown> | undefined)
@@ -349,6 +377,41 @@ async function resolveCanonicalSnapshots(
     }
   }
   return snapshots;
+}
+
+/**
+ * Single authoritative read. Returns a snapshot when PostgreSQL knows the
+ * ID (throwing for draft/retired — the authoritative rejection), or null
+ * when PostgreSQL does not know it / is unreachable so the caller uses the
+ * transitional Firestore path. Never throws for missing records.
+ */
+async function resolveFromAuthority(
+  authority: KnowledgeAuthorityReader,
+  kind: 'fitness' | 'wellness',
+  id: string,
+): Promise<CanonicalSnapshot | null> {
+  let record;
+  try {
+    record = await authority.findCanonical(id);
+  } catch {
+    return null;
+  }
+  if (!record || record.kind !== kind) return null;
+  if (record.lifecycle !== 'published') {
+    throw new HttpsError(
+      'invalid-argument',
+      `Activity "${id}" is no longer available for new challenges (retired or draft). Please replace it.`,
+    );
+  }
+  if (kind === 'fitness') {
+    return {
+      knowledgeVersion: normalizeCanonicalVersion(record.knowledgeVersion),
+      metric: optionalString(record.metricType, 100),
+      tier1: optionalString(record.tier1, 200),
+      tier2: optionalString(record.tier2, 200),
+    };
+  }
+  return { knowledgeVersion: normalizeCanonicalVersion(record.knowledgeVersion) };
 }
 
 /**
@@ -384,6 +447,7 @@ async function getDocData<T extends Record<string, unknown>>(transaction: any, r
 export async function createChallengeWithCreatorMembershipCore(
   db: CoreDb,
   input: CreateChallengeWithCreatorMembershipInput,
+  authority?: KnowledgeAuthorityReader | null,
 ) {
   const actorUid = requireString(input.actorUid, 'actorUid', { min: 1, max: 200 });
   const createdBy = optionalString(input.createdBy, 200) ?? actorUid;
@@ -466,7 +530,7 @@ export async function createChallengeWithCreatorMembershipCore(
   // are rejected (custom entries must carry no canonical ID). Reads happen
   // here, before the transaction opens. Historical challenges are never
   // re-validated, so retirement cannot break them.
-  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities);
+  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities, authority);
 
   // CORR-2: pin immutable canonical snapshot fields from the authoritative
   // record — a client cannot falsely claim a different canonical version or
@@ -655,6 +719,7 @@ export async function createChallengeFromAdminCore(
     activities?: unknown;
     donation?: unknown;
   },
+  authority?: KnowledgeAuthorityReader | null,
 ) {
   const actorUid = requireString(input.actorUid, 'actorUid', { min: 1, max: 200 });
   const adminSnap = await db.collection('admins').doc(actorUid).get();
@@ -690,7 +755,7 @@ export async function createChallengeFromAdminCore(
       seenIds.add(id);
     }
   }
-  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities);
+  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities, authority);
   applyCanonicalSnapshots(activities, canonicalSnapshots);
 
   const donation = normalizeDonation(input.donation);
@@ -725,7 +790,10 @@ export async function createChallengeFromAdminCore(
   return { challenge: { id: challengeId } };
 }
 
-export function createChallengeWithCreatorMembershipCallable(db: Firestore) {
+export function createChallengeWithCreatorMembershipCallable(
+  db: Firestore,
+  authority?: KnowledgeAuthorityReader | null,
+) {
   return onCall(
     {
       region: 'us-central1',
@@ -734,12 +802,15 @@ export function createChallengeWithCreatorMembershipCallable(db: Firestore) {
       return createChallengeWithCreatorMembershipCore(db, {
         ...((request.data ?? {}) as Record<string, unknown>),
         actorUid: uidFromRequest(request),
-      });
+      }, authority);
     },
   );
 }
 
-export function createChallengeFromAdminCallable(db: Firestore) {
+export function createChallengeFromAdminCallable(
+  db: Firestore,
+  authority?: KnowledgeAuthorityReader | null,
+) {
   return onCall(
     {
       region: 'us-central1',
@@ -748,7 +819,7 @@ export function createChallengeFromAdminCallable(db: Firestore) {
       return createChallengeFromAdminCore(db, {
         ...((request.data ?? {}) as Record<string, unknown>),
         actorUid: uidFromRequest(request),
-      });
+      }, authority);
     },
   );
 }

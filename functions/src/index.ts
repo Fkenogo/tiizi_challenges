@@ -37,6 +37,7 @@ import {
   revokeGroupInviteCallable,
 } from './groupInviteBackend.js';
 import { createChallengeFromAdminCallable, createChallengeWithCreatorMembershipCallable } from './challengeCreationBackend.js';
+import { createKnowledgeAuthorityFromEnv } from './knowledgeAuthority.js';
 
 initializeApp();
 
@@ -50,8 +51,12 @@ export const redeemGroupInvite = redeemGroupInviteCallable(db);
 export const requestGroupJoin = requestGroupJoinCallable(db);
 export const approveGroupJoinRequest = approveGroupJoinRequestCallable(db);
 export const rejectGroupJoinRequest = rejectGroupJoinRequestCallable(db);
-export const createChallengeWithCreatorMembership = createChallengeWithCreatorMembershipCallable(db);
-export const createChallengeFromAdmin = createChallengeFromAdminCallable(db);
+// Phase B: PostgreSQL-first canonical Knowledge resolution. Null when
+// DATABASE_URL is unset — the backend then runs the legacy Firestore-only
+// path (safe rollback: unset DATABASE_URL).
+const knowledgeAuthority = createKnowledgeAuthorityFromEnv();
+export const createChallengeWithCreatorMembership = createChallengeWithCreatorMembershipCallable(db, knowledgeAuthority);
+export const createChallengeFromAdmin = createChallengeFromAdminCallable(db, knowledgeAuthority);
 
 export const refreshAdminMetrics = onSchedule(
   {

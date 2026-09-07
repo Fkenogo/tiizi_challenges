@@ -1,6 +1,28 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { isTiiziKnowledgeApiEnabled } from '../api/apiClient';
+import { fetchKnowledgeById, fetchPublishedKnowledge, mapApiItemToExercise } from '../api/knowledgeApi';
 import { exerciseService } from '../services/exerciseService';
 import { CatalogExercise } from '../types';
+
+/**
+ * Phase B: when the Knowledge API flag is on, runtime lists come from the
+ * Tiizi API (PostgreSQL authority, published-only enforced server-side) and
+ * ids are Tiizi UUIDs. Otherwise the legacy Firestore service runs unchanged.
+ */
+async function getExercisesFromApi(filters?: {
+  tier1?: string;
+  tier2?: string;
+  difficulty?: string;
+}): Promise<CatalogExercise[]> {
+  const items = await fetchPublishedKnowledge('fitness');
+  return items
+    .map(mapApiItemToExercise)
+    .filter((ex) => (filters?.tier1 && filters.tier1 !== 'All' ? ex.tier_1 === filters.tier1 : true))
+    .filter((ex) => (filters?.tier2 && filters.tier2 !== 'All' ? ex.tier_2 === filters.tier2 : true))
+    .filter((ex) => (filters?.difficulty && filters.difficulty !== 'All'
+      ? ex.difficulty === filters.difficulty
+      : true));
+}
 
 /**
  * React Query Hooks for Exercise Data
@@ -27,9 +49,10 @@ export function useExercises(filters?: {
   tier2?: string;
   difficulty?: string;
 }): UseQueryResult<CatalogExercise[], Error> {
+  const apiEnabled = isTiiziKnowledgeApiEnabled();
   return useQuery<CatalogExercise[], Error>({
-    queryKey: ['exercises', filters],
-    queryFn: () => exerciseService.getExercises(filters),
+    queryKey: ['exercises', apiEnabled ? 'api' : 'firestore', filters],
+    queryFn: () => (apiEnabled ? getExercisesFromApi(filters) : exerciseService.getExercises(filters)),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     retry: 2,
@@ -44,9 +67,23 @@ export function useExercises(filters?: {
  * const { data: exercise } = useExercise('push-ups');
  */
 export function useExercise(id: string | undefined): UseQueryResult<CatalogExercise | null, Error> {
+  const apiEnabled = isTiiziKnowledgeApiEnabled();
   return useQuery<CatalogExercise | null, Error>({
-    queryKey: ['exercise', id],
-    queryFn: () => id ? exerciseService.getExerciseById(id) : Promise.resolve(null),
+    queryKey: ['exercise', apiEnabled ? 'api' : 'firestore', id],
+    queryFn: async () => {
+      if (!id) return null;
+      if (!apiEnabled) return exerciseService.getExerciseById(id);
+      // Phase B by-ID: API primary (historical resolution preserved
+      // server-side), Firestore fallback for legacy slug ids held by older
+      // screens/caches during transition. Remove fallback with the last
+      // Firestore reader.
+      try {
+        const item = await fetchKnowledgeById(id);
+        return item.kind === 'fitness' ? mapApiItemToExercise(item) : null;
+      } catch {
+        return exerciseService.getExerciseById(id);
+      }
+    },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes
     retry: 2,
@@ -62,9 +99,21 @@ export function useExercise(id: string | undefined): UseQueryResult<CatalogExerc
  * const { data: results } = useExerciseSearch(searchTerm);
  */
 export function useExerciseSearch(searchTerm: string): UseQueryResult<CatalogExercise[], Error> {
+  const apiEnabled = isTiiziKnowledgeApiEnabled();
   return useQuery<CatalogExercise[], Error>({
-    queryKey: ['exercises', 'search', searchTerm],
-    queryFn: () => exerciseService.searchExercises(searchTerm),
+    queryKey: ['exercises', 'search', apiEnabled ? 'api' : 'firestore', searchTerm],
+    queryFn: async () => {
+      if (!apiEnabled) return exerciseService.searchExercises(searchTerm);
+      if (searchTerm.length < 2) return [];
+      const items = await fetchPublishedKnowledge('fitness', searchTerm);
+      const term = searchTerm.toLowerCase();
+      return items.map(mapApiItemToExercise).filter((ex) =>
+        ex.name.toLowerCase().includes(term) ||
+        ex.tier_1.toLowerCase().includes(term) ||
+        ex.tier_2.toLowerCase().includes(term) ||
+        ex.musclesTargeted.some((muscle) => muscle.toLowerCase().includes(term)) ||
+        ex.equipment.some((eq) => eq.toLowerCase().includes(term)));
+    },
     enabled: searchTerm.length >= 2,
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 1,

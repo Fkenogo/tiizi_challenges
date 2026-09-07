@@ -56,6 +56,57 @@ npm test                        # vitest against in-process PGlite (real Postgre
 - Firestore remains the operational authority. No dual writes.
 - No Challenges, no Activity Events, no engine changes.
 
+## Phase B knowledge authority (canonical Knowledge migration)
+
+PostgreSQL/API is authoritative for canonical Knowledge (fitness
+`catalogExercises` + wellness `wellnessActivities`). Firestore Knowledge data
+is retained read-only; `firestore.rules` blocks ordinary client Knowledge
+writes (deployed after the flag cutover).
+
+- Migration `002_phase_b_knowledge.sql`: `knowledge_items` (Tiizi UUID
+  identity, kind, lifecycle, current version, stable runtime columns,
+  `details` JSONB for kind-specific content) + append-only
+  `knowledge_item_versions` (UPDATE/DELETE rejected by trigger) + `members.role`
+  (existing Tiizi role vocabulary, no new roles).
+- Routes: `GET /v1/knowledge` (published only), `GET /v1/knowledge/:id`
+  (any lifecycle — history stays resolvable), `GET
+  /v1/knowledge/:id/versions/:version`, `GET /v1/compat/knowledge-ids`
+  (transitional legacy lookup, read-only, capped), `GET /v1/admin/knowledge`,
+  `POST /v1/admin/knowledge` (starts at version 1), `PATCH
+  /v1/admin/knowledge/:id` (atomic +1 + immutable history row), `POST
+  /v1/admin/knowledge/:id/publish|retire` (forward-only, no version bump).
+  No destructive delete. Admin = super_admin/admin/moderator/content_manager
+  (mirrors canModerateChallenges ∪ canManageExercises).
+- Importer (read-only Firestore source, dry-run/apply, idempotent,
+  deterministic UUIDv5 legacy mapping, missing lifecycle → published,
+  missing version → 1, malformed records reported never fabricated,
+  PostgreSQL wins version ties):
+
+```sh
+npm run knowledge:import -- --dry-run
+npm run knowledge:import -- --apply
+```
+
+- Knowledge parity check (identity/lifecycle/version/name, read-only):
+
+```sh
+npm run parity:knowledge
+```
+
+- Challenge creation (`functions/src/knowledgeAuthority.ts`): PostgreSQL
+  consulted first per canonical ID; PG hit decides authoritatively, PG miss
+  or outage uses the transitional Firestore read-through, unset
+  `DATABASE_URL` keeps legacy Firestore behavior (rollback).
+- Frontend cutover flag: `VITE_TIIZI_KNOWLEDGE_API_ENABLED=true` moves
+  Knowledge lists, by-ID reads (with Firestore fallback), and admin
+  mutations to the API. Unset = legacy Firestore behavior (rollback).
+
+Out of scope (later domains): Groups, Challenges, Activity Events, Social,
+Donations, Firebase Auth removal, challenge/workout templates
+(`challengeTemplates`/`wellnessTemplates` stay in Firestore), verification/
+correction/recognition/rewards authorities, and the seven accepted Phase A2
+orphan groupMembership rows.
+
 ## Transitional identity bridge (Phase A2)
 
 During the strangler migration the frontend still holds Firestore group
