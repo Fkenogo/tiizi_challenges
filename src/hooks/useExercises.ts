@@ -2,6 +2,7 @@ import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import { tiiziKnowledgeAuthorityMode } from '../api/apiClient';
 import { fetchKnowledgeById, fetchPublishedKnowledge, mapApiItemToExercise } from '../api/knowledgeApi';
 import { allowsFirestoreFallback, isKnowledgeApiActive } from '../api/knowledgeAuthorityMode';
+import { exerciseFilterOptionsSource, exerciseStatsSource } from '../api/knowledgeAggregates';
 import { exerciseService } from '../services/exerciseService';
 import { CatalogExercise } from '../types';
 
@@ -135,9 +136,17 @@ export function useExerciseSearch(searchTerm: string): UseQueryResult<CatalogExe
  * console.log(stats.byTier1); // { Core: 58, ... }
  */
 export function useExerciseStats() {
+  // Phase B authority mode: firestore = legacy helper; transition/postgres =
+  // derived from the canonical API list (PostgreSQL authority). In postgres
+  // mode API errors surface — Firestore is never consulted.
+  const mode = tiiziKnowledgeAuthorityMode();
   return useQuery({
-    queryKey: ['exercises', 'stats'],
-    queryFn: () => exerciseService.getExerciseStats(),
+    queryKey: ['exercises', 'stats', mode],
+    queryFn: () => exerciseStatsSource(mode, {
+      fetchApiExercises: async () =>
+        (await fetchPublishedKnowledge('fitness')).map(mapApiItemToExercise),
+      fetchLegacy: () => exerciseService.getExerciseStats(),
+    }),
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 2,
   });
@@ -151,9 +160,15 @@ export function useExerciseStats() {
  * console.log(options.tier1); // ['Core', 'Upper Body', ...]
  */
 export function useExerciseFilterOptions() {
+  // Same authority contract as useExerciseStats (see above).
+  const mode = tiiziKnowledgeAuthorityMode();
   return useQuery({
-    queryKey: ['exercises', 'filterOptions'],
-    queryFn: () => exerciseService.getFilterOptions(),
+    queryKey: ['exercises', 'filterOptions', mode],
+    queryFn: () => exerciseFilterOptionsSource(mode, {
+      fetchApiExercises: async () =>
+        (await fetchPublishedKnowledge('fitness')).map(mapApiItemToExercise),
+      fetchLegacy: () => exerciseService.getFilterOptions(),
+    }),
     staleTime: 60 * 60 * 1000, // 1 hour
     retry: 2,
   });
