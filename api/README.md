@@ -50,6 +50,57 @@ npm run parity:memberships
 npm test                        # vitest against in-process PGlite (real Postgres semantics)
 ```
 
+## Production runtime (Cloud Run + Cloud SQL)
+
+Provider-neutral Fastify service packaged as a standard container. The image
+carries no GCP-specific domain code: Cloud Run supplies `$PORT`, Cloud SQL is
+reached over a standard `DATABASE_URL`, and auth uses Application Default
+Credentials. See `DEPLOY.md` for the full provisioning runbook (not executed).
+
+```sh
+docker build -f api/Dockerfile -t tiizi-api ./api   # from the repository root
+docker run -p 8080:8080 \
+  -e PORT=8080 \
+  -e DATABASE_URL=postgresql://user:pass@host:5432/tiizi?sslmode=require \
+  -e FIREBASE_PROJECT_ID=your-project-id \
+  -e TIIZI_ALLOWED_ORIGINS=https://tiizi.example \
+  tiizi-api
+```
+
+- Liveness `GET /health`: process alive only, no database, no auth.
+- Readiness `GET /ready`: `SELECT 1` against
+  PostgreSQL; 200 when reachable, 503 `not_ready` without leaking connection
+  details when not. No auth required. Never overloads `/health`.
+- CORS is environment-controlled (`TIIZI_ALLOWED_ORIGINS`, comma-separated
+  exact origins). Empty means same-origin only — never a wildcard. Invalid
+  entries fail startup fast.
+- Migrations run from the same image, never automatically on API startup:
+  `node dist/src/migrateCli.js` (local: `npm run migrate`; compiled:
+  `npm run migrate:prod`). Order: migration job → verify success →
+  deploy/revise API. Idempotent; non-zero exit on failure; no down migrations.
+- Auth adapter unchanged: `FIREBASE_PROJECT_ID` + ADC/workload identity, no
+  service-account JSON in Cloud Run (`GOOGLE_APPLICATION_CREDENTIALS` stays
+  valid for local/admin tooling only). Tiizi identity remains the internal
+  Member UUID; Firebase is a replaceable issuer mapping.
+- Pool: `TIIZI_DB_POOL_MAX` per instance (default 5, max 50). Total
+  connections ≈ (Cloud Run max instances) × pool max — bound both against the
+  Cloud SQL tier limit. No PgBouncer.
+
+### Environment / secret contract
+
+| Class | Variables |
+|---|---|
+| NON-SECRET | `PORT`, `FIREBASE_PROJECT_ID`, `TIIZI_ALLOWED_ORIGINS`, `TIIZI_DB_POOL_MAX` |
+| SECRET (Secret Manager at runtime) | `DATABASE_URL` (unless a secure connector removes embedded passwords) |
+| FUTURE CUTOVER / NOT YET ENABLED | `TIIZI_KNOWLEDGE_AUTHORITY_MODE`, frontend `VITE_TIIZI_API_BASE_URL`, frontend `VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE` |
+
+Service-account JSON is not a production deployment mechanism. Never commit
+`.env` files. Deployment characteristics: region `africa-south1`, HTTPS
+terminated by Cloud Run, container listens on `0.0.0.0:$PORT`, API identity
+uses ADC/workload identity, PostgreSQL target is Cloud SQL PostgreSQL 17
+(private connectivity preferred, no public exposure), min instances may start
+at 0, max instances intentionally bounded by the pool math above.
+
 ## Phase A scope guardrails
 
 - PostgreSQL is a **shadow/read model** for group memberships only.

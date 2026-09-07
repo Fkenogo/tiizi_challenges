@@ -7,8 +7,44 @@ export interface Db {
   close(): Promise<void>;
 }
 
-export function createPool(connectionString: string): Db {
-  const pool = new Pool({ connectionString });
+/**
+ * Production connection contract (provider-neutral `pg`, standard DATABASE_URL).
+ *
+ * - TLS is carried by the connection string itself (e.g. `?sslmode=require`
+ *   for Cloud SQL); node-postgres honors it, so no driver fork is needed.
+ * - The pool is deliberately bounded for Cloud Run: total PostgreSQL
+ *   connections ≈ (Cloud Run max instances) × TIIZI_DB_POOL_MAX, so both
+ *   factors must be set intentionally against the Cloud SQL tier limit.
+ * - No PgBouncer, no Cloud SQL-specific driver assumptions in this code.
+ */
+
+/** Conservative default: safe for small Cloud SQL tiers and max-instances > 1. */
+export const DEFAULT_DB_POOL_MAX = 5;
+
+/** Hard upper bound: fail fast instead of silently opening unbounded pools. */
+export const MAX_DB_POOL_MAX = 50;
+
+export const DB_POOL_MAX_ENV = 'TIIZI_DB_POOL_MAX';
+
+/** Resolve the pool size from the environment, validating bounds safely. */
+export function resolveDbPoolMax(raw: string | undefined = process.env[DB_POOL_MAX_ENV]): number {
+  if (raw === undefined || raw.trim() === '') return DEFAULT_DB_POOL_MAX;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_DB_POOL_MAX) {
+    throw new Error(
+      `${DB_POOL_MAX_ENV} must be an integer between 1 and ${MAX_DB_POOL_MAX}`,
+    );
+  }
+  return parsed;
+}
+
+export function createPool(connectionString: string, options?: { max?: number }): Db {
+  const pool = new Pool({
+    connectionString,
+    max: options?.max ?? resolveDbPoolMax(),
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 30_000,
+  });
   return {
     async query(text, params) {
       const result = await pool.query(text, params);

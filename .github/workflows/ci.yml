@@ -26,6 +26,30 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  api-image:
+    name: api image (build, liveness)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        run: docker build -f api/Dockerfile -t tiizi-api:ci ./api
+      - name: Start container without production credentials
+        run: |
+          docker run -d --name tiizi-api-ci -p 8080:8080 \
+            -e PORT=8080 \
+            -e DATABASE_URL=postgresql://ci:ci@127.0.0.1:5432/ci \
+            -e FIREBASE_PROJECT_ID=ci-project \
+            tiizi-api:ci
+          sleep 5
+          docker logs tiizi-api-ci
+      - name: Liveness check (/health needs no DB or credentials)
+        run: curl -fsS http://127.0.0.1:8080/health
+      - name: Readiness detects the unreachable database (/ready is 503, never 401)
+        run: test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ready)" = "503"
+      - name: Stop container
+        if: always()
+        run: docker rm -f tiizi-api-ci
+
   web:
     name: web (typecheck, build)
     runs-on: ubuntu-latest
