@@ -110,6 +110,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await db.query('TRUNCATE group_memberships, groups, members CASCADE');
+  await db.query('TRUNCATE knowledge_item_versions, knowledge_items CASCADE');
 });
 
 export function buildTestApp(uidByToken: Record<string, string>) {

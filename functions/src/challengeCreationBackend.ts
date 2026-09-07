@@ -1,5 +1,6 @@
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import type { KnowledgeAuthorityMode, KnowledgeAuthorityReader } from './knowledgeAuthority.js';
 
 type CoreDb = {
   collection: (path: string) => any;
@@ -289,66 +290,187 @@ function normalizeCanonicalVersion(value: unknown): number {
  * missing documents plus draft/retired records throw invalid-argument.
  * Custom entries (no canonical ID) resolve to nothing and pass through.
  * Returns pinned immutable snapshot fields keyed by `collection/id`.
+ *
+ * Phase B authority modes (TIIZI_KNOWLEDGE_AUTHORITY_MODE):
+ * - `firestore`: legacy Firestore-only path, PostgreSQL never consulted.
+ * - `transition` (default): PostgreSQL first; a PG miss or PG infrastructure
+ *   failure falls through to the transitional Firestore read below
+ *   (import-lag coverage / safe rollback).
+ * - `postgres`: PostgreSQL/API only. A PG hit decides authoritatively; a PG
+ *   miss rejects the canonical ID; PG unavailability fails closed.
+ *   Firestore is NEVER consulted for canonical resolution.
  */
 async function resolveCanonicalSnapshots(
   db: CoreDb,
   activities: Array<{ exerciseId?: string; activityId?: string }>,
+  authority?: KnowledgeAuthorityReader | null,
+  mode: KnowledgeAuthorityMode = 'transition',
 ): Promise<Map<string, CanonicalSnapshot>> {
   const snapshots = new Map<string, CanonicalSnapshot>();
   for (const activity of activities) {
     const exerciseId = String(activity.exerciseId ?? '').trim();
     if (exerciseId) {
-      const snap = await db.collection('catalogExercises').doc(exerciseId).get();
-      const data = snap && snap.exists
-        ? (snap.data() as Record<string, unknown> | undefined)
-        : undefined;
-      if (!data) {
-        throw new HttpsError(
-          'invalid-argument',
-          `Unknown canonical exercise "${exerciseId}". Custom activities must not carry an exerciseId.`,
-        );
-      }
-      const status = data.lifecycleStatus;
-      if (typeof status === 'string' && status !== 'published') {
-        throw new HttpsError(
-          'invalid-argument',
-          `Activity "${exerciseId}" is no longer available for new challenges (retired or draft). Please replace it.`,
-        );
-      }
-      const metric = data.metric as { type?: unknown } | undefined;
-      snapshots.set(`catalogExercises/${exerciseId}`, {
-        knowledgeVersion: normalizeCanonicalVersion(data.knowledgeVersion),
-        metric: optionalString(metric?.type, 100),
-        tier1: optionalString(data.tier_1, 200),
-        tier2: optionalString(data.tier_2, 200),
-      });
+      snapshots.set(
+        `catalogExercises/${exerciseId}`,
+        await resolveExerciseSnapshot(db, exerciseId, authority, mode),
+      );
       continue;
     }
     const activityId = String(activity.activityId ?? '').trim();
     if (activityId) {
-      const snap = await db.collection('wellnessActivities').doc(activityId).get();
-      const data = snap && snap.exists
-        ? (snap.data() as Record<string, unknown> | undefined)
-        : undefined;
-      if (!data) {
-        throw new HttpsError(
-          'invalid-argument',
-          `Unknown canonical wellness activity "${activityId}". Custom activities must not carry an activityId.`,
-        );
-      }
-      const status = data.lifecycleStatus;
-      if (typeof status === 'string' && status !== 'published') {
-        throw new HttpsError(
-          'invalid-argument',
-          `Activity "${activityId}" is no longer available for new challenges (retired or draft). Please replace it.`,
-        );
-      }
-      snapshots.set(`wellnessActivities/${activityId}`, {
-        knowledgeVersion: normalizeCanonicalVersion(data.knowledgeVersion),
-      });
+      snapshots.set(
+        `wellnessActivities/${activityId}`,
+        await resolveWellnessSnapshot(db, activityId, authority, mode),
+      );
     }
   }
   return snapshots;
+}
+
+type AuthorityRead =
+  | { status: 'hit'; snapshot: CanonicalSnapshot }
+  | { status: 'miss' }
+  | { status: 'unavailable' };
+
+/**
+ * Single authoritative read. A PG hit returns the snapshot (throwing
+ * invalid-argument for draft/retired — the authoritative rejection).
+ * A PG miss or infrastructure failure is reported, never thrown, so the
+ * caller applies the mode contract (fallback vs fail-closed).
+ */
+async function readAuthorityRecord(
+  authority: KnowledgeAuthorityReader | null | undefined,
+  kind: 'fitness' | 'wellness',
+  id: string,
+): Promise<AuthorityRead> {
+  if (!authority) return { status: 'unavailable' };
+  let record;
+  try {
+    record = await authority.findCanonical(id);
+  } catch {
+    return { status: 'unavailable' };
+  }
+  if (!record || record.kind !== kind) return { status: 'miss' };
+  if (record.lifecycle !== 'published') {
+    throw new HttpsError(
+      'invalid-argument',
+      `Activity "${id}" is no longer available for new challenges (retired or draft). Please replace it.`,
+    );
+  }
+  if (kind === 'fitness') {
+    return {
+      status: 'hit',
+      snapshot: {
+        knowledgeVersion: normalizeCanonicalVersion(record.knowledgeVersion),
+        metric: optionalString(record.metricType, 100),
+        tier1: optionalString(record.tier1, 200),
+        tier2: optionalString(record.tier2, 200),
+      },
+    };
+  }
+  return {
+    status: 'hit',
+    snapshot: { knowledgeVersion: normalizeCanonicalVersion(record.knowledgeVersion) },
+  };
+}
+
+function unknownExerciseError(exerciseId: string): HttpsError {
+  return new HttpsError(
+    'invalid-argument',
+    `Unknown canonical exercise "${exerciseId}". Custom activities must not carry an exerciseId.`,
+  );
+}
+
+function unknownActivityError(activityId: string): HttpsError {
+  return new HttpsError(
+    'invalid-argument',
+    `Unknown canonical wellness activity "${activityId}". Custom activities must not carry an activityId.`,
+  );
+}
+
+function authorityUnavailableError(): HttpsError {
+  return new HttpsError(
+    'unavailable',
+    'Canonical Knowledge authority is temporarily unavailable. Please retry.',
+  );
+}
+
+async function resolveExerciseSnapshot(
+  db: CoreDb,
+  exerciseId: string,
+  authority: KnowledgeAuthorityReader | null | undefined,
+  mode: KnowledgeAuthorityMode,
+): Promise<CanonicalSnapshot> {
+  if (mode !== 'firestore') {
+    const read = await readAuthorityRecord(authority, 'fitness', exerciseId);
+    if (read.status === 'hit') return read.snapshot;
+    if (mode === 'postgres') {
+      // Final authority mode: no stale Firestore record may substitute.
+      if (read.status === 'miss') throw unknownExerciseError(exerciseId);
+      throw authorityUnavailableError();
+    }
+    // TRANSITIONAL read-through (import lag / rollback window). Remove with
+    // the last Firestore reader.
+  }
+  return readExerciseFromFirestore(db, exerciseId);
+}
+
+async function resolveWellnessSnapshot(
+  db: CoreDb,
+  activityId: string,
+  authority: KnowledgeAuthorityReader | null | undefined,
+  mode: KnowledgeAuthorityMode,
+): Promise<CanonicalSnapshot> {
+  if (mode !== 'firestore') {
+    const read = await readAuthorityRecord(authority, 'wellness', activityId);
+    if (read.status === 'hit') return read.snapshot;
+    if (mode === 'postgres') {
+      // Final authority mode: no stale Firestore record may substitute.
+      if (read.status === 'miss') throw unknownActivityError(activityId);
+      throw authorityUnavailableError();
+    }
+    // TRANSITIONAL read-through (import lag / rollback window). Remove with
+    // the last Firestore reader.
+  }
+  return readActivityFromFirestore(db, activityId);
+}
+
+async function readExerciseFromFirestore(db: CoreDb, exerciseId: string): Promise<CanonicalSnapshot> {
+  const snap = await db.collection('catalogExercises').doc(exerciseId).get();
+  const data = snap && snap.exists
+    ? (snap.data() as Record<string, unknown> | undefined)
+    : undefined;
+  if (!data) throw unknownExerciseError(exerciseId);
+  const status = data.lifecycleStatus;
+  if (typeof status === 'string' && status !== 'published') {
+    throw new HttpsError(
+      'invalid-argument',
+      `Activity "${exerciseId}" is no longer available for new challenges (retired or draft). Please replace it.`,
+    );
+  }
+  const metric = data.metric as { type?: unknown } | undefined;
+  return {
+    knowledgeVersion: normalizeCanonicalVersion(data.knowledgeVersion),
+    metric: optionalString(metric?.type, 100),
+    tier1: optionalString(data.tier_1, 200),
+    tier2: optionalString(data.tier_2, 200),
+  };
+}
+
+async function readActivityFromFirestore(db: CoreDb, activityId: string): Promise<CanonicalSnapshot> {
+  const snap = await db.collection('wellnessActivities').doc(activityId).get();
+  const data = snap && snap.exists
+    ? (snap.data() as Record<string, unknown> | undefined)
+    : undefined;
+  if (!data) throw unknownActivityError(activityId);
+  const status = data.lifecycleStatus;
+  if (typeof status === 'string' && status !== 'published') {
+    throw new HttpsError(
+      'invalid-argument',
+      `Activity "${activityId}" is no longer available for new challenges (retired or draft). Please replace it.`,
+    );
+  }
+  return { knowledgeVersion: normalizeCanonicalVersion(data.knowledgeVersion) };
 }
 
 /**
@@ -384,6 +506,8 @@ async function getDocData<T extends Record<string, unknown>>(transaction: any, r
 export async function createChallengeWithCreatorMembershipCore(
   db: CoreDb,
   input: CreateChallengeWithCreatorMembershipInput,
+  authority?: KnowledgeAuthorityReader | null,
+  mode: KnowledgeAuthorityMode = 'transition',
 ) {
   const actorUid = requireString(input.actorUid, 'actorUid', { min: 1, max: 200 });
   const createdBy = optionalString(input.createdBy, 200) ?? actorUid;
@@ -466,7 +590,7 @@ export async function createChallengeWithCreatorMembershipCore(
   // are rejected (custom entries must carry no canonical ID). Reads happen
   // here, before the transaction opens. Historical challenges are never
   // re-validated, so retirement cannot break them.
-  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities);
+  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities, authority, mode);
 
   // CORR-2: pin immutable canonical snapshot fields from the authoritative
   // record — a client cannot falsely claim a different canonical version or
@@ -655,6 +779,8 @@ export async function createChallengeFromAdminCore(
     activities?: unknown;
     donation?: unknown;
   },
+  authority?: KnowledgeAuthorityReader | null,
+  mode: KnowledgeAuthorityMode = 'transition',
 ) {
   const actorUid = requireString(input.actorUid, 'actorUid', { min: 1, max: 200 });
   const adminSnap = await db.collection('admins').doc(actorUid).get();
@@ -690,7 +816,7 @@ export async function createChallengeFromAdminCore(
       seenIds.add(id);
     }
   }
-  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities);
+  const canonicalSnapshots = await resolveCanonicalSnapshots(db, activities, authority, mode);
   applyCanonicalSnapshots(activities, canonicalSnapshots);
 
   const donation = normalizeDonation(input.donation);
@@ -725,7 +851,11 @@ export async function createChallengeFromAdminCore(
   return { challenge: { id: challengeId } };
 }
 
-export function createChallengeWithCreatorMembershipCallable(db: Firestore) {
+export function createChallengeWithCreatorMembershipCallable(
+  db: Firestore,
+  authority?: KnowledgeAuthorityReader | null,
+  mode: KnowledgeAuthorityMode = 'transition',
+) {
   return onCall(
     {
       region: 'us-central1',
@@ -734,12 +864,16 @@ export function createChallengeWithCreatorMembershipCallable(db: Firestore) {
       return createChallengeWithCreatorMembershipCore(db, {
         ...((request.data ?? {}) as Record<string, unknown>),
         actorUid: uidFromRequest(request),
-      });
+      }, authority, mode);
     },
   );
 }
 
-export function createChallengeFromAdminCallable(db: Firestore) {
+export function createChallengeFromAdminCallable(
+  db: Firestore,
+  authority?: KnowledgeAuthorityReader | null,
+  mode: KnowledgeAuthorityMode = 'transition',
+) {
   return onCall(
     {
       region: 'us-central1',
@@ -748,7 +882,7 @@ export function createChallengeFromAdminCallable(db: Firestore) {
       return createChallengeFromAdminCore(db, {
         ...((request.data ?? {}) as Record<string, unknown>),
         actorUid: uidFromRequest(request),
-      });
+      }, authority, mode);
     },
   );
 }

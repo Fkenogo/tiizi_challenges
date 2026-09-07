@@ -37,6 +37,7 @@ import {
   revokeGroupInviteCallable,
 } from './groupInviteBackend.js';
 import { createChallengeFromAdminCallable, createChallengeWithCreatorMembershipCallable } from './challengeCreationBackend.js';
+import { createKnowledgeAuthorityFromEnv, knowledgeAuthorityModeFromEnv } from './knowledgeAuthority.js';
 
 initializeApp();
 
@@ -50,8 +51,16 @@ export const redeemGroupInvite = redeemGroupInviteCallable(db);
 export const requestGroupJoin = requestGroupJoinCallable(db);
 export const approveGroupJoinRequest = approveGroupJoinRequestCallable(db);
 export const rejectGroupJoinRequest = rejectGroupJoinRequestCallable(db);
-export const createChallengeWithCreatorMembership = createChallengeWithCreatorMembershipCallable(db);
-export const createChallengeFromAdmin = createChallengeFromAdminCallable(db);
+// Phase B canonical Knowledge authority mode (TIIZI_KNOWLEDGE_AUTHORITY_MODE):
+// firestore = legacy Firestore-only; transition = PG first with controlled
+// Firestore fallback (default, migration behavior); postgres = PG/API only,
+// fail closed, Firestore never consulted. Null reader (DATABASE_URL unset)
+// keeps the legacy path in firestore/transition modes and fails closed in
+// postgres mode. Rollback before cutover: firestore/transition mode.
+const knowledgeAuthority = createKnowledgeAuthorityFromEnv();
+const knowledgeAuthorityMode = knowledgeAuthorityModeFromEnv();
+export const createChallengeWithCreatorMembership = createChallengeWithCreatorMembershipCallable(db, knowledgeAuthority, knowledgeAuthorityMode);
+export const createChallengeFromAdmin = createChallengeFromAdminCallable(db, knowledgeAuthority, knowledgeAuthorityMode);
 
 export const refreshAdminMetrics = onSchedule(
   {

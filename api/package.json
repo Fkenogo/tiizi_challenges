@@ -12,7 +12,9 @@
     "test": "vitest run",
     "migrate": "tsx src/migrateCli.ts",
     "shadow:import": "tsx src/shadowImportCli.ts",
-    "parity:memberships": "tsx src/parityCli.ts"
+    "parity:memberships": "tsx src/parityCli.ts",
+    "knowledge:import": "tsx src/knowledgeImportCli.ts",
+    "parity:knowledge": "tsx src/knowledgeParityCli.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

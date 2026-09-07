@@ -164,7 +164,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /catalogExercises/{exerciseId} {
       allow read: if true;
-      allow create, update, delete: if canManageExercises();
+      // Phase B: PostgreSQL/API is authoritative for canonical Knowledge.
+      // Ordinary client writes (including admin console writes) are blocked
+      // so no application code can mutate canonical Knowledge through
+      // Firestore; historical data stays readable during transition. Admin
+      // mutations go through the Tiizi API. Deploy this rule at cutover
+      // step 7 only (authority mode postgres + parity proven); before that,
+      // firestore/transition-mode admin screens still write here.
+      // Templates below are untouched.
+      allow create, update, delete: if false;
     }
 
     // Top-level fields a user may write on their own /users/{uid} document.
@@ -332,7 +340,9 @@ service cloud.firestore {
 
     match /wellnessActivities/{activityId} {
       allow read: if isAuthenticated();
-      allow write: if canModerateChallenges();
+      // Phase B: PostgreSQL/API is authoritative for canonical Knowledge
+      // (same rule as catalogExercises above — reads stay, writes blocked).
+      allow create, update, delete: if false;
     }
 
     match /wellnessLogs/{logId} {

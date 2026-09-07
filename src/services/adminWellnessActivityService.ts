@@ -1,5 +1,17 @@
 import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { tiiziKnowledgeAuthorityMode } from '../api/apiClient';
+import { isKnowledgeApiActive } from '../api/knowledgeAuthorityMode';
+import {
+  createKnowledgeItem,
+  fetchAdminKnowledgeList,
+  fetchKnowledgeById,
+  mapApiItemToWellnessActivity,
+  mapWellnessActivityToApiInput,
+  publishKnowledgeItem,
+  retireKnowledgeItem,
+  reviseKnowledgeItem,
+} from '../api/knowledgeApi';
 import type { WellnessActivity, WellnessCategory, WellnessDifficulty, WellnessActivityType } from '../types/wellnessActivity';
 import { KNOWLEDGE_VERSION_INITIAL, nextKnowledgeVersion } from '../utils/knowledgeLifecycle';
 
@@ -52,12 +64,26 @@ class AdminWellnessActivityService {
   }
 
   async getActivityById(id: string): Promise<WellnessActivity | null> {
+    // Phase B: admins read the new authority when flagged (ids are Tiizi
+    // UUIDs then); legacy Firestore path otherwise.
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
+      try {
+        const item = await fetchKnowledgeById(id);
+        return item.kind === 'wellness' ? mapApiItemToWellnessActivity(item) : null;
+      } catch {
+        return null;
+      }
+    }
     const snap = await getDoc(doc(db, this.collectionName, id));
     if (!snap.exists()) return null;
     return { id: snap.id, ...(snap.data() as Omit<WellnessActivity, 'id'>) };
   }
 
   async getAdminWellnessActivities(): Promise<WellnessActivity[]> {
+    // Phase B: admin list comes from the Tiizi API when flagged.
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
+      return (await fetchAdminKnowledgeList('wellness')).map(mapApiItemToWellnessActivity);
+    }
     const snap = await getDocs(query(collection(db, this.collectionName)));
     return snap.docs
       .map((item) => ({ id: item.id, ...(item.data() as Omit<WellnessActivity, 'id'>) }))
@@ -67,6 +93,17 @@ class AdminWellnessActivityService {
   async createActivity(input: AdminWellnessActivityInput): Promise<string> {
     const errors = this.validateInput(input);
     if (errors.length > 0) throw new Error(errors.join(' '));
+
+    // Phase B: canonical mutation authority is the Tiizi API (PostgreSQL)
+    // when flagged — versions start at 1 server-side. Returns the Tiizi UUID.
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
+      const created = await createKnowledgeItem(
+        'wellness',
+        mapWellnessActivityToApiInput(input),
+        input.lifecycleStatus === 'draft' ? 'draft' : undefined,
+      );
+      return created.id;
+    }
 
     const idBase = slugify(input.name) || 'wellness-activity';
     const existing = await getDocs(query(collection(db, this.collectionName)));
@@ -93,6 +130,12 @@ class AdminWellnessActivityService {
   async updateActivity(documentId: string, input: AdminWellnessActivityInput): Promise<void> {
     const errors = this.validateInput(input);
     if (errors.length > 0) throw new Error(errors.join(' '));
+    // Phase B: content revisions go through the Tiizi API (atomic version
+    // increment server-side) when flagged.
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
+      await reviseKnowledgeItem(documentId, mapWellnessActivityToApiInput(input));
+      return;
+    }
     // CORR-1: a canonical content revision atomically advances the version
     // (read-current → write-next in a transaction; no lost updates).
     // Lifecycle-only changes go through setLifecycleStatus and never touch
@@ -122,6 +165,24 @@ class AdminWellnessActivityService {
   ): Promise<void> {
     if (lifecycleStatus !== 'draft' && lifecycleStatus !== 'published' && lifecycleStatus !== 'retired') {
       throw new Error(`Invalid lifecycle status: ${lifecycleStatus}`);
+    }
+    // Phase B: lifecycle-only transitions go through the Tiizi API when
+    // flagged (forward-only draft → published → retired; never touches the
+    // version). Moving an item back to draft is rejected.
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
+      if (lifecycleStatus === 'published') {
+        await publishKnowledgeItem(documentId);
+        return;
+      }
+      if (lifecycleStatus === 'retired') {
+        await retireKnowledgeItem(documentId);
+        return;
+      }
+      const current = await fetchKnowledgeById(documentId);
+      if (current.lifecycle !== 'draft') {
+        throw new Error('Cannot move knowledge back to draft once published');
+      }
+      return;
     }
     await updateDoc(doc(db, this.collectionName, documentId), {
       lifecycleStatus,
