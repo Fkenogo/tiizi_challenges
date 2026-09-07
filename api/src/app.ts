@@ -1,6 +1,7 @@
 import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import { requireAuth, type TokenVerifier } from './auth.js';
+import { allowedOriginsFromEnv } from './cors.js';
 import type { Db } from './db.js';
 import { registerGroupIdentityRoutes } from './groupIdentity.js';
 import { registerKnowledgeRoutes } from './knowledge.js';
@@ -13,7 +14,10 @@ export interface AppDeps {
 
 export function buildApp(deps: AppDeps) {
   const app = Fastify({ logger: false });
-  void app.register(cors);
+  // Fail fast on invalid CORS configuration. An empty allowlist denies
+  // cross-origin requests (same-origin only) — it never falls back to '*'.
+  const allowedOrigins = allowedOriginsFromEnv();
+  void app.register(cors, allowedOrigins.length > 0 ? { origin: allowedOrigins } : { origin: false });
 
   app.setErrorHandler((error: FastifyError, _request, reply) => {
     const statusCode = error.statusCode ?? 500;
@@ -30,11 +34,26 @@ export function buildApp(deps: AppDeps) {
     }
   });
 
+  // Liveness only: never touches the database, never requires auth.
   app.get('/health', async () => ({ status: 'ok', service: 'tiizi-api' }));
+
+  // Readiness: minimal PostgreSQL connectivity check. 200 only when the
+  // database answers; 503 without leaking connection details when it does not.
+  // Intentionally outside /v1/ and exempt from authentication below.
+  app.get('/ready', async (_request, reply) => {
+    try {
+      await deps.db.query('SELECT 1');
+      return { status: 'ok', service: 'tiizi-api' };
+    } catch {
+      return reply
+        .status(503)
+        .send({ error: { code: 'not_ready', message: 'Database unavailable' } });
+    }
+  });
 
   const auth = requireAuth(deps.db, deps.verifier);
   app.addHook('onRequest', async (request, reply) => {
-    if (request.url === '/health' || !request.url.startsWith('/v1/')) return;
+    if (request.url === '/health' || request.url === '/ready' || !request.url.startsWith('/v1/')) return;
     await auth(request, reply);
   });
 

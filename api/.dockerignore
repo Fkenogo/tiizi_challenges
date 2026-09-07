@@ -1,0 +1,20 @@
+# Never bake secrets, local env, or credentials into the image.
+node_modules
+dist
+.env
+.env.*
+*.local
+npm-debug.log*
+Dockerfile
+.dockerignore
+# test/ IS required at build time: tsc must see the same file set as local
+# builds to emit the dist/src layout (compiled tests are pruned from dist
+# afterwards, so they never reach the runtime image).
+vitest.config.ts
+# Tooling / VCS artefacts.
+.git
+.gitignore
+coverage
+.nyc_output
+.vscode
+.idea
