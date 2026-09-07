@@ -154,6 +154,17 @@ data reconciliation step (re-import, parity, and review of diverged
 lifecycle/version/content), because Firestore no longer receives writes and
 has diverged from the authority.
 
+## Phase B status (merged 2026-09-07)
+
+- Merged to main: `95f9dcc` (PR #14, head `acb08e9`); CI green.
+- Implementation complete; Founder real-data verification passed against
+  local PostgreSQL 17: 154 fitness + 67 wellness imported, 51 roles synced,
+  221/221 parity match, idempotent re-apply/re-parity.
+- Production authority cutover NOT performed and NOT live: no shared
+  production PostgreSQL/API runtime exists yet. `postgres` authority mode
+  and the Firestore Knowledge write-deny rules deploy only after that
+  runtime is established, per the cutover contract above.
+
 ## Transitional identity bridge (Phase A2)
 
 During the strangler migration the frontend still holds Firestore group
