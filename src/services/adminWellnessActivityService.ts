@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { isTiiziKnowledgeApiEnabled } from '../api/apiClient';
+import { tiiziKnowledgeAuthorityMode } from '../api/apiClient';
+import { isKnowledgeApiActive } from '../api/knowledgeAuthorityMode';
 import {
   createKnowledgeItem,
   fetchAdminKnowledgeList,
@@ -65,7 +66,7 @@ class AdminWellnessActivityService {
   async getActivityById(id: string): Promise<WellnessActivity | null> {
     // Phase B: admins read the new authority when flagged (ids are Tiizi
     // UUIDs then); legacy Firestore path otherwise.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       try {
         const item = await fetchKnowledgeById(id);
         return item.kind === 'wellness' ? mapApiItemToWellnessActivity(item) : null;
@@ -80,7 +81,7 @@ class AdminWellnessActivityService {
 
   async getAdminWellnessActivities(): Promise<WellnessActivity[]> {
     // Phase B: admin list comes from the Tiizi API when flagged.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       return (await fetchAdminKnowledgeList('wellness')).map(mapApiItemToWellnessActivity);
     }
     const snap = await getDocs(query(collection(db, this.collectionName)));
@@ -95,7 +96,7 @@ class AdminWellnessActivityService {
 
     // Phase B: canonical mutation authority is the Tiizi API (PostgreSQL)
     // when flagged — versions start at 1 server-side. Returns the Tiizi UUID.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       const created = await createKnowledgeItem(
         'wellness',
         mapWellnessActivityToApiInput(input),
@@ -131,7 +132,7 @@ class AdminWellnessActivityService {
     if (errors.length > 0) throw new Error(errors.join(' '));
     // Phase B: content revisions go through the Tiizi API (atomic version
     // increment server-side) when flagged.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       await reviseKnowledgeItem(documentId, mapWellnessActivityToApiInput(input));
       return;
     }
@@ -168,7 +169,7 @@ class AdminWellnessActivityService {
     // Phase B: lifecycle-only transitions go through the Tiizi API when
     // flagged (forward-only draft → published → retired; never touches the
     // version). Moving an item back to draft is rejected.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       if (lifecycleStatus === 'published') {
         await publishKnowledgeItem(documentId);
         return;

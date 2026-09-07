@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
-import { isTiiziKnowledgeApiEnabled } from '../api/apiClient';
+import { tiiziKnowledgeAuthorityMode } from '../api/apiClient';
 import { fetchKnowledgeById, fetchPublishedKnowledge, mapApiItemToWellnessActivity } from '../api/knowledgeApi';
+import { allowsFirestoreFallback, isKnowledgeApiActive } from '../api/knowledgeAuthorityMode';
 import { wellnessActivityService } from '../services/wellnessActivityService';
 import type { WellnessActivity, WellnessCategory, WellnessDifficulty } from '../types/wellnessActivity';
 
@@ -11,20 +12,21 @@ export function useWellnessActivities(filters?: {
   search?: string;
 }) {
   const { user } = useAuth();
-  const apiEnabled = isTiiziKnowledgeApiEnabled();
+  // Phase B authority mode: firestore = legacy paths; transition/postgres =
+  // API lists (published-only server-side, ids are Tiizi UUIDs).
+  const mode = tiiziKnowledgeAuthorityMode();
+  const apiActive = isKnowledgeApiActive(mode);
   return useQuery<WellnessActivity[]>({
     queryKey: [
       'wellness-activities',
-      apiEnabled ? 'api' : 'firestore',
+      mode,
       user?.uid ?? 'anon',
       filters?.category ?? 'all',
       filters?.difficulty ?? 'all',
       filters?.search ?? '',
     ],
     queryFn: async () => {
-      // Phase B: API primary when flagged (published-only server-side, ids
-      // are Tiizi UUIDs); legacy Firestore path otherwise.
-      const all = apiEnabled
+      const all = apiActive
         ? (await fetchPublishedKnowledge('wellness', filters?.search || undefined))
           .map(mapApiItemToWellnessActivity)
         : filters?.search
@@ -42,18 +44,21 @@ export function useWellnessActivities(filters?: {
 
 export function useWellnessActivity(activityId?: string | null) {
   const { user } = useAuth();
-  const apiEnabled = isTiiziKnowledgeApiEnabled();
+  const mode = tiiziKnowledgeAuthorityMode();
+  const apiActive = isKnowledgeApiActive(mode);
   return useQuery({
-    queryKey: ['wellness-activity', apiEnabled ? 'api' : 'firestore', user?.uid ?? 'anon', activityId ?? ''],
+    queryKey: ['wellness-activity', mode, user?.uid ?? 'anon', activityId ?? ''],
     queryFn: async () => {
       if (!activityId) return null;
-      if (!apiEnabled) return wellnessActivityService.getActivityById(activityId);
-      // Phase B by-ID: API primary, Firestore fallback for legacy slug ids
-      // held by older screens/caches during transition.
+      if (!apiActive) return wellnessActivityService.getActivityById(activityId);
+      // API primary. Controlled Firestore fallback ONLY in transition mode.
+      // In postgres mode API errors surface — Firestore must never
+      // substitute for PG authority.
       try {
         const item = await fetchKnowledgeById(activityId);
         return item.kind === 'wellness' ? mapApiItemToWellnessActivity(item) : null;
-      } catch {
+      } catch (error) {
+        if (!allowsFirestoreFallback(mode)) throw error;
         return wellnessActivityService.getActivityById(activityId);
       }
     },

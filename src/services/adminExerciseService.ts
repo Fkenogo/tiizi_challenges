@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { isTiiziKnowledgeApiEnabled } from '../api/apiClient';
+import { tiiziKnowledgeAuthorityMode } from '../api/apiClient';
+import { isKnowledgeApiActive } from '../api/knowledgeAuthorityMode';
 import {
   createKnowledgeItem,
   fetchAdminKnowledgeList,
@@ -61,7 +62,7 @@ class AdminExerciseService {
   async getExerciseById(id: string): Promise<CatalogExercise | null> {
     // Phase B: admins read the new authority when flagged (ids are Tiizi
     // UUIDs then); legacy Firestore path otherwise.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       try {
         const item = await fetchKnowledgeById(id);
         return item.kind === 'fitness' ? mapApiItemToExercise(item) : null;
@@ -78,7 +79,7 @@ class AdminExerciseService {
     // Usage counts always come from the challenges collection (Challenges
     // authority is unchanged in Phase B) regardless of the Knowledge source.
     const challengeSnap = await getDocs(collection(db, 'challenges'));
-    const exercises: CatalogExercise[] = isTiiziKnowledgeApiEnabled()
+    const exercises: CatalogExercise[] = isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())
       ? (await fetchAdminKnowledgeList('fitness')).map(mapApiItemToExercise)
       : (await getDocs(collection(db, this.collectionName))).docs.map(
         (d) => ({ id: d.id, ...(d.data() as Omit<CatalogExercise, 'id'>) }),
@@ -103,7 +104,7 @@ class AdminExerciseService {
 
     // Phase B: canonical mutation authority is the Tiizi API (PostgreSQL)
     // when flagged — versions start at 1 server-side. Returns the Tiizi UUID.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       const created = await createKnowledgeItem(
         'fitness',
         mapExerciseToApiInput(input),
@@ -137,7 +138,7 @@ class AdminExerciseService {
     if (errors.length > 0) throw new Error(errors.join(' '));
     // Phase B: content revisions go through the Tiizi API (atomic version
     // increment server-side) when flagged.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       await reviseKnowledgeItem(documentId, mapExerciseToApiInput(input));
       return;
     }
@@ -174,7 +175,7 @@ class AdminExerciseService {
     // flagged (forward-only draft → published → retired; never touches the
     // version). Moving an item back to draft is rejected — retirement
     // replaces deletion and publication is one-way.
-    if (isTiiziKnowledgeApiEnabled()) {
+    if (isKnowledgeApiActive(tiiziKnowledgeAuthorityMode())) {
       if (lifecycleStatus === 'published') {
         await publishKnowledgeItem(documentId);
         return;

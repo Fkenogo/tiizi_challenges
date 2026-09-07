@@ -97,15 +97,62 @@ npm run parity:knowledge
   consulted first per canonical ID; PG hit decides authoritatively, PG miss
   or outage uses the transitional Firestore read-through, unset
   `DATABASE_URL` keeps legacy Firestore behavior (rollback).
-- Frontend cutover flag: `VITE_TIIZI_KNOWLEDGE_API_ENABLED=true` moves
-  Knowledge lists, by-ID reads (with Firestore fallback), and admin
-  mutations to the API. Unset = legacy Firestore behavior (rollback).
+- Frontend authority mode (`VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE`, else the
+  legacy `VITE_TIIZI_KNOWLEDGE_API_ENABLED` flag): `firestore` = legacy
+  paths; `transition` = API primary with controlled by-ID Firestore
+  fallback; `postgres` = API/PG only, API errors surface, no fallback.
 
 Out of scope (later domains): Groups, Challenges, Activity Events, Social,
 Donations, Firebase Auth removal, challenge/workout templates
 (`challengeTemplates`/`wellnessTemplates` stay in Firestore), verification/
 correction/recognition/rewards authorities, and the seven accepted Phase A2
 orphan groupMembership rows.
+
+## Phase B cutover + rollback contract
+
+Authority mode contract (`TIIZI_KNOWLEDGE_AUTHORITY_MODE` for functions,
+`VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE` for the frontend):
+
+- `firestore`: legacy pre-cutover behavior (Firestore canonical resolution
+  and legacy frontend paths; PostgreSQL never consulted).
+- `transition` (default when unset): temporary migration mode — PostgreSQL
+  first, controlled Firestore fallback allowed for not-yet-imported records
+  and migration compatibility.
+- `postgres`: final Phase B authority mode. Canonical Knowledge authority =
+  PostgreSQL/API only. Challenge creation: PG published hit → accept; PG
+  draft/retired → reject; PG missing → reject the canonical ID; PG
+  unavailable → fail closed (`unavailable`); Firestore NEVER consulted.
+  Frontend: runtime lists and canonical by-ID reads use API/PG authority
+  only — no silent Firestore fallback on API 404, 5xx, network failure, or
+  retired/missing records. Legacy Firestore IDs remain resolvable through
+  the API compatibility mapping (`GET /v1/compat/knowledge-ids`, backed by
+  the PG `legacy_firestore_id` mapping) — never by treating Firestore as
+  authority. Firestore document IDs are never canonical domain IDs.
+
+Exact cutover sequence:
+
+1. run `knowledge:import --dry-run`;
+2. run `knowledge:import --apply`;
+3. run `parity:knowledge`;
+4. resolve material parity defects (malformed Firestore records surface as
+   `missing_in_api` by design and stay out of PostgreSQL);
+5. set Knowledge authority mode = `postgres` (functions env +
+   frontend env);
+6. enable frontend Knowledge API (covered by mode `postgres`; the legacy
+   boolean flag is only a pre-cutover fallback);
+7. deploy Firestore Knowledge write-deny rules
+   (`firebase deploy --only firestore:rules`).
+
+After step 5, Firestore canonical Knowledge is historical/read-only
+migration data only. It must not participate in new challenge validation or
+ordinary Knowledge runtime authority.
+
+Rollback before step 5 may use `transition`/`firestore` mode (and unsetting
+the frontend flag). Rollback after PostgreSQL has accepted authoritative API
+writes must NOT simply switch back to stale Firestore without an explicit
+data reconciliation step (re-import, parity, and review of diverged
+lifecycle/version/content), because Firestore no longer receives writes and
+has diverged from the authority.
 
 ## Transitional identity bridge (Phase A2)
 

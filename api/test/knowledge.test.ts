@@ -12,6 +12,7 @@ import {
   summarizeKnowledgeParity,
 } from '../src/knowledgeParity.js';
 import {
+  forwardLifecycleTarget,
   normalizeKnowledgeRecord,
   runKnowledgeImport,
   type KnowledgeSource,
@@ -747,5 +748,148 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
       headers: authHeaders('adm'),
     });
     expect(historic.json().name).toBe('Firestore v5');
+  });
+});
+
+describe('forwardLifecycleTarget (import lifecycle sync, version-independent)', () => {
+  it('allows strict forward moves and blocks same-state/regressions', () => {
+    expect(forwardLifecycleTarget('draft', 'published')).toBe('published');
+    expect(forwardLifecycleTarget('draft', 'retired')).toBe('retired');
+    expect(forwardLifecycleTarget('published', 'retired')).toBe('retired');
+    expect(forwardLifecycleTarget('published', 'published')).toBeNull();
+    expect(forwardLifecycleTarget('retired', 'published')).toBeNull();
+    expect(forwardLifecycleTarget('retired', 'draft')).toBeNull();
+    expect(forwardLifecycleTarget('published', 'draft')).toBeNull();
+    expect(forwardLifecycleTarget('draft', 'draft')).toBeNull();
+  });
+});
+
+describe('runKnowledgeImport lifecycle-only synchronization (Finding 1)', () => {
+  const source = (knowledge: SourceKnowledgeItem[]): KnowledgeSource => ({
+    listKnowledge: async () => knowledge,
+    listUserRoles: async () => [],
+  });
+
+  const fitnessDoc = (
+    firestoreId: string,
+    data: Record<string, unknown>,
+  ): SourceKnowledgeItem => ({
+    firestoreId,
+    collection: 'catalogExercises',
+    data: {
+      name: 'Push-Ups',
+      tier_1: 'Upper Body',
+      tier_2: 'Strength',
+      difficulty: 'Beginner',
+      metric: { type: 'count', unit: 'reps' },
+      description: 'Classic',
+      ...data,
+    },
+  });
+
+  async function itemState(db: ReturnType<typeof testDb>, legacyId: string) {
+    const rows = await db.query<{
+      knowledge_id: string;
+      lifecycle: string;
+      current_version: number;
+      name: string;
+    }>(
+      `SELECT knowledge_id, lifecycle, current_version, name FROM knowledge_items
+       WHERE legacy_firestore_id = $1`,
+      [legacyId],
+    );
+    const row = rows.rows[0];
+    const versions = await db.query<{ count: string }>(
+      'SELECT COUNT(*) AS count FROM knowledge_item_versions WHERE item_id = $1',
+      [row.knowledge_id],
+    );
+    const versionContent = await db.query<{ name: string }>(
+      `SELECT name FROM knowledge_item_versions
+       WHERE item_id = $1 AND version = $2`,
+      [row.knowledge_id, Number(row.current_version)],
+    );
+    return {
+      lifecycle: row.lifecycle,
+      version: Number(row.current_version),
+      name: row.name,
+      versionRows: Number(versions.rows[0].count),
+      versionContentName: versionContent.rows[0]?.name,
+    };
+  }
+
+  it('v3 published PG + v3 retired Firestore → retired, version stays 3', async () => {
+    const db = testDb();
+    await runKnowledgeImport(
+      db,
+      source([fitnessDoc('push-ups', { knowledgeVersion: 3 })]),
+      { dryRun: false },
+    );
+    await runKnowledgeImport(
+      db,
+      source([fitnessDoc('push-ups', { knowledgeVersion: 3, lifecycleStatus: 'retired' })]),
+      { dryRun: false },
+    );
+    const state = await itemState(db, 'push-ups');
+    expect(state).toMatchObject({
+      lifecycle: 'retired',
+      version: 3,
+      name: 'Push-Ups',
+      versionRows: 1,
+      versionContentName: 'Push-Ups',
+    });
+  });
+
+  it('v3 draft PG + v3 published Firestore → published, version stays 3', async () => {
+    const db = testDb();
+    await runKnowledgeImport(
+      db,
+      source([fitnessDoc('push-ups', { knowledgeVersion: 3, lifecycleStatus: 'draft' })]),
+      { dryRun: false },
+    );
+    await runKnowledgeImport(
+      db,
+      source([fitnessDoc('push-ups', { knowledgeVersion: 3 })]),
+      { dryRun: false },
+    );
+    const state = await itemState(db, 'push-ups');
+    expect(state).toMatchObject({ lifecycle: 'published', version: 3, versionRows: 1 });
+  });
+
+  it('v3 retired PG + v3 published Firestore → stays retired (never regress)', async () => {
+    const db = testDb();
+    await runKnowledgeImport(
+      db,
+      source([fitnessDoc('push-ups', { knowledgeVersion: 3, lifecycleStatus: 'retired' })]),
+      { dryRun: false },
+    );
+    await runKnowledgeImport(
+      db,
+      source([fitnessDoc('push-ups', { knowledgeVersion: 3, name: 'Push-Ups Renamed' })]),
+      { dryRun: false },
+    );
+    const state = await itemState(db, 'push-ups');
+    expect(state).toMatchObject({
+      lifecycle: 'retired',
+      version: 3,
+      name: 'Push-Ups',
+      versionRows: 1,
+      versionContentName: 'Push-Ups',
+    });
+  });
+
+  it('equal-version lifecycle sync stays idempotent across repeated applies', async () => {
+    const db = testDb();
+    const first = source([fitnessDoc('push-ups', { knowledgeVersion: 2 })]);
+    const second = source([
+      fitnessDoc('push-ups', { knowledgeVersion: 2, lifecycleStatus: 'retired' }),
+    ]);
+    await runKnowledgeImport(db, first, { dryRun: false });
+    await runKnowledgeImport(db, second, { dryRun: false });
+    const synced = await itemState(db, 'push-ups');
+    expect(synced).toMatchObject({ lifecycle: 'retired', version: 2, versionRows: 1 });
+    const repeat = await runKnowledgeImport(db, second, { dryRun: false });
+    expect(repeat.fitnessWritten).toBe(1);
+    const stable = await itemState(db, 'push-ups');
+    expect(stable).toEqual(synced);
   });
 });

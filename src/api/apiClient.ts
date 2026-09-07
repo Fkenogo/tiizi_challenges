@@ -1,4 +1,8 @@
 import { auth } from '../lib/firebaseAuth';
+import {
+  resolveKnowledgeAuthorityMode,
+  type KnowledgeAuthorityMode,
+} from './knowledgeAuthorityMode';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -21,6 +25,10 @@ export function isTiiziApiEnabled(): boolean {
  * only when this is 'true'; otherwise the legacy Firestore paths run
  * unchanged. Safe rollback is unsetting the flag. Remove the Firestore
  * branches once parity is proven and PostgreSQL is the sole authority.
+ *
+ * Superseded by tiiziKnowledgeAuthorityMode(): an explicit
+ * VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE wins; otherwise this flag maps to
+ * transition (true) or firestore (false/unset).
  */
 export function isTiiziKnowledgeApiEnabled(): boolean {
   return import.meta.env.VITE_TIIZI_KNOWLEDGE_API_ENABLED === 'true';
@@ -75,4 +83,16 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
     throw new ApiError(response.status, code, message);
   }
   return (await response.json()) as T;
+}
+
+/**
+ * Effective frontend Knowledge authority mode. Explicit
+ * VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE wins; otherwise the legacy
+ * VITE_TIIZI_KNOWLEDGE_API_ENABLED flag maps to transition/firestore.
+ */
+export function tiiziKnowledgeAuthorityMode(): KnowledgeAuthorityMode {
+  return resolveKnowledgeAuthorityMode(
+    import.meta.env as Record<string, string | undefined>,
+    isTiiziKnowledgeApiEnabled(),
+  );
 }

@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { createChallengeWithCreatorMembershipCore } from '../functions/src/challengeCreationBackend.js';
-import type {
-  KnowledgeAuthorityReader,
-  KnowledgeAuthorityRecord,
+import {
+  knowledgeAuthorityModeFromEnv,
+  type KnowledgeAuthorityMode,
+  type KnowledgeAuthorityReader,
+  type KnowledgeAuthorityRecord,
 } from '../functions/src/knowledgeAuthority.js';
 
 /**
@@ -339,4 +341,171 @@ async function run() {
   console.log('knowledge authority backend: 9 scenarios passed');
 }
 
+async function runModes() {
+  const pgPublished = (version: number): KnowledgeAuthorityRecord => ({
+    knowledgeId: '66666666-6666-6666-6666-666666666666',
+    kind: 'fitness',
+    legacyId: 'push-ups',
+    lifecycle: 'published',
+    knowledgeVersion: version,
+    metricType: 'count',
+    tier1: 'Upper Body',
+    tier2: 'Strength',
+  });
+
+  // 10. firestore mode: PG is never consulted (draft in PG, published in
+  // Firestore → Firestore version pins; PG v7 ignored in favor of FS v1).
+  {
+    const db = new FakeDb();
+    seedMembership(db);
+    db.store.set('catalogExercises/push-ups', { name: 'Push-Ups', lifecycleStatus: 'published' });
+    const authority = stubAuthority({ 'push-ups': { ...pgPublished(7), lifecycle: 'draft' } });
+    const result = await createChallengeWithCreatorMembershipCore(
+      db as never,
+      fitnessInput('push-ups'),
+      authority,
+      'firestore',
+    );
+    assert.equal(storedVersion(db, result.challenge.id), 1, 'firestore mode must use Firestore');
+  }
+
+  // 11. firestore mode with no reader behaves like legacy.
+  {
+    const db = new FakeDb();
+    seedMembership(db);
+    db.store.set('catalogExercises/push-ups', { name: 'Push-Ups', lifecycleStatus: 'published' });
+    const result = await createChallengeWithCreatorMembershipCore(
+      db as never,
+      fitnessInput('push-ups'),
+      null,
+      'firestore',
+    );
+    assert.ok(result.challenge.id, 'firestore mode without reader must work');
+  }
+
+  // 12. postgres mode: published hit accepted with authoritative version.
+  {
+    const db = new FakeDb();
+    seedMembership(db);
+    const result = await createChallengeWithCreatorMembershipCore(
+      db as never,
+      fitnessInput('push-ups', 1),
+      stubAuthority({ 'push-ups': pgPublished(7) }),
+      'postgres',
+    );
+    assert.equal(storedVersion(db, result.challenge.id), 7, 'postgres hit must pin PG version');
+  }
+
+  // 13. postgres mode: PG miss rejects even though Firestore holds a
+  // published doc — Firestore must never substitute.
+  {
+    const db = new FakeDb();
+    seedMembership(db);
+    db.store.set('catalogExercises/ghost-doc', { name: 'Ghost', lifecycleStatus: 'published' });
+    await assertRejectsWithCode('postgres miss must reject', 'invalid-argument', () =>
+      createChallengeWithCreatorMembershipCore(
+        db as never,
+        fitnessInput('ghost-doc'),
+        stubAuthority({}),
+        'postgres',
+      ),
+    );
+    assert.equal(
+      Array.from(db.store.keys()).some((path) => path.startsWith('challenges/')),
+      false,
+      'postgres rejection must write nothing',
+    );
+  }
+
+  // 14. postgres mode: draft/retired reject.
+  {
+    for (const lifecycle of ['draft', 'retired']) {
+      const db = new FakeDb();
+      seedMembership(db);
+      const authority = stubAuthority({
+        'stale-doc': { ...pgPublished(2), lifecycle },
+      });
+      await assertRejectsWithCode(`postgres ${lifecycle} must reject`, 'invalid-argument', () =>
+        createChallengeWithCreatorMembershipCore(
+          db as never,
+          fitnessInput('stale-doc'),
+          authority,
+          'postgres',
+        ),
+      );
+    }
+  }
+
+  // 15. postgres mode: PG outage fails closed (unavailable), no fallback.
+  {
+    const db = new FakeDb();
+    seedMembership(db);
+    db.store.set('catalogExercises/push-ups', { name: 'Push-Ups', lifecycleStatus: 'published' });
+    const failing: KnowledgeAuthorityReader = {
+      async findCanonical() {
+        throw new Error('connection refused');
+      },
+    };
+    await assertRejectsWithCode('postgres outage must fail closed', 'unavailable', () =>
+      createChallengeWithCreatorMembershipCore(
+        db as never,
+        fitnessInput('push-ups'),
+        failing,
+        'postgres',
+      ),
+    );
+  }
+
+  // 16. postgres mode without a reader fails closed for canonical IDs but
+  // still allows custom activities (no canonical lookup needed).
+  {
+    const db = new FakeDb();
+    seedMembership(db);
+    await assertRejectsWithCode('postgres without reader must fail closed', 'unavailable', () =>
+      createChallengeWithCreatorMembershipCore(
+        db as never,
+        fitnessInput('push-ups'),
+        null,
+        'postgres',
+      ),
+    );
+    const custom = await createChallengeWithCreatorMembershipCore(
+      db as never,
+      {
+        ...fitnessInput('push-ups'),
+        activities: [{ exerciseName: 'Freestyle', targetValue: 5, unit: 'reps' }],
+      },
+      null,
+      'postgres',
+    );
+    assert.ok(custom.challenge.id, 'custom activities pass in postgres mode');
+  }
+
+  // 17. mode env contract: default transition, explicit modes, invalid throws.
+  {
+    assert.equal(knowledgeAuthorityModeFromEnv({}), 'transition');
+    assert.equal(
+      knowledgeAuthorityModeFromEnv({ TIIZI_KNOWLEDGE_AUTHORITY_MODE: 'postgres' }),
+      'postgres',
+    );
+    assert.equal(
+      knowledgeAuthorityModeFromEnv({ TIIZI_KNOWLEDGE_AUTHORITY_MODE: 'Firestore' }),
+      'firestore',
+    );
+    assert.equal(
+      knowledgeAuthorityModeFromEnv({ TIIZI_KNOWLEDGE_AUTHORITY_MODE: '  transition ' }),
+      'transition',
+    );
+    assert.throws(
+      () => knowledgeAuthorityModeFromEnv({ TIIZI_KNOWLEDGE_AUTHORITY_MODE: 'bogus' }),
+      /Invalid TIIZI_KNOWLEDGE_AUTHORITY_MODE/,
+    );
+    const modes: KnowledgeAuthorityMode[] = ['firestore', 'transition', 'postgres'];
+    assert.deepEqual(modes, ['firestore', 'transition', 'postgres']);
+  }
+
+  console.log('knowledge authority modes: 8 scenarios passed');
+}
+
 await run();
+await runModes();

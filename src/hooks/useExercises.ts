@@ -1,6 +1,7 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
-import { isTiiziKnowledgeApiEnabled } from '../api/apiClient';
+import { tiiziKnowledgeAuthorityMode } from '../api/apiClient';
 import { fetchKnowledgeById, fetchPublishedKnowledge, mapApiItemToExercise } from '../api/knowledgeApi';
+import { allowsFirestoreFallback, isKnowledgeApiActive } from '../api/knowledgeAuthorityMode';
 import { exerciseService } from '../services/exerciseService';
 import { CatalogExercise } from '../types';
 
@@ -49,10 +50,13 @@ export function useExercises(filters?: {
   tier2?: string;
   difficulty?: string;
 }): UseQueryResult<CatalogExercise[], Error> {
-  const apiEnabled = isTiiziKnowledgeApiEnabled();
+  // Phase B authority mode: firestore = legacy paths; transition/postgres =
+  // API lists (ids are Tiizi UUIDs). No Firestore fallback for lists.
+  const mode = tiiziKnowledgeAuthorityMode();
+  const apiActive = isKnowledgeApiActive(mode);
   return useQuery<CatalogExercise[], Error>({
-    queryKey: ['exercises', apiEnabled ? 'api' : 'firestore', filters],
-    queryFn: () => (apiEnabled ? getExercisesFromApi(filters) : exerciseService.getExercises(filters)),
+    queryKey: ['exercises', mode, filters],
+    queryFn: () => (apiActive ? getExercisesFromApi(filters) : exerciseService.getExercises(filters)),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     retry: 2,
@@ -67,20 +71,21 @@ export function useExercises(filters?: {
  * const { data: exercise } = useExercise('push-ups');
  */
 export function useExercise(id: string | undefined): UseQueryResult<CatalogExercise | null, Error> {
-  const apiEnabled = isTiiziKnowledgeApiEnabled();
+  const mode = tiiziKnowledgeAuthorityMode();
+  const apiActive = isKnowledgeApiActive(mode);
   return useQuery<CatalogExercise | null, Error>({
-    queryKey: ['exercise', apiEnabled ? 'api' : 'firestore', id],
+    queryKey: ['exercise', mode, id],
     queryFn: async () => {
       if (!id) return null;
-      if (!apiEnabled) return exerciseService.getExerciseById(id);
-      // Phase B by-ID: API primary (historical resolution preserved
-      // server-side), Firestore fallback for legacy slug ids held by older
-      // screens/caches during transition. Remove fallback with the last
-      // Firestore reader.
+      if (!apiActive) return exerciseService.getExerciseById(id);
+      // API primary. Controlled Firestore fallback ONLY in transition mode
+      // (legacy slug ids held by older screens/caches). In postgres mode API
+      // errors surface — Firestore must never substitute for PG authority.
       try {
         const item = await fetchKnowledgeById(id);
         return item.kind === 'fitness' ? mapApiItemToExercise(item) : null;
-      } catch {
+      } catch (error) {
+        if (!allowsFirestoreFallback(mode)) throw error;
         return exerciseService.getExerciseById(id);
       }
     },
@@ -99,11 +104,12 @@ export function useExercise(id: string | undefined): UseQueryResult<CatalogExerc
  * const { data: results } = useExerciseSearch(searchTerm);
  */
 export function useExerciseSearch(searchTerm: string): UseQueryResult<CatalogExercise[], Error> {
-  const apiEnabled = isTiiziKnowledgeApiEnabled();
+  const mode = tiiziKnowledgeAuthorityMode();
+  const apiActive = isKnowledgeApiActive(mode);
   return useQuery<CatalogExercise[], Error>({
-    queryKey: ['exercises', 'search', apiEnabled ? 'api' : 'firestore', searchTerm],
+    queryKey: ['exercises', 'search', mode, searchTerm],
     queryFn: async () => {
-      if (!apiEnabled) return exerciseService.searchExercises(searchTerm);
+      if (!apiActive) return exerciseService.searchExercises(searchTerm);
       if (searchTerm.length < 2) return [];
       const items = await fetchPublishedKnowledge('fitness', searchTerm);
       const term = searchTerm.toLowerCase();

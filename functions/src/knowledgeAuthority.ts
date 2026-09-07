@@ -3,26 +3,62 @@
  * trusted challenge-creation backend.
  *
  * Authority rule after Phase B: PostgreSQL/API is authoritative for canonical
- * Knowledge. The backend therefore consults PostgreSQL FIRST for every
- * supplied canonical ID (exerciseId/activityId — Tiizi UUID or legacy
- * Firestore document id):
+ * Knowledge. Which stores participate is governed by KnowledgeAuthorityMode
+ * (see below); the backend consults PostgreSQL FIRST for every supplied
+ * canonical ID (exerciseId/activityId — Tiizi UUID or legacy Firestore
+ * document id) in `transition` and `postgres` modes.
  *
- * - PG hit → the decision is authoritative (published resolves and pins the
- *   authoritative knowledgeVersion; draft/retired/missing-in-PG... see below);
- * - PG reachable but record absent → transitional Firestore read-through for
- *   not-yet-imported records (covers import lag during the strangler window);
- * - PG unreachable/misconfigured (or DATABASE_URL unset) → legacy Firestore
- *   path, unchanged. Rollback is unsetting DATABASE_URL.
- *
- * The Firestore branches below are TRANSITIONAL. Remove them once the
- * knowledge import covers all referenced records and parity is proven —
- * challenge creation must not consult two authorities permanently.
+ * The Firestore fallback branches in challengeCreationBackend are
+ * TRANSITIONAL (allowed only in `transition` mode). In `postgres` mode
+ * Firestore is NEVER consulted for canonical resolution.
  *
  * Custom/manual activities (no canonical ID) never touch either store and
  * pass through unchanged, exactly as before.
  */
 
 export type KnowledgeAuthorityKind = 'fitness' | 'wellness';
+
+/**
+ * Explicit canonical Knowledge authority mode
+ * (TIIZI_KNOWLEDGE_AUTHORITY_MODE):
+ *
+ * - `firestore`: legacy pre-cutover behavior. Canonical resolution uses
+ *   Firestore only; PostgreSQL is never consulted.
+ * - `transition`: temporary migration mode. PostgreSQL first; controlled
+ *   Firestore fallback is allowed for not-yet-imported records and
+ *   migration compatibility. TRANSITIONAL — remove with the last fallback.
+ * - `postgres`: final Phase B authority mode. PostgreSQL/API only:
+ *   published hit → accept; draft/retired → reject; missing → reject the
+ *   canonical ID; unavailable → fail closed; Firestore is NEVER consulted.
+ */
+export type KnowledgeAuthorityMode = 'firestore' | 'transition' | 'postgres';
+
+export const KNOWLEDGE_AUTHORITY_MODES: KnowledgeAuthorityMode[] = [
+  'firestore',
+  'transition',
+  'postgres',
+];
+
+export function isKnowledgeAuthorityMode(value: unknown): value is KnowledgeAuthorityMode {
+  return value === 'firestore' || value === 'transition' || value === 'postgres';
+}
+
+/**
+ * Reads the authority mode. Unset/blank defaults to `transition` (current
+ * Phase B migration behavior). An explicit invalid value throws — failing
+ * loud at startup is safer than silently running the wrong authority.
+ */
+export function knowledgeAuthorityModeFromEnv(
+  env: Record<string, string | undefined> = process.env,
+): KnowledgeAuthorityMode {
+  const raw = (env.TIIZI_KNOWLEDGE_AUTHORITY_MODE ?? '').trim().toLowerCase();
+  if (!raw) return 'transition';
+  if (isKnowledgeAuthorityMode(raw)) return raw;
+  throw new Error(
+    `Invalid TIIZI_KNOWLEDGE_AUTHORITY_MODE "${env.TIIZI_KNOWLEDGE_AUTHORITY_MODE}". ` +
+      'Expected firestore, transition, or postgres.',
+  );
+}
 
 export interface KnowledgeAuthorityRecord {
   /** Authoritative Tiizi knowledge UUID. */

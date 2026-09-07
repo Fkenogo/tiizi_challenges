@@ -97,6 +97,23 @@ const MEMBER_ROLES = new Set([
   'super_admin',
 ]);
 
+const LIFECYCLE_ORDER: KnowledgeLifecycle[] = ['draft', 'published', 'retired'];
+
+/**
+ * Forward-only lifecycle target for import synchronization, independent of
+ * content version. Returns the Firestore lifecycle when it is a strict
+ * forward move from the PostgreSQL lifecycle, else null (same state or a
+ * regression such as retired → published, which must never be applied).
+ */
+export function forwardLifecycleTarget(
+  current: KnowledgeLifecycle,
+  incoming: KnowledgeLifecycle,
+): KnowledgeLifecycle | null {
+  if (current === incoming) return null;
+  if (LIFECYCLE_ORDER.indexOf(incoming) > LIFECYCLE_ORDER.indexOf(current)) return incoming;
+  return null;
+}
+
 function stringValue(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -306,8 +323,12 @@ export async function runKnowledgeImport(
 
   await db.transaction(async (tx) => {
     for (const n of normalized) {
-      const existing = await tx.query<{ knowledge_id: string; current_version: number }>(
-        `SELECT knowledge_id, current_version FROM knowledge_items
+      const existing = await tx.query<{
+        knowledge_id: string;
+        current_version: number;
+        lifecycle: string;
+      }>(
+        `SELECT knowledge_id, current_version, lifecycle FROM knowledge_items
          WHERE legacy_firestore_id = $1`,
         [n.legacyId],
       );
@@ -330,9 +351,14 @@ export async function runKnowledgeImport(
         );
         continue;
       }
-      // PostgreSQL wins ties: only a strictly newer Firestore version moves
-      // current content forward. Equal versions keep API-side content (the
-      // version row already exists from the API write path).
+      // PostgreSQL wins content ties: only a strictly newer Firestore version
+      // moves current content forward. Equal versions keep API-side content
+      // (the version row already exists from the API write path).
+      // Lifecycle sync is INDEPENDENT of version: a safe forward lifecycle
+      // move (draft → published → retired) is applied even when versions are
+      // equal, without touching current_version, content, or history.
+      const currentLifecycle = normalizeLifecycle(row.lifecycle);
+      const lifecycleMove = forwardLifecycleTarget(currentLifecycle, n.lifecycle);
       if (n.version > Number(row.current_version)) {
         await tx.query(
           `UPDATE knowledge_items SET
@@ -342,7 +368,7 @@ export async function runKnowledgeImport(
              frequency = $13, points = $14, image_url = $15, tags = $16,
              details = $17, updated_at = now()
            WHERE knowledge_id = $1`,
-          [row.knowledge_id, n.lifecycle, n.version, ...contentValues(n)],
+          [row.knowledge_id, lifecycleMove ?? currentLifecycle, n.version, ...contentValues(n)],
         );
         await tx.query(
           `INSERT INTO knowledge_item_versions
@@ -350,6 +376,12 @@ export async function runKnowledgeImport(
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
            ON CONFLICT (item_id, version) DO NOTHING`,
           [row.knowledge_id, n.version, ...contentValues(n)],
+        );
+      } else if (lifecycleMove) {
+        await tx.query(
+          `UPDATE knowledge_items SET lifecycle = $2, updated_at = now()
+           WHERE knowledge_id = $1`,
+          [row.knowledge_id, lifecycleMove],
         );
       } else {
         await tx.query(
