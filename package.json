@@ -38,6 +38,7 @@
     "test:challenge-creation-6combos": "tsx scripts/testChallengeCreation6Combinations.ts",
     "test:challenge-creation-backend": "tsx scripts/testChallengeCreationBackend.ts",
     "test:knowledge-authority-backend": "tsx scripts/testKnowledgeAuthorityBackend.ts",
+    "test:functions-pg-authority-bridge": "tsx scripts/testFunctionsPgAuthorityBridge.ts",
     "test:knowledge-authority-mode": "tsx scripts/testKnowledgeAuthorityMode.ts",
     "test:knowledge-aggregates": "tsx scripts/testKnowledgeAggregates.ts",
     "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts",

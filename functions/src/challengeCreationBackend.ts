@@ -1,6 +1,7 @@
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { KnowledgeAuthorityMode, KnowledgeAuthorityReader } from './knowledgeAuthority.js';
+import { knowledgeCallableOptions } from './knowledgeRuntime.js';
 
 type CoreDb = {
   collection: (path: string) => any;
@@ -857,9 +858,7 @@ export function createChallengeWithCreatorMembershipCallable(
   mode: KnowledgeAuthorityMode = 'transition',
 ) {
   return onCall(
-    {
-      region: 'us-central1',
-    },
+    knowledgeCallableOptions(),
     async (request) => {
       return createChallengeWithCreatorMembershipCore(db, {
         ...((request.data ?? {}) as Record<string, unknown>),
@@ -875,9 +874,7 @@ export function createChallengeFromAdminCallable(
   mode: KnowledgeAuthorityMode = 'transition',
 ) {
   return onCall(
-    {
-      region: 'us-central1',
-    },
+    knowledgeCallableOptions(),
     async (request) => {
       return createChallengeFromAdminCore(db, {
         ...((request.data ?? {}) as Record<string, unknown>),

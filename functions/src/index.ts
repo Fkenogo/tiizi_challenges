@@ -38,6 +38,7 @@ import {
 } from './groupInviteBackend.js';
 import { createChallengeFromAdminCallable, createChallengeWithCreatorMembershipCallable } from './challengeCreationBackend.js';
 import { createKnowledgeAuthorityFromEnv, knowledgeAuthorityModeFromEnv } from './knowledgeAuthority.js';
+import { knowledgeAuthorityModeParam } from './knowledgeRuntime.js';
 
 initializeApp();
 
@@ -57,8 +58,15 @@ export const rejectGroupJoinRequest = rejectGroupJoinRequestCallable(db);
 // fail closed, Firestore never consulted. Null reader (DATABASE_URL unset)
 // keeps the legacy path in firestore/transition modes and fails closed in
 // postgres mode. Rollback before cutover: firestore/transition mode.
+//
+// The mode travels as a declared string param (default `transition`; the
+// production cutover sets it to `postgres` at deploy time). Resolving it here
+// registers the param and fails cold-start loudly on invalid values.
 const knowledgeAuthority = createKnowledgeAuthorityFromEnv();
-const knowledgeAuthorityMode = knowledgeAuthorityModeFromEnv();
+const knowledgeAuthorityMode = knowledgeAuthorityModeFromEnv({
+  ...process.env,
+  TIIZI_KNOWLEDGE_AUTHORITY_MODE: knowledgeAuthorityModeParam.value(),
+});
 export const createChallengeWithCreatorMembership = createChallengeWithCreatorMembershipCallable(db, knowledgeAuthority, knowledgeAuthorityMode);
 export const createChallengeFromAdmin = createChallengeFromAdminCallable(db, knowledgeAuthority, knowledgeAuthorityMode);
 

@@ -112,18 +112,43 @@ function mapAuthorityRow(row: AuthorityRow): KnowledgeAuthorityRecord | null {
   };
 }
 
+/** Default pool ceiling: small enough for callable warm instances. */
+export const AUTHORITY_POOL_MAX_DEFAULT = 3;
+/** Pool ceiling bounds: callable workloads stay within 1..5 connections. */
+export const AUTHORITY_POOL_MAX_MIN = 1;
+export const AUTHORITY_POOL_MAX_MAX = 5;
+
+/**
+ * Resolves the pg pool ceiling to a bounded integer. Non-numeric input keeps
+ * the default; out-of-range input clamps to [1, 5].
+ */
+export function resolveAuthorityPoolMax(value: unknown = AUTHORITY_POOL_MAX_DEFAULT): number {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n)) return AUTHORITY_POOL_MAX_DEFAULT;
+  return Math.min(AUTHORITY_POOL_MAX_MAX, Math.max(AUTHORITY_POOL_MAX_MIN, n));
+}
+
 /**
  * Standard PostgreSQL reader (node-postgres, lazy pool). No ORM, no Firebase.
+ * The pool is created once per reader and reused across requests on a warm
+ * instance; its ceiling is bounded for callable workloads.
  */
 export class PgKnowledgeAuthorityReader implements KnowledgeAuthorityReader {
   private pool: { query: (text: string, params: unknown[]) => Promise<{ rows: AuthorityRow[] }>; end: () => Promise<void> } | null = null;
 
-  constructor(private readonly connectionString: string) {}
+  readonly maxConnections: number;
+
+  constructor(
+    private readonly connectionString: string,
+    maxConnections?: number,
+  ) {
+    this.maxConnections = resolveAuthorityPoolMax(maxConnections);
+  }
 
   private async poolQuery(text: string, params: unknown[]): Promise<{ rows: AuthorityRow[] }> {
     if (!this.pool) {
       const { Pool } = await import('pg');
-      const pool = new Pool({ connectionString: this.connectionString });
+      const pool = new Pool({ connectionString: this.connectionString, max: this.maxConnections });
       this.pool = {
         query: (queryText: string, queryParams: unknown[]) => pool.query(queryText, queryParams as never[]) as Promise<{ rows: AuthorityRow[] }>,
         end: () => pool.end(),
