@@ -7,6 +7,10 @@ import { defineSecret, defineString } from 'firebase-functions/params';
  * - DATABASE_URL arrives via Secret Manager binding (never committed, never
  *   exposed to unrelated functions). At runtime secrets are injected as
  *   environment variables, which createKnowledgeAuthorityFromEnv() reads.
+ * - TIIZI_DB_SERVER_CA_PEM carries the Cloud SQL server CA (PEM) the same
+ *   way. The authority reader (same verified-TLS contract as the API, see
+ *   dbSsl.ts) materializes it to a 0600 temp file and enforces
+ *   sslmode=verify-ca; without it the reader refuses to connect.
  * - TIIZI_KNOWLEDGE_AUTHORITY_MODE is a non-secret string param. Default is
  *   `transition` (safe); production cutover sets it to `postgres`.
  * - TIIZI_FUNCTIONS_VPC_CONNECTOR names the Serverless VPC Access connector
@@ -16,6 +20,11 @@ import { defineSecret, defineString } from 'firebase-functions/params';
 export const KNOWLEDGE_DATABASE_URL_SECRET_NAME = 'DATABASE_URL';
 
 export const knowledgeDatabaseUrlSecret = defineSecret(KNOWLEDGE_DATABASE_URL_SECRET_NAME);
+
+/** Secret Manager name for the Cloud SQL server CA (PEM trust material). */
+export const KNOWLEDGE_SERVER_CA_SECRET_NAME = 'TIIZI_DB_SERVER_CA_PEM';
+
+export const knowledgeServerCaSecret = defineSecret(KNOWLEDGE_SERVER_CA_SECRET_NAME);
 
 export const knowledgeAuthorityModeParam = defineString('TIIZI_KNOWLEDGE_AUTHORITY_MODE', {
   default: 'transition',
@@ -40,21 +49,21 @@ export const KNOWLEDGE_VPC_EGRESS = 'PRIVATE_RANGES_ONLY' as const;
 
 export interface KnowledgeCallableOptions {
   region: 'us-central1';
-  secrets: [typeof knowledgeDatabaseUrlSecret];
+  secrets: [typeof knowledgeDatabaseUrlSecret, typeof knowledgeServerCaSecret];
   vpcConnector?: string;
   vpcConnectorEgressSettings?: typeof KNOWLEDGE_VPC_EGRESS;
 }
 
 /**
  * Shared options for the two PostgreSQL-authority callables. Region stays
- * pinned; the secret is always bound; the connector attaches only when
+ * pinned; both secrets are always bound; the connector attaches only when
  * configured (unset in non-production environments).
  */
 export function knowledgeCallableOptions(): KnowledgeCallableOptions {
   const connector = functionsVpcConnectorParam.value().trim();
   return {
     region: 'us-central1',
-    secrets: [knowledgeDatabaseUrlSecret],
+    secrets: [knowledgeDatabaseUrlSecret, knowledgeServerCaSecret],
     ...(connector
       ? { vpcConnector: connector, vpcConnectorEgressSettings: KNOWLEDGE_VPC_EGRESS }
       : {}),

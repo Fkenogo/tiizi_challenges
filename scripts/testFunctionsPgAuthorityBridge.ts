@@ -11,6 +11,7 @@ import {
 import { createChallengeWithCreatorMembershipCore } from '../functions/src/challengeCreationBackend.js';
 import {
   KNOWLEDGE_DATABASE_URL_SECRET_NAME,
+  KNOWLEDGE_SERVER_CA_SECRET_NAME,
   knowledgeCallableOptions,
 } from '../functions/src/knowledgeRuntime.js';
 
@@ -127,8 +128,8 @@ async function run() {
   assert.equal(resolveAuthorityPoolMax(Number.NaN), 3);
   assert.equal(resolveAuthorityPoolMax('bogus'), 3);
   assert.equal(resolveAuthorityPoolMax(2.9), 2);
-  assert.equal(new PgKnowledgeAuthorityReader('postgresql://x', undefined).maxConnections, 3);
-  assert.equal(new PgKnowledgeAuthorityReader('postgresql://x', 99).maxConnections, 5);
+  assert.equal(new PgKnowledgeAuthorityReader('postgresql://x@localhost/tiizi', undefined).maxConnections, 3);
+  assert.equal(new PgKnowledgeAuthorityReader('postgresql://x@localhost/tiizi', 99).maxConnections, 5);
 
   // E. Invalid authority mode fails loudly; valid modes resolve.
   assert.equal(knowledgeAuthorityModeFromEnv({ TIIZI_KNOWLEDGE_AUTHORITY_MODE: 'postgres' }), 'postgres');
@@ -212,7 +213,11 @@ async function run() {
   delete process.env.TIIZI_FUNCTIONS_VPC_CONNECTOR;
   const bare = knowledgeCallableOptions();
   assert.equal(bare.region, 'us-central1');
-  assert.equal(bare.secrets.length, 1);
+  assert.equal(bare.secrets.length, 2);
+  assert.ok(
+    bare.secrets.some((entry) => entry.name === KNOWLEDGE_SERVER_CA_SECRET_NAME),
+    'callables must bind the server-CA secret alongside DATABASE_URL',
+  );
   assert.ok(!('vpcConnector' in bare), 'connector option must be absent when unconfigured');
 
   // G. Unrelated Functions receive no DATABASE_URL and no VPC attachment.
