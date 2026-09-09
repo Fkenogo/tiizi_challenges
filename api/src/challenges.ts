@@ -19,6 +19,15 @@
  *
  * No Derived Truth here: no counters, totals, positions, or streak states.
  * No routes. No Firebase. Pure domain + `Db`.
+ *
+ * TRANSITIONAL GROUP INVARIANT: the FK makes the PG Group UUID the
+ * referential anchor, but Group operational authority still lives in
+ * Firestore and the PG groups row is a shadow that can go stale (deleted
+ * groups leave rows behind; status refreshes only on import runs). A stale
+ * shadow row alone must therefore never authorize establishment: creation
+ * requires an injected current-authority group check
+ * (ChallengeCreationResolvers.resolveGroupAuthority). The later
+ * Group-authority migration removes that seam; the FK stays.
  */
 
 import type { Db } from './db.js';
@@ -31,6 +40,16 @@ import {
   type ChallengeGoverningBasis,
   type ConfigVersionRow,
 } from './challengeConfigs.js';
+
+export interface ChallengeCreationResolvers extends ChallengeConfigResolvers {
+  /**
+   * TRANSITIONAL current-authority Group check. Confirm the group is live
+   * (exists and active) under whatever authority currently governs Groups.
+   * Return null when the group must not host new Challenges. Removed when
+   * Group authority migrates to PostgreSQL.
+   */
+  resolveGroupAuthority: (groupId: string) => Promise<{ status: string } | null>;
+}
 
 export type ChallengeType = 'collective' | 'competitive' | 'streak';
 
@@ -192,9 +211,13 @@ export function normalizeChallengeRow(row: {
 export async function createChallenge(
   db: Db,
   input: NewChallengeInput,
-  resolvers: ChallengeConfigResolvers,
+  resolvers: ChallengeCreationResolvers,
 ): Promise<{ challenge: ChallengeRow; version: ConfigVersionRow; activities: ActivityConfigRow[] }> {
   const basis = validateNewChallenge(input);
+  const authority = await resolvers.resolveGroupAuthority(input.group_id);
+  if (!authority || authority.status !== 'active') {
+    fail('group is not available for challenge establishment under current Group authority');
+  }
   return db.transaction(async (tx) => {
     let challenge: ChallengeRow;
     try {

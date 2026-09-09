@@ -26,9 +26,16 @@
 -- Standard PostgreSQL only. No Firebase/Firestore identifiers as domain
 -- keys: all identities are Tiizi UUIDs. groups/members already exist in
 -- PostgreSQL (Phase A/B); challenges reference them directly — no new
--- Group migration in this task (group rows originate from the existing
--- transitional shadow until Group authority migrates; a later phase
--- removes that provenance, not this relationship).
+-- Group migration in this task.
+--
+-- TRANSITIONAL GROUP INVARIANT (explicit): the FK challenges.group_id ->
+-- groups makes the PG Group UUID the referential anchor, but Group
+-- operational authority still lives in Firestore (the PG row is a shadow
+-- refreshed only on import runs, and deleted Firestore groups leave stale
+-- rows behind). A stale shadow row alone must therefore never grant
+-- authority to establish a Challenge: the creation seam requires an
+-- injected current-authority group check, which the later Group-authority
+-- migration removes. The FK stays; only the validation provenance moves.
 
 CREATE TABLE IF NOT EXISTS challenges (
   challenge_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -205,13 +212,17 @@ CREATE TRIGGER challenge_activity_configs_no_mutation
   BEFORE UPDATE OR DELETE ON challenge_activity_configs
   FOR EACH ROW EXECUTE FUNCTION challenge_activity_configs_immutable();
 
--- Explicit Challenge Participation. One row per (challenge, member):
--- withdrawal/removal end the row in place (history preserved); rejoining
--- the same challenge is not a new participation in C2A.
+-- Explicit Challenge Participation, modeled as EPISODES. One row per
+-- (challenge, member, join): an episode runs joined_at -> exited_at.
+-- No authoritative rule bars re-entry after exit (Stage F ends *active*
+-- participation on exit and preserves history; it never imposes permanent
+-- exclusion), so the model permits a later episode while making simultaneous
+-- active episodes impossible (partial unique index below). MVP UI need not
+-- expose rejoining, and no reinstatement policy is invented here.
 -- States: active (may log) | withdrawn (voluntary exit) | removed
 -- (authorized removal; actor recorded). Completion is a Derived Truth
--- outcome (C2B), never a participation state: exited rows block new
--- applications while their history stays attributable.
+-- outcome (C2B), never a participation state. C2B evaluates eligibility at
+-- occurred_at per episode interval; exited episodes stay historical.
 CREATE TABLE IF NOT EXISTS challenge_participations (
   participation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   challenge_id UUID NOT NULL REFERENCES challenges (challenge_id) ON DELETE RESTRICT,
@@ -224,7 +235,6 @@ CREATE TABLE IF NOT EXISTS challenge_participations (
   exited_by_member_id UUID REFERENCES members (member_id) ON DELETE RESTRICT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT challenge_participations_unique UNIQUE (challenge_id, member_id),
   CONSTRAINT challenge_participations_status_check CHECK (status IN ('active', 'withdrawn', 'removed')),
   CONSTRAINT challenge_participations_joined_version_check CHECK (joined_config_version >= 1),
   CONSTRAINT challenge_participations_exit_check CHECK (
@@ -234,11 +244,16 @@ CREATE TABLE IF NOT EXISTS challenge_participations (
   )
 );
 
+-- One ACTIVE episode per (challenge, member). Closed episodes never block a
+-- later episode; simultaneous active episodes are impossible by constraint.
+CREATE UNIQUE INDEX IF NOT EXISTS challenge_participations_one_active_idx
+  ON challenge_participations (challenge_id, member_id)
+  WHERE status = 'active';
 CREATE INDEX IF NOT EXISTS challenge_participations_challenge_idx ON challenge_participations (challenge_id);
 CREATE INDEX IF NOT EXISTS challenge_participations_member_idx ON challenge_participations (member_id);
 
 -- Participation guard: identity immutable; only active -> exited transitions;
--- exit columns paired with exited status; no reactivation in C2A.
+-- exit columns paired with exited status; history is never rewritten.
 CREATE OR REPLACE FUNCTION challenge_participations_guard_mutation()
 RETURNS trigger AS $$
 BEGIN

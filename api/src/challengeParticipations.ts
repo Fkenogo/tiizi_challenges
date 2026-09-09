@@ -1,24 +1,27 @@
 /**
- * Phase C2A Challenge Participation seam — explicit, attributable joining.
+ * Phase C2A Challenge Participation seam — explicit, attributable episodes.
  *
  * Stage F rules encoded here:
  * - Participation requires affirmative joining; group membership never
  *   auto-enrolls. Joining checks Group Membership (of the challenge's group)
  *   at join time.
- * - One participation per (challenge, member): exit ends the row in place,
- *   history stays attributable, and C2A offers no reactivation.
+ * - Participation is an EPISODE: one row per (challenge, member, join)
+ *   running joined_at -> exited_at. No authoritative rule bars re-entry
+ *   after exit, so a later episode is structurally possible; simultaneous
+ *   active episodes are impossible (partial unique index). No rejoin
+ *   UI/product behavior and no reinstatement policy are invented here.
  * - Exits are distinguishable: voluntary `withdrawn` vs authorized `removed`
- *   (actor recorded). Both end active participation and block further
- *   logging (enforced by C2B acceptance); prior records stay in history.
+ *   (actor recorded). Both end the episode and block further logging under
+ *   it (enforced by C2B acceptance); prior records stay in history.
  * - Completion is a Derived Truth outcome (C2B), never a participation
  *   state: no `completed`/`abandoned` status here.
  * - No Derived Truth counters on participation (no points, streaks,
  *   cumulative values): attribution + lifecycle only.
  *
- * C2B eligibility questions this foundation answers: was this member
- * participating (row exists)? Was it eligible at event time (active
- * interval [joined_at, exited_at) via isParticipationActiveAt)? Which
- * configuration applied (resolved per event time from versions)?
+ * C2B eligibility questions this foundation answers per episode: was this
+ * member participating (episode exists)? Was it eligible at event time
+ * (active interval [joined_at, exited_at) via isParticipationActiveAt)?
+ * Which configuration applied (resolved per event time from versions)?
  *
  * No routes. No Firebase. Pure domain + `Db`.
  */
@@ -77,9 +80,10 @@ export function normalizeParticipationRow(row: {
 }
 
 /**
- * Affirmative join. Requires: challenge exists and is not ended; member
- * holds an active group membership in the challenge's group (join-time
- * eligibility); no existing participation for the pair.
+ * Affirmative join: opens a new participation episode. Requires: challenge
+ * exists and is not ended; member holds an active group membership in the
+ * challenge's group (join-time eligibility); no currently ACTIVE episode
+ * for the pair (closed episodes never block a later episode).
  */
 export async function joinChallenge(
   db: Db,
@@ -115,7 +119,11 @@ export async function joinChallenge(
     );
     return normalizeParticipationRow(inserted.rows[0] as never);
   } catch (error) {
-    fail(`join rejected: ${(error as Error).message}`);
+    const message = (error as Error).message;
+    if (message.includes('challenge_participations_one_active_idx')) {
+      fail('an active participation episode already exists for this challenge and member');
+    }
+    fail(`join rejected: ${message}`);
   }
 }
 
@@ -167,13 +175,30 @@ async function readParticipation(db: Db, participationId: string): Promise<Parti
   return normalizeParticipationRow(result.rows[0] as never);
 }
 
-export async function getParticipation(
+/** All episodes for the pair, oldest first (history is never rewritten). */
+export async function listParticipations(
+  db: Db,
+  challengeId: string,
+  memberId: string,
+): Promise<ParticipationRow[]> {
+  const result = await db.query(
+    `SELECT * FROM challenge_participations
+     WHERE challenge_id = $1 AND member_id = $2
+     ORDER BY joined_at ASC, participation_id ASC`,
+    [challengeId, memberId],
+  );
+  return (result.rows as never[]).map(normalizeParticipationRow);
+}
+
+/** The currently active episode, if any. */
+export async function getActiveParticipation(
   db: Db,
   challengeId: string,
   memberId: string,
 ): Promise<ParticipationRow | null> {
   const result = await db.query(
-    `SELECT * FROM challenge_participations WHERE challenge_id = $1 AND member_id = $2`,
+    `SELECT * FROM challenge_participations
+     WHERE challenge_id = $1 AND member_id = $2 AND status = 'active'`,
     [challengeId, memberId],
   );
   if (result.rows.length === 0) return null;
@@ -181,12 +206,15 @@ export async function getParticipation(
 }
 
 /**
- * Pure C2B helper: was this participation eligible at event time?
- * Active interval is [joined_at, exited_at); an exited participation never
- * counts as active, even at its exact exit instant.
+ * Pure C2B helper: was this episode eligible at event time?
+ * Eligibility is the episode interval [joined_at, exited_at): an exited
+ * episode was eligible before its exit and ineligible from the exit instant
+ * on; an active episode is eligible from its join onward. Current status is
+ * intentionally NOT consulted — the DB CHECK guarantees active rows carry
+ * no exit columns and exited rows carry both, so the interval alone is
+ * authoritative and withdrawn history stays evaluable.
  */
 export function isParticipationActiveAt(row: ParticipationRow, at: Date): boolean {
-  if (row.status !== 'active') return false;
   const time = at.getTime();
   if (Number.isNaN(time)) return false;
   if (time < Date.parse(row.joined_at)) return false;

@@ -4,6 +4,7 @@ import {
   createChallenge,
   endChallenge,
   getChallenge,
+  type ChallengeCreationResolvers,
   type NewChallengeInput,
 } from '../src/challenges.js';
 import {
@@ -13,9 +14,10 @@ import {
   type ChallengeConfigResolvers,
 } from '../src/challengeConfigs.js';
 import {
-  getParticipation,
+  getActiveParticipation,
   isParticipationActiveAt,
   joinChallenge,
+  listParticipations,
   removeParticipation,
   withdrawParticipation,
 } from '../src/challengeParticipations.js';
@@ -49,8 +51,12 @@ async function seedKnowledgePin(
 
 function resolversFor(
   pins: Record<string, { knowledge_id: string; current_version: number }>,
-): ChallengeConfigResolvers {
-  return { resolveKnowledgePin: async (key) => pins[key] ?? null };
+  groupAuthority: { status: string } | null = { status: 'active' },
+): ChallengeCreationResolvers {
+  return {
+    resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveGroupAuthority: async () => groupAuthority,
+  };
 }
 
 async function setupGroupWithMember(uid: string): Promise<{ groupId: string; memberId: string }> {
@@ -331,14 +337,17 @@ describe('participation', () => {
     expect(participation.participation_id).toMatch(UUID_RE);
     expect(participation.status).toBe('active');
     expect(participation.joined_config_version).toBe(1);
-    await expect(joinChallenge(db, challenge.challenge_id, memberId)).rejects.toThrow();
+    await expect(joinChallenge(db, challenge.challenge_id, memberId)).rejects.toThrow(
+      /active participation episode already exists/,
+    );
     await expect(joinChallenge(db, challenge.challenge_id, outsider)).rejects.toThrow(
       /active membership in the challenge group/,
     );
     await expect(
       joinChallenge(db, '00000000-0000-4000-8000-000000000000', memberId),
     ).rejects.toThrow(/unknown challenge/);
-    expect(await getParticipation(db, challenge.challenge_id, outsider)).toBeNull();
+    expect(await getActiveParticipation(db, challenge.challenge_id, outsider)).toBeNull();
+    expect(await listParticipations(db, challenge.challenge_id, outsider)).toEqual([]);
   });
 
   it('distinguishes withdrawal from removal and preserves history', async () => {
@@ -367,9 +376,10 @@ describe('participation', () => {
     expect(removed.exit_reason).toBe('removed');
     expect(removed.exited_by_member_id).toBe(steward);
     // History stays attributable after exit.
-    expect(await getParticipation(db, challenge.challenge_id, memberId)).toMatchObject({
-      status: 'withdrawn',
-    });
+    const history = await listParticipations(db, challenge.challenge_id, memberId);
+    expect(history).toHaveLength(1);
+    expect(history[0]).toMatchObject({ status: 'withdrawn' });
+    expect(await getActiveParticipation(db, challenge.challenge_id, memberId)).toBeNull();
     await expect(
       removeParticipation(db, leaving.participation_id, steward),
     ).rejects.toThrow(/only active/);
@@ -388,9 +398,100 @@ describe('participation', () => {
     const joinedAt = new Date(before.joined_at);
     expect(isParticipationActiveAt(before, new Date(joinedAt.getTime() - 1000))).toBe(false);
     expect(isParticipationActiveAt(before, new Date(joinedAt.getTime() + 1000))).toBe(true);
+    // Separate exit from join so the probe below falls strictly inside the episode.
+    await new Promise((resolve) => setTimeout(resolve, 25));
     const exited = await withdrawParticipation(db, before.participation_id);
     expect(isParticipationActiveAt(exited, new Date(Date.parse(exited.exited_at!) + 1000))).toBe(false);
-    expect(isParticipationActiveAt(exited, new Date(joinedAt.getTime() + 1000))).toBe(false);
+    // Withdrawn history stays evaluable: 10ms after joining (exit came ~25ms
+    // after joining) the episode was eligible.
+    expect(isParticipationActiveAt(exited, new Date(joinedAt.getTime() + 10))).toBe(true);
+  });
+});
+
+describe('participation episodes', () => {
+  it('opens a later episode after exit while keeping history', async () => {
+    const db = testDb();
+    const { groupId, memberId } = await setupGroupWithMember(`c2a-ep-${seq}`);
+    const pin = await seedKnowledgePin();
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    const first = await joinChallenge(db, challenge.challenge_id, memberId);
+    await withdrawParticipation(db, first.participation_id);
+    const second = await joinChallenge(db, challenge.challenge_id, memberId);
+    expect(second.participation_id).not.toBe(first.participation_id);
+    expect(second.status).toBe('active');
+    expect(second.joined_config_version).toBe(1);
+    const episodes = await listParticipations(db, challenge.challenge_id, memberId);
+    expect(episodes.map((e) => e.status)).toEqual(['withdrawn', 'active']);
+    // Simultaneous active episodes stay impossible.
+    await expect(joinChallenge(db, challenge.challenge_id, memberId)).rejects.toThrow(
+      /active participation episode already exists/,
+    );
+    expect(await getActiveParticipation(db, challenge.challenge_id, memberId)).toMatchObject({
+      participation_id: second.participation_id,
+    });
+  });
+
+  it('evaluates each episode independently at event time', () => {
+    // Pure-helper evaluation with fixed episode intervals (no clock dependence).
+    const base = {
+      participation_id: '00000000-0000-4000-8000-000000000001',
+      challenge_id: '00000000-0000-4000-8000-000000000002',
+      member_id: '00000000-0000-4000-8000-000000000003',
+      joined_config_version: 1,
+      exited_by_member_id: null,
+      created_at: '2026-06-01T08:00:00.000Z',
+      updated_at: '2026-06-01T08:00:00.000Z',
+    } as const;
+    const first = {
+      ...base,
+      status: 'withdrawn' as const,
+      joined_at: '2026-06-01T08:00:00.000Z',
+      exited_at: '2026-06-10T08:00:00.000Z',
+      exit_reason: 'withdrawn' as const,
+    };
+    const second = {
+      ...base,
+      participation_id: '00000000-0000-4000-8000-000000000004',
+      status: 'active' as const,
+      joined_at: '2026-06-15T08:00:00.000Z',
+      exited_at: null,
+      exit_reason: null,
+    };
+    // Gap between episodes: neither episode is eligible.
+    const gap = new Date('2026-06-12T08:00:00.000Z');
+    expect(isParticipationActiveAt(first, gap)).toBe(false);
+    expect(isParticipationActiveAt(second, gap)).toBe(false);
+    // Inside each episode: only that episode is eligible.
+    const inFirst = new Date('2026-06-05T08:00:00.000Z');
+    expect(isParticipationActiveAt(first, inFirst)).toBe(true);
+    expect(isParticipationActiveAt(second, inFirst)).toBe(false);
+    const inSecond = new Date('2026-06-20T08:00:00.000Z');
+    expect(isParticipationActiveAt(first, inSecond)).toBe(false);
+    expect(isParticipationActiveAt(second, inSecond)).toBe(true);
+    // Before any episode: nothing is eligible.
+    expect(isParticipationActiveAt(first, new Date('2026-05-01T08:00:00.000Z'))).toBe(false);
+    expect(isParticipationActiveAt(second, new Date('2026-05-01T08:00:00.000Z'))).toBe(false);
+  });
+});
+
+describe('transitional group authority', () => {
+  it('rejects establishment when current authority does not confirm the group', async () => {
+    const db = testDb();
+    const { groupId, memberId } = await setupGroupWithMember(`c2a-grp-${seq}`);
+    const pin = await seedKnowledgePin();
+    for (const authority of [null, { status: 'disabled' }, { status: 'deleted' }]) {
+      await expect(
+        createChallenge(
+          db,
+          collectiveInput(groupId, memberId),
+          resolversFor({ 'push-up': pin }, authority),
+        ),
+      ).rejects.toThrow(/not available for challenge establishment/);
+    }
+    // A stale shadow row alone grants nothing: zero challenges persisted.
+    const count = await db.query<{ n: string }>(`SELECT COUNT(*)::text AS n FROM challenges`);
+    expect(count.rows[0].n).toBe('0');
   });
 });
 

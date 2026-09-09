@@ -168,7 +168,11 @@ npm run parity:knowledge
   `challenge_activity_configs` (exact config reproducibility for future
   application records; Knowledge pins server-resolved), and explicit
   `challenge_participations` (affirmative join with group-membership check,
-  distinguishable withdrawal/removal, history preserved). No application
+  episode-based: one active episode per challenge/member, distinguishable
+  withdrawal/removal, history preserved). Challenge establishment requires
+  an injected current-authority Group check: the PG groups row is a shadow
+  that can go stale, so row existence alone never authorizes establishment
+  (transitional seam, removed at Group-authority migration). No application
   records, scoring execution, Derived Truth, leaderboards, or V1 migration.
   No public routes: domain seams only (`challenges.ts`,
   `challengeConfigs.ts`, `challengeParticipations.ts`).
