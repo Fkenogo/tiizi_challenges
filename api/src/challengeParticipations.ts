@@ -27,6 +27,10 @@
  */
 
 import type { Db } from './db.js';
+import {
+  requireCurrentGroupMember,
+  type GroupMembershipAuthority,
+} from './groupMembershipAuthority.js';
 
 export type ParticipationStatus = 'active' | 'withdrawn' | 'removed';
 
@@ -81,14 +85,17 @@ export function normalizeParticipationRow(row: {
 
 /**
  * Affirmative join: opens a new participation episode. Requires: challenge
- * exists and is not ended; member holds an active group membership in the
- * challenge's group (join-time eligibility); no currently ACTIVE episode
- * for the pair (closed episodes never block a later episode).
+ * exists and is not ended; member holds CURRENT Group Membership in the
+ * challenge's group under live membership authority (the PG
+ * group_memberships shadow is reference data only and never authorizes
+ * joining — a stale active-looking shadow row grants nothing); no currently
+ * ACTIVE episode for the pair (closed episodes never block a later episode).
  */
 export async function joinChallenge(
   db: Db,
   challengeId: string,
   memberId: string,
+  membershipAuthority: GroupMembershipAuthority,
 ): Promise<ParticipationRow> {
   if (!UUID_RE.test(challengeId)) fail('challenge_id must be a Tiizi challenge UUID');
   if (!UUID_RE.test(memberId)) fail('member_id must be a member UUID');
@@ -105,12 +112,7 @@ export async function joinChallenge(
   if (challenge.rows.length === 0) fail(`unknown challenge ${challengeId}`);
   const { group_id: groupId, status, current_config_version: configVersion } = challenge.rows[0];
   if (status === 'ended') fail('cannot join an ended challenge (run-again creates a new challenge)');
-  const membership = await db.query<{ member_id: string }>(
-    `SELECT member_id FROM group_memberships
-     WHERE group_id = $1 AND member_id = $2 AND status IN ('joined', 'active')`,
-    [String(groupId), memberId],
-  );
-  if (membership.rows.length === 0) fail('joining requires an active membership in the challenge group');
+  await requireCurrentGroupMember(membershipAuthority, String(groupId), memberId, 'challenge joining');
   try {
     const inserted = await db.query(
       `INSERT INTO challenge_participations (challenge_id, member_id, joined_config_version)

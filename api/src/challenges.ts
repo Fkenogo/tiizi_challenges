@@ -40,8 +40,12 @@ import {
   type ChallengeGoverningBasis,
   type ConfigVersionRow,
 } from './challengeConfigs.js';
+import {
+  requireCurrentGroupMember,
+  type GroupMembershipAuthority,
+} from './groupMembershipAuthority.js';
 
-export interface ChallengeCreationResolvers extends ChallengeConfigResolvers {
+export interface ChallengeCreationResolvers extends ChallengeConfigResolvers, GroupMembershipAuthority {
   /**
    * TRANSITIONAL current-authority Group check. Confirm the group is live
    * (exists and active) under whatever authority currently governs Groups.
@@ -205,8 +209,11 @@ export function normalizeChallengeRow(row: {
 /**
  * Create a Challenge with its version-1 governing configuration, atomically:
  * challenge row (establishment) + config snapshot + activity rows.
- * Group membership of the creator is a join-time concern (participation),
- * not a creation gate: any member creates within an existing group.
+ * Establishment proves, before anything persists: (1) the Group is live
+ * under current Group authority, and (2) the creator currently holds
+ * qualifying Group Membership under live membership authority (V2 chain:
+ * Member -> Group Membership -> Challenge creation). No Charter-role
+ * restrictions are applied here (deferred).
  */
 export async function createChallenge(
   db: Db,
@@ -218,6 +225,12 @@ export async function createChallenge(
   if (!authority || authority.status !== 'active') {
     fail('group is not available for challenge establishment under current Group authority');
   }
+  await requireCurrentGroupMember(
+    resolvers,
+    input.group_id,
+    input.created_by_member_id,
+    'challenge establishment',
+  );
   return db.transaction(async (tx) => {
     let challenge: ChallengeRow;
     try {

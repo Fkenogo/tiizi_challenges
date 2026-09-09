@@ -35,6 +35,7 @@ const DOMAIN_MODULES = [
   '../src/challenges.ts',
   '../src/challengeConfigs.ts',
   '../src/challengeParticipations.ts',
+  '../src/groupMembershipAuthority.ts',
   '../src/engine/index.ts',
   '../src/engine/types.ts',
   '../src/engine/collectiveEngine.ts',
