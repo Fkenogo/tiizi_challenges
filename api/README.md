@@ -167,15 +167,18 @@ npm run parity:knowledge
   terminal end), immutable `challenge_config_versions` + normalized
   `challenge_activity_configs` (exact config reproducibility for future
   application records; Knowledge pins server-resolved), and explicit
-  `challenge_participations` (affirmative join with group-membership check,
-  episode-based: one active episode per challenge/member, distinguishable
-  withdrawal/removal, history preserved). Challenge establishment requires
-  an injected current-authority Group check: the PG groups row is a shadow
-  that can go stale, so row existence alone never authorizes establishment
-  (transitional seam, removed at Group-authority migration). No application
-  records, scoring execution, Derived Truth, leaderboards, or V1 migration.
-  No public routes: domain seams only (`challenges.ts`,
-  `challengeConfigs.ts`, `challengeParticipations.ts`).
+  `challenge_participations` (affirmative join gated on live membership
+  authority, episode-based: one active episode per challenge/member,
+  distinguishable withdrawal/removal, history preserved). Challenge
+  establishment requires an injected current-authority Group check AND
+  current creator Group Membership: the PG groups/memberships rows are
+  shadows that can go stale, so shadow state alone never authorizes
+  establishment or joining (transitional `groupMembershipAuthority.ts`
+  seam, also reusable by C2B; removed at Group-authority migration).
+  No application records, scoring execution, Derived Truth, leaderboards,
+  or V1 migration. No public routes: domain seams only (`challenges.ts`,
+  `challengeConfigs.ts`, `challengeParticipations.ts`,
+  `groupMembershipAuthority.ts`).
 
 - Challenge creation (`functions/src/knowledgeAuthority.ts`): PostgreSQL
   consulted first per canonical ID; PG hit decides authoritatively, PG miss

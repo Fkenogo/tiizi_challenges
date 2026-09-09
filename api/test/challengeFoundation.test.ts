@@ -52,10 +52,12 @@ async function seedKnowledgePin(
 function resolversFor(
   pins: Record<string, { knowledge_id: string; current_version: number }>,
   groupAuthority: { status: string } | null = { status: 'active' },
+  memberAuthority: { status: string; eligible: boolean } | null = { status: 'active', eligible: true },
 ): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
     resolveGroupAuthority: async () => groupAuthority,
+    resolveGroupMembershipAuthority: async () => memberAuthority,
   };
 }
 
@@ -292,11 +294,8 @@ describe('challenge lifecycle', () => {
     const db = testDb();
     const { groupId, memberId } = await setupGroupWithMember(`c2a-life-${seq}`);
     const pin = await seedKnowledgePin();
-    const { challenge } = await createChallenge(
-      db,
-      collectiveInput(groupId, memberId),
-      resolversFor({ 'push-up': pin }),
-    );
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
     const active = await activateChallenge(db, challenge.challenge_id);
     expect(active.status).toBe('active');
     expect(active.activated_at).not.toBeNull();
@@ -318,7 +317,7 @@ describe('challenge lifecycle', () => {
     await expect(
       addChallengeConfigVersion(db, challenge.challenge_id, { activities: [pushUp()] }, resolvers),
     ).rejects.toThrow(/historically complete/);
-    await expect(joinChallenge(db, challenge.challenge_id, memberId)).rejects.toThrow(/ended challenge/);
+    await expect(joinChallenge(db, challenge.challenge_id, memberId, resolvers)).rejects.toThrow(/ended challenge/);
   });
 });
 
@@ -328,23 +327,22 @@ describe('participation', () => {
     const { groupId, memberId } = await setupGroupWithMember(`c2a-join-${seq}`);
     const outsider = await seedMember(db, `c2a-outsider-${seq}`);
     const pin = await seedKnowledgePin();
-    const { challenge } = await createChallenge(
-      db,
-      collectiveInput(groupId, memberId),
-      resolversFor({ 'push-up': pin }),
-    );
-    const participation = await joinChallenge(db, challenge.challenge_id, memberId);
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    const participation = await joinChallenge(db, challenge.challenge_id, memberId, resolvers);
     expect(participation.participation_id).toMatch(UUID_RE);
     expect(participation.status).toBe('active');
     expect(participation.joined_config_version).toBe(1);
-    await expect(joinChallenge(db, challenge.challenge_id, memberId)).rejects.toThrow(
+    await expect(joinChallenge(db, challenge.challenge_id, memberId, resolvers)).rejects.toThrow(
       /active participation episode already exists/,
     );
-    await expect(joinChallenge(db, challenge.challenge_id, outsider)).rejects.toThrow(
-      /active membership in the challenge group/,
+    // Live authority governs: a PG outsider the authority confirms is rejected.
+    const noAuthority = resolversFor({ 'push-up': pin }, { status: 'active' }, null);
+    await expect(joinChallenge(db, challenge.challenge_id, outsider, noAuthority)).rejects.toThrow(
+      /no current Group Membership/,
     );
     await expect(
-      joinChallenge(db, '00000000-0000-4000-8000-000000000000', memberId),
+      joinChallenge(db, '00000000-0000-4000-8000-000000000000', memberId, resolvers),
     ).rejects.toThrow(/unknown challenge/);
     expect(await getActiveParticipation(db, challenge.challenge_id, outsider)).toBeNull();
     expect(await listParticipations(db, challenge.challenge_id, outsider)).toEqual([]);
@@ -356,12 +354,9 @@ describe('participation', () => {
     const second = await seedMember(db, `c2a-second-${seq}`);
     const { memberId: steward } = await setupGroupWithMember(`c2a-steward-${seq}`);
     const pin = await seedKnowledgePin();
-    const { challenge } = await createChallenge(
-      db,
-      collectiveInput(groupId, memberId),
-      resolversFor({ 'push-up': pin }),
-    );
-    const leaving = await joinChallenge(db, challenge.challenge_id, memberId);
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    const leaving = await joinChallenge(db, challenge.challenge_id, memberId, resolvers);
     const withdrawn = await withdrawParticipation(db, leaving.participation_id);
     expect(withdrawn.status).toBe('withdrawn');
     expect(withdrawn.exit_reason).toBe('withdrawn');
@@ -369,7 +364,7 @@ describe('participation', () => {
     expect(withdrawn.exited_by_member_id).toBeNull();
     await expect(withdrawParticipation(db, leaving.participation_id)).rejects.toThrow(/only active/);
     await seedMembership(db, groupId, second, { status: 'active' });
-    const removed = await joinChallenge(db, challenge.challenge_id, second).then((p) =>
+    const removed = await joinChallenge(db, challenge.challenge_id, second, resolvers).then((p) =>
       removeParticipation(db, p.participation_id, steward),
     );
     expect(removed.status).toBe('removed');
@@ -389,12 +384,9 @@ describe('participation', () => {
     const db = testDb();
     const { groupId, memberId } = await setupGroupWithMember(`c2a-elig-${seq}`);
     const pin = await seedKnowledgePin();
-    const { challenge } = await createChallenge(
-      db,
-      collectiveInput(groupId, memberId),
-      resolversFor({ 'push-up': pin }),
-    );
-    const before = await joinChallenge(db, challenge.challenge_id, memberId);
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    const before = await joinChallenge(db, challenge.challenge_id, memberId, resolvers);
     const joinedAt = new Date(before.joined_at);
     expect(isParticipationActiveAt(before, new Date(joinedAt.getTime() - 1000))).toBe(false);
     expect(isParticipationActiveAt(before, new Date(joinedAt.getTime() + 1000))).toBe(true);
@@ -415,16 +407,16 @@ describe('participation episodes', () => {
     const pin = await seedKnowledgePin();
     const resolvers = resolversFor({ 'push-up': pin });
     const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
-    const first = await joinChallenge(db, challenge.challenge_id, memberId);
+    const first = await joinChallenge(db, challenge.challenge_id, memberId, resolvers);
     await withdrawParticipation(db, first.participation_id);
-    const second = await joinChallenge(db, challenge.challenge_id, memberId);
+    const second = await joinChallenge(db, challenge.challenge_id, memberId, resolvers);
     expect(second.participation_id).not.toBe(first.participation_id);
     expect(second.status).toBe('active');
     expect(second.joined_config_version).toBe(1);
     const episodes = await listParticipations(db, challenge.challenge_id, memberId);
     expect(episodes.map((e) => e.status)).toEqual(['withdrawn', 'active']);
     // Simultaneous active episodes stay impossible.
-    await expect(joinChallenge(db, challenge.challenge_id, memberId)).rejects.toThrow(
+    await expect(joinChallenge(db, challenge.challenge_id, memberId, resolvers)).rejects.toThrow(
       /active participation episode already exists/,
     );
     expect(await getActiveParticipation(db, challenge.challenge_id, memberId)).toMatchObject({
@@ -495,17 +487,109 @@ describe('transitional group authority', () => {
   });
 });
 
+describe('creator group membership (establishment gate)', () => {
+  it('A: active Group + current Group Member → creation succeeds', async () => {
+    const db = testDb();
+    const { groupId, memberId } = await setupGroupWithMember(`c2a-crA-${seq}`);
+    const pin = await seedKnowledgePin();
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    expect(challenge.status).toBe('establishment');
+  });
+
+  it('B: active Group + non-member creator → creation rejected', async () => {
+    const db = testDb();
+    const { groupId } = await setupGroupWithMember(`c2a-crB-${seq}`);
+    const outsider = await seedMember(db, `c2a-crouter-${seq}`);
+    const pin = await seedKnowledgePin();
+    await expect(
+      createChallenge(
+        db,
+        collectiveInput(groupId, outsider),
+        resolversFor({ 'push-up': pin }, { status: 'active' }, null),
+      ),
+    ).rejects.toThrow(/no current Group Membership/);
+  });
+
+  it('C+D: stale PG membership + live authority removed → rejected, zero rows persist', async () => {
+    const db = testDb();
+    const { groupId, memberId } = await setupGroupWithMember(`c2a-crC-${seq}`);
+    const pin = await seedKnowledgePin();
+    // PG shadow still shows the creator as active; live authority says removed.
+    await expect(
+      createChallenge(
+        db,
+        collectiveInput(groupId, memberId),
+        resolversFor({ 'push-up': pin }, { status: 'active' }, { status: 'removed', eligible: false }),
+      ),
+    ).rejects.toThrow(/no current Group Membership/);
+    for (const table of ['challenges', 'challenge_config_versions', 'challenge_activity_configs']) {
+      const count = await db.query<{ n: string }>(`SELECT COUNT(*)::text AS n FROM ${table}`);
+      expect(count.rows[0].n).toBe('0');
+    }
+  });
+});
+
+describe('join membership authority', () => {
+  it('F: stale PG active membership + live authority removed → join rejected', async () => {
+    const db = testDb();
+    const { groupId, memberId } = await setupGroupWithMember(`c2a-jF-${seq}`);
+    const pin = await seedKnowledgePin();
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    const stale = resolversFor(
+      { 'push-up': pin },
+      { status: 'active' },
+      { status: 'removed', eligible: false },
+    );
+    await expect(joinChallenge(db, challenge.challenge_id, memberId, stale)).rejects.toThrow(
+      /no current Group Membership/,
+    );
+    expect(await getActiveParticipation(db, challenge.challenge_id, memberId)).toBeNull();
+  });
+
+  it('G: missing live membership → join rejected even with PG shadow row', async () => {
+    const db = testDb();
+    const { groupId, memberId } = await setupGroupWithMember(`c2a-jG-${seq}`);
+    const pin = await seedKnowledgePin();
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    const missing = resolversFor({ 'push-up': pin }, { status: 'active' }, null);
+    await expect(joinChallenge(db, challenge.challenge_id, memberId, missing)).rejects.toThrow(
+      /no current Group Membership/,
+    );
+  });
+
+  it('unreachable authority fails closed', async () => {
+    const db = testDb();
+    const { groupId, memberId } = await setupGroupWithMember(`c2a-jU-${seq}`);
+    const pin = await seedKnowledgePin();
+    const resolvers = resolversFor({ 'push-up': pin });
+    const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
+    const broken: ChallengeCreationResolvers = {
+      ...resolvers,
+      resolveGroupMembershipAuthority: async () => {
+        throw new Error('firestore unavailable');
+      },
+    };
+    await expect(joinChallenge(db, challenge.challenge_id, memberId, broken)).rejects.toThrow(
+      /authority unreachable/,
+    );
+  });
+});
+
 describe('C2A boundary guards', () => {
   it('uses Tiizi UUIDs everywhere, never Firestore document ids', async () => {
     const db = testDb();
     const { groupId, memberId } = await setupGroupWithMember(`c2a-uuid-${seq}`);
     const pin = await seedKnowledgePin();
+    const resolvers = resolversFor({ 'push-up': pin });
     const { challenge, activities } = await createChallenge(
       db,
       collectiveInput(groupId, memberId),
-      resolversFor({ 'push-up': pin }),
+      resolvers,
     );
-    const participation = await joinChallenge(db, challenge.challenge_id, memberId);
+    const participation = await joinChallenge(db, challenge.challenge_id, memberId, resolvers);
     for (const id of [
       challenge.challenge_id,
       challenge.group_id,
@@ -539,7 +623,7 @@ describe('C2A boundary guards', () => {
     );
     const before = JSON.stringify(evidence.row);
     const { challenge } = await createChallenge(db, collectiveInput(groupId, memberId), resolvers);
-    await joinChallenge(db, challenge.challenge_id, memberId);
+    await joinChallenge(db, challenge.challenge_id, memberId, resolvers);
     await addChallengeConfigVersion(db, challenge.challenge_id, { activities: [pushUp()] }, resolvers);
     const after = await listEffectiveEvents(db, { member_id: memberId });
     expect(after).toHaveLength(1);
