@@ -26,6 +26,21 @@
  * This schema is already compatible: `event_id` is a stable UUID PRIMARY
  * KEY, so the C2 record table references it with NO change here.
  *
+ * C2 application contract (NOT implemented in C1 — documented so C1 cannot
+ * grow a bypass): the ONLY shape permitted to feed the Challenge Engine is
+ * the Challenge-Specific Activity Record:
+ *   ChallengeApplicationInput {
+ *     event_id, challenge_id, participation_id,
+ *     challenge_activity_config_version, accepted state,
+ *     event measurement (value/unit/day, Knowledge pin snapshot)
+ *   }
+ * C1 deliberately provides NO production path from a raw Member Activity
+ * Event to a ChallengeContext/engine result: replaying arbitrary Evidence
+ * against an arbitrary Challenge would let a log in Challenge A count in
+ * Challenge B without the member intentionally logging it there. The
+ * vendored `engine/` sources remain (drift-guarded) as the C2 foundation;
+ * replay/calculation arrives with challenge_activity_records in C2.
+ *
  * Knowledge authority: the server resolves the canonical key (+variant)
  * against canonical Knowledge at write time and stores a complete,
  * trustworthy pin. Client input supplies ONLY the canonical key (+variant);

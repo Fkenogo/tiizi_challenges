@@ -154,10 +154,11 @@ npm run parity:knowledge
   and correction-chain semantics. No `challenge_id`, no points/scoring on
   the event — Challenge association and scoring are C2 application
   (`challenge_activity_records` will reference the stable `event_id` PK with
-  no schema change here). Replay models the C2 application step (Evidence
-  -> scorer + challenge target -> vendored engines in `api/src/engine/`,
-  logic-identical to `src/services/challengeEngine/`) over synthetic V2
-  fixtures — historical migration parity is intentionally not a correctness
+  no schema change here). C1 has NO production path from raw Evidence to a
+  Challenge: the vendored engines (`api/src/engine/`, logic-identical to
+  `src/services/challengeEngine/`) are retained drift-guarded as the C2
+  foundation, and replay/calculation arrives with the C2 application
+  records. Historical migration parity is intentionally not a correctness
   gate. No member activity-history route: Tiizi is not a personal activity
   logger, and no such product surface is approved.
 
