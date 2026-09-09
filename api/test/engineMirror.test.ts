@@ -28,9 +28,13 @@ const MIRRORED: Array<[string, string]> = [
 
 // NOTE: there is intentionally no C1 production path from raw Member
 // Activity Evidence to a Challenge (see activityEvents.ts C2 boundary), so
-// the domain surface under the no-Firebase check is the Evidence seam only.
+// the domain surface under the no-Firebase check is the Evidence seam plus
+// the C2A Challenge foundation (neither applies Evidence to a Challenge).
 const DOMAIN_MODULES = [
   '../src/activityEvents.ts',
+  '../src/challenges.ts',
+  '../src/challengeConfigs.ts',
+  '../src/challengeParticipations.ts',
   '../src/engine/index.ts',
   '../src/engine/types.ts',
   '../src/engine/collectiveEngine.ts',
