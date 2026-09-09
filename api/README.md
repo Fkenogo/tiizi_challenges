@@ -162,6 +162,17 @@ npm run parity:knowledge
   gate. No member activity-history route: Tiizi is not a personal activity
   logger, and no such product surface is approved.
 
+- Phase C2A Challenge + Participation foundation (migration 004): `challenges`
+  (one Group for life, creator attribution, establishment/active/ended with
+  terminal end), immutable `challenge_config_versions` + normalized
+  `challenge_activity_configs` (exact config reproducibility for future
+  application records; Knowledge pins server-resolved), and explicit
+  `challenge_participations` (affirmative join with group-membership check,
+  distinguishable withdrawal/removal, history preserved). No application
+  records, scoring execution, Derived Truth, leaderboards, or V1 migration.
+  No public routes: domain seams only (`challenges.ts`,
+  `challengeConfigs.ts`, `challengeParticipations.ts`).
+
 - Challenge creation (`functions/src/knowledgeAuthority.ts`): PostgreSQL
   consulted first per canonical ID; PG hit decides authoritatively, PG miss
   or outage uses the transitional Firestore read-through, unset

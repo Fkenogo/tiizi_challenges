@@ -1,0 +1,195 @@
+/**
+ * Phase C2A Challenge Participation seam — explicit, attributable joining.
+ *
+ * Stage F rules encoded here:
+ * - Participation requires affirmative joining; group membership never
+ *   auto-enrolls. Joining checks Group Membership (of the challenge's group)
+ *   at join time.
+ * - One participation per (challenge, member): exit ends the row in place,
+ *   history stays attributable, and C2A offers no reactivation.
+ * - Exits are distinguishable: voluntary `withdrawn` vs authorized `removed`
+ *   (actor recorded). Both end active participation and block further
+ *   logging (enforced by C2B acceptance); prior records stay in history.
+ * - Completion is a Derived Truth outcome (C2B), never a participation
+ *   state: no `completed`/`abandoned` status here.
+ * - No Derived Truth counters on participation (no points, streaks,
+ *   cumulative values): attribution + lifecycle only.
+ *
+ * C2B eligibility questions this foundation answers: was this member
+ * participating (row exists)? Was it eligible at event time (active
+ * interval [joined_at, exited_at) via isParticipationActiveAt)? Which
+ * configuration applied (resolved per event time from versions)?
+ *
+ * No routes. No Firebase. Pure domain + `Db`.
+ */
+
+import type { Db } from './db.js';
+
+export type ParticipationStatus = 'active' | 'withdrawn' | 'removed';
+
+export interface ParticipationRow {
+  participation_id: string;
+  challenge_id: string;
+  member_id: string;
+  status: ParticipationStatus;
+  joined_at: string;
+  joined_config_version: number;
+  exited_at: string | null;
+  exit_reason: 'withdrawn' | 'removed' | null;
+  exited_by_member_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function fail(message: string): never {
+  throw new Error(`challenge-participations: ${message}`);
+}
+
+export function normalizeParticipationRow(row: {
+  participation_id: unknown;
+  challenge_id: unknown;
+  member_id: unknown;
+  status: ParticipationStatus;
+  joined_at: string | Date;
+  joined_config_version: unknown;
+  exited_at: string | Date | null;
+  exit_reason: 'withdrawn' | 'removed' | null;
+  exited_by_member_id: unknown;
+  created_at: string | Date;
+  updated_at: string | Date;
+}): ParticipationRow {
+  return {
+    participation_id: String(row.participation_id),
+    challenge_id: String(row.challenge_id),
+    member_id: String(row.member_id),
+    status: row.status,
+    joined_at: new Date(row.joined_at).toISOString(),
+    joined_config_version: Number(row.joined_config_version),
+    exited_at: row.exited_at == null ? null : new Date(row.exited_at).toISOString(),
+    exit_reason: row.exit_reason,
+    exited_by_member_id: row.exited_by_member_id == null ? null : String(row.exited_by_member_id),
+    created_at: new Date(row.created_at).toISOString(),
+    updated_at: new Date(row.updated_at).toISOString(),
+  };
+}
+
+/**
+ * Affirmative join. Requires: challenge exists and is not ended; member
+ * holds an active group membership in the challenge's group (join-time
+ * eligibility); no existing participation for the pair.
+ */
+export async function joinChallenge(
+  db: Db,
+  challengeId: string,
+  memberId: string,
+): Promise<ParticipationRow> {
+  if (!UUID_RE.test(challengeId)) fail('challenge_id must be a Tiizi challenge UUID');
+  if (!UUID_RE.test(memberId)) fail('member_id must be a member UUID');
+  const challenge = await db.query<{
+    challenge_id: string;
+    group_id: string;
+    status: string;
+    current_config_version: number;
+  }>(
+    `SELECT challenge_id, group_id, status, current_config_version
+     FROM challenges WHERE challenge_id = $1`,
+    [challengeId],
+  );
+  if (challenge.rows.length === 0) fail(`unknown challenge ${challengeId}`);
+  const { group_id: groupId, status, current_config_version: configVersion } = challenge.rows[0];
+  if (status === 'ended') fail('cannot join an ended challenge (run-again creates a new challenge)');
+  const membership = await db.query<{ member_id: string }>(
+    `SELECT member_id FROM group_memberships
+     WHERE group_id = $1 AND member_id = $2 AND status IN ('joined', 'active')`,
+    [String(groupId), memberId],
+  );
+  if (membership.rows.length === 0) fail('joining requires an active membership in the challenge group');
+  try {
+    const inserted = await db.query(
+      `INSERT INTO challenge_participations (challenge_id, member_id, joined_config_version)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [challengeId, memberId, Number(configVersion)],
+    );
+    return normalizeParticipationRow(inserted.rows[0] as never);
+  } catch (error) {
+    fail(`join rejected: ${(error as Error).message}`);
+  }
+}
+
+/** Voluntary withdrawal: ends active participation, preserves history. */
+export async function withdrawParticipation(
+  db: Db,
+  participationId: string,
+): Promise<ParticipationRow> {
+  const current = await readParticipation(db, participationId);
+  if (current.status !== 'active') fail(`only active participations can withdraw (status=${current.status})`);
+  const result = await db.query(
+    `UPDATE challenge_participations
+     SET status = 'withdrawn', exited_at = now(), exit_reason = 'withdrawn', updated_at = now()
+     WHERE participation_id = $1 RETURNING *`,
+    [participationId],
+  );
+  return normalizeParticipationRow(result.rows[0] as never);
+}
+
+/** Authorized removal: ends active participation, records the actor. */
+export async function removeParticipation(
+  db: Db,
+  participationId: string,
+  removedByMemberId: string,
+): Promise<ParticipationRow> {
+  if (!UUID_RE.test(removedByMemberId)) fail('removed_by must be a member UUID');
+  const current = await readParticipation(db, participationId);
+  if (current.status !== 'active') fail(`only active participations can be removed (status=${current.status})`);
+  try {
+    const result = await db.query(
+      `UPDATE challenge_participations
+       SET status = 'removed', exited_at = now(), exit_reason = 'removed',
+           exited_by_member_id = $2, updated_at = now()
+       WHERE participation_id = $1 RETURNING *`,
+      [participationId, removedByMemberId],
+    );
+    return normalizeParticipationRow(result.rows[0] as never);
+  } catch (error) {
+    fail(`removal rejected: ${(error as Error).message}`);
+  }
+}
+
+async function readParticipation(db: Db, participationId: string): Promise<ParticipationRow> {
+  const result = await db.query(
+    `SELECT * FROM challenge_participations WHERE participation_id = $1`,
+    [participationId],
+  );
+  if (result.rows.length === 0) fail(`unknown participation ${participationId}`);
+  return normalizeParticipationRow(result.rows[0] as never);
+}
+
+export async function getParticipation(
+  db: Db,
+  challengeId: string,
+  memberId: string,
+): Promise<ParticipationRow | null> {
+  const result = await db.query(
+    `SELECT * FROM challenge_participations WHERE challenge_id = $1 AND member_id = $2`,
+    [challengeId, memberId],
+  );
+  if (result.rows.length === 0) return null;
+  return normalizeParticipationRow(result.rows[0] as never);
+}
+
+/**
+ * Pure C2B helper: was this participation eligible at event time?
+ * Active interval is [joined_at, exited_at); an exited participation never
+ * counts as active, even at its exact exit instant.
+ */
+export function isParticipationActiveAt(row: ParticipationRow, at: Date): boolean {
+  if (row.status !== 'active') return false;
+  const time = at.getTime();
+  if (Number.isNaN(time)) return false;
+  if (time < Date.parse(row.joined_at)) return false;
+  if (row.exited_at != null && time >= Date.parse(row.exited_at)) return false;
+  return true;
+}
