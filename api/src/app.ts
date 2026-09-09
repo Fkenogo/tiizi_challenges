@@ -6,6 +6,10 @@ import type { Db } from './db.js';
 import { registerGroupIdentityRoutes } from './groupIdentity.js';
 import { registerKnowledgeRoutes } from './knowledge.js';
 import { registerMembershipRoutes } from './memberships.js';
+import {
+  registerChallengeActivityRoutes,
+  type ChallengeActivityRouteDeps,
+} from './challengeActivityRoutes.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -15,6 +19,9 @@ import { registerMembershipRoutes } from './memberships.js';
 export interface AppDeps {
   db: Db;
   verifier: TokenVerifier;
+  /** C2B runtime deps. Absent in tests unless the test wires them; requests
+   * then fail closed (group authority unavailable) instead of authorizing. */
+  challengeActivity?: ChallengeActivityRouteDeps;
 }
 
 export function buildApp(deps: AppDeps) {
@@ -65,5 +72,6 @@ export function buildApp(deps: AppDeps) {
   registerMembershipRoutes(app, deps.db);
   registerGroupIdentityRoutes(app, deps.db);
   registerKnowledgeRoutes(app, deps.db);
+  registerChallengeActivityRoutes(app, deps.db, deps.challengeActivity ?? {});
   return app;
 }

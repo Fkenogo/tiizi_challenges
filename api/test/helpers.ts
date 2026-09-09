@@ -113,6 +113,9 @@ beforeEach(async () => {
   await db.query('TRUNCATE knowledge_item_versions, knowledge_items CASCADE');
 });
 
-export function buildTestApp(uidByToken: Record<string, string>) {
-  return buildApp({ db: testDb(), verifier: stubVerifier(uidByToken) });
+export function buildTestApp(
+  uidByToken: Record<string, string>,
+  extra?: { challengeActivity?: import('../src/app.js').AppDeps['challengeActivity'] },
+) {
+  return buildApp({ db: testDb(), verifier: stubVerifier(uidByToken), ...(extra ?? {}) });
 }

@@ -26,16 +26,24 @@ const MIRRORED: Array<[string, string]> = [
   ],
 ];
 
-// NOTE: there is intentionally no C1 production path from raw Member
-// Activity Evidence to a Challenge (see activityEvents.ts C2 boundary), so
-// the domain surface under the no-Firebase check is the Evidence seam plus
-// the C2A Challenge foundation (neither applies Evidence to a Challenge).
+// NOTE: the ONLY permitted shape feeding the Challenge Engine in production
+// is the accepted Challenge Activity Record (see activityEvents.ts C2
+// boundary + challengeActivityApplication.ts). Raw Member Activity Evidence
+// never reaches an engine directly, so the domain surface under the
+// no-Firebase check is the Evidence seam, the C2A Challenge foundation, and
+// the C2B application/derived-truth seam. The Firestore authority adapter
+// (firestoreGroupAuthority.ts) is the single documented boundary exception
+// and is intentionally absent from this list.
 const DOMAIN_MODULES = [
   '../src/activityEvents.ts',
   '../src/challenges.ts',
   '../src/challengeConfigs.ts',
   '../src/challengeParticipations.ts',
   '../src/groupMembershipAuthority.ts',
+  '../src/challengeActivityApplication.ts',
+  '../src/derivedTruth.ts',
+  '../src/knowledgePins.ts',
+  '../src/challengeActivityRoutes.ts',
   '../src/engine/index.ts',
   '../src/engine/types.ts',
   '../src/engine/collectiveEngine.ts',
