@@ -144,28 +144,22 @@ npm run knowledge:import -- --apply
 npm run parity:knowledge
 ```
 
-- Phase C1 Activity Event ledger (PostgreSQL shadow of Firestore
-  `workouts`/`wellnessLogs`; Firestore remains the live writer/authority for
-  new events — no dual writes, no cutover in C1). Append-only
-  `activity_events` with correction-chain semantics, deterministic
-  `firestore:<collection>:<doc>` idempotency keys, member UUID identity via
-  `members`, transitional legacy challenge/group references, and
-  import-snapshot Knowledge version pins:
-
-```sh
-npm run activity:import -- --dry-run
-npm run activity:import -- --apply
-npm run parity:events
-npm run shadow:activities
-```
-
-  `parity:events` compares Firestore vs ledger semantics (counts,
-  occurred_at, value/unit, pins, associations, correction state; non-zero
-  exit on material mismatch). `shadow:activities` replays the ledger through
-  the vendored engines (`api/src/engine/`, logic-identical to
-  `src/services/challengeEngine/`) and classifies Firestore derived truth as
-  exact parity / explainable-stale / material mismatch. Ledger reads:
-  `GET /v1/activity-events/me`.
+- Phase C1 Member Activity Event ledger (clean V2 state — no V1
+  `workouts`/`wellnessLogs` migration; Firestore remains the temporary V1
+  writer while C1/C2 complete, and the V2 cutover starts from a clean event
+  state). Append-only `member_activity_events` holds reported Evidence only:
+  member UUID identity via `members`, canonical Knowledge id/version pins
+  (server-resolved, never client-authored), variants, measurement
+  (value/unit), authoritative local-day semantics, client idempotency keys,
+  and correction-chain semantics. No `challenge_id`, no points/scoring on
+  the event — Challenge association and scoring are C2 application
+  (`challenge_activity_records` will reference the stable `event_id` PK with
+  no schema change here). Replay models the C2 application step (Evidence
+  -> scorer + challenge target -> vendored engines in `api/src/engine/`,
+  logic-identical to `src/services/challengeEngine/`) over synthetic V2
+  fixtures — historical migration parity is intentionally not a correctness
+  gate. No member activity-history route: Tiizi is not a personal activity
+  logger, and no such product surface is approved.
 
 - Challenge creation (`functions/src/knowledgeAuthority.ts`): PostgreSQL
   consulted first per canonical ID; PG hit decides authoritatively, PG miss

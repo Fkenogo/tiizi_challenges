@@ -28,11 +28,7 @@ const MIRRORED: Array<[string, string]> = [
 
 const DOMAIN_MODULES = [
   '../src/activityEvents.ts',
-  '../src/activityEventImport.ts',
-  '../src/activityEventParity.ts',
   '../src/activityReplay.ts',
-  '../src/activityShadow.ts',
-  '../src/activityEventsRead.ts',
   '../src/engine/index.ts',
   '../src/engine/types.ts',
   '../src/engine/collectiveEngine.ts',

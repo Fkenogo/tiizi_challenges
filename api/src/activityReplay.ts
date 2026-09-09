@@ -1,12 +1,16 @@
 /**
- * Phase C1 engine replay — derive challenge/member progress from the
- * PostgreSQL event ledger using the existing provider-neutral engines.
+ * Phase C1 engine replay — derive challenge/member progress from Member
+ * Activity Evidence using the existing provider-neutral engines.
  *
- * The engines are NOT rewritten: this module folds effective ledger events
+ * This module models the C2 application step (Evidence -> application ->
+ * engine) in one fold: each event's reported measurement is scored against
+ * the ChallengeContext activity target via the unified v2 scorer, then folded
  * through the vendored `engine/` sources (logic-identical to
  * `src/services/challengeEngine/` modulo ESM extensions, drift-guarded by
- * test) with the same
- * application semantics as the Firestore write path:
+ * test). Scoring is computed here at application time — it is never read
+ * from the event, because Evidence carries no points.
+ *
+ * Application semantics mirror the Firestore write path:
  * - per-member sequential fold in deterministic event order
  *   (occurred_at, recorded_at, event_id);
  * - collective group total accumulates challengeUpdate deltas;
@@ -15,13 +19,14 @@
  *   cascade, matching `atomicCollectiveGroupUpdate` outcomes).
  *
  * No Firebase import. Inputs are domain-shaped (ChallengeContext built by the
- * caller from Firestore challenge docs; ActivityEventRow from the ledger).
- * Repeated replay of the same inputs is deterministic.
+ * caller; ActivityEventRow from the ledger). Repeated replay of the same
+ * inputs is deterministic.
  */
 
 import type { ActivityEventRow } from './activityEvents.js';
 import { computeRequiredLogs } from './engine/challengeCompletion.js';
 import { selectEngine } from './engine/index.js';
+import { computeActivityScore } from './engine/scoringConfig.js';
 import type {
   ChallengeContext,
   LogEvent,
@@ -35,7 +40,8 @@ export interface ReplayMemberResult {
 }
 
 export interface ReplayResult {
-  legacyChallengeId: string;
+  /** The ChallengeContext identity replayed against (application scope, not event content). */
+  challengeId: string;
   challengeType: ChallengeContext['challengeType'];
   members: ReplayMemberResult[];
   /** Collective group total (sum of deltas); 0 for non-collective types. */
@@ -55,16 +61,32 @@ function initialSnapshot(memberId: string, challengeId: string, context: Challen
   };
 }
 
-function toLogEvent(row: ActivityEventRow): LogEvent {
+/**
+ * Build the engine LogEvent for one Evidence row in a Challenge context.
+ * Points are derived here (C2 application scoring): the challenge activity
+ * target for the row's canonical key drives the unified v2 scorer. Evidence
+ * carries no points, so there is nothing to read back.
+ */
+function toLogEvent(row: ActivityEventRow, context: ChallengeContext): LogEvent {
+  const config = context.activities.find(
+    (a) => (a.activityId ?? a.exerciseId) === row.canonical_key
+      || (a.exerciseId ?? a.activityId) === row.canonical_key,
+  );
+  const targetValue = config?.activityCumulativeTarget ?? config?.targetValue ?? 0;
+  const { pointsEarned } = computeActivityScore({
+    value: row.value,
+    targetValue,
+    challengeType: context.challengeType,
+  });
   return {
     userId: row.member_id,
-    challengeId: row.legacy_challenge_id ?? '',
+    challengeId: context.challengeId,
     activityId: row.canonical_key,
     value: row.value,
     unit: row.unit,
     date: row.occurred_day,
     loggedAt: new Date(row.occurred_at),
-    pointsEarned: row.points,
+    pointsEarned,
   };
 }
 
@@ -104,7 +126,7 @@ export function replayChallengeEvents(
   for (const row of ordered) {
     if (row.status !== 'committed') continue;
     const snapshot = snapshotFor(row.member_id);
-    const logEvent = toLogEvent(row);
+    const logEvent = toLogEvent(row, context);
     const result = engine.computeUpdate(context, snapshot, logEvent, { groupCurrentTotal: groupTotal });
     const next: MembershipSnapshot = { ...snapshot, ...result.membershipUpdate };
     // Mirror the service layer: collective completion status is decided by the
@@ -132,7 +154,7 @@ export function replayChallengeEvents(
   }
 
   return {
-    legacyChallengeId: context.challengeId,
+    challengeId: context.challengeId,
     challengeType: context.challengeType,
     members: [...snapshots.entries()].map(([memberId, snapshot]) => ({
       memberId,

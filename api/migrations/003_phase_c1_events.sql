@@ -1,182 +1,184 @@
--- Phase C1: append-only Activity Event ledger (shadow / replay-validation only).
--- Standard PostgreSQL only. No provider-specific features.
--- Firestore remains the live writer/authority for NEW workouts and wellnessLogs;
--- this ledger is a shadow until a later Phase C cutover. No dual writes.
+-- Phase C1 (clean V2): Member Activity Event ledger — reported Evidence.
 --
--- Model: each historical workout / wellness log maps 1:1 to one canonical event
--- row. Committed event content is never destructively overwritten: corrections
--- arrive as NEW rows referencing the superseded row (see trigger below).
--- Event deletion is not a correction mechanism.
+-- Clean-state principle (Founder decision): Tiizi has not launched and V1
+-- Firestore workouts/wellnessLogs are development/test data. They do NOT
+-- migrate. This table represents V2 business truth, not Firestore migration
+-- mechanics: no legacy_collection / legacy_id / legacy_challenge_id /
+-- legacy_group_id, and no Challenge-derived score/progress fields.
+--
+-- Domain separation (Stage F logical model):
+--   Member Activity Event  = Evidence (THIS table: what the member reported).
+--   Challenge-Specific Activity Record = C2 application of one event within
+--     one Challenge/Participation (event FK + challenge + config version +
+--     acceptance state + scoring result). NOT implemented here.
+--   Derived Truth = calculated challenge outcome (recomputable, C2).
+-- Conceptual flow: Member Activity Event -> Challenge-Specific Activity
+-- Record -> Challenge Engine -> Derived Truth.
+--
+-- Consequences for this schema:
+-- - NO challenge_id: a logging action occurs in a Challenge context, but the
+--   association is recorded by the C2 application record, not the Evidence.
+--   Cross-challenge reuse stays prohibited: a log in Challenge A never
+--   automatically counts in Challenge B, and Tiizi is not a personal diary.
+-- - NO points / scoring_method / scoring_version: scoring is Challenge
+--   application (engine + challenge config), computed at application time,
+--   never stored on the Evidence.
+-- - `event_id` is a stable UUID PRIMARY KEY so a future
+--   challenge_activity_records table can reference it WITHOUT any change to
+--   this schema.
+-- - Knowledge pin (knowledge_id + knowledge_version, always complete) is
+--   server-resolved at write time against canonical Knowledge. Client input
+--   supplies only the canonical key (+variant); it never determines the
+--   authoritative version.
+-- - `occurred_day` is the authoritative local calendar day the engines reason
+--   about; `occurred_tz` records the originating timezone when known.
+--
+-- Standard PostgreSQL only. Firestore remains the temporary V1 writer while
+-- C1/C2 complete; the V2 cutover starts from a CLEAN event state (no import).
+-- Corrections arrive as NEW rows referencing the superseded row (trigger
+-- below). Event deletion is not a correction mechanism.
 
-CREATE TABLE IF NOT EXISTS activity_events (
+CREATE TABLE IF NOT EXISTS member_activity_events (
   event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_type TEXT NOT NULL,
+  -- V2 member identity: internal UUID FK. Firebase UIDs never appear here.
   member_id UUID NOT NULL REFERENCES members (member_id) ON DELETE RESTRICT,
-  -- Transitional identity: challenges/groups have no PostgreSQL authority yet
-  -- in C1, so the legacy Firestore document ids are carried as references.
-  -- These are NOT authority claims.
-  legacy_challenge_id TEXT,
-  legacy_group_id TEXT,
-  -- Canonical activity key exactly as logged (exerciseId for workouts,
-  -- activityId for wellness logs).
+  -- Activity domain: Knowledge-aligned kind + canonical activity identity.
+  activity_kind TEXT NOT NULL,
   canonical_key TEXT NOT NULL,
-  -- Canonical Knowledge pin, resolved at import time from knowledge_items.
-  -- NULL when the key cannot be resolved to canonical Knowledge (reported by
-  -- the importer, never invented). knowledge_version is the snapshot of
-  -- current_version at import; historical pins stay pinned.
-  knowledge_id UUID REFERENCES knowledge_items (knowledge_id) ON DELETE RESTRICT,
-  knowledge_version INTEGER,
-  version_source TEXT,
-  -- Event time (historical) vs ledger time (import). occurred_day preserves
-  -- the legacy local calendar-day bucket engines reason about.
+  -- Optional Knowledge variant (e.g. a push-up variant or measurement mode
+  -- defined by the canonical Activity). NULL when the Activity has no variant.
+  activity_variant TEXT,
+  -- Canonical Knowledge pin, server-resolved at write time. Always complete:
+  -- V2 events never carry partial pins and never invent Knowledge.
+  knowledge_id UUID NOT NULL REFERENCES knowledge_items (knowledge_id) ON DELETE RESTRICT,
+  knowledge_version INTEGER NOT NULL,
+  -- Event time (when the activity happened) vs ledger time (recorded_at).
   occurred_at TIMESTAMPTZ NOT NULL,
   occurred_day DATE NOT NULL,
+  -- Originating IANA timezone for occurred_day (e.g. 'Africa/Lagos').
+  -- NULL means the day was derived from occurred_at in UTC.
+  occurred_tz TEXT,
   recorded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Reported measurement. No scoring: points are Challenge application (C2).
   value DOUBLE PRECISION NOT NULL,
   unit TEXT NOT NULL,
-  points INTEGER NOT NULL,
-  -- Client idempotency key. Legacy imports use the deterministic
-  -- `firestore:<collection>:<docId>` key, so retries and re-runs converge.
+  -- Client idempotency key (V2 client-generated, opaque). Duplicate retries
+  -- converge on this key; business identity is event_id.
   client_key TEXT NOT NULL,
-  legacy_collection TEXT NOT NULL,
-  legacy_id TEXT NOT NULL,
-  -- Wellness variant tail (fasting|hydration|sleep|meditation); NULL for workouts.
-  log_type TEXT,
   -- Correction chain. A correction/reversal is a NEW event row pointing at the
   -- row it supersedes; the trigger below flips the target to superseded.
-  supersedes_event_id UUID REFERENCES activity_events (event_id) ON DELETE RESTRICT,
+  supersedes_event_id UUID REFERENCES member_activity_events (event_id) ON DELETE RESTRICT,
   correction_kind TEXT,
   status TEXT NOT NULL DEFAULT 'committed',
-  -- Structured metadata for genuinely variant tails only (notes, scoring
-  -- version, verified flag, wellness variant fields). Never business truth.
+  -- Structured metadata for genuinely variant tails only. Never business truth.
   metadata JSONB NOT NULL DEFAULT '{}',
-  CONSTRAINT activity_events_type_check CHECK (event_type IN ('workout', 'wellness')),
-  CONSTRAINT activity_events_canonical_key_check CHECK (char_length(canonical_key) BETWEEN 1 AND 200),
-  CONSTRAINT activity_events_knowledge_pin_check CHECK (
-    (knowledge_id IS NULL AND knowledge_version IS NULL AND version_source IS NULL)
-    OR (knowledge_id IS NOT NULL AND knowledge_version IS NOT NULL AND version_source IS NOT NULL)
-  ),
-  CONSTRAINT activity_events_knowledge_version_check CHECK (knowledge_version IS NULL OR knowledge_version >= 1),
-  CONSTRAINT activity_events_version_source_check CHECK (version_source IS NULL OR version_source IN ('import_snapshot', 'log_pinned')),
-  CONSTRAINT activity_events_value_check CHECK (value >= 0),
-  CONSTRAINT activity_events_unit_check CHECK (char_length(unit) BETWEEN 1 AND 40),
-  CONSTRAINT activity_events_points_check CHECK (points >= 0),
-  CONSTRAINT activity_events_client_key_check CHECK (char_length(client_key) BETWEEN 1 AND 300),
-  CONSTRAINT activity_events_client_key_unique UNIQUE (client_key),
-  CONSTRAINT activity_events_legacy_check CHECK (legacy_collection IN ('workouts', 'wellnessLogs')),
-  CONSTRAINT activity_events_legacy_id_check CHECK (char_length(legacy_id) BETWEEN 1 AND 200),
-  CONSTRAINT activity_events_legacy_unique UNIQUE (legacy_collection, legacy_id),
-  CONSTRAINT activity_events_log_type_check CHECK (
-    (event_type = 'workout' AND log_type IS NULL)
-    OR (event_type = 'wellness' AND log_type IN ('fasting', 'hydration', 'sleep', 'meditation'))
-  ),
-  CONSTRAINT activity_events_correction_check CHECK (
+  CONSTRAINT member_activity_events_kind_check CHECK (activity_kind IN ('fitness', 'wellness')),
+  CONSTRAINT member_activity_events_canonical_key_check CHECK (char_length(canonical_key) BETWEEN 1 AND 200),
+  CONSTRAINT member_activity_events_variant_check CHECK (activity_variant IS NULL OR char_length(activity_variant) BETWEEN 1 AND 120),
+  CONSTRAINT member_activity_events_knowledge_version_check CHECK (knowledge_version >= 1),
+  CONSTRAINT member_activity_events_value_check CHECK (value >= 0),
+  CONSTRAINT member_activity_events_unit_check CHECK (char_length(unit) BETWEEN 1 AND 40),
+  CONSTRAINT member_activity_events_client_key_check CHECK (char_length(client_key) BETWEEN 1 AND 300),
+  CONSTRAINT member_activity_events_client_key_unique UNIQUE (client_key),
+  CONSTRAINT member_activity_events_correction_check CHECK (
     (supersedes_event_id IS NULL AND correction_kind IS NULL)
     OR (supersedes_event_id IS NOT NULL AND correction_kind IN ('correction', 'reversal'))
   ),
-  CONSTRAINT activity_events_no_self_supersede CHECK (supersedes_event_id IS DISTINCT FROM event_id),
-  CONSTRAINT activity_events_status_check CHECK (status IN ('committed', 'superseded'))
+  CONSTRAINT member_activity_events_no_self_supersede CHECK (supersedes_event_id IS DISTINCT FROM event_id),
+  CONSTRAINT member_activity_events_status_check CHECK (status IN ('committed', 'superseded'))
 );
 
-CREATE INDEX IF NOT EXISTS activity_events_member_idx ON activity_events (member_id);
-CREATE INDEX IF NOT EXISTS activity_events_challenge_idx ON activity_events (legacy_challenge_id);
-CREATE INDEX IF NOT EXISTS activity_events_occurred_idx ON activity_events (occurred_at);
-CREATE INDEX IF NOT EXISTS activity_events_knowledge_idx ON activity_events (knowledge_id);
-CREATE INDEX IF NOT EXISTS activity_events_supersedes_idx ON activity_events (supersedes_event_id);
+CREATE INDEX IF NOT EXISTS member_activity_events_member_idx ON member_activity_events (member_id);
+CREATE INDEX IF NOT EXISTS member_activity_events_occurred_idx ON member_activity_events (occurred_at);
+CREATE INDEX IF NOT EXISTS member_activity_events_knowledge_idx ON member_activity_events (knowledge_id);
+CREATE INDEX IF NOT EXISTS member_activity_events_supersedes_idx ON member_activity_events (supersedes_event_id);
 
 -- Immutability: committed content is never destructively overwritten.
 -- The ONLY permitted UPDATE flips status committed -> superseded with every
 -- other column identical (performed by the correction trigger below).
 -- DELETE is never permitted; corrections are INSERTs.
-CREATE OR REPLACE FUNCTION activity_events_guard_mutation()
+CREATE OR REPLACE FUNCTION member_activity_events_guard_mutation()
 RETURNS trigger AS $$
 BEGIN
   IF TG_OP = 'DELETE' THEN
-    RAISE EXCEPTION 'activity_events are append-only: DELETE is not a correction mechanism (insert a correction event instead)';
+    RAISE EXCEPTION 'member_activity_events are append-only: DELETE is not a correction mechanism (insert a correction event instead)';
   END IF;
   IF OLD.status IS DISTINCT FROM NEW.status
      AND OLD.status = 'committed' AND NEW.status = 'superseded'
      AND OLD.event_id = NEW.event_id
-     AND OLD.event_type = NEW.event_type
      AND OLD.member_id = NEW.member_id
-     AND OLD.legacy_challenge_id IS NOT DISTINCT FROM NEW.legacy_challenge_id
-     AND OLD.legacy_group_id IS NOT DISTINCT FROM NEW.legacy_group_id
+     AND OLD.activity_kind = NEW.activity_kind
      AND OLD.canonical_key = NEW.canonical_key
+     AND OLD.activity_variant IS NOT DISTINCT FROM NEW.activity_variant
      AND OLD.knowledge_id IS NOT DISTINCT FROM NEW.knowledge_id
      AND OLD.knowledge_version IS NOT DISTINCT FROM NEW.knowledge_version
-     AND OLD.version_source IS NOT DISTINCT FROM NEW.version_source
      AND OLD.occurred_at = NEW.occurred_at
      AND OLD.occurred_day = NEW.occurred_day
+     AND OLD.occurred_tz IS NOT DISTINCT FROM NEW.occurred_tz
      AND OLD.recorded_at = NEW.recorded_at
      AND OLD.value = NEW.value
      AND OLD.unit = NEW.unit
-     AND OLD.points = NEW.points
      AND OLD.client_key = NEW.client_key
-     AND OLD.legacy_collection = NEW.legacy_collection
-     AND OLD.legacy_id = NEW.legacy_id
-     AND OLD.log_type IS NOT DISTINCT FROM NEW.log_type
      AND OLD.supersedes_event_id IS NOT DISTINCT FROM NEW.supersedes_event_id
      AND OLD.correction_kind IS NOT DISTINCT FROM NEW.correction_kind
      AND OLD.metadata = NEW.metadata THEN
     RETURN NEW;
   END IF;
-  RAISE EXCEPTION 'activity_events are append-only: committed content cannot be overwritten (insert a correction event instead)';
+  RAISE EXCEPTION 'member_activity_events are append-only: committed content cannot be overwritten (insert a correction event instead)';
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS activity_events_no_mutation ON activity_events;
-CREATE TRIGGER activity_events_no_mutation
-  BEFORE UPDATE OR DELETE ON activity_events
-  FOR EACH ROW EXECUTE FUNCTION activity_events_guard_mutation();
+DROP TRIGGER IF EXISTS member_activity_events_no_mutation ON member_activity_events;
+CREATE TRIGGER member_activity_events_no_mutation
+  BEFORE UPDATE OR DELETE ON member_activity_events
+  FOR EACH ROW EXECUTE FUNCTION member_activity_events_guard_mutation();
 
 -- Correction chain: inserting a correction/reversal flips its target from
 -- committed to superseded. The target must be committed (linear chain, no
--- double-supersede) and must belong to the same member and event type.
-CREATE OR REPLACE FUNCTION activity_events_apply_correction()
+-- double-supersede) and must belong to the same member and activity kind.
+CREATE OR REPLACE FUNCTION member_activity_events_apply_correction()
 RETURNS trigger AS $$
 DECLARE
-  target activity_events%ROWTYPE;
+  target member_activity_events%ROWTYPE;
 BEGIN
   IF NEW.supersedes_event_id IS NULL THEN
     RETURN NEW;
   END IF;
-  SELECT * INTO target FROM activity_events WHERE event_id = NEW.supersedes_event_id FOR UPDATE;
+  SELECT * INTO target FROM member_activity_events WHERE event_id = NEW.supersedes_event_id FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'correction target event % does not exist', NEW.supersedes_event_id;
   END IF;
   IF target.status <> 'committed' THEN
     RAISE EXCEPTION 'correction target event % is not committed (status=%)', NEW.supersedes_event_id, target.status;
   END IF;
-  IF target.member_id IS DISTINCT FROM NEW.member_id OR target.event_type <> NEW.event_type THEN
-    RAISE EXCEPTION 'correction must reference the same member and event type';
+  IF target.member_id IS DISTINCT FROM NEW.member_id OR target.activity_kind <> NEW.activity_kind THEN
+    RAISE EXCEPTION 'correction must reference the same member and activity kind';
   END IF;
-  UPDATE activity_events SET status = 'superseded' WHERE event_id = NEW.supersedes_event_id;
+  UPDATE member_activity_events SET status = 'superseded' WHERE event_id = NEW.supersedes_event_id;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS activity_events_correction_chain ON activity_events;
-CREATE TRIGGER activity_events_correction_chain
-  AFTER INSERT ON activity_events
-  FOR EACH ROW EXECUTE FUNCTION activity_events_apply_correction();
+DROP TRIGGER IF EXISTS member_activity_events_correction_chain ON member_activity_events;
+CREATE TRIGGER member_activity_events_correction_chain
+  AFTER INSERT ON member_activity_events
+  FOR EACH ROW EXECUTE FUNCTION member_activity_events_apply_correction();
 
 -- Derived read surface (C1): views only, recomputable, never client-authored.
 -- Effective ledger: committed rows, i.e. originals never superseded plus
 -- their live corrections.
-CREATE OR REPLACE VIEW v_activity_events_effective AS
-  SELECT * FROM activity_events WHERE status = 'committed';
+CREATE OR REPLACE VIEW v_member_activity_events_effective AS
+  SELECT * FROM member_activity_events WHERE status = 'committed';
 
--- Per-member / per-challenge totals over the effective ledger.
-CREATE OR REPLACE VIEW v_activity_event_totals AS
+-- Per-member totals over the effective ledger (measurement only, no scoring).
+CREATE OR REPLACE VIEW v_member_activity_event_totals AS
   SELECT member_id,
-         legacy_challenge_id,
-         event_type,
+         activity_kind,
          COUNT(*)::BIGINT AS event_count,
          COALESCE(SUM(value), 0) AS value_sum,
-         COALESCE(SUM(points), 0)::BIGINT AS points_sum,
          COUNT(DISTINCT occurred_day)::BIGINT AS day_count,
          MIN(occurred_at) AS first_occurred_at,
          MAX(occurred_at) AS last_occurred_at
-  FROM activity_events
+  FROM member_activity_events
   WHERE status = 'committed'
-  GROUP BY member_id, legacy_challenge_id, event_type;
+  GROUP BY member_id, activity_kind;

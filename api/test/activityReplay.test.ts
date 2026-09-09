@@ -1,33 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { replayChallengeEvents, snapshotToComparable } from '../src/activityReplay.js';
-import { compareReplayToFirestore } from '../src/activityShadow.js';
 import type { ActivityEventRow } from '../src/activityEvents.js';
 import type { ChallengeContext } from '../src/engine/types.js';
 
 let seq = 0;
 
+/** Synthetic V2 fixture row — no Firestore provenance anywhere. */
 function row(overrides: Partial<ActivityEventRow>): ActivityEventRow {
   seq += 1;
   return {
     event_id: `00000000-0000-4000-8000-${String(seq).padStart(12, '0')}`,
-    event_type: 'workout',
     member_id: 'member-1',
-    legacy_challenge_id: 'challenge-1',
-    legacy_group_id: null,
+    activity_kind: 'fitness',
     canonical_key: 'push-up',
-    knowledge_id: null,
-    knowledge_version: null,
-    version_source: null,
+    activity_variant: null,
+    knowledge_id: '00000000-0000-4000-8000-000000000001',
+    knowledge_version: 1,
     occurred_at: '2026-05-01T08:00:00.000Z',
     occurred_day: '2026-05-01',
+    occurred_tz: null,
     recorded_at: '2026-06-01T00:00:00.000Z',
     value: 20,
     unit: 'reps',
-    points: 80,
-    client_key: `firestore:workouts:t${seq}`,
-    legacy_collection: 'workouts',
-    legacy_id: `t${seq}`,
-    log_type: null,
+    client_key: `v2-client:t${seq}`,
     supersedes_event_id: null,
     correction_kind: null,
     status: 'committed',
@@ -64,6 +59,18 @@ describe('replay determinism', () => {
       snapshotToComparable(second.members[0].snapshot),
     );
     expect(first.appliedEvents).toBe(3);
+  });
+
+  it('skips superseded rows: replay is a pure function of the committed ledger', () => {
+    const live = row({ occurred_at: '2026-05-01T08:00:00.000Z', occurred_day: '2026-05-01' });
+    const dead = row({
+      occurred_at: '2026-05-02T08:00:00.000Z',
+      occurred_day: '2026-05-02',
+      status: 'superseded',
+    });
+    const result = replayChallengeEvents([live, dead], streakContext());
+    expect(result.appliedEvents).toBe(1);
+    expect(result.members[0].snapshot.activitiesCompleted).toBe(1);
   });
 });
 
@@ -129,16 +136,24 @@ describe('competitive replay', () => {
     return {
       ...streakContext(),
       challengeType: 'competitive',
-      activities: [{ exerciseId: 'push-up', targetValue: 50, unit: 'reps' }],
+      activities: [
+        { exerciseId: 'push-up', targetValue: 50, unit: 'reps' },
+        { exerciseId: 'water-intake', targetValue: 2000, unit: 'ml' },
+      ],
     };
   }
 
   it('tracks per-activity cumulative values toward completion', () => {
+    const singleActivity = {
+      ...competitiveContext(),
+      activities: [{ exerciseId: 'push-up', targetValue: 50, unit: 'reps' }],
+    };
+    // Application scoring derives 20/50 -> 40 pts and 30/50 -> 60 pts.
     const events = [
-      row({ value: 20, points: 40 }),
-      row({ value: 30, points: 60 }),
+      row({ value: 20 }),
+      row({ value: 30 }),
     ];
-    const result = replayChallengeEvents(events, competitiveContext());
+    const result = replayChallengeEvents(events, singleActivity);
     const snap = result.members[0].snapshot;
     expect(snap.cumulativeLoggedValue).toBe(50);
     expect(snap.cumulativeValues).toEqual({ 'push-up': 50 });
@@ -146,57 +161,27 @@ describe('competitive replay', () => {
     expect(snap.status).toBe('completed');
     expect(snap.completionRate).toBe(100);
   });
-});
 
-describe('shadow classification', () => {
-  it('classifies exact parity as A', () => {
-    const events = [1, 2, 3].map((day) =>
-      row({ occurred_at: `2026-05-0${day}T08:00:00.000Z`, occurred_day: `2026-05-0${day}` }),
-    );
-    const replay = replayChallengeEvents(events, streakContext());
-    const snap = snapshotToComparable(replay.members[0].snapshot);
-    const report = compareReplayToFirestore(replay, [
-      {
-        memberId: 'member-1',
-        status: snap.status as string,
-        activitiesCompleted: snap.activitiesCompleted as number,
-        completionRate: snap.completionRate as number,
-        totalPoints: snap.totalPoints as number,
-        currentStreak: snap.currentStreak as number,
-        longestStreak: snap.longestStreak as number,
-        lastActivityAt: (snap.lastActivityAt as string) ?? null,
-      },
-    ]);
-    expect(report.counts).toEqual({ A: 1, B: 0, C: 0 });
-  });
-
-  it('classifies behind-counters with older timestamps as explainable-stale B', () => {
-    const events = [1, 2].map((day) =>
-      row({ occurred_at: `2026-05-0${day}T08:00:00.000Z`, occurred_day: `2026-05-0${day}` }),
-    );
-    const replay = replayChallengeEvents(events, streakContext());
-    const report = compareReplayToFirestore(replay, [
-      {
-        memberId: 'member-1',
-        status: 'active',
-        activitiesCompleted: 1,
-        completionRate: 14,
-        totalPoints: 80,
-        currentStreak: 1,
-        longestStreak: 1,
-        lastActivityAt: '2026-05-01T08:00:00.000Z',
-      },
-    ]);
-    expect(report.members[0].classification).toBe('B');
-  });
-
-  it('classifies status divergence as material C', () => {
-    const events = [row({})];
-    const replay = replayChallengeEvents(events, streakContext());
-    const report = compareReplayToFirestore(replay, [
-      { memberId: 'member-1', status: 'completed', lastActivityAt: '2026-05-01T08:00:00.000Z' },
-    ]);
-    expect(report.members[0].classification).toBe('C');
-    expect(report.counts.C).toBe(1);
+  it('accumulates multi-activity days per activity key', () => {
+    // Application scoring derives 20/50 -> 40 pts and 2000/2000 -> 100 pts.
+    const events = [
+      row({
+        canonical_key: 'push-up',
+        value: 20,
+        activity_kind: 'fitness',
+        occurred_day: '2026-05-01',
+      }),
+      row({
+        canonical_key: 'water-intake',
+        value: 2000,
+        unit: 'ml',
+        activity_kind: 'wellness',
+        occurred_day: '2026-05-01',
+      }),
+    ];
+    const result = replayChallengeEvents(events, competitiveContext());
+    const snap = result.members[0].snapshot;
+    expect(snap.cumulativeValues).toEqual({ 'push-up': 20, 'water-intake': 2000 });
+    expect(snap.totalPoints).toBe(140);
   });
 });
