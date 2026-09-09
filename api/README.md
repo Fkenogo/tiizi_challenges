@@ -144,6 +144,24 @@ npm run knowledge:import -- --apply
 npm run parity:knowledge
 ```
 
+- Phase C1 Member Activity Event ledger (clean V2 state — no V1
+  `workouts`/`wellnessLogs` migration; Firestore remains the temporary V1
+  writer while C1/C2 complete, and the V2 cutover starts from a clean event
+  state). Append-only `member_activity_events` holds reported Evidence only:
+  member UUID identity via `members`, canonical Knowledge id/version pins
+  (server-resolved, never client-authored), variants, measurement
+  (value/unit), authoritative local-day semantics, client idempotency keys,
+  and correction-chain semantics. No `challenge_id`, no points/scoring on
+  the event — Challenge association and scoring are C2 application
+  (`challenge_activity_records` will reference the stable `event_id` PK with
+  no schema change here). C1 has NO production path from raw Evidence to a
+  Challenge: the vendored engines (`api/src/engine/`, logic-identical to
+  `src/services/challengeEngine/`) are retained drift-guarded as the C2
+  foundation, and replay/calculation arrives with the C2 application
+  records. Historical migration parity is intentionally not a correctness
+  gate. No member activity-history route: Tiizi is not a personal activity
+  logger, and no such product surface is approved.
+
 - Challenge creation (`functions/src/knowledgeAuthority.ts`): PostgreSQL
   consulted first per canonical ID; PG hit decides authoritatively, PG miss
   or outage uses the transitional Firestore read-through, unset
@@ -153,7 +171,9 @@ npm run parity:knowledge
   paths; `transition` = API primary with controlled by-ID Firestore
   fallback; `postgres` = API/PG only, API errors surface, no fallback.
 
-Out of scope (later domains): Groups, Challenges, Activity Events, Social,
+Out of scope (later domains): Groups, Challenges, Activity Event live
+cutover (C1 ledger is shadow/replay-validation only; Firestore remains live
+authority for new workouts/wellnessLogs), Social,
 Donations, Firebase Auth removal, challenge/workout templates
 (`challengeTemplates`/`wellnessTemplates` stay in Firestore), verification/
 correction/recognition/rewards authorities, and the seven accepted Phase A2

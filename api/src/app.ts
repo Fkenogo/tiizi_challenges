@@ -6,6 +6,11 @@ import type { Db } from './db.js';
 import { registerGroupIdentityRoutes } from './groupIdentity.js';
 import { registerKnowledgeRoutes } from './knowledge.js';
 import { registerMembershipRoutes } from './memberships.js';
+/* No member activity-history route in C1: Tiizi is not a personal activity
+ * logger (Stage F), and no user-facing personal-history capability is
+ * approved. The ledger is readable internally via listEffectiveEvents for
+ * C2 application/replay. A product surface, if ever approved, is a C2+ API
+ * decision — not an accident of this table existing. */
 
 export interface AppDeps {
   db: Db;
