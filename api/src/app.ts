@@ -6,6 +6,7 @@ import type { Db } from './db.js';
 import { registerGroupIdentityRoutes } from './groupIdentity.js';
 import { registerKnowledgeRoutes } from './knowledge.js';
 import { registerMembershipRoutes } from './memberships.js';
+import { registerActivityEventRoutes } from './activityEventsRead.js';
 
 export interface AppDeps {
   db: Db;
@@ -58,6 +59,7 @@ export function buildApp(deps: AppDeps) {
   });
 
   registerMembershipRoutes(app, deps.db);
+  registerActivityEventRoutes(app, deps.db);
   registerGroupIdentityRoutes(app, deps.db);
   registerKnowledgeRoutes(app, deps.db);
   return app;

@@ -15,7 +15,10 @@
     "shadow:import": "tsx src/shadowImportCli.ts",
     "parity:memberships": "tsx src/parityCli.ts",
     "knowledge:import": "tsx src/knowledgeImportCli.ts",
-    "parity:knowledge": "tsx src/knowledgeParityCli.ts"
+    "parity:knowledge": "tsx src/knowledgeParityCli.ts",
+    "activity:import": "tsx src/activityEventImportCli.ts",
+    "parity:events": "tsx src/activityEventParityCli.ts",
+    "shadow:activities": "tsx src/activityShadowCli.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

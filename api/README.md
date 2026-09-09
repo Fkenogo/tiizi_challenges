@@ -144,6 +144,29 @@ npm run knowledge:import -- --apply
 npm run parity:knowledge
 ```
 
+- Phase C1 Activity Event ledger (PostgreSQL shadow of Firestore
+  `workouts`/`wellnessLogs`; Firestore remains the live writer/authority for
+  new events — no dual writes, no cutover in C1). Append-only
+  `activity_events` with correction-chain semantics, deterministic
+  `firestore:<collection>:<doc>` idempotency keys, member UUID identity via
+  `members`, transitional legacy challenge/group references, and
+  import-snapshot Knowledge version pins:
+
+```sh
+npm run activity:import -- --dry-run
+npm run activity:import -- --apply
+npm run parity:events
+npm run shadow:activities
+```
+
+  `parity:events` compares Firestore vs ledger semantics (counts,
+  occurred_at, value/unit, pins, associations, correction state; non-zero
+  exit on material mismatch). `shadow:activities` replays the ledger through
+  the vendored engines (`api/src/engine/`, logic-identical to
+  `src/services/challengeEngine/`) and classifies Firestore derived truth as
+  exact parity / explainable-stale / material mismatch. Ledger reads:
+  `GET /v1/activity-events/me`.
+
 - Challenge creation (`functions/src/knowledgeAuthority.ts`): PostgreSQL
   consulted first per canonical ID; PG hit decides authoritatively, PG miss
   or outage uses the transitional Firestore read-through, unset
@@ -153,7 +176,9 @@ npm run parity:knowledge
   paths; `transition` = API primary with controlled by-ID Firestore
   fallback; `postgres` = API/PG only, API errors surface, no fallback.
 
-Out of scope (later domains): Groups, Challenges, Activity Events, Social,
+Out of scope (later domains): Groups, Challenges, Activity Event live
+cutover (C1 ledger is shadow/replay-validation only; Firestore remains live
+authority for new workouts/wellnessLogs), Social,
 Donations, Firebase Auth removal, challenge/workout templates
 (`challengeTemplates`/`wellnessTemplates` stay in Firestore), verification/
 correction/recognition/rewards authorities, and the seven accepted Phase A2
