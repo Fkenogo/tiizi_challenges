@@ -23,8 +23,20 @@ for the Secret Manager step. Do not encode instance names in the image.
 
 ## 2. Configure Secret Manager / service identity
 
-- Store `DATABASE_URL` (with `?sslmode=require` where applicable) as a secret;
-  inject it into the Cloud Run service and Cloud Run Jobs at runtime.
+- Store `DATABASE_URL` with verified TLS as a secret and inject it into the
+  Cloud Run service and Cloud Run Jobs at runtime:
+  `postgresql://user:pass@host:5432/tiizi?uselibpqcompat=true&sslmode=verify-ca&sslrootcert=/secrets/tiizi-db-server-ca/server-ca.pem`.
+  `sslmode=require` (encrypted but unverified) is rejected at startup by the
+  shared TLS contract (`api/src/db.ts` + `dbSsl.ts`, mirrored in
+  `functions/src/`); remote hosts without `sslmode=verify-ca`/`verify-full`
+  refuse to connect at all.
+- Store the Cloud SQL server CA (PEM trust material, `TIIZI_DB_SERVER_CA_PEM`)
+  as its own secret. It is deploy-specific trust config, not an application
+  secret, so it lives in Secret Manager rather than the repo (rotation without
+  a code change). Mount it as a volume file for the API and jobs
+  (`--set-secrets=/secrets/tiizi-db-server-ca/server-ca.pem=TIIZI_DB_SERVER_CA_PEM:latest`);
+  bind it as an env secret for the two Functions authority callables, where
+  the reader materializes it to a 0600 temp file. No service-account JSON.
 - Give the API service identity ADC/workload-identity rights only. No
   service-account JSON is deployed with the container.
 - Set non-secret env: `FIREBASE_PROJECT_ID`, `TIIZI_ALLOWED_ORIGINS`
@@ -122,7 +134,8 @@ on any `firebase_admin_init_failed` (credential/identity misconfiguration).
 
 - Frontend later needs `VITE_TIIZI_API_BASE_URL` +
   `VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE`. It stays on Firebase Hosting.
-- Functions later need `DATABASE_URL` (or equivalent secure connection),
+- Functions later need `DATABASE_URL` with `sslmode=verify-ca` (or equivalent
+  secure connection), the `TIIZI_DB_SERVER_CA_PEM` CA secret,
   `TIIZI_KNOWLEDGE_AUTHORITY_MODE`, and a supported network path to
   PostgreSQL. They are not migrated here; Firebase Auth is not replaced here.
 

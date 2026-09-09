@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { Pool } from 'pg';
+import { resolveVerifiedTls } from './dbSsl.js';
 
 export interface Db {
   query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<{ rows: T[] }>;
@@ -10,8 +11,12 @@ export interface Db {
 /**
  * Production connection contract (provider-neutral `pg`, standard DATABASE_URL).
  *
- * - TLS is carried by the connection string itself (e.g. `?sslmode=require`
- *   for Cloud SQL); node-postgres honors it, so no driver fork is needed.
+ * - TLS is carried by the connection string itself
+ *   (`?uselibpqcompat=true&sslmode=verify-ca&sslrootcert=<server-ca.pem>`);
+ *   `resolveVerifiedTls` (./dbSsl.ts) enforces CA-verified server
+ *   authentication and fails fast on unverified modes (`require`, `prefer`,
+ *   `allow`, explicit disables) or a missing CA, so `sslmode=require` can
+ *   never silently connect. No driver fork is needed.
  * - The pool is deliberately bounded for Cloud Run: total PostgreSQL
  *   connections ≈ (Cloud Run max instances) × TIIZI_DB_POOL_MAX, so both
  *   factors must be set intentionally against the Cloud SQL tier limit.
@@ -39,8 +44,12 @@ export function resolveDbPoolMax(raw: string | undefined = process.env[DB_POOL_M
 }
 
 export function createPool(connectionString: string, options?: { max?: number }): Db {
+  // Fail closed before pg ever sees the URL: unverified TLS modes and remote
+  // plaintext throw here. Every consumer (API, migrate/parity/import CLIs)
+  // inherits the verified-TLS contract through this single seam.
+  const tls = resolveVerifiedTls(connectionString);
   const pool = new Pool({
-    connectionString,
+    connectionString: tls.connectionString,
     max: options?.max ?? resolveDbPoolMax(),
     connectionTimeoutMillis: 10_000,
     idleTimeoutMillis: 30_000,

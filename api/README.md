@@ -61,7 +61,7 @@ Credentials. See `DEPLOY.md` for the full provisioning runbook (not executed).
 docker build -f api/Dockerfile -t tiizi-api ./api   # from the repository root
 docker run -p 8080:8080 \
   -e PORT=8080 \
-  -e DATABASE_URL=postgresql://user:pass@host:5432/tiizi?sslmode=require \
+  -e DATABASE_URL='postgresql://user:pass@host:5432/tiizi?uselibpqcompat=true&sslmode=verify-ca&sslrootcert=/secrets/server-ca.pem' \
   -e FIREBASE_PROJECT_ID=your-project-id \
   -e TIIZI_ALLOWED_ORIGINS=https://tiizi.example \
   tiizi-api
@@ -91,7 +91,7 @@ docker run -p 8080:8080 \
 | Class | Variables |
 |---|---|
 | NON-SECRET | `PORT`, `FIREBASE_PROJECT_ID`, `TIIZI_ALLOWED_ORIGINS`, `TIIZI_DB_POOL_MAX` |
-| SECRET (Secret Manager at runtime) | `DATABASE_URL` (unless a secure connector removes embedded passwords) |
+| SECRET (Secret Manager at runtime) | `DATABASE_URL` (verified TLS: `sslmode=verify-ca` + server CA; unless a secure connector removes embedded passwords), `TIIZI_DB_SERVER_CA_PEM` (server CA PEM) |
 | FUTURE CUTOVER / NOT YET ENABLED | `TIIZI_KNOWLEDGE_AUTHORITY_MODE`, frontend `VITE_TIIZI_API_BASE_URL`, frontend `VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE` |
 
 Service-account JSON is not a production deployment mechanism. Never commit

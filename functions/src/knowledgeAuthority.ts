@@ -16,6 +16,8 @@
  * pass through unchanged, exactly as before.
  */
 
+import { resolveVerifiedTls } from './dbSsl.js';
+
 export type KnowledgeAuthorityKind = 'fitness' | 'wellness';
 
 /**
@@ -137,18 +139,23 @@ export class PgKnowledgeAuthorityReader implements KnowledgeAuthorityReader {
   private pool: { query: (text: string, params: unknown[]) => Promise<{ rows: AuthorityRow[] }>; end: () => Promise<void> } | null = null;
 
   readonly maxConnections: number;
+  readonly verifiedConnectionString: string;
 
   constructor(
-    private readonly connectionString: string,
+    connectionString: string,
     maxConnections?: number,
   ) {
     this.maxConnections = resolveAuthorityPoolMax(maxConnections);
+    // Same fail-closed verified-TLS contract as the API (see dbSsl.ts, kept
+    // byte-identical with api/src/dbSsl.ts). Resolving eagerly fails cold
+    // start loudly on unverified TLS instead of connecting insecurely later.
+    this.verifiedConnectionString = resolveVerifiedTls(connectionString).connectionString;
   }
 
   private async poolQuery(text: string, params: unknown[]): Promise<{ rows: AuthorityRow[] }> {
     if (!this.pool) {
       const { Pool } = await import('pg');
-      const pool = new Pool({ connectionString: this.connectionString, max: this.maxConnections });
+      const pool = new Pool({ connectionString: this.verifiedConnectionString, max: this.maxConnections });
       this.pool = {
         query: (queryText: string, queryParams: unknown[]) => pool.query(queryText, queryParams as never[]) as Promise<{ rows: AuthorityRow[] }>,
         end: () => pool.end(),
