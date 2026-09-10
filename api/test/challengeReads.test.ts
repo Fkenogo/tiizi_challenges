@@ -290,6 +290,56 @@ describe('challenge detail', () => {
     ).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it('exposes activityKind=fitness for fitness-configured activities', async () => {
+    const db = testDb();
+    const fx = await setupChallenge('c3a-kind-fitness', {
+      challenge_type: 'competitive',
+      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      kinds: { 'push-up': 'fitness' },
+    });
+    await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
+    const detail = await getChallengeDetail(db, fx.memberId, fx.challengeId, {
+      groupMembershipAuthority: stubAuthority(new Set([fx.groupId])),
+    });
+    expect(detail.config.activities[0].activityKind).toBe('fitness');
+  });
+
+  it('exposes activityKind=wellness for wellness-configured activities', async () => {
+    const db = testDb();
+    const fx = await setupChallenge('c3a-kind-wellness', {
+      challenge_type: 'streak',
+      required_consecutive_days: 30,
+      activities: [{ canonical_key: 'deep-rest', target_value: 8, unit: 'hours' }],
+      kinds: { 'deep-rest': 'wellness' },
+    });
+    await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
+    const detail = await getChallengeDetail(db, fx.memberId, fx.challengeId, {
+      groupMembershipAuthority: stubAuthority(new Set([fx.groupId])),
+    });
+    // The canonical key 'deep-rest' carries none of the old heuristic
+    // keywords — kind must still be wellness because the config says so.
+    expect(detail.config.activities[0].activityKind).toBe('wellness');
+  });
+
+  it('mixed fitness+wellness config preserves each exact kind', async () => {
+    const db = testDb();
+    const fx = await setupChallenge('c3a-kind-mixed', {
+      challenge_type: 'competitive',
+      activities: [
+        { canonical_key: 'push-up', target_value: 100, unit: 'reps' },
+        { canonical_key: 'quiet-time', target_value: 20, unit: 'minutes' },
+      ],
+      kinds: { 'push-up': 'fitness', 'quiet-time': 'wellness' },
+    });
+    await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
+    const detail = await getChallengeDetail(db, fx.memberId, fx.challengeId, {
+      groupMembershipAuthority: stubAuthority(new Set([fx.groupId])),
+    });
+    const byKey = Object.fromEntries(detail.config.activities.map((a) => [a.canonicalKey, a.activityKind]));
+    expect(byKey['push-up']).toBe('fitness');
+    expect(byKey['quiet-time']).toBe('wellness');
+  });
+
   it('collective overshoot is preserved in derived truth', async () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-overshoot', {

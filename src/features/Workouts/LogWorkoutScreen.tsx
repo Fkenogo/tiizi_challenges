@@ -37,10 +37,13 @@ function LogWorkoutScreen() {
   // and reused across automatic/manual retries of THIS submission.
   const [v2ClientKey] = useState(() => newClientKey());
 
-  const { data: exercise } = useExercise(exerciseId);
-  const { data: challenge } = useChallenge(challengeId);
-  const { data: membership } = useChallengeMembership(challengeId);
-  const { data: challengeSummary } = useChallengeSummary(challengeId);
+  // V1 truth reads are disabled in V2 mode: V2 governing/progress truth comes
+  // exclusively from the V2 API (useV2ChallengeDetail). The exercise catalog
+  // lookup remains for V1 display only (exerciseId is absent on V2 nav).
+  const { data: exercise } = useExercise(v2Mode ? undefined : exerciseId);
+  const { data: challenge } = useChallenge(v2Mode ? undefined : challengeId);
+  const { data: membership } = useChallengeMembership(v2Mode ? undefined : challengeId);
+  const { data: challengeSummary } = useChallengeSummary(v2Mode ? undefined : challengeId);
 
   const [value, setValue] = useState(1);
   const [notes, setNotes] = useState('');
@@ -132,13 +135,20 @@ function LogWorkoutScreen() {
         showToast('This activity is not configured on the V2 challenge.', 'error');
         return;
       }
+      // Fail closed: this is the FITNESS logger — a configured wellness
+      // activity must never be submitted as fitness (and vice versa). Kind
+      // comes from the V2 config's authoritative domain value, not the route.
+      if (!configured || configured.activityKind !== 'fitness') {
+        showToast('This activity is not a fitness activity on this V2 challenge.', 'error');
+        return;
+      }
       try {
         const result = await v2Log.mutateAsync({
           challengeId,
           payload: buildV2ActivityPayload({
-            activityKind: 'fitness',
+            activityKind: configured.activityKind,
             canonicalKey,
-            activityVariant: variantParam ?? configured?.activityVariant ?? null,
+            activityVariant: variantParam ?? configured.activityVariant ?? null,
             value,
             unit,
             occurredAt: new Date(),

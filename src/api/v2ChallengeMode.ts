@@ -7,9 +7,11 @@
  * as a V2 Challenge.
  *
  * V1/V2 identity separation: a V2 Challenge is identified SOLELY by the V2
- * API/domain identity (Tiizi UUID returned from the V2 Challenge API).
- * Firestore document ids never match isV2ChallengeId, so the two namespaces
- * cannot collide and are never deduplicated or matched heuristically.
+ * API/domain identity (Tiizi UUID returned from the V2 Challenge API) and a
+ * successful V2 API/domain lookup. The UUID-shape check is a routing
+ * convenience, NOT a security/domain invariant — a Firestore document id
+ * could theoretically be UUID-shaped. V1 and V2 Challenges are never
+ * deduplicated or matched heuristically.
  *
  * Pure env parsing (no Firebase) so the boundary is unit-testable.
  */
@@ -28,9 +30,10 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * True only for V2 API/domain identities (Tiizi UUIDs). Firestore document
- * ids (20-char base62) never match. This is an identity-namespace check, not
- * a heuristic: V1 and V2 Challenges are separate identities by construction.
+ * UUID-shape routing convenience only (NOT a security invariant): a
+ * Firestore document id could theoretically be UUID-shaped, so this check
+ * alone does not establish V2 identity. The real boundary is the explicit
+ * V2 flow (isV2ChallengeAction) plus a successful V2 API/domain lookup.
  */
 export function isV2ChallengeId(id: string | undefined | null): boolean {
   return typeof id === 'string' && UUID_RE.test(id);

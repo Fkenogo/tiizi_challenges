@@ -58,6 +58,7 @@ export interface V2ChallengeSummary {
 export interface V2ConfigActivity {
   canonicalKey: string;
   activityVariant: string | null;
+  activityKind: 'fitness' | 'wellness';
   targetValue: number;
   unit: string;
   position: number;

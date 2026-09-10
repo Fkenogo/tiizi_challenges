@@ -55,22 +55,20 @@ function V2ChallengeDetailScreen() {
         canonicalKey: activity.canonicalKey,
         unit: activity.unit,
         targetValue: String(activity.targetValue),
-        activityKind: detail.challengeType === 'streak' && activity.canonicalKey.includes('water')
-          ? 'wellness'
-          : 'fitness',
+        activityKind: activity.activityKind,
       });
       if (activity.activityVariant) qs.set('activityVariant', activity.activityVariant);
-      // Wellness-configured activities route to the wellness log screen; the
-      // V2 config's canonical identity (not the Firestore id) travels along.
-      const isWellness = activity.canonicalKey.startsWith('wellness:')
-        || /water|sleep|fast|meditat|mindful|hydrat/i.test(activity.canonicalKey);
+      // Route solely on the configured domain kind — no name/unit/prefix
+      // inference. The canonical identity (not a Firestore id) travels along.
+      const isWellness = activity.activityKind === 'wellness';
       return {
         key: `${activity.canonicalKey}::${activity.activityVariant ?? ''}`,
         label: activity.canonicalKey,
         unit: activity.unit,
         targetValue: activity.targetValue,
+        activityKind: activity.activityKind,
         path: isWellness
-          ? `/app/workouts/log-wellness?${qs.toString()}&activityType=wellness&activityName=${encodeURIComponent(activity.canonicalKey)}`
+          ? `/app/workouts/log-wellness?${qs.toString()}&activityName=${encodeURIComponent(activity.canonicalKey)}`
           : `/app/workouts/log?${qs.toString()}&exerciseName=${encodeURIComponent(activity.canonicalKey)}`,
       };
     });

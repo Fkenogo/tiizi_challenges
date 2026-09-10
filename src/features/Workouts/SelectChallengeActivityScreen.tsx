@@ -28,9 +28,14 @@ function SelectChallengeActivityScreen() {
   const [params] = useSearchParams();
   const challengeId = params.get('challengeId') ?? undefined;
   const groupId = params.get('groupId') ?? undefined;
-  const { data: challenge } = useChallenge(challengeId);
-  const { data: membership } = useChallengeMembership(challengeId);
-  const { data: challengeSummary } = useChallengeSummary(challengeId);
+  // V2 boundary computed first so V1 truth reads can be gated in V2 mode
+  // (V2 governing/progress truth is V2-API-only).
+  const v2Mode = isV2ChallengeAction(challengeId, params.get('v2'));
+  const { data: challenge } = useChallenge(v2Mode ? undefined : challengeId);
+  const { data: membership } = useChallengeMembership(v2Mode ? undefined : challengeId);
+  const { data: challengeSummary } = useChallengeSummary(v2Mode ? undefined : challengeId);
+  // Exercise catalog is shared display content (not challenge progress truth);
+  // it has no enabled guard and cannot contaminate V2 governing truth.
   const { data: exercises = [] } = useExercises();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -42,7 +47,6 @@ function SelectChallengeActivityScreen() {
   // ── C3B V2 branch state: explicit per-activity actions, each with its own
   // stable idempotency key. Sequential HTTP calls are never claimed atomic:
   // per-item success/failure stays visible and retries reuse the item's key.
-  const v2Mode = isV2ChallengeAction(challengeId, params.get('v2'));
   const { data: v2Detail, isLoading: v2Loading, isError: v2Error } = useV2ChallengeDetail(v2Mode ? challengeId : undefined);
   const v2Log = useV2LogActivity();
   const [v2ItemKeys, setV2ItemKeys] = useState<Record<number, string>>({});
@@ -381,8 +385,9 @@ function SelectChallengeActivityScreen() {
             {v2Error && <p className="text-[14px] font-bold text-red-600">This challenge is no longer available.</p>}
             {v2Detail && v2Detail.config.activities.map((activity, idx) => {
               const status = v2ItemStatus[idx] ?? 'idle';
-              const isWellnessRow = activity.canonicalKey.startsWith('wellness:')
-                || /water|sleep|fast|meditat|mindful|hydrat/i.test(activity.canonicalKey);
+              // Route solely on the configured domain kind — no name/unit/
+              // prefix inference.
+              const isWellnessRow = activity.activityKind === 'wellness';
               const goLog = () => {
                 const qs = new URLSearchParams({
                   challengeId: v2Detail.challengeId,
@@ -390,10 +395,11 @@ function SelectChallengeActivityScreen() {
                   canonicalKey: activity.canonicalKey,
                   unit: activity.unit,
                   targetValue: String(activity.targetValue),
+                  activityKind: activity.activityKind,
                 });
                 if (activity.activityVariant) qs.set('activityVariant', activity.activityVariant);
                 navigate(isWellnessRow
-                  ? `/app/workouts/log-wellness?${qs.toString()}&activityType=wellness&activityName=${encodeURIComponent(activity.canonicalKey)}`
+                  ? `/app/workouts/log-wellness?${qs.toString()}&activityName=${encodeURIComponent(activity.canonicalKey)}`
                   : `/app/workouts/log?${qs.toString()}&exerciseName=${encodeURIComponent(activity.canonicalKey)}`);
               };
               return (
@@ -462,7 +468,7 @@ function SelectChallengeActivityScreen() {
                           await v2Log.mutateAsync({
                             challengeId,
                             payload: buildV2ActivityPayload({
-                              activityKind: /water|sleep|fast|meditat|mindful|hydrat/i.test(activity.canonicalKey) ? 'wellness' : 'fitness',
+                              activityKind: activity.activityKind,
                               canonicalKey: activity.canonicalKey,
                               activityVariant: activity.activityVariant,
                               value,

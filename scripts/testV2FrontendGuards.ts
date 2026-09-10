@@ -172,6 +172,55 @@ check('detail: V2 leaderboard endpoint used for competitive',
 check('detail: streak renders server truth, no leaderboard for streak',
   /bestStreak|daysCompleted/.test(read('src/features/Challenges/V2ChallengeDetailScreen.tsx')));
 
+// ─── 8. activityKind contract (CORR-001) ─────────────────────────────────
+console.log('activityKind contract');
+const v2Api = read('src/api/v2ChallengeApi.ts');
+check('client contract carries activityKind', v2Api.includes("activityKind: 'fitness' | 'wellness'"));
+
+// Strip comments + route path strings so only code-level heuristics are judged.
+const strip = (s: string): string => s
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\/\/[^\n]*/g, '')
+  .replace(/`\/app\/[^`]*`/g, "''")
+  .replace(/'\/app\/[^']*'/g, "''");
+const detailCode = strip(read('src/features/Challenges/V2ChallengeDetailScreen.tsx'));
+const selectCode = strip(read('src/features/Workouts/SelectChallengeActivityScreen.tsx'));
+const workoutCode = strip(read('src/features/Workouts/LogWorkoutScreen.tsx'));
+const wellnessCode = strip(read('src/features/Workouts/LogWellnessActivityScreen.tsx'));
+
+check('detail: routes wellness solely on activityKind',
+  detailCode.includes("activity.activityKind === 'wellness'"));
+check('detail: no wellness heuristics (startsWith/regex)',
+  !/startsWith\('wellness:'\)|\/water\|sleep\|fast\|meditat\|mindful\|hydrat\//.test(detailCode));
+check('select: routes wellness solely on activityKind',
+  selectCode.includes("activity.activityKind === 'wellness'"));
+check('select: payload kind equals configured kind',
+  selectCode.includes('activityKind: activity.activityKind'));
+// V2 branch only: V1's own resolveWellnessActivityType/startsWith heuristics
+// may remain, but none may appear inside the V2 branch.
+const selectV2Start = selectCode.indexOf('if (v2Mode) {');
+const selectV2End = selectCode.indexOf('\n  }\n\n  return (', selectV2Start);
+const selectV2 = selectV2Start >= 0 && selectV2End > selectV2Start
+  ? selectCode.slice(selectV2Start, selectV2End)
+  : '';
+check('select: no wellness heuristics inside V2 branch',
+  selectV2.length > 0
+  && !/startsWith\('wellness:'\)|\/water\|sleep\|fast\|meditat\|mindful\|hydrat\/|resolveWellnessActivityType/.test(selectV2));
+check('fitness logger: fail-closed on non-fitness kind',
+  workoutCode.includes("configured.activityKind !== 'fitness'"));
+check('fitness logger: submits configured kind',
+  workoutCode.includes('activityKind: configured.activityKind'));
+check('wellness logger: fail-closed on non-wellness kind',
+  wellnessCode.includes("configured.activityKind !== 'wellness'"));
+check('wellness logger: submits configured kind',
+  wellnessCode.includes('activityKind: configured.activityKind'));
+check('V1 truth reads gated off in V2 mode (fitness)',
+  workoutCode.includes('useChallenge(v2Mode ? undefined : challengeId)'));
+check('V1 truth reads gated off in V2 mode (wellness)',
+  wellnessCode.includes('useChallenge(v2Mode ? undefined : challengeId)'));
+check('V1 truth reads gated off in V2 mode (select)',
+  selectCode.includes('useChallenge(v2Mode ? undefined : challengeId)'));
+
 if (failures > 0) {
   console.error(`\nV2 frontend guards: ${failures} failure(s).`);
   process.exit(1);

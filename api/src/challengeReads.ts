@@ -127,6 +127,9 @@ export interface ApiChallengeDetail extends ApiChallengeSummary {
     activities: Array<{
       canonicalKey: string;
       activityVariant: string | null;
+      /** Authoritative configured kind (fitness|wellness) from the pinned
+       *  Knowledge item — never inferred from name/unit/prefix. */
+      activityKind: 'fitness' | 'wellness';
       targetValue: number;
       unit: string;
       position: number;
@@ -433,6 +436,10 @@ export async function getChallengeDetail(
   // Governing truth loads fail-closed (C3A): a malformed persisted snapshot
   // rejects here rather than rendering unit-blind terms.
   const governing = await getGoverningVersion(db, challengeId, challenge.current_config_version);
+  const activityKinds = await fetchActivityKinds(
+    db,
+    governing.activities.map((a) => a.knowledge_id),
+  );
   const derivedMap = await fetchChallengeDerived(db, [challengeId]);
   const derived = derivedMap.get(challengeId) ?? zeroChallengeDerived(challenge);
   const episode = displayEpisode(episodes);
@@ -458,7 +465,7 @@ export async function getChallengeDetail(
     instructions: challenge.instructions,
     activatedAt: challenge.activated_at,
     endedAt: challenge.ended_at,
-    config: toConfigContract(governing.version, governing.snapshot, governing.activities),
+    config: toConfigContract(governing.version, governing.snapshot, governing.activities, activityKinds),
   };
 }
 
@@ -466,19 +473,51 @@ function toConfigContract(
   version: number,
   snapshot: GoverningSnapshot,
   activities: ActivityConfigRow[],
+  activityKinds: Map<string, 'fitness' | 'wellness'>,
 ): ApiChallengeDetail['config'] {
   return {
     version,
     period: { startDate: snapshot.start_date, endDate: snapshot.end_date },
     requiredConsecutiveDays: snapshot.required_consecutive_days,
-    activities: activities.map((a) => ({
-      canonicalKey: a.canonical_key,
-      activityVariant: a.activity_variant,
-      targetValue: a.target_value,
-      unit: a.unit,
-      position: a.position,
-    })),
+    activities: activities.map((a) => {
+      const kind = activityKinds.get(a.knowledge_id);
+      // The pinned knowledge_id is FK-constrained to a knowledge_items row
+      // whose kind is NOT NULL + CHECK(fitness|wellness). A missing kind is a
+      // corrupt DB — fail closed rather than infer.
+      if (kind !== 'fitness' && kind !== 'wellness') {
+        readFail(500, 'activity_kind_missing', `no Knowledge kind for activity '${a.canonical_key}'`);
+      }
+      return {
+        canonicalKey: a.canonical_key,
+        activityVariant: a.activity_variant,
+        activityKind: kind!,
+        targetValue: a.target_value,
+        unit: a.unit,
+        position: a.position,
+      };
+    }),
   };
+}
+
+/**
+ * Authoritative activity kind for each pinned Knowledge id (knowledge_items
+ * kind is the domain truth for fitness vs wellness; never inferred from
+ * canonical key, unit, title, prefix, category or route).
+ */
+async function fetchActivityKinds(
+  db: Db,
+  knowledgeIds: string[],
+): Promise<Map<string, 'fitness' | 'wellness'>> {
+  const out = new Map<string, 'fitness' | 'wellness'>();
+  if (knowledgeIds.length === 0) return out;
+  const result = await db.query(
+    `SELECT knowledge_id, kind FROM knowledge_items WHERE ${inClause('knowledge_id', knowledgeIds.length)}`,
+    knowledgeIds,
+  );
+  for (const row of result.rows as { knowledge_id: string; kind: string }[]) {
+    out.set(String(row.knowledge_id), row.kind as 'fitness' | 'wellness');
+  }
+  return out;
 }
 
 export async function getChallengeLeaderboard(
