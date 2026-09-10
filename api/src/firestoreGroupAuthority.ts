@@ -51,7 +51,8 @@ function memberDocId(legacyGroupId: string, firebaseUid: string): string {
   return `${legacyGroupId}_${firebaseUid}`;
 }
 
-function isGroupDocActive(data: Record<string, unknown> | undefined): boolean {
+/** V1 group-liveness semantics shared by the adapter and operational tooling. */
+export function isGroupDocActive(data: Record<string, unknown> | undefined): boolean {
   if (!data) return false;
   const status = String(data.status ?? 'active').toLowerCase();
   if (status !== 'active') return false;

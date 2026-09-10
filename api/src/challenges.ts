@@ -32,6 +32,7 @@
 
 import type { Db } from './db.js';
 import {
+  assertCollectiveUnitHomogeneity,
   insertConfigVersion,
   toDayString,
   type ActivityConfigInput,
@@ -157,6 +158,10 @@ export function validateNewChallenge(input: NewChallengeInput): ChallengeGoverni
     }
     if (input.required_consecutive_days !== undefined) fail('required_consecutive_days belongs to streak challenges only');
   }
+  // C3A collective-unit invariant, checked early (before any authority I/O)
+  // so malformed collective configs fail fast; insertConfigVersion re-checks
+  // defensively on every version path (v1 + later versions).
+  assertCollectiveUnitHomogeneity(input.challenge_type, basis.goal_unit, input.activities);
   return basis;
 }
 
