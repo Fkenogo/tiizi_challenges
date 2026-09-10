@@ -295,31 +295,33 @@ describe('fail-closed authority handling', () => {
 });
 
 describe('atomicity and lifecycle', () => {
-  it('leaves no partial rows when creator join fails after establishment', async () => {
-    // Establishment itself stays atomic; a failing join must not strand a
-    // half-written config (challenge + v1 rows commit together or not at all).
+  it('proves live membership once per request and performs no authority I/O in-tx', async () => {
+    // CORR-001: the live membership proof happens ONCE outside the
+    // transaction and is carried in; the join inside the transaction performs
+    // no second authority round-trip (so a mid-request authority flap cannot
+    // strand a partially established Challenge — any in-tx failure rolls the
+    // whole establishment back; see challengeEstablishment.test.ts B/C).
     const world = await stubWorld([{ kind: 'fitness', key: 'push-up' }]);
-    let joinCalls = 0;
-    const failingJoin = {
+    let authorityCalls = 0;
+    const counting = {
       ...world.resolvers,
       resolveGroupMembershipAuthority: async () => {
-        // Establishment membership check passes; join-time check fails.
-        joinCalls += 1;
-        if (joinCalls === 1) return { status: 'active', eligible: true };
-        return { status: 'removed', eligible: false };
+        authorityCalls += 1;
+        return { status: 'active', eligible: true };
       },
     };
     const before = await rowCounts();
-    await expect(
-      runChallengeCreateV2(testDb(), { ...baseInput(world), join_creator: true }, failingJoin),
-    ).rejects.toThrow(/no current Group Membership/);
+    const result = await runChallengeCreateV2(
+      testDb(),
+      { ...baseInput(world), activate: true, join_creator: true },
+      counting,
+    );
+    expect(authorityCalls).toBe(1);
+    expect(result.status).toBe('active');
+    expect(result.creatorParticipationId).toMatch(/^[0-9a-f-]{36}$/i);
     const after = await rowCounts();
-    // Challenge + config committed atomically by the seam (valid
-    // establishment state); only the participation is absent.
     expect(after.challenges).toBe(before.challenges + 1);
-    expect(after.challenge_config_versions).toBe(before.challenge_config_versions + 1);
-    expect(after.challenge_activity_configs).toBe(before.challenge_activity_configs + 1);
-    expect(after.challenge_participations).toBe(before.challenge_participations);
+    expect(after.challenge_participations).toBe(before.challenge_participations + 1);
   });
 
   it('config v1 is immutable after establishment', async () => {

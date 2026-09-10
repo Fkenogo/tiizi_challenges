@@ -113,11 +113,28 @@ export async function joinChallenge(
   const { group_id: groupId, status, current_config_version: configVersion } = challenge.rows[0];
   if (status === 'ended') fail('cannot join an ended challenge (run-again creates a new challenge)');
   await requireCurrentGroupMember(membershipAuthority, String(groupId), memberId, 'challenge joining');
+  return insertParticipationEpisode(db, challengeId, memberId, Number(configVersion));
+}
+
+/**
+ * INSERT-only participation core (transaction-safe): opens a new episode for
+ * the pair with no authority I/O of its own. The caller proves, OUTSIDE the
+ * transaction, that the challenge exists, is joinable, and that the member
+ * holds CURRENT Group Membership under live authority (see joinChallenge);
+ * DB-controlled guards (no simultaneous active episode) revalidate here via
+ * constraint, so the insert fails closed inside the caller's transaction.
+ */
+export async function insertParticipationEpisode(
+  db: Db,
+  challengeId: string,
+  memberId: string,
+  configVersion: number,
+): Promise<ParticipationRow> {
   try {
     const inserted = await db.query(
       `INSERT INTO challenge_participations (challenge_id, member_id, joined_config_version)
        VALUES ($1, $2, $3) RETURNING *`,
-      [challengeId, memberId, Number(configVersion)],
+      [challengeId, memberId, configVersion],
     );
     return normalizeParticipationRow(inserted.rows[0] as never);
   } catch (error) {

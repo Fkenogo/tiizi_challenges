@@ -219,6 +219,15 @@ export function normalizeChallengeRow(row: {
  * qualifying Group Membership under live membership authority (V2 chain:
  * Member -> Group Membership -> Challenge creation). No Charter-role
  * restrictions are applied here (deferred).
+ *
+ * Transaction policy: the persistence core (insertChallengeWithConfig) takes
+ * a caller-owned transaction and opens none of its own, so a wider
+ * establishment operation (create + activate + join) can commit or roll back
+ * as ONE transaction. Called with a pool Db, this wrapper owns the
+ * transaction; called with an outer transaction's Db, the nested
+ * transaction() call runs inline on the same transaction (both the `pg`
+ * driver and the test seam implement nested transaction() without
+ * savepoints or independent commits).
  */
 export async function createChallenge(
   db: Db,
@@ -236,39 +245,55 @@ export async function createChallenge(
     input.created_by_member_id,
     'challenge establishment',
   );
-  return db.transaction(async (tx) => {
-    let challenge: ChallengeRow;
-    try {
-      const inserted = await tx.query(
-        `INSERT INTO challenges
-           (group_id, created_by_member_id, challenge_type, title, description,
-            instructions, start_date, end_date,
-            goal_value, goal_unit, required_consecutive_days, reset_on_miss)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-         RETURNING *`,
-        [
-          input.group_id, input.created_by_member_id, input.challenge_type,
-          input.title, input.description ?? '', input.instructions ?? '',
-          basis.start_date, basis.end_date,
-          basis.goal_value, basis.goal_unit,
-          basis.required_consecutive_days, basis.reset_on_miss,
-        ],
-      );
-      challenge = normalizeChallengeRow(inserted.rows[0] as never);
-    } catch (error) {
-      fail(`challenge insert rejected: ${(error as Error).message}`);
-    }
-    const { activities } = await insertConfigVersion(
-      tx,
-      challenge!.challenge_id,
-      1,
-      { activities: input.activities, basis, challengeType: input.challenge_type },
-      resolvers,
+  return db.transaction((tx) => insertChallengeWithConfig(tx, input, basis, resolvers));
+}
+
+/**
+ * Persistence core for Challenge establishment: challenge row + version-1
+ * config snapshot + normalized activity rows. Runs on the supplied
+ * transaction and opens none of its own — the caller owns atomicity.
+ * Knowledge pins resolve through the supplied resolvers (callers that must
+ * keep the transaction short pre-resolve pins and pass a map-backed
+ * resolver; resolution here performs no Firestore I/O).
+ */
+export async function insertChallengeWithConfig(
+  tx: Db,
+  input: NewChallengeInput,
+  basis: ChallengeGoverningBasis,
+  resolvers: ChallengeConfigResolvers,
+): Promise<{ challenge: ChallengeRow; version: ConfigVersionRow; activities: ActivityConfigRow[] }> {
+  let challenge: ChallengeRow;
+  try {
+    const inserted = await tx.query(
+      `INSERT INTO challenges
+         (group_id, created_by_member_id, challenge_type, title, description,
+          instructions, start_date, end_date,
+          goal_value, goal_unit, required_consecutive_days, reset_on_miss)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING *`,
+      [
+        input.group_id, input.created_by_member_id, input.challenge_type,
+        input.title, input.description ?? '', input.instructions ?? '',
+        basis.start_date, basis.end_date,
+        basis.goal_value, basis.goal_unit,
+        basis.required_consecutive_days, basis.reset_on_miss,
+      ],
     );
-    const versionRow = await tx.query(
-      `SELECT * FROM challenge_config_versions WHERE challenge_id = $1 AND version = 1`,
-      [challenge!.challenge_id],
-    );
+    challenge = normalizeChallengeRow(inserted.rows[0] as never);
+  } catch (error) {
+    fail(`challenge insert rejected: ${(error as Error).message}`);
+  }
+  const { activities } = await insertConfigVersion(
+    tx,
+    challenge!.challenge_id,
+    1,
+    { activities: input.activities, basis, challengeType: input.challenge_type },
+    resolvers,
+  );
+  const versionRow = await tx.query(
+    `SELECT * FROM challenge_config_versions WHERE challenge_id = $1 AND version = 1`,
+    [challenge!.challenge_id],
+  );
     return {
       challenge: challenge!,
       version: {
@@ -283,7 +308,6 @@ export async function createChallenge(
       },
       activities,
     };
-  });
 }
 
 async function readChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {

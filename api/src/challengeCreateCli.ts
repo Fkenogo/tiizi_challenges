@@ -48,8 +48,8 @@ import 'dotenv/config';
 import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { createDbKnowledgeResolver } from './knowledgePins.js';
 import { findMemberByAuth } from './members.js';
-import { activateChallenge, createChallenge, type NewChallengeInput } from './challenges.js';
-import { joinChallenge } from './challengeParticipations.js';
+import { type NewChallengeInput } from './challenges.js';
+import { establishChallengeV2 } from './challengeEstablishment.js';
 import { createPool, databaseUrl, type Db } from './db.js';
 import {
   createAdminFirestoreReader,
@@ -242,9 +242,11 @@ function toNewChallengeInput(
 
 /**
  * Core establishment (testable without Firestore): resolves the creator to an
- * internal member, pre-resolves every Knowledge pin through the trusted
- * database resolvers (unknown/unpublished keys fail closed before anything
- * persists), then runs createChallenge (+ optional activate/join).
+ * internal member, builds the kind-aware Knowledge resolver (mixed
+ * fitness/wellness configs use the correct canonical namespace), then
+ * delegates to the atomic establishChallengeV2 seam — Challenge, immutable
+ * v1 config, activation and creator join commit or roll back as ONE
+ * PostgreSQL transaction. No establishment logic lives here.
  */
 export async function runChallengeCreateV2(
   db: Db,
@@ -253,57 +255,36 @@ export async function runChallengeCreateV2(
 ): Promise<ChallengeCreateV2Result> {
   const creator = await findMemberByAuth(db, 'firebase', input.creator_firebase_uid);
   if (!creator) cliFail(`unknown member for creator_firebase_uid (no members row)`);
-  // Pre-resolve pins per activity kind so mixed fitness/wellness configs use
-  // the correct canonical namespace; failures abort before any write.
-  const pinByKey = new Map<string, { knowledge_id: string; current_version: number }>();
-  for (const activity of input.activities) {
-    const resolvePin = (resolvers as ChallengeCreationResolvers & {
-      resolveKnowledgePinFor?: (kind: string, key: string) => Promise<{ knowledge_id: string; current_version: number } | null>;
-    }).resolveKnowledgePinFor;
-    const pin = resolvePin
-      ? await resolvePin(activity.activity_kind, activity.canonical_key)
-      : await resolvers.resolveKnowledgePin(activity.canonical_key);
-    if (!pin) {
-      cliFail(`unknown or unpublished Knowledge for '${activity.canonical_key}' (${activity.activity_kind})`);
-    }
-    pinByKey.set(`${activity.activity_kind}::${activity.canonical_key}`, pin!);
-  }
+  const resolvePinFor = (resolvers as ChallengeCreationResolvers & {
+    resolveKnowledgePinFor?: (kind: string, key: string) => Promise<{ knowledge_id: string; current_version: number } | null>;
+  }).resolveKnowledgePinFor;
+  // Kind-aware on-demand resolution. establishChallengeV2 pre-resolves every
+  // pin OUTSIDE its transaction; the map it carries inside performs no I/O.
   const mappedResolvers: ChallengeCreationResolvers = {
     ...resolvers,
     resolveKnowledgePin: async (key: string) => {
-      for (const activity of input.activities) {
-        if (activity.canonical_key === key) {
-          return pinByKey.get(`${activity.activity_kind}::${key}`) ?? null;
-        }
-      }
-      return null;
+      const activity = input.activities.find((a) => a.canonical_key === key);
+      if (!activity) return null;
+      if (resolvePinFor) return resolvePinFor(activity.activity_kind, key);
+      return resolvers.resolveKnowledgePin(key);
     },
   };
-  const created = await createChallenge(db, toNewChallengeInput(input, creator!.memberId), mappedResolvers);
-  let status = created.challenge.status;
-  let activated = false;
-  if (input.activate && status !== 'active') {
-    const next = await activateChallenge(db, created.challenge.challenge_id);
-    status = next.status;
-    activated = true;
-  }
-  let creatorParticipationId: string | null = null;
-  if (input.join_creator) {
-    const episode = await joinChallenge(
-      db,
-      created.challenge.challenge_id,
-      creator!.memberId,
-      mappedResolvers,
-    );
-    creatorParticipationId = episode.participation_id;
-  }
+  const established = await establishChallengeV2(
+    db,
+    {
+      ...toNewChallengeInput(input, creator!.memberId),
+      activate: input.activate ?? false,
+      joinCreator: input.join_creator ?? false,
+    },
+    mappedResolvers,
+  );
   return {
     dryRun: false,
-    challengeId: created.challenge.challenge_id,
-    status,
-    configVersion: created.version.version,
-    activated,
-    creatorParticipationId,
+    challengeId: established.challenge.challenge_id,
+    status: established.challenge.status,
+    configVersion: established.version.version,
+    activated: established.activated,
+    creatorParticipationId: established.creatorParticipationId,
   };
 }
 
