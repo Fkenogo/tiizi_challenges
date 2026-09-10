@@ -25,8 +25,9 @@ import { appendActivityEvent, listEffectiveEvents } from '../src/activityEvents.
 import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
 
 beforeEach(async () => {
+  // C2B tables reference these via FKs, so they truncate together (clean slate per test).
   await testDb().query(
-    'TRUNCATE challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
   );
 });
 
@@ -636,8 +637,12 @@ describe('C2A boundary guards', () => {
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`,
     );
     const names = new Set(tables.rows.map((r) => r.table_name));
+    // C2B owns the application/derived surface now (challenge_activity_records
+    // + challenge_participation_derived + challenge_derived_state, covered by
+    // the C2B suite). What must STILL stay absent: leaderboard storage,
+    // guessed-name derived tables, and any scoring/derived columns on the
+    // Challenge/Participation identity tables (checked below).
     for (const absent of [
-      'challenge_activity_records',
       'challenge_derived_truth',
       'derived_truth',
       'leaderboards',

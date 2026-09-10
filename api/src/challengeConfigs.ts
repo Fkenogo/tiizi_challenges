@@ -365,3 +365,199 @@ export async function getChallengeConfig(
     activities: (activities.rows as never[]).map(normalizeActivityRow),
   };
 }
+
+// ─── Governing snapshots for version-pinned application (C2B) ───────────────
+// The snapshot JSONB is the immutable authority for a version; activity rows
+// are its queryable projection. C2B acceptance and recomputation MUST build
+// every governing value (type, period, type params, activities) from the
+// pinned snapshot, never from the mutable challenges mirrors.
+
+/** Stable cross-version activity identity (canonical key + variant). */
+export function canonicalActivityIdentity(canonicalKey: string, variant: string | null): string {
+  return `${canonicalKey}::${variant ?? ''}`;
+}
+
+export interface GoverningSnapshotActivity {
+  canonical_key: string;
+  activity_variant: string | null;
+  knowledge_id: string;
+  knowledge_version: number;
+  target_value: number;
+  unit: string;
+  position: number;
+  conditions: Record<string, unknown>;
+}
+
+export interface GoverningSnapshot {
+  challenge_type: 'collective' | 'competitive' | 'streak';
+  start_date: string;
+  end_date: string;
+  goal_value: number | null;
+  goal_unit: string | null;
+  required_consecutive_days: number | null;
+  reset_on_miss: boolean;
+  activities: GoverningSnapshotActivity[];
+}
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function snapshotFail(message: string): never {
+  throw new Error(`challenge-configs: corrupt governing snapshot (${message})`);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) snapshotFail('not an object');
+  return value as Record<string, unknown>;
+}
+
+/** Validate + normalize one immutable version snapshot (fail closed). */
+export function parseGoverningSnapshot(raw: unknown): GoverningSnapshot {
+  const snapshot = asRecord(raw);
+  const challengeType = snapshot.challenge_type;
+  if (challengeType !== 'collective' && challengeType !== 'competitive' && challengeType !== 'streak') {
+    snapshotFail('challenge_type must be collective|competitive|streak');
+  }
+  const period = asRecord(snapshot.period);
+  const startDate = period.start_date;
+  const endDate = period.end_date;
+  if (typeof startDate !== 'string' || !DAY_RE.test(startDate)
+    || typeof endDate !== 'string' || !DAY_RE.test(endDate) || endDate < startDate) {
+    snapshotFail('period must be valid YYYY-MM-DD with end_date >= start_date');
+  }
+  const params = asRecord(snapshot.type_params);
+  const goalValue = params.goal_value;
+  const goalUnit = params.goal_unit;
+  const requiredDays = params.required_consecutive_days;
+  const resetOnMiss = params.reset_on_miss;
+  if (challengeType === 'collective') {
+    if (typeof goalValue !== 'number' || !(goalValue > 0)) snapshotFail('collective goal_value must be > 0');
+    if (typeof goalUnit !== 'string' || goalUnit.length < 1 || goalUnit.length > 40) {
+      snapshotFail('collective goal_unit is required (1..40 chars)');
+    }
+    if (requiredDays !== null) snapshotFail('collective must not carry required_consecutive_days');
+  } else {
+    if (goalValue !== null) snapshotFail('non-collective snapshot must not carry goal_value');
+    if (goalUnit !== null) snapshotFail('non-collective snapshot must not carry goal_unit');
+  }
+  if (challengeType === 'streak') {
+    if (!Number.isInteger(requiredDays) || (requiredDays as number) < 1) {
+      snapshotFail('streak required_consecutive_days must be an integer >= 1');
+    }
+  } else if (requiredDays !== null) {
+    snapshotFail('only streak snapshots carry required_consecutive_days');
+  }
+  if (typeof resetOnMiss !== 'boolean') snapshotFail('reset_on_miss must be boolean');
+  if (!Array.isArray(snapshot.activities) || snapshot.activities.length === 0) {
+    snapshotFail('at least one snapshot activity is required');
+  }
+  const activities: GoverningSnapshotActivity[] = (snapshot.activities as unknown[]).map((entry, index) => {
+    const activity = asRecord(entry);
+    if (typeof activity.canonical_key !== 'string'
+      || activity.canonical_key.length < 1 || activity.canonical_key.length > 200) {
+      snapshotFail(`activities[${index}].canonical_key is required (1..200 chars)`);
+    }
+    const variant = activity.activity_variant;
+    if (variant !== null && (typeof variant !== 'string' || variant.length < 1 || variant.length > 120)) {
+      snapshotFail(`activities[${index}].activity_variant must be null or 1..120 chars`);
+    }
+    if (typeof activity.knowledge_id !== 'string' || activity.knowledge_id.length === 0) {
+      snapshotFail(`activities[${index}].knowledge_id is required`);
+    }
+    if (!Number.isInteger(activity.knowledge_version) || (activity.knowledge_version as number) < 1) {
+      snapshotFail(`activities[${index}].knowledge_version must be an integer >= 1`);
+    }
+    if (typeof activity.target_value !== 'number' || activity.target_value < 0) {
+      snapshotFail(`activities[${index}].target_value must be a number >= 0`);
+    }
+    if (typeof activity.unit !== 'string' || activity.unit.length < 1 || activity.unit.length > 40) {
+      snapshotFail(`activities[${index}].unit is required (1..40 chars)`);
+    }
+    return {
+      canonical_key: activity.canonical_key as string,
+      activity_variant: variant as string | null,
+      knowledge_id: activity.knowledge_id as string,
+      knowledge_version: activity.knowledge_version as number,
+      target_value: activity.target_value as number,
+      unit: activity.unit as string,
+      position: Number(activity.position ?? index),
+      conditions: activity.conditions == null
+        ? {}
+        : asRecord(activity.conditions) as Record<string, unknown>,
+    };
+  });
+  return {
+    challenge_type: challengeType,
+    start_date: startDate as string,
+    end_date: endDate as string,
+    goal_value: goalValue as number | null,
+    goal_unit: goalUnit as string | null,
+    required_consecutive_days: requiredDays as number | null,
+    reset_on_miss: resetOnMiss as boolean,
+    activities,
+  };
+}
+
+export interface GoverningVersion {
+  version: number;
+  snapshot: GoverningSnapshot;
+  activities: ActivityConfigRow[];
+}
+
+/**
+ * Load ONE immutable governing version: snapshot authority + normalized
+ * activity projection, cross-checked field by field. Throws fail-closed on
+ * unknown versions, corrupt snapshots, or snapshot/row divergence — an
+ * acceptance or replay must never mix terms from two versions.
+ */
+export async function getGoverningVersion(
+  db: Db,
+  challengeId: string,
+  version: number,
+): Promise<GoverningVersion> {
+  if (!Number.isInteger(version) || version < 1) fail(`config version must be an integer >= 1`);
+  const versionRow = await db.query<{ snapshot: unknown }>(
+    `SELECT snapshot FROM challenge_config_versions WHERE challenge_id = $1 AND version = $2`,
+    [challengeId, version],
+  );
+  if (versionRow.rows.length === 0) fail(`unknown config version ${version} for challenge ${challengeId}`);
+  const raw = versionRow.rows[0].snapshot;
+  const snapshot = parseGoverningSnapshot(
+    typeof raw === 'string' ? JSON.parse(raw) : raw,
+  );
+  const activityResult = await db.query(
+    `SELECT * FROM challenge_activity_configs
+     WHERE challenge_id = $1 AND version = $2 ORDER BY position ASC, canonical_key ASC`,
+    [challengeId, version],
+  );
+  const activities = (activityResult.rows as never[]).map(normalizeActivityRow);
+  assertSnapshotActivitiesConsistent(version, snapshot, activities);
+  return { version, snapshot, activities };
+}
+
+/** Every snapshot activity must project to exactly one normalized row. */
+export function assertSnapshotActivitiesConsistent(
+  version: number,
+  snapshot: GoverningSnapshot,
+  activities: ActivityConfigRow[],
+): void {
+  if (activities.length !== snapshot.activities.length) {
+    fail(`version ${version}: snapshot carries ${snapshot.activities.length} activities but ${activities.length} rows exist`);
+  }
+  const byIdentity = new Map<string, ActivityConfigRow>();
+  for (const row of activities) {
+    if (row.version !== version || row.challenge_id === undefined) {
+      fail(`version ${version}: activity row belongs to another version`);
+    }
+    byIdentity.set(canonicalActivityIdentity(row.canonical_key, row.activity_variant), row);
+  }
+  for (const expected of snapshot.activities) {
+    const row = byIdentity.get(canonicalActivityIdentity(expected.canonical_key, expected.activity_variant));
+    if (!row) fail(`version ${version}: snapshot activity '${expected.canonical_key}' has no row`);
+    if (row.knowledge_id !== expected.knowledge_id
+      || row.knowledge_version !== expected.knowledge_version
+      || row.target_value !== expected.target_value
+      || row.unit !== expected.unit) {
+      fail(`version ${version}: activity row diverges from snapshot for '${expected.canonical_key}'`);
+    }
+  }
+}

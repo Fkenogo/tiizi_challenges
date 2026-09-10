@@ -10,7 +10,10 @@ import {
 import { testDb, seedMember } from './helpers.js';
 
 beforeEach(async () => {
-  await testDb().query('TRUNCATE member_activity_events');
+  // C2B application/derived tables FK-reference the Evidence ledger.
+  await testDb().query(
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, member_activity_events',
+  );
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
