@@ -110,6 +110,35 @@ export function validateActivityInputs(activities: ActivityConfigInput[]): void 
   }
 }
 
+/**
+ * Phase C3A collective-unit invariant (single shared predicate).
+ *
+ * A collective Challenge pools raw activity values into one unit-blind total
+ * that is compared against goal_unit. Only exact canonical unit equality
+ * keeps that total meaningful, so EVERY configured activity unit must exactly
+ * equal the collective goal_unit. No conversion or equivalence is inferred:
+ * minutes != hours, kilometres != metres, kilograms != anything else.
+ *
+ * Competitive and streak Challenges keep per-activity units (progress is
+ * tracked per activity, never pooled) and are unaffected by this rule.
+ */
+export function assertCollectiveUnitHomogeneity(
+  challengeType: string,
+  goalUnit: string | null,
+  activities: Array<{ unit: string }>,
+): void {
+  if (challengeType !== 'collective') return;
+  if (!goalUnit) fail('collective challenges require goal_unit before activity units can be checked');
+  for (const [index, activity] of activities.entries()) {
+    if (activity.unit !== goalUnit) {
+      fail(
+        `collective activities[${index}] unit '${activity.unit}' `
+        + `must exactly equal goal_unit '${goalUnit}' (no unit conversion is inferred)`,
+      );
+    }
+  }
+}
+
 /** Canonical snapshot: complete governing config, JSON-stable key order. */
 export function buildConfigSnapshot(
   challengeType: string,
@@ -217,6 +246,7 @@ export async function insertConfigVersion(
   resolvers: ChallengeConfigResolvers,
 ): Promise<{ snapshot: Record<string, unknown>; activities: ActivityConfigRow[] }> {
   validateActivityInputs(insert.activities);
+  assertCollectiveUnitHomogeneity(insert.challengeType, insert.basis.goal_unit, insert.activities);
   const pins = await resolvePins(insert.activities, resolvers);
   const resolved = insert.activities.map((input, index) => ({
     input,
@@ -485,6 +515,21 @@ export function parseGoverningSnapshot(raw: unknown): GoverningSnapshot {
         : asRecord(activity.conditions) as Record<string, unknown>,
     };
   });
+  // C3A: a malformed collective snapshot already persisted in the DB must
+  // fail closed when loaded as governing truth (never applied unit-blind).
+  if (challengeType === 'collective') {
+    if (typeof goalUnit !== 'string' || goalUnit.length === 0) {
+      snapshotFail('collective snapshot carries no usable goal_unit');
+    }
+    for (const [index, activity] of activities.entries()) {
+      if (activity.unit !== goalUnit) {
+        snapshotFail(
+          `collective snapshot activities[${index}] unit '${activity.unit}' `
+          + `must exactly equal goal_unit '${goalUnit as string}'`,
+        );
+      }
+    }
+  }
   return {
     challenge_type: challengeType,
     start_date: startDate as string,
