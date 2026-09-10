@@ -40,6 +40,7 @@
     "test:knowledge-authority-backend": "tsx scripts/testKnowledgeAuthorityBackend.ts",
     "test:functions-pg-authority-bridge": "tsx scripts/testFunctionsPgAuthorityBridge.ts",
     "test:knowledge-authority-mode": "tsx scripts/testKnowledgeAuthorityMode.ts",
+    "test:v2-frontend": "tsx scripts/testV2FrontendGuards.ts",
     "test:knowledge-aggregates": "tsx scripts/testKnowledgeAggregates.ts",
     "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts",
     "test:group-lifecycle": "tsx scripts/testGroupLifecycle.ts",

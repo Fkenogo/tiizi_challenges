@@ -6,6 +6,9 @@ import { LearnMoreLink } from '../../components/LearnMoreLink';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChallenge, useChallengeMembership, useChallengeSummary } from '../../hooks/useChallenges';
+import { useV2ChallengeDetail, useV2LogActivity } from '../../hooks/useV2Challenges';
+import { isV2ChallengeAction } from '../../api/v2ChallengeMode';
+import { buildV2ActivityPayload, mapV2ApiError, newClientKey } from '../../services/v2ActivityPayload';
 import { useExercise } from '../../hooks/useExercises';
 import { useLogWorkout } from '../../hooks/useWorkouts';
 import { buildActivitySuccessPath } from '../../services/challengeActivityFlow';
@@ -24,6 +27,15 @@ function LogWorkoutScreen() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const logWorkout = useLogWorkout();
+
+  // C3B V2 path: enabled flag + explicit v2 navigation + V2 API identity.
+  // A Firestore/V1 challenge id never satisfies this — no reinterpretation.
+  const v2Mode = isV2ChallengeAction(challengeId, params.get('v2'));
+  const { data: v2Detail } = useV2ChallengeDetail(v2Mode ? challengeId : undefined);
+  const v2Log = useV2LogActivity();
+  // ONE client_key per intentional action: created once per screen instance
+  // and reused across automatic/manual retries of THIS submission.
+  const [v2ClientKey] = useState(() => newClientKey());
 
   const { data: exercise } = useExercise(exerciseId);
   const { data: challenge } = useChallenge(challengeId);
@@ -99,6 +111,56 @@ function LogWorkoutScreen() {
     }
     if (value <= 0) {
       showToast('Enter a valid value.', 'error');
+      return;
+    }
+    // ── C3B V2 branch: exactly one Evidence/Application through the API.
+    // No workouts / challengeMembers / users.stats / collective-counter
+    // writes; no client scoring. Server response is authoritative.
+    if (v2Mode) {
+      if (!challengeId) {
+        showToast('Missing challenge context.', 'error');
+        return;
+      }
+      const canonicalParam = params.get('canonicalKey') ?? undefined;
+      const variantParam = params.get('activityVariant') ?? undefined;
+      const configured = v2Detail?.config.activities.find(
+        (a) => a.canonicalKey === (canonicalParam ?? exerciseNameParam ?? exerciseId ?? ''),
+      ) ?? (v2Detail && v2Detail.config.activities.length === 1 ? v2Detail.config.activities[0] : undefined);
+      const canonicalKey = canonicalParam ?? configured?.canonicalKey;
+      const unit = configured?.unit ?? unitParam ?? exercise?.metric.unit;
+      if (!canonicalKey || !unit) {
+        showToast('This activity is not configured on the V2 challenge.', 'error');
+        return;
+      }
+      try {
+        const result = await v2Log.mutateAsync({
+          challengeId,
+          payload: buildV2ActivityPayload({
+            activityKind: 'fitness',
+            canonicalKey,
+            activityVariant: variantParam ?? configured?.activityVariant ?? null,
+            value,
+            unit,
+            occurredAt: new Date(),
+            clientKey: v2ClientKey,
+          }),
+        });
+        showToast(result.duplicate ? 'Already recorded — no duplicate was created.' : 'Workout logged.', 'success');
+        const qs = new URLSearchParams({
+          challengeId,
+          v2: '1',
+          source: 'workout',
+          exerciseName: canonicalKey,
+          value: String(value),
+          unit,
+          target: String(configured?.targetValue ?? value),
+          points: String(result.pointsAwarded),
+        });
+        if (groupId) qs.set('groupId', groupId);
+        navigate(`/app/workouts/success?${qs.toString()}`);
+      } catch (error) {
+        showToast(mapV2ApiError(error).message, 'error');
+      }
       return;
     }
     const now = new Date();

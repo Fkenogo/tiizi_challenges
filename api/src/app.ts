@@ -11,6 +11,7 @@ import {
   type ChallengeActivityRouteDeps,
 } from './challengeActivityRoutes.js';
 import { registerChallengeReadRoutes } from './challengeReads.js';
+import { registerParticipationRoutes } from './challengeParticipationRoutes.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -77,5 +78,8 @@ export function buildApp(deps: AppDeps) {
   // C3A V2 Challenge reads (list/detail/leaderboard). Same live authority
   // as C2B; absent authority fails closed per-route instead of authorizing.
   registerChallengeReadRoutes(app, deps.db, deps.challengeActivity ?? {});
+  // C3B V2 participation mutations (join/withdraw). Same live authority as
+  // C2B; absent authority fails closed per-route instead of authorizing.
+  registerParticipationRoutes(app, deps.db, deps.challengeActivity ?? {});
   return app;
 }

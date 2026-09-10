@@ -14,6 +14,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useGroups, useMyGroups } from '../../hooks/useGroups';
 import { useWellnessTemplates } from '../../hooks/useWellnessTemplates';
 import { isChallengeOngoing } from '../../utils/challengeLifecycle';
+import { isV2ChallengesEnabled } from '../../api/v2ChallengeMode';
 
 type ChallengeCardType = 'collective' | 'competitive' | 'streak';
 
@@ -156,6 +157,16 @@ function ChallengesScreen() {
         </header>
 
         <main className="px-4 pt-5 space-y-7">
+          {isV2ChallengesEnabled() && (
+            <section>
+              <button
+                className="w-full h-12 rounded-2xl border border-primary/30 bg-primary/10 text-primary text-[14px] font-black"
+                onClick={() => navigate('/app/challenges/v2')}
+              >
+                View V2 Challenges
+              </button>
+            </section>
+          )}
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="st-section-title">Fitness Challenges</h2>

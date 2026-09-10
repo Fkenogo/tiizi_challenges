@@ -4,6 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BottomNav, Screen } from '../../components/Layout';
 import { ShareTiiziCard } from '../../components/ShareTiiziCard';
 import { useChallenge, useChallengeMembership, useChallengeSummary } from '../../hooks/useChallenges';
+import { useV2ChallengeDetail } from '../../hooks/useV2Challenges';
+import { isV2ChallengeAction } from '../../api/v2ChallengeMode';
 import { useAuth } from '../../hooks/useAuth';
 import { resolveChallengeProgress } from '../Challenges/challengeProgressResolver';
 
@@ -17,6 +19,74 @@ function WorkoutLoggedScreen() {
   const unit = params.get('unit') ?? '';
   const value = Number(params.get('value') || 0);
   const scoringMethod = params.get('scoringMethod') ?? undefined;
+  // Server-authoritative points for V2 logs (never client-computed).
+  const serverPoints = Number(params.get('points') || 0);
+
+  // ── C3B V2 branch: progress/points/completion come from the server
+  // response (URL) and refreshed V2 reads. No client scoring, no V1 reads.
+  const v2Mode = isV2ChallengeAction(challengeId, params.get('v2'));
+  const { data: v2Detail } = useV2ChallengeDetail(v2Mode ? challengeId : undefined);
+  if (v2Mode) {
+    const v2Progress = v2Detail?.myParticipation?.progress ?? null;
+    const v2GoalPct = v2Detail && v2Detail.goalValue != null && v2Detail.goalValue > 0
+      ? Math.round((v2Detail.collectiveTotal / v2Detail.goalValue) * 100)
+      : 0;
+    return (
+      <Screen noPadding noBottomPadding className="st-page">
+        <div className="st-frame st-bottom-safe pb-[108px] relative overflow-hidden">
+          <main className="st-form-max relative z-10 pt-10">
+            <div className="mx-auto h-[116px] w-[116px] rounded-full bg-primary flex items-center justify-center">
+              <div className="h-[56px] w-[56px] rounded-full bg-white flex items-center justify-center">
+                <Check size={30} className="text-primary" />
+              </div>
+            </div>
+            <h1 className="mt-5 text-center text-[22px] leading-[26px] font-black text-[#1c120d]">
+              {exerciseName}: {value.toLocaleString()} {unit} logged!
+            </h1>
+            <p className="mt-3 text-center text-[14px] leading-[22px] font-medium text-[#5f5148]">
+              Server recorded +{serverPoints.toLocaleString()} pts for this activity.
+            </p>
+            {v2Detail?.challengeType === 'collective' && (
+              <section className="mt-6 st-card p-4">
+                <p className="text-[11px] font-black uppercase tracking-widest text-primary">Team Progress</p>
+                <p className="text-[22px] leading-[26px] font-black text-[#1c120d]">
+                  {(v2Detail.collectiveTotal).toLocaleString()} / {(v2Detail.goalValue ?? 0).toLocaleString()}
+                  {v2Detail.goalUnit ? <span className="text-[16px] font-semibold text-[#7f746c]"> {v2Detail.goalUnit}</span> : null}
+                </p>
+                <div className="mt-2 h-3 rounded-full bg-[#e8edf5] overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${Math.min(v2GoalPct, 100)}%` }} />
+                </div>
+                <p className="mt-1 text-[12px] text-[#7f746c]">{v2GoalPct}%{v2Detail.collectiveGoalReached ? ' · goal reached' : ''}</p>
+              </section>
+            )}
+            {v2Detail?.challengeType === 'streak' && v2Progress && (
+              <section className="mt-6 st-card p-4">
+                <p className="text-[11px] font-black uppercase tracking-widest text-primary">Streak</p>
+                <p className="text-[18px] font-black text-[#1c120d]">
+                  {v2Progress.currentStreak}-day streak · {v2Progress.daysCompleted} days done
+                </p>
+              </section>
+            )}
+            {v2Detail?.challengeType === 'competitive' && v2Progress && (
+              <section className="mt-6 st-card p-4">
+                <p className="text-[11px] font-black uppercase tracking-widest text-primary">Your Progress</p>
+                <p className="text-[18px] font-black text-[#1c120d]">
+                  {v2Progress.cumulativeTotal.toLocaleString()} total · {v2Progress.totalPoints.toLocaleString()} pts
+                </p>
+              </section>
+            )}
+            <button
+              className="st-btn-primary mt-6"
+              onClick={() => navigate(challengeId ? `/app/challenge/v2/${challengeId}` : '/app/challenges/v2')}
+            >
+              Back to V2 Challenge
+            </button>
+          </main>
+        </div>
+        <BottomNav active="home" />
+      </Screen>
+    );
+  }
 
   const { user } = useAuth();
   const { data: challenge } = useChallenge(challengeId);
