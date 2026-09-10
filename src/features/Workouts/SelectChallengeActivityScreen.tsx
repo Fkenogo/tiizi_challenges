@@ -7,6 +7,9 @@ import { BottomNav, Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChallenge, useChallengeMembership, useChallengeSummary } from '../../hooks/useChallenges';
+import { useV2ChallengeDetail, useV2LogActivity } from '../../hooks/useV2Challenges';
+import { isV2ChallengeAction } from '../../api/v2ChallengeMode';
+import { buildV2ActivityPayload, mapV2ApiError, newClientKey } from '../../services/v2ActivityPayload';
 import { useExercises } from '../../hooks/useExercises';
 import { useLogWellnessActivity, useLogWorkout } from '../../hooks/useWorkouts';
 import { db } from '../../lib/firebase';
@@ -25,9 +28,14 @@ function SelectChallengeActivityScreen() {
   const [params] = useSearchParams();
   const challengeId = params.get('challengeId') ?? undefined;
   const groupId = params.get('groupId') ?? undefined;
-  const { data: challenge } = useChallenge(challengeId);
-  const { data: membership } = useChallengeMembership(challengeId);
-  const { data: challengeSummary } = useChallengeSummary(challengeId);
+  // V2 boundary computed first so V1 truth reads can be gated in V2 mode
+  // (V2 governing/progress truth is V2-API-only).
+  const v2Mode = isV2ChallengeAction(challengeId, params.get('v2'));
+  const { data: challenge } = useChallenge(v2Mode ? undefined : challengeId);
+  const { data: membership } = useChallengeMembership(v2Mode ? undefined : challengeId);
+  const { data: challengeSummary } = useChallengeSummary(v2Mode ? undefined : challengeId);
+  // Exercise catalog is shared display content (not challenge progress truth);
+  // it has no enabled guard and cannot contaminate V2 governing truth.
   const { data: exercises = [] } = useExercises();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -35,6 +43,17 @@ function SelectChallengeActivityScreen() {
   const logWellness = useLogWellnessActivity();
   const [checklistValues, setChecklistValues] = useState<Record<number, number>>({});
   const [isChecklistSubmitting, setIsChecklistSubmitting] = useState(false);
+
+  // ── C3B V2 branch state: explicit per-activity actions, each with its own
+  // stable idempotency key. Sequential HTTP calls are never claimed atomic:
+  // per-item success/failure stays visible and retries reuse the item's key.
+  const { data: v2Detail, isLoading: v2Loading, isError: v2Error } = useV2ChallengeDetail(v2Mode ? challengeId : undefined);
+  const v2Log = useV2LogActivity();
+  const [v2ItemKeys, setV2ItemKeys] = useState<Record<number, string>>({});
+  const [v2ItemStatus, setV2ItemStatus] = useState<Record<number, 'idle' | 'pending' | 'done' | 'error'>>({});
+  const [v2ItemErrors, setV2ItemErrors] = useState<Record<number, string>>({});
+  const [v2Values, setV2Values] = useState<Record<number, number>>({});
+  const [v2Submitting, setV2Submitting] = useState(false);
 
   const engineVersion = challenge?.engineVersion;
   const challengeType = challenge?.challengeType ?? 'collective';
@@ -338,6 +357,148 @@ function SelectChallengeActivityScreen() {
     }
     return 'Count-based activity';
   };
+
+  // ── C3B V2 branch: dedicated render from V2 config + Derived Truth only.
+  // Each required activity is an explicit logging action with its own stable
+  // client_key; sequential calls are never claimed atomic.
+  if (v2Mode) {
+  return (
+    <Screen noPadding noBottomPadding className="st-page">
+      <div className="st-frame st-bottom-safe pb-[108px]">
+        <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 pb-3">
+          {v2Mode ? (
+            <header className="st-form-max flex items-center justify-between">
+              <button
+                className="h-10 w-10 flex items-center justify-center"
+                onClick={() => navigate(challengeId ? `/app/challenge/v2/${challengeId}` : '/app/challenges/v2')}
+              >
+                <ArrowLeft size={22} className="text-slate-900" />
+              </button>
+              <h1 className="st-page-title truncate">{v2Detail?.title ?? 'V2 Activities'}</h1>
+              <span className="w-10" />
+            </header>
+          ) : null}
+        </div>
+        {v2Mode ? (
+          <main className="st-form-max mt-5 space-y-3">
+            {v2Loading && <p className="text-[14px] text-slate-500">Loading V2 activities…</p>}
+            {v2Error && <p className="text-[14px] font-bold text-red-600">This challenge is no longer available.</p>}
+            {v2Detail && v2Detail.config.activities.map((activity, idx) => {
+              const status = v2ItemStatus[idx] ?? 'idle';
+              // Route solely on the configured domain kind — no name/unit/
+              // prefix inference.
+              const isWellnessRow = activity.activityKind === 'wellness';
+              const goLog = () => {
+                const qs = new URLSearchParams({
+                  challengeId: v2Detail.challengeId,
+                  v2: '1',
+                  canonicalKey: activity.canonicalKey,
+                  unit: activity.unit,
+                  targetValue: String(activity.targetValue),
+                  activityKind: activity.activityKind,
+                });
+                if (activity.activityVariant) qs.set('activityVariant', activity.activityVariant);
+                navigate(isWellnessRow
+                  ? `/app/workouts/log-wellness?${qs.toString()}&activityName=${encodeURIComponent(activity.canonicalKey)}`
+                  : `/app/workouts/log?${qs.toString()}&exerciseName=${encodeURIComponent(activity.canonicalKey)}`);
+              };
+              return (
+                <article key={`${activity.canonicalKey}::${activity.activityVariant ?? ''}`} className="st-card p-4">
+                  <p className="text-[15px] font-bold text-slate-900">{activity.canonicalKey}</p>
+                  <p className="text-[12px] text-slate-500">Target {activity.targetValue} {activity.unit}</p>
+                  {v2Detail.challengeType === 'streak' && v2Detail.config.activities.length > 1 ? (
+                    <div className="mt-3 flex items-center gap-2">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        value={v2Values[idx] ?? ''}
+                        placeholder={String(activity.targetValue)}
+                        onChange={(e) => setV2Values((prev) => ({ ...prev, [idx]: Math.max(0, Number(e.target.value) || 0) }))}
+                        className="h-11 w-28 rounded-xl border border-slate-300 px-3 text-[15px] font-bold"
+                        aria-label={`${activity.canonicalKey} value`}
+                      />
+                      <span className="text-[12px] text-slate-500">{activity.unit}</span>
+                      {status === 'done' && <span className="text-[12px] font-bold text-green-600">Logged</span>}
+                      {status === 'error' && <span className="text-[12px] font-bold text-red-600">{v2ItemErrors[idx] ?? 'Failed'}</span>}
+                    </div>
+                  ) : (
+                    <button
+                      className="mt-3 w-full h-11 rounded-xl bg-primary text-white text-[14px] font-black active:opacity-80"
+                      onClick={goLog}
+                    >
+                      Log {activity.canonicalKey}
+                    </button>
+                  )}
+                </article>
+              );
+            })}
+            {v2Detail && v2Detail.challengeType === 'streak' && v2Detail.config.activities.length > 1 && (
+              <>
+                <p className="text-[12px] text-slate-500">
+                  Each activity logs as its own entry — the day is Done when the server confirms all requirements.
+                  Failures stay on their activity; already-logged activities are never resubmitted.
+                </p>
+                <button
+                  className="st-btn-primary"
+                  disabled={v2Submitting}
+                  onClick={async () => {
+                    if (!user?.uid || !v2Detail || !challengeId) {
+                      showToast('Missing challenge context.', 'error');
+                      return;
+                    }
+                    setV2Submitting(true);
+                    try {
+                      for (let i = 0; i < v2Detail.config.activities.length; i++) {
+                        if ((v2ItemStatus[i] ?? 'idle') === 'done') continue;
+                        const activity = v2Detail.config.activities[i];
+                        const value = v2Values[i] ?? 0;
+                        if (value <= 0) {
+                          setV2ItemStatus((prev) => ({ ...prev, [i]: 'error' }));
+                          setV2ItemErrors((prev) => ({ ...prev, [i]: 'Enter a value first.' }));
+                          continue;
+                        }
+                        let key = v2ItemKeys[i];
+                        if (!key) {
+                          key = newClientKey();
+                          setV2ItemKeys((prev) => ({ ...prev, [i]: key }));
+                        }
+                        setV2ItemStatus((prev) => ({ ...prev, [i]: 'pending' }));
+                        try {
+                          await v2Log.mutateAsync({
+                            challengeId,
+                            payload: buildV2ActivityPayload({
+                              activityKind: activity.activityKind,
+                              canonicalKey: activity.canonicalKey,
+                              activityVariant: activity.activityVariant,
+                              value,
+                              unit: activity.unit,
+                              occurredAt: new Date(),
+                              clientKey: key,
+                            }),
+                          });
+                          setV2ItemStatus((prev) => ({ ...prev, [i]: 'done' }));
+                        } catch (error) {
+                          setV2ItemStatus((prev) => ({ ...prev, [i]: 'error' }));
+                          setV2ItemErrors((prev) => ({ ...prev, [i]: mapV2ApiError(error).message }));
+                        }
+                      }
+                    } finally {
+                      setV2Submitting(false);
+                    }
+                  }}
+                >
+                  {v2Submitting ? 'Logging…' : 'Log Day Activities'}
+                </button>
+              </>
+            )}
+          </main>
+        ) : null}
+      </div>
+      {v2Mode ? <BottomNav active="home" /> : null}
+    </Screen>
+  );
+  }
 
   return (
     <Screen noPadding noBottomPadding className="st-page">

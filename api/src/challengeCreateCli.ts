@@ -35,12 +35,11 @@
  *
  * Safety: unknown member / inactive-missing group / non-member creator /
  * unpublished-unknown Knowledge / invalid collective units all fail closed.
- * Dry-run executes the FULL operation (create + optional activate + join)
- * inside one transaction that is always rolled back. --apply runs
- * createChallenge in its own atomic transaction first (challenge + config v1
- * never partial), then activation and creator-join as subsequent valid
- * lifecycle transitions — a later-step failure leaves a valid
- * establishment-state challenge, never a half-written config.
+ * Both dry-run and --apply execute through the atomic establishChallengeV2
+ * seam: Challenge, immutable config v1, activation when requested and
+ * creator Participation when requested commit or roll back as ONE
+ * PostgreSQL transaction. Dry-run wraps the same implementation in an outer
+ * transaction that is always rolled back (nothing persists).
  */
 
 import { readFile } from 'node:fs/promises';
