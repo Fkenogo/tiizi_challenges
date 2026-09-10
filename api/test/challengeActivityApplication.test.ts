@@ -11,6 +11,8 @@ import {
   type ActivityConfigInput,
 } from '../src/challengeConfigs.js';
 import { joinChallenge } from '../src/challengeParticipations.js';
+import { reviseKnowledgeItem } from '../src/knowledge.js';
+import { computeActivityScore } from '../src/engine/scoringConfig.js';
 import { appendCorrectionEvent } from '../src/activityEvents.js';
 import {
   ApplicationError,
@@ -1421,5 +1423,342 @@ describe('knowledge pin resolver', () => {
     expect(await resolveKnowledgePinByName(db, 'fitness', 'retired-move')).toBeNull();
     await seedKnowledge(db, 'push-up', 'fitness');
     expect(await resolveKnowledgePinByName(db, 'fitness', 'push-up')).toBeNull();
+  });
+});
+
+describe('config version pinning and replay (CORR-001)', () => {
+  async function snapshotTarget(db: Db, challengeId: string, version: number): Promise<number> {
+    const row = await db.query<{ snapshot: unknown }>(
+      `SELECT snapshot FROM challenge_config_versions WHERE challenge_id = $1 AND version = $2`,
+      [challengeId, version],
+    );
+    const snapshot = row.rows[0].snapshot;
+    const parsed = (typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot) as {
+      activities: Array<{ target_value: number }>;
+      type_params: Record<string, number | null>;
+    };
+    return Number(parsed.activities[0].target_value);
+  }
+
+  async function storedVsRecomputed(challengeId: string) {
+    const db = testDb();
+    const recomputed = await recomputeChallengeDerived(db, challengeId);
+    const parts = await db.query('SELECT * FROM challenge_participation_derived WHERE challenge_id = $1', [challengeId]);
+    const chall = await db.query('SELECT * FROM challenge_derived_state WHERE challenge_id = $1', [challengeId]);
+    const states: Record<string, object> = {};
+    for (const row of parts.rows as Record<string, unknown>[]) {
+      const n = normalizeParticipationDerived(row);
+      const { participation_id: _p, challenge_id: _c, member_id: _m, engine_version: _e, scoring_version: _s, updated_at: _u, ...state } = n;
+      states[String(row.participation_id)] = state;
+    }
+    const c = normalizeChallengeDerived(chall.rows[0] as Record<string, unknown>);
+    const { challenge_id: _cc, challenge_type: _t, engine_version: _e2, scoring_version: _s2, updated_at: _u2, ...challenge } = c;
+    expect(recomputed.participations).toEqual(states);
+    expect(recomputed.challenge).toEqual(challenge);
+    return recomputed;
+  }
+
+  it('acceptance pins the current version; backdated logs use current terms; pins are permanent', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      activities: [pushUp({ target_value: 100 })],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    const resolvers = resolversFor(setup.pins);
+    const r1 = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 60, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    expect(r1.record.config_version).toBe(1);
+    expect(r1.record.scoring_target_value).toBe(100);
+    expect(r1.record.points_awarded).toBe(60);
+
+    await addChallengeConfigVersion(db, setup.challengeId, {
+      activities: [pushUp({ target_value: 200 })],
+    }, creationResolvers(setup.pins));
+    // Backdated Evidence (before v2 existed) is still governed by current v2.
+    const r2 = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 50, occurred_at: T('2026-06-05T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    expect(r2.record.config_version).toBe(2);
+    expect(r2.record.scoring_target_value).toBe(200);
+    expect(r2.record.points_awarded).toBe(25);
+
+    await addChallengeConfigVersion(db, setup.challengeId, {
+      activities: [pushUp({ target_value: 300 })],
+    }, creationResolvers(setup.pins));
+    // Historical pins never move: r1 still carries v1 terms after two bumps.
+    const stored1 = await db.query<Record<string, unknown>>(
+      `SELECT config_version, scoring_target_value, points_awarded FROM challenge_activity_records WHERE record_id = $1`,
+      [r1.record.record_id],
+    );
+    expect(Number(stored1.rows[0].config_version)).toBe(1);
+    expect(Number(stored1.rows[0].scoring_target_value)).toBe(100);
+    expect(Number(stored1.rows[0].points_awarded)).toBe(60);
+    // The pinned snapshots stay identifiable: v1 terms intact beside v2/v3.
+    expect(await snapshotTarget(db, setup.challengeId, 1)).toBe(100);
+    expect(await snapshotTarget(db, setup.challengeId, 2)).toBe(200);
+    await storedVsRecomputed(setup.challengeId);
+  });
+
+  it('concurrent config change cannot produce a mixed-version application', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      activities: [pushUp({ target_value: 100 })],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    const resolvers = resolversFor(setup.pins);
+    const day = (n: number): Date => T(`2026-06-${String(10 + n).padStart(2, '0')}T12:00:00Z`);
+    // Race acceptances against a governing version bump. Either side may win,
+    // but no accepted record may mix terms from two versions.
+    const [, ...results] = await Promise.all([
+      addChallengeConfigVersion(db, setup.challengeId, {
+        activities: [pushUp({ target_value: 200 })],
+      }, creationResolvers(setup.pins)).catch((error: Error) => error),
+      ...[0, 1, 2, 3].map((n) => applyChallengeActivity(
+        db, setup.memberId, setup.challengeId,
+        logInput({ value: 40, occurred_at: day(n), client_key: `race-${n}` }), resolvers,
+      ).catch((error: Error) => error)),
+    ]);
+    const accepted = results.filter(
+      (r): r is Exclude<typeof r, Error> => !(r instanceof Error),
+    );
+    expect(accepted.length).toBeGreaterThan(0);
+    for (const result of accepted) {
+      const row = await db.query<Record<string, unknown>>(
+        `SELECT r.config_version, r.scoring_target_value, r.points_awarded, r.value,
+                c.target_value AS row_target, c.unit AS row_unit,
+                r.activity_config_id AS record_config, c.activity_config_id AS row_config
+         FROM challenge_activity_records r
+         JOIN challenge_activity_configs c ON c.activity_config_id = r.activity_config_id
+         WHERE r.record_id = $1`,
+        [result.record.record_id],
+      );
+      const found = row.rows[0];
+      // Record, activity row, and scoring attribution all agree on one version.
+      expect(Number(found.config_version)).toBe(Number((await db.query<{ version: number }>(
+        `SELECT version FROM challenge_activity_configs WHERE activity_config_id = $1`,
+        [String(found.record_config)],
+      )).rows[0].version));
+      expect(Number(found.scoring_target_value)).toBe(Number(found.row_target));
+      expect(String(found.record_config)).toBe(String(found.row_config));
+      expect(Number(found.points_awarded)).toBe(computeActivityScore({
+        value: Number(found.value),
+        targetValue: Number(found.row_target),
+        challengeType: 'competitive',
+      }).pointsEarned);
+      // The pinned snapshot for that version exists and carries the same terms.
+      expect(await snapshotTarget(db, setup.challengeId, Number(found.config_version)))
+        .toBe(Number(found.row_target));
+    }
+    await storedVsRecomputed(setup.challengeId);
+  });
+
+  it('replay uses v1 snapshot for record 1 and v2 for later records', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      activities: [pushUp({ target_value: 100 })],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    const resolvers = resolversFor(setup.pins);
+    const r1 = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 60, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    await addChallengeConfigVersion(db, setup.challengeId, {
+      activities: [pushUp({ target_value: 200 })],
+    }, creationResolvers(setup.pins));
+    const r2 = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 50, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    const r3 = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 100, occurred_at: T('2026-06-12T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    expect([r1.record.config_version, r2.record.config_version, r3.record.config_version])
+      .toEqual([1, 2, 2]);
+    // Progress carries across versions on stable canonical identity ...
+    expect(r3.participation.cumulativeValues['push-up::']).toBe(210);
+    // ... and completion is evaluated under each record's own version terms:
+    // 110/200 after r2 is not complete; 210/200 after r3 is.
+    expect(r2.participation.completionStatus).toBe('in_progress');
+    expect(r3.participation.completionStatus).toBe('completed');
+    expect(r3.participation.completedAt).toBe(r3.record.accepted_at);
+    expect(r3.participation.totalPoints).toBe(60 + 25 + 50);
+    const recomputed = await storedVsRecomputed(setup.challengeId);
+    expect(recomputed.recordsReplayed).toBe(3);
+  });
+
+  it('later current mirrors do not reinterpret historical records', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      activities: [pushUp({ target_value: 100 })],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    const resolvers = resolversFor(setup.pins);
+    await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 40, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    await addChallengeConfigVersion(db, setup.challengeId, {
+      activities: [pushUp({ target_value: 500 })],
+    }, creationResolvers(setup.pins));
+    await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 40, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    // Absolute version-correct outcomes: 40/100 + 40/500, NOT collapsed onto v3.
+    const before = await storedVsRecomputed(setup.challengeId);
+    const onlyPart = Object.values(before.participations)[0];
+    expect(onlyPart.totalPoints).toBe(48);
+    expect(onlyPart.cumulativeValues['push-up::']).toBe(80);
+
+    // Later governing change (new target + extended period) ...
+    await addChallengeConfigVersion(db, setup.challengeId, {
+      activities: [pushUp({ target_value: 1000 })],
+      end_date: '2026-07-31',
+    }, creationResolvers(setup.pins));
+    // ... plus a non-governing mirror edit (title needs no version bump) ...
+    await db.query(`UPDATE challenges SET title = 'Renamed mirrors' WHERE challenge_id = $1`, [setup.challengeId]);
+    // ... leave historical replay exactly unchanged.
+    const after = await storedVsRecomputed(setup.challengeId);
+    expect(after.participations).toEqual(before.participations);
+    expect(after.challenge).toEqual(before.challenge);
+  });
+
+  it('collective goal transition replays deterministically under each version', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'collective',
+      goal_value: 1000,
+      goal_unit: 'reps',
+      activities: [pushUp()],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    const resolvers = resolversFor(setup.pins);
+    const r1 = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 600, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    expect(r1.completionTriggered).toBe(false);
+    // Approved goal change: 1000 -> 800. The 600 already banked under v1
+    // replays against v1 terms (no completion at 600/1000).
+    await addChallengeConfigVersion(db, setup.challengeId, {
+      activities: [pushUp()],
+      goal_value: 800,
+    }, creationResolvers(setup.pins));
+    const r2 = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 300, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
+    );
+    // Crossing happens under v2 terms (900 >= 800); under v1 terms for all,
+    // 900 < 1000 would have left the challenge active.
+    expect(r2.completionTriggered).toBe(true);
+    expect(r2.record.completion_triggered).toBe(true);
+    expect(r1.record.completion_triggered).toBe(false);
+    expect(r2.challenge.collectiveTotal).toBe(900);
+    const status = await db.query<{ status: string }>(
+      'SELECT status FROM challenges WHERE challenge_id = $1', [setup.challengeId],
+    );
+    expect(status.rows[0].status).toBe('ended');
+    expect(r2.challenge.goalCompletedAt).toBe(r2.record.accepted_at);
+    const recomputed = await storedVsRecomputed(setup.challengeId);
+    expect(recomputed.recordsReplayed).toBe(2);
+    expect(recomputed.challenge.collectiveTotal).toBe(900);
+    expect(recomputed.challenge.collectiveGoalReached).toBe(true);
+  });
+
+  it('streak requirement transition replays deterministically under each version', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'streak',
+      required_consecutive_days: 2,
+      activities: [pushUp()],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    const resolvers = resolversFor(setup.pins);
+    const log = (day: string) => applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 20, occurred_at: T(`${day}T12:00:00Z`), client_key: next('key') }), resolvers,
+    );
+    await log('2026-06-10');
+    const r2 = await log('2026-06-11');
+    // Completed under v1 terms (2 consecutive). Under retroactive v2 terms
+    // (required 5) this completion could never have happened.
+    expect(r2.participation.completionStatus).toBe('completed');
+    expect(r2.participation.currentStreak).toBe(2);
+    await addChallengeConfigVersion(db, setup.challengeId, {
+      activities: [pushUp()],
+      required_consecutive_days: 5,
+    }, creationResolvers(setup.pins));
+    const r3 = await log('2026-06-12');
+    const r4 = await log('2026-06-13');
+    expect(r4.participation.currentStreak).toBe(4);
+    expect(r4.participation.bestStreak).toBe(4);
+    // First completion stands: later versions never move completed_at.
+    expect(r4.participation.completedAt).toBe(r2.participation.completedAt);
+    expect(r4.participation.completedAt).toBe(r2.record.accepted_at);
+    // Streak period/params come from pinned snapshots; current mirrors agree.
+    const recomputed = await storedVsRecomputed(setup.challengeId);
+    expect(recomputed.recordsReplayed).toBe(4);
+    expect(r3.record.config_version).toBe(2);
+    expect(r4.record.config_version).toBe(2);
+  });
+
+  it('immutable older Knowledge pin survives later canonical revision', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      activities: [pushUp({ target_value: 20 })],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    const knowledgeId = setup.pins['push-up'].knowledge_id;
+    // Canonical Knowledge revised v1 -> v2 (same identity, new content).
+    const revised = await reviseKnowledgeItem(db, knowledgeId, {
+      name: 'push-up',
+      category: 'Upper Body',
+      difficulty: 'Beginner',
+      metricUnit: 'reps',
+    });
+    expect(revised.knowledgeVersion).toBe(2);
+    // Production resolution now returns the v2 pin for the same identity.
+    const livePin = await resolveKnowledgePinByName(db, 'fitness', 'push-up');
+    expect(livePin).toEqual({ knowledge_id: knowledgeId, current_version: 2 });
+    const result = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ value: 20, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }),
+      resolversFor({ 'push-up': livePin as { knowledge_id: string; current_version: number } }),
+    );
+    // Logging succeeds under the Challenge's pinned v1 terms ...
+    expect(result.record.scoring_target_value).toBe(20);
+    expect(result.record.points_awarded).toBe(100);
+    expect(result.event.knowledge_version).toBe(2);
+    // ... and the Challenge pin is never rewritten to v2.
+    const config = await db.query<{ knowledge_version: number }>(
+      `SELECT knowledge_version FROM challenge_activity_configs WHERE activity_config_id = $1`,
+      [result.record.activity_config_id],
+    );
+    expect(Number(config.rows[0].knowledge_version)).toBe(1);
+    await storedVsRecomputed(setup.challengeId);
   });
 });

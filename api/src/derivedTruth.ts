@@ -27,8 +27,12 @@
 import type { Db } from './db.js';
 import { selectEngine, type ChallengeContext, type LogEvent, type MembershipSnapshot } from './engine/index.js';
 import { isParticipationActiveAt, type ParticipationRow } from './challengeParticipations.js';
-import type { ActivityConfigRow } from './challengeConfigs.js';
-import type { ChallengeRow } from './challenges.js';
+import {
+  canonicalActivityIdentity,
+  getGoverningVersion,
+  type ActivityConfigRow,
+  type GoverningSnapshot,
+} from './challengeConfigs.js';
 
 export const DERIVED_ENGINE_VERSION = 'v2';
 export const DERIVED_SCORING_VERSION = 'computeActivityScore/v1';
@@ -132,30 +136,40 @@ function targetTypeFor(challengeType: string): ChallengeContext['targetType'] {
   fail(`unknown challenge_type '${challengeType}'`);
 }
 
-/** Adapt immutable C2A config + challenge row into the engine's pure input. */
+/**
+ * Adapt ONE immutable governing version into the engine's pure input.
+ * Every governing value comes from the pinned snapshot — never from the
+ * mutable challenges mirrors. Engine activity identity is the stable
+ * canonical (key + variant) identity, NOT the per-version activity_config_id:
+ * versions mint new config rows, so per-row keys would silently reset
+ * cumulative progress and streak day-sets on any config change (even a pure
+ * extension, whose history Stage F preserves). The activity_config_id stays
+ * the record's pinned application anchor; progress keys stay comparable.
+ */
 export function toChallengeContext(
-  challenge: Pick<ChallengeRow, 'challenge_id' | 'challenge_type' | 'start_date' | 'end_date' | 'goal_value' | 'required_consecutive_days' | 'reset_on_miss'>,
+  challengeId: string,
+  snapshot: GoverningSnapshot,
   activities: ActivityConfigRow[],
 ): ChallengeContext {
   return {
-    challengeId: challenge.challenge_id,
-    challengeType: challenge.challenge_type,
+    challengeId,
+    challengeType: snapshot.challenge_type,
     engineVersion: 'v2',
-    targetType: targetTypeFor(challenge.challenge_type),
-    durationDays: periodDays(challenge.start_date, challenge.end_date),
+    targetType: targetTypeFor(snapshot.challenge_type),
+    durationDays: periodDays(snapshot.start_date, snapshot.end_date),
     activities: activities.map((a) => ({
-      activityId: a.activity_config_id,
-      exerciseId: a.activity_config_id,
+      activityId: canonicalActivityIdentity(a.canonical_key, a.activity_variant),
+      exerciseId: canonicalActivityIdentity(a.canonical_key, a.activity_variant),
       exerciseName: a.canonical_key,
       targetValue: a.target_value,
       unit: a.unit,
     })),
-    startDate: challenge.start_date,
-    endDate: challenge.end_date,
-    groupCumulativeTarget: challenge.goal_value ?? undefined,
+    startDate: snapshot.start_date,
+    endDate: snapshot.end_date,
+    groupCumulativeTarget: snapshot.goal_value ?? undefined,
     autoCompleteOnGroupTarget: true,
-    requiredConsecutiveDays: challenge.required_consecutive_days ?? undefined,
-    streakResetOnMiss: challenge.reset_on_miss,
+    requiredConsecutiveDays: snapshot.required_consecutive_days ?? undefined,
+    streakResetOnMiss: snapshot.reset_on_miss,
   };
 }
 
@@ -203,9 +217,11 @@ export interface AcceptedRecordInput {
 }
 
 export interface RecordUpdateInput {
-  challenge: Pick<ChallengeRow, 'challenge_id' | 'challenge_type' | 'start_date' | 'end_date' | 'goal_value' | 'required_consecutive_days' | 'reset_on_miss'>;
+  challenge_id: string;
+  /** The record's PINNED immutable governing version (snapshot = authority). */
+  snapshot: GoverningSnapshot;
   memberId: string;
-  /** Governing-version activity rows (the record's config_version). */
+  /** Governing-version activity rows (same version as the snapshot). */
   activities: ActivityConfigRow[];
   prevPart: ParticipationTruthState;
   prevChallenge: ChallengeTruthState;
@@ -225,57 +241,67 @@ export interface RecordUpdate {
  * so replay reproduces the stored outcome exactly.
  */
 export function applyAcceptedRecord(input: RecordUpdateInput): RecordUpdate {
-  const { challenge, memberId, activities, prevPart, prevChallenge, record } = input;
-  const context = toChallengeContext(challenge, activities);
+  const { challenge_id, snapshot, memberId, activities, prevPart, prevChallenge, record } = input;
+  const context = toChallengeContext(challenge_id, snapshot, activities);
   const totalActivities = Math.max(1, context.durationDays * Math.max(1, activities.length));
-  const engine = selectEngine({ engineVersion: 'v2', challengeType: challenge.challenge_type });
+  const engine = selectEngine({ engineVersion: 'v2', challengeType: snapshot.challenge_type });
+  const recordRow = activities.find((a) => a.activity_config_id === record.activity_config_id);
+  if (!recordRow) fail('record activity_config is not part of the governing version');
+  const activityIdentity = canonicalActivityIdentity(recordRow.canonical_key, recordRow.activity_variant);
   const logEvent: LogEvent = {
     userId: memberId,
-    challengeId: challenge.challenge_id,
-    activityId: record.activity_config_id,
+    challengeId: challenge_id,
+    activityId: activityIdentity,
     value: record.value,
     unit: record.unit,
     date: record.occurred_day,
     loggedAt: new Date(record.accepted_at),
     pointsEarned: record.points_awarded,
   };
-  const membership = toMembershipSnapshot(prevPart, memberId, challenge.challenge_id, totalActivities);
+  const membership = toMembershipSnapshot(prevPart, memberId, challenge_id, totalActivities);
   const result = engine.computeUpdate(context, membership, logEvent, {
     groupCurrentTotal: prevChallenge.collectiveTotal,
   });
   const mu = result.membershipUpdate;
 
-  // Day-state merge. Streak days are Done only when ALL governing-version
+  // Day-state merge, keyed by stable canonical activity identity (comparable
+  // across versions). Streak days are Done only when ALL governing-version
   // requirements are logged (engine tracks the set; the flag below mirrors
-  // it so recomputation agrees without re-reading the engine internals).
-  const requiredIds = new Set(activities.map((a) => a.activity_config_id));
+  // it so recomputation agrees without re-reading the engine internals). A
+  // day once Done stays Done: later versions' changed requirements never
+  // un-complete history, and backdated logs only add to the day's set.
+  const requiredIds = new Set(
+    activities.map((a) => canonicalActivityIdentity(a.canonical_key, a.activity_variant)),
+  );
   const prevDay = prevPart.dayStates[record.occurred_day] ?? { complete: false, activities: [] };
   let dayActivities: string[];
-  let dayComplete: boolean;
-  if (challenge.challenge_type === 'streak') {
-    const engineSet = mu.dailyCompletedActivities ?? [...prevDay.activities, record.activity_config_id];
+  let newlyComplete: boolean;
+  if (snapshot.challenge_type === 'streak') {
+    const engineSet = mu.dailyCompletedActivities ?? [...prevDay.activities, activityIdentity];
     dayActivities = [...new Set(engineSet)].sort();
-    dayComplete = requiredIds.size === 0 || [...requiredIds].every((id) => dayActivities.includes(id));
+    newlyComplete = requiredIds.size === 0 || [...requiredIds].every((id) => dayActivities.includes(id));
   } else {
-    dayActivities = [...new Set([...prevDay.activities, record.activity_config_id])].sort();
-    dayComplete = true;
+    dayActivities = [...new Set([...prevDay.activities, activityIdentity])].sort();
+    newlyComplete = true;
   }
+  const dayComplete = prevDay.complete || newlyComplete;
   const dayStates: Record<string, DayState> = {
     ...prevPart.dayStates,
     [record.occurred_day]: { complete: dayComplete, activities: dayActivities },
   };
   const distinctDays = Object.keys(dayStates).length;
-  const daysCompleted = challenge.challenge_type === 'streak'
+  const daysCompleted = snapshot.challenge_type === 'streak'
     ? Object.values(dayStates).filter((d) => d.complete).length
     : distinctDays;
 
-  // Cumulative maps: engines that track them return them; otherwise the fold
-  // maintains the exact sum so every family keeps a truthful per-member total.
+  // Cumulative maps keyed by stable canonical identity so progress survives
+  // version transitions. Engines that track them return them; otherwise the
+  // fold maintains the exact sum so every family keeps a truthful total.
   const cumulativeValues: Record<string, number> = mu.cumulativeValues
     ? { ...mu.cumulativeValues }
     : {
       ...prevPart.cumulativeValues,
-      [record.activity_config_id]: (prevPart.cumulativeValues[record.activity_config_id] ?? 0) + record.value,
+      [activityIdentity]: (prevPart.cumulativeValues[activityIdentity] ?? 0) + record.value,
     };
   const cumulativeTotal = mu.cumulativeLoggedValue ?? (prevPart.cumulativeTotal + record.value);
 
@@ -297,9 +323,9 @@ export function applyAcceptedRecord(input: RecordUpdateInput): RecordUpdate {
   };
 
   let challengeState = prevChallenge;
-  let completionTriggered = newlyCompleted && challenge.challenge_type !== 'collective';
-  if (challenge.challenge_type === 'collective') {
-    const goal = challenge.goal_value ?? 0;
+  let completionTriggered = newlyCompleted && snapshot.challenge_type !== 'collective';
+  if (snapshot.challenge_type === 'collective') {
+    const goal = snapshot.goal_value ?? 0;
     const newTotal = prevChallenge.collectiveTotal + record.value;
     const reached = goal > 0 && newTotal >= goal;
     const newlyReached = reached && !prevChallenge.collectiveGoalReached;
@@ -524,6 +550,12 @@ interface ReplayRecord extends AcceptedRecordInput {
 }
 
 /**
+ * Founder product rule (replay side): recomputation MUST use each record's
+ * PINNED immutable governing version — never the current challenges mirrors.
+ * A later version can change type params, period, or requirements; replaying
+ * historical records under it would rewrite accepted history. The challenges
+ * row below serves stable identity/existence only.
+ *
  * Replay every effective accepted record for a challenge in acceptance
  * order and fold the same pure transition the seam persists. Effective =
  * the Evidence event is still committed (a superseded event's application
@@ -535,12 +567,11 @@ export async function recomputeChallengeDerived(
   db: Db,
   challengeId: string,
 ): Promise<RecomputedTruth> {
-  const challengeResult = await db.query(
-    `SELECT * FROM challenges WHERE challenge_id = $1`,
+  const challengeResult = await db.query<{ challenge_id: string }>(
+    `SELECT challenge_id FROM challenges WHERE challenge_id = $1`,
     [challengeId],
   );
   if (challengeResult.rows.length === 0) fail(`unknown challenge ${challengeId}`);
-  const challenge = challengeResult.rows[0] as unknown as ChallengeRow;
 
   const episodeResult = await db.query(
     `SELECT * FROM challenge_participations WHERE challenge_id = $1
@@ -578,57 +609,29 @@ export async function recomputeChallengeDerived(
     accepted_at: new Date(row.accepted_at as string).toISOString(),
   })) as ReplayRecord[];
 
-  const configsResult = await db.query(
-    `SELECT * FROM challenge_activity_configs WHERE challenge_id = $1
-     ORDER BY version ASC, position ASC, canonical_key ASC`,
-    [challengeId],
-  );
-  const configsByVersion = new Map<number, ActivityConfigRow[]>();
-  for (const row of configsResult.rows as Record<string, unknown>[]) {
-    const version = Number(row.version);
-    const list = configsByVersion.get(version) ?? [];
-    list.push({
-      activity_config_id: String(row.activity_config_id),
-      challenge_id: String(row.challenge_id),
-      version,
-      canonical_key: String(row.canonical_key),
-      activity_variant: row.activity_variant == null ? null : String(row.activity_variant),
-      knowledge_id: String(row.knowledge_id),
-      knowledge_version: Number(row.knowledge_version),
-      target_value: Number(row.target_value),
-      unit: String(row.unit),
-      position: Number(row.position),
-      conditions: {},
-      created_at: new Date(row.created_at as string).toISOString(),
-    });
-    configsByVersion.set(version, list);
-  }
+  // One immutable governing bundle per pinned version. A challenge may hold
+  // accepted records from several versions; each replays under its own
+  // snapshot — versions are never collapsed onto the latest configuration.
+  const bundles = new Map<number, { snapshot: GoverningSnapshot; activities: ActivityConfigRow[] }>();
+  const bundleFor = async (version: number) => {
+    const cached = bundles.get(version);
+    if (cached) return cached;
+    const bundle = await getGoverningVersion(db, challengeId, version);
+    bundles.set(version, bundle);
+    return bundle;
+  };
 
   const partStates: Record<string, ParticipationTruthState> = {};
   for (const episode of episodes) partStates[episode.participation_id] = emptyParticipationState();
   let challengeState = emptyChallengeState();
 
   for (const record of records) {
-    const activities = configsByVersion.get(record.config_version);
-    if (!activities) fail(`recompute: unknown config version ${record.config_version}`);
+    const { snapshot, activities } = await bundleFor(record.config_version);
     const prevPart = partStates[record.participation_id] ?? emptyParticipationState();
     partStates[record.participation_id] = prevPart;
     const update = applyAcceptedRecord({
-      challenge: {
-        challenge_id: challenge.challenge_id,
-        challenge_type: challenge.challenge_type,
-        start_date: typeof challenge.start_date === 'string'
-          ? challenge.start_date.slice(0, 10)
-          : (challenge.start_date as unknown as Date).toISOString().slice(0, 10),
-        end_date: typeof challenge.end_date === 'string'
-          ? challenge.end_date.slice(0, 10)
-          : (challenge.end_date as unknown as Date).toISOString().slice(0, 10),
-        goal_value: challenge.goal_value == null ? null : Number(challenge.goal_value),
-        required_consecutive_days: challenge.required_consecutive_days == null
-          ? null
-          : Number(challenge.required_consecutive_days),
-        reset_on_miss: Boolean(challenge.reset_on_miss),
-      },
+      challenge_id: challengeId,
+      snapshot,
       memberId: record.member_id,
       activities,
       prevPart,
@@ -637,7 +640,7 @@ export async function recomputeChallengeDerived(
     });
     partStates[record.participation_id] = update.part;
     challengeState = update.challenge;
-    if (update.completionTriggered && challenge.challenge_type === 'collective') {
+    if (update.completionTriggered && snapshot.challenge_type === 'collective') {
       const at = new Date(record.accepted_at);
       for (const episode of episodes) {
         if (!isParticipationActiveAt(

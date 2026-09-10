@@ -50,10 +50,11 @@ import {
   type KnowledgePin as EventKnowledgePin,
 } from './activityEvents.js';
 import {
-  getChallengeConfig,
+  getGoverningVersion,
   type ActivityConfigRow,
+  type GoverningVersion,
 } from './challengeConfigs.js';
-import { getChallenge, type ChallengeRow } from './challenges.js';
+import { getChallenge, normalizeChallengeRow, type ChallengeRow } from './challenges.js';
 import {
   isParticipationActiveAt,
   listParticipations,
@@ -230,6 +231,14 @@ function owningEpisode(episodes: ParticipationRow[], occurredAt: Date): Particip
   return owned[0];
 }
 
+/**
+ * Explicit V2 log-time gate (transitional architecture): the participation
+ * episode proves Challenge participation at occurred_at; the CURRENT
+ * Group-Membership authority proves the Member remains eligible to submit a
+ * NEW log now. Stale PG shadow state never authorizes, and already-accepted
+ * historical Evidence/applications stay historical if Group membership later
+ * changes. No automatic participation termination on Group exit.
+ */
 async function requireLiveGroupMember(
   resolvers: ChallengeActivityResolvers,
   groupId: string,
@@ -279,16 +288,43 @@ export async function applyChallengeActivity(
   }
 
   return db.transaction(async (tx) => {
-    // In-transaction re-verification: challenge, governing config and
-    // owning episode are re-read here so a concurrent lifecycle/config/exit
-    // change between the pre-checks and commit cannot slip through.
-    const freshChallenge: ChallengeRow = await getChallenge(tx, challengeId).catch(() => {
+    // Founder product rule (acceptance side): an ordinary log is governed by
+    // the immutable configuration CURRENT WHEN TIIZI ACCEPTS THE LOG.
+    // occurred_at records when the activity occurred; it never retroactively
+    // selects an older configuration. The accepted record permanently pins
+    // that (version, activity_config_id); retrospective re-application under
+    // different terms belongs to the governed correction mechanism, not here.
+    //
+    // Single-version concurrency (CORR-2): the Challenge governing pointer
+    // (challenges row) is locked FOR UPDATE first, then ONE exact version is
+    // resolved and its immutable snapshot + activity rows are read for THAT
+    // version only. A concurrent versioned config change (which UPDATEs the
+    // same row when bumping current_config_version) serializes against this
+    // lock, so an acceptance can never mix vN+1 mirrors with vN activity
+    // rows: it either sees the bump entirely or precedes it entirely.
+    const lockedRow = await tx.query(
+      `SELECT * FROM challenges WHERE challenge_id = $1 FOR UPDATE`,
+      [challengeId],
+    );
+    if (lockedRow.rows.length === 0) {
       fail(404, 'unknown_challenge', `unknown challenge ${challengeId}`);
-    });
+    }
+    const freshChallenge = normalizeChallengeRow(lockedRow.rows[0] as never);
     if (freshChallenge.status !== 'active') {
       fail(422, 'challenge_not_active', 'challenge is not active for logging');
     }
-    const { activities } = await getChallengeConfig(tx, challengeId);
+    const governing: GoverningVersion = await getGoverningVersion(
+      tx, challengeId, freshChallenge.current_config_version,
+    ).catch((error) => {
+      fail(500, 'governing_config_unavailable',
+        `governing configuration v${freshChallenge.current_config_version} is unreadable: ${(error as Error).message}`);
+    });
+    const pinned = governing as GoverningVersion;
+    if (pinned.snapshot.challenge_type !== freshChallenge.challenge_type) {
+      fail(500, 'governing_config_mismatch',
+        'pinned snapshot type disagrees with Challenge identity');
+    }
+    const activities = pinned.activities;
     const config = matchActivityConfig(activities, input.canonical_key, eventVariant);
     if (!config) {
       const keyKnown = activities.some((a) => a.canonical_key === input.canonical_key);
@@ -302,6 +338,14 @@ export async function applyChallengeActivity(
       fail(422, 'wrong_unit',
         `unit '${input.unit}' does not match the configured unit '${matched.unit}' for '${input.canonical_key}'`);
     }
+    // Knowledge boundary: canonical IDENTITY must match the pinned Challenge
+    // activity config; the Knowledge VERSION is deliberately not required to
+    // equal the config's pinned knowledge_version. Canonical Knowledge may be
+    // revised (v1 -> v2, same identity) after the Challenge version was cut —
+    // requiring version equality would make immutable Challenge snapshots
+    // unusable after an unrelated Knowledge revision. The authoritative
+    // application identity stays the pinned Challenge config (its terms score
+    // the log); the Challenge pin is never rewritten to the newer version.
     if (pin.knowledge_id !== matched.knowledge_id) {
       fail(422, 'knowledge_mismatch',
         `activity '${input.canonical_key}' does not resolve to this challenge's configured Knowledge`);
@@ -379,9 +423,13 @@ export async function applyChallengeActivity(
       };
     }
 
-    if (evidence.occurred_day < freshChallenge.start_date || evidence.occurred_day > freshChallenge.end_date) {
+    // Period eligibility comes from the PINNED snapshot's period, never the
+    // mutable mirrors: a later extension cannot retroactively admit (or bar)
+    // this Evidence, and the current mirrors cannot reinterpret it either.
+    if (evidence.occurred_day < pinned.snapshot.start_date
+      || evidence.occurred_day > pinned.snapshot.end_date) {
       fail(422, 'outside_challenge_window',
-        `occurred day ${evidence.occurred_day} is outside the challenge period ${freshChallenge.start_date}..${freshChallenge.end_date}`);
+        `occurred day ${evidence.occurred_day} is outside the governing challenge period ${pinned.snapshot.start_date}..${pinned.snapshot.end_date}`);
     }
 
     // Server-owned scoring against the governing activity config. The client
@@ -391,7 +439,7 @@ export async function applyChallengeActivity(
     const scoring = computeActivityScore({
       value: input.value,
       targetValue: matched.target_value,
-      challengeType: freshChallenge.challenge_type,
+      challengeType: pinned.snapshot.challenge_type,
     });
 
     const acceptedAt = new Date();
@@ -399,18 +447,11 @@ export async function applyChallengeActivity(
       tx, owned.participation_id, challengeId, memberId,
     );
     const challengeBefore = await lockChallengeDerived(
-      tx, challengeId, freshChallenge.challenge_type,
+      tx, challengeId, pinned.snapshot.challenge_type,
     );
     const update = applyAcceptedRecord({
-      challenge: {
-        challenge_id: freshChallenge.challenge_id,
-        challenge_type: freshChallenge.challenge_type,
-        start_date: freshChallenge.start_date,
-        end_date: freshChallenge.end_date,
-        goal_value: freshChallenge.goal_value,
-        required_consecutive_days: freshChallenge.required_consecutive_days,
-        reset_on_miss: freshChallenge.reset_on_miss,
-      },
+      challenge_id: challengeId,
+      snapshot: pinned.snapshot,
       memberId,
       activities,
       prevPart: partBefore,
@@ -436,7 +477,7 @@ export async function applyChallengeActivity(
        RETURNING *`,
       [
         evidence.event_id, owned.participation_id, challengeId, matched.activity_config_id,
-        matched.version, acceptedAt.toISOString(), input.value, input.unit, evidence.occurred_day,
+        pinned.version, acceptedAt.toISOString(), input.value, input.unit, evidence.occurred_day,
         scoring.pointsEarned, matched.target_value, scoring.scoringMethod,
         DERIVED_SCORING_VERSION, 'v2', update.completionTriggered,
       ],
@@ -449,7 +490,7 @@ export async function applyChallengeActivity(
     // boundary: ordinary new logging closes) and completes every episode
     // active at the crossing instant — the shared achievement belongs to
     // the group, matching the V1 cascade (all active memberships complete).
-    if (freshChallenge.challenge_type === 'collective' && update.completionTriggered) {
+    if (pinned.snapshot.challenge_type === 'collective' && update.completionTriggered) {
       const ended = await tx.query(
         `UPDATE challenges SET status = 'ended', ended_at = now(), updated_at = now()
          WHERE challenge_id = $1 AND status = 'active' RETURNING *`,

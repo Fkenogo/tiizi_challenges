@@ -195,7 +195,12 @@ CREATE TABLE IF NOT EXISTS challenge_participation_derived (
   total_points INTEGER NOT NULL DEFAULT 0,
   -- Engine-reported rate (approved engine output, persisted verbatim).
   completion_rate INTEGER NOT NULL DEFAULT 0,
-  -- Per-activity cumulative values, keyed by activity_config_id
+  -- Per-activity cumulative values, keyed by STABLE canonical activity
+  -- identity (canonical_key + variant), NOT by per-version activity_config_id:
+  -- versions mint new config rows, so per-row keys would silently reset
+  -- cumulative progress on any config change (even a pure extension, whose
+  -- history is preserved). The record's activity_config_id stays the pinned
+  -- application anchor; these keys stay comparable across versions.
   -- (competitive completion + collective per-member contribution).
   cumulative_values JSONB NOT NULL DEFAULT '{}',
   cumulative_total DOUBLE PRECISION NOT NULL DEFAULT 0,
