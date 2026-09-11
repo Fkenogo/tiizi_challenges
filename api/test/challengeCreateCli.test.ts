@@ -26,7 +26,7 @@ import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
   );
 });
 
@@ -114,7 +114,7 @@ function baseInput(world: StubWorld): ChallengeCreateV2Input {
     end_date: '2026-06-30',
     goal_value: 1000,
     goal_unit: 'reps',
-    activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+    activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
   };
 }
 
@@ -191,8 +191,8 @@ describe('valid establishment', () => {
         goal_value: undefined,
         goal_unit: undefined,
         activities: [
-          { activity_kind: 'fitness', canonical_key: 'push-up', target_value: 20, unit: 'reps' },
-          { activity_kind: 'wellness', canonical_key: 'water-intake', target_value: 2000, unit: 'ml' },
+          { activity_kind: 'fitness', canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' },
+          { activity_kind: 'wellness', canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'ml' },
         ],
       },
       world.resolvers,
@@ -263,7 +263,7 @@ describe('fail-closed authority handling', () => {
         testDb(),
         {
           ...baseInput(world),
-          activities: [{ activity_kind: 'fitness', canonical_key: 'draft-move', target_value: 1, unit: 'reps' }],
+          activities: [{ activity_kind: 'fitness', canonical_key: 'draft-move', metric: 'repetitions', target_value: 1, unit: 'reps' }],
         },
         world.resolvers,
       ),
@@ -283,8 +283,8 @@ describe('fail-closed authority handling', () => {
           ...baseInput(world),
           goal_unit: 'minutes',
           activities: [
-            { activity_kind: 'fitness', canonical_key: 'running', target_value: 30, unit: 'minutes' },
-            { activity_kind: 'fitness', canonical_key: 'push-up', target_value: 20, unit: 'repetitions' },
+            { activity_kind: 'fitness', canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
+            { activity_kind: 'fitness', canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'repetitions' },
           ],
         },
         world.resolvers,
@@ -397,7 +397,7 @@ describe('input contract', () => {
       end_date: '2026-06-30',
       goal_value: 100,
       goal_unit: 'reps',
-      activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+      activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
       activate: true,
     });
     expect(parsed.activate).toBe(true);

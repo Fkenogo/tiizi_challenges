@@ -27,7 +27,7 @@ import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
 beforeEach(async () => {
   // C2B tables reference these via FKs, so they truncate together (clean slate per test).
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
   );
 });
 
@@ -71,11 +71,11 @@ async function setupGroupWithMember(uid: string): Promise<{ groupId: string; mem
 }
 
 function pushUp(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
-  return { canonical_key: 'push-up', target_value: 20, unit: 'reps', ...overrides };
+  return { canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps', ...overrides };
 }
 
 function waterIntake(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
-  return { canonical_key: 'water-intake', target_value: 2000, unit: 'ml', ...overrides };
+  return { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'ml', ...overrides };
 }
 
 function collectiveInput(groupId: string, memberId: string): NewChallengeInput {

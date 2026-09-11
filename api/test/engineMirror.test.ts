@@ -44,6 +44,18 @@ const DOMAIN_MODULES = [
   '../src/derivedTruth.ts',
   '../src/knowledgePins.ts',
   '../src/challengeActivityRoutes.ts',
+  // EBC-01 governed seams: establishment + creation authority + measurement
+  // eligibility/vocabulary + group mutation boundary and their routes. The
+  // Firestore adapters (firestoreGroupAuthority.ts,
+  // firestoreChallengeCreationAuthority.ts, firestoreGroupMutationStore.ts)
+  // are the documented boundary exceptions and stay absent from this list.
+  '../src/challengeEstablishment.ts',
+  '../src/challengeCreationAuthority.ts',
+  '../src/challengeCreationRoutes.ts',
+  '../src/knowledgeEligibility.ts',
+  '../src/measurementVocabulary.ts',
+  '../src/groupMutations.ts',
+  '../src/groupMutationRoutes.ts',
   '../src/engine/index.ts',
   '../src/engine/types.ts',
   '../src/engine/collectiveEngine.ts',

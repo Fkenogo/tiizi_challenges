@@ -46,6 +46,11 @@ import { readFile } from 'node:fs/promises';
 import 'dotenv/config';
 import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { createDbKnowledgeResolver } from './knowledgePins.js';
+import { isCanonicalMetric } from './measurementVocabulary.js';
+import { createDbKnowledgeEligibilityResolver } from './knowledgeEligibility.js';
+import { createFirestoreChallengeCreationAuthority } from './firestoreChallengeCreationAuthority.js';
+import type { ChallengeCreationAuthority } from './challengeCreationAuthority.js';
+import type { KnowledgeEligibility } from './knowledgeEligibility.js';
 import { findMemberByAuth } from './members.js';
 import { type NewChallengeInput } from './challenges.js';
 import { establishChallengeV2 } from './challengeEstablishment.js';
@@ -63,6 +68,8 @@ export interface CliActivityInput {
   activity_kind: 'fitness' | 'wellness';
   canonical_key: string;
   activity_variant?: string | null;
+  /** EBC-01 governing Metric (canonical vocabulary, tuple-proven at establishment). */
+  metric: string;
   target_value: number;
   unit: string;
 }
@@ -170,10 +177,17 @@ export function parseChallengeCreateV2Input(raw: unknown): ChallengeCreateV2Inpu
     if (typeof activity.unit !== 'string' || activity.unit.length === 0 || activity.unit.length > 40) {
       cliFail(`activities[${index}].unit is required (1..40 chars)`);
     }
+    if (!isCanonicalMetric(activity.metric)) {
+      cliFail(
+        `activities[${index}].metric must be a canonical Metric `
+        + `(completion|repetitions|duration|distance|weight|quantity)`,
+      );
+    }
     return {
       activity_kind: activity.activity_kind,
       canonical_key: activity.canonical_key,
       activity_variant: (variant ?? null) as string | null,
+      metric: activity.metric as string,
       target_value: activity.target_value,
       unit: activity.unit,
     };
@@ -219,6 +233,7 @@ function toNewChallengeInput(
   const activities: ActivityConfigInput[] = input.activities.map((a) => ({
     canonical_key: a.canonical_key,
     activity_variant: a.activity_variant ?? null,
+    metric: a.metric,
     target_value: a.target_value,
     unit: a.unit,
   }));
@@ -239,6 +254,16 @@ function toNewChallengeInput(
   };
 }
 
+export interface ChallengeCreateV2Options {
+  /** EBC-01 charter-aware live creation authority (governed path). */
+  creationAuthority?: ChallengeCreationAuthority;
+  /** EBC-01 kind-aware establishment eligibility (governed path). */
+  eligibilityFor?: (
+    kind: 'fitness' | 'wellness',
+    key: string,
+  ) => Promise<KnowledgeEligibility | null>;
+}
+
 /**
  * Core establishment (testable without Firestore): resolves the creator to an
  * internal member, builds the kind-aware Knowledge resolver (mixed
@@ -251,6 +276,7 @@ export async function runChallengeCreateV2(
   db: Db,
   input: ChallengeCreateV2Input,
   resolvers: ChallengeCreationResolvers,
+  options: ChallengeCreateV2Options = {},
 ): Promise<ChallengeCreateV2Result> {
   const creator = await findMemberByAuth(db, 'firebase', input.creator_firebase_uid);
   if (!creator) cliFail(`unknown member for creator_firebase_uid (no members row)`);
@@ -276,6 +302,18 @@ export async function runChallengeCreateV2(
       joinCreator: input.join_creator ?? false,
     },
     mappedResolvers,
+    {
+      ...(options.creationAuthority ? { creationAuthority: options.creationAuthority } : {}),
+      ...(options.eligibilityFor
+        ? {
+          knowledgeEligibility: async (key: string) => {
+            const activity = input.activities.find((a) => a.canonical_key === key);
+            if (!activity) return null;
+            return options.eligibilityFor!(activity.activity_kind, key);
+          },
+        }
+        : {}),
+    },
   );
   return {
     dryRun: false,
@@ -294,12 +332,13 @@ export async function dryRunChallengeCreateV2(
   db: Db,
   input: ChallengeCreateV2Input,
   resolvers: ChallengeCreationResolvers,
+  options: ChallengeCreateV2Options = {},
 ): Promise<ChallengeCreateV2Result> {
   // Pre-validate outside the transaction so input errors read cleanly.
   parseChallengeCreateV2Input(JSON.parse(JSON.stringify(input)));
   try {
     const result = await db.transaction(async (tx) => {
-      const created = await runChallengeCreateV2(tx, input, resolvers);
+      const created = await runChallengeCreateV2(tx, input, resolvers, options);
       throw new Error(DRY_RUN_ROLLBACK + JSON.stringify(created));
     });
     return result;
@@ -316,6 +355,7 @@ export async function dryRunChallengeCreateV2(
 interface ProductionResolvers {
   resolvers: ChallengeCreationResolvers;
   reader: FirestoreReader;
+  options: ChallengeCreateV2Options;
 }
 
 /** Production wiring: ADC Firestore reader + database Knowledge pins. */
@@ -324,6 +364,10 @@ export async function productionResolvers(db: Db): Promise<ProductionResolvers> 
   const membershipAuthority = createFirestoreGroupMembershipAuthority(db, reader);
   return {
     reader,
+    options: {
+      creationAuthority: createFirestoreChallengeCreationAuthority(db, reader),
+      eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
+    },
     resolvers: {
       resolveKnowledgePin: async () => null,
       resolveKnowledgePinFor: async (kind: string, key: string) => {
@@ -365,10 +409,10 @@ async function main(): Promise<void> {
   }
   const db = createPool(databaseUrl());
   try {
-    const { resolvers } = await productionResolvers(db);
+    const { resolvers, options } = await productionResolvers(db);
     const result = apply
-      ? await runChallengeCreateV2(db, input, resolvers)
-      : await dryRunChallengeCreateV2(db, input, resolvers);
+      ? await runChallengeCreateV2(db, input, resolvers, options)
+      : await dryRunChallengeCreateV2(db, input, resolvers, options);
     console.log(JSON.stringify(result, null, 2));
   } finally {
     await db.close();
