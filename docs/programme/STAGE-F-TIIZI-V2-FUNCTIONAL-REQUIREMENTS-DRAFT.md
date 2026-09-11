@@ -718,10 +718,11 @@ standing.
 > settled.
 >
 > **Settled rule:** Where two or more Participants have the same governed
-> target-completion point, they MUST share that finishing position. Tiizi MUST NOT
+> target-completion point, they MUST share that finishing position under
+> competition-ranking semantics (1, 2, 2, 4). Tiizi MUST NOT
 > invent an artificial tie-breaker.
 >
-> **Source:** Reconciliation F-B-02; Calculation Model §16.
+> **Source:** Reconciliation F-B-02; Calculation Model §16; Founder disposition 001.
 
 ### FR-V2-102 — Non-completer ordering *(SUPERSEDED)*
 
@@ -1399,10 +1400,12 @@ Challenge-type constraints.
 > define..." open questions. They are now SETTLED, ADDRESSED, or DOWNSTREAM per the
 > Product Definition DRAFT and reconciliation.**
 
-### FR-V2-198 — Competitive tie-breaking *(SETTLED)*
+### FR-V2-198 — Competitive tie-breaking *(SETTLED, AMENDED per Founder disposition 001)*
 
 Where two or more Participants have the same governed target-completion point, they MUST
-share that finishing position. Tiizi MUST NOT invent an artificial tie-breaker.
+share that finishing position. Shared positions MUST use competition-ranking semantics
+(1, 2, 2, 4): the position after a tie is skipped, never filled sequentially. Dense
+ranking is prohibited. Tiizi MUST NOT invent an artificial tie-breaker.
 
 > **Disposition:** ALIGNED WORDING — was open in the baseline, now settled by
 > Calculation Model §16. This requirement replaces the original open question with the
