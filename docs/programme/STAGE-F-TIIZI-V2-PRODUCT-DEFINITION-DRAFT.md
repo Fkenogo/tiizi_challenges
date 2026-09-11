@@ -355,8 +355,8 @@ Tiizi maintains a **canonical Activity Library** per EKG-01. The Activity Librar
 
 **Initial baseline:** 6 Fitness categories + 6 Wellness categories.
 
-**Fitness categories (examples):** Running, Cycling, Strength Training, Swimming, Yoga, Walking.
-**Wellness categories (examples):** Sleep, Hydration, Nutrition, Mindfulness, Reading, Medication Adherence.
+**Fitness categories:** Strength, Cardio & Conditioning, Mobility & Flexibility, Balance & Stability, Power, Speed & Agility, Sports & Recreation (e.g. Push-Up, Running, Cycling, Swimming, Walking).
+**Wellness categories:** Sleep & Rest, Mind & Emotional Wellbeing, Nutrition & Hydration, Daily Living, Personal Growth, Social Wellbeing (e.g. Sleep, Water Intake, Breathing Practice, Fruit Intake).
 
 The exact category and Activity catalogue is governed knowledge and may evolve. This document establishes the structural relationship, not the exhaustive content.
 
@@ -366,7 +366,7 @@ Each canonical Activity provides:
 
 - **Identity** — unique Activity identifier and name
 - **Category** — Fitness or Wellness category
-- **Variants** — permitted measurement variants (e.g., Push-Up in repetitions, Push-Up Hold in seconds)
+- **Variants** — governed execution or measurement expressions attributable to the parent Activity (e.g., Walking measured in steps or in kilometres). Independently measurable undertakings such as Push-Up Hold are separate canonical Activities per the governed Activity baseline, not variants of Push-Up.
 - **Permitted Metrics/Units** — what can be measured and in what units (e.g., distance in kilometers, duration in minutes)
 - **Measurement guidance** — how to measure the Activity
 - **Instructions** — how to perform the Activity
@@ -389,9 +389,9 @@ An Activity may have multiple **variants** — distinct measurement modes for th
 
 **Example:**
 
-- **Activity:** Push-Up
-- **Variant 1:** Push-Up (measured in repetitions)
-- **Variant 2:** Push-Up Hold (measured in seconds)
+- **Activity:** Walking
+- **Variant 1:** Walking (measured in steps)
+- **Variant 2:** Walking (measured in kilometres)
 
 A Challenge selects which variant applies. A Participant logs according to the Challenge-configured variant. The variant determines what metric and unit are used for that Challenge.
 

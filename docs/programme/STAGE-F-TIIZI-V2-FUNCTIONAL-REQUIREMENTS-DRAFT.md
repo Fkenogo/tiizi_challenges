@@ -360,6 +360,20 @@ Activity guidance MUST NOT unnecessarily force one fixed Challenge configuration
 Authorized Admin capability SHOULD allow appropriate Activity and Template content to be
 refined without hardcoding all such content into application releases.
 
+### FR-V2-213 — Knowledge publication gate *(NEW — Knowledge Content Specification §§3–4)*
+
+An Activity MUST NOT transition from draft to published unless the content-class
+minimum applicable to it under the Knowledge Content Specification is satisfied.
+Progressive per-Activity publication is permitted; simultaneous publication of the
+full catalogue is not required.
+
+### FR-V2-214 — Localizable Knowledge structure *(NEW — Knowledge Content Specification §5)*
+
+Canonical Activity identity MUST be language-independent. Member-facing textual
+Knowledge MUST be structurally localizable against the canonical ID and MUST NOT
+create separate Activity identities per language. No translation is required by
+this requirement.
+
 ---
 
 ## §11 Challenge Configuration
@@ -1718,10 +1732,13 @@ to maintain clear traceability while preserving the original 001–206 numbering
 | FR-V2-210 | Multi-Activity Streak | NEW | §19 | Calculation Model §24 |
 | FR-V2-211 | No Streak Leaderboard | NEW | §19 | Calculation Model §34; Recognition §16 |
 | FR-V2-212 | Share to Group is explicit | NEW | §22 | Notifications baseline §§14-15 |
+| FR-V2-213 | Knowledge publication gate | NEW | §10 | Knowledge Content Specification §§3–4 |
+| FR-V2-214 | Localizable Knowledge structure | NEW | §10 | Knowledge Content Specification §5 |
 
 **Identifier convention:** New requirements are allocated sequential identifiers beginning at FR-V2-207
-(FR-V2-207 through FR-V2-212). This preserves the original 001–206 numbering intact while
-providing a clear, sequential range for all new requirements introduced through reconciliation.
+(FR-V2-207 through FR-V2-214). This preserves the original 001–206 numbering intact while
+providing a clear, sequential range for all new requirements introduced through reconciliation
+and the Knowledge Content Specification.
 
 ---
 
