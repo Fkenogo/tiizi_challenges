@@ -1,24 +1,24 @@
 /**
  * EBC-01 establishment-grade Knowledge gate + (Activity, Metric, Unit)
- * compatibility.
+ * compatibility (CORR-001: current-version readiness).
  *
  * Two boundaries, kept separate on purpose:
  *
  * - Runtime pins (`knowledgePins.ts`) stay published-only: historical
- *   Challenges established before EBC-01 — including ones built on
- *   grandfathered Knowledge — must keep resolving their pins for Activity
- *   application and historical reads. That seam is untouched.
- * - NEW V2 Challenge establishment additionally requires the V2
- *   publication/readiness rule AND a governed measurement tuple. That gate
+ *   Challenges — including ones built on grandfathered Knowledge — must
+ *   keep resolving their pins for Activity application and historical
+ *   reads. That seam is untouched.
+ * - NEW V2 Challenge establishment additionally requires current-version
+ *   establishment readiness AND a governed measurement tuple. That gate
  *   lives here.
  *
- * V2 publication/readiness rule for NEW establishment (explicit, testable):
- * a Knowledge item may back a new Challenge activity only when it is
- * currently `published` AND NOT `grandfathered`. Grandfathered items were
- * published under pre-KCS rules; their exemption covers readability and
- * historical pins, never new establishment. Non-grandfathered published
- * items earned publication through the KCS gate (enforced on every
- * publish transition and content revision in knowledge.ts).
+ * Readiness rule for NEW establishment (explicit, testable): a Knowledge
+ * item may back a new Challenge activity only when its CURRENT version
+ * satisfies the CURRENT KCS publication/readiness rules
+ * (`isCurrentVersionEstablishmentReady`). `grandfathered` is historical
+ * provenance, never the eligibility test: untouched pre-KCS grandfathered
+ * items fail (content-thin); grandfathered items revised under the gate
+ * pass while keeping `grandfathered = TRUE`.
  *
  * Compatibility rule (explicit, testable): for the resolved item with
  * governed contract (primary ∪ secondary Metrics, compatible Units), the
@@ -32,6 +32,11 @@
  */
 
 import type { Db } from './db.js';
+import {
+  isCurrentVersionEstablishmentReady,
+  type KcsClass,
+  type KcsContentSnapshot,
+} from './knowledge.js';
 import {
   isCanonicalMetric,
   metricForUnit,
@@ -57,6 +62,16 @@ function asStringList(value: unknown): string[] {
   return value.map((entry) => String(entry));
 }
 
+function asText(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+const KCS_CLASSES = new Set(['U', 'Q', 'T', 'P', 'C', 'M', 'S']);
+
+function asDeclaredClasses(value: unknown): KcsClass[] {
+  return asStringList(value).filter((entry) => KCS_CLASSES.has(entry)) as KcsClass[];
+}
+
 interface EligibilityRow {
   knowledge_id: string;
   current_version: number;
@@ -66,13 +81,76 @@ interface EligibilityRow {
   primary_metrics: unknown;
   secondary_metrics: unknown;
   compatible_units: unknown;
+  name: unknown;
+  description: unknown;
+  category: unknown;
+  metric_unit: unknown;
+  measurement_guidance: unknown;
+  unit_semantics: unknown;
+  setup: unknown;
+  execution: unknown;
+  technique_reference: unknown;
+  form_cues: unknown;
+  common_mistakes: unknown;
+  equipment: unknown;
+  environment: unknown;
+  adaptation: unknown;
+  protocol_steps: unknown;
+  session_framing: unknown;
+  completion_meaning: unknown;
+  avoidance_condition: unknown;
+  semantic_definition: unknown;
+  safety_notes: unknown;
+  content_classes: unknown;
+}
+
+function asStepsList(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  // Driver variance guard (mirrors knowledge.parseProtocolSteps): JSONB
+  // arrives parsed, but a text-serialized row must still assess.
+  if (typeof value === 'string' && value) {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function snapshotFromRow(row: EligibilityRow): KcsContentSnapshot {
+  return {
+    name: asText(row.name),
+    description: asText(row.description),
+    category: asText(row.category),
+    metricUnit: asText(row.metric_unit),
+    measurementGuidance: asText(row.measurement_guidance),
+    unitSemantics: asText(row.unit_semantics),
+    setup: asText(row.setup),
+    execution: asText(row.execution),
+    techniqueReference: asText(row.technique_reference),
+    formCues: asStringList(row.form_cues),
+    commonMistakes: asStringList(row.common_mistakes),
+    equipment: asText(row.equipment),
+    environment: asText(row.environment),
+    adaptation: asText(row.adaptation),
+    protocolSteps: asStepsList(row.protocol_steps),
+    sessionFraming: asText(row.session_framing),
+    completionMeaning: asText(row.completion_meaning),
+    avoidanceCondition: asText(row.avoidance_condition),
+    semanticDefinition: asText(row.semantic_definition),
+    safetyNotes: asStringList(row.safety_notes),
+  };
 }
 
 /**
- * Database-backed establishment eligibility. Exact-name, published-only,
- * non-grandfathered-only, fail-closed: unknown keys, drafts, retired items,
- * grandfathered items and ambiguous duplicates all resolve to null (the
- * caller rejects; eligibility is never invented).
+ * Database-backed establishment eligibility (CORR-001 current-version
+ * readiness). Exact-name, published-only, readiness-gated, fail-closed:
+ * unknown keys, drafts, retired items, content-thin items (grandfathered
+ * or not) and ambiguous duplicates all resolve to null (the caller
+ * rejects; eligibility is never invented). `grandfathered` is returned as
+ * provenance only — it never decides eligibility.
  */
 export function createDbKnowledgeEligibilityResolver(
   db: Db,
@@ -83,14 +161,26 @@ export function createDbKnowledgeEligibilityResolver(
     if (!canonicalKey) return null;
     const result = await db.query<EligibilityRow>(
       `SELECT knowledge_id, current_version, kind, lifecycle, grandfathered,
-              primary_metrics, secondary_metrics, compatible_units
+              primary_metrics, secondary_metrics, compatible_units,
+              name, description, category, metric_unit, measurement_guidance,
+              unit_semantics, setup, execution, technique_reference,
+              form_cues, common_mistakes, equipment, environment, adaptation,
+              protocol_steps, session_framing, completion_meaning,
+              avoidance_condition, semantic_definition, safety_notes,
+              content_classes
        FROM knowledge_items
-       WHERE kind = $1 AND name = $2
-         AND lifecycle = 'published' AND grandfathered = FALSE`,
+       WHERE kind = $1 AND name = $2 AND lifecycle = 'published'`,
       [kind, canonicalKey],
     );
     if (result.rows.length !== 1) return null;
     const row = result.rows[0];
+    const ready = isCurrentVersionEstablishmentReady(
+      String(row.lifecycle),
+      row.kind as 'fitness' | 'wellness',
+      asDeclaredClasses(row.content_classes),
+      snapshotFromRow(row),
+    );
+    if (!ready) return null;
     return {
       knowledgeId: String(row.knowledge_id),
       version: Number(row.current_version),

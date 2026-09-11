@@ -15,10 +15,10 @@
  * - creation authority (live group + live membership + existing Charter
  *   allowMemberChallenges rule) is proven through the injected
  *   ChallengeCreationAuthority — the PG membership shadow cannot authorize;
- * - every activity proves establishment eligibility (published +
- *   non-grandfathered KCS-ready Knowledge) and the exact (Activity, Metric,
- *   Unit) governed tuple; raw IDs/strings bypass nothing because resolution
- *   is server-side from canonical_key + activity_kind;
+ * - every activity proves current-version establishment eligibility
+ *   (current KCS readiness, never grandfathered provenance) and the exact
+ *   (Activity, Metric, Unit) governed tuple; raw IDs/strings bypass nothing
+ *   because resolution is server-side from canonical_key + activity_kind;
  * - without the wired governed dependencies the route fails closed (503)
  *   instead of establishing;
  * - no Firestore Challenge write exists on this path (PG-only); no V1
@@ -34,7 +34,8 @@ import { establishChallengeV2 } from './challengeEstablishment.js';
 import type {
   ChallengeCreationAuthority,
 } from './challengeCreationAuthority.js';
-import type { KnowledgeEligibility } from './knowledgeEligibility.js';
+import { createDbKnowledgeResolver } from './knowledgePins.js';
+import type { KnowledgeEligibility, KnowledgeEligibilityResolver } from './knowledgeEligibility.js';
 import type { NewChallengeInput } from './challenges.js';
 import type { ActivityConfigInput } from './challengeConfigs.js';
 
@@ -105,10 +106,10 @@ export interface ChallengeCreationRouteDeps {
     kind: 'fitness' | 'wellness',
     key: string,
   ) => Promise<KnowledgeEligibility | null>;
-}
-
-function unusedPin(): Promise<never> {
-  throw new Error('challenge-creation-routes: pins derive from proven eligibility (unreachable)');
+  pinsFor?: (
+    kind: 'fitness' | 'wellness',
+    key: string,
+  ) => Promise<{ knowledge_id: string; current_version: number } | null>;
 }
 
 function unusedAuthority(): Promise<never> {
@@ -365,6 +366,13 @@ export function registerChallengeCreationRoutes(
         kindByKey.set(activity.canonical_key, activity.activity_kind);
       }
       const eligibilityFor = deps.eligibilityFor!;
+      const pinsFor = deps.pinsFor
+        ?? ((kind, key) => createDbKnowledgeResolver(db, kind)(key));
+      const kindAwareEligibility: KnowledgeEligibilityResolver = async (key: string) => {
+        const kind = kindByKey.get(key);
+        if (!kind) return null;
+        return eligibilityFor(kind, key);
+      };
       try {
         const activities: ActivityConfigInput[] = body.activities.map((activity) => ({
           canonical_key: activity.canonical_key,
@@ -397,20 +405,21 @@ export function registerChallengeCreationRoutes(
             ...(body.idempotency_key !== undefined ? { idempotencyKey: body.idempotency_key } : {}),
           },
           {
-            // Governed path: authority + pins both derive from the proven
-            // eligibility/creation authority. These legacy seams are
-            // unreachable here; they throw loudly if ever called.
-            resolveKnowledgePin: unusedPin,
+            // Governed path: kind-aware pins + kind-aware eligibility from
+            // the proven resolvers. The legacy group-authority seams are
+            // unreachable here (creationAuthority decides); they throw
+            // loudly if ever called.
+            resolveKnowledgePin: async (key: string) => {
+              const kind = kindByKey.get(key);
+              if (!kind) return null;
+              return pinsFor(kind, key);
+            },
+            resolveKnowledgeEligibility: kindAwareEligibility,
             resolveGroupAuthority: unusedAuthority,
             resolveGroupMembershipAuthority: unusedAuthority,
           },
           {
             creationAuthority: deps.creationAuthority!,
-            knowledgeEligibility: async (key: string) => {
-              const kind = kindByKey.get(key);
-              if (!kind) return null;
-              return eligibilityFor(kind, key);
-            },
           },
         );
         const response = {

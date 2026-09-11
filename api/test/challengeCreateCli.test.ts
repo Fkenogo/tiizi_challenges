@@ -21,7 +21,7 @@ import {
   runChallengeCreateV2,
   type ChallengeCreateV2Input,
 } from '../src/challengeCreateCli.js';
-import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
+import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from './helpers.js';
 import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
@@ -91,6 +91,7 @@ async function stubWorld(
   };
   world.resolvers = {
     resolveKnowledgePin: async () => null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveKnowledgePinFor: async (kind: string, key: string) =>
       world.pins[`${kind}::${key}`] != null
         ? {
@@ -192,7 +193,7 @@ describe('valid establishment', () => {
         goal_unit: undefined,
         activities: [
           { activity_kind: 'fitness', canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' },
-          { activity_kind: 'wellness', canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'ml' },
+          { activity_kind: 'wellness', canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres' },
         ],
       },
       world.resolvers,

@@ -924,6 +924,30 @@ export function snapshotItemForReadiness(item: ApiKnowledgeItem): KcsContentSnap
 }
 
 /**
+ * EBC-01 CORR-001 current-version establishment readiness (derived,
+ * server-owned; no persisted marker, no second lifecycle).
+ *
+ * NEW V2 Challenge establishment requires the CURRENT version to satisfy
+ * the CURRENT KCS publication/readiness rules — `grandfathered` is
+ * historical provenance (pre-KCS publication), never permanent
+ * ineligibility, and is NOT consulted here. Consequences:
+ * - an untouched pre-KCS grandfathered item (content-thin) fails;
+ * - any content-thin published item fails, grandfathered or not;
+ * - a grandfathered item revised under the gate (every content revision
+ *   enforces requirePublicationReady) passes while keeping
+ *   `grandfathered = TRUE`.
+ */
+export function isCurrentVersionEstablishmentReady(
+  lifecycle: string,
+  kind: KnowledgeKind,
+  declared: KcsClass[],
+  snapshot: KcsContentSnapshot,
+): boolean {
+  if (lifecycle !== 'published') return false;
+  return assessPublicationReadiness(kind, declared, snapshot).length === 0;
+}
+
+/**
  * Enforces the KCS publication gate (KRC §6.2, T2 FR-V2-213). Throws 422
  * `kcs_not_ready` with structured missing-field details unless every
  * applicable class minimum is satisfied. Grandfathered items (published
@@ -946,8 +970,9 @@ export function snapshotItemForReadiness(item: ApiKnowledgeItem): KcsContentSnap
  * Current-state governance (like content classes): setting the contract
  * never mints a Knowledge version and never changes lifecycle or
  * grandfathered state; revisions capture the contract current at revision
- * time. Grandfathered items may carry a contract, but establishment still
- * requires non-grandfathered items (readability vs establishment, §8).
+ * time. Grandfathered items may carry a contract; establishment requires
+ * current-version KCS readiness (CORR-001), never non-grandfathered
+ * provenance — readability vs establishment, §8.
  */
 export async function setMeasurementCompatibility(
   db: Db,

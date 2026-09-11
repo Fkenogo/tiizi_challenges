@@ -1,18 +1,31 @@
 /**
  * EBC-01 canonical Metric / Unit vocabulary (governed measurement contract).
  *
- * Source: Founder Working Baselines for the Metric & Unit model and the
- * initial canonical Activity baseline (Stage EK working baselines under
- * EKG-01). This module carries ONLY the small fixed vocabularies — six
- * canonical Metrics and their compatible Units — never the Activity
- * catalogue itself. Per-Activity compatibility (which Metrics/Units a
- * canonical Activity permits) lives server-side on the Knowledge item
- * (knowledge_items.primary_metrics / secondary_metrics / compatible_units)
- * and is declared through governed Knowledge administration.
+ * AUTHORITY: this module encodes — it does not author — the approved
+ * canonical values from the Founder Working Baselines:
+ * - `docs/governance/knowledge/working-baselines/TIIZI-V2-METRIC-AND-UNIT-MODEL-FOUNDER-WORKING-BASELINE.md`
+ *   §2 (six canonical Metrics), §3 (compatible Units per Metric),
+ *   §5 (normalization basis is semantic-only: no conversion inferred),
+ *   §§6–8 (Primary vs Secondary Metric roles; canonical spelling `reps`
+ *   with accepted alias `repetitions`), and
+ * - `docs/governance/knowledge/working-baselines/TIIZI-V2-INITIAL-CANONICAL-ACTIVITY-BASELINE-FOUNDER-WORKING-BASELINE.md`
+ *   (per-Activity compatible Metrics/Units — the catalogue itself, which
+ *   this module deliberately does NOT carry).
+ *
+ * This module therefore carries ONLY the small fixed vocabularies — six
+ * canonical Metrics and their compatible Units — for runtime validation.
+ * Per-Activity compatibility (which Metrics/Units a canonical Activity
+ * permits) is canonical Knowledge, lives server-side on the Knowledge
+ * item (knowledge_items.primary_metrics / secondary_metrics /
+ * compatible_units), and is declared through governed Knowledge
+ * administration. Any drift between this encoding and the baselines is a
+ * defect in this file, caught by the vocabulary drift-guard test
+ * (ebc01KnowledgeCompatibility: governed vocabulary table).
  *
  * Governance rules enforced here:
  * - every governed Unit belongs to exactly one canonical Metric;
- * - `reps` and `repetitions` are accepted spellings of the same Unit;
+ * - `reps` (canonical) and `repetitions` (accepted alias) are spellings of
+ *   the same Unit;
  * - no conversion or equivalence is inferred (minutes != hours,
  *   kilometres != metres): same strictness as the C3A collective-unit
  *   invariant, extended to every Challenge type;

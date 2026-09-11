@@ -38,6 +38,7 @@ import {
   seedMember,
   seedMembership,
   testDb,
+  stubEligibility,
 } from './helpers.js';
 import type { Db } from '../src/db.js';
 
@@ -96,6 +97,7 @@ function creationResolvers(
 ): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => ({ status: 'active' }),
     resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
   };
@@ -106,7 +108,7 @@ function pushUp(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
 }
 
 function water(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
-  return { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'ml', ...overrides };
+  return { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres', ...overrides };
 }
 
 interface ChallengeSetup {
@@ -731,7 +733,7 @@ describe('idempotency', () => {
       activity_kind: 'fitness',
       canonical_key: 'water-intake',
       value: 2000,
-      unit: 'ml',
+      unit: 'millilitres',
       occurred_at: T('2026-06-10T12:00:00Z'),
       client_key: 'streak-retry',
     });
@@ -936,7 +938,7 @@ describe('engines', () => {
         activity_kind: 'fitness',
         canonical_key,
         value: canonical_key === 'water-intake' ? 2000 : 8,
-        unit: canonical_key === 'water-intake' ? 'ml' : 'hours',
+        unit: canonical_key === 'water-intake' ? 'millilitres' : 'hours',
         occurred_at: T(`${day}T12:00:00Z`),
         client_key: key ?? next('key'),
       },

@@ -92,12 +92,22 @@ function tokensFor(w: World): Record<string, string> {
   return { [w.creatorToken]: w.creatorUid };
 }
 
-/** Seed a KCS-ready, compatibility-governed Knowledge item for establishment. */
+/**
+ * Seed a KCS-ready, compatibility-governed Knowledge item for
+ * establishment: published with current content satisfying the KCS gate
+ * (description, category, metric unit, measurement guidance, safety
+ * notes) plus a governed measurement contract.
+ */
 async function seedEligibleKnowledge(name: string): Promise<void> {
   await testDb().query(
     `INSERT INTO knowledge_items
-       (kind, name, lifecycle, grandfathered, primary_metrics, secondary_metrics, compatible_units)
-     VALUES ('fitness', $1, 'published', FALSE, ARRAY['repetitions'], ARRAY[]::TEXT[], ARRAY['reps'])`,
+       (kind, name, lifecycle, grandfathered, description, category,
+        metric_unit, measurement_guidance, safety_notes,
+        primary_metrics, secondary_metrics, compatible_units)
+     VALUES ('fitness', $1, 'published', FALSE,
+       'A governed test movement', 'Upper Body', 'reps',
+       'Count full-range repetitions', ARRAY['Stop on sharp pain'],
+       ARRAY['repetitions'], ARRAY[]::TEXT[], ARRAY['reps'])`,
     [name],
   );
 }

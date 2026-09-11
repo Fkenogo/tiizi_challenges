@@ -25,7 +25,7 @@ import {
   parseGoverningSnapshot,
   type ActivityConfigInput,
 } from '../src/challengeConfigs.js';
-import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
+import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from './helpers.js';
 
 beforeEach(async () => {
   await testDb().query(
@@ -50,6 +50,7 @@ async function seedKnowledgePin(key: string): Promise<{ knowledge_id: string; cu
 function resolversFor(pins: Record<string, { knowledge_id: string; current_version: number }>): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => ({ status: 'active' }),
     resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
   };
@@ -215,7 +216,7 @@ describe('collective unit homogeneity (domain)', () => {
         title: 'Mixed units race',
         start_date: '2026-06-01',
         end_date: '2026-06-30',
-        activities: [reps('push-up'), { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'ml' }],
+        activities: [reps('push-up'), { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres' }],
       },
       resolversFor(pins),
     );
@@ -236,7 +237,7 @@ describe('collective unit homogeneity (domain)', () => {
         end_date: '2026-06-30',
         required_consecutive_days: 30,
         activities: [
-          { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'ml' },
+          { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres' },
           { canonical_key: 'sleep-8h', metric: 'duration', target_value: 8, unit: 'hours' },
         ],
       },

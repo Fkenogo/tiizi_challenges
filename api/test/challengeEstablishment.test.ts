@@ -15,7 +15,7 @@ import {
   dryRunChallengeCreateV2,
   runChallengeCreateV2,
 } from '../src/challengeCreateCli.js';
-import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
+import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from './helpers.js';
 import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
@@ -68,6 +68,7 @@ async function stubWorld(
         return null;
       },
       resolveKnowledgePinFor: async (kind: string, key: string) => pins.get(`${kind}::${key}`) ?? null,
+      resolveKnowledgeEligibility: async () => stubEligibility(),
       resolveGroupAuthority: async () => ({ status: 'active' }),
       resolveGroupMembershipAuthority: async () => memberEligibility,
     },
@@ -248,6 +249,7 @@ describe('F. dry-run exercises the same path and persists nothing', () => {
         knowledge_id: String(pin.rows[0].knowledge_id),
         current_version: Number(pin.rows[0].current_version),
       }),
+      resolveKnowledgeEligibility: async () => stubEligibility(),
       resolveGroupAuthority: async () => ({ status: 'active' }),
       resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
     };

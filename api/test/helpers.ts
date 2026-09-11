@@ -5,6 +5,35 @@ import { buildApp } from '../src/app.js';
 import type { TokenVerifier } from '../src/auth.js';
 import type { Db } from '../src/db.js';
 import { runMigrations } from '../src/migrate.js';
+import type { KnowledgeEligibility } from '../src/knowledgeEligibility.js';
+
+/**
+ * Permit-all establishment gate for tests that are NOT about
+ * compatibility: every governed (Activity, Metric, Unit) tuple proves
+ * against this contract, so fixtures must use governed units (they do —
+ * compatibility itself is proven by the EBC-01 compatibility tests
+ * against the real database gate). Never use this where the test asserts
+ * compatibility behavior.
+ */
+export function stubEligibility(): KnowledgeEligibility {
+  return {
+    knowledgeId: '00000000-0000-4000-8000-000000000000',
+    version: 1,
+    kind: 'fitness',
+    lifecycle: 'published',
+    grandfathered: false,
+    primaryMetrics: ['completion', 'repetitions', 'duration', 'distance', 'weight', 'quantity'],
+    secondaryMetrics: [],
+    compatibleUnits: [
+      'completion',
+      'reps', 'repetitions',
+      'seconds', 'minutes', 'hours',
+      'metres', 'kilometres',
+      'grams', 'kilograms',
+      'steps', 'millilitres', 'litres', 'servings', 'pages', 'acts', 'flights',
+    ],
+  };
+}
 
 interface PGliteQueryTarget {
   query<T>(text: string, params?: unknown[]): Promise<{ rows: T[] }>;

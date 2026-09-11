@@ -22,7 +22,7 @@ import {
   withdrawParticipation,
 } from '../src/challengeParticipations.js';
 import { appendActivityEvent, listEffectiveEvents } from '../src/activityEvents.js';
-import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
+import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from './helpers.js';
 
 beforeEach(async () => {
   // C2B tables reference these via FKs, so they truncate together (clean slate per test).
@@ -57,6 +57,7 @@ function resolversFor(
 ): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => groupAuthority,
     resolveGroupMembershipAuthority: async () => memberAuthority,
   };
@@ -75,7 +76,7 @@ function pushUp(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
 }
 
 function waterIntake(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
-  return { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'ml', ...overrides };
+  return { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres', ...overrides };
 }
 
 function collectiveInput(groupId: string, memberId: string): NewChallengeInput {

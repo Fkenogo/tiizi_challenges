@@ -27,13 +27,10 @@
  *   existing Charter allowMemberChallenges rule). Without it, the legacy
  *   proofs apply (live group + any live membership) — the pre-EBC-01
  *   contract, preserved for non-product seams;
- * - per-activity establishment eligibility via the injected Knowledge
- *   eligibility resolver when wired: published + non-grandfathered (the V2
- *   publication/readiness rule for NEW establishment) plus the exact
- *   (Activity, Metric, Unit) governed tuple. Pins for the persistence path
- *   are derived from the proven eligibility (no second resolution round).
- *   Without it, the legacy pin loop applies and no tuple is proven
- *   (pre-EBC-01 contract; the governed product entries always wire it).
+ * - per-activity current-version readiness AND the exact (Activity, Metric,
+ *   Unit) governed tuple via the REQUIRED resolvers gate (CORR-001: the
+ *   same authoritative validator insertConfigVersion enforces in-version).
+ *   Pins for the persistence path resolve alongside and ride in as a map.
  *
  * Idempotency (bounded retry contract): when the input carries an
  * idempotency key, its claim row commits in the SAME transaction as the
@@ -74,7 +71,6 @@ import {
 import {
   assertActivityMeasurementCompatible,
   type KnowledgeEligibility,
-  type KnowledgeEligibilityResolver,
 } from './knowledgeEligibility.js';
 import {
   getChallengeConfig,
@@ -113,11 +109,6 @@ export interface EstablishmentOptions {
    * absent, the legacy proofs apply (live group + any live membership).
    */
   creationAuthority?: ChallengeCreationAuthority;
-  /**
-   * Establishment-grade Knowledge gate (EBC-01 governed path). When absent,
-   * the legacy pin loop applies and no measurement tuple is proven.
-   */
-  knowledgeEligibility?: KnowledgeEligibilityResolver;
 }
 
 function fail(message: string): never {
@@ -263,49 +254,44 @@ export async function establishChallengeV2(
     );
   }
 
-  // Knowledge proofs, outside the transaction. With the EBC-01 eligibility
-  // resolver wired, every activity proves publication/readiness AND the
-  // exact (Activity, Metric, Unit) tuple, and the persistence pins derive
-  // from that same proof (one resolution round, zero I/O in the tx).
-  // Without it, the legacy pin loop applies (pre-EBC-01 contract).
-  let pinnedResolvers: ChallengeConfigResolvers;
-  if (options.knowledgeEligibility) {
-    const eligibility = new Map<string, KnowledgeEligibility>();
-    for (const activity of input.activities) {
-      if (eligibility.has(activity.canonical_key)) continue;
-      const proven = await options.knowledgeEligibility(activity.canonical_key);
-      if (!proven) {
-        fail(
-          `unknown, unpublished, or not KCS-ready Knowledge for '${activity.canonical_key}' `
-          + `(eligibility is never invented; grandfathered Knowledge cannot back new establishment)`,
-        );
-      }
-      eligibility.set(activity.canonical_key, proven);
+  // Knowledge proofs, outside the transaction (fail fast, zero I/O in the
+  // tx): every activity proves current-version readiness AND the exact
+  // (Activity, Metric, Unit) tuple through the same authoritative validator
+  // insertConfigVersion enforces in-version (CORR-001: one validator, two
+  // call sites — pre-check here, enforcement there). Pins for the
+  // persistence path resolve alongside, carried in as a map.
+  const eligibility = new Map<string, KnowledgeEligibility>();
+  for (const activity of input.activities) {
+    if (eligibility.has(activity.canonical_key)) continue;
+    const proven = await resolvers.resolveKnowledgeEligibility(activity.canonical_key);
+    if (!proven) {
+      fail(
+        `unknown, unpublished, or not KCS-ready Knowledge for '${activity.canonical_key}' `
+        + `(eligibility is never invented; only the current KCS-ready version establishes)`,
+      );
     }
-    input.activities.forEach((activity, index) => {
-      assertActivityMeasurementCompatible(eligibility.get(activity.canonical_key)!, activity, index);
-    });
-    pinnedResolvers = {
-      resolveKnowledgePin: async (key: string) => {
-        const proven = eligibility.get(key);
-        if (!proven) return null;
-        return { knowledge_id: proven.knowledgeId, current_version: proven.version };
-      },
-    };
-  } else {
-    const pins = new Map<string, { knowledge_id: string; current_version: number }>();
-    for (const activity of input.activities) {
-      if (pins.has(activity.canonical_key)) continue;
-      const pin = await resolvers.resolveKnowledgePin(activity.canonical_key);
-      if (!pin) {
-        fail(`unknown or unpublished Knowledge for '${activity.canonical_key}' (pins are never invented)`);
-      }
-      pins.set(activity.canonical_key, pin);
-    }
-    pinnedResolvers = {
-      resolveKnowledgePin: async (key: string) => pins.get(key) ?? null,
-    };
+    eligibility.set(activity.canonical_key, proven);
   }
+  input.activities.forEach((activity, index) => {
+    assertActivityMeasurementCompatible(eligibility.get(activity.canonical_key)!, activity, index);
+  });
+  const pins = new Map<string, { knowledge_id: string; current_version: number }>();
+  for (const activity of input.activities) {
+    if (pins.has(activity.canonical_key)) continue;
+    const pin = await resolvers.resolveKnowledgePin(activity.canonical_key);
+    if (!pin) {
+      fail(`unknown or unpublished Knowledge for '${activity.canonical_key}' (pins are never invented)`);
+    }
+    pins.set(activity.canonical_key, pin);
+  }
+  // Both maps ride INTO the transaction: insertConfigVersion's in-version
+  // enforcement replays against the same proven eligibility with zero I/O
+  // in the tx (never the live resolvers — PGlite serializes a transaction
+  // and outer-DB I/O from inside it never resolves).
+  const pinnedResolvers: ChallengeConfigResolvers = {
+    resolveKnowledgePin: async (key: string) => pins.get(key) ?? null,
+    resolveKnowledgeEligibility: async (key: string) => eligibility.get(key) ?? null,
+  };
 
   try {
     return await db.transaction(async (tx) => {

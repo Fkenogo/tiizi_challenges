@@ -38,6 +38,7 @@ import {
   seedMember,
   seedMembership,
   testDb,
+  stubEligibility,
 } from './helpers.js';
 import type { Db } from '../src/db.js';
 
@@ -75,6 +76,7 @@ async function seedKnowledge(
 function creationResolvers(pins: Record<string, Pin>): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => ({ status: 'active' }),
     resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
   };

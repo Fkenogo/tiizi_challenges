@@ -20,6 +20,10 @@
 
 import type { Db } from './db.js';
 import { isCanonicalMetric } from './measurementVocabulary.js';
+import {
+  assertActivityMeasurementCompatible,
+  type KnowledgeEligibilityResolver,
+} from './knowledgeEligibility.js';
 
 export interface KnowledgePin {
   knowledge_id: string;
@@ -28,6 +32,16 @@ export interface KnowledgePin {
 
 export interface ChallengeConfigResolvers {
   resolveKnowledgePin: (canonicalKey: string) => Promise<KnowledgePin | null>;
+  /**
+   * EBC-01 CORR-001 REQUIRED establishment gate. Every version path
+   * (initial establishment AND later versions) proves each activity's
+   * (Activity, Metric, Unit) tuple through this resolver with the single
+   * authoritative validator below — no code path may persist an unproven
+   * tuple. Product entries wire the database readiness gate; tests wire
+   * explicit fixtures (permit-all only where the test is not about
+   * compatibility).
+   */
+  resolveKnowledgeEligibility: KnowledgeEligibilityResolver;
 }
 
 export interface ActivityConfigInput {
@@ -265,6 +279,22 @@ export async function insertConfigVersion(
   resolvers: ChallengeConfigResolvers,
 ): Promise<{ snapshot: Record<string, unknown>; activities: ActivityConfigRow[] }> {
   validateActivityInputs(insert.activities);
+  // CORR-001 centralized invariant: EVERY version path (initial AND later)
+  // proves each activity's exact (Activity, Metric, Unit) tuple through the
+  // single authoritative validator before anything persists. Initial
+  // establishment additionally pre-checks with the same function (fail
+  // fast); this in-version enforcement is what later versions cannot
+  // bypass. Unresolvable/ineligible Knowledge rejects here, never invents.
+  for (const [index, activity] of insert.activities.entries()) {
+    const eligibility = await resolvers.resolveKnowledgeEligibility(activity.canonical_key);
+    if (!eligibility) {
+      fail(
+        `unknown, unpublished, or not KCS-ready Knowledge for '${activity.canonical_key}' `
+        + `(eligibility is never invented; only the current KCS-ready version establishes)`,
+      );
+    }
+    assertActivityMeasurementCompatible(eligibility, activity, index);
+  }
   assertCollectiveUnitHomogeneity(insert.challengeType, insert.basis.goal_unit, insert.activities);
   const pins = await resolvePins(insert.activities, resolvers);
   const resolved = insert.activities.map((input, index) => ({

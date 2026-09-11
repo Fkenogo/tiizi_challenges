@@ -5,10 +5,12 @@
  * - governed vocabulary mapping (units belong to exactly one metric);
  * - tuple validation: valid combinations accepted; individually-valid but
  *   mismatched combinations rejected; unsupported metrics/units rejected;
- * - establishment eligibility: published + non-grandfathered (KCS-ready)
- *   only; grandfathered/draft/retired/unknown/ambiguous resolve to null;
+ * - establishment eligibility: current-version KCS readiness only
+ *   (grandfathered is provenance, never the test); content-thin,
+ *   draft/retired/unknown/ambiguous resolve to null;
  * - historical grandfathered Knowledge stays readable and resolvable
- *   (runtime pins untouched) while barred from NEW establishment;
+ *   (runtime pins untouched); untouched pre-KCS items stay ineligible
+ *   while revised-under-gate items become eligible with provenance intact;
  * - client raw IDs/strings cannot bypass validation;
  * - historical Challenge configurations stay interpretable after
  *   Knowledge changes and versioning.
@@ -27,8 +29,12 @@ import {
   type KnowledgeEligibility,
 } from '../src/knowledgeEligibility.js';
 import { resolveKnowledgePinByName } from '../src/knowledgePins.js';
-import { parseGoverningSnapshot } from '../src/challengeConfigs.js';
-import { getChallengeConfig } from '../src/challengeConfigs.js';
+import {
+  addChallengeConfigVersion,
+  getChallengeConfig,
+  parseGoverningSnapshot,
+} from '../src/challengeConfigs.js';
+import { createChallenge } from '../src/challenges.js';
 
 beforeEach(async () => {
   await testDb().query(
@@ -53,6 +59,41 @@ function eligibilityFixture(overrides: Partial<KnowledgeEligibility> = {}): Know
 }
 
 describe('governed measurement vocabulary', () => {
+  it('encodes exactly the Founder baseline table (drift guard, CORR-001 §5)', () => {
+    // Mechanically grounded in TIIZI-V2-METRIC-AND-UNIT-MODEL-FOUNDER-
+    // WORKING-BASELINE §2 (Metrics) + §3 (compatible Units per Metric).
+    // Any divergence here is a defect in measurementVocabulary.ts, not an
+    // approved catalogue change (the catalogue itself is never carried in
+    // code — per-Activity compatibility is canonical Knowledge).
+    const table: Record<string, string[]> = {
+      completion: ['completion'],
+      repetitions: ['reps', 'repetitions'],
+      duration: ['seconds', 'minutes', 'hours'],
+      distance: ['metres', 'kilometres'],
+      weight: ['grams', 'kilograms'],
+      quantity: ['steps', 'millilitres', 'litres', 'servings', 'pages', 'acts', 'flights'],
+    };
+    expect(Object.keys(table).sort()).toEqual([
+      'completion',
+      'distance',
+      'duration',
+      'quantity',
+      'repetitions',
+      'weight',
+    ]);
+    for (const [metric, units] of Object.entries(table)) {
+      for (const unit of units) {
+        expect(metricForUnit(unit)).toBe(metric);
+      }
+    }
+    // No other governed units exist: the vocabulary is closed.
+    const total = Object.values(table).reduce((sum, units) => sum + units.length, 0);
+    expect(GOVERNED_UNITS).toHaveLength(total);
+    expect([...GOVERNED_UNITS].sort()).toEqual(
+      Object.values(table).flat().sort(),
+    );
+  });
+
   it('every governed unit belongs to exactly one canonical metric', () => {
     expect(isCanonicalMetric('repetitions')).toBe(true);
     expect(isCanonicalMetric('reps')).toBe(false);
@@ -149,17 +190,28 @@ describe('establishment eligibility gate', () => {
       secondary?: string[];
       units?: string[];
       kind?: string;
+      /** KCS-satisfying content (description, category, metric unit,
+       *  measurement guidance, safety notes). Absent = content-thin. */
+      readyContent?: boolean;
     } = {},
   ): Promise<void> {
+    const ready = overrides.readyContent ?? true;
     await testDb().query(
       `INSERT INTO knowledge_items
-         (kind, name, lifecycle, grandfathered, primary_metrics, secondary_metrics, compatible_units)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         (kind, name, lifecycle, grandfathered, description, category,
+          metric_unit, measurement_guidance, safety_notes,
+          primary_metrics, secondary_metrics, compatible_units)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [
         overrides.kind ?? 'fitness',
         name,
         overrides.lifecycle ?? 'published',
         overrides.grandfathered ?? false,
+        ready ? 'A governed test movement' : '',
+        ready ? 'Upper Body' : '',
+        ready ? 'reps' : '',
+        ready ? 'Count full-range repetitions' : '',
+        ready ? ['Stop on sharp pain'] : [],
         overrides.primary ?? ['repetitions'],
         overrides.secondary ?? [],
         overrides.units ?? ['reps'],
@@ -171,7 +223,8 @@ describe('establishment eligibility gate', () => {
     const db = testDb();
     const tag = `elig${(seq += 1)}`;
     await seedItem(`ok-${tag}`);
-    await seedItem(`grandfathered-${tag}`, { grandfathered: true });
+    await seedItem(`thin-${tag}`, { readyContent: false });
+    await seedItem(`grandfathered-${tag}`, { grandfathered: true, readyContent: false });
     await seedItem(`draft-${tag}`, { lifecycle: 'draft' });
     await seedItem(`retired-${tag}`, { lifecycle: 'retired' });
 
@@ -184,10 +237,57 @@ describe('establishment eligibility gate', () => {
       primaryMetrics: ['repetitions'],
       compatibleUnits: ['reps'],
     });
+    // Content-thin published items fail readiness — grandfathered or not.
+    expect(await resolve(`thin-${tag}`)).toBeNull();
     expect(await resolve(`grandfathered-${tag}`)).toBeNull();
     expect(await resolve(`draft-${tag}`)).toBeNull();
     expect(await resolve(`retired-${tag}`)).toBeNull();
     expect(await resolve(`missing-${tag}`)).toBeNull();
+  });
+
+  it('grandfathered item revised under the KCS gate becomes eligible with provenance intact', async () => {
+    const db = testDb();
+    const tag = `rev${(seq += 1)}`;
+    const name = `revised-${tag}`;
+    // Untouched pre-KCS grandfathered item: readable, pin-resolvable, ineligible.
+    await seedItem(name, { grandfathered: true, readyContent: false });
+    expect(await createDbKnowledgeEligibilityResolver(db, 'fitness')(name)).toBeNull();
+
+    // Revise under the current KCS gate through the governed admin path.
+    const adminUid = `rev-admin-${tag}`;
+    await seedMember(db, adminUid);
+    await db.query(`UPDATE members SET role = 'admin' WHERE auth_subject = $1`, [adminUid]);
+    const app = buildApp({ db, verifier: stubVerifier({ [`rev-token-${tag}`]: adminUid }) });
+    const item = await db.query<{ knowledge_id: string }>(
+      `SELECT knowledge_id FROM knowledge_items WHERE name = $1`,
+      [name],
+    );
+    const id = String(item.rows[0].knowledge_id);
+    const revised = await app.inject({
+      method: 'PATCH',
+      url: `/v1/admin/knowledge/${id}`,
+      headers: authHeaders(`rev-token-${tag}`),
+      payload: {
+        name,
+        category: 'Upper Body',
+        difficulty: 'Beginner',
+        metricUnit: 'reps',
+        description: 'A revised governed movement',
+        measurementGuidance: 'Count full-range repetitions',
+        safetyNotes: ['Stop on sharp pain'],
+      },
+    });
+    expect(revised.statusCode).toBe(200);
+
+    // Eligible now — while grandfathered provenance remains TRUE.
+    const eligibility = await createDbKnowledgeEligibilityResolver(db, 'fitness')(name);
+    expect(eligibility).not.toBeNull();
+    expect(eligibility).toMatchObject({ grandfathered: true, version: 2 });
+    const check = await db.query<{ grandfathered: boolean; current_version: number }>(
+      `SELECT grandfathered, current_version FROM knowledge_items WHERE knowledge_id = $1`,
+      [id],
+    );
+    expect(check.rows[0]).toMatchObject({ grandfathered: true, current_version: 2 });
   });
 
   it('ambiguous duplicate names fail closed', async () => {
@@ -201,7 +301,7 @@ describe('establishment eligibility gate', () => {
   it('historical grandfathered Knowledge stays readable and pin-resolvable', async () => {
     const db = testDb();
     const tag = `hist${(seq += 1)}`;
-    await seedItem(`old-move-${tag}`, { grandfathered: true });
+    await seedItem(`old-move-${tag}`, { grandfathered: true, readyContent: false });
     // Runtime pins (C2B + historical reads) still resolve grandfathered items…
     const pin = await resolveKnowledgePinByName(db, 'fitness', `old-move-${tag}`);
     expect(pin).not.toBeNull();
@@ -350,18 +450,27 @@ describe('establishment compatibility enforcement (route)', () => {
       primary?: string[];
       secondary?: string[];
       units?: string[];
+      readyContent?: boolean;
     }>,
   ) {
     const db = testDb();
     for (const item of items) {
+      const ready = item.readyContent ?? true;
       await db.query(
         `INSERT INTO knowledge_items
-           (kind, name, lifecycle, grandfathered, primary_metrics, secondary_metrics, compatible_units)
-         VALUES ('fitness', $1, $2, $3, $4, $5, $6)`,
+           (kind, name, lifecycle, grandfathered, description, category,
+            metric_unit, measurement_guidance, safety_notes,
+            primary_metrics, secondary_metrics, compatible_units)
+         VALUES ('fitness', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           item.name,
           item.lifecycle ?? 'published',
           item.grandfathered ?? false,
+          ready ? 'A governed test movement' : '',
+          ready ? 'Upper Body' : '',
+          ready ? 'reps' : '',
+          ready ? 'Count full-range repetitions' : '',
+          ready ? ['Stop on sharp pain'] : [],
           item.primary ?? ['repetitions'],
           item.secondary ?? [],
           item.units ?? ['reps'],
@@ -447,11 +556,18 @@ describe('establishment compatibility enforcement (route)', () => {
     expect(await challengeCount()).toBe(0);
   });
 
-  it('unsupported unit, grandfathered, draft, and unknown knowledge rejected', async () => {
+  it('unsupported unit, content-thin, draft, and unknown knowledge rejected', async () => {
     const w = await setup();
     const app = await establishmentApp(w, [
       { name: `strict-${w.token}`, primary: ['repetitions'], units: ['reps'] },
-      { name: `grand-${w.token}`, grandfathered: true, primary: ['repetitions'], units: ['reps'] },
+      { name: `thin-${w.token}`, readyContent: false, primary: ['repetitions'], units: ['reps'] },
+      {
+        name: `thin-grand-${w.token}`,
+        grandfathered: true,
+        readyContent: false,
+        primary: ['repetitions'],
+        units: ['reps'],
+      },
       { name: `draft-${w.token}`, lifecycle: 'draft', primary: ['repetitions'], units: ['reps'] },
     ]);
     const headers = authHeaders(w.token);
@@ -464,13 +580,21 @@ describe('establishment compatibility enforcement (route)', () => {
     });
     expect(unsupportedUnit.statusCode).toBe(422);
 
-    const grandfathered = await app.inject({
+    const thin = await app.inject({
       method: 'POST',
       url: '/v1/challenges',
       headers,
-      payload: body(w, `grand-${w.token}`),
+      payload: body(w, `thin-${w.token}`),
     });
-    expect(grandfathered.statusCode).toBe(422);
+    expect(thin.statusCode).toBe(422);
+
+    const thinGrandfathered = await app.inject({
+      method: 'POST',
+      url: '/v1/challenges',
+      headers,
+      payload: body(w, `thin-grand-${w.token}`),
+    });
+    expect(thinGrandfathered.statusCode).toBe(422);
 
     const draft = await app.inject({
       method: 'POST',
@@ -488,6 +612,28 @@ describe('establishment compatibility enforcement (route)', () => {
     });
     expect(unknown.statusCode).toBe(422);
     expect(await challengeCount()).toBe(0);
+  });
+
+  it('grandfathered provenance alone never decides: ready content establishes', async () => {
+    const w = await setup();
+    const app = await establishmentApp(w, [
+      {
+        name: `grand-ready-${w.token}`,
+        grandfathered: true,
+        primary: ['repetitions'],
+        units: ['reps'],
+      },
+    ]);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/challenges',
+      headers: authHeaders(w.token),
+      payload: body(w, `grand-ready-${w.token}`),
+    });
+    // Content satisfies the current KCS gate, so the item establishes even
+    // though historical provenance remains grandfathered = TRUE.
+    expect(response.statusCode).toBe(201);
+    expect(await challengeCount()).toBe(1);
   });
 
   it('raw IDs and ungoverned metrics cannot bypass validation', async () => {
@@ -536,6 +682,130 @@ describe('establishment compatibility enforcement (route)', () => {
     });
     expect(ungovernedMetric.statusCode).toBe(400);
     expect(await challengeCount()).toBe(0);
+  });
+});
+
+describe('later config versions cannot bypass compatibility (domain seam)', () => {
+  it('addChallengeConfigVersion rejects an unproven tuple without any HTTP route', async () => {
+    const db = testDb();
+    const tag = `ver${(seq += 1)}`;
+    const memberId = await seedMember(db, `ver-uid-${tag}`);
+    const groupId = await seedGroup(db, { name: `Versions ${tag}` });
+    await db.query(
+      `INSERT INTO group_memberships (group_id, member_id, role, status)
+       VALUES ($1, $2, 'member', 'active')`,
+      [groupId, memberId],
+    );
+    const pins: Record<string, { knowledge_id: string; current_version: number }> = {};
+    for (const key of [`push-up-${tag}`, `running-${tag}`]) {
+      const pin = await db.query<{ knowledge_id: string; current_version: number }>(
+        `INSERT INTO knowledge_items (kind, name) VALUES ('fitness', $1)
+         RETURNING knowledge_id, current_version`,
+        [key],
+      );
+      pins[key] = {
+        knowledge_id: String(pin.rows[0].knowledge_id),
+        current_version: Number(pin.rows[0].current_version),
+      };
+    }
+    // Strict per-activity contracts (the same authoritative validator the
+    // route uses — no HTTP involved on this path).
+    const contracts: Record<string, { primary: string[]; units: string[] }> = {
+      [`push-up-${tag}`]: { primary: ['repetitions'], units: ['reps'] },
+      [`running-${tag}`]: { primary: ['duration'], units: ['minutes'] },
+    };
+    const resolvers = {
+      resolveKnowledgePin: async (key: string) => pins[key] ?? null,
+      resolveKnowledgeEligibility: async (key: string) => {
+        const contract = contracts[key];
+        if (!contract || !pins[key]) return null;
+        return {
+          knowledgeId: pins[key].knowledge_id,
+          version: pins[key].current_version,
+          kind: 'fitness' as const,
+          lifecycle: 'published',
+          grandfathered: false,
+          primaryMetrics: contract.primary,
+          secondaryMetrics: [],
+          compatibleUnits: contract.units,
+        };
+      },
+      resolveGroupAuthority: async () => ({ status: 'active' }),
+      resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
+    };
+    const created = await createChallenge(
+      db,
+      {
+        group_id: groupId,
+        created_by_member_id: memberId,
+        challenge_type: 'collective',
+        title: 'Versioned',
+        start_date: '2026-06-01',
+        end_date: '2026-06-30',
+        goal_value: 100,
+        goal_unit: 'reps',
+        activities: [
+          {
+            canonical_key: `push-up-${tag}`,
+            metric: 'repetitions',
+            target_value: 20,
+            unit: 'reps',
+          },
+        ],
+      },
+      resolvers,
+    );
+    expect(created.version.version).toBe(1);
+
+    // Valid tuple on v2: accepted.
+    const second = await addChallengeConfigVersion(
+      db,
+      created.challenge.challenge_id,
+      {
+        activities: [
+          {
+            canonical_key: `push-up-${tag}`,
+            metric: 'repetitions',
+            target_value: 30,
+            unit: 'reps',
+          },
+        ],
+      },
+      resolvers,
+    );
+    expect(second.version.version).toBe(2);
+
+    // Individually valid Metric + Unit in an invalid combination on v3:
+    // both 'duration' and 'minutes' are governed, but push-up permits
+    // neither — rejected with no v3 state.
+    await expect(
+      addChallengeConfigVersion(
+        db,
+        created.challenge.challenge_id,
+        {
+          activities: [
+            {
+              canonical_key: `push-up-${tag}`,
+              metric: 'duration',
+              target_value: 30,
+              unit: 'minutes',
+            },
+          ],
+        },
+        resolvers,
+      ),
+    ).rejects.toThrow(/not permitted for this Activity/);
+    const current = await db.query<{ current_config_version: number }>(
+      `SELECT current_config_version FROM challenges WHERE challenge_id = $1`,
+      [created.challenge.challenge_id],
+    );
+    expect(Number(current.rows[0].current_config_version)).toBe(2);
+    const v3 = await db.query(
+      `SELECT COUNT(*) AS count FROM challenge_config_versions
+       WHERE challenge_id = $1 AND version = 3`,
+      [created.challenge.challenge_id],
+    );
+    expect(Number(v3.rows[0].count)).toBe(0);
   });
 });
 

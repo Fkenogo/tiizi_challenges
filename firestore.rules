@@ -228,16 +228,66 @@ service cloud.firestore {
       );
     }
 
+    // EBC-01 CORR-001: governed membership transitions. Ordinary clients
+    // may only perform the exact transitions the governed server boundary
+    // performs (V1 GroupService parity): owner establishing their own
+    // relation at creation, member join under the group's approval rule,
+    // activation, leave, and rejoin. Everything else is denied for
+    // ordinary clients: role promotion, approval bypass (pending→active,
+    // or rejoin-as-active in an approval group), identity fabrication
+    // (doc id / userId / groupId pinned to the caller), expelled
+    // self-restore, and deletes. Platform admins retain the moderation
+    // branch (suspend/expel, console tooling). get() failures deny.
+    function membershipWriteIdentityOk(membershipId, data) {
+      return data.userId == request.auth.uid
+        && data.groupId is string
+        && membershipId == data.groupId + '_' + request.auth.uid;
+    }
+
+    function membershipGroupNeedsApproval(groupData) {
+      return groupData.isPrivate == true || groupData.requireAdminApproval == true;
+    }
+
+    function isGovernedMembershipCreate(membershipId) {
+      let data = request.resource.data;
+      let g = get(/databases/$(database)/documents/groups/$(data.groupId)).data;
+      return membershipWriteIdentityOk(membershipId, data)
+        && g.keys().hasAll(['ownerId'])
+        && (g.status == 'active' || !g.keys().hasAll(['status']))
+        && g.moderationStatus != 'deactivated'
+        && (
+          (data.role == 'owner' && data.status == 'active' && g.ownerId == request.auth.uid)
+          || (data.role == 'member'
+            && ((membershipGroupNeedsApproval(g) && data.status == 'pending')
+              || (!membershipGroupNeedsApproval(g) && data.status == 'active')))
+        );
+    }
+
+    function isGovernedMembershipUpdate(membershipId) {
+      let old = resource.data;
+      let data = request.resource.data;
+      let g = get(/databases/$(database)/documents/groups/$(data.groupId)).data;
+      return membershipWriteIdentityOk(membershipId, data)
+        && old.userId == request.auth.uid
+        && old.groupId == data.groupId
+        && old.status != 'expelled'
+        && (data.role == old.role
+          || (old.role == 'admin' && data.role == 'member'))
+        && (data.status == old.status
+          || (old.status == 'active' && data.status == 'left')
+          || (old.status == 'joined' && (data.status == 'left' || data.status == 'active'))
+          || ((old.status == 'left' || old.status == 'rejected')
+            && (data.status == 'pending'
+              || (data.status == 'active' && !membershipGroupNeedsApproval(g)))));
+    }
+
     match /groupMembers/{membershipId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()
-                    && request.resource.data.userId == request.auth.uid
-                    && isActiveGroup(request.resource.data.groupId);
-      allow update, delete: if isAuthenticated()
-                            && (
-                              resource.data.userId == request.auth.uid
-                              || canManageGroups()
-                            );
+                    && (isGovernedMembershipCreate(membershipId) || canManageGroups());
+      allow update: if isAuthenticated()
+                    && (isGovernedMembershipUpdate(membershipId) || canManageGroups());
+      allow delete: if isAuthenticated() && canManageGroups();
     }
 
     match /challenges/{challengeId} {

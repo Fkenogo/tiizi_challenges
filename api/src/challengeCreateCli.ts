@@ -285,13 +285,22 @@ export async function runChallengeCreateV2(
   }).resolveKnowledgePinFor;
   // Kind-aware on-demand resolution. establishChallengeV2 pre-resolves every
   // pin OUTSIDE its transaction; the map it carries inside performs no I/O.
+  // Eligibility is kind-aware when options.eligibilityFor is provided
+  // (production), else the input resolvers' own gate applies (tests).
+  const kindOf = (key: string) => input.activities.find((a) => a.canonical_key === key)?.activity_kind;
   const mappedResolvers: ChallengeCreationResolvers = {
     ...resolvers,
     resolveKnowledgePin: async (key: string) => {
-      const activity = input.activities.find((a) => a.canonical_key === key);
-      if (!activity) return null;
-      if (resolvePinFor) return resolvePinFor(activity.activity_kind, key);
+      const kind = kindOf(key);
+      if (!kind) return null;
+      if (resolvePinFor) return resolvePinFor(kind, key);
       return resolvers.resolveKnowledgePin(key);
+    },
+    resolveKnowledgeEligibility: async (key: string) => {
+      const kind = kindOf(key);
+      if (!kind) return null;
+      if (options.eligibilityFor) return options.eligibilityFor(kind, key);
+      return resolvers.resolveKnowledgeEligibility(key);
     },
   };
   const established = await establishChallengeV2(
@@ -304,15 +313,6 @@ export async function runChallengeCreateV2(
     mappedResolvers,
     {
       ...(options.creationAuthority ? { creationAuthority: options.creationAuthority } : {}),
-      ...(options.eligibilityFor
-        ? {
-          knowledgeEligibility: async (key: string) => {
-            const activity = input.activities.find((a) => a.canonical_key === key);
-            if (!activity) return null;
-            return options.eligibilityFor!(activity.activity_kind, key);
-          },
-        }
-        : {}),
     },
   );
   return {
@@ -369,7 +369,11 @@ export async function productionResolvers(db: Db): Promise<ProductionResolvers> 
       eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
     },
     resolvers: {
+      // Fail-closed bases: runChallengeCreateV2 always overrides both with
+      // the kind-aware production gates (resolveKnowledgePinFor +
+      // options.eligibilityFor) before any persistence path runs.
       resolveKnowledgePin: async () => null,
+      resolveKnowledgeEligibility: async () => null,
       resolveKnowledgePinFor: async (kind: string, key: string) => {
         if (kind !== 'fitness' && kind !== 'wellness') return null;
         return createDbKnowledgeResolver(db, kind)(key);
