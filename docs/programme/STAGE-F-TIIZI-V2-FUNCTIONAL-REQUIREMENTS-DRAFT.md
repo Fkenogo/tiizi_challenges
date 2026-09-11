@@ -719,7 +719,8 @@ standing.
 >
 > **Settled rule:** Where two or more Participants have the same governed
 > target-completion point, they MUST share that finishing position under
-> competition-ranking semantics (1, 2, 2, 4). Tiizi MUST NOT
+> standard competition ranking (positions skipped by tie size: 1, 1, 3 for a
+> tie for first; 1, 2, 2, 4 for a tie for second). Tiizi MUST NOT
 > invent an artificial tie-breaker.
 >
 > **Source:** Reconciliation F-B-02; Calculation Model §16; Founder disposition 001.
@@ -1403,8 +1404,9 @@ Challenge-type constraints.
 ### FR-V2-198 — Competitive tie-breaking *(SETTLED, AMENDED per Founder disposition 001)*
 
 Where two or more Participants have the same governed target-completion point, they MUST
-share that finishing position. Shared positions MUST use competition-ranking semantics
-(1, 2, 2, 4): the position after a tie is skipped, never filled sequentially. Dense
+share that finishing position. Shared positions MUST use standard competition ranking:
+the same ordinal position is shared and subsequent positions are skipped by the size of
+the tie (a tie for second yields 1, 2, 2, 4; a tie for first yields 1, 1, 3). Dense
 ranking is prohibited. Tiizi MUST NOT invent an artificial tie-breaker.
 
 > **Disposition:** ALIGNED WORDING — was open in the baseline, now settled by

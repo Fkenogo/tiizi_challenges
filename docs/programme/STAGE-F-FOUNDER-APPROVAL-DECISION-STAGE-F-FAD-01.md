@@ -43,10 +43,15 @@ V2 baseline to build from, subject to the single amendment in §3.**
 
 ## 3. Required Amendment (applied in the reviewed package)
 
-Competitive shared-position ranking uses **competition-ranking
-semantics (1, 2, 2, 4)**: the position after a tie is skipped, never
-filled sequentially. Dense ranking and 1,1,3-style statements are
-prohibited. Applied in T1 §§K.8, K.11, M.9; T2 FR-V2-101/198;
+Competitive shared-position ranking uses **standard competition ranking**:
+tied participants receive the same ordinal position and subsequent positions
+are skipped by the size of the tie. Valid outcomes include 1, 1, 3 (tie for
+first), 1, 2, 2, 4 (tie for second) and 1, 2, 3, 3, 5 (tie for third).
+**Dense ranking (1, 2, 2, 3) is prohibited**, as is sequentially separating
+equal completion points. *Corrigendum CORR-001 (2026-09-11): this paragraph
+supersedes the earlier over-broad wording that prohibited 1,1,3-style
+statements; 1,1,3 is a valid outcome of the same rule when the tie is for
+first.* Applied in T1 §§K.8, K.11, M.9; T2 FR-V2-101/198;
 CIC Competitive 4.17; TAM competitive V2 target. All other
 Competitive mechanics are unchanged: race-to-target, completion
 order, no tie-breaker, no position for non-completers, progress

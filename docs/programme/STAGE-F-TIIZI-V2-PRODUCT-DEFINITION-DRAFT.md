@@ -696,9 +696,9 @@ Once a Participant reaches the target, additional progress **does not improve th
 
 ### K.8 Ties — No Artificial Tie-Breaker
 
-If two or more Participants reach the target at the **identical governed completion point**, they **share that finishing position**. Shared positions use **competition-ranking semantics (1, 2, 2, 4)**: the finishing position immediately after a tie is skipped, never filled sequentially. Dense ranking is prohibited.
+If two or more Participants reach the target at the **identical governed completion point**, they **share that finishing position**. Shared positions use **standard competition ranking**: tied participants share the same ordinal position and subsequent positions are skipped by the size of the tie. Dense ranking is prohibited.
 
-- Example: If two Participants tie for 2nd position at the same governed completion point, they are both in 2nd position. The next Participant to finish is in 4th position (not 3rd).
+- Example: If two Participants tie for 2nd position at the same governed completion point, they are both in 2nd position. The next Participant to finish is in 4th position (not 3rd). The same rule governs ties at any position: a tie for first yields 1, 1, 3; a tie for third yields 1, 2, 3, 3, 5.
 - **No artificial tie-breaker** is applied. Tiizi does not introduce secondary criteria (e.g., fractional time, random ordering) to separate tied Participants.
 
 Ties are a legitimate outcome. They reflect truthful equality, not a problem to be solved.
