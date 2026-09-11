@@ -753,7 +753,7 @@ Platform Governance (absolute)
 | Rule | Detail |
 |---|---|
 | Race to target | Participants compete to reach the individual target first |
-| Ties share position | If two Participants complete at the same value/timestamp, they share the same finishing position |
+| Ties share position (competition ranking 1, 2, 2, 4) | If two Participants complete at the same value/timestamp, they share the same finishing position; the next position is skipped, never filled sequentially |
 | Non-completers get no position | Participants who do not reach the target do NOT receive a finishing position |
 | No HP mode | No "honourable mention" or participation trophy for non-completers |
 | Position recalculation | Corrections that change completion order MUST recalculate positions |

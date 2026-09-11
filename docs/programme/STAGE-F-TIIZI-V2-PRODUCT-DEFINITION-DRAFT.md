@@ -355,8 +355,8 @@ Tiizi maintains a **canonical Activity Library** per EKG-01. The Activity Librar
 
 **Initial baseline:** 6 Fitness categories + 6 Wellness categories.
 
-**Fitness categories (examples):** Running, Cycling, Strength Training, Swimming, Yoga, Walking.
-**Wellness categories (examples):** Sleep, Hydration, Nutrition, Mindfulness, Reading, Medication Adherence.
+**Fitness categories:** Strength, Cardio & Conditioning, Mobility & Flexibility, Balance & Stability, Power, Speed & Agility, Sports & Recreation (e.g. Push-Up, Running, Cycling, Swimming, Walking).
+**Wellness categories:** Sleep & Rest, Mind & Emotional Wellbeing, Nutrition & Hydration, Daily Living, Personal Growth, Social Wellbeing (e.g. Sleep, Water Intake, Breathing Practice, Fruit Intake).
 
 The exact category and Activity catalogue is governed knowledge and may evolve. This document establishes the structural relationship, not the exhaustive content.
 
@@ -366,7 +366,7 @@ Each canonical Activity provides:
 
 - **Identity** — unique Activity identifier and name
 - **Category** — Fitness or Wellness category
-- **Variants** — permitted measurement variants (e.g., Push-Up in repetitions, Push-Up Hold in seconds)
+- **Variants** — governed execution or measurement expressions attributable to the parent Activity (e.g., Walking measured in steps or in kilometres). Independently measurable undertakings such as Push-Up Hold are separate canonical Activities per the governed Activity baseline, not variants of Push-Up.
 - **Permitted Metrics/Units** — what can be measured and in what units (e.g., distance in kilometers, duration in minutes)
 - **Measurement guidance** — how to measure the Activity
 - **Instructions** — how to perform the Activity
@@ -389,9 +389,9 @@ An Activity may have multiple **variants** — distinct measurement modes for th
 
 **Example:**
 
-- **Activity:** Push-Up
-- **Variant 1:** Push-Up (measured in repetitions)
-- **Variant 2:** Push-Up Hold (measured in seconds)
+- **Activity:** Walking
+- **Variant 1:** Walking (measured in steps)
+- **Variant 2:** Walking (measured in kilometres)
 
 A Challenge selects which variant applies. A Participant logs according to the Challenge-configured variant. The variant determines what metric and unit are used for that Challenge.
 
@@ -696,9 +696,9 @@ Once a Participant reaches the target, additional progress **does not improve th
 
 ### K.8 Ties — No Artificial Tie-Breaker
 
-If two or more Participants reach the target at the **identical governed completion point**, they **share that finishing position**.
+If two or more Participants reach the target at the **identical governed completion point**, they **share that finishing position**. Shared positions use **competition-ranking semantics (1, 2, 2, 4)**: the finishing position immediately after a tie is skipped, never filled sequentially. Dense ranking is prohibited.
 
-- Example: If two Participants both reach the target at the same governed time point, they are both in 1st position. The next Participant to reach the target is in 3rd position (not 2nd).
+- Example: If two Participants tie for 2nd position at the same governed completion point, they are both in 2nd position. The next Participant to finish is in 4th position (not 3rd).
 - **No artificial tie-breaker** is applied. Tiizi does not introduce secondary criteria (e.g., fractional time, random ordering) to separate tied Participants.
 
 Ties are a legitimate outcome. They reflect truthful equality, not a problem to be solved.
@@ -729,9 +729,9 @@ The calculation schedule for Competitive Challenges is:
 1. **Participant progress:** Each Participant's individual Challenge-specific progress total is maintained.
 2. **Target completion:** A Participant's qualifying cumulative progress reaches or exceeds the configured target.
 3. **Finishing position:** Determined by governed target-completion order (earlier = higher).
-4. **Shared/tied position:** Identical completion points share position; no artificial tie-breaker.
+4. **Shared/tied position:** Identical completion points share position under competition-ranking semantics (1, 2, 2, 4); no artificial tie-breaker.
 5. **Non-completer outcome:** No finishing position; actual progress visible; never labelled failed.
-6. **Challenge closure:** At the configured end of the competitive window.
+6. **Challenge closure:** At the configured end of the competitive window; one finisher does not end the Challenge.
 7. **Correction/recalculation:** A legitimate governed correction triggers recalculation of position as Derived Truth.
 
 ---
@@ -933,9 +933,9 @@ Derived Truth is calculated from **Challenge-specific records only**. There is n
 1. **Participant progress:** Each Participant's individual Challenge-specific progress total is maintained.
 2. **Target completion:** A Participant's qualifying cumulative progress reaches or exceeds the configured target.
 3. **Finishing position:** Determined by governed target-completion order (earlier = higher).
-4. **Shared/tied position:** Identical completion points share position; no artificial tie-breaker.
+4. **Shared/tied position:** Identical completion points share position under competition-ranking semantics (1, 2, 2, 4); no artificial tie-breaker.
 5. **Non-completer outcome:** No finishing position; actual progress visible; never labelled failed.
-6. **Challenge closure:** At the configured end of the competitive window.
+6. **Challenge closure:** At the configured end of the competitive window; one finisher does not end the Challenge.
 7. **Correction/recalculation:** A legitimate governed correction triggers recalculation of position as Derived Truth.
 
 ### M.10 Calculation Schedule — Streak

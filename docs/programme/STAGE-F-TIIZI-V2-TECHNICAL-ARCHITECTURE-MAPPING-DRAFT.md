@@ -498,7 +498,7 @@ const isComplete = newTotal >= challenge.groupCumulativeTarget;
 | Classification | **PARTIALLY ALIGNED** |
 | Key Files | `src/services/challengeEngine/competitiveEngine.ts`, `src/utils/leaderboardSort.ts`, `src/features/Challenges/ChallengeLeaderboardScreen.tsx` |
 | Current Behaviour | Leaderboard assigns sequential integer ranks (1, 2, 3, 4...) regardless of ties. Non-completers ranked by progress. |
-| V2 Target | Shared positions for ties (1, 1, 3, 4...). Non-completers show actual progress but no finishing position. |
+| V2 Target | Shared positions for ties under competition-ranking semantics (1, 2, 2, 4...). Non-completers show actual progress but no finishing position. |
 | Gap 1 | No shared-position logic — tied members get different ranks. |
 | Gap 2 | Non-completers appear on leaderboard with sequential ranks (this is close to correct — V2 says no finishing position but actual progress visible). |
 | Recommended Change | Implement shared-position logic in `leaderboardSort.ts`. Detect identical `completionRate` + `totalPoints`, assign same rank. Skip subsequent rank numbers. |

@@ -58,6 +58,7 @@ This contract defines how Tiizi's governed Knowledge domain operates at runtime.
 | Stage F Canonical Information Contract DRAFT | Data contracts that this runtime contract operationalises |
 | EOG-E1-01 Entity & Operational Governance Standard v0.2 | Entity boundaries and operational governance |
 | CGP-04 Entity Relationship Allocation Register v0.1 | Relationship allocation between governed entities |
+| Stage F Knowledge Content Specification (KCS annex) | Publication content minimum, localization structure, safety boundary |
 
 **Preserved deferrals (NOT resolved by this contract):**
 
@@ -152,7 +153,7 @@ Each Activity in the Runtime Catalogue conforms to the following field structure
 |---|---|---|---|
 | **Identity** | `id`, `canonicalName`, `domain` (fitness\|wellness), `lifecycleState` | Governed | `id` is the canonical reference for all consumers |
 | **Classification** | `primaryCategory`, `secondaryClassifications[]` | Governed | Must reference valid taxonomy entries (EKG-01 §5) |
-| **Meaning** | `description`, `instructions[]`, `safetyNotes[]` | Governed | Human-readable; safetyNotes are mandatory for physical Activities |
+| **Meaning** | `description`, `instructions[]`, `safetyNotes[]` | Governed | Human-readable; safetyNotes are mandatory for physical Activities. Member-facing textual fields are locale-keyed against the language-independent canonical ID (KCS §5); no per-language Activity identities |
 | **Measurement** | `permittedMetrics[]`, `permittedUnits[]` | Governed | Defines what can be measured and in what units (EKG-01 §8) |
 | **Configuration Constraints** | `permittedChallengeTypes[]`, `targetRanges[]` | Governed | Bounds what Challenge configurations are valid |
 | **Relationships** | `variants[]`, `relatedActivities[]`, `equipment[]` | Governed | Variants attributable to parent unless materially different (EKG-01 §7) |
@@ -450,7 +451,7 @@ When rendering a historical Challenge view:
 
 | Transition | Who Can Authorise | Source | Notes |
 |---|---|---|---|
-| `draft → published` | Knowledge Authority or delegated admin | EKG-01 §14, §16 | Publication gate; makes Activity available to Runtime Catalogue |
+| `draft → published` | Knowledge Authority or delegated admin | EKG-01 §14, §16; KCS §4 | Content-gated publication; makes Activity available to Runtime Catalogue only when the KCS class minimum is satisfied |
 | `published → retired` | Knowledge Authority or delegated admin | EKG-01 §16 | Retirement; removes from Runtime Catalogue but preserves for historical |
 | `published → draft` | **PROHIBITED** | This contract | Once published, always at least published in history |
 | `retired → published` | **PROHIBITED** | This contract | Retirement is irreversible; create new Activity if needed |
@@ -465,6 +466,7 @@ New Activities are introduced through Knowledge administration (EKG-01 §19).
 | Must be assigned to a valid category | EKG-01 §5 | Category must exist in governed taxonomy |
 | Must declare permitted metrics / units | EKG-01 §8 | Non-empty `permittedMetrics[]` and `permittedUnits[]` |
 | Must have safety information (physical Activities) | EKG-01 §10 | `safetyNotes[]` required for Fitness Activities |
+| Must satisfy its KCS content-class minimum before publication | KCS §§3–4 | Class minimum (U plus applicable Q/T/P/C/M/S) verified at `draft → published`; progressive per-Activity publication permitted, no simultaneous publication required |
 | Published Activities become immediately available in Runtime Catalogue | EKG-01 §17 | Runtime Catalogue reflects publication state |
 | Creation is attributable (actor ID recorded) | EKG-01 §13 | `createdBy`, `createdAt` fields |
 

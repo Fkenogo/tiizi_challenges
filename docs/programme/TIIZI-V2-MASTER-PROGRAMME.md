@@ -2,7 +2,7 @@
 
 **Document type:** Governed programme-management roadmap
 
-**Version:** 1.45
+**Version:** 1.46
 
 **Status:** Approved programme baseline
 
@@ -26,8 +26,8 @@ This document is not a constitutional instrument and does not establish constitu
 | Stage E0 — Governance Architecture           | **Complete** | CGP-02 Complete; CGP-03 Complete; CGP-04 Complete (CGP-04-FAD-01, 2026-09-01). Stage E0 completion gate satisfied.                     |
 | Stage EK — Knowledge Governance              | **Complete** | **Stage EK Complete (STAGE-EK-CLOSE-01, 2026-09-02). EKG-01 v0.1 Founder Approved (EKG-01-FAD-01); Metric & Unit Founder Working Baseline and 118-Activity Baseline filed and accepted. EK2–EK5 accepted as substantively satisfied — no separate instruments. No implementation authorized.** |
 | Stage E1 — Entity and Operational Governance | **Complete** | **Stage E1 Complete (EOG-E1-01 filed and effective 2026-09-03; E1-IOG-RECON-002 disposition A). FQ-01–FQ-12 governed; ACT-03/ACT-04 and MOT-01 preserved deferred. No implementation authorized.** |
-| Stage F — Product & Technical Translation    | Not Started  | Stage E1 Complete. Next: Stage F — Product Definition & Technical Translation when Founder-authorized (per dependency order).                                                            |
-| Stage G — Governance-to-Code Alignment       | Not Started  | Begin only after the Stage F completion gate is satisfied.                                                                             |
+| Stage F — Product & Technical Translation    | **Complete** | **Stage F Founder Approved (STAGE-F-FAD-01, 2026-09-11). Package: T1, T2 (through FR-V2-214), CIC, KRC, TAM, KCS annex; competitive 1,2,2,4 amendment applied. Stage F completion gate satisfied.** |
+| Stage G — Governance-to-Code Alignment       | Not Started  | Stage F completion gate satisfied (STAGE-F-FAD-01). Stage G is the next attributable stage.                                             |
 | Stage H — Implementation                     | Not Started  | Begin only after the Stage G completion gate is satisfied.                                                                             |
 
 The Programme Dashboard must be updated whenever programme status, next action or dependency changes.
@@ -38,10 +38,10 @@ The Programme Dashboard must be updated whenever programme status, next action o
 | ----------------- | -------- |
 | Programme Version | 1.46     |
 | Total Stages      | 7        |
-| Completed Stages  | 4        |
-| Active Stage      | Stage F  |
+| Completed Stages  | 5        |
+| Active Stage      | Stage G  |
 | Active Phase      | CGP-02   |
-| Remaining Stages  | 3        |
+| Remaining Stages  | 2        |
 | Current Health    | On Track |
 
 Programme Metrics must be updated with the Programme Dashboard whenever programme position or health changes.
@@ -50,7 +50,7 @@ Programme Metrics must be updated with the Programme Dashboard whenever programm
 
 | Focus                      | Current                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Current Stage              | Stage E1 — Entity & Operational Governance (**Complete** — EOG-E1-01 filed and effective 2026-09-03; E1-IOG-RECON-002 disposition A. READY FOR AUTHORITATIVE FILING; FQ-01–FQ-12 governed; ACT-03/ACT-04 and MOT-01 preserved deferred) |                                                                                                                                                                                                                                                                                                                                                                             |
+| Current Stage              | Stage F — Product & Technical Translation (**Complete** — STAGE-F-FAD-01, 2026-09-11: T1, T2 through FR-V2-214, CIC, KRC, TAM, KCS annex approved with competitive 1,2,2,4 amendment) |                                                                                                                                                                                                                                                                                                                                                                             |
 | Current Phase              | CGP-02 — Constitutional Amendment & Governance Review Standard                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Current Phase Status       | **Complete** (FLD-01, 2026-09-01)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Completed Bounded Sequence | CGP-02C.2 — Governance Lifecycle, Amendment Classification, and Review Triggers and Proportionality drafting and technical Founder Review sequence                                                                                                                                                                                                                                                                                                                  |
@@ -68,8 +68,8 @@ Programme Metrics must be updated with the Programme Dashboard whenever programm
 | Approval Decision Evidence | [FAD-01](CGP-02D-FOUNDER-APPROVAL-DECISION-RECORD.md): Option A — Approve (2026-08-31). [FLD-01](CGP-02-POST-APPROVAL-LIFECYCLE-FOUNDER-DECISION-FLD-01.md): Post-Approval Lifecycle Determination (2026-09-01). CGP-02 Complete. Constitutional effect established 2026-09-01. DQ-06 resolved (no separate adoption required). DQ-07 resolved (no separate application required). 7 D17 matters remain deferred.                                                   |
 | Approval Date              | 2026-08-31                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Lifecycle Determination    | [FLD-01](CGP-02-POST-APPROVAL-LIFECYCLE-FOUNDER-DECISION-FLD-01.md) — 2026-09-01. No separate adoption or application required. Constitutional effect established. CGP-02 Complete.                                                                                                                                                                                                                                                                                 |
-| Current Objective          | Stage E1 Complete (EOG-E1-01 filed and effective 2026-09-03; 37-EOG-E1-01-FOUNDER-APPROVAL-RECORD). EOG-E1-01 remains governing instrument. FQ-01–FQ-12 governed (FQ-11 closed by approval record with no new requirements text). ACT-03/ACT-04 and MOT-01 preserved deferred; Reward implementation deferred. Stage F is next attributable stage when Founder-authorized. No implementation authorized. |                                                                                                                                                                                                                                                                                                                                             |
-| Next Action                | Stage E1 Complete. Next: Stage F — Product Definition & Technical Translation when Founder-authorized (per dependency order). No implementation authorized by this closure. |                                                                                                                                                                                                                                                                                                                                                    |
+| Current Objective          | Stage F Complete (STAGE-F-FAD-01, 2026-09-11 — approve with competitive 1,2,2,4 amendment). The approved V2 baseline is T1, T2 through FR-V2-214, CIC, KRC, TAM and the KCS annex. ACT-03/ACT-04 and MOT-01 preserved deferred; Rewards implementation deferred. Stage G (Governance-to-Code Alignment) is the next attributable stage. No normal feature implementation authorized. |                                                                                                                                                                                                                                                                                                                                             |
+| Next Action                | Stage F Complete. Next: Stage G — Governance-to-Code Alignment (reconcile implementation against the approved V2 foundation before any feature implementation). |                                                                                                                                                                                                                                                                                                                                                    |
 | Drafting Authorization     | CGP-02D **COMPLETE / CLOSED**. CGP-03 **COMPLETE** (CGP-03-FAD-01). CGP-04 **COMPLETE** (CGP-04-FAD-01, 2026-09-01). Stage E0 **COMPLETE**. No successor work package authorized.                                                                                                                                                                                                                                                                                   |
 | Next Phase After CGP-02    | CGP-03 — **COMPLETE** (CGP-03-FAD-01, 2026-09-01). Next: CGP-04 — **COMPLETE** (CGP-04-FAD-01, 2026-09-01). Stage E0 **COMPLETE**.                                                                                                                                                                                                                                                                                                                                  |
 | CGP-04 Dependency Status   | **COMPLETE** (CGP-04-FAD-01, 2026-09-01). CGP-02 and CGP-03 dependencies satisfied. Founder Approved, constitutionally effective, complete.                                                                                                                                                                                                                                                                                                                         |
@@ -911,23 +911,29 @@ Every deliverable traces to approved governance; functional requirements are com
 
 ### Current Status
 
-**Not Started**
+**Complete (STAGE-F-FAD-01, 2026-09-11)**
+
+Completion evidence: T1 Product Definition, T2 Functional Requirements
+(through FR-V2-214), Canonical Information Contract, Knowledge Runtime
+Contract, Technical Architecture Mapping, Knowledge Content Specification
+annex — all on branch `docs/stage-f-knowledge-content-closure-001`
+(amendment commit `4de80b4`, incl. competitive 1,2,2,4 amendment).
 
 ### Decision Register References
 
 | Reference          | Entry |
 | ------------------ | ----- |
-| Relevant Decisions | —     |
-| Resolved Decisions | —     |
+| Relevant Decisions | STAGE-F-FAD-01 (2026-09-11) — Approve with competitive 1,2,2,4 amendment |
+| Resolved Decisions | Stage F completion gate satisfied |
 | Blocking Decisions | —     |
-| Dependencies       | —     |
+| Dependencies       | Stage E1 Complete; EKG-01; CGP-02/03/04 |
 
 ### Repository Location
 
 | Repository reference | Location |
 | -------------------- | -------- |
-| Primary Folder       | —        |
-| Supporting Documents | —        |
+| Primary Folder       | `docs/programme/STAGE-F-*` (T1, T2, CIC, KRC, TAM, KCS, FAD-01) |
+| Supporting Documents | T1–T2 Consolidation Report; RECON-001 findings (recon branch) |
 | Generated Outputs    | —        |
 
 ## 15. Stage G — Governance-to-Code Alignment
@@ -1179,6 +1185,7 @@ These rules apply throughout the Version 2 programme and may be changed only thr
 
 | Version | Date | Change | Approval | Effect |
 | ------- | ---------- | ------ | -------- | ------ |
+| 1.46 | 2026-09-11 | **Stage F Closure (STAGE-F-FAD-01) — Stage F Complete; competitive 1,2,2,4 amendment; v1.46 reconciliation** | **Attributable Founder approval decision STAGE-F-FAD-01 (2026-09-11)** | Records [STAGE-F-FAD-01](STAGE-F-FOUNDER-APPROVAL-DECISION-STAGE-F-FAD-01.md): Stage F — Product & Technical Translation is **Complete**. Approves T1, T2 (through FR-V2-214), CIC, KRC, TAM and KCS annex with the single amendment that Competitive shared positions use competition-ranking semantics (1, 2, 2, 4). Corrects 1,1,3-style statements (T1 K.8, TAM V2 target). Preserves ACT-03/ACT-04/MOT-01/Rewards deferrals. Updates Dashboard (§2) Stage F `Complete`, Metrics (`Completed 5/Remaining 2/Active Stage G`), Current Focus (§4), §14 status/evidence/register/location, and Change Log. Resolves the v1.45-header/1.46-metrics skew by giving 1.46 its changelog entry. Stage G is the next attributable stage. No normal feature implementation authorized. Master Programme 1.45 → 1.46. |
 | 1.45 | 2026-09-02 | **Stage EK Closure (STAGE-EK-CLOSE-01) — Stage EK Complete; v1.45 reconciliation** | **Attributable Founder closure decision STAGE-EK-CLOSE-01 (2026-09-02); mechanical synchronization (CGP03-P31)** | Records [STAGE-EK-CLOSE-01](STAGE-EK-CLOSURE-DECISION-EK-CLOSE-01.md): Stage EK — Knowledge Governance is **Complete** (effective 2026-09-02). Accepts final reconciliation evidence on `recon/ek-final-reconciliation` `5c3379b` (Master Programme v1.44), EKG-01 v0.1 as governing instrument (EKG-01-FAD-01), and two Founder Working Baselines as initial working foundations (six-Metric + 118 Activities: 84 Fitness/34 Wellness) under EKG-01. EK2–EK5 accepted as substantively satisfied — no separate instruments. Lifecycle/ Runtime/ historical/ retirement/ relationship/ Activity-Challenge/ publication-readiness interpretations accepted as working interpretation of EKG-01. No implementation authorized. Updates Dashboard (§2) Stage EK `Complete`, Metrics (`Completed 3/Remaining 4/Active E1`), Current Focus (§4) and §12 (Status `Complete`), Decision Register (adds STAGE-EK-CLOSE-01) and Change Log. Master Programme 1.44 → 1.45. |
 | 1.44 | 2026-09-02 | Stage EK Final Reconciliation — Working Baselines filed; EK2–EK5 substance absorbed; v1.44 reconciliation | Mechanical reconciliation (CGP03-P31); records already-settled Founder Working Baselines; no substantive governance amendment | Records filing of [Metric & Unit Founder Working Baseline](../governance/knowledge/working-baselines/TIIZI-V2-METRIC-AND-UNIT-MODEL-FOUNDER-WORKING-BASELINE.md) and [118-Activity Founder Working Baseline](../governance/knowledge/working-baselines/TIIZI-V2-INITIAL-CANONICAL-ACTIVITY-BASELINE-FOUNDER-WORKING-BASELINE.md) (both 2026-09-02, substantively settled under EKG-01). Updates Dashboard, §12 deliverables (EK2–EK5 now [x] absorbed), Current Status, Decision Register and Repository Location to reflect substantively complete Stage EK. Stage EK remains In Progress pending Founder closure decision; no new instrument required for EK2–EK5. No implementation authorized. Master Programme 1.43 → 1.44. |
 | 1.43 | 2026-09-02 | EKG-01-FAD-01 EKG-01 Founder Approval; EKG-01 COMPLETE (EK1); Stage EK In Progress; v1.43 reconciliation | Attributable Founder approval decision; does not amend EKG-01 §§1–23, CGP-02, CGP-03, CGP-04, FLD-01 or D17 | Records [EKG-01-FAD-01](EKG-01-FOUNDER-APPROVAL-DECISION-EKG-01-FAD-01.md) (2026-09-02): EKG-01 v0.1 Founder Approved — Knowledge Governance — Effective — Complete. Reviewed corrected draft at `6008c67b2e398a1b9c339a290527a9ffcdd754cf` (SHA-256 `77a73deb`) — bounded B/C corrections already applied. No substantive proposition amendment beyond Document Control approval metadata. EK1 — Knowledge Asset Governance Complete. Stage EK In Progress pending EK2–EK5; remaining work Metric/Unit vocabularies (EK-FQ-04/05) and canonical Activity baseline reconciliation. No Stage E1/F/G/H status change. No downstream implementation authorized. |
