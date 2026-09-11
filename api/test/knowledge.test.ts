@@ -292,7 +292,8 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
     const body = res.json();
     expect(body.id).toMatch(UUID_RE);
     expect(body.knowledgeVersion).toBe(1);
-    expect(body.lifecycle).toBe('published');
+    // PKG-2A safe default: omitted lifecycle creates a draft, never published.
+    expect(body.lifecycle).toBe('draft');
 
     const history = await app.inject({
       method: 'GET',
@@ -367,7 +368,13 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
   it('keeps lifecycle-only transitions off the version counter', async () => {
     await seedAdmin('admin-uid');
     const app = buildTestApp({ adm: 'admin-uid' });
-    const created = (await createAsAdmin(app, { ...wellnessPayload(), lifecycle: 'draft' })).json();
+    const created = (
+      await createAsAdmin(app, {
+        ...wellnessPayload(),
+        lifecycle: 'draft',
+        measurementGuidance: 'Report fasting hours',
+      })
+    ).json();
     expect(created.knowledgeVersion).toBe(1);
 
     const published = await app.inject({
@@ -396,7 +403,13 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
   it('enforces forward-only lifecycle with idempotent repeats', async () => {
     await seedAdmin('admin-uid');
     const app = buildTestApp({ adm: 'admin-uid' });
-    const created = (await createAsAdmin(app, fitnessPayload())).json();
+    const created = (
+      await createAsAdmin(app, {
+        ...fitnessPayload(),
+        measurementGuidance: 'Count full-range repetitions',
+        safetyNotes: ['Stop on sharp pain'],
+      })
+    ).json();
     const headers = authHeaders('adm');
 
     const republish = await app.inject({
@@ -485,9 +498,30 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
     await seedMember(testDb(), 'member-uid');
     const app = buildTestApp({ adm: 'admin-uid', m: 'member-uid' });
 
-    const pub = (await createAsAdmin(app, fitnessPayload({ name: 'Alpha Press' }))).json();
+    const pub = (
+      await createAsAdmin(app, {
+        ...fitnessPayload({ name: 'Alpha Press' }),
+        measurementGuidance: 'Count full-range repetitions',
+        safetyNotes: ['Stop on sharp pain'],
+      })
+    ).json();
+    await app.inject({
+      method: 'POST',
+      url: `/v1/admin/knowledge/${pub.id}/publish`,
+      headers: authHeaders('adm'),
+    });
     await createAsAdmin(app, { ...fitnessPayload({ name: 'Beta Draft' }), lifecycle: 'draft' });
-    const retiring = (await createAsAdmin(app, wellnessPayload({ name: 'Gamma Fast' }))).json();
+    const retiring = (
+      await createAsAdmin(app, {
+        ...wellnessPayload({ name: 'Gamma Fast' }),
+        measurementGuidance: 'Report fasting hours',
+      })
+    ).json();
+    await app.inject({
+      method: 'POST',
+      url: `/v1/admin/knowledge/${retiring.id}/publish`,
+      headers: authHeaders('adm'),
+    });
     await app.inject({
       method: 'POST',
       url: `/v1/admin/knowledge/${retiring.id}/retire`,
@@ -716,11 +750,16 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
     const id = compat.json().mappings[0].id as string;
 
     // API-side revision to version 2; re-import of Firestore version 1 must not regress it.
+    // (PKG-2A-CORR: published revisions satisfy the KCS gate.)
     await app.inject({
       method: 'PATCH',
       url: `/v1/admin/knowledge/${id}`,
       headers: jsonHeaders('adm'),
-      payload: fitnessPayload({ name: 'API Revised' }),
+      payload: fitnessPayload({
+        name: 'API Revised',
+        measurementGuidance: 'Count full-range repetitions',
+        safetyNotes: ['Stop on sharp pain'],
+      }),
     });
     await runKnowledgeImport(db, source([fitnessDoc('push-ups')]), { dryRun: false });
     const kept = await app.inject({
