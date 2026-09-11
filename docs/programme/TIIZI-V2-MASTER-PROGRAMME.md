@@ -2,7 +2,7 @@
 
 **Document type:** Governed programme-management roadmap
 
-**Version:** 1.49
+**Version:** 1.50
 
 **Status:** Approved programme baseline
 
@@ -27,7 +27,7 @@ This document is not a constitutional instrument and does not establish constitu
 | Stage EK — Knowledge Governance              | **Complete** | **Stage EK Complete (STAGE-EK-CLOSE-01, 2026-09-02). EKG-01 v0.1 Founder Approved (EKG-01-FAD-01); Metric & Unit Founder Working Baseline and 118-Activity Baseline filed and accepted. EK2–EK5 accepted as substantively satisfied — no separate instruments. No implementation authorized.** |
 | Stage E1 — Entity and Operational Governance | **Complete** | **Stage E1 Complete (EOG-E1-01 filed and effective 2026-09-03; E1-IOG-RECON-002 disposition A). FQ-01–FQ-12 governed; ACT-03/ACT-04 and MOT-01 preserved deferred. No implementation authorized.** |
 | Stage F — Product & Technical Translation    | **Complete** | **Stage F Founder Approved (STAGE-F-FAD-01, 2026-09-11). Package: T1, T2 (through FR-V2-214), CIC, KRC, TAM, KCS annex; competitive 1,2,2,4 amendment applied. Stage F completion gate satisfied.** |
-| Stage G — Governance-to-Code Alignment       | Not Started  | Stage F completion gate satisfied (STAGE-F-FAD-01). Stage G is the next attributable stage.                                             |
+| Stage G — Governance-to-Code Alignment       | **In Progress** | **Engine Alignment Assessment Founder accepted (Disposition B). Engine Baseline Closure authorized (EBC-01→EBC-05); integrated Engine Founder Preview follows EBC-05. Stage F remains closed.** |
 | Stage H — Implementation                     | Not Started  | Begin only after the Stage G completion gate is satisfied.                                                                             |
 
 The Programme Dashboard must be updated whenever programme status, next action or dependency changes.
@@ -36,7 +36,7 @@ The Programme Dashboard must be updated whenever programme status, next action o
 
 | Metric            | Current  |
 | ----------------- | -------- |
-| Programme Version | 1.49     |
+| Programme Version | 1.50     |
 | Total Stages      | 7        |
 | Completed Stages  | 5        |
 | Active Stage      | Stage G  |
@@ -68,8 +68,8 @@ Programme Metrics must be updated with the Programme Dashboard whenever programm
 | Approval Decision Evidence | [FAD-01](CGP-02D-FOUNDER-APPROVAL-DECISION-RECORD.md): Option A — Approve (2026-08-31). [FLD-01](CGP-02-POST-APPROVAL-LIFECYCLE-FOUNDER-DECISION-FLD-01.md): Post-Approval Lifecycle Determination (2026-09-01). CGP-02 Complete. Constitutional effect established 2026-09-01. DQ-06 resolved (no separate adoption required). DQ-07 resolved (no separate application required). 7 D17 matters remain deferred.                                                   |
 | Approval Date              | 2026-08-31                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Lifecycle Determination    | [FLD-01](CGP-02-POST-APPROVAL-LIFECYCLE-FOUNDER-DECISION-FLD-01.md) — 2026-09-01. No separate adoption or application required. Constitutional effect established. CGP-02 Complete.                                                                                                                                                                                                                                                                                 |
-| Current Objective          | Stage F Complete (STAGE-F-FAD-01, 2026-09-11 — approve with competitive 1,2,2,4 amendment). The approved V2 baseline is T1, T2 through FR-V2-214, CIC, KRC, TAM and the KCS annex. ACT-03/ACT-04 and MOT-01 preserved deferred; Rewards implementation deferred. Stage G (Governance-to-Code Alignment) is the next attributable stage. No normal feature implementation authorized. |                                                                                                                                                                                                                                                                                                                                             |
-| Next Action                | PKG-2A Knowledge Publication Readiness COMPLETE / MERGED (migrations 007/008 code-authorized, not deployed). Next bounded task: Tiizi Engine Alignment Assessment. PKG-1 does NOT automatically proceed; the assessment determines the next missing Core Engine capability. |                                                                                                                                                                                                                                                                                                                                                    |
+| Current Objective          | Engine Alignment Assessment Founder accepted (Disposition B: ENGINE BASELINE PARTIAL — BOUNDED ENGINE GAPS MUST CLOSE FIRST, at canonical main `c015dbe`). One bounded Engine Baseline Closure authorized (EBC-01→EBC-05) before standalone PKG-1 and broad participant experience. Approved doctrine, hybrid allocation, and ACT-03/ACT-04/MOT-01/Rewards deferrals preserved. |                                                                                                                                                                                                                                                                                                                                             |
+| Next Action                | Execute Engine Baseline Closure slice EBC-01 (Group/Challenge Authority + Knowledge Compatibility). PKG-2A remains COMPLETE / MERGED; migrations 007/008 remain code-authorized, not deployed. Integrated Engine Founder Preview follows EBC-05; broad participant/social experience follows the successful preview. |                                                                                                                                                                                                                                                                                                                                                    |
 | Drafting Authorization     | CGP-02D **COMPLETE / CLOSED**. CGP-03 **COMPLETE** (CGP-03-FAD-01). CGP-04 **COMPLETE** (CGP-04-FAD-01, 2026-09-01). Stage E0 **COMPLETE**. No successor work package authorized.                                                                                                                                                                                                                                                                                   |
 | Next Phase After CGP-02    | CGP-03 — **COMPLETE** (CGP-03-FAD-01, 2026-09-01). Next: CGP-04 — **COMPLETE** (CGP-04-FAD-01, 2026-09-01). Stage E0 **COMPLETE**.                                                                                                                                                                                                                                                                                                                                  |
 | CGP-04 Dependency Status   | **COMPLETE** (CGP-04-FAD-01, 2026-09-01). CGP-02 and CGP-03 dependencies satisfied. Founder Approved, constitutionally effective, complete.                                                                                                                                                                                                                                                                                                                         |
@@ -973,24 +973,52 @@ The Governance Audit is evidence-based; every material gap has an attributable t
 
 ### Current Status
 
-**Active — reconciliation (Stage G entry v1.47; Stage F remains closed)**
+**In Progress — Engine Baseline Closure authorized (v1.50; Stage F remains closed)**
 
 ### Decision Register References
 
 | Reference          | Entry |
 | ------------------ | ----- |
-| Relevant Decisions | —     |
-| Resolved Decisions | —     |
+| Relevant Decisions | Engine Alignment Assessment Disposition B accepted (2026-09-11); Engine Baseline Closure authorized (EBC-01→EBC-05) |
+| Resolved Decisions | Standalone PKG-1 sequencing superseded by EBC order; assessment baseline `c015dbe` confirmed current |
 | Blocking Decisions | —     |
-| Dependencies       | —     |
+| Dependencies       | STAGE-F-FAD-01; hybrid architecture position; PKG-2A COMPLETE / MERGED |
 
 ### Repository Location
 
 | Repository reference | Location |
 | -------------------- | -------- |
-| Primary Folder       | —        |
-| Supporting Documents | —        |
+| Primary Folder       | `docs/programme/STAGE-G-TIIZI-ENGINE-ALIGNMENT-ASSESSMENT.md` |
+| Supporting Documents | Stage F package (T1/T2/CIC/KRC/TAM/KCS); hybrid architecture decision candidate |
 | Generated Outputs    | —        |
+
+### Engine Baseline Closure (authorized — one bounded Stage G engineering closure)
+
+Five required P0 areas: (1) governed Group/Membership mutation boundary and
+Challenge-creation authority; (2) canonical Activity/Metric/Unit compatibility
+validation; (3) explicit ordinary automatic Submission Intent → Evidence
+Eligibility → Acceptance Authority → Accepted Activity Event → Challenge
+Application trace; (4) Streak timezone, late-logging and period-end semantics;
+(5) scheduled ending, finalization, stable results and authoritative rebuild.
+
+Ordered internal slices: EBC-01 Group/Challenge Authority + Knowledge
+Compatibility → EBC-02 Submission/Eligibility/Acceptance trace (no ACT-03/
+ACT-04, no human approval) → EBC-03 Streak temporal correctness → EBC-04
+Ending/Finalization/Rebuild/Stable history → EBC-05 revised PKG-1 exposure
+(creation consumes Published/KCS-ready Knowledge; no V1 dual-write).
+
+Checkpoint: integrated LOCAL Founder Preview after EBC-05 (Group → establish
+→ join → submit → acceptance trace → current truth → end → final stable
+result). Presentation consumes Engine truth; never creates it. Home, Feed,
+notifications, discovery, Kudos, sharing, causes, polish and hosted preview
+infra are expressly out of scope for the preview.
+
+Architecture: PostgreSQL V2 domain truth; Firebase Auth issuer; Firestore
+Group/Membership authority; mandatory provider-neutral seams. No Group/auth/
+database/hosting migration, no broad Firebase migration, no infra rewrite,
+no new deployment, no production cutover. ACT-03/ACT-04/MOT-01/Rewards
+preserved deferred; ordinary automatic self-accountability acceptance does
+not resolve ACT-03; dormant correction structures are not ACT-04 authority.
 
 ## 16. Stage H — Implementation
 
@@ -1185,6 +1213,7 @@ These rules apply throughout the Version 2 programme and may be changed only thr
 
 | Version | Date | Change | Approval | Effect |
 | ------- | ---------- | ------ | -------- | ------ |
+| 1.50 | 2026-09-11 | **Engine Alignment Assessment Founder accepted; Engine Baseline Closure authorized (TIIZI-V2-STAGE-G-ENGINE-BASELINE-AUTH-001)** | **Founder decision: APPROVE Disposition B; authorize one bounded Engine Baseline Closure (EBC-01→EBC-05)** | Publishes STAGE-G-TIIZI-ENGINE-ALIGNMENT-ASSESSMENT.md (assessed at `c015dbe`, baseline confirmed current — no intervening main commits). Records Disposition B accepted and EBC-01→EBC-05 authorized with integrated Engine Founder Preview after EBC-05; standalone PKG-1 superseded in sequence. Preserves hybrid allocation and ACT-03/ACT-04/MOT-01/Rewards deferrals. Stage G In Progress; Stage H Not Started. No implementation authorized by this entry. Master Programme 1.49 → 1.50. |
 | 1.49 | 2026-09-11 | **PKG-2A Knowledge Publication Readiness merged (TIIZI-V2-STAGE-G-PKG-2A-MERGE-001)** | **Founder/review disposition: PKG-2A APPROVED FOR MERGE** | Merges PKG-2A implementation + CORR-001 (migrations 007/008, KCS gate incl. published revisions, bounded grandfathering, fail-closed classes, locale subset, versioned classes; 317/317 tests). Records PKG-2A COMPLETE / MERGED. Next: Tiizi Engine Alignment Assessment determines the next missing Core Engine capability; PKG-1 does not automatically proceed. Migrations code-authorized, NOT deployed. Master Programme 1.48 → 1.49. |
 | 1.48 | 2026-09-11 | **Hybrid architecture position Founder Approved; PR #25 gate satisfied; PKG-2A authorized next** | **Founder disposition TIIZI-V2-STAGE-G-ARCH-DECISION-001 (APPROVE as written)** | Records §7 approval in STAGE-G-HYBRID-ARCHITECTURE-DECISION-CANDIDATE: PG authoritative for V2 domain truth, Firebase Auth issuer retained, Firestore Group/membership authority retained, provider-neutral seams mandatory; explicit non-authorizations preserved. Bounded amendment/clarification to older Stage F infrastructure description; Stage F product closed; no rollback; existing PG work affirmed intentional. Updates Next Action (PKG-2A authorized next, then PKG-1). Master Programme 1.47 → 1.48. |
 | 1.47 | 2026-09-11 | **Stage G entry + CORR-001 competition-ranking corrigendum + reconciliation correction (TIIZI-V2-STAGE-G-RECON-001-CORR-001)** | **Bounded wording corrigendum under STAGE-F-FAD-01; no mechanics changed; Stage G entry per FAD-01 §6** | Replaces the over-broad "1,1,3-style prohibited" wording with the mathematical standard-competition-ranking rule (FAD-01 §3 CORR-001, T1 K.8, T2 FR-V2-101/198). Records corrected code verdicts: streak ALL-requirements, collective overshoot and competitive backend ranking already aligned in V2 (no Stage G correction work for these). Sets Active Phase to neutral N/A (stages carry no phase taxonomy), Stage G Active, v1.47. Next: PKG-1 + PKG-2. Master Programme 1.46 → 1.47. |
