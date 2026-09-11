@@ -1734,11 +1734,15 @@ describe('config version pinning and replay (CORR-001)', () => {
     });
     const knowledgeId = setup.pins['push-up'].knowledge_id;
     // Canonical Knowledge revised v1 -> v2 (same identity, new content).
+    // (PKG-2A-CORR: published revisions satisfy the KCS gate.)
     const revised = await reviseKnowledgeItem(db, knowledgeId, {
       name: 'push-up',
       category: 'Upper Body',
       difficulty: 'Beginner',
       metricUnit: 'reps',
+      description: 'A pressing movement',
+      measurementGuidance: 'Count full-range repetitions',
+      safetyNotes: ['Stop on sharp pain'],
     });
     expect(revised.knowledgeVersion).toBe(2);
     // Production resolution now returns the v2 pin for the same identity.

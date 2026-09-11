@@ -29,6 +29,10 @@ import type { Db } from './db.js';
  * Identity: `id` is always the internal Tiizi UUID. Transitional legacy
  * Firestore document ids appear ONLY as `legacyId` in the compat lookup —
  * never as a domain `id`.
+ *
+ * PKG-2A note: this module is Tiizi Core Engine capability (Canonical
+ * Activity / Knowledge authority + KCS publication contract). It does not by
+ * itself authorize PKG-1 sequencing or any participant experience.
  */
 
 export type KnowledgeKind = 'fitness' | 'wellness';
@@ -265,13 +269,29 @@ export type KcsClass = 'U' | 'Q' | 'T' | 'P' | 'C' | 'M' | 'S';
 export const KCS_CLASSES: KcsClass[] = ['U', 'Q', 'T', 'P', 'C', 'M', 'S'];
 const KCS_CLASS_SET = new Set<string>(KCS_CLASSES);
 
+/**
+ * PKG-2A-CORR fail-closed class parsing. Omission (undefined/null) yields no
+ * declared classes; duplicates normalize deterministically. Anything else
+ * malformed — unknown letters, non-string entries, non-array values —
+ * rejects with 400 invalid_knowledge so client input can never silently
+ * weaken the effective KCS gate. Database rows already satisfy the CHECK
+ * constraint, so row mapping through this function is safe.
+ */
 export function parseContentClasses(value: unknown): KcsClass[] {
-  if (!Array.isArray(value)) return [];
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'contentClasses must be an array');
+  }
   const out: KcsClass[] = [];
   for (const entry of value) {
-    if (typeof entry === 'string' && KCS_CLASS_SET.has(entry) && !out.includes(entry as KcsClass)) {
-      out.push(entry as KcsClass);
+    if (typeof entry !== 'string' || !KCS_CLASS_SET.has(entry)) {
+      throw new KnowledgeError(
+        400,
+        'invalid_knowledge',
+        `Unknown content class: ${String(entry)} (valid: U Q T P C M S)`,
+      );
     }
+    if (!out.includes(entry as KcsClass)) out.push(entry as KcsClass);
   }
   return out;
 }
@@ -440,7 +460,13 @@ export function assessPublicationReadiness(
   return issues;
 }
 
-/** BCP 47–shaped locale identifiers (e.g. en, fr, fr-FR). Not coupled to any fixed language set. */
+/**
+ * Bounded locale subset (documented contract, PKG-2A-CORR §6 option B — not
+ * full BCP 47): two-letter lowercase language (`en`, `fr`) with an optional
+ * two-letter uppercase region (`fr-FR`, `sw-KE`). Longer BCP 47 tags
+ * (script/extended variants) are rejected until a governed need exists.
+ * Not coupled to any fixed language set.
+ */
 const LOCALE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
 
 export function validateLocale(value: unknown): string {
@@ -761,13 +787,19 @@ const ITEM_COLUMNS = `knowledge_id, kind, lifecycle, current_version, name, cate
   environment, adaptation, protocol_steps, session_framing, completion_meaning,
   avoidance_condition, semantic_definition, safety_notes, created_at, updated_at`;
 
-/** Content columns mirrored into knowledge_item_versions (governance columns excluded). */
+/**
+ * Content columns mirrored into knowledge_item_versions. content_classes is
+ * included (PKG-2A-CORR §7) so a historical version shows the class set that
+ * governed it; locale/default-locale/grandfathered remain current-state item
+ * attributes. Historical intelligibility of member-facing text is additionally
+ * carried by challenge snapshots.
+ */
 const VERSION_CONTENT_COLUMNS = `name, category, subcategory, difficulty, icon,
   description, metric_unit, target_value, target_type, frequency, points,
   image_url, tags, details, measurement_guidance, unit_semantics, setup,
   execution, technique_reference, form_cues, common_mistakes, equipment,
   environment, adaptation, protocol_steps, session_framing, completion_meaning,
-  avoidance_condition, semantic_definition, safety_notes`;
+  avoidance_condition, semantic_definition, safety_notes, content_classes`;
 
 function contentParams(content: ValidatedKnowledgeContent): unknown[] {
   return [
@@ -955,14 +987,14 @@ export async function createKnowledgeItem(
          (item_id, version, ${VERSION_CONTENT_COLUMNS})
        VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
                $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
-               $30, $31)`,
+               $30, $31, $32)`,
       [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content)],
     );
     return mapKnowledgeRow(row);
   });
 }
 
-/** PKG-2A content columns for version rows (governance columns excluded). */
+/** PKG-2A content columns for version rows (plus content_classes per §7). */
 function kcsVersionParams(content: ValidatedKnowledgeContent): unknown[] {
   return [
     content.measurementGuidance,
@@ -981,6 +1013,7 @@ function kcsVersionParams(content: ValidatedKnowledgeContent): unknown[] {
     content.avoidanceCondition,
     content.semanticDefinition,
     content.safetyNotes,
+    content.contentClasses,
   ];
 }
 
@@ -1004,6 +1037,18 @@ export async function reviseKnowledgeItem(
     const row = current.rows[0];
     if (!row) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
     const content = validateKnowledgeContent(row.kind as KnowledgeKind, input);
+    // PKG-2A-CORR: a revision that remains published must satisfy the current
+    // KCS gate on the NEW content — including grandfathered items, whose
+    // exemption covers only their pre-KCS publication, never future versions.
+    // Failure rejects before any write; the published version is untouched.
+    if ((row.lifecycle as KnowledgeLifecycle) === 'published') {
+      requirePublicationReady(
+        row.kind as KnowledgeKind,
+        content.contentClasses,
+        snapshotForReadiness(content),
+        false,
+      );
+    }
     const next = Number(row.current_version) + 1;
     const updated = await tx.query<KnowledgeRow>(
       `UPDATE knowledge_items SET
@@ -1033,7 +1078,7 @@ export async function reviseKnowledgeItem(
          (item_id, version, ${VERSION_CONTENT_COLUMNS})
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
                $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-               $31, $32)`,
+               $31, $32, $33)`,
       [id, next, ...contentParams(content), ...kcsVersionParams(content)],
     );
     return mapKnowledgeRow(updated.rows[0]);

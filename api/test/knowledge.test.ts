@@ -750,11 +750,16 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
     const id = compat.json().mappings[0].id as string;
 
     // API-side revision to version 2; re-import of Firestore version 1 must not regress it.
+    // (PKG-2A-CORR: published revisions satisfy the KCS gate.)
     await app.inject({
       method: 'PATCH',
       url: `/v1/admin/knowledge/${id}`,
       headers: jsonHeaders('adm'),
-      payload: fitnessPayload({ name: 'API Revised' }),
+      payload: fitnessPayload({
+        name: 'API Revised',
+        measurementGuidance: 'Count full-range repetitions',
+        safetyNotes: ['Stop on sharp pain'],
+      }),
     });
     await runKnowledgeImport(db, source([fitnessDoc('push-ups')]), { dryRun: false });
     const kept = await app.inject({

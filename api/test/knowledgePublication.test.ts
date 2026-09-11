@@ -10,6 +10,7 @@ import {
   reviseKnowledgeItem,
   setKnowledgeLifecycle,
   setKnowledgeText,
+  validateLocale,
   type KcsClass,
 } from '../src/knowledge.js';
 import { runMigrations } from '../src/migrate.js';
@@ -401,6 +402,136 @@ describe('PKG-2A publication readiness', () => {
       payload: { locale: 'fr', field: 'description', value: 'x' },
     });
     expect(missing.statusCode).toBe(404);
+  });
+});
+
+describe('PKG-2A-CORR publication integrity', () => {
+  async function publishFullPhysical(db: ReturnType<typeof testDb>) {
+    const item = await createKnowledgeItem(db, fullPhysical());
+    return setKnowledgeLifecycle(db, item.id, 'published');
+  }
+
+  it('1+2. published item cannot be revised into KCS-invalid content; prior version unchanged', async () => {
+    const db = testDb();
+    const published = await publishFullPhysical(db);
+    expect(published.lifecycle).toBe('published');
+    try {
+      await reviseKnowledgeItem(db, published.id, fullPhysical({ setup: '', execution: '' }));
+      throw new Error('revision should have been rejected');
+    } catch (error) {
+      if ((error as Error).message === 'revision should have been rejected') throw error;
+      const err = error as { statusCode?: number; code?: string };
+      expect(err.statusCode).toBe(422);
+      expect(err.code).toBe('kcs_not_ready');
+    }
+    const current = await getKnowledgeById(db, published.id);
+    expect(current?.knowledgeVersion).toBe(1);
+    expect(current?.lifecycle).toBe('published');
+    expect(current?.setup).toBe('Hands under shoulders, body straight');
+  });
+
+  it('3. valid published revision succeeds and versions', async () => {
+    const db = testDb();
+    const published = await publishFullPhysical(db);
+    const revised = await reviseKnowledgeItem(
+      db,
+      published.id,
+      fullPhysical({ description: 'Revised pressing movement' }),
+    );
+    expect(revised.knowledgeVersion).toBe(2);
+    expect(revised.lifecycle).toBe('published');
+    expect(revised.description).toBe('Revised pressing movement');
+  });
+
+  it('4+5. grandfathered item stays readable, but its new revision is KCS-gated', async () => {
+    const db = testDb();
+    await db.query(
+      `INSERT INTO knowledge_items
+         (kind, lifecycle, current_version, grandfathered, name, category, metric_unit)
+       VALUES ('wellness', 'published', 1, TRUE, 'Legacy Rest', 'sleep', 'hours')`,
+    );
+    const listed = await listPublishedKnowledge(db, {});
+    const legacy = listed.find((entry) => entry.name === 'Legacy Rest');
+    expect(legacy?.grandfathered).toBe(true);
+    // Incomplete new content → rejected, published version untouched.
+    try {
+      await reviseKnowledgeItem(db, legacy!.id, {
+        name: 'Legacy Rest',
+        category: 'sleep',
+        difficulty: 'beginner',
+        metricUnit: 'hours',
+        description: 'Still incomplete',
+      });
+      throw new Error('revision should have been rejected');
+    } catch (error) {
+      if ((error as Error).message === 'revision should have been rejected') throw error;
+      expect((error as { code?: string }).code).toBe('kcs_not_ready');
+    }
+    expect((await getKnowledgeById(db, legacy!.id))?.knowledgeVersion).toBe(1);
+    // Complete new content → accepted as version 2; grandfathered provenance preserved.
+    const revised = await reviseKnowledgeItem(db, legacy!.id, {
+      name: 'Legacy Rest',
+      category: 'sleep',
+      difficulty: 'beginner',
+      metricUnit: 'hours',
+      description: 'A rest practice',
+      measurementGuidance: 'Report rest hours',
+    });
+    expect(revised.knowledgeVersion).toBe(2);
+    expect(revised.lifecycle).toBe('published');
+    expect(revised.grandfathered).toBe(true);
+  });
+
+  it('6+7. invalid and non-string content classes are rejected, not dropped', async () => {
+    const db = testDb();
+    await expect(
+      createKnowledgeItem(db, baseWellness({ contentClasses: ['Q', 'X'] })),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'invalid_knowledge' });
+    await expect(
+      createKnowledgeItem(db, baseWellness({ contentClasses: ['Q', 5] })),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'invalid_knowledge' });
+    await expect(
+      createKnowledgeItem(db, baseWellness({ contentClasses: 'Q' })),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'invalid_knowledge' });
+  });
+
+  it('8. duplicate valid classes normalize deterministically', async () => {
+    const db = testDb();
+    const item = await createKnowledgeItem(db, baseWellness({ contentClasses: ['Q', 'Q', 'T'] }));
+    expect(item.contentClasses).toEqual(['Q', 'T']);
+  });
+
+  it('9. locale behavior matches the documented bounded-subset contract', async () => {
+    for (const locale of ['en', 'fr', 'fr-FR', 'sw-KE']) {
+      expect(validateLocale(locale)).toBe(locale);
+    }
+    for (const bad of ['e', 'eng', 'en_us', 'EN', 'en-Latn-US', '', 'e1']) {
+      expect(() => validateLocale(bad)).toThrow(expect.objectContaining({ code: 'invalid_knowledge' }));
+    }
+    const db = testDb();
+    const item = await createKnowledgeItem(db, simpleUQ());
+    await expect(setKnowledgeText(db, item.id, 'en-Latn-US', 'description', 'x')).rejects.toMatchObject({
+      code: 'invalid_knowledge',
+    });
+  });
+
+  it('10. version/class history remains reconstructable', async () => {
+    const db = testDb();
+    const item = await createKnowledgeItem(db, fullPhysical());
+    await setKnowledgeLifecycle(db, item.id, 'published');
+    await reviseKnowledgeItem(
+      db,
+      item.id,
+      fullPhysical({
+        contentClasses: ['Q', 'T', 'M'],
+        semanticDefinition: 'A governed strength meaning',
+      }),
+    );
+    const v1 = await getKnowledgeVersion(db, item.id, 1);
+    const v2 = await getKnowledgeVersion(db, item.id, 2);
+    expect(v1?.contentClasses).toEqual(['Q', 'T']);
+    expect(v2?.contentClasses).toEqual(['Q', 'T', 'M']);
+    expect(v2?.semanticDefinition).toBe('A governed strength meaning');
   });
 });
 

@@ -1,8 +1,11 @@
 -- PKG-2A Knowledge Publication Readiness (Stage F KCS contract).
 --
--- Additive only: new columns/tables for KCS content classes, publication
--- readiness evidence, and locale-keyed member-facing text. No existing
--- column is altered, no data is rewritten, no table is dropped.
+-- Schema changes are additive: new columns/tables for KCS content classes,
+-- publication readiness evidence, and locale-keyed member-facing text. No
+-- existing column is altered and no table is dropped.
+-- One bounded compatibility data update marks pre-existing published records
+-- grandfathered (see below). No canonical Knowledge content is rewritten;
+-- no records are demoted or deleted.
 --
 -- Compatibility rule (explicit, bounded): rows already published when this
 -- migration runs are marked grandfathered = TRUE — they were published
