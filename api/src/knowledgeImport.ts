@@ -334,11 +334,14 @@ export async function runKnowledgeImport(
       );
       const row = existing.rows[0];
       if (!row) {
+        // Legacy Firestore carries predate the KCS gate: they enter as
+        // grandfathered published records (PKG-2A compat rule), never as
+        // gate-subject drafts.
         await tx.query(
           `INSERT INTO knowledge_items
              (knowledge_id, kind, legacy_firestore_id, legacy_collection,
-              lifecycle, current_version, ${ITEM_CONTENT_COLUMNS})
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+              lifecycle, current_version, grandfathered, ${ITEM_CONTENT_COLUMNS})
+           VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8, $9, $10, $11, $12, $13,
                    $14, $15, $16, $17, $18, $19, $20)`,
           [n.knowledgeId, n.kind, n.legacyId, n.legacyCollection, n.lifecycle, n.version,
             ...contentValues(n)],

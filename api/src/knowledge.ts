@@ -72,11 +72,13 @@ export const KNOWLEDGE_UUID_NAMESPACE = 'b3e1a2c4-8f5d-4a1e-9c3b-2d4f6a8b0c1e';
 export class KnowledgeError extends Error {
   readonly statusCode: number;
   readonly code: string;
+  readonly details?: unknown;
 
-  constructor(statusCode: number, code: string, message: string) {
+  constructor(statusCode: number, code: string, message: string, details?: unknown) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -134,6 +136,25 @@ export interface ApiKnowledgeItem {
   imageUrl: string;
   tags: string[];
   details: Record<string, unknown>;
+  contentClasses: KcsClass[];
+  defaultLocale: string;
+  grandfathered: boolean;
+  measurementGuidance: string;
+  unitSemantics: string;
+  setup: string;
+  execution: string;
+  techniqueReference: string;
+  formCues: string[];
+  commonMistakes: string[];
+  equipment: string;
+  environment: string;
+  adaptation: string;
+  protocolSteps: unknown[];
+  sessionFraming: string;
+  completionMeaning: string;
+  avoidanceCondition: string;
+  semanticDefinition: string;
+  safetyNotes: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -153,6 +174,24 @@ export interface KnowledgeContentInput {
   imageUrl?: unknown;
   tags?: unknown;
   details?: unknown;
+  contentClasses?: unknown;
+  defaultLocale?: unknown;
+  measurementGuidance?: unknown;
+  unitSemantics?: unknown;
+  setup?: unknown;
+  execution?: unknown;
+  techniqueReference?: unknown;
+  formCues?: unknown;
+  commonMistakes?: unknown;
+  equipment?: unknown;
+  environment?: unknown;
+  adaptation?: unknown;
+  protocolSteps?: unknown;
+  sessionFraming?: unknown;
+  completionMeaning?: unknown;
+  avoidanceCondition?: unknown;
+  semanticDefinition?: unknown;
+  safetyNotes?: unknown;
 }
 
 export interface CreateKnowledgeInput extends KnowledgeContentInput {
@@ -215,6 +254,234 @@ function asDetails(value: unknown): Record<string, unknown> {
   return {};
 }
 
+/**
+ * PKG-2A — KCS content classes (Stage F Knowledge Content Specification).
+ * Classes compose; the publication minimum is the UNION of all applicable
+ * class requirements. U applies to every Activity. S is automatic for
+ * fitness kinds (physical by default, KCS §3.7).
+ */
+export type KcsClass = 'U' | 'Q' | 'T' | 'P' | 'C' | 'M' | 'S';
+
+export const KCS_CLASSES: KcsClass[] = ['U', 'Q', 'T', 'P', 'C', 'M', 'S'];
+const KCS_CLASS_SET = new Set<string>(KCS_CLASSES);
+
+export function parseContentClasses(value: unknown): KcsClass[] {
+  if (!Array.isArray(value)) return [];
+  const out: KcsClass[] = [];
+  for (const entry of value) {
+    if (typeof entry === 'string' && KCS_CLASS_SET.has(entry) && !out.includes(entry as KcsClass)) {
+      out.push(entry as KcsClass);
+    }
+  }
+  return out;
+}
+
+/** Declared classes plus automatic memberships. U always applies. */
+export function effectiveContentClasses(kind: KnowledgeKind, declared: KcsClass[]): Set<KcsClass> {
+  const effective = new Set<KcsClass>(['U', ...declared]);
+  if (kind === 'fitness') effective.add('S');
+  return effective;
+}
+
+export interface KcsReadinessIssue {
+  field: string;
+  class: KcsClass;
+  reason: string;
+}
+
+export interface KcsContentSnapshot {
+  name: string;
+  description: string;
+  category: string;
+  metricUnit: string;
+  measurementGuidance: string;
+  unitSemantics: string;
+  setup: string;
+  execution: string;
+  techniqueReference: string;
+  formCues: string[];
+  commonMistakes: string[];
+  equipment: string;
+  environment: string;
+  adaptation: string;
+  protocolSteps: unknown;
+  sessionFraming: string;
+  completionMeaning: string;
+  avoidanceCondition: string;
+  semanticDefinition: string;
+  safetyNotes: string[];
+}
+
+function nonEmpty(value: string): boolean {
+  return value.trim().length > 0;
+}
+
+function nonEmptyList(value: string[]): boolean {
+  return value.some((entry) => entry.trim().length > 0);
+}
+
+function validProtocolSteps(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  return value.every((entry) => {
+    if (typeof entry === 'string') return entry.trim().length > 0 && entry.length <= 500;
+    if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+      const text = (entry as Record<string, unknown>).text;
+      const title = (entry as Record<string, unknown>).title;
+      return typeof text === 'string' && text.trim().length > 0 && text.length <= 1000 &&
+        (title === undefined || (typeof title === 'string' && title.length <= 200));
+    }
+    return false;
+  });
+}
+
+export function asProtocolSteps(value: unknown): unknown[] {
+  if (!Array.isArray(value)) return [];
+  return value;
+}
+
+/**
+ * Server-owned KCS publication readiness assessment (KRC §6.2, T2 FR-V2-213).
+ * Pure function over kind + effective classes + content snapshot. Returns
+ * every unmet minimum; empty means publishable. Never invents clinical
+ * content — absence is reported, not filled.
+ */
+export function assessPublicationReadiness(
+  kind: KnowledgeKind,
+  declared: KcsClass[],
+  content: KcsContentSnapshot,
+): KcsReadinessIssue[] {
+  const issues: KcsReadinessIssue[] = [];
+  const effective = effectiveContentClasses(kind, declared);
+  const require = (ok: boolean, field: string, cls: KcsClass, reason: string) => {
+    if (!ok) issues.push({ field, class: cls, reason });
+  };
+
+  // U — Universal.
+  require(nonEmpty(content.name), 'name', 'U', 'display title is required');
+  require(nonEmpty(content.description), 'description', 'U', 'authoritative description is required');
+  require(nonEmpty(content.category), 'category', 'U', 'governed category reference is required');
+  require(nonEmpty(content.metricUnit), 'metricUnit', 'U', 'compatible unit is required');
+  require(
+    nonEmpty(content.measurementGuidance),
+    'measurementGuidance',
+    'U',
+    'measurement/reporting guidance is required',
+  );
+
+  // Q — Quantitative.
+  if (effective.has('Q')) {
+    require(
+      nonEmpty(content.unitSemantics),
+      'unitSemantics',
+      'Q',
+      'governed unit semantics are required for measured activities',
+    );
+  }
+
+  // T — Technique-dependent fitness.
+  if (effective.has('T')) {
+    require(nonEmpty(content.setup), 'setup', 'T', 'setup guidance is required');
+    require(nonEmpty(content.execution), 'execution', 'T', 'execution guidance is required');
+    require(
+      nonEmptyList(content.formCues) || nonEmptyList(content.commonMistakes) ||
+        nonEmpty(content.techniqueReference),
+      'formCues',
+      'T',
+      'form cues, common mistakes, or a governed technique reference is required',
+    );
+    require(
+      nonEmpty(content.adaptation),
+      'adaptation',
+      'T',
+      'adaptation/difficulty pointer is required',
+    );
+  }
+
+  // P — Protocol/practice wellness.
+  if (effective.has('P')) {
+    require(
+      validProtocolSteps(content.protocolSteps),
+      'protocolSteps',
+      'P',
+      'non-empty protocol steps are required',
+    );
+  }
+
+  // C — Completion/self-attested.
+  if (effective.has('C')) {
+    require(
+      nonEmpty(content.completionMeaning),
+      'completionMeaning',
+      'C',
+      'completion meaning (what counts as Done) is required',
+    );
+  }
+
+  // M — Meaning-sensitive.
+  if (effective.has('M')) {
+    require(
+      nonEmpty(content.semanticDefinition),
+      'semanticDefinition',
+      'M',
+      'governed semantic definition is required before publishing with the dependent meaning',
+    );
+  }
+
+  // S — Safety-sensitive.
+  if (effective.has('S')) {
+    require(
+      nonEmptyList(content.safetyNotes),
+      'safetyNotes',
+      'S',
+      'supported caution/safety content is required',
+    );
+  }
+
+  return issues;
+}
+
+/** BCP 47–shaped locale identifiers (e.g. en, fr, fr-FR). Not coupled to any fixed language set. */
+const LOCALE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
+
+export function validateLocale(value: unknown): string {
+  if (typeof value !== 'string' || !LOCALE_RE.test(value)) {
+    throw new KnowledgeError(400, 'invalid_knowledge', `Invalid locale identifier: ${String(value)}`);
+  }
+  return value;
+}
+
+/** Source locale for canonical member-facing text stored in base columns. */
+export const DEFAULT_SOURCE_LOCALE = 'en';
+
+/** Member-facing scalar text fields supporting locale overrides. */
+export const LOCALIZABLE_TEXT_FIELDS = new Set([
+  'name',
+  'description',
+  'measurementGuidance',
+  'unitSemantics',
+  'setup',
+  'execution',
+  'techniqueReference',
+  'equipment',
+  'environment',
+  'adaptation',
+  'sessionFraming',
+  'completionMeaning',
+  'avoidanceCondition',
+  'semanticDefinition',
+]);
+
+/** Member-facing string-list fields supporting locale overrides (JSON array values). */
+export const LOCALIZABLE_ARRAY_FIELDS = new Set([
+  'formCues',
+  'commonMistakes',
+  'safetyNotes',
+]);
+
+export function isLocalizableField(field: string): boolean {
+  return LOCALIZABLE_TEXT_FIELDS.has(field) || LOCALIZABLE_ARRAY_FIELDS.has(field);
+}
+
 export interface ValidatedKnowledgeContent {
   name: string;
   category: string;
@@ -230,6 +497,24 @@ export interface ValidatedKnowledgeContent {
   imageUrl: string;
   tags: string[];
   details: Record<string, unknown>;
+  contentClasses: KcsClass[];
+  defaultLocale: string;
+  measurementGuidance: string;
+  unitSemantics: string;
+  setup: string;
+  execution: string;
+  techniqueReference: string;
+  formCues: string[];
+  commonMistakes: string[];
+  equipment: string;
+  environment: string;
+  adaptation: string;
+  protocolSteps: unknown[];
+  sessionFraming: string;
+  completionMeaning: string;
+  avoidanceCondition: string;
+  semanticDefinition: string;
+  safetyNotes: string[];
 }
 
 /**
@@ -288,6 +573,18 @@ export function validateKnowledgeContent(
     points = Math.floor(n);
   }
 
+  if (input.protocolSteps !== undefined && !Array.isArray(input.protocolSteps)) {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'protocolSteps must be an array');
+  }
+  const protocolSteps = asProtocolSteps(input.protocolSteps);
+  if (input.protocolSteps !== undefined && protocolSteps.length > 0 && !validProtocolSteps(protocolSteps)) {
+    throw new KnowledgeError(
+      400,
+      'invalid_knowledge',
+      'protocolSteps entries must be non-empty strings or {title?, text} objects',
+    );
+  }
+
   return {
     name,
     category,
@@ -303,6 +600,26 @@ export function validateKnowledgeContent(
     imageUrl: asTrimmed(input.imageUrl, 500),
     tags: asStringArray(input.tags),
     details: asDetails(input.details),
+    contentClasses: parseContentClasses(input.contentClasses),
+    defaultLocale: input.defaultLocale === undefined || input.defaultLocale === null
+      ? DEFAULT_SOURCE_LOCALE
+      : validateLocale(input.defaultLocale),
+    measurementGuidance: asTrimmed(input.measurementGuidance, 2000),
+    unitSemantics: asTrimmed(input.unitSemantics, 2000),
+    setup: asTrimmed(input.setup, 2000),
+    execution: asTrimmed(input.execution, 2000),
+    techniqueReference: asTrimmed(input.techniqueReference, 500),
+    formCues: asStringArray(input.formCues),
+    commonMistakes: asStringArray(input.commonMistakes),
+    equipment: asTrimmed(input.equipment, 1000),
+    environment: asTrimmed(input.environment, 1000),
+    adaptation: asTrimmed(input.adaptation, 2000),
+    protocolSteps,
+    sessionFraming: asTrimmed(input.sessionFraming, 2000),
+    completionMeaning: asTrimmed(input.completionMeaning, 2000),
+    avoidanceCondition: asTrimmed(input.avoidanceCondition, 2000),
+    semanticDefinition: asTrimmed(input.semanticDefinition, 2000),
+    safetyNotes: asStringArray(input.safetyNotes),
   };
 }
 
@@ -325,8 +642,45 @@ interface KnowledgeRow {
   image_url: string;
   tags: string[] | string | null;
   details: Record<string, unknown> | string | null;
+  content_classes: string[] | string | null;
+  default_locale: string | null;
+  grandfathered: boolean | null;
+  measurement_guidance: string | null;
+  unit_semantics: string | null;
+  setup: string | null;
+  execution: string | null;
+  technique_reference: string | null;
+  form_cues: string[] | string | null;
+  common_mistakes: string[] | string | null;
+  equipment: string | null;
+  environment: string | null;
+  adaptation: string | null;
+  protocol_steps: unknown[] | string | null;
+  session_framing: string | null;
+  completion_meaning: string | null;
+  avoidance_condition: string | null;
+  semantic_definition: string | null;
+  safety_notes: string[] | string | null;
   created_at: string;
   updated_at: string;
+}
+
+function parseStringList(value: string[] | string | null | undefined): string[] {
+  if (Array.isArray(value)) return value.map((t) => String(t));
+  return [];
+}
+
+function parseProtocolSteps(value: unknown[] | string | null | undefined): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value) {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Fall through to empty steps.
+    }
+  }
+  return [];
 }
 
 function parseTags(value: KnowledgeRow['tags']): string[] {
@@ -373,6 +727,27 @@ export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
     imageUrl: row.image_url ?? '',
     tags: parseTags(row.tags),
     details: parseDetails(row.details),
+    contentClasses: parseContentClasses(row.content_classes),
+    defaultLocale: typeof row.default_locale === 'string' && row.default_locale
+      ? row.default_locale
+      : DEFAULT_SOURCE_LOCALE,
+    grandfathered: row.grandfathered === true,
+    measurementGuidance: row.measurement_guidance ?? '',
+    unitSemantics: row.unit_semantics ?? '',
+    setup: row.setup ?? '',
+    execution: row.execution ?? '',
+    techniqueReference: row.technique_reference ?? '',
+    formCues: parseStringList(row.form_cues),
+    commonMistakes: parseStringList(row.common_mistakes),
+    equipment: row.equipment ?? '',
+    environment: row.environment ?? '',
+    adaptation: row.adaptation ?? '',
+    protocolSteps: parseProtocolSteps(row.protocol_steps),
+    sessionFraming: row.session_framing ?? '',
+    completionMeaning: row.completion_meaning ?? '',
+    avoidanceCondition: row.avoidance_condition ?? '',
+    semanticDefinition: row.semantic_definition ?? '',
+    safetyNotes: parseStringList(row.safety_notes),
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
@@ -380,7 +755,19 @@ export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
 
 const ITEM_COLUMNS = `knowledge_id, kind, lifecycle, current_version, name, category,
   subcategory, difficulty, icon, description, metric_unit, target_value,
-  target_type, frequency, points, image_url, tags, details, created_at, updated_at`;
+  target_type, frequency, points, image_url, tags, details, content_classes,
+  default_locale, grandfathered, measurement_guidance, unit_semantics, setup,
+  execution, technique_reference, form_cues, common_mistakes, equipment,
+  environment, adaptation, protocol_steps, session_framing, completion_meaning,
+  avoidance_condition, semantic_definition, safety_notes, created_at, updated_at`;
+
+/** Content columns mirrored into knowledge_item_versions (governance columns excluded). */
+const VERSION_CONTENT_COLUMNS = `name, category, subcategory, difficulty, icon,
+  description, metric_unit, target_value, target_type, frequency, points,
+  image_url, tags, details, measurement_guidance, unit_semantics, setup,
+  execution, technique_reference, form_cues, common_mistakes, equipment,
+  environment, adaptation, protocol_steps, session_framing, completion_meaning,
+  avoidance_condition, semantic_definition, safety_notes`;
 
 function contentParams(content: ValidatedKnowledgeContent): unknown[] {
   return [
@@ -401,6 +788,113 @@ function contentParams(content: ValidatedKnowledgeContent): unknown[] {
   ];
 }
 
+/** PKG-2A content columns appended after the legacy content params. */
+function kcsContentParams(content: ValidatedKnowledgeContent): unknown[] {
+  return [
+    content.contentClasses,
+    content.defaultLocale,
+    false,
+    content.measurementGuidance,
+    content.unitSemantics,
+    content.setup,
+    content.execution,
+    content.techniqueReference,
+    content.formCues,
+    content.commonMistakes,
+    content.equipment,
+    content.environment,
+    content.adaptation,
+    JSON.stringify(content.protocolSteps),
+    content.sessionFraming,
+    content.completionMeaning,
+    content.avoidanceCondition,
+    content.semanticDefinition,
+    content.safetyNotes,
+  ];
+}
+
+const KCS_ITEM_COLUMNS = `content_classes, default_locale, grandfathered,
+  measurement_guidance, unit_semantics, setup, execution, technique_reference,
+  form_cues, common_mistakes, equipment, environment, adaptation,
+  protocol_steps, session_framing, completion_meaning, avoidance_condition,
+  semantic_definition, safety_notes`;
+
+/** Snapshot of a validated content object for readiness assessment. */
+export function snapshotForReadiness(content: ValidatedKnowledgeContent): KcsContentSnapshot {
+  return {
+    name: content.name,
+    description: content.description,
+    category: content.category,
+    metricUnit: content.metricUnit,
+    measurementGuidance: content.measurementGuidance,
+    unitSemantics: content.unitSemantics,
+    setup: content.setup,
+    execution: content.execution,
+    techniqueReference: content.techniqueReference,
+    formCues: content.formCues,
+    commonMistakes: content.commonMistakes,
+    equipment: content.equipment,
+    environment: content.environment,
+    adaptation: content.adaptation,
+    protocolSteps: content.protocolSteps,
+    sessionFraming: content.sessionFraming,
+    completionMeaning: content.completionMeaning,
+    avoidanceCondition: content.avoidanceCondition,
+    semanticDefinition: content.semanticDefinition,
+    safetyNotes: content.safetyNotes,
+  };
+}
+
+/** Snapshot of a mapped API item for readiness assessment. */
+export function snapshotItemForReadiness(item: ApiKnowledgeItem): KcsContentSnapshot {
+  return {
+    name: item.name,
+    description: item.description,
+    category: item.category,
+    metricUnit: item.metricUnit,
+    measurementGuidance: item.measurementGuidance,
+    unitSemantics: item.unitSemantics,
+    setup: item.setup,
+    execution: item.execution,
+    techniqueReference: item.techniqueReference,
+    formCues: item.formCues,
+    commonMistakes: item.commonMistakes,
+    equipment: item.equipment,
+    environment: item.environment,
+    adaptation: item.adaptation,
+    protocolSteps: item.protocolSteps,
+    sessionFraming: item.sessionFraming,
+    completionMeaning: item.completionMeaning,
+    avoidanceCondition: item.avoidanceCondition,
+    semanticDefinition: item.semanticDefinition,
+    safetyNotes: item.safetyNotes,
+  };
+}
+
+/**
+ * Enforces the KCS publication gate (KRC §6.2, T2 FR-V2-213). Throws 422
+ * `kcs_not_ready` with structured missing-field details unless every
+ * applicable class minimum is satisfied. Grandfathered items (published
+ * under pre-KCS rules) are exempt: published state is never auto-demoted.
+ */
+export function requirePublicationReady(
+  kind: KnowledgeKind,
+  declared: KcsClass[],
+  content: KcsContentSnapshot,
+  grandfathered: boolean,
+): void {
+  if (grandfathered) return;
+  const issues = assessPublicationReadiness(kind, declared, content);
+  if (issues.length > 0) {
+    throw new KnowledgeError(
+      422,
+      'kcs_not_ready',
+      `Knowledge does not satisfy KCS publication minimum: ${issues.map((i) => i.field).join(', ')}`,
+      { missing: issues },
+    );
+  }
+}
+
 /** Throws 403 unless the member holds a knowledge-administration role. */
 export async function requireKnowledgeAdmin(db: Db, memberId: string): Promise<void> {
   const result = await db.query<{ role: string }>(
@@ -416,8 +910,10 @@ export async function requireKnowledgeAdmin(db: Db, memberId: string): Promise<v
 /**
  * Create a canonical Knowledge item. Starts at version 1 with an initial
  * immutable version row; any client-supplied version is ignored. `kind` is
- * immutable after creation. Lifecycle defaults to published (legacy
- * backwards compatibility); callers may explicitly create drafts.
+ * immutable after creation. Lifecycle defaults to draft (PKG-2A safe
+ * default — new records must earn publication through the KCS gate).
+ * Requesting published at creation runs the same gate before insert.
+ * New items are never grandfathered.
  */
 export async function createKnowledgeItem(
   db: Db,
@@ -429,7 +925,7 @@ export async function createKnowledgeItem(
   }
   const content = validateKnowledgeContent(kind, input);
   const lifecycle = input.lifecycle === undefined || input.lifecycle === null
-    ? 'published'
+    ? 'draft'
     : String(input.lifecycle);
   if (lifecycle !== 'draft' && lifecycle !== 'published') {
     throw new KnowledgeError(
@@ -438,27 +934,54 @@ export async function createKnowledgeItem(
       'New items start as draft or published; retired is reached only via retire',
     );
   }
+  if (lifecycle === 'published') {
+    requirePublicationReady(kind, content.contentClasses, snapshotForReadiness(content), false);
+  }
   return db.transaction(async (tx) => {
     const inserted = await tx.query<KnowledgeRow>(
       `INSERT INTO knowledge_items
          (kind, lifecycle, current_version, name, category, subcategory, difficulty,
           icon, description, metric_unit, target_value, target_type, frequency,
-          points, image_url, tags, details)
-       VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          points, image_url, tags, details, ${KCS_ITEM_COLUMNS})
+       VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+               $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+               $31, $32, $33, $34, $35)
        RETURNING ${ITEM_COLUMNS}`,
-      [kind, lifecycle, ...contentParams(content)],
+      [kind, lifecycle, ...contentParams(content), ...kcsContentParams(content)],
     );
     const row = inserted.rows[0];
     await tx.query(
       `INSERT INTO knowledge_item_versions
-         (item_id, version, name, category, subcategory, difficulty, icon,
-          description, metric_unit, target_value, target_type, frequency,
-          points, image_url, tags, details)
-       VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-      [row.knowledge_id, ...contentParams(content)],
+         (item_id, version, ${VERSION_CONTENT_COLUMNS})
+       VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+               $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
+               $30, $31)`,
+      [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content)],
     );
     return mapKnowledgeRow(row);
   });
+}
+
+/** PKG-2A content columns for version rows (governance columns excluded). */
+function kcsVersionParams(content: ValidatedKnowledgeContent): unknown[] {
+  return [
+    content.measurementGuidance,
+    content.unitSemantics,
+    content.setup,
+    content.execution,
+    content.techniqueReference,
+    content.formCues,
+    content.commonMistakes,
+    content.equipment,
+    content.environment,
+    content.adaptation,
+    JSON.stringify(content.protocolSteps),
+    content.sessionFraming,
+    content.completionMeaning,
+    content.avoidanceCondition,
+    content.semanticDefinition,
+    content.safetyNotes,
+  ];
 }
 
 /**
@@ -487,18 +1010,31 @@ export async function reviseKnowledgeItem(
          name = $2, category = $3, subcategory = $4, difficulty = $5, icon = $6,
          description = $7, metric_unit = $8, target_value = $9, target_type = $10,
          frequency = $11, points = $12, image_url = $13, tags = $14, details = $15,
-         current_version = $16, updated_at = now()
+         content_classes = $16, default_locale = $17,
+         measurement_guidance = $18, unit_semantics = $19, setup = $20,
+         execution = $21, technique_reference = $22, form_cues = $23,
+         common_mistakes = $24, equipment = $25, environment = $26,
+         adaptation = $27, protocol_steps = $28, session_framing = $29,
+         completion_meaning = $30, avoidance_condition = $31,
+         semantic_definition = $32, safety_notes = $33,
+         current_version = $34, updated_at = now()
        WHERE knowledge_id = $1
        RETURNING ${ITEM_COLUMNS}`,
-      [id, ...contentParams(content), next],
+      [id, ...contentParams(content), content.contentClasses, content.defaultLocale,
+        content.measurementGuidance, content.unitSemantics, content.setup,
+        content.execution, content.techniqueReference, content.formCues,
+        content.commonMistakes, content.equipment, content.environment,
+        content.adaptation, JSON.stringify(content.protocolSteps),
+        content.sessionFraming, content.completionMeaning, content.avoidanceCondition,
+        content.semanticDefinition, content.safetyNotes, next],
     );
     await tx.query(
       `INSERT INTO knowledge_item_versions
-         (item_id, version, name, category, subcategory, difficulty, icon,
-          description, metric_unit, target_value, target_type, frequency,
-          points, image_url, tags, details)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-      [id, next, ...contentParams(content)],
+         (item_id, version, ${VERSION_CONTENT_COLUMNS})
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+               $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+               $31, $32)`,
+      [id, next, ...contentParams(content), ...kcsVersionParams(content)],
     );
     return mapKnowledgeRow(updated.rows[0]);
   });
@@ -514,6 +1050,9 @@ const LIFECYCLE_TRANSITIONS: Record<KnowledgeLifecycle, KnowledgeLifecycle[]> = 
  * Lifecycle-only transition. Forward-only (draft → published → retired);
  * never creates a content version and never touches knowledgeVersion.
  * Idempotent when the item already holds the target lifecycle.
+ * The draft → published move enforces the KCS publication gate (T2
+ * FR-V2-213) for non-grandfathered items; published state is never
+ * auto-demoted by this function.
  */
 export async function setKnowledgeLifecycle(
   db: Db,
@@ -539,6 +1078,15 @@ export async function setKnowledgeLifecycle(
       `Cannot move knowledge from ${from} to ${target}`,
     );
   }
+  if (target === 'published') {
+    const item = mapKnowledgeRow(row);
+    requirePublicationReady(
+      item.kind,
+      item.contentClasses,
+      snapshotItemForReadiness(item),
+      item.grandfathered,
+    );
+  }
   const updated = await db.query<KnowledgeRow>(
     `UPDATE knowledge_items SET lifecycle = $2, updated_at = now()
      WHERE knowledge_id = $1
@@ -546,6 +1094,188 @@ export async function setKnowledgeLifecycle(
     [id, target],
   );
   return mapKnowledgeRow(updated.rows[0]);
+}
+
+/**
+ * PKG-2A locale-keyed member-facing text (T2 FR-V2-214). Canonical identity
+ * is never duplicated per locale: overrides attach to the same knowledge_id.
+ * Base columns always carry the default-locale (source) text.
+ */
+export interface KnowledgeTextEntry {
+  locale: string;
+  field: string;
+  value: string;
+}
+
+function parseTextArrayValue(field: string, value: string): string[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new KnowledgeError(
+      400,
+      'invalid_knowledge',
+      `Locale value for ${field} must be a JSON array of strings`,
+    );
+  }
+  if (!Array.isArray(parsed) || parsed.some((e) => typeof e !== 'string')) {
+    throw new KnowledgeError(
+      400,
+      'invalid_knowledge',
+      `Locale value for ${field} must be a JSON array of strings`,
+    );
+  }
+  return (parsed as string[]).map((e) => e.trim()).filter((e) => e.length > 0);
+}
+
+export async function setKnowledgeText(
+  db: Db,
+  id: string,
+  localeInput: unknown,
+  fieldInput: unknown,
+  valueInput: unknown,
+): Promise<KnowledgeTextEntry> {
+  if (!isUuid(id)) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
+  const locale = validateLocale(localeInput);
+  const field = typeof fieldInput === 'string' ? fieldInput : '';
+  if (!isLocalizableField(field)) {
+    throw new KnowledgeError(400, 'invalid_knowledge', `Field is not localizable: ${field}`);
+  }
+  if (typeof valueInput !== 'string' || !valueInput.trim()) {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'Locale value must be a non-empty string');
+  }
+  if (valueInput.length > 5000) {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'Locale value exceeds 5000 characters');
+  }
+  const exists = await db.query<{ knowledge_id: string }>(
+    'SELECT knowledge_id FROM knowledge_items WHERE knowledge_id = $1',
+    [id],
+  );
+  if (!exists.rows[0]) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
+  // Validate array-field payloads up front so malformed locale content is rejected, not stored.
+  if (LOCALIZABLE_ARRAY_FIELDS.has(field)) parseTextArrayValue(field, valueInput);
+  const stored = await db.query<{ locale: string; field: string; value: string }>(
+    `INSERT INTO knowledge_item_texts (item_id, locale, field, value, updated_at)
+     VALUES ($1, $2, $3, $4, now())
+     ON CONFLICT (item_id, locale, field)
+     DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+     RETURNING locale, field, value`,
+    [id, locale, field, valueInput],
+  );
+  return stored.rows[0];
+}
+
+export async function listKnowledgeTexts(db: Db, id: string): Promise<KnowledgeTextEntry[]> {
+  if (!isUuid(id)) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
+  const result = await db.query<KnowledgeTextEntry>(
+    'SELECT locale, field, value FROM knowledge_item_texts WHERE item_id = $1 ORDER BY locale, field',
+    [id],
+  );
+  return result.rows;
+}
+
+export interface LocalizedKnowledgeItem extends ApiKnowledgeItem {
+  resolvedLocale: string;
+  localeFallback: boolean;
+}
+
+const LOCALE_FIELD_PROPS: Record<string, keyof ApiKnowledgeItem> = {
+  name: 'name',
+  description: 'description',
+  measurementGuidance: 'measurementGuidance',
+  unitSemantics: 'unitSemantics',
+  setup: 'setup',
+  execution: 'execution',
+  techniqueReference: 'techniqueReference',
+  equipment: 'equipment',
+  environment: 'environment',
+  adaptation: 'adaptation',
+  sessionFraming: 'sessionFraming',
+  completionMeaning: 'completionMeaning',
+  avoidanceCondition: 'avoidanceCondition',
+  semanticDefinition: 'semanticDefinition',
+  formCues: 'formCues',
+  commonMistakes: 'commonMistakes',
+  safetyNotes: 'safetyNotes',
+};
+
+function applyLocaleOverrides(
+  item: ApiKnowledgeItem,
+  texts: KnowledgeTextEntry[],
+): { item: ApiKnowledgeItem; applied: number } {
+  let applied = 0;
+  const merged = { ...item };
+  for (const entry of texts) {
+    const prop = LOCALE_FIELD_PROPS[entry.field];
+    if (!prop) continue;
+    if (LOCALIZABLE_ARRAY_FIELDS.has(entry.field)) {
+      try {
+        const parsed = parseTextArrayValue(entry.field, entry.value);
+        if (parsed.length === 0) continue;
+        (merged as Record<string, unknown>)[prop] = parsed;
+        applied += 1;
+      } catch {
+        continue;
+      }
+    } else {
+      if (!entry.value.trim()) continue;
+      (merged as Record<string, unknown>)[prop] = entry.value;
+      applied += 1;
+    }
+  }
+  return { item: merged, applied };
+}
+
+/**
+ * Deterministic locale resolution (FR-V2-214): requested locale overrides
+ * apply per field; every field without an override falls back to the base
+ * (default-locale) text. resolvedLocale is always the requested locale;
+ * localeFallback is true whenever the request differs from the default
+ * locale — including when no override exists (full fallback).
+ */
+export async function localizeKnowledgeItems(
+  db: Db,
+  items: ApiKnowledgeItem[],
+  localeInput: unknown,
+): Promise<LocalizedKnowledgeItem[]> {
+  if (localeInput === undefined || localeInput === null || localeInput === '') {
+    return items.map((item) => ({ ...item, resolvedLocale: item.defaultLocale, localeFallback: false }));
+  }
+  const locale = validateLocale(localeInput);
+  const ids = items.map((item) => item.id);
+  const textsResult = ids.length > 0
+    ? await db.query<{ item_id: string; locale: string; field: string; value: string }>(
+      `SELECT item_id, locale, field, value FROM knowledge_item_texts
+       WHERE item_id = ANY($1::uuid[]) AND locale = $2`,
+      [ids, locale],
+    )
+    : { rows: [] as Array<{ item_id: string; locale: string; field: string; value: string }> };
+  const byItem = new Map<string, KnowledgeTextEntry[]>();
+  for (const row of textsResult.rows) {
+    const key = String(row.item_id);
+    const list = byItem.get(key) ?? [];
+    list.push({ locale: row.locale, field: row.field, value: row.value });
+    byItem.set(key, list);
+  }
+  return items.map((item) => {
+    const { item: merged } = applyLocaleOverrides(item, byItem.get(item.id) ?? []);
+    return {
+      ...merged,
+      resolvedLocale: locale,
+      localeFallback: locale !== item.defaultLocale,
+    };
+  });
+}
+
+export async function getLocalizedKnowledge(
+  db: Db,
+  id: string,
+  localeInput: unknown,
+): Promise<LocalizedKnowledgeItem | null> {
+  const item = await getKnowledgeById(db, id);
+  if (!item) return null;
+  const [localized] = await localizeKnowledgeItems(db, [item], localeInput);
+  return localized;
 }
 
 export interface KnowledgeListQuery {
@@ -645,9 +1375,7 @@ export async function getKnowledgeVersion(
   const current = item.rows[0];
   if (!current) return null;
   const versionRow = await db.query<KnowledgeRow>(
-    `SELECT name, category, subcategory, difficulty, icon, description,
-            metric_unit, target_value, target_type, frequency, points,
-            image_url, tags, details
+    `SELECT ${VERSION_CONTENT_COLUMNS}
      FROM knowledge_item_versions
      WHERE item_id = $1 AND version = $2`,
     [id, version],
@@ -758,6 +1486,27 @@ const knowledgeItemSchema = {
     imageUrl: { type: 'string' },
     tags: { type: 'array', items: { type: 'string' } },
     details: { type: 'object' },
+    contentClasses: { type: 'array', items: { type: 'string' } },
+    defaultLocale: { type: 'string' },
+    grandfathered: { type: 'boolean' },
+    measurementGuidance: { type: 'string' },
+    unitSemantics: { type: 'string' },
+    setup: { type: 'string' },
+    execution: { type: 'string' },
+    techniqueReference: { type: 'string' },
+    formCues: { type: 'array', items: { type: 'string' } },
+    commonMistakes: { type: 'array', items: { type: 'string' } },
+    equipment: { type: 'string' },
+    environment: { type: 'string' },
+    adaptation: { type: 'string' },
+    protocolSteps: { type: 'array' },
+    sessionFraming: { type: 'string' },
+    completionMeaning: { type: 'string' },
+    avoidanceCondition: { type: 'string' },
+    semanticDefinition: { type: 'string' },
+    safetyNotes: { type: 'array', items: { type: 'string' } },
+    resolvedLocale: { type: 'string' },
+    localeFallback: { type: 'boolean' },
     createdAt: { type: 'string' },
     updatedAt: { type: 'string' },
   },
@@ -797,7 +1546,8 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     const params = (request.query ?? {}) as Record<string, unknown>;
     const kind = params.kind === 'fitness' || params.kind === 'wellness' ? params.kind : undefined;
     const search = typeof params.search === 'string' ? params.search : undefined;
-    return { items: await listPublishedKnowledge(db, { kind, search }) };
+    const items = await listPublishedKnowledge(db, { kind, search });
+    return { items: await localizeKnowledgeItems(db, items, params.locale ?? undefined) };
   });
 
   const notFoundSchema = {
@@ -816,7 +1566,8 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     schema: { response: { 200: knowledgeItemSchema, 404: notFoundSchema } },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const item = await getKnowledgeById(db, id);
+    const params = (request.query ?? {}) as Record<string, unknown>;
+    const item = await getLocalizedKnowledge(db, id, params.locale ?? undefined);
     if (!item) {
       return reply.status(404).send({
         error: { code: 'knowledge_not_found', message: 'Unknown knowledge item' },
@@ -896,5 +1647,55 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
     const { id } = request.params as { id: string };
     return setKnowledgeLifecycle(db, id, 'retired');
+  });
+
+  app.get('/v1/admin/knowledge/:id/texts', {
+    schema: {
+      response: {
+        200: {
+          type: 'object',
+          required: ['texts'],
+          properties: {
+            texts: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['locale', 'field', 'value'],
+                properties: {
+                  locale: { type: 'string' },
+                  field: { type: 'string' },
+                  value: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (request) => {
+    await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
+    const { id } = request.params as { id: string };
+    return { texts: await listKnowledgeTexts(db, id) };
+  });
+
+  app.put('/v1/admin/knowledge/:id/texts', {
+    schema: {
+      response: {
+        200: {
+          type: 'object',
+          required: ['locale', 'field', 'value'],
+          properties: {
+            locale: { type: 'string' },
+            field: { type: 'string' },
+            value: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request) => {
+    await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
+    const { id } = request.params as { id: string };
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    return setKnowledgeText(db, id, body.locale, body.field, body.value);
   });
 }

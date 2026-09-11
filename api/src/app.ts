@@ -44,7 +44,14 @@ export function buildApp(deps: AppDeps) {
     if (statusCode >= 500) {
       reply.status(statusCode).send({ error: { code, message: 'Internal server error' } });
     } else {
-      reply.status(statusCode).send({ error: { code, message: error.message } });
+      const details = (error as { details?: unknown }).details;
+      reply.status(statusCode).send({
+        error: {
+          code,
+          message: error.message,
+          ...(details !== undefined ? { details } : {}),
+        },
+      });
     }
   });
 
