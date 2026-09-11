@@ -1,6 +1,6 @@
 # Stage G Hybrid Architecture Decision Candidate
 
-**Status:** Proposed — awaiting Founder approval. Not an authorization.
+**Status:** Founder Approved 2026-09-11 (APPROVE as written; see §7).
 **Date:** 2026-09-11
 **Scope:** Answers the PR #25 entry requirement (TIIZI-V2-STAGE-G-ARCH-RECON-001).
 Reconciliation of approved architecture description with V2 implementation
@@ -22,7 +22,7 @@ canonical main `7f55b68` (verified this session).
 | Participation | PostgreSQL (episodes, one-active guard) | V1 `challengeMembers` | Live membership authority | API join/withdraw routes | Unchanged |
 | Member Activity Evidence | PG C1 ledger (Evidence/association split, RESTRICT FKs) | V1 `workouts` (broad-read rules; legacy) | API validation | Evidence-only activity route + `client_key` idempotency | Unchanged; V1 store untouched |
 | Challenge Application | PG C2B (UNIQUE event, pins, Evidence-only) | — | Knowledge pins, fail-closed | API | Unchanged |
-| Derived Truth | PG computed (engines + fold; 1,2,2,4 read-time) | V1 summaries/snapshots | Server-owned, recomputable | API reads; V2 UI via API/hooks | Fix UI snapshot remnants in PKG-1 scope |
+| Derived Truth | PG computed (engines + fold; standard competition ranking at read time) | V1 summaries/snapshots | Server-owned, recomputable | API reads; V2 UI via API/hooks | Fix UI snapshot remnants in PKG-1 scope |
 | Social/feed | V1 Firestore (`groupActivityFeed`, auto-write) | — | Legacy triggers | V1 UI only | Consent-gated V2 feed is later package; never port auto-write |
 | Notifications | V1 Firestore user subcollections | — | Legacy service | V1 UI only | Later package |
 | Storage/media | Firebase Storage (client image upload) | — | Existing service | Direct SDK | Retained short-term; no change |
@@ -99,3 +99,28 @@ One, and only one: **approve or amend §4** (acknowledge the hybrid as the
 intended architecture within the MTAIP-001 interpretation). No product,
 schema, provider, or migration decision is requested. ACT-03/ACT-04/MOT-01/
 Rewards remain deferred and untouched.
+
+## 7. Founder Approval (2026-09-11)
+
+**Disposition: APPROVE as written.** The §4 position is adopted as the
+Stage G architecture position with immediate effect on merge to canonical
+main.
+
+- **MTAIP / Stage F relationship:** this is a bounded architecture
+  amendment/clarification to the older Stage F infrastructure description
+  (TAM "retain Firebase / no contradiction" wording). Stage F product
+  decisions remain closed. No rollback of existing V2 PostgreSQL/domain
+  implementation is required or authorized. The existing PostgreSQL-backed
+  V2 work is affirmed as intentional implementation of the decided
+  direction. Architecture remains governed by the principle that
+  architecture drives infrastructure. MTAIP-001 itself is not rewritten.
+- **Effect on Stage G:** the PR #25 architecture-reconciliation entry
+  requirement is satisfied.
+- **Effect on packages:** PKG-2A (Knowledge Publication Readiness) is
+  authorized next; PKG-1 (V2 Challenge Establishment Integration) is
+  authorized after PKG-2A per current execution order. Both proceed under
+  the §4 position and its explicit non-authorizations.
+- **Explicit non-authorizations preserved:** no broad Firebase migration;
+  no auth-provider change; no Group-authority migration; no infrastructure
+  rewrite; no hosting/provider change; no new deployment work; no
+  database-provider change. Each requires separate future authority.
