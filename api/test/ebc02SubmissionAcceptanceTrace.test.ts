@@ -780,9 +780,13 @@ describe('EBC-02 regression', () => {
     await insertEpisode(db, {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
+    // EBC-03: streak acceptance is same-day in the governing timezone —
+    // the clock is driven to the log's own Challenge day. Calculation
+    // assertions below are unchanged.
     const result = await applyChallengeActivity(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'streak-1' }),
       resolversFor(setup.pins),
+      { now: T('2026-06-10T12:00:00Z') },
     );
     expect(result.participation.currentStreak).toBe(1);
     expect(result.participation.daysCompleted).toBe(1);

@@ -145,6 +145,7 @@ const ALLOWED_TOP_FIELDS = new Set([
   'goal_unit',
   'required_consecutive_days',
   'reset_on_miss',
+  'timezone',
   'activities',
   'activate',
   'join_creator',
@@ -248,6 +249,10 @@ function checkCreationBody(data: unknown): string | null {
   if (body.reset_on_miss !== undefined && typeof body.reset_on_miss !== 'boolean') {
     return 'reset_on_miss must be boolean when present';
   }
+  if (body.timezone !== undefined
+    && (typeof body.timezone !== 'string' || body.timezone.length < 1 || body.timezone.length > 100)) {
+    return 'timezone must be an IANA identifier string (1..100 chars) when present';
+  }
   if (!Array.isArray(body.activities) || body.activities.length < 1 || body.activities.length > 50) {
     return 'activities must list 1..50 configured activities';
   }
@@ -304,6 +309,7 @@ const createBodySchema = {
     goal_unit: { type: 'string', minLength: 1, maxLength: 40 },
     required_consecutive_days: { type: 'integer', minimum: 1 },
     reset_on_miss: { type: 'boolean' },
+    timezone: { type: 'string', minLength: 1, maxLength: 100 },
     activities: { type: 'array', minItems: 1, maxItems: 50, items: activitySchema },
     activate: { type: 'boolean' },
     join_creator: { type: 'boolean' },
@@ -332,6 +338,7 @@ interface RouteBody {
   goal_unit?: string;
   required_consecutive_days?: number;
   reset_on_miss?: boolean;
+  timezone?: string;
   activities: RouteActivity[];
   activate?: boolean;
   join_creator?: boolean;
@@ -394,6 +401,7 @@ export function registerChallengeCreationRoutes(
           goal_unit: body.goal_unit,
           required_consecutive_days: body.required_consecutive_days,
           reset_on_miss: body.reset_on_miss,
+          timezone: body.timezone,
           activities,
         };
         const established = await establishChallengeV2(

@@ -737,8 +737,11 @@ describe('idempotency', () => {
       occurred_at: T('2026-06-10T12:00:00Z'),
       client_key: 'streak-retry',
     });
-    const first = await applyChallengeActivity(db, setup.memberId, setup.challengeId, input(), resolvers);
-    const second = await applyChallengeActivity(db, setup.memberId, setup.challengeId, input(), resolvers);
+    // EBC-03: streak acceptance is same-day in the governing timezone —
+    // drive the acceptance clock to the log's own day.
+    const atLogDay = { now: T('2026-06-10T12:00:00Z') };
+    const first = await applyChallengeActivity(db, setup.memberId, setup.challengeId, input(), resolvers, atLogDay);
+    const second = await applyChallengeActivity(db, setup.memberId, setup.challengeId, input(), resolvers, atLogDay);
     expect(second.duplicate).toBe(true);
     expect(first.participation.currentStreak).toBe(1);
     expect(second.participation.currentStreak).toBe(1);
@@ -932,6 +935,8 @@ describe('engines', () => {
       joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
+    // EBC-03: the acceptance clock advances with the log's own Challenge
+    // day (streak logs are same-day in the governing timezone).
     const log = (canonical_key: string, day: string, key?: string) => applyChallengeActivity(
       db, setup.memberId, setup.challengeId,
       {
@@ -943,6 +948,7 @@ describe('engines', () => {
         client_key: key ?? next('key'),
       },
       resolvers,
+      { now: T(`${day}T12:00:00Z`) },
     );
 
     // Partial multi-activity day does not advance.
@@ -990,10 +996,12 @@ describe('engines', () => {
     await applyChallengeActivity(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
+      { now: T('2026-06-10T12:00:00Z') },
     );
     const done = await applyChallengeActivity(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
+      { now: T('2026-06-11T12:00:00Z') },
     );
     expect(done.participation.completionStatus).toBe('completed');
     expect(done.completionTriggered).toBe(true);
@@ -1088,10 +1096,13 @@ describe('derived truth', () => {
       challengeId: streak.challengeId, memberId: streak.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
     const streakResolvers = resolversFor(streak.pins);
+    // EBC-03: clock advances with each log's own Challenge day.
     await applyChallengeActivity(db, streak.memberId, streak.challengeId,
-      logInput({ value: 20, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), streakResolvers);
+      logInput({ value: 20, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), streakResolvers,
+      { now: T('2026-06-10T12:00:00Z') });
     await applyChallengeActivity(db, streak.memberId, streak.challengeId,
-      logInput({ value: 20, occurred_at: T('2026-06-12T12:00:00Z'), client_key: next('key') }), streakResolvers);
+      logInput({ value: 20, occurred_at: T('2026-06-12T12:00:00Z'), client_key: next('key') }), streakResolvers,
+      { now: T('2026-06-12T12:00:00Z') });
     const restreak = await recomputeChallengeDerived(db, streak.challengeId);
     const storedStreak = await storedTruth(streak.challengeId);
     expect(restreak.participations).toEqual(storedStreak.states);
@@ -1697,9 +1708,11 @@ describe('config version pinning and replay (CORR-001)', () => {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
+    // EBC-03: clock advances with each log's own Challenge day.
     const log = (day: string) => applyChallengeActivity(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 20, occurred_at: T(`${day}T12:00:00Z`), client_key: next('key') }), resolvers,
+      { now: T(`${day}T12:00:00Z`) },
     );
     await log('2026-06-10');
     const r2 = await log('2026-06-11');

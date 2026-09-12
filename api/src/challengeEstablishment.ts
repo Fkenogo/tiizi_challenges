@@ -150,6 +150,7 @@ export function hashEstablishmentRequest(input: EstablishmentInput): string {
     goal_unit: input.goal_unit ?? null,
     required_consecutive_days: input.required_consecutive_days ?? null,
     reset_on_miss: input.reset_on_miss ?? true,
+    timezone: input.timezone ?? 'UTC',
     activities: input.activities.map((activity) => ({
       canonical_key: activity.canonical_key,
       activity_variant: activity.activity_variant ?? null,

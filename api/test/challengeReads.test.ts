@@ -179,6 +179,9 @@ async function log(
   challengeId: string,
   pins: Record<string, Pin>,
   input: NewChallengeActivityInput,
+  // EBC-03: streak acceptance is same-day in the governing timezone —
+  // pass the log's own Challenge day as the acceptance clock.
+  now?: Date,
 ): Promise<void> {
   await applyChallengeActivity(
     db,
@@ -186,6 +189,7 @@ async function log(
     challengeId,
     input,
     activityResolvers(pins, async () => ({ status: 'active', eligible: true })),
+    now === undefined ? {} : { now },
   );
 }
 
@@ -371,7 +375,8 @@ describe('challenge detail', () => {
       },
     );
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
-    await log(db, fx.memberId, fx.challengeId, fx.pins, logInput({ value: 10, occurred_at: T('2026-06-10T12:00:00Z') }));
+    await log(db, fx.memberId, fx.challengeId, fx.pins,
+      logInput({ value: 10, occurred_at: T('2026-06-10T12:00:00Z') }), T('2026-06-10T12:00:00Z'));
     const authority = stubAuthority(new Set([fx.groupId]));
     const detail = await getChallengeDetail(db, fx.memberId, fx.challengeId, {
       groupMembershipAuthority: authority,

@@ -34,11 +34,18 @@
  * refuse logs). The conservative C2B reading applies the same live gate at
  * logging: the PG shadow never authorizes.
  *
- * Streak late logging: Stage F allows no ordinary grace period, but the
- * approved engine measures gaps/resets honestly from occurred days, and the
- * synthetic proof must advance across days — so past occurred_at values are
- * accepted within episode + period. Open-day editing (L.16) and governed
- * correction (ACT-03/ACT-04) stay deferred; the recompute seam covers them.
+ * Streak temporal correctness (EBC-03; Stage F FR-V2-118/FR-V2-119):
+ * - every accepted activity's Challenge day is derived server-side from
+ *   occurred_at + the PINNED governing Challenge timezone. A
+ *   client-supplied occurred_day that disagrees is rejected, never trusted;
+ * - a Streak submission for a Challenge day that has already closed in the
+ *   governing timezone is ineligible (STREAK_DAY_CLOSED, durable rejected
+ *   intent, no Derived effect). No ordinary grace period exists, and
+ *   backdated occurred_at never restores a missed day.
+ * Collective/competitive Challenges keep accepting past occurred_at values
+ * within episode + period (their day is likewise server-derived, but no
+ * same-day rule applies). Open-day editing (L.16) and governed correction
+ * (ACT-03/ACT-04) stay deferred; the recompute seam covers them.
  *
  * No Firebase. No routes. Pure domain + `Db`.
  */
@@ -181,6 +188,11 @@ const REJECTION_DETAILS: Record<EligibilityReason, { statusCode: number; code: s
     code: 'knowledge_mismatch',
     message: 'activity does not resolve to this challenge\'s configured Knowledge',
   },
+  [ELIGIBILITY_REASON.STREAK_DAY_CLOSED]: {
+    statusCode: 422,
+    code: 'streak_day_closed',
+    message: 'streak day already closed in the governing challenge timezone: no late logging',
+  },
 };
 
 function rejectionErrorFor(reason: EligibilityReason): SubmissionRejectedError {
@@ -203,9 +215,26 @@ export interface NewChallengeActivityInput {
   value: number;
   unit: string;
   occurred_at: Date;
+  /**
+   * EBC-03: optional client assertion of the local day. The effective
+   * Challenge day is ALWAYS server-derived from occurred_at + the governing
+   * Challenge timezone; a supplied value that disagrees is rejected (422)
+   * and can never override the Challenge day.
+   */
   occurred_day?: string;
+  /** Originating client timezone (provenance only; never defines the day). */
   occurred_tz?: string | null;
   client_key: string;
+}
+
+/**
+ * EBC-03 acceptance clock. Production passes nothing (wall clock governs
+ * day closure); tests drive time explicitly for deterministic day-boundary
+ * proofs. The same instant stamps accepted_at and defines "today" in the
+ * governing Challenge timezone.
+ */
+export interface ApplyChallengeActivityOptions {
+  now?: Date;
 }
 
 export interface ActivityRecordRow {
@@ -268,7 +297,7 @@ function normalizeRecord(row: Record<string, unknown>): ActivityRecordRow {
   };
 }
 
-function validateInput(input: NewChallengeActivityInput): void {
+function validateInput(input: NewChallengeActivityInput, now: Date): void {
   if (input.activity_kind !== 'fitness' && input.activity_kind !== 'wellness') {
     fail(422, 'invalid_activity_kind', 'activity_kind must be fitness|wellness');
   }
@@ -288,7 +317,7 @@ function validateInput(input: NewChallengeActivityInput): void {
   if (!(input.occurred_at instanceof Date) || Number.isNaN(input.occurred_at.getTime())) {
     fail(422, 'invalid_occurred_at', 'occurred_at must be a valid timestamp');
   }
-  if (input.occurred_at.getTime() > Date.now() + FUTURE_SKEW_MS) {
+  if (input.occurred_at.getTime() > now.getTime() + FUTURE_SKEW_MS) {
     fail(422, 'future_occurred_at', 'occurred_at must not be in the future');
   }
   if (!input.client_key || input.client_key.length > 300) {
@@ -363,11 +392,20 @@ export async function applyChallengeActivity(
   challengeId: string,
   input: NewChallengeActivityInput,
   resolvers: ChallengeActivityResolvers,
+  options: ApplyChallengeActivityOptions = {},
 ): Promise<ApplyChallengeActivityResult> {
   if (!UUID_RE.test(memberId)) fail(401, 'unknown_member', 'authenticated member is required');
   if (!UUID_RE.test(challengeId)) fail(404, 'unknown_challenge', 'challenge_id must be a Tiizi challenge UUID');
-  validateInput(input);
+  const now = options.now ?? new Date();
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
+    fail(422, 'invalid_clock', 'acceptance clock must be a valid timestamp');
+  }
+  validateInput(input, now);
   const eventVariant = input.activity_variant ?? null;
+  // EBC-03 provisional day: client-tz derivation preserved ONLY for the
+  // pre-acceptance intent payload shape. The AUTHORITATIVE Challenge day is
+  // derived inside the transaction from the pinned governing snapshot and
+  // replaces this value before anything persists (see runSubmission).
   const occurredDay = input.occurred_day ?? dayInTimezone(input.occurred_at, input.occurred_tz ?? null);
   const intentPayload = {
     member_id: memberId,
@@ -404,7 +442,7 @@ export async function applyChallengeActivity(
   }
 
   try {
-    return await runSubmission(db, memberId, challengeId, input, resolvers, intentPayload);
+    return await runSubmission(db, memberId, challengeId, input, resolvers, intentPayload, now);
   } catch (error) {
     // A domain-valid but ineligible submission gets a durable rejected
     // decision trace OUTSIDE the (rolled-back) acceptance transaction. The
@@ -439,6 +477,7 @@ async function runSubmission(
     occurred_day: string;
     occurred_tz: string | null;
   },
+  now: Date,
 ): Promise<ApplyChallengeActivityResult> {
   const eventVariant = input.activity_variant ?? null;
 
@@ -532,6 +571,23 @@ async function runSubmission(
     }
     const owned = episode as ParticipationRow;
 
+    // EBC-03 governing day (Stage F FR-V2-119): the Challenge day is
+    // derived server-side from occurred_at + the PINNED governing
+    // timezone — never from the participant device at calculation time.
+    // A client-supplied occurred_day that disagrees is rejected here
+    // (transport-level 422, before any intent persists); agreement or
+    // absence proceeds with the derived day. occurred_tz stays client
+    // provenance only.
+    const governingDay = dayInTimezone(input.occurred_at, pinned.snapshot.timezone);
+    if (input.occurred_day !== undefined && input.occurred_day !== governingDay) {
+      fail(422, 'occurred_day_mismatch',
+        `occurred_day ${input.occurred_day} disagrees with occurred_at in the governing`
+        + ` challenge timezone ${pinned.snapshot.timezone} (expected ${governingDay})`);
+    }
+    // The durable intent carries the authoritative day (a retry's
+    // provisional client-tz day is excluded from payload binding).
+    intentPayload.occurred_day = governingDay;
+
     // Evidence: C1 idempotent append. A duplicate client_key returns the
     // existing event; the existing application is then returned (or a
     // cross-challenge key reuse is rejected) — never a second application.
@@ -548,12 +604,12 @@ async function runSubmission(
       canonical_key: input.canonical_key,
       activity_variant: eventVariant,
       occurred_at: input.occurred_at,
-      occurred_day: input.occurred_day,
+      occurred_day: undefined,
       occurred_tz: input.occurred_tz ?? null,
       value: input.value,
       unit: input.unit,
       client_key: input.client_key,
-    }, { resolveKnowledgePin: async () => pin }).catch((error) => {
+    }, { resolveKnowledgePin: async () => pin }, { authoritativeDay: governingDay }).catch((error) => {
       if (error instanceof ApplicationError) throw error;
       fail(422, 'evidence_rejected', `member activity evidence rejected: ${(error as Error).message}`);
     });
@@ -611,6 +667,22 @@ async function runSubmission(
         owned.participation_id);
     }
 
+    // EBC-03 late-logging rule (Stage F FR-V2-118): a Streak day is Done
+    // only during its own Challenge day. Once the day has closed in the
+    // governing timezone, logging can no longer satisfy it — the miss
+    // stands, the reset stands, and backdated occurred_at changes nothing.
+    // The rejection persists as a durable intent but creates no
+    // Evidence/application/Derived effect. No grace period exists.
+    if (pinned.snapshot.challenge_type === 'streak') {
+      const openDay = dayInTimezone(now, pinned.snapshot.timezone);
+      if (governingDay !== openDay) {
+        failEligibility(ELIGIBILITY_REASON.STREAK_DAY_CLOSED, 422, 'streak_day_closed',
+          `streak day ${governingDay} is closed in the governing challenge timezone`
+          + ` ${pinned.snapshot.timezone} (open day is ${openDay}): no late logging`,
+          owned.participation_id);
+      }
+    }
+
     // Server-owned scoring against the governing activity config. The client
     // supplies measurement facts; points are derived here and persisted with
     // full attribution. computeActivityScore consumes the C2B shape directly
@@ -621,7 +693,7 @@ async function runSubmission(
       challengeType: pinned.snapshot.challenge_type,
     });
 
-    const acceptedAt = new Date();
+    const acceptedAt = now;
     const partBefore = await lockParticipationDerived(
       tx, owned.participation_id, challengeId, memberId,
     );
