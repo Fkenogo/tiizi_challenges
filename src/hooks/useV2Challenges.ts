@@ -8,6 +8,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createChallengeV2,
   getChallengeV2,
   getCompetitiveLeaderboardV2,
   joinChallengeV2,
@@ -16,9 +17,21 @@ import {
   withdrawChallengeV2,
   type V2ActivityPayload,
   type V2ActivityResult,
+  type V2CreateChallengeInput,
+  type V2CreateChallengeResponse,
 } from '../api/v2ChallengeApi';
 import { isV2ChallengesEnabled } from '../api/v2ChallengeMode';
 import { useAuth } from './useAuth';
+import {
+  createGroupV2,
+  fetchMyGroupsV2,
+  joinGroupV2,
+  type V2CreateGroupInput,
+} from '../api/v2GroupsApi';
+import {
+  listEstablishmentKnowledge,
+  type V2KnowledgeKind,
+} from '../api/v2KnowledgeApi';
 
 export function useV2ChallengeList() {
   const { user } = useAuth();
@@ -97,5 +110,69 @@ export function useV2LogActivity() {
         queryClient.invalidateQueries({ queryKey: ['v2-leaderboard', result.challengeId] }),
       ]);
     },
+  });
+}
+
+/**
+ * EBC-05 establishment + Group authority hooks. Same V2-only cache
+ * namespace discipline: mutations invalidate V2 queries only.
+ */
+
+export function useV2CreateChallenge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: V2CreateChallengeInput): Promise<V2CreateChallengeResponse> =>
+      createChallengeV2(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['v2-challenges'] });
+    },
+  });
+}
+
+export function useV2MyGroups() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['v2-groups', user?.uid],
+    queryFn: () => fetchMyGroupsV2(),
+    enabled: !!user?.uid && isV2ChallengesEnabled(),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useV2CreateGroup() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: (input: V2CreateGroupInput) => createGroupV2(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['v2-groups', user?.uid] });
+    },
+  });
+}
+
+export function useV2JoinGroup() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: (groupId: string) => joinGroupV2(groupId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['v2-groups', user?.uid] });
+    },
+  });
+}
+
+/** Server-authoritative published Knowledge for establishment pickers. */
+export function useV2EstablishmentKnowledge(kind: V2KnowledgeKind | undefined, search: string) {
+  const { user } = useAuth();
+  const trimmed = search.trim();
+  return useQuery({
+    queryKey: ['v2-knowledge', kind ?? 'all', trimmed, user?.uid],
+    queryFn: () =>
+      listEstablishmentKnowledge({
+        ...(kind ? { kind } : {}),
+        ...(trimmed ? { search: trimmed } : {}),
+      }),
+    enabled: !!user?.uid && isV2ChallengesEnabled(),
+    staleTime: 60 * 1000,
   });
 }

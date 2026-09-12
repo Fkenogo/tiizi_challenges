@@ -27,6 +27,10 @@ export interface V2ParticipationProgress {
   daysCompleted: number;
   completionStatus: V2CompletionStatus;
   completedAt: string | null;
+  /** EBC-04 frozen competitive rank (null unless finalized). */
+  finalPosition: number | null;
+  /** EBC-05 frozen terminal-day streak (null unless a finalized streak). */
+  finalStreak: number | null;
 }
 
 export interface V2OwnParticipation {
@@ -46,6 +50,10 @@ export interface V2ChallengeSummary {
   status: V2ChallengeStatus;
   startDate: string;
   endDate: string;
+  /** EBC-03 governing Challenge timezone (IANA). */
+  timezone: string;
+  /** EBC-04 true once the terminal result is computed and frozen. */
+  finalized: boolean;
   currentConfigVersion: number;
   goalValue: number | null;
   goalUnit: string | null;
@@ -64,10 +72,23 @@ export interface V2ConfigActivity {
   position: number;
 }
 
+export interface V2FinalResult {
+  finalizedAt: string;
+  configVersion: number;
+  finalizationVersion: string;
+  engineVersion: string;
+  scoringVersion: string;
+  result: Record<string, unknown>;
+}
+
 export interface V2ChallengeDetail extends V2ChallengeSummary {
   instructions: string;
   activatedAt: string | null;
   endedAt: string | null;
+  /** EBC-04 finalization marker mirror (null = not finalized). */
+  finalizedAt: string | null;
+  /** EBC-04 frozen terminal result (null = not finalized). */
+  finalResult: V2FinalResult | null;
   config: {
     version: number;
     period: { startDate: string; endDate: string };
@@ -142,6 +163,55 @@ export interface V2ActivityPayload {
   occurred_day?: string;
   occurred_tz?: string;
   client_key: string;
+}
+
+export interface V2CreateActivity {
+  activity_kind: 'fitness' | 'wellness';
+  canonical_key: string;
+  activity_variant?: string;
+  metric: string;
+  target_value: number;
+  unit: string;
+}
+
+export interface V2CreateChallengeInput {
+  group_id: string;
+  challenge_type: V2ChallengeType;
+  title: string;
+  description?: string;
+  instructions?: string;
+  start_date: string;
+  end_date: string;
+  goal_value?: number;
+  goal_unit?: string;
+  required_consecutive_days?: number;
+  timezone?: string;
+  activities: V2CreateActivity[];
+  activate?: boolean;
+  join_creator?: boolean;
+  idempotency_key?: string;
+}
+
+export interface V2CreateChallengeResponse {
+  challengeId: string;
+  groupId: string;
+  status: string;
+  configVersion: number;
+  activated: boolean;
+  creatorParticipationId: string | null;
+  idempotentReplay: boolean;
+}
+
+/**
+ * EBC-05 governed V2 Challenge establishment (POST /v1/challenges, the
+ * EBC-01 creation authority). The ONLY client path that establishes V2
+ * Challenges — no Firestore writes, no second config model.
+ */
+export function createChallengeV2(input: V2CreateChallengeInput): Promise<V2CreateChallengeResponse> {
+  return apiFetch<V2CreateChallengeResponse>('/v1/challenges', {
+    method: 'POST',
+    body: input,
+  });
 }
 
 export function listChallengesV2(): Promise<{ memberId: string; challenges: V2ChallengeSummary[] }> {

@@ -30,6 +30,8 @@ const ChallengesScreen = lazy(() => import('./features/Challenges/ChallengesScre
 const ChallengeDetailScreen = lazy(() => import('./features/Challenges/ChallengeDetailScreen'));
 const V2ChallengesScreen = lazy(() => import('./features/Challenges/V2ChallengesScreen'));
 const V2ChallengeDetailScreen = lazy(() => import('./features/Challenges/V2ChallengeDetailScreen'));
+const V2EstablishScreen = lazy(() => import('./features/Challenges/V2EstablishScreen'));
+const V2GroupsScreen = lazy(() => import('./features/Challenges/V2GroupsScreen'));
 const CreateChallengeWizard = lazy(() => import('./features/Challenges/CreateChallengeWizard'));
 const SuggestedChallengesScreen = lazy(() => import('./features/Challenges/SuggestedChallengesScreen'));
 const WellnessTemplateGalleryScreen = lazy(() => import('./features/Challenges/WellnessTemplateGalleryScreen'));
@@ -286,6 +288,8 @@ function App() {
                 <Route path="/app/join-group" element={<RequireOnboardedRoute><JoinGroupScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/challenges" element={<RequireOnboardedRoute><ChallengesScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/challenges/v2" element={<RequireOnboardedRoute><V2ChallengesScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/v2/new" element={<RequireOnboardedRoute><V2EstablishScreen /></RequireOnboardedRoute>} />
+                <Route path="/app/challenges/v2/groups" element={<RequireOnboardedRoute><V2GroupsScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/challenge/v2/:id" element={<RequireOnboardedRoute><V2ChallengeDetailScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/challenges/wellness" element={<RequireOnboardedRoute><WellnessTemplateGalleryScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/challenges/wellness/:id" element={<RequireOnboardedRoute><WellnessTemplateDetailScreen /></RequireOnboardedRoute>} />

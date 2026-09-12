@@ -100,6 +100,13 @@ export interface ApiParticipationProgress {
    * Challenges.
    */
   finalPosition: number | null;
+  /**
+   * EBC-05 frozen streak value as of the terminal Challenge day
+   * (finalStreakAsOfTerminalDay). Set only from finalized history; null
+   * for unfinalized Challenges and for non-streak families (collective
+   * and competitive episodes carry the live currentStreak instead).
+   */
+  finalStreak: number | null;
 }
 
 export interface ApiOwnParticipation {
@@ -190,6 +197,7 @@ export interface ApiLeaderboardEntry {
 function toProgress(
   derived: ParticipationDerivedRow,
   finalPosition: number | null = null,
+  finalStreak: number | null = null,
 ): ApiParticipationProgress {
   return {
     logsAccepted: derived.logsAccepted,
@@ -212,6 +220,9 @@ function toProgress(
     completedAt: derived.completedAt,
     // EBC-04: frozen rank only — callers pass the finals position (or null).
     finalPosition,
+    // EBC-05: frozen terminal-day streak only — callers pass the finals
+    // final_streak (or null).
+    finalStreak,
   };
 }
 
@@ -355,13 +366,14 @@ function toOwnParticipation(
   episode: ParticipationRow,
   derived: ParticipationDerivedRow | undefined,
   finalPosition: number | null = null,
+  finalStreak: number | null = null,
 ): ApiOwnParticipation {
   return {
     participationId: episode.participation_id,
     status: episode.status,
     joinedAt: episode.joined_at,
     joinedConfigVersion: episode.joined_config_version,
-    progress: toProgress(derived ?? zeroParticipationDerived(episode), finalPosition),
+    progress: toProgress(derived ?? zeroParticipationDerived(episode), finalPosition, finalStreak),
   };
 }
 
@@ -397,6 +409,10 @@ async function toSummary(
         episode,
         participationDerived.get(episode.participation_id),
         participationFinals.get(episode.participation_id)?.final_position ?? null,
+        // EBC-05: frozen terminal-day streak is a streak-family fact only.
+        challenge.challenge_type === 'streak'
+          ? participationFinals.get(episode.participation_id)?.final_streak ?? null
+          : null,
       )
       : null,
   };
@@ -525,7 +541,13 @@ export async function getChallengeDetail(
     collectiveGoalReached: derived.collectiveGoalReached,
     completionsCount: derived.completionsCount,
     myParticipation: episode
-      ? toOwnParticipation(episode, participationDerived, episodeFinal?.final_position ?? null)
+      ? toOwnParticipation(
+        episode,
+        participationDerived,
+        episodeFinal?.final_position ?? null,
+        // EBC-05: frozen terminal-day streak is a streak-family fact only.
+        challenge.challenge_type === 'streak' ? episodeFinal?.final_streak ?? null : null,
+      )
       : null,
     instructions: challenge.instructions,
     activatedAt: challenge.activated_at,

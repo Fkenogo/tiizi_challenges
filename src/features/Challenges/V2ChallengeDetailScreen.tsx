@@ -47,7 +47,7 @@ function V2ChallengeDetailScreen() {
   const progress = participation?.progress ?? null;
 
   const logLinks = useMemo(() => {
-    if (!detail || !activeParticipation) return [];
+    if (!detail || !activeParticipation || detail.status !== 'active') return [];
     return detail.config.activities.map((activity) => {
       const qs = new URLSearchParams({
         challengeId: detail.challengeId,
@@ -140,8 +140,25 @@ function V2ChallengeDetailScreen() {
             <>
               <p className="text-[13px] text-slate-600">{detail.description}</p>
               <p className="text-[12px] text-slate-500">
-                {detail.challengeType} · {detail.status} · {detail.startDate} → {detail.endDate}
+                {detail.challengeType} · {detail.status}
+                {detail.finalized ? ' · finalized' : ''} · {detail.startDate} → {detail.endDate}
               </p>
+              <p className="text-[12px] text-slate-500">Challenge days follow {detail.timezone}.</p>
+
+              {detail.status === 'ended' && !detail.finalized && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-[13px] font-bold text-amber-800">
+                    This challenge has ended and is awaiting finalization. Results are not final yet.
+                  </p>
+                </div>
+              )}
+              {detail.finalized && (
+                <div className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-3">
+                  <p className="text-[13px] font-bold text-slate-800">
+                    Finalized{detail.finalizedAt ? ` on ${detail.finalizedAt.slice(0, 10)}` : ''} — results below are frozen history.
+                  </p>
+                </div>
+              )}
 
               {detail.challengeType === 'collective' && (
                 <div className="rounded-xl bg-primary/5 border border-primary/20 px-4 py-4 flex flex-col gap-2">
@@ -166,6 +183,9 @@ function V2ChallengeDetailScreen() {
                   <Flame size={16} className="text-primary flex-shrink-0" />
                   <p className="text-[13px] leading-[18px] text-primary font-semibold">
                     {progress.currentStreak}-day streak · best {progress.bestStreak} · {progress.daysCompleted} days done
+                    {detail.finalized && progress.finalStreak != null
+                      ? ` · final streak ${progress.finalStreak}`
+                      : ''}
                   </p>
                 </div>
               )}
@@ -176,13 +196,21 @@ function V2ChallengeDetailScreen() {
                   <p className="text-[13px] leading-[18px] text-primary font-semibold">
                     {progress.cumulativeTotal.toLocaleString()} total · {progress.totalPoints.toLocaleString()} pts
                     {progress.completionStatus === 'completed' ? ' · complete' : ''}
+                    {detail.finalized && progress.finalPosition != null
+                      ? ` · final rank #${progress.finalPosition}`
+                      : ''}
+                    {detail.finalized && progress.finalPosition == null && progress.completionStatus !== 'completed'
+                      ? ' · no rank (did not finish)'
+                      : ''}
                   </p>
                 </div>
               )}
 
               {detail.challengeType === 'competitive' && board && board.entries.length > 0 && (
                 <section>
-                  <h2 className="st-section-title">Leaderboard</h2>
+                  <h2 className="st-section-title">
+                    {detail.finalized ? 'Final standings' : 'Leaderboard'}
+                  </h2>
                   <div className="mt-2 space-y-2">
                     {board.entries.map((entry) => (
                       <div key={entry.participationId} className="st-card px-4 py-3 flex items-center justify-between">
@@ -210,7 +238,7 @@ function V2ChallengeDetailScreen() {
                 </div>
               </section>
 
-              {!participation && (
+              {!participation && detail.status === 'active' && (
                 <button
                   className="w-full h-12 rounded-2xl bg-primary text-white text-[15px] font-black transition-opacity active:opacity-80"
                   disabled={join.isPending}

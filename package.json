@@ -53,7 +53,9 @@
     "audit:challenge-templates": "tsx scripts/auditChallengeTemplates.ts",
     "test:admin-challenge-management": "tsx scripts/testAdminChallengeManagement.ts",
     "test:challenges-view-polish": "tsx scripts/testChallengesViewPolish.ts",
-    "test:profile-analytics-guards": "tsx scripts/testProfileAnalyticsGuards.ts"
+    "test:profile-analytics-guards": "tsx scripts/testProfileAnalyticsGuards.ts",
+    "preview:engine": "tsx scripts/previewEngine.ts",
+    "test:ebc05-preview": "tsx scripts/testEbc05PreviewGuards.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.0",

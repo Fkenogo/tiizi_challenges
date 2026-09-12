@@ -15,6 +15,8 @@
     "shadow:import": "tsx src/shadowImportCli.ts",
     "challenge:create-v2": "tsx src/challengeCreateCli.ts",
     "challenge:lifecycle": "tsx src/challengeLifecycleCli.ts",
+    "preview:seed": "tsx src/previewSeedCli.ts seed",
+    "preview:reset": "tsx src/previewSeedCli.ts reset",
     "parity:memberships": "tsx src/parityCli.ts",
     "knowledge:import": "tsx src/knowledgeImportCli.ts",
     "parity:knowledge": "tsx src/knowledgeParityCli.ts"

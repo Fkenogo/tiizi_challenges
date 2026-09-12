@@ -19,27 +19,37 @@ function typeIcon(type: V2ChallengeSummary['challengeType']) {
   return <Flame size={16} className="text-primary flex-shrink-0" />;
 }
 
+function statusSuffix(summary: V2ChallengeSummary): string {
+  if (summary.finalized) return ' · finalized';
+  if (summary.status === 'ended') return ' · ended';
+  return '';
+}
+
 function cardSubtitle(summary: V2ChallengeSummary): string {
   if (summary.challengeType === 'collective' && summary.goalValue != null) {
+    const suffix = statusSuffix(summary);
     const pct = summary.goalValue > 0
       ? Math.round((summary.collectiveTotal / summary.goalValue) * 100)
       : 0;
     // Textual truth retains the actual total (overshoot preserved); only a
     // progress-bar width below clamps at 100%.
-    return `${summary.collectiveTotal.toLocaleString()} / ${summary.goalValue.toLocaleString()} ${summary.goalUnit ?? ''} · ${pct}%`.trim();
+    return `${summary.collectiveTotal.toLocaleString()} / ${summary.goalValue.toLocaleString()} ${summary.goalUnit ?? ''} · ${pct}%${suffix}`.trim();
   }
   if (summary.challengeType === 'streak' && summary.myParticipation) {
     const p = summary.myParticipation.progress;
-    return `${p.currentStreak}-day streak · ${p.daysCompleted} days done`;
+    const frozen = summary.finalized && p.finalStreak != null ? ` · final ${p.finalStreak}` : '';
+    return `${p.currentStreak}-day streak · ${p.daysCompleted} days done${frozen}${statusSuffix(summary)}`;
   }
   if (summary.challengeType === 'competitive' && summary.myParticipation) {
     const p = summary.myParticipation.progress;
-    return `${p.cumulativeTotal.toLocaleString()} total · ${p.totalPoints.toLocaleString()} pts`;
+    const rank = summary.finalized && p.finalPosition != null ? ` · #${p.finalPosition}` : '';
+    return `${p.cumulativeTotal.toLocaleString()} total · ${p.totalPoints.toLocaleString()} pts${rank}${statusSuffix(summary)}`;
   }
   const participation = summary.myParticipation
     ? summary.myParticipation.status
     : 'not joined';
-  return `${summary.status} · ${participation}`;
+  const state = statusSuffix(summary) || ` · ${summary.status}`;
+  return `${participation}${state}`;
 }
 
 function V2ChallengesScreen() {
@@ -89,8 +99,22 @@ function V2ChallengesScreen() {
               </button>
             </div>
           )}
+          <div className="flex gap-2">
+            <button
+              className="flex-1 h-11 rounded-2xl bg-primary text-white text-[14px] font-black"
+              onClick={() => navigate('/app/challenges/v2/new')}
+            >
+              New V2 challenge
+            </button>
+            <button
+              className="flex-1 h-11 rounded-2xl bg-slate-900 text-white text-[14px] font-black"
+              onClick={() => navigate('/app/challenges/v2/groups')}
+            >
+              Groups
+            </button>
+          </div>
           {!isLoading && !isError && challenges.length === 0 && (
-            <p className="text-[14px] text-slate-500">No V2 challenges yet. New V2 challenges are created by the controlled establishment flow.</p>
+            <p className="text-[14px] text-slate-500">No V2 challenges yet. Establish one with the button above.</p>
           )}
           {challenges.map((summary) => (
             <article
