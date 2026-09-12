@@ -38,12 +38,13 @@ import {
   seedMember,
   seedMembership,
   testDb,
+  stubEligibility,
 } from './helpers.js';
 import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
   );
 });
 
@@ -75,6 +76,7 @@ async function seedKnowledge(
 function creationResolvers(pins: Record<string, Pin>): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => ({ status: 'active' }),
     resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
   };
@@ -192,7 +194,7 @@ describe('challenge list', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-list', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     });
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
     await log(db, fx.memberId, fx.challengeId, fx.pins, logInput({ value: 40 }));
@@ -210,7 +212,7 @@ describe('challenge list', () => {
       challenge_type: 'collective',
       goal_value: 500,
       goal_unit: 'reps',
-      activities: [{ canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
     });
     const outsider = await seedMember(db, `outsider-${next('m')}`);
     // Candidate set comes from the PG shadow; live authority confirms.
@@ -234,7 +236,7 @@ describe('challenge list', () => {
     const fx = await setupChallenge('c3a-list-down', {
       challenge_type: 'streak',
       required_consecutive_days: 10,
-      activities: [{ canonical_key: 'push-up', target_value: 10, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 10, unit: 'reps' }],
     });
     await expect(
       listVisibleChallenges(db, fx.memberId, {
@@ -249,7 +251,7 @@ describe('challenge detail', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-detail', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     });
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
     await log(db, fx.memberId, fx.challengeId, fx.pins, logInput({ value: 25 }));
@@ -258,7 +260,7 @@ describe('challenge detail', () => {
       fx.challengeId,
       {
         end_date: '2026-07-31',
-        activities: [{ canonical_key: 'push-up', target_value: 150, unit: 'reps' }],
+        activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 150, unit: 'reps' }],
       },
       creationResolvers(fx.pins),
     );
@@ -280,7 +282,7 @@ describe('challenge detail', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-detail-hidden', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     });
     const stranger = await seedMember(db, `stranger-${next('m')}`);
     await expect(
@@ -294,7 +296,7 @@ describe('challenge detail', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-kind-fitness', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
       kinds: { 'push-up': 'fitness' },
     });
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
@@ -309,7 +311,7 @@ describe('challenge detail', () => {
     const fx = await setupChallenge('c3a-kind-wellness', {
       challenge_type: 'streak',
       required_consecutive_days: 30,
-      activities: [{ canonical_key: 'deep-rest', target_value: 8, unit: 'hours' }],
+      activities: [{ canonical_key: 'deep-rest', metric: 'duration', target_value: 8, unit: 'hours' }],
       kinds: { 'deep-rest': 'wellness' },
     });
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
@@ -326,8 +328,8 @@ describe('challenge detail', () => {
     const fx = await setupChallenge('c3a-kind-mixed', {
       challenge_type: 'competitive',
       activities: [
-        { canonical_key: 'push-up', target_value: 100, unit: 'reps' },
-        { canonical_key: 'quiet-time', target_value: 20, unit: 'minutes' },
+        { canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' },
+        { canonical_key: 'quiet-time', metric: 'duration', target_value: 20, unit: 'minutes' },
       ],
       kinds: { 'push-up': 'fitness', 'quiet-time': 'wellness' },
     });
@@ -346,7 +348,7 @@ describe('challenge detail', () => {
       challenge_type: 'collective',
       goal_value: 100,
       goal_unit: 'reps',
-      activities: [{ canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
     });
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
     await log(db, fx.memberId, fx.challengeId, fx.pins, logInput({ value: 60 }));
@@ -365,7 +367,7 @@ describe('challenge detail', () => {
       {
         challenge_type: 'streak',
         required_consecutive_days: 30,
-        activities: [{ canonical_key: 'push-up', target_value: 10, unit: 'reps' }],
+        activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 10, unit: 'reps' }],
       },
     );
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
@@ -387,7 +389,7 @@ describe('challenge detail', () => {
       challenge_type: 'collective',
       goal_value: 100,
       goal_unit: 'reps',
-      activities: [{ canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
     });
     await expect(
       getChallengeLeaderboard(db, fx.memberId, fx.challengeId, {
@@ -423,7 +425,7 @@ describe('competitive leaderboard', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-ties', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     });
     const authority = stubAuthority(new Set([fx.groupId]));
     const deps = { groupMembershipAuthority: authority };
@@ -449,7 +451,7 @@ describe('competitive leaderboard', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-rank', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 50, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 50, unit: 'reps' }],
     });
     const rival = await seedMember(db, `rival-${next('m')}`);
     await seedMembership(db, fx.groupId, rival, { status: 'active' });
@@ -477,7 +479,7 @@ describe('read routes (HTTP)', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-http', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     });
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
     // Wire the stub token to the seeded firebase subject.
@@ -513,7 +515,7 @@ describe('read routes (HTTP)', () => {
     const db = testDb();
     const fx = await setupChallenge('c3a-http-auth', {
       challenge_type: 'competitive',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     });
     const app = appFor({ 'token-x': 'uid-x' }, stubAuthority(new Set()));
     const anon = await app.inject({ method: 'GET', url: '/v1/challenges' });
@@ -533,7 +535,7 @@ describe('read routes (HTTP)', () => {
       challenge_type: 'collective',
       goal_value: 100,
       goal_unit: 'reps',
-      activities: [{ canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
     });
     await insertEpisode(db, fx.challengeId, fx.memberId, '2026-06-01T00:00:00Z');
     await log(db, fx.memberId, fx.challengeId, fx.pins, logInput({ value: 10 }));

@@ -12,6 +12,14 @@ import {
 } from './challengeActivityRoutes.js';
 import { registerChallengeReadRoutes } from './challengeReads.js';
 import { registerParticipationRoutes } from './challengeParticipationRoutes.js';
+import {
+  registerChallengeCreationRoutes,
+  type ChallengeCreationRouteDeps,
+} from './challengeCreationRoutes.js';
+import {
+  registerGroupMutationRoutes,
+  type GroupMutationRouteDeps,
+} from './groupMutationRoutes.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -24,6 +32,10 @@ export interface AppDeps {
   /** C2B runtime deps. Absent in tests unless the test wires them; requests
    * then fail closed (group authority unavailable) instead of authorizing. */
   challengeActivity?: ChallengeActivityRouteDeps;
+  /** EBC-01 governed Group mutation boundary. Absent: routes fail closed. */
+  groupMutation?: GroupMutationRouteDeps;
+  /** EBC-01 governed Challenge establishment. Absent: route fails closed. */
+  challengeCreation?: ChallengeCreationRouteDeps;
 }
 
 export function buildApp(deps: AppDeps) {
@@ -88,5 +100,12 @@ export function buildApp(deps: AppDeps) {
   // C3B V2 participation mutations (join/withdraw). Same live authority as
   // C2B; absent authority fails closed per-route instead of authorizing.
   registerParticipationRoutes(app, deps.db, deps.challengeActivity ?? {});
+  // EBC-01 governed Group mutations (create/join/leave). Server-side
+  // Firestore authority boundary; absent store fails closed per-route.
+  registerGroupMutationRoutes(app, deps.db, deps.groupMutation ?? {});
+  // EBC-01 governed V2 Challenge establishment. Authenticated actor,
+  // charter-aware live creation authority, KCS-ready + tuple validation;
+  // absent deps fail closed instead of establishing.
+  registerChallengeCreationRoutes(app, deps.db, deps.challengeCreation ?? {});
   return app;
 }

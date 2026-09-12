@@ -21,12 +21,13 @@ import {
   seedMember,
   seedMembership,
   testDb,
+  stubEligibility,
 } from './helpers.js';
 import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
   );
 });
 
@@ -73,6 +74,7 @@ async function setupJoinableChallenge(
   };
   const resolvers: ChallengeCreationResolvers = {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => ({ status: 'active' }),
     resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
   };
@@ -85,7 +87,7 @@ async function setupJoinableChallenge(
       title: `C3B ${tag}`,
       start_date: '2026-06-01',
       end_date: '2026-06-30',
-      activities: [{ canonical_key: 'push-up', target_value: 100, unit: 'reps' }],
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     } as NewChallengeInput,
     resolvers,
   );

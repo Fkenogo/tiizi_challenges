@@ -38,12 +38,13 @@ import {
   seedMember,
   seedMembership,
   testDb,
+  stubEligibility,
 } from './helpers.js';
 import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
   );
 });
 
@@ -96,17 +97,18 @@ function creationResolvers(
 ): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => ({ status: 'active' }),
     resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
   };
 }
 
 function pushUp(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
-  return { canonical_key: 'push-up', target_value: 20, unit: 'reps', ...overrides };
+  return { canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps', ...overrides };
 }
 
 function water(overrides?: Partial<ActivityConfigInput>): ActivityConfigInput {
-  return { canonical_key: 'water-intake', target_value: 2000, unit: 'ml', ...overrides };
+  return { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres', ...overrides };
 }
 
 interface ChallengeSetup {
@@ -731,7 +733,7 @@ describe('idempotency', () => {
       activity_kind: 'fitness',
       canonical_key: 'water-intake',
       value: 2000,
-      unit: 'ml',
+      unit: 'millilitres',
       occurred_at: T('2026-06-10T12:00:00Z'),
       client_key: 'streak-retry',
     });
@@ -861,7 +863,7 @@ describe('engines', () => {
     const db = testDb();
     const setup = await setupActiveChallenge({
       challenge_type: 'competitive',
-      activities: [pushUp({ target_value: 100 }), { canonical_key: 'squat', target_value: 50, unit: 'reps' }],
+      activities: [pushUp({ target_value: 100 }), { canonical_key: 'squat', metric: 'repetitions', target_value: 50, unit: 'reps' }],
     });
     const pinSquat = setup.pins['squat'];
     expect(pinSquat.knowledge_id).toMatch(UUID_RE);
@@ -922,7 +924,7 @@ describe('engines', () => {
     const setup = await setupActiveChallenge({
       challenge_type: 'streak',
       required_consecutive_days: 30,
-      activities: [water({ canonical_key: 'water-intake' }), { canonical_key: 'sleep-8h', target_value: 8, unit: 'hours' }],
+      activities: [water({ canonical_key: 'water-intake' }), { canonical_key: 'sleep-8h', metric: 'duration', target_value: 8, unit: 'hours' }],
     });
     await insertEpisode(db, {
       challengeId: setup.challengeId,
@@ -936,7 +938,7 @@ describe('engines', () => {
         activity_kind: 'fitness',
         canonical_key,
         value: canonical_key === 'water-intake' ? 2000 : 8,
-        unit: canonical_key === 'water-intake' ? 'ml' : 'hours',
+        unit: canonical_key === 'water-intake' ? 'millilitres' : 'hours',
         occurred_at: T(`${day}T12:00:00Z`),
         client_key: key ?? next('key'),
       },

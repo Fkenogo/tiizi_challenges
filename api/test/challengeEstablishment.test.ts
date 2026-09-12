@@ -15,12 +15,12 @@ import {
   dryRunChallengeCreateV2,
   runChallengeCreateV2,
 } from '../src/challengeCreateCli.js';
-import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
+import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from './helpers.js';
 import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
   );
 });
 
@@ -68,6 +68,7 @@ async function stubWorld(
         return null;
       },
       resolveKnowledgePinFor: async (kind: string, key: string) => pins.get(`${kind}::${key}`) ?? null,
+      resolveKnowledgeEligibility: async () => stubEligibility(),
       resolveGroupAuthority: async () => ({ status: 'active' }),
       resolveGroupMembershipAuthority: async () => memberEligibility,
     },
@@ -85,7 +86,7 @@ function establishmentInput(world: StubWorld) {
     end_date: '2026-06-30',
     goal_value: 1000,
     goal_unit: 'reps',
-    activities: [{ canonical_key: 'push-up', target_value: 20, unit: 'reps' as string }],
+    activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' as string }],
     activate: true,
     joinCreator: true,
   };
@@ -135,8 +136,8 @@ describe('A. create failure persists nothing', () => {
         ...establishmentInput(world),
         goal_unit: 'minutes',
         activities: [
-          { canonical_key: 'running', target_value: 30, unit: 'minutes' },
-          { canonical_key: 'push-up', target_value: 20, unit: 'repetitions' },
+          { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
+          { canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'repetitions' },
         ],
       }, world.resolvers),
     ).rejects.toThrow(/must exactly equal goal_unit/);
@@ -248,6 +249,7 @@ describe('F. dry-run exercises the same path and persists nothing', () => {
         knowledge_id: String(pin.rows[0].knowledge_id),
         current_version: Number(pin.rows[0].current_version),
       }),
+      resolveKnowledgeEligibility: async () => stubEligibility(),
       resolveGroupAuthority: async () => ({ status: 'active' }),
       resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
     };
@@ -261,7 +263,7 @@ describe('F. dry-run exercises the same path and persists nothing', () => {
       end_date: '2026-06-30',
       goal_value: 1000,
       goal_unit: 'reps',
-      activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+      activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
       activate: true,
       join_creator: true,
     }, resolvers);
@@ -279,7 +281,7 @@ describe('F. dry-run exercises the same path and persists nothing', () => {
       end_date: '2026-06-30',
       goal_value: 1000,
       goal_unit: 'reps',
-      activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', target_value: 20, unit: 'reps' }],
+      activities: [{ activity_kind: 'fitness', canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
       activate: true,
       join_creator: true,
     }, resolvers);

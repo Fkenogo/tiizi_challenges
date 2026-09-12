@@ -25,11 +25,11 @@ import {
   parseGoverningSnapshot,
   type ActivityConfigInput,
 } from '../src/challengeConfigs.js';
-import { testDb, seedMember, seedGroup, seedMembership } from './helpers.js';
+import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from './helpers.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
   );
 });
 
@@ -50,6 +50,7 @@ async function seedKnowledgePin(key: string): Promise<{ knowledge_id: string; cu
 function resolversFor(pins: Record<string, { knowledge_id: string; current_version: number }>): ChallengeCreationResolvers {
   return {
     resolveKnowledgePin: async (key) => pins[key] ?? null,
+    resolveKnowledgeEligibility: async () => stubEligibility(),
     resolveGroupAuthority: async () => ({ status: 'active' }),
     resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
   };
@@ -88,8 +89,9 @@ function collectiveInput(
   };
 }
 
-const reps = (key: string, unit = 'reps'): ActivityConfigInput => ({
+const reps = (key: string, unit = 'reps', metric = 'repetitions'): ActivityConfigInput => ({
   canonical_key: key,
+  metric,
   target_value: 20,
   unit,
 });
@@ -101,8 +103,8 @@ describe('collective unit homogeneity (domain)', () => {
     const { challenge } = await createChallenge(
       testDb(),
       collectiveInput(groupId, memberId, 'minutes', [
-        { canonical_key: 'running', target_value: 30, unit: 'minutes' },
-        { canonical_key: 'cycling', target_value: 30, unit: 'minutes' },
+        { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
+        { canonical_key: 'cycling', metric: 'duration', target_value: 30, unit: 'minutes' },
       ]),
       resolversFor(pins),
     );
@@ -113,8 +115,8 @@ describe('collective unit homogeneity (domain)', () => {
   it('activity unit != goal_unit rejected at creation', async () => {
     const { groupId, memberId } = await setupGroupWithMember('c3a-units-goal');
     const input = collectiveInput(groupId, memberId, 'minutes', [
-      { canonical_key: 'running', target_value: 30, unit: 'minutes' },
-      { canonical_key: 'push-up', target_value: 20, unit: 'repetitions' },
+      { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
+      { canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'repetitions' },
     ]);
     // Early validation fails before any authority I/O or write.
     expect(() => validateNewChallenge(input)).toThrow(/must exactly equal goal_unit/);
@@ -129,8 +131,8 @@ describe('collective unit homogeneity (domain)', () => {
       createChallenge(
         testDb(),
         collectiveInput(groupId, memberId, 'kilometres', [
-          { canonical_key: 'running', target_value: 5, unit: 'kilometres' },
-          { canonical_key: 'lifting', target_value: 50, unit: 'kilograms' },
+          { canonical_key: 'running', metric: 'distance', target_value: 5, unit: 'kilometres' },
+          { canonical_key: 'lifting', metric: 'weight', target_value: 50, unit: 'kilograms' },
         ]),
         resolversFor(await pinsFor(['running', 'lifting'])),
       ),
@@ -163,7 +165,7 @@ describe('collective unit homogeneity (domain)', () => {
     const { challenge } = await createChallenge(
       db,
       collectiveInput(groupId, memberId, 'minutes', [
-        { canonical_key: 'running', target_value: 30, unit: 'minutes' },
+        { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
       ]),
       resolversFor(pins),
     );
@@ -174,8 +176,8 @@ describe('collective unit homogeneity (domain)', () => {
       {
         end_date: '2026-07-31',
         activities: [
-          { canonical_key: 'running', target_value: 30, unit: 'minutes' },
-          { canonical_key: 'cycling', target_value: 30, unit: 'minutes' },
+          { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
+          { canonical_key: 'cycling', metric: 'duration', target_value: 30, unit: 'minutes' },
         ],
       },
       resolversFor(pins),
@@ -188,8 +190,8 @@ describe('collective unit homogeneity (domain)', () => {
         challenge.challenge_id,
         {
           activities: [
-            { canonical_key: 'running', target_value: 30, unit: 'minutes' },
-            { canonical_key: 'push-up', target_value: 20, unit: 'repetitions' },
+            { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
+            { canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'repetitions' },
           ],
         },
         resolversFor({ ...pins, 'push-up': await seedKnowledgePin('push-up') }),
@@ -214,7 +216,7 @@ describe('collective unit homogeneity (domain)', () => {
         title: 'Mixed units race',
         start_date: '2026-06-01',
         end_date: '2026-06-30',
-        activities: [reps('push-up'), { canonical_key: 'water-intake', target_value: 2000, unit: 'ml' }],
+        activities: [reps('push-up'), { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres' }],
       },
       resolversFor(pins),
     );
@@ -235,8 +237,8 @@ describe('collective unit homogeneity (domain)', () => {
         end_date: '2026-06-30',
         required_consecutive_days: 30,
         activities: [
-          { canonical_key: 'water-intake', target_value: 2000, unit: 'ml' },
-          { canonical_key: 'sleep-8h', target_value: 8, unit: 'hours' },
+          { canonical_key: 'water-intake', metric: 'quantity', target_value: 2000, unit: 'millilitres' },
+          { canonical_key: 'sleep-8h', metric: 'duration', target_value: 8, unit: 'hours' },
         ],
       },
       resolversFor(pins),
@@ -273,7 +275,7 @@ describe('malformed persisted snapshots fail closed', () => {
     const { challenge } = await createChallenge(
       db,
       collectiveInput(groupId, memberId, 'minutes', [
-        { canonical_key: 'running', target_value: 30, unit: 'minutes' },
+        { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
       ]),
       resolversFor(pins),
     );
@@ -299,7 +301,7 @@ describe('migration 006 database defence', () => {
     const { challenge } = await createChallenge(
       db,
       collectiveInput(groupId, memberId, 'minutes', [
-        { canonical_key: 'running', target_value: 30, unit: 'minutes' },
+        { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
       ]),
       resolversFor(pins),
     );
@@ -320,7 +322,7 @@ describe('migration 006 database defence', () => {
     const { challenge } = await createChallenge(
       db,
       collectiveInput(groupId, memberId, 'minutes', [
-        { canonical_key: 'running', target_value: 30, unit: 'minutes' },
+        { canonical_key: 'running', metric: 'duration', target_value: 30, unit: 'minutes' },
       ]),
       resolversFor(pins),
     );

@@ -6,16 +6,28 @@ import {
   createAdminFirestoreReader,
   createFirestoreGroupMembershipAuthority,
 } from './firestoreGroupAuthority.js';
+import { createFirestoreChallengeCreationAuthority } from './firestoreChallengeCreationAuthority.js';
+import { createAdminGroupMutationStore } from './firestoreGroupMutationStore.js';
+import { createDbKnowledgeEligibilityResolver } from './knowledgeEligibility.js';
 
 async function main(): Promise<void> {
   const db = createPool(databaseUrl());
+  const reader = createAdminFirestoreReader();
   const app = buildApp({
     db,
     verifier: createFirebaseVerifier(),
     // Transitional live Group authority (read-only Firestore). Removed when
     // Group authority migrates to PostgreSQL; the domain contract is unchanged.
     challengeActivity: {
-      groupMembershipAuthority: createFirestoreGroupMembershipAuthority(db, createAdminFirestoreReader()),
+      groupMembershipAuthority: createFirestoreGroupMembershipAuthority(db, reader),
+    },
+    // EBC-01 governed boundaries (same live Firestore authority).
+    groupMutation: {
+      store: createAdminGroupMutationStore(),
+    },
+    challengeCreation: {
+      creationAuthority: createFirestoreChallengeCreationAuthority(db, reader),
+      eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
     },
   });
   const port = Number(process.env.PORT ?? 4000);

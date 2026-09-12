@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
+import { isCanonicalMetric, metricForUnit } from './measurementVocabulary.js';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 
@@ -143,6 +144,17 @@ export interface ApiKnowledgeItem {
   contentClasses: KcsClass[];
   defaultLocale: string;
   grandfathered: boolean;
+  /**
+   * EBC-01 governed measurement contract: permitted primary/secondary
+   * Metrics and compatible Units for this canonical Activity. Empty by
+   * default (nothing permitted): legacy/grandfathered records gain no
+   * contract implicitly. Declared through governed Knowledge
+   * administration; consumed by Challenge establishment validation and by
+   * future creation UI querying valid options.
+   */
+  primaryMetrics: string[];
+  secondaryMetrics: string[];
+  compatibleUnits: string[];
   measurementGuidance: string;
   unitSemantics: string;
   setup: string;
@@ -671,6 +683,9 @@ interface KnowledgeRow {
   content_classes: string[] | string | null;
   default_locale: string | null;
   grandfathered: boolean | null;
+  primary_metrics: string[] | string | null;
+  secondary_metrics: string[] | string | null;
+  compatible_units: string[] | string | null;
   measurement_guidance: string | null;
   unit_semantics: string | null;
   setup: string | null;
@@ -758,6 +773,9 @@ export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
       ? row.default_locale
       : DEFAULT_SOURCE_LOCALE,
     grandfathered: row.grandfathered === true,
+    primaryMetrics: parseStringList(row.primary_metrics),
+    secondaryMetrics: parseStringList(row.secondary_metrics),
+    compatibleUnits: parseStringList(row.compatible_units),
     measurementGuidance: row.measurement_guidance ?? '',
     unitSemantics: row.unit_semantics ?? '',
     setup: row.setup ?? '',
@@ -782,7 +800,8 @@ export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
 const ITEM_COLUMNS = `knowledge_id, kind, lifecycle, current_version, name, category,
   subcategory, difficulty, icon, description, metric_unit, target_value,
   target_type, frequency, points, image_url, tags, details, content_classes,
-  default_locale, grandfathered, measurement_guidance, unit_semantics, setup,
+  default_locale, grandfathered, primary_metrics, secondary_metrics,
+  compatible_units, measurement_guidance, unit_semantics, setup,
   execution, technique_reference, form_cues, common_mistakes, equipment,
   environment, adaptation, protocol_steps, session_framing, completion_meaning,
   avoidance_condition, semantic_definition, safety_notes, created_at, updated_at`;
@@ -799,7 +818,8 @@ const VERSION_CONTENT_COLUMNS = `name, category, subcategory, difficulty, icon,
   image_url, tags, details, measurement_guidance, unit_semantics, setup,
   execution, technique_reference, form_cues, common_mistakes, equipment,
   environment, adaptation, protocol_steps, session_framing, completion_meaning,
-  avoidance_condition, semantic_definition, safety_notes, content_classes`;
+  avoidance_condition, semantic_definition, safety_notes, content_classes,
+  primary_metrics, secondary_metrics, compatible_units`;
 
 function contentParams(content: ValidatedKnowledgeContent): unknown[] {
   return [
@@ -904,11 +924,140 @@ export function snapshotItemForReadiness(item: ApiKnowledgeItem): KcsContentSnap
 }
 
 /**
+ * EBC-01 CORR-001 current-version establishment readiness (derived,
+ * server-owned; no persisted marker, no second lifecycle).
+ *
+ * NEW V2 Challenge establishment requires the CURRENT version to satisfy
+ * the CURRENT KCS publication/readiness rules — `grandfathered` is
+ * historical provenance (pre-KCS publication), never permanent
+ * ineligibility, and is NOT consulted here. Consequences:
+ * - an untouched pre-KCS grandfathered item (content-thin) fails;
+ * - any content-thin published item fails, grandfathered or not;
+ * - a grandfathered item revised under the gate (every content revision
+ *   enforces requirePublicationReady) passes while keeping
+ *   `grandfathered = TRUE`.
+ */
+export function isCurrentVersionEstablishmentReady(
+  lifecycle: string,
+  kind: KnowledgeKind,
+  declared: KcsClass[],
+  snapshot: KcsContentSnapshot,
+): boolean {
+  if (lifecycle !== 'published') return false;
+  return assessPublicationReadiness(kind, declared, snapshot).length === 0;
+}
+
+/**
  * Enforces the KCS publication gate (KRC §6.2, T2 FR-V2-213). Throws 422
  * `kcs_not_ready` with structured missing-field details unless every
  * applicable class minimum is satisfied. Grandfathered items (published
  * under pre-KCS rules) are exempt: published state is never auto-demoted.
  */
+/**
+ * EBC-01 governed measurement-contract administration.
+ *
+ * Sets the canonical (Activity → permitted Metrics → compatible Units)
+ * contract for one Knowledge item. Knowledge-administration role required
+ * (enforced at the route). Validation is fail-closed and deterministic:
+ * - Metrics must be canonical; a Metric cannot be both primary and
+ *   secondary (roles are distinct by §6 of the working baseline);
+ * - Units must belong to the governed vocabulary;
+ * - every compatible Unit's governed Metric must be among the declared
+ *   Metrics (coherence: a Unit that could never validate against any
+ *   declared Metric is rejected rather than stored);
+ * - values normalize deterministically (dedupe + sort).
+ *
+ * Current-state governance (like content classes): setting the contract
+ * never mints a Knowledge version and never changes lifecycle or
+ * grandfathered state; revisions capture the contract current at revision
+ * time. Grandfathered items may carry a contract; establishment requires
+ * current-version KCS readiness (CORR-001), never non-grandfathered
+ * provenance — readability vs establishment, §8.
+ */
+export async function setMeasurementCompatibility(
+  db: Db,
+  id: string,
+  contract: {
+    primaryMetrics?: unknown;
+    secondaryMetrics?: unknown;
+    compatibleUnits?: unknown;
+  },
+): Promise<ApiKnowledgeItem> {
+  if (!isUuid(id)) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
+  const primary = normalizeMetricList(contract.primaryMetrics, 'primaryMetrics');
+  const secondary = normalizeMetricList(contract.secondaryMetrics, 'secondaryMetrics');
+  const overlap = primary.filter((metric) => secondary.includes(metric));
+  if (overlap.length > 0) {
+    throw new KnowledgeError(
+      400,
+      'invalid_knowledge',
+      `Metrics cannot be both primary and secondary: ${overlap.join(', ')}`,
+    );
+  }
+  const units = normalizeUnitList(contract.compatibleUnits);
+  const declared = new Set([...primary, ...secondary]);
+  for (const unit of units) {
+    const unitMetric = metricForUnit(unit);
+    if (!unitMetric || !declared.has(unitMetric)) {
+      throw new KnowledgeError(
+        400,
+        'invalid_knowledge',
+        `Unit '${unit}' expresses Metric '${unitMetric ?? 'ungoverned'}'`
+          + ` which is not among the declared Metrics (${[...declared].sort().join(', ') || 'none'})`,
+      );
+    }
+  }
+  const updated = await db.query<KnowledgeRow>(
+    `UPDATE knowledge_items
+     SET primary_metrics = $2, secondary_metrics = $3, compatible_units = $4,
+         updated_at = now()
+     WHERE knowledge_id = $1
+     RETURNING ${ITEM_COLUMNS}`,
+    [id, primary, secondary, units],
+  );
+  const row = updated.rows[0];
+  if (!row) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
+  return mapKnowledgeRow(row);
+}
+
+function normalizeMetricList(value: unknown, field: string): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new KnowledgeError(400, 'invalid_knowledge', `${field} must be an array`);
+  }
+  const out: string[] = [];
+  for (const entry of value) {
+    if (!isCanonicalMetric(entry)) {
+      throw new KnowledgeError(
+        400,
+        'invalid_knowledge',
+        `${field} must list canonical Metrics (completion|repetitions|duration|distance|weight|quantity)`,
+      );
+    }
+    if (!out.includes(entry)) out.push(entry);
+  }
+  return out.sort();
+}
+
+function normalizeUnitList(value: unknown): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'compatibleUnits must be an array');
+  }
+  const out: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string' || metricForUnit(entry) === null) {
+      throw new KnowledgeError(
+        400,
+        'invalid_knowledge',
+        `compatibleUnits must list governed Units (got '${String(entry)}')`,
+      );
+    }
+    if (!out.includes(entry)) out.push(entry);
+  }
+  return out.sort();
+}
+
 export function requirePublicationReady(
   kind: KnowledgeKind,
   declared: KcsClass[],
@@ -987,15 +1136,35 @@ export async function createKnowledgeItem(
          (item_id, version, ${VERSION_CONTENT_COLUMNS})
        VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
                $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
-               $30, $31, $32)`,
+               $30, $31, $32, $33, $34, $35)`,
       [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content)],
     );
     return mapKnowledgeRow(row);
   });
 }
 
-/** PKG-2A content columns for version rows (plus content_classes per §7). */
-function kcsVersionParams(content: ValidatedKnowledgeContent): unknown[] {
+/**
+ * PKG-2A content columns for version rows (plus content_classes per §7 and
+ * the EBC-01 measurement contract so a historical version shows the
+ * contract that governed it). New items start with an empty contract;
+ * revisions capture the contract current at revision time.
+ */
+export interface MeasurementContractValues {
+  primaryMetrics: string[];
+  secondaryMetrics: string[];
+  compatibleUnits: string[];
+}
+
+const EMPTY_CONTRACT: MeasurementContractValues = {
+  primaryMetrics: [],
+  secondaryMetrics: [],
+  compatibleUnits: [],
+};
+
+function kcsVersionParams(
+  content: ValidatedKnowledgeContent,
+  contract: MeasurementContractValues = EMPTY_CONTRACT,
+): unknown[] {
   return [
     content.measurementGuidance,
     content.unitSemantics,
@@ -1014,6 +1183,9 @@ function kcsVersionParams(content: ValidatedKnowledgeContent): unknown[] {
     content.semanticDefinition,
     content.safetyNotes,
     content.contentClasses,
+    contract.primaryMetrics,
+    contract.secondaryMetrics,
+    contract.compatibleUnits,
   ];
 }
 
@@ -1073,15 +1245,20 @@ export async function reviseKnowledgeItem(
         content.sessionFraming, content.completionMeaning, content.avoidanceCondition,
         content.semanticDefinition, content.safetyNotes, next],
     );
+    const revised = mapKnowledgeRow(updated.rows[0]);
     await tx.query(
       `INSERT INTO knowledge_item_versions
          (item_id, version, ${VERSION_CONTENT_COLUMNS})
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
                $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-               $31, $32, $33)`,
-      [id, next, ...contentParams(content), ...kcsVersionParams(content)],
+               $31, $32, $33, $34, $35, $36)`,
+      [id, next, ...contentParams(content), ...kcsVersionParams(content, {
+        primaryMetrics: revised.primaryMetrics,
+        secondaryMetrics: revised.secondaryMetrics,
+        compatibleUnits: revised.compatibleUnits,
+      })],
     );
-    return mapKnowledgeRow(updated.rows[0]);
+    return revised;
   });
 }
 
@@ -1534,6 +1711,9 @@ const knowledgeItemSchema = {
     contentClasses: { type: 'array', items: { type: 'string' } },
     defaultLocale: { type: 'string' },
     grandfathered: { type: 'boolean' },
+    primaryMetrics: { type: 'array', items: { type: 'string' } },
+    secondaryMetrics: { type: 'array', items: { type: 'string' } },
+    compatibleUnits: { type: 'array', items: { type: 'string' } },
     measurementGuidance: { type: 'string' },
     unitSemantics: { type: 'string' },
     setup: { type: 'string' },
@@ -1692,6 +1872,30 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
     const { id } = request.params as { id: string };
     return setKnowledgeLifecycle(db, id, 'retired');
+  });
+
+  app.put('/v1/admin/knowledge/:id/compatibility', {
+    schema: {
+      body: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          primaryMetrics: { type: 'array', items: { type: 'string' } },
+          secondaryMetrics: { type: 'array', items: { type: 'string' } },
+          compatibleUnits: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      response: { 200: knowledgeItemSchema },
+    },
+  }, async (request) => {
+    await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
+    const { id } = request.params as { id: string };
+    const body = (request.body ?? {}) as {
+      primaryMetrics?: unknown;
+      secondaryMetrics?: unknown;
+      compatibleUnits?: unknown;
+    };
+    return setMeasurementCompatibility(db, id, body);
   });
 
   app.get('/v1/admin/knowledge/:id/texts', {

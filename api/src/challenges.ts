@@ -35,6 +35,7 @@ import {
   assertCollectiveUnitHomogeneity,
   insertConfigVersion,
   toDayString,
+  validateActivityInputs,
   type ActivityConfigInput,
   type ActivityConfigRow,
   type ChallengeConfigResolvers,
@@ -158,9 +159,11 @@ export function validateNewChallenge(input: NewChallengeInput): ChallengeGoverni
     }
     if (input.required_consecutive_days !== undefined) fail('required_consecutive_days belongs to streak challenges only');
   }
-  // C3A collective-unit invariant, checked early (before any authority I/O)
-  // so malformed collective configs fail fast; insertConfigVersion re-checks
+  // Activity shape (including the EBC-01 governing metric) and the C3A
+  // collective-unit invariant are checked early (before any authority I/O)
+  // so malformed configs fail fast; insertConfigVersion re-checks
   // defensively on every version path (v1 + later versions).
+  validateActivityInputs(input.activities);
   assertCollectiveUnitHomogeneity(input.challenge_type, basis.goal_unit, input.activities);
   return basis;
 }
