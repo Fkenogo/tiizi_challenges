@@ -212,6 +212,41 @@ export async function recordRejectedSubmissionIntent(
   return normalizeSubmissionIntentRow(existing.rows[0] as Record<string, unknown>);
 }
 
+/**
+ * CORR-001: a client_key binds to the ORIGINAL logical submission payload, not
+ * just to the member/challenge. Replay of a persisted intent is allowed ONLY
+ * when the incoming submission matches the persisted intent's normalized
+ * canonical values. Any bound-field difference is a key conflict, never a
+ * replay — for BOTH accepted and rejected prior intents.
+ *
+ * Normalization (so serialization differences never false-conflict):
+ * - activity_variant: null and absent compare consistently (both are null by
+ *   the time the domain sees them);
+ * - occurred_at: compared by canonical instant (getTime), not by transport
+ *   string formatting;
+ * - occurred_day: compared using the canonical stored/derived YYYY-MM-DD
+ *   value (the caller passes the derived day, not the raw request field);
+ * - value: compared as the normalized domain number;
+ * - occurred_tz: null and absent compare consistently; a supplied tz is part
+ *   of the bound request contract.
+ */
+export function isSameSubmissionPayload(
+  prior: SubmissionIntentRow,
+  incoming: SubmissionIntentPayload,
+): boolean {
+  if (prior.member_id !== incoming.member_id) return false;
+  if (prior.challenge_id !== incoming.challenge_id) return false;
+  if (prior.activity_kind !== incoming.activity_kind) return false;
+  if (prior.canonical_key !== incoming.canonical_key) return false;
+  if ((prior.activity_variant ?? null) !== (incoming.activity_variant ?? null)) return false;
+  if (prior.value !== incoming.value) return false;
+  if (prior.unit !== incoming.unit) return false;
+  if (new Date(prior.occurred_at).getTime() !== incoming.occurred_at.getTime()) return false;
+  if (prior.occurred_day !== String(incoming.occurred_day).slice(0, 10)) return false;
+  if ((prior.occurred_tz ?? null) !== (incoming.occurred_tz ?? null)) return false;
+  return true;
+}
+
 /** Look up the persisted decision for a request/client idempotency key. */
 export async function findSubmissionIntentByClientKey(
   db: Db,

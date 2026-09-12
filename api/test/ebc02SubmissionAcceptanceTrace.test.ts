@@ -841,3 +841,185 @@ describe('EBC-02 join-path integration', () => {
     expect(result.submission!.acceptance_status).toBe('accepted');
   });
 });
+
+describe('EBC-02 CORR-001 idempotency payload binding', () => {
+  async function corrSetup() {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      activities: [pushUp()],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId,
+      memberId: setup.memberId,
+      joinedAt: '2026-06-01T00:00:00Z',
+    });
+    return { db, setup };
+  }
+
+  async function conflictErr(promise: Promise<unknown>): Promise<ApplicationError> {
+    const error = await applyErr(promise);
+    expect(error.statusCode).toBe(409);
+    expect(error.code).toBe('idempotency_key_conflict');
+    return error;
+  }
+
+  it('C1: accepted intent + identical retry replays the prior acceptance', async () => {
+    const { db, setup } = await corrSetup();
+    const first = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c1' }),
+      resolversFor(setup.pins),
+    );
+    expect(first.duplicate).toBe(false);
+    const second = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c1' }),
+      resolversFor(setup.pins),
+    );
+    expect(second.duplicate).toBe(true);
+    expect(second.record.record_id).toBe(first.record.record_id);
+    expect(second.submission!.submission_id).toBe(first.submission!.submission_id);
+    expect((await intents())).toHaveLength(1);
+  });
+
+  it('C2: accepted intent + same key + different value conflicts', async () => {
+    const { db, setup } = await corrSetup();
+    await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c2', value: 20 }),
+      resolversFor(setup.pins),
+    );
+    await conflictErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c2', value: 25 }),
+      resolversFor(setup.pins),
+    ));
+    expect((await intents())).toHaveLength(1);
+    const state = await counts();
+    expect(state.events).toBe(1);
+    expect(state.records).toBe(1);
+  });
+
+  it('C3: accepted intent + same key + different unit conflicts', async () => {
+    const { db, setup } = await corrSetup();
+    await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c3', unit: 'reps' }),
+      resolversFor(setup.pins),
+    );
+    // A bare unit change alone would be MEASUREMENT_NOT_COMPATIBLE; the
+    // payload-binding check fires first as a 409 key conflict.
+    await conflictErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c3', unit: 'km' }),
+      resolversFor(setup.pins),
+    ));
+    expect((await intents())).toHaveLength(1);
+  });
+
+  it('C4: accepted intent + same key + different activity conflicts', async () => {
+    const { db, setup } = await corrSetup();
+    await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c4', canonical_key: 'push-up' }),
+      resolversFor(setup.pins),
+    );
+    await conflictErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c4', canonical_key: 'squat' }),
+      resolversFor(setup.pins),
+    ));
+    expect((await intents())).toHaveLength(1);
+  });
+
+  it('C5: accepted intent + same key + different occurrence timestamp conflicts', async () => {
+    const { db, setup } = await corrSetup();
+    await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ client_key: 'corr-c5', occurred_at: T('2026-06-10T12:00:00Z') }),
+      resolversFor(setup.pins),
+    );
+    await conflictErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ client_key: 'corr-c5', occurred_at: T('2026-06-10T13:00:00Z') }),
+      resolversFor(setup.pins),
+    ));
+    const stored = (await intents()).find((i) => i.client_key === 'corr-c5')!;
+    expect(new Date(stored.occurred_at).toISOString()).toBe('2026-06-10T12:00:00.000Z');
+  });
+
+  it('C6: rejected intent + identical retry replays the same rejection', async () => {
+    const { db, setup } = await corrSetup();
+    const first = await applyErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c6', unit: 'km' }),
+      resolversFor(setup.pins),
+    ));
+    expect(first).toBeInstanceOf(SubmissionRejectedError);
+    const retry = await applyErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c6', unit: 'km' }),
+      resolversFor(setup.pins),
+    ));
+    expect(retry).toBeInstanceOf(SubmissionRejectedError);
+    expect(retry.code).toBe(first.code);
+    expect((retry as SubmissionRejectedError).eligibilityReason)
+      .toBe(ELIGIBILITY_REASON.MEASUREMENT_NOT_COMPATIBLE);
+    expect((await intents())).toHaveLength(1);
+    const state = await counts();
+    expect(state.events).toBe(0);
+    expect(state.records).toBe(0);
+  });
+
+  it('C7: rejected intent + same key + changed payload conflicts (no reuse for a valid log)', async () => {
+    const { db, setup } = await corrSetup();
+    await applyErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c7', unit: 'km' }),
+      resolversFor(setup.pins),
+    ));
+    // The changed payload would be eligible on a fresh key; on the rejected
+    // key it must conflict instead of being accepted.
+    await conflictErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c7', unit: 'reps' }),
+      resolversFor(setup.pins),
+    ));
+    expect((await intents())).toHaveLength(1);
+    const state = await counts();
+    expect(state.events).toBe(0);
+    expect(state.records).toBe(0);
+  });
+
+  it('C8: null/absent equivalent variant does not false-conflict', async () => {
+    const { db, setup } = await corrSetup();
+    const first = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c8a' }),
+      resolversFor(setup.pins),
+    );
+    const explicitNull = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ client_key: 'corr-c8a', activity_variant: null }),
+      resolversFor(setup.pins),
+    );
+    expect(explicitNull.duplicate).toBe(true);
+    expect(explicitNull.submission!.submission_id).toBe(first.submission!.submission_id);
+    const second = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ client_key: 'corr-c8b', activity_variant: null }),
+      resolversFor(setup.pins),
+    );
+    const omitted = await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c8b' }),
+      resolversFor(setup.pins),
+    );
+    expect(omitted.duplicate).toBe(true);
+    expect(omitted.submission!.submission_id).toBe(second.submission!.submission_id);
+    expect((await intents())).toHaveLength(2);
+  });
+
+  it('C9: same member/challenge alone is NOT sufficient for replay', async () => {
+    const { db, setup } = await corrSetup();
+    await applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ client_key: 'corr-c9', occurred_at: T('2026-06-10T12:00:00Z') }),
+      resolversFor(setup.pins),
+    );
+    // Same member, same challenge, same key — but a different occurred day.
+    await conflictErr(applyChallengeActivity(
+      db, setup.memberId, setup.challengeId,
+      logInput({ client_key: 'corr-c9', occurred_at: T('2026-06-11T12:00:00Z') }),
+      resolversFor(setup.pins),
+    ));
+    expect((await intents())).toHaveLength(1);
+  });
+});

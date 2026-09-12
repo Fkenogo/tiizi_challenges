@@ -56,6 +56,7 @@ import {
   ELIGIBILITY_REASON,
   findSubmissionIntentByClientKey,
   findSubmissionIntentByRecordId,
+  isSameSubmissionPayload,
   recordAcceptedSubmissionIntent,
   recordRejectedSubmissionIntent,
   type EligibilityReason,
@@ -384,12 +385,17 @@ export async function applyChallengeActivity(
 
   // Deterministic replay of an already-decided submission (accepted or
   // rejected). A retry never re-validates stored data against current config;
-  // it returns the persisted decision verbatim. A reused key aimed at another
-  // member or Challenge is a conflict, not a replay.
+  // it returns the persisted decision verbatim. CORR-001: the key binds to
+  // the original logical submission payload, so a reused key aimed at another
+  // member, another Challenge, or ANY different payload is a 409 conflict,
+  // not a replay — for both accepted and rejected prior intents.
   const prior = await findSubmissionIntentByClientKey(db, input.client_key);
   if (prior) {
     if (prior.member_id !== memberId || prior.challenge_id !== challengeId) {
       fail(409, 'idempotency_key_conflict', 'client_key is already bound to another submission');
+    }
+    if (!isSameSubmissionPayload(prior, intentPayload)) {
+      fail(409, 'idempotency_key_conflict', 'client_key was already used for a different submission payload');
     }
     if (prior.acceptance_status === 'rejected') {
       throw rejectionErrorFor(prior.eligibility_reason as EligibilityReason);
