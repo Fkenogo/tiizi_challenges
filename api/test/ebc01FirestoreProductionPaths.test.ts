@@ -89,7 +89,7 @@ beforeEach(async () => {
   calls.length = 0;
   mockGetApps.mockReturnValue([{ name: '[DEFAULT]' }] as never);
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents',
   );
 });
 

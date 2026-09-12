@@ -12,7 +12,7 @@ import { testDb, seedMember } from './helpers.js';
 beforeEach(async () => {
   // C2B application/derived tables FK-reference the Evidence ledger.
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, member_activity_events',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, member_activity_events, activity_submission_intents',
   );
 });
 
