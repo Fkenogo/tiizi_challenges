@@ -1,5 +1,7 @@
 /**
- * EBC-01 CORR-001 Firestore membership rules tests (emulator-backed).
+ * EBC-01 CORR-001 Firestore membership rules tests (emulator-backed),
+ * extended by CORR-002 with optional-field safety proofs (absent
+ * isPrivate / requireAdminApproval default to public, never throw).
  *
  * Proves the tightened `groupMembers` rules close the direct-client
  * bypass around the governed server boundary: ordinary clients can only
@@ -78,6 +80,20 @@ run('firestore groupMembers governed transitions (emulator)', () => {
         status: 'active',
         moderationStatus: 'active',
       });
+      // EBC-01 CORR-002: legacy/default groups carry NEITHER optional
+      // approval field; approval-flag group carries ONLY
+      // requireAdminApproval (no isPrivate key at all).
+      await setDoc(doc(store, 'groups/legacy'), {
+        ownerId: 'owner1',
+        status: 'active',
+        moderationStatus: 'active',
+      });
+      await setDoc(doc(store, 'groups/flag'), {
+        ownerId: 'owner1',
+        requireAdminApproval: true,
+        status: 'active',
+        moderationStatus: 'active',
+      });
       await setDoc(doc(store, 'groups/deact'), {
         ownerId: 'owner1',
         status: 'active',
@@ -105,6 +121,10 @@ run('firestore groupMembers governed transitions (emulator)', () => {
         await setDoc(doc(store, `groupMembers/pub_${uid}`), memberDoc('pub', uid, { status }));
       }
       await setDoc(doc(store, 'groupMembers/priv_left1'), memberDoc('priv', 'left1', { status: 'left' }));
+      await setDoc(
+        doc(store, 'groupMembers/legacy_left9'),
+        memberDoc('legacy', 'left9', { status: 'left' }),
+      );
     });
   }, 60000);
 
@@ -129,6 +149,45 @@ run('firestore groupMembers governed transitions (emulator)', () => {
         doc(privateJoiner, 'groupMembers/priv_joiner2'),
         memberDoc('priv', 'joiner2', { status: 'pending' }),
       ),
+    );
+  });
+
+  it('absent approval fields default to public; each flag alone requires pending', async () => {
+    // 1 + 5: BOTH fields absent — ordinary active join succeeds, so no
+    // rules evaluation error is produced on the legacy/default document.
+    const legacyJoiner = env.authenticatedContext('legacy1').firestore();
+    await assertSucceeds(
+      setDoc(doc(legacyJoiner, 'groupMembers/legacy_legacy1'), memberDoc('legacy', 'legacy1')),
+    );
+    // 2: isPrivate=true requires pending (covered on priv), and still
+    // denies an active join — repeated here to pin the semantic post-fix.
+    const privJoiner = env.authenticatedContext('privlock1').firestore();
+    await assertFails(
+      setDoc(
+        doc(privJoiner, 'groupMembers/priv_privlock1'),
+        memberDoc('priv', 'privlock1', { status: 'active' }),
+      ),
+    );
+    // 3: requireAdminApproval=true alone (no isPrivate key) requires
+    // pending and denies an active join.
+    const flagJoiner = env.authenticatedContext('flag1').firestore();
+    await assertFails(
+      setDoc(
+        doc(flagJoiner, 'groupMembers/flag_flag1'),
+        memberDoc('flag', 'flag1', { status: 'active' }),
+      ),
+    );
+    await assertSucceeds(
+      setDoc(
+        doc(flagJoiner, 'groupMembers/flag_flag1'),
+        memberDoc('flag', 'flag1', { status: 'pending' }),
+      ),
+    );
+    // 4: rejoin on a both-fields-absent group follows public behavior
+    // (left→active allowed, no evaluation error).
+    const legacyLeft = env.authenticatedContext('left9').firestore();
+    await assertSucceeds(
+      updateDoc(doc(legacyLeft, 'groupMembers/legacy_left9'), { status: 'active' }),
     );
   });
 

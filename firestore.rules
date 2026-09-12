@@ -244,8 +244,21 @@ service cloud.firestore {
         && membershipId == data.groupId + '_' + request.auth.uid;
     }
 
+    // EBC-01 CORR-002: optional Group fields are legacy-compatible. Absent
+    // isPrivate / requireAdminApproval count as false (public/default);
+    // key-existence checks precede every read so absent fields permit or
+    // deny on their default instead of throwing an evaluation error. The
+    // same guard applies to the legacy-compatible status and
+    // moderationStatus reads below.
     function membershipGroupNeedsApproval(groupData) {
-      return groupData.isPrivate == true || groupData.requireAdminApproval == true;
+      return (groupData.keys().hasAll(['isPrivate']) && groupData.isPrivate == true)
+        || (groupData.keys().hasAll(['requireAdminApproval'])
+          && groupData.requireAdminApproval == true);
+    }
+
+    function groupModerationOk(groupData) {
+      return !(groupData.keys().hasAll(['moderationStatus'])
+        && groupData.moderationStatus == 'deactivated');
     }
 
     function isGovernedMembershipCreate(membershipId) {
@@ -253,8 +266,8 @@ service cloud.firestore {
       let g = get(/databases/$(database)/documents/groups/$(data.groupId)).data;
       return membershipWriteIdentityOk(membershipId, data)
         && g.keys().hasAll(['ownerId'])
-        && (g.status == 'active' || !g.keys().hasAll(['status']))
-        && g.moderationStatus != 'deactivated'
+        && (!g.keys().hasAll(['status']) || g.status == 'active')
+        && groupModerationOk(g)
         && (
           (data.role == 'owner' && data.status == 'active' && g.ownerId == request.auth.uid)
           || (data.role == 'member'
