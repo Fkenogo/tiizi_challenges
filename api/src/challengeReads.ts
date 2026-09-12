@@ -53,6 +53,11 @@ import {
   type ParticipationDerivedRow,
 } from './derivedTruth.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
+import {
+  getChallengeFinal,
+  getParticipationFinals,
+  type ParticipationFinalRow,
+} from './challengeFinalization.js';
 
 export class ChallengeReadError extends Error {
   readonly statusCode: number;
@@ -88,6 +93,13 @@ export interface ApiParticipationProgress {
   daysCompleted: number;
   completionStatus: 'in_progress' | 'completed';
   completedAt: string | null;
+  /**
+   * EBC-04 frozen competitive finishing position (standard competition
+   * ranking). Set only from finalized history; null for non-completers,
+   * non-competitive families (streaks never carry rank), and unfinalized
+   * Challenges.
+   */
+  finalPosition: number | null;
 }
 
 export interface ApiOwnParticipation {
@@ -109,6 +121,8 @@ export interface ApiChallengeSummary {
   endDate: string;
   /** EBC-03 governing Challenge timezone (IANA) defining the Challenge day. */
   timezone: string;
+  /** EBC-04: true once the terminal result is computed and frozen. */
+  finalized: boolean;
   currentConfigVersion: number;
   goalValue: number | null;
   goalUnit: string | null;
@@ -118,10 +132,28 @@ export interface ApiChallengeSummary {
   myParticipation: ApiOwnParticipation | null;
 }
 
+/**
+ * EBC-04 frozen terminal result: the authoritative historical truth for an
+ * ended + finalized Challenge. Null while unfinalized.
+ */
+export interface ApiFinalResult {
+  finalizedAt: string;
+  configVersion: number;
+  finalizationVersion: string;
+  engineVersion: string;
+  scoringVersion: string;
+  /** Type-specific terminal payload (collective aggregate, completions). */
+  result: Record<string, unknown>;
+}
+
 export interface ApiChallengeDetail extends ApiChallengeSummary {
   instructions: string;
   activatedAt: string | null;
   endedAt: string | null;
+  /** EBC-04 finalization marker mirror (NULL = not finalized). */
+  finalizedAt: string | null;
+  /** EBC-04 frozen terminal result (NULL = not finalized). */
+  finalResult: ApiFinalResult | null;
   config: {
     version: number;
     period: { startDate: string; endDate: string };
@@ -155,7 +187,10 @@ export interface ApiLeaderboardEntry {
 
 // ─── Internal assembly ─────────────────────────────────────────────────────
 
-function toProgress(derived: ParticipationDerivedRow): ApiParticipationProgress {
+function toProgress(
+  derived: ParticipationDerivedRow,
+  finalPosition: number | null = null,
+): ApiParticipationProgress {
   return {
     logsAccepted: derived.logsAccepted,
     distinctDays: derived.distinctDays,
@@ -175,6 +210,8 @@ function toProgress(derived: ParticipationDerivedRow): ApiParticipationProgress 
     daysCompleted: derived.daysCompleted,
     completionStatus: derived.completionStatus,
     completedAt: derived.completedAt,
+    // EBC-04: frozen rank only — callers pass the finals position (or null).
+    finalPosition,
   };
 }
 
@@ -317,13 +354,14 @@ async function requireChallengeVisible(
 function toOwnParticipation(
   episode: ParticipationRow,
   derived: ParticipationDerivedRow | undefined,
+  finalPosition: number | null = null,
 ): ApiOwnParticipation {
   return {
     participationId: episode.participation_id,
     status: episode.status,
     joinedAt: episode.joined_at,
     joinedConfigVersion: episode.joined_config_version,
-    progress: toProgress(derived ?? zeroParticipationDerived(episode)),
+    progress: toProgress(derived ?? zeroParticipationDerived(episode), finalPosition),
   };
 }
 
@@ -332,6 +370,7 @@ async function toSummary(
   challengeDerived: Map<string, ChallengeDerivedRow>,
   episodesByChallenge: Map<string, ParticipationRow[]>,
   participationDerived: Map<string, ParticipationDerivedRow>,
+  participationFinals: Map<string, ParticipationFinalRow>,
 ): Promise<ApiChallengeSummary> {
   const derived = challengeDerived.get(challenge.challenge_id) ?? zeroChallengeDerived(challenge);
   const episode = displayEpisode(episodesByChallenge.get(challenge.challenge_id) ?? []);
@@ -345,6 +384,8 @@ async function toSummary(
     startDate: challenge.start_date,
     endDate: challenge.end_date,
     timezone: challenge.timezone,
+    // EBC-04: finalized once the terminal result is frozen (NULL marker = no).
+    finalized: challenge.finalized_at != null,
     currentConfigVersion: challenge.current_config_version,
     goalValue: challenge.goal_value,
     goalUnit: challenge.goal_unit,
@@ -352,7 +393,11 @@ async function toSummary(
     collectiveGoalReached: derived.collectiveGoalReached,
     completionsCount: derived.completionsCount,
     myParticipation: episode
-      ? toOwnParticipation(episode, participationDerived.get(episode.participation_id))
+      ? toOwnParticipation(
+        episode,
+        participationDerived.get(episode.participation_id),
+        participationFinals.get(episode.participation_id)?.final_position ?? null,
+      )
       : null,
   };
 }
@@ -414,9 +459,16 @@ export async function listVisibleChallenges(
     fetchChallengeDerived(db, ids),
     fetchParticipationDerived(db, participationIds),
   ]);
+  // EBC-04 frozen ranks for the displayed episodes (empty when unfinalized).
+  const participationFinals = new Map<string, ParticipationFinalRow>();
+  for (const challengeId of ids) {
+    for (const [participationId, final] of await getParticipationFinals(db, challengeId)) {
+      participationFinals.set(participationId, final);
+    }
+  }
   const summaries = await Promise.all(
     challenges.map((challenge) =>
-      toSummary(challenge, challengeDerived, episodesByChallenge, participationDerived),
+      toSummary(challenge, challengeDerived, episodesByChallenge, participationDerived, participationFinals),
     ),
   );
   // A corrupt governing version fails the whole list closed (loud integrity
@@ -451,6 +503,10 @@ export async function getChallengeDetail(
   const participationDerived = episode
     ? (await fetchParticipationDerived(db, [episode.participation_id])).get(episode.participation_id)
     : undefined;
+  // EBC-04 frozen terminal result + frozen rank (absent when unfinalized).
+  const finalization = await getChallengeFinal(db, challengeId);
+  const finals = await getParticipationFinals(db, challengeId);
+  const episodeFinal = episode ? finals.get(episode.participation_id) : undefined;
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
@@ -461,16 +517,30 @@ export async function getChallengeDetail(
     startDate: challenge.start_date,
     endDate: challenge.end_date,
     timezone: challenge.timezone,
+    finalized: challenge.finalized_at != null,
     currentConfigVersion: challenge.current_config_version,
     goalValue: challenge.goal_value,
     goalUnit: challenge.goal_unit,
     collectiveTotal: derived.collectiveTotal,
     collectiveGoalReached: derived.collectiveGoalReached,
     completionsCount: derived.completionsCount,
-    myParticipation: episode ? toOwnParticipation(episode, participationDerived) : null,
+    myParticipation: episode
+      ? toOwnParticipation(episode, participationDerived, episodeFinal?.final_position ?? null)
+      : null,
     instructions: challenge.instructions,
     activatedAt: challenge.activated_at,
     endedAt: challenge.ended_at,
+    finalizedAt: challenge.finalized_at,
+    finalResult: finalization
+      ? {
+        finalizedAt: finalization.finalized_at,
+        configVersion: finalization.config_version,
+        finalizationVersion: finalization.finalization_version,
+        engineVersion: finalization.engine_version,
+        scoringVersion: finalization.scoring_version,
+        result: { ...finalization.result },
+      }
+      : null,
     config: toConfigContract(governing.version, governing.snapshot, governing.activities, activityKinds),
   };
 }
@@ -553,17 +623,30 @@ export async function getChallengeLeaderboard(
     db,
     episodes.map((e) => e.participation_id),
   );
-  const completions = episodes.map((episode) => {
-    const row = derived.get(episode.participation_id);
-    return {
-      participation_id: episode.participation_id,
-      completed_at: row?.completedAt ?? null,
-    };
-  });
-  const positions = computeFinishingPositions(
-    completions,
-    episodes.map((e) => e.participation_id),
-  );
+  // EBC-04: finalized Challenges serve frozen finishing positions so the
+  // rank can never shift under read-time recalculation. Unfinalized
+  // Challenges keep the live deterministic computation.
+  const frozen = challenge.finalized_at != null
+    ? await getParticipationFinals(db, challengeId)
+    : new Map<string, ParticipationFinalRow>();
+  const positions: Record<string, number | null> = {};
+  if (challenge.finalized_at != null) {
+    for (const episode of episodes) {
+      positions[episode.participation_id] = frozen.get(episode.participation_id)?.final_position ?? null;
+    }
+  } else {
+    const completions = episodes.map((episode) => {
+      const row = derived.get(episode.participation_id);
+      return {
+        participation_id: episode.participation_id,
+        completed_at: row?.completedAt ?? null,
+      };
+    });
+    Object.assign(
+      positions,
+      computeFinishingPositions(completions, episodes.map((e) => e.participation_id)),
+    );
+  }
   const entries: ApiLeaderboardEntry[] = episodes.map((episode) => {
     const row = derived.get(episode.participation_id);
     const progress = toProgress(row ?? zeroParticipationDerived(episode));

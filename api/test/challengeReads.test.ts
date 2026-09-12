@@ -44,7 +44,7 @@ import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -189,7 +189,10 @@ async function log(
     challengeId,
     input,
     activityResolvers(pins, async () => ({ status: 'active', eligible: true })),
-    now === undefined ? {} : { now },
+    // EBC-04: default the acceptance clock to the log's own occurred
+    // instant so historical June fixtures stay eligible under the settled
+    // window-expiry rule.
+    now === undefined ? { now: input.occurred_at } : { now },
   );
 }
 

@@ -11,6 +11,7 @@ import {
   ApplicationError,
   applyChallengeActivity,
   SubmissionRejectedError,
+  type ApplyChallengeActivityOptions,
   type ChallengeActivityResolvers,
   type NewChallengeActivityInput,
 } from '../src/challengeActivityApplication.js';
@@ -32,7 +33,7 @@ import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -153,6 +154,23 @@ function logInput(overrides?: Partial<NewChallengeActivityInput>): NewChallengeA
   };
 }
 
+// EBC-04: the acceptance clock defaults to the log's own occurred instant
+// (same-day acceptance), keeping the historical June fixtures eligible under
+// the settled window-expiry rule. Tests proving expiry pass explicit now.
+function apply(
+  db: Db,
+  memberId: string,
+  challengeId: string,
+  input: NewChallengeActivityInput,
+  resolvers: ChallengeActivityResolvers,
+  options: ApplyChallengeActivityOptions = {},
+) {
+  return applyChallengeActivity(db, memberId, challengeId, input, resolvers, {
+    now: input.occurred_at,
+    ...options,
+  });
+}
+
 async function applyErr(promise: Promise<unknown>): Promise<ApplicationError> {
   try {
     await promise;
@@ -204,7 +222,7 @@ describe('EBC-02 accepted path', () => {
 
   it('1: eligible participant submission creates one attributable Submission Intent', async () => {
     const { setup } = await acceptedSetup();
-    const result = await applyChallengeActivity(
+    const result = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's1' }),
       resolversFor(setup.pins),
     );
@@ -220,7 +238,7 @@ describe('EBC-02 accepted path', () => {
 
   it('2: eligibility outcome is recorded as eligible', async () => {
     const { setup } = await acceptedSetup();
-    const result = await applyChallengeActivity(
+    const result = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's2' }),
       resolversFor(setup.pins),
     );
@@ -230,7 +248,7 @@ describe('EBC-02 accepted path', () => {
 
   it('3: acceptance outcome records the automatic-system authority', async () => {
     const { setup } = await acceptedSetup();
-    const result = await applyChallengeActivity(
+    const result = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's3' }),
       resolversFor(setup.pins),
     );
@@ -242,7 +260,7 @@ describe('EBC-02 accepted path', () => {
 
   it('4: accepted Evidence/Event is created once', async () => {
     const { setup } = await acceptedSetup();
-    const result = await applyChallengeActivity(
+    const result = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's4' }),
       resolversFor(setup.pins),
     );
@@ -254,7 +272,7 @@ describe('EBC-02 accepted path', () => {
 
   it('5: exactly one Challenge application references that Evidence/Event', async () => {
     const { setup } = await acceptedSetup();
-    const result = await applyChallengeActivity(
+    const result = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's5' }),
       resolversFor(setup.pins),
     );
@@ -269,7 +287,7 @@ describe('EBC-02 accepted path', () => {
     const before = await counts();
     expect(before.derived).toBe(0);
     expect(before.challengeDerived).toBe(0);
-    const result = await applyChallengeActivity(
+    const result = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's6' }),
       resolversFor(setup.pins),
     );
@@ -281,7 +299,7 @@ describe('EBC-02 accepted path', () => {
 
   it('7: Derived Truth updates correctly from the accepted application', async () => {
     const { setup } = await acceptedSetup();
-    const result = await applyChallengeActivity(
+    const result = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's7', value: 20 }),
       resolversFor(setup.pins),
     );
@@ -293,12 +311,12 @@ describe('EBC-02 accepted path', () => {
 
   it('8: same idempotency key retries without duplicate Evidence/Application/calculation', async () => {
     const { setup } = await acceptedSetup();
-    const first = await applyChallengeActivity(
+    const first = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's8' }),
       resolversFor(setup.pins),
     );
     expect(first.duplicate).toBe(false);
-    const second = await applyChallengeActivity(
+    const second = await apply(
       testDb(), setup.memberId, setup.challengeId, logInput({ client_key: 's8' }),
       resolversFor(setup.pins),
     );
@@ -326,7 +344,7 @@ describe('EBC-02 rejected path', () => {
       joinedAt: '2026-06-01T00:00:00Z',
     });
     // Wrong unit: domain-valid submission that fails eligibility.
-    const error = await applyErr(applyChallengeActivity(
+    const error = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'r9', unit: 'km' }),
       resolversFor(setup.pins),
     ));
@@ -351,7 +369,7 @@ describe('EBC-02 rejected path', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    await applyErr(applyChallengeActivity(
+    await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'r10', unit: 'km' }),
       resolversFor(setup.pins),
     ));
@@ -372,7 +390,7 @@ describe('EBC-02 rejected path', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    await applyErr(applyChallengeActivity(
+    await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'r11', unit: 'km' }),
       resolversFor(setup.pins),
     ));
@@ -391,7 +409,7 @@ describe('EBC-02 rejected path', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    await applyErr(applyChallengeActivity(
+    await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'r12', unit: 'km' }),
       resolversFor(setup.pins),
     ));
@@ -421,7 +439,7 @@ describe('EBC-02 rejected path', () => {
     const pins = { ...setup.pins, squat: squatPin };
     for (const [override, reason] of reasons) {
       const key = next('reason-key');
-      await applyErr(applyChallengeActivity(
+      await applyErr(apply(
         db, setup.memberId, setup.challengeId, logInput({ client_key: key, ...override }),
         resolversFor(pins),
       ));
@@ -447,11 +465,11 @@ describe('EBC-02 rejected path', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    const first = await applyErr(applyChallengeActivity(
+    const first = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'r14', unit: 'km' }),
       resolversFor(setup.pins),
     ));
-    const retry = await applyErr(applyChallengeActivity(
+    const retry = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'r14', unit: 'km' }),
       resolversFor(setup.pins),
     ));
@@ -469,6 +487,9 @@ describe('EBC-02 rejected path', () => {
     const db = testDb();
     const setup = await setupActiveChallenge({
       challenge_type: 'competitive',
+      // EBC-04: route tests run on wall clock, so the window spans it.
+      start_date: '2026-01-01',
+      end_date: '2027-12-31',
       activities: [pushUp()],
     });
     await insertEpisode(db, {
@@ -712,12 +733,12 @@ describe('EBC-02 boundary / security', () => {
     await insertEpisode(db, { challengeId: challengeA, memberId, joinedAt: '2026-06-01T00:00:00Z' });
     await insertEpisode(db, { challengeId: challengeB, memberId, joinedAt: '2026-06-01T00:00:00Z' });
 
-    const first = await applyChallengeActivity(
+    const first = await apply(
       db, memberId, challengeA, logInput({ client_key: 'cross-1' }),
       resolversFor(pins),
     );
     // Same key aimed at another challenge is a conflict, not reuse.
-    const conflict = await applyErr(applyChallengeActivity(
+    const conflict = await applyErr(apply(
       db, memberId, challengeB, logInput({ client_key: 'cross-1' }),
       resolversFor(pins),
     ));
@@ -744,7 +765,7 @@ describe('EBC-02 regression', () => {
     await insertEpisode(db, {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'coll-1', value: 600 }),
       resolversFor(setup.pins),
     );
@@ -762,7 +783,7 @@ describe('EBC-02 regression', () => {
     await insertEpisode(db, {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'comp-1', value: 100 }),
       resolversFor(setup.pins),
     );
@@ -783,7 +804,7 @@ describe('EBC-02 regression', () => {
     // EBC-03: streak acceptance is same-day in the governing timezone —
     // the clock is driven to the log's own Challenge day. Calculation
     // assertions below are unchanged.
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'streak-1' }),
       resolversFor(setup.pins),
       { now: T('2026-06-10T12:00:00Z') },
@@ -801,11 +822,11 @@ describe('EBC-02 regression', () => {
     await insertEpisode(db, {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'replay-1', value: 20 }),
       resolversFor(setup.pins),
     );
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'replay-2', value: 20 }),
       resolversFor(setup.pins),
     );
@@ -835,7 +856,7 @@ describe('EBC-02 join-path integration', () => {
     const episode = await joinChallenge(db, setup.challengeId, setup.memberId, {
       resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
     });
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: new Date(), client_key: next('join-key') }),
       resolversFor(setup.pins),
@@ -870,12 +891,12 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C1: accepted intent + identical retry replays the prior acceptance', async () => {
     const { db, setup } = await corrSetup();
-    const first = await applyChallengeActivity(
+    const first = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c1' }),
       resolversFor(setup.pins),
     );
     expect(first.duplicate).toBe(false);
-    const second = await applyChallengeActivity(
+    const second = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c1' }),
       resolversFor(setup.pins),
     );
@@ -887,11 +908,11 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C2: accepted intent + same key + different value conflicts', async () => {
     const { db, setup } = await corrSetup();
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c2', value: 20 }),
       resolversFor(setup.pins),
     );
-    await conflictErr(applyChallengeActivity(
+    await conflictErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c2', value: 25 }),
       resolversFor(setup.pins),
     ));
@@ -903,13 +924,13 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C3: accepted intent + same key + different unit conflicts', async () => {
     const { db, setup } = await corrSetup();
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c3', unit: 'reps' }),
       resolversFor(setup.pins),
     );
     // A bare unit change alone would be MEASUREMENT_NOT_COMPATIBLE; the
     // payload-binding check fires first as a 409 key conflict.
-    await conflictErr(applyChallengeActivity(
+    await conflictErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c3', unit: 'km' }),
       resolversFor(setup.pins),
     ));
@@ -918,11 +939,11 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C4: accepted intent + same key + different activity conflicts', async () => {
     const { db, setup } = await corrSetup();
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c4', canonical_key: 'push-up' }),
       resolversFor(setup.pins),
     );
-    await conflictErr(applyChallengeActivity(
+    await conflictErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c4', canonical_key: 'squat' }),
       resolversFor(setup.pins),
     ));
@@ -931,12 +952,12 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C5: accepted intent + same key + different occurrence timestamp conflicts', async () => {
     const { db, setup } = await corrSetup();
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ client_key: 'corr-c5', occurred_at: T('2026-06-10T12:00:00Z') }),
       resolversFor(setup.pins),
     );
-    await conflictErr(applyChallengeActivity(
+    await conflictErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ client_key: 'corr-c5', occurred_at: T('2026-06-10T13:00:00Z') }),
       resolversFor(setup.pins),
@@ -947,12 +968,12 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C6: rejected intent + identical retry replays the same rejection', async () => {
     const { db, setup } = await corrSetup();
-    const first = await applyErr(applyChallengeActivity(
+    const first = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c6', unit: 'km' }),
       resolversFor(setup.pins),
     ));
     expect(first).toBeInstanceOf(SubmissionRejectedError);
-    const retry = await applyErr(applyChallengeActivity(
+    const retry = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c6', unit: 'km' }),
       resolversFor(setup.pins),
     ));
@@ -968,13 +989,13 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C7: rejected intent + same key + changed payload conflicts (no reuse for a valid log)', async () => {
     const { db, setup } = await corrSetup();
-    await applyErr(applyChallengeActivity(
+    await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c7', unit: 'km' }),
       resolversFor(setup.pins),
     ));
     // The changed payload would be eligible on a fresh key; on the rejected
     // key it must conflict instead of being accepted.
-    await conflictErr(applyChallengeActivity(
+    await conflictErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c7', unit: 'reps' }),
       resolversFor(setup.pins),
     ));
@@ -986,23 +1007,23 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C8: null/absent equivalent variant does not false-conflict', async () => {
     const { db, setup } = await corrSetup();
-    const first = await applyChallengeActivity(
+    const first = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c8a' }),
       resolversFor(setup.pins),
     );
-    const explicitNull = await applyChallengeActivity(
+    const explicitNull = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ client_key: 'corr-c8a', activity_variant: null }),
       resolversFor(setup.pins),
     );
     expect(explicitNull.duplicate).toBe(true);
     expect(explicitNull.submission!.submission_id).toBe(first.submission!.submission_id);
-    const second = await applyChallengeActivity(
+    const second = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ client_key: 'corr-c8b', activity_variant: null }),
       resolversFor(setup.pins),
     );
-    const omitted = await applyChallengeActivity(
+    const omitted = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'corr-c8b' }),
       resolversFor(setup.pins),
     );
@@ -1013,13 +1034,13 @@ describe('EBC-02 CORR-001 idempotency payload binding', () => {
 
   it('C9: same member/challenge alone is NOT sufficient for replay', async () => {
     const { db, setup } = await corrSetup();
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ client_key: 'corr-c9', occurred_at: T('2026-06-10T12:00:00Z') }),
       resolversFor(setup.pins),
     );
     // Same member, same challenge, same key — but a different occurred day.
-    await conflictErr(applyChallengeActivity(
+    await conflictErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ client_key: 'corr-c9', occurred_at: T('2026-06-11T12:00:00Z') }),
       resolversFor(setup.pins),

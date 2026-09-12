@@ -305,7 +305,14 @@ export function applyAcceptedRecord(input: RecordUpdateInput): RecordUpdate {
     };
   const cumulativeTotal = mu.cumulativeLoggedValue ?? (prevPart.cumulativeTotal + record.value);
 
-  const newlyCompleted = mu.status === 'completed' && prevPart.completionStatus === 'in_progress';
+  // EBC-04: streak completion is a FINALIZATION-time terminal evaluation
+  // (Stage F FR-V2-112: reaching requiredConsecutiveDays must not finish a
+  // participant early). Live streak records therefore never flip completion
+  // here — not in the seam and not in replay (this fold is shared, so parity
+  // holds by construction). finalizeChallenge evaluates terminal completion
+  // from bestStreak against the governing requiredConsecutiveDays.
+  const engineCompleted = mu.status === 'completed' && prevPart.completionStatus === 'in_progress';
+  const newlyCompleted = snapshot.challenge_type === 'streak' ? false : engineCompleted;
   const part: ParticipationTruthState = {
     logsAccepted: prevPart.logsAccepted + 1,
     distinctDays,

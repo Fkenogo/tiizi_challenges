@@ -27,7 +27,7 @@ import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from '
 beforeEach(async () => {
   // C2B tables reference these via FKs, so they truncate together (clean slate per test).
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -305,7 +305,10 @@ describe('challenge lifecycle', () => {
     const ended = await endChallenge(db, challenge.challenge_id);
     expect(ended.status).toBe('ended');
     expect(ended.ended_at).not.toBeNull();
-    await expect(endChallenge(db, challenge.challenge_id)).rejects.toThrow(/already ended/);
+    // EBC-04: duplicate ending is idempotent (converges on the ended state).
+    const reended = await endChallenge(db, challenge.challenge_id);
+    expect(reended.status).toBe('ended');
+    expect(reended.ended_at).toBe(ended.ended_at);
     await expect(activateChallenge(db, challenge.challenge_id)).rejects.toThrow(/reopened/);
   });
 

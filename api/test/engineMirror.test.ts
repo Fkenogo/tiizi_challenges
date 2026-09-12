@@ -41,6 +41,7 @@ const DOMAIN_MODULES = [
   '../src/challengeParticipations.ts',
   '../src/groupMembershipAuthority.ts',
   '../src/challengeActivityApplication.ts',
+  '../src/challengeFinalization.ts',
   '../src/derivedTruth.ts',
   '../src/knowledgePins.ts',
   '../src/challengeActivityRoutes.ts',

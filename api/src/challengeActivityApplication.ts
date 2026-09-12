@@ -537,6 +537,15 @@ async function runSubmission(
       fail(500, 'governing_config_mismatch',
         'pinned snapshot type disagrees with Challenge identity');
     }
+    // EBC-04 period-end determination (Stage F FR-V2-111): once the
+    // governing window has expired in the Challenge timezone, ordinary
+    // logging stops — even before the maintenance seam processes the
+    // ending. Backdated in-window occurred_at does not reopen it.
+    if (dayInTimezone(now, pinned.snapshot.timezone) > pinned.snapshot.end_date) {
+      failEligibility(ELIGIBILITY_REASON.CHALLENGE_NOT_ACTIVE, 422, 'challenge_not_active',
+        `challenge window ended ${pinned.snapshot.end_date} in the governing`
+        + ` challenge timezone ${pinned.snapshot.timezone}: no ordinary logging is accepted`);
+    }
     const activities = pinned.activities;
     const config = matchActivityConfig(activities, input.canonical_key, eventVariant);
     if (!config) {

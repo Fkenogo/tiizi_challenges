@@ -48,7 +48,7 @@ import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -741,7 +741,8 @@ describe('EBC-03 REGRESSION — other families and the acceptance chain are unch
     await insertEpisode(db, {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
-    // No acceptance clock: production wall-clock path, past occurred_at.
+    // EBC-04: clock driven to the log's day (expired windows refuse
+    // ordinary logging regardless of family).
     const result = await applyChallengeActivity(
       db, setup.memberId, setup.challengeId,
       {
@@ -749,6 +750,7 @@ describe('EBC-03 REGRESSION — other families and the acceptance chain are unch
         occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key'),
       },
       resolversFor(setup.pins),
+      { now: T('2026-06-10T12:00:00Z') },
     );
     expect(result.duplicate).toBe(false);
     expect(result.record.occurred_day).toBe('2026-06-10');
@@ -771,6 +773,7 @@ describe('EBC-03 REGRESSION — other families and the acceptance chain are unch
         occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key'),
       },
       resolversFor(setup.pins),
+      { now: T('2026-06-10T12:00:00Z') },
     );
     const second = await applyChallengeActivity(
       db, setup.memberId, setup.challengeId,
@@ -779,6 +782,7 @@ describe('EBC-03 REGRESSION — other families and the acceptance chain are unch
         occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key'),
       },
       resolversFor(setup.pins),
+      { now: T('2026-06-11T12:00:00Z') },
     );
     expect(second.participation.cumulativeTotal).toBe(
       first.participation.cumulativeTotal + 50,
@@ -800,23 +804,29 @@ describe('EBC-03 REGRESSION — other families and the acceptance chain are unch
       occurred_at: T('2026-06-10T12:00:00Z'),
     };
     // Accepted + identical retry replays (duplicate, one intent, one record).
+    // (Clock driven to the log's day throughout, per EBC-04 expiry rule.)
+    const atLogDay = { now: T('2026-06-10T12:00:00Z') };
     const first = await applyChallengeActivity(
       db, setup.memberId, setup.challengeId, { ...base, client_key: 'ebc02-same' }, resolvers,
+      atLogDay,
     );
     const replay = await applyChallengeActivity(
       db, setup.memberId, setup.challengeId, { ...base, client_key: 'ebc02-same' }, resolvers,
+      atLogDay,
     );
     expect(replay.duplicate).toBe(true);
     expect(replay.record.record_id).toBe(first.record.record_id);
     // Same key + different payload conflicts (CORR-001 binding intact).
     const conflict = await applyErr(applyChallengeActivity(
       db, setup.memberId, setup.challengeId, { ...base, value: 25, client_key: 'ebc02-same' }, resolvers,
+      atLogDay,
     ));
     expect(conflict.statusCode).toBe(409);
     // Rejected submissions still persist a rejected intent with no effect.
     const rejected = await applyErr(applyChallengeActivity(
       db, setup.memberId, setup.challengeId,
       { ...base, unit: 'km', client_key: 'ebc02-bad' }, resolvers,
+      atLogDay,
     ));
     expect(rejected.code).toBe('wrong_unit');
     expect((await intentsFor('ebc02-bad'))[0].acceptance_status).toBe('rejected');
