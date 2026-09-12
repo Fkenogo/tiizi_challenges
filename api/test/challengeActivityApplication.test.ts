@@ -17,6 +17,7 @@ import { appendCorrectionEvent } from '../src/activityEvents.js';
 import {
   ApplicationError,
   applyChallengeActivity,
+  type ApplyChallengeActivityOptions,
   type ChallengeActivityResolvers,
   type NewChallengeActivityInput,
 } from '../src/challengeActivityApplication.js';
@@ -44,7 +45,7 @@ import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents',
+    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -194,6 +195,23 @@ function logInput(overrides?: Partial<NewChallengeActivityInput>): NewChallengeA
   };
 }
 
+// EBC-04: the acceptance clock defaults to the log's own occurred instant
+// (same-day acceptance), keeping the historical June fixtures eligible under
+// the settled window-expiry rule. Tests proving expiry pass explicit now.
+function apply(
+  db: Db,
+  memberId: string,
+  challengeId: string,
+  input: NewChallengeActivityInput,
+  resolvers: ChallengeActivityResolvers,
+  options: ApplyChallengeActivityOptions = {},
+) {
+  return applyChallengeActivity(db, memberId, challengeId, input, resolvers, {
+    now: input.occurred_at,
+    ...options,
+  });
+}
+
 async function applyErr(promise: Promise<unknown>): Promise<ApplicationError> {
   try {
     await promise;
@@ -273,8 +291,10 @@ describe('auth / authority', () => {
       created_by_member_id: memberId,
       challenge_type: 'competitive',
       title: 'Route proof',
-      start_date: DAY_START,
-      end_date: DAY_END,
+      // EBC-04: route tests run on wall clock, so the window spans it
+      // (fixed dates — no test-time clock coupling).
+      start_date: '2026-01-01',
+      end_date: '2027-12-31',
       activities: [pushUp()],
     }, creationResolvers({ 'push-up': pin }));
     await activateChallenge(db, challenge.challenge_id);
@@ -363,7 +383,7 @@ describe('auth / authority', () => {
       joinedAt: '2026-06-01T00:00:00Z',
     });
     const before = await tableCounts();
-    const error = await applyErr(applyChallengeActivity(
+    const error = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput(),
       resolversFor(setup.pins, null, 'firestore offline'),
     ));
@@ -386,7 +406,7 @@ describe('auth / authority', () => {
       joinedAt: '2026-06-01T00:00:00Z',
     });
     const before = await tableCounts();
-    const error = await applyErr(applyChallengeActivity(
+    const error = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput(),
       resolversFor(setup.pins, null),
     ));
@@ -408,7 +428,7 @@ describe('application', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId, logInput({ value: 20 }),
       resolversFor(setup.pins),
     );
@@ -449,26 +469,26 @@ describe('application', () => {
     const resolvers = resolversFor({ ...setup.pins, squat: squatPin });
     const before = await tableCounts();
 
-    const wrongActivity = await applyErr(applyChallengeActivity(
+    const wrongActivity = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ canonical_key: 'squat', client_key: next('key') }), resolvers,
     ));
     expect(wrongActivity.code).toBe('wrong_activity');
 
-    const wrongVariant = await applyErr(applyChallengeActivity(
+    const wrongVariant = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ activity_variant: 'wide', client_key: next('key') }), resolvers,
     ));
     expect(wrongVariant.code).toBe('wrong_variant');
 
     // Matching variant so the failure lands on the unit gate, not variant matching.
-    const wrongUnit = await applyErr(applyChallengeActivity(
+    const wrongUnit = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ activity_variant: 'standard', unit: 'km', client_key: next('key') }), resolvers,
     ));
     expect(wrongUnit.code).toBe('wrong_unit');
 
-    const unknownKnowledge = await applyErr(applyChallengeActivity(
+    const unknownKnowledge = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ canonical_key: 'ghost-move', client_key: next('key') }), resolvers,
     ));
@@ -488,7 +508,7 @@ describe('application', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    const first = await applyChallengeActivity(
+    const first = await apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: 'shared-key' }),
       resolversFor(setup.pins),
     );
@@ -514,7 +534,7 @@ describe('application', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    const conflict = await applyErr(applyChallengeActivity(
+    const conflict = await applyErr(apply(
       db, setup.memberId, other.challengeId, logInput({ client_key: 'shared-key' }),
       resolversFor({ ...setup.pins, ...other.pins }),
     ));
@@ -596,32 +616,32 @@ describe('participation episodes', () => {
     });
 
     const at = (day: string) => T(`${day}T12:00:00Z`);
-    const before = await applyErr(applyChallengeActivity(
+    const before = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: at('2026-05-20'), client_key: next('key') }), resolvers,
     ));
     expect(before.code).toBe('no_participation_episode');
 
-    const during1 = await applyChallengeActivity(
+    const during1 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: at('2026-06-05'), client_key: next('key') }), resolvers,
     );
     expect(during1.record.participation_id).toBe(ep1);
 
     // At/after exit belongs to no episode (exit instant is exclusive).
-    const atExit = await applyErr(applyChallengeActivity(
+    const atExit = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: T('2026-06-10T00:00:00Z'), client_key: next('key') }), resolvers,
     ));
     expect(atExit.code).toBe('no_participation_episode');
 
-    const gap = await applyErr(applyChallengeActivity(
+    const gap = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: at('2026-06-12'), client_key: next('key') }), resolvers,
     ));
     expect(gap.code).toBe('no_participation_episode');
 
-    const during2 = await applyChallengeActivity(
+    const during2 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: at('2026-06-20'), client_key: next('key') }), resolvers,
     );
@@ -649,7 +669,7 @@ describe('participation episodes', () => {
     const episode = await joinChallenge(db, setup.challengeId, setup.memberId, {
       resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
     });
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: new Date(), client_key: next('key') }),
       resolversFor(setup.pins),
@@ -673,12 +693,12 @@ describe('idempotency', () => {
       joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    const first = await applyChallengeActivity(
+    const first = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 100, client_key: 'retry-key' }), resolvers,
     );
     expect(first.duplicate).toBe(false);
-    const second = await applyChallengeActivity(
+    const second = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 100, client_key: 'retry-key' }), resolvers,
     );
@@ -705,8 +725,8 @@ describe('idempotency', () => {
     });
     const resolvers = resolversFor(setup.pins);
     const [a, b] = await Promise.all([
-      applyChallengeActivity(db, setup.memberId, setup.challengeId, logInput({ client_key: 'race-key' }), resolvers),
-      applyChallengeActivity(db, setup.memberId, setup.challengeId, logInput({ client_key: 'race-key' }), resolvers),
+      apply(db, setup.memberId, setup.challengeId, logInput({ client_key: 'race-key' }), resolvers),
+      apply(db, setup.memberId, setup.challengeId, logInput({ client_key: 'race-key' }), resolvers),
     ]);
     const flags = [a.duplicate, b.duplicate].sort();
     expect(flags).toEqual([false, true]);
@@ -740,8 +760,8 @@ describe('idempotency', () => {
     // EBC-03: streak acceptance is same-day in the governing timezone —
     // drive the acceptance clock to the log's own day.
     const atLogDay = { now: T('2026-06-10T12:00:00Z') };
-    const first = await applyChallengeActivity(db, setup.memberId, setup.challengeId, input(), resolvers, atLogDay);
-    const second = await applyChallengeActivity(db, setup.memberId, setup.challengeId, input(), resolvers, atLogDay);
+    const first = await apply(db, setup.memberId, setup.challengeId, input(), resolvers, atLogDay);
+    const second = await apply(db, setup.memberId, setup.challengeId, input(), resolvers, atLogDay);
     expect(second.duplicate).toBe(true);
     expect(first.participation.currentStreak).toBe(1);
     expect(second.participation.currentStreak).toBe(1);
@@ -765,26 +785,26 @@ describe('scoring', () => {
     });
     const resolvers = resolversFor(setup.pins);
     // Defensive seam rejection of server-derived fields.
-    const forged = await applyErr(applyChallengeActivity(
+    const forged = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       { ...logInput({ client_key: next('key') }), points: 100 } as unknown as NewChallengeActivityInput,
       resolvers,
     ));
     expect(forged.statusCode).toBe(400);
 
-    const half = await applyChallengeActivity(
+    const half = await apply(
       db, setup.memberId, setup.challengeId, logInput({ value: 10, client_key: next('key') }), resolvers,
     );
-    const full = await applyChallengeActivity(
+    const full = await apply(
       db, setup.memberId, setup.challengeId, logInput({ value: 20, client_key: next('key') }), resolvers,
     );
-    const over = await applyChallengeActivity(
+    const over = await apply(
       db, setup.memberId, setup.challengeId, logInput({ value: 40, client_key: next('key') }), resolvers,
     );
     expect(half.record.points_awarded).toBe(50);
     expect(full.record.points_awarded).toBe(100);
     expect(over.record.points_awarded).toBe(100);
-    const again = await applyChallengeActivity(
+    const again = await apply(
       db, setup.memberId, setup.challengeId, logInput({ value: 10, client_key: next('key') }), resolvers,
     );
     expect(again.record.points_awarded).toBe(half.record.points_awarded);
@@ -821,7 +841,7 @@ describe('engines', () => {
     const resolvers = resolversFor(setup.pins);
     const at = (day: string) => T(`${day}T12:00:00Z`);
 
-    const a = await applyChallengeActivity(
+    const a = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 600, occurred_at: at('2026-06-10'), client_key: next('key') }), resolvers,
     );
@@ -830,7 +850,7 @@ describe('engines', () => {
     // Participant truth carries the accepted contribution.
     expect(a.participation.cumulativeTotal).toBe(600);
 
-    const b = await applyChallengeActivity(
+    const b = await apply(
       db, memberB, setup.challengeId,
       logInput({ value: 500, occurred_at: at('2026-06-11'), client_key: next('key') }), resolvers,
     );
@@ -854,7 +874,7 @@ describe('engines', () => {
 
     // Ordinary logging after the boundary is rejected with zero new rows.
     const before = await tableCounts();
-    const closed = await applyErr(applyChallengeActivity(
+    const closed = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 10, occurred_at: at('2026-06-12'), client_key: next('key') }), resolvers,
     ));
@@ -879,7 +899,7 @@ describe('engines', () => {
     const at = (day: string) => T(`${day}T12:00:00Z`);
 
     // Partial progress: push-up target met, squat untouched -> in progress.
-    const p1 = await applyChallengeActivity(
+    const p1 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 100, occurred_at: at('2026-06-10'), client_key: next('key') }), resolvers,
     );
@@ -887,7 +907,7 @@ describe('engines', () => {
     expect(p1.participation.cumulativeTotal).toBe(100);
     expect(p1.completionTriggered).toBe(false);
 
-    const p2 = await applyChallengeActivity(
+    const p2 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ canonical_key: 'squat', value: 50, occurred_at: at('2026-06-11'), client_key: next('key') }),
       resolvers,
@@ -899,7 +919,7 @@ describe('engines', () => {
     // Points are server-owned per log (100 + 100 + 10); later logs still
     // accepted (position fixed at first completion) without moving completed_at.
     const firstCompletedAt = p2.participation.completedAt;
-    const p3 = await applyChallengeActivity(
+    const p3 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 10, occurred_at: at('2026-06-12'), client_key: next('key') }), resolvers,
     );
@@ -937,7 +957,7 @@ describe('engines', () => {
     const resolvers = resolversFor(setup.pins);
     // EBC-03: the acceptance clock advances with the log's own Challenge
     // day (streak logs are same-day in the governing timezone).
-    const log = (canonical_key: string, day: string, key?: string) => applyChallengeActivity(
+    const log = (canonical_key: string, day: string, key?: string) => apply(
       db, setup.memberId, setup.challengeId,
       {
         activity_kind: 'fitness',
@@ -980,7 +1000,7 @@ describe('engines', () => {
     expect(reset.participation.daysCompleted).toBe(3);
   });
 
-  it('streak: completion at required days keeps the challenge open', async () => {
+  it('streak: reaching required days does not finish the participant early', async () => {
     const db = testDb();
     const setup = await setupActiveChallenge({
       challenge_type: 'streak',
@@ -993,18 +1013,23 @@ describe('engines', () => {
       joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
       { now: T('2026-06-10T12:00:00Z') },
     );
-    const done = await applyChallengeActivity(
+    const done = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
       { now: T('2026-06-11T12:00:00Z') },
     );
-    expect(done.participation.completionStatus).toBe('completed');
-    expect(done.completionTriggered).toBe(true);
+    // EBC-04 (Stage F FR-V2-112): streak completion is a finalization-time
+    // terminal evaluation. Reaching the required run early advances the
+    // streak but never marks the participant finished.
+    expect(done.participation.completionStatus).toBe('in_progress');
+    expect(done.completionTriggered).toBe(false);
+    expect(done.participation.currentStreak).toBe(2);
+    expect(done.participation.bestStreak).toBe(2);
     const status = await db.query<{ status: string }>(
       'SELECT status FROM challenges WHERE challenge_id = $1', [setup.challengeId],
     );
@@ -1045,9 +1070,9 @@ describe('derived truth', () => {
       challengeId: setup.challengeId, memberId: memberB, joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    await applyChallengeActivity(db, setup.memberId, setup.challengeId,
+    await apply(db, setup.memberId, setup.challengeId,
       logInput({ value: 600, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers);
-    await applyChallengeActivity(db, memberB, setup.challengeId,
+    await apply(db, memberB, setup.challengeId,
       logInput({ value: 500, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers);
 
     const recomputed = await recomputeChallengeDerived(db, setup.challengeId);
@@ -1077,9 +1102,9 @@ describe('derived truth', () => {
       challengeId: comp.challengeId, memberId: comp.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
     const compResolvers = resolversFor(comp.pins);
-    await applyChallengeActivity(db, comp.memberId, comp.challengeId,
+    await apply(db, comp.memberId, comp.challengeId,
       logInput({ value: 60, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), compResolvers);
-    await applyChallengeActivity(db, comp.memberId, comp.challengeId,
+    await apply(db, comp.memberId, comp.challengeId,
       logInput({ value: 50, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), compResolvers);
     const recomp = await recomputeChallengeDerived(db, comp.challengeId);
     expect(recomp.recordsReplayed).toBe(2);
@@ -1097,10 +1122,10 @@ describe('derived truth', () => {
     });
     const streakResolvers = resolversFor(streak.pins);
     // EBC-03: clock advances with each log's own Challenge day.
-    await applyChallengeActivity(db, streak.memberId, streak.challengeId,
+    await apply(db, streak.memberId, streak.challengeId,
       logInput({ value: 20, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), streakResolvers,
       { now: T('2026-06-10T12:00:00Z') });
-    await applyChallengeActivity(db, streak.memberId, streak.challengeId,
+    await apply(db, streak.memberId, streak.challengeId,
       logInput({ value: 20, occurred_at: T('2026-06-12T12:00:00Z'), client_key: next('key') }), streakResolvers,
       { now: T('2026-06-12T12:00:00Z') });
     const restreak = await recomputeChallengeDerived(db, streak.challengeId);
@@ -1194,7 +1219,7 @@ describe('lifecycle / period', () => {
       memberId: setup.memberId,
       joinedAt: '2026-06-01T00:00:00Z',
     });
-    const notActive = await applyErr(applyChallengeActivity(
+    const notActive = await applyErr(apply(
       db, setup.memberId, est.challenge.challenge_id,
       logInput({ client_key: next('key') }), resolvers,
     ));
@@ -1202,7 +1227,7 @@ describe('lifecycle / period', () => {
 
     // Ended directly: no ordinary logging.
     await endChallenge(db, setup.challengeId);
-    const ended = await applyErr(applyChallengeActivity(
+    const ended = await applyErr(apply(
       db, setup.memberId, setup.challengeId, logInput({ client_key: next('key') }), resolvers,
     ));
     expect(ended.code).toBe('challenge_not_active');
@@ -1220,16 +1245,19 @@ describe('lifecycle / period', () => {
       joinedAt: '2026-05-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    const early = await applyErr(applyChallengeActivity(
+    const early = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: T('2026-05-20T12:00:00Z'), client_key: next('key') }), resolvers,
     ));
     expect(early.code).toBe('outside_challenge_window');
-    const late = await applyErr(applyChallengeActivity(
+    // Post-window Evidence is refused at the EBC-04 expiry gate (the
+    // acceptance instant is itself past the window); pre-window Evidence
+    // above still proves the period rule.
+    const late = await applyErr(apply(
       db, setup.memberId, setup.challengeId,
       logInput({ occurred_at: T('2026-07-05T12:00:00Z'), client_key: next('key') }), resolvers,
     ));
-    expect(late.code).toBe('outside_challenge_window');
+    expect(late.code).toBe('challenge_not_active');
     expect(await tableCounts()).toEqual({ events: 0, records: 0 });
   });
 });
@@ -1253,7 +1281,7 @@ describe('config version at acceptance', () => {
     const resolvers = resolversFor(setup.pins);
     // Backdated Evidence (before version 2 existed) is still governed by the
     // current version at acceptance — the documented C2B rule.
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 200, occurred_at: T('2026-06-05T12:00:00Z'), client_key: next('key') }),
       resolvers,
@@ -1279,12 +1307,12 @@ describe('correction readiness', () => {
       joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    const first = await applyChallengeActivity(
+    const first = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 100, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }),
       resolvers,
     );
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 200, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }),
       resolvers,
@@ -1481,7 +1509,7 @@ describe('config version pinning and replay (CORR-001)', () => {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    const r1 = await applyChallengeActivity(
+    const r1 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 60, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
     );
@@ -1493,9 +1521,12 @@ describe('config version pinning and replay (CORR-001)', () => {
       activities: [pushUp({ target_value: 200 })],
     }, creationResolvers(setup.pins));
     // Backdated Evidence (before v2 existed) is still governed by current v2.
-    const r2 = await applyChallengeActivity(
+    // The acceptance clock stays monotonic (after r1) so replay order
+    // (accepted_at, record_id) matches live acceptance order.
+    const r2 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 50, occurred_at: T('2026-06-05T12:00:00Z'), client_key: next('key') }), resolvers,
+      { now: T('2026-06-10T13:00:00Z') },
     );
     expect(r2.record.config_version).toBe(2);
     expect(r2.record.scoring_target_value).toBe(200);
@@ -1535,7 +1566,7 @@ describe('config version pinning and replay (CORR-001)', () => {
       addChallengeConfigVersion(db, setup.challengeId, {
         activities: [pushUp({ target_value: 200 })],
       }, creationResolvers(setup.pins)).catch((error: Error) => error),
-      ...[0, 1, 2, 3].map((n) => applyChallengeActivity(
+      ...[0, 1, 2, 3].map((n) => apply(
         db, setup.memberId, setup.challengeId,
         logInput({ value: 40, occurred_at: day(n), client_key: `race-${n}` }), resolvers,
       ).catch((error: Error) => error)),
@@ -1584,18 +1615,18 @@ describe('config version pinning and replay (CORR-001)', () => {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    const r1 = await applyChallengeActivity(
+    const r1 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 60, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
     );
     await addChallengeConfigVersion(db, setup.challengeId, {
       activities: [pushUp({ target_value: 200 })],
     }, creationResolvers(setup.pins));
-    const r2 = await applyChallengeActivity(
+    const r2 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 50, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
     );
-    const r3 = await applyChallengeActivity(
+    const r3 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 100, occurred_at: T('2026-06-12T12:00:00Z'), client_key: next('key') }), resolvers,
     );
@@ -1623,14 +1654,14 @@ describe('config version pinning and replay (CORR-001)', () => {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 40, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
     );
     await addChallengeConfigVersion(db, setup.challengeId, {
       activities: [pushUp({ target_value: 500 })],
     }, creationResolvers(setup.pins));
-    await applyChallengeActivity(
+    await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 40, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
     );
@@ -1665,7 +1696,7 @@ describe('config version pinning and replay (CORR-001)', () => {
       challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
     });
     const resolvers = resolversFor(setup.pins);
-    const r1 = await applyChallengeActivity(
+    const r1 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 600, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }), resolvers,
     );
@@ -1676,7 +1707,7 @@ describe('config version pinning and replay (CORR-001)', () => {
       activities: [pushUp()],
       goal_value: 800,
     }, creationResolvers(setup.pins));
-    const r2 = await applyChallengeActivity(
+    const r2 = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 300, occurred_at: T('2026-06-11T12:00:00Z'), client_key: next('key') }), resolvers,
     );
@@ -1709,16 +1740,16 @@ describe('config version pinning and replay (CORR-001)', () => {
     });
     const resolvers = resolversFor(setup.pins);
     // EBC-03: clock advances with each log's own Challenge day.
-    const log = (day: string) => applyChallengeActivity(
+    const log = (day: string) => apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 20, occurred_at: T(`${day}T12:00:00Z`), client_key: next('key') }), resolvers,
       { now: T(`${day}T12:00:00Z`) },
     );
     await log('2026-06-10');
     const r2 = await log('2026-06-11');
-    // Completed under v1 terms (2 consecutive). Under retroactive v2 terms
-    // (required 5) this completion could never have happened.
-    expect(r2.participation.completionStatus).toBe('completed');
+    // EBC-04: streak completion is terminal-only, so live progress stays
+    // in_progress across the version transition while the run builds.
+    expect(r2.participation.completionStatus).toBe('in_progress');
     expect(r2.participation.currentStreak).toBe(2);
     await addChallengeConfigVersion(db, setup.challengeId, {
       activities: [pushUp()],
@@ -1728,9 +1759,7 @@ describe('config version pinning and replay (CORR-001)', () => {
     const r4 = await log('2026-06-13');
     expect(r4.participation.currentStreak).toBe(4);
     expect(r4.participation.bestStreak).toBe(4);
-    // First completion stands: later versions never move completed_at.
-    expect(r4.participation.completedAt).toBe(r2.participation.completedAt);
-    expect(r4.participation.completedAt).toBe(r2.record.accepted_at);
+    expect(r4.participation.completionStatus).toBe('in_progress');
     // Streak period/params come from pinned snapshots; current mirrors agree.
     const recomputed = await storedVsRecomputed(setup.challengeId);
     expect(recomputed.recordsReplayed).toBe(4);
@@ -1763,7 +1792,7 @@ describe('config version pinning and replay (CORR-001)', () => {
     // Production resolution now returns the v2 pin for the same identity.
     const livePin = await resolveKnowledgePinByName(db, 'fitness', 'push-up');
     expect(livePin).toEqual({ knowledge_id: knowledgeId, current_version: 2 });
-    const result = await applyChallengeActivity(
+    const result = await apply(
       db, setup.memberId, setup.challengeId,
       logInput({ value: 20, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') }),
       resolversFor({ 'push-up': livePin as { knowledge_id: string; current_version: number } }),

@@ -80,6 +80,8 @@ export interface ChallengeRow {
   reset_on_miss: boolean;
   /** EBC-03 governing Challenge timezone mirror (IANA; 'UTC' pre-EBC-03). */
   timezone: string;
+  /** EBC-04 finalization marker (NULL = not finalized; write-once). */
+  finalized_at: string | null;
   activated_at: string | null;
   ended_at: string | null;
   created_at: string;
@@ -197,6 +199,7 @@ export function normalizeChallengeRow(row: {
   required_consecutive_days: unknown;
   reset_on_miss: unknown;
   timezone?: unknown;
+  finalized_at?: string | Date | null;
   activated_at: string | Date | null;
   ended_at: string | Date | null;
   created_at: string | Date;
@@ -223,6 +226,7 @@ export function normalizeChallengeRow(row: {
     // EBC-03: pre-EBC-03 rows predate the mirror column and read as UTC
     // (matches the migration default; no backfill, no fabrication).
     timezone: row.timezone == null ? 'UTC' : String(row.timezone),
+    finalized_at: row.finalized_at == null ? null : new Date(row.finalized_at).toISOString(),
     activated_at: row.activated_at == null ? null : new Date(row.activated_at).toISOString(),
     ended_at: row.ended_at == null ? null : new Date(row.ended_at).toISOString(),
     created_at: new Date(row.created_at).toISOString(),
@@ -351,15 +355,27 @@ export async function activateChallenge(db: Db, challengeId: string): Promise<Ch
 }
 
 /** active (or establishment) -> ended. Terminal: history stays put. */
+/**
+ * EBC-04 idempotent governed end: ending stops ordinary activity
+ * acceptance (it is NOT finalization — terminal truth freezes separately).
+ * Ending an already-ended Challenge returns its current state instead of
+ * failing, so duplicate/concurrent ending calls converge; ended Challenges
+ * still never reopen (guard trigger) and finalization never reverses this.
+ */
 export async function endChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {
-  const current = await readChallenge(db, challengeId);
-  if (current.status === 'ended') fail('challenge is already ended');
+  // Conditional single-statement end: concurrent callers converge instead
+  // of tripping the ended_at write-once guard (only non-ended rows match,
+  // so an existing ended_at is never rewritten). Duplicate calls return
+  // the ended state (EBC-04 idempotent ending).
   const result = await db.query(
     `UPDATE challenges SET status = 'ended', ended_at = now(), updated_at = now()
-     WHERE challenge_id = $1 RETURNING *`,
+     WHERE challenge_id = $1 AND status IN ('establishment', 'active') RETURNING *`,
     [challengeId],
   );
-  return normalizeChallengeRow(result.rows[0] as never);
+  if (result.rows.length > 0) return normalizeChallengeRow(result.rows[0] as never);
+  const current = await readChallenge(db, challengeId);
+  if (current.status === 'ended') return current;
+  fail(`challenge ${challengeId} cannot transition to ended from status '${current.status}'`);
 }
 
 export async function getChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {
