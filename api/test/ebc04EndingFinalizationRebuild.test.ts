@@ -895,6 +895,184 @@ describe('EBC-04 REGRESSION — earlier slices and live semantics hold', () => {
     expect(late.code).toBe('streak_day_closed');
   });
 
+describe('EBC-04 CORR-001 authoritative frozen completion time', () => {
+  interface Racer {
+    memberId: string;
+    participationId: string;
+  }
+
+  async function corrRaceSetup(memberCount: number): Promise<{ setup: ChallengeSetup; racers: Racer[] }> {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      start_date: '2026-06-01',
+      end_date: '2026-06-05',
+      activities: [pushUp({ target_value: 100 })],
+    });
+    const racers: Racer[] = [];
+    for (let index = 0; index < memberCount; index += 1) {
+      const memberId = index === 0
+        ? setup.memberId
+        : await seedMember(db, `corr-${next('m')}`);
+      const participationId = await insertEpisode(db, {
+        challengeId: setup.challengeId, memberId, joinedAt: '2026-06-01T00:00:00Z',
+      });
+      racers.push({ memberId, participationId });
+    }
+    return { setup, racers };
+  }
+
+  async function finish(
+    db: Db,
+    setup: ChallengeSetup,
+    racer: Racer,
+    atIso: string,
+    value = 100,
+  ) {
+    return logAt(db, setup,
+      { value, occurred_at: T(atIso), client_key: next('key') }, atIso, racer.memberId);
+  }
+
+  it('CORR-1: competitive finisher preserves the actual completion timestamp', async () => {
+    const db = testDb();
+    const { setup, racers } = await corrRaceSetup(1);
+    const done = await finish(db, setup, racers[0], '2026-06-02T10:00:00Z');
+    const canonicalAt = done.record.accepted_at;
+    const result = await finalizeChallenge(db, setup.challengeId, T('2026-06-10T12:00:00Z'));
+    const [frozen] = result.participations;
+    expect(frozen.completed).toBe(true);
+    // The canonical completion fact — not Challenge finalization time.
+    expect(frozen.completed_at).toBe(canonicalAt);
+    expect(frozen.completed_at).not.toBe(result.finalization.finalized_at);
+  });
+
+  it('CORR-2: distinct finishers retain distinct frozen completed_at values', async () => {
+    const db = testDb();
+    const { setup, racers } = await corrRaceSetup(2);
+    const first = await finish(db, setup, racers[0], '2026-06-02T10:00:00Z');
+    const second = await finish(db, setup, racers[1], '2026-06-03T10:00:00Z');
+    const result = await finalizeChallenge(db, setup.challengeId, T('2026-06-10T12:00:00Z'));
+    const byMember = new Map(result.participations.map((p) => [p.member_id, p]));
+    expect(byMember.get(racers[0].memberId)?.completed_at).toBe(first.record.accepted_at);
+    expect(byMember.get(racers[1].memberId)?.completed_at).toBe(second.record.accepted_at);
+    expect(byMember.get(racers[0].memberId)?.completed_at)
+      .not.toBe(byMember.get(racers[1].memberId)?.completed_at);
+  });
+
+  it('CORR-3: tied finishers share rank and keep canonical timestamps', async () => {
+    const db = testDb();
+    const { setup, racers } = await corrRaceSetup(2);
+    await finish(db, setup, racers[0], '2026-06-02T10:00:00Z');
+    await finish(db, setup, racers[1], '2026-06-02T10:00:00Z');
+    const result = await finalizeChallenge(db, setup.challengeId, T('2026-06-10T12:00:00Z'));
+    const positions = result.participations.map((p) => p.final_position).sort();
+    expect(positions).toEqual([1, 1]);
+    for (const participation of result.participations) {
+      expect(participation.completed_at).toBe(T('2026-06-02T10:00:00Z').toISOString());
+    }
+  });
+
+  it('CORR-4: collective crossing freezes the crossing timestamp', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'collective',
+      goal_value: 100,
+      goal_unit: 'reps',
+      activities: [pushUp()],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    await logAt(db, setup,
+      { value: 60, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') },
+      '2026-06-10T12:00:00Z');
+    const crossing = await logAt(db, setup,
+      { value: 50, occurred_at: T('2026-06-10T13:00:00Z'), client_key: next('key') },
+      '2026-06-10T13:00:00Z');
+    const result = await finalizeChallenge(db, setup.challengeId, T('2026-06-11T12:00:00Z'));
+    const [frozen] = result.participations;
+    expect(frozen.completed).toBe(true);
+    expect(frozen.completed_at).toBe(crossing.record.accepted_at);
+    expect(frozen.completed_at).not.toBe(result.finalization.finalized_at);
+  });
+
+  it('CORR-5: streak terminal completion still freezes finalization time', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'streak',
+      start_date: '2026-06-01',
+      end_date: '2026-06-03',
+      required_consecutive_days: 3,
+      activities: [pushUp()],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+    for (const day of ['2026-06-01', '2026-06-02', '2026-06-03']) {
+      await logAt(db, setup,
+        { occurred_at: T(`${day}T12:00:00Z`), client_key: next('key') }, `${day}T12:00:00Z`);
+    }
+    const result = await finalizeChallenge(db, setup.challengeId, T('2026-06-10T12:00:00Z'));
+    const [frozen] = result.participations;
+    expect(frozen.completed).toBe(true);
+    expect(frozen.completed_at).toBe(result.finalization.finalized_at);
+    expect(frozen.final_streak).toBe(3);
+  });
+
+  it('CORR-6: non-completer freezes completed=false with NULL timestamp', async () => {
+    const db = testDb();
+    const { setup, racers } = await corrRaceSetup(2);
+    await finish(db, setup, racers[0], '2026-06-02T10:00:00Z');
+    await finish(db, setup, racers[1], '2026-06-03T10:00:00Z', 10);
+    const result = await finalizeChallenge(db, setup.challengeId, T('2026-06-10T12:00:00Z'));
+    const byMember = new Map(result.participations.map((p) => [p.member_id, p]));
+    const alsoRan = byMember.get(racers[1].memberId)!;
+    expect(alsoRan.completed).toBe(false);
+    expect(alsoRan.completed_at).toBeNull();
+    expect(alsoRan.final_position).toBeNull();
+  });
+
+  it('CORR-7: verify-only succeeds when frozen timestamps match canonical truth', async () => {
+    const db = testDb();
+    const { setup, racers } = await corrRaceSetup(2);
+    await finish(db, setup, racers[0], '2026-06-02T10:00:00Z');
+    await finish(db, setup, racers[1], '2026-06-03T10:00:00Z');
+    await finalizeChallenge(db, setup.challengeId, T('2026-06-10T12:00:00Z'));
+    const result = await rebuildChallengeDerived(db, setup.challengeId);
+    expect(result.mode).toBe('verify');
+    expect(result.verified).toBe(true);
+    expect(result.mismatches).toEqual([]);
+  });
+
+  it('CORR-8: verification reports a diverged frozen completed_at', async () => {
+    const db = testDb();
+    const { setup, racers } = await corrRaceSetup(1);
+    await finish(db, setup, racers[0], '2026-06-02T10:00:00Z');
+    await finalizeChallenge(db, setup.challengeId, T('2026-06-10T12:00:00Z'));
+    // Fault injection: bypass the immutability guard to simulate corrupted
+    // frozen history, then restore the guard. Production code can never do
+    // this; the test proves verify-only detects it without mutating.
+    await db.query('ALTER TABLE challenge_participation_finals DISABLE TRIGGER challenge_participation_finals_no_mutation');
+    await db.query(
+      `UPDATE challenge_participation_finals SET completed_at = $2 WHERE participation_id = $1`,
+      [racers[0].participationId, T('2026-06-09T12:00:00Z').toISOString()],
+    );
+    await db.query('ALTER TABLE challenge_participation_finals ENABLE TRIGGER challenge_participation_finals_no_mutation');
+    const result = await rebuildChallengeDerived(db, setup.challengeId);
+    expect(result.mode).toBe('verify');
+    expect(result.verified).toBe(false);
+    expect(result.mismatches?.some((m) => m.includes(racers[0].participationId))).toBe(true);
+    // Verify-only never repairs: the tampered value is still there.
+    const finals = await db.query<{ completed_at: string }>(
+      `SELECT completed_at FROM challenge_participation_finals WHERE participation_id = $1`,
+      [racers[0].participationId],
+    );
+    expect(new Date(finals.rows[0].completed_at).toISOString())
+      .toBe(T('2026-06-09T12:00:00Z').toISOString());
+  });
+});
+
+describe('EBC-04 REGRESSION — earlier slices and live semantics hold (terminal)', () => {
   it('37: live calculations unchanged before terminal state', async () => {
     const db = testDb();
     const collective = await setupActiveChallenge({
@@ -917,4 +1095,5 @@ describe('EBC-04 REGRESSION — earlier slices and live semantics hold', () => {
     });
     expect(visible.find((s) => s.challengeId === collective.challengeId)?.finalized).toBe(false);
   });
+});
 });

@@ -159,6 +159,14 @@ export interface TerminalEvaluation {
   /** Per-episode terminal outcome (keyed by participation_id). */
   episodes: Record<string, {
     completed: boolean;
+    /**
+     * EBC-04 CORR-001 authoritative completion instant to freeze:
+     * competitive/collective preserve the canonical completion timestamp
+     * from recomputed participation truth (the same fact that determines
+     * finishing order); streak terminal completion stamps finalizedAt
+     * (terminal-only by design); null when not completed.
+     */
+    completedAt: string | null;
     daysCompleted: number;
     bestStreak: number;
     finalStreak: number;
@@ -195,6 +203,9 @@ export function evaluateTerminalTruth(
       const completed = state?.completionStatus === 'completed';
       episodes[id] = {
         completed,
+        // CORR-001: freeze the canonical completion timestamp from
+        // recomputed truth (finishing-order fact), never finalization time.
+        completedAt: completed ? (state?.completedAt ?? null) : null,
         daysCompleted: state?.daysCompleted ?? 0,
         bestStreak: state?.bestStreak ?? 0,
         finalStreak: state?.currentStreak ?? 0,
@@ -214,6 +225,9 @@ export function evaluateTerminalTruth(
       const completed = required > 0 && bestStreak >= required;
       episodes[id] = {
         completed,
+        // CORR-001: streak completion is terminal-only, so the
+        // finalization instant is the authoritative completion time.
+        completedAt: completed ? finalizedAt : null,
         daysCompleted,
         bestStreak,
         finalStreak,
@@ -223,8 +237,12 @@ export function evaluateTerminalTruth(
   } else {
     for (const id of episodeIds) {
       const state = states[id];
+      const completed = state?.completionStatus === 'completed';
       episodes[id] = {
-        completed: state?.completionStatus === 'completed',
+        completed,
+        // CORR-001: preserve the canonical goal-crossing completion
+        // timestamp from recomputed truth, never finalization time.
+        completedAt: completed ? (state?.completedAt ?? null) : null,
         daysCompleted: state?.daysCompleted ?? 0,
         bestStreak: state?.bestStreak ?? 0,
         finalStreak: state?.currentStreak ?? 0,
@@ -411,7 +429,9 @@ export async function finalizeChallenge(
          ON CONFLICT (participation_id) DO NOTHING`,
         [
           id, challengeId, memberByParticipation.get(id),
-          outcome.completed, outcome.completed ? finalizedAt : null,
+          // CORR-001: freeze the authoritative per-family completedAt
+          // carried by the terminal outcome (never blanket finalizedAt).
+          outcome.completed, outcome.completedAt,
           outcome.daysCompleted, outcome.bestStreak, outcome.finalStreak,
           outcome.finalPosition, finalizedAt,
         ],
@@ -661,11 +681,19 @@ async function verifyFinalizedHistory(db: Db, challengeId: string): Promise<Rebu
       mismatches.push(`episode ${id} missing on one side of the comparison`);
       continue;
     }
-    const sameCompletedAt = (frozen.completed_at == null && !outcome.completed)
-      || (frozen.completed_at != null && outcome.completed
-        && frozen.completed_at === finals.finalized_at);
+    // CORR-001: the frozen timestamp must equal the authoritative
+    // per-family completedAt re-evaluated from canonical truth — the
+    // canonical completion instant for competitive/collective, the
+    // finalization instant for terminal streak completion, null otherwise.
+    const sameCompletedAt = (frozen.completed_at == null && outcome.completedAt == null)
+      || (frozen.completed_at != null && outcome.completedAt != null
+        && frozen.completed_at === outcome.completedAt);
     if (frozen.completed !== outcome.completed || !sameCompletedAt) {
-      mismatches.push(`episode ${id} completion diverges (frozen=${frozen.completed})`);
+      mismatches.push(
+        `episode ${id} completion diverges `
+        + `(frozen=${frozen.completed}@${String(frozen.completed_at)} `
+        + `recomputed=${outcome.completed}@${String(outcome.completedAt)})`,
+      );
     }
     if (frozen.days_completed !== outcome.daysCompleted
       || frozen.best_streak !== outcome.bestStreak
