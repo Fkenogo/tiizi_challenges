@@ -218,16 +218,31 @@ export function validateNewEvent(event: NewActivityEvent): void {
  * existing row with inserted=false instead of creating a second event.
  * The Knowledge pin is always server-resolved; unknown activities are
  * rejected, never invented.
+ *
+ * EBC-03 authoritative day: the Challenge application seam derives the
+ * Challenge-local day server-side from occurred_at + the governing
+ * Challenge timezone and passes it as `options.authoritativeDay`. That day
+ * overrides the client derivation and skips the client-tz agreement check
+ * (a client-supplied occurred_day that disagrees with the governing day is
+ * rejected by the caller, never trusted). occurred_tz still records the
+ * originating client timezone as provenance only.
  */
 export async function appendActivityEvent(
   db: Db,
   event: NewActivityEvent,
   resolvers: ActivityEventResolvers,
+  options: { authoritativeDay?: string } = {},
 ): Promise<{ row: ActivityEventRow; inserted: boolean }> {
   validateNewEvent(event);
   const pin = await resolvers.resolveKnowledgePin(event.canonical_key);
   if (!pin) fail(`unknown activity '${event.canonical_key}' (no canonical Knowledge; pins are never invented)`);
-  const occurredDay = event.occurred_day ?? dayInTimezone(event.occurred_at, event.occurred_tz ?? null);
+  let occurredDay = event.occurred_day ?? dayInTimezone(event.occurred_at, event.occurred_tz ?? null);
+  if (options.authoritativeDay !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(options.authoritativeDay)) {
+      fail('authoritativeDay must be YYYY-MM-DD');
+    }
+    occurredDay = options.authoritativeDay;
+  }
   const params = [
     event.event_id ?? null, event.member_id,
     event.activity_kind, event.canonical_key, event.activity_variant ?? null,

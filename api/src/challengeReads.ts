@@ -107,6 +107,8 @@ export interface ApiChallengeSummary {
   status: 'establishment' | 'active' | 'ended';
   startDate: string;
   endDate: string;
+  /** EBC-03 governing Challenge timezone (IANA) defining the Challenge day. */
+  timezone: string;
   currentConfigVersion: number;
   goalValue: number | null;
   goalUnit: string | null;
@@ -123,6 +125,8 @@ export interface ApiChallengeDetail extends ApiChallengeSummary {
   config: {
     version: number;
     period: { startDate: string; endDate: string };
+    /** EBC-03 governing timezone pinned by this config version. */
+    timezone: string;
     requiredConsecutiveDays: number | null;
     activities: Array<{
       canonicalKey: string;
@@ -340,6 +344,7 @@ async function toSummary(
     status: challenge.status,
     startDate: challenge.start_date,
     endDate: challenge.end_date,
+    timezone: challenge.timezone,
     currentConfigVersion: challenge.current_config_version,
     goalValue: challenge.goal_value,
     goalUnit: challenge.goal_unit,
@@ -455,6 +460,7 @@ export async function getChallengeDetail(
     status: challenge.status,
     startDate: challenge.start_date,
     endDate: challenge.end_date,
+    timezone: challenge.timezone,
     currentConfigVersion: challenge.current_config_version,
     goalValue: challenge.goal_value,
     goalUnit: challenge.goal_unit,
@@ -478,6 +484,7 @@ function toConfigContract(
   return {
     version,
     period: { startDate: snapshot.start_date, endDate: snapshot.end_date },
+    timezone: snapshot.timezone,
     requiredConsecutiveDays: snapshot.required_consecutive_days,
     activities: activities.map((a) => {
       const kind = activityKinds.get(a.knowledge_id);

@@ -10,10 +10,10 @@
  * - excess quantity on one requirement cannot compensate for another missing;
  * - ALL configured requirements complete advances the day exactly once;
  * - repeated logs MUST NOT double-advance the same Challenge day;
- * - a missed day resets Current Streak (streakResetOnMiss=true) to 1 — the
- *   new valid day starts a fresh streak; the Participant remains in the
- *   Challenge (status is never changed by a reset) and later valid days
- *   keep building the new streak;
+ * - a missed day resets Current Streak (streakResetOnMiss=true): an
+ *   evaluated miss resets to 0, and the next completed day starts a fresh
+ *   streak at 1; the Participant remains in the Challenge (status is never
+ *   changed by a reset) and later valid days keep building the new streak;
  * - no ordinary late-logging grace restores a missed day: the gap is measured
  *   from the last COMPLETED day, so partial-log days never bridge a miss.
  *
@@ -108,8 +108,24 @@ export class StreakEngine implements ChallengeEngine {
           newStreak = prevStreak + 1;
         }
       }
+    } else if (!allRequirementsMet && !wereAllMetBefore) {
+      // EBC-03 missed-day evaluation (Stage F FR-V2-107): this log belongs
+      // to a day that is not (yet) complete. When that day is NEWER than
+      // the last completed day by more than one day, at least one required
+      // day closed uncompleted in between — the run ending at the latest
+      // evaluated day is broken, so Current Streak resets to 0 now (best
+      // is preserved below; daysCompleted is cumulative and untouched). A
+      // consecutive next day that is still open keeps the previous run
+      // (it may yet complete and continue it); same-day repeats never
+      // reach this branch.
+      if (prevLastLogDate === null) {
+        newStreak = 0;
+      } else if (daysBetween(prevLastLogDate, today) > 1) {
+        newStreak = 0;
+      }
     }
-    // Requirements not fully met, or day already counted → streak does NOT advance.
+    // Requirements not fully met on an open consecutive day, or day already
+    // counted → streak does NOT advance (and is NOT reset).
 
     const newLongest = Math.max(prevLongest, newStreak);
     const isCompleted = newStreak >= requiredDays;

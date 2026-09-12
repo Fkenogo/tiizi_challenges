@@ -33,6 +33,7 @@
 import type { Db } from './db.js';
 import {
   assertCollectiveUnitHomogeneity,
+  assertValidTimezone,
   insertConfigVersion,
   toDayString,
   validateActivityInputs,
@@ -77,6 +78,8 @@ export interface ChallengeRow {
   goal_unit: string | null;
   required_consecutive_days: number | null;
   reset_on_miss: boolean;
+  /** EBC-03 governing Challenge timezone mirror (IANA; 'UTC' pre-EBC-03). */
+  timezone: string;
   activated_at: string | null;
   ended_at: string | null;
   created_at: string;
@@ -98,6 +101,11 @@ export interface NewChallengeInput {
   /** Streak only. */
   required_consecutive_days?: number;
   reset_on_miss?: boolean;
+  /**
+   * EBC-03 governing Challenge timezone (IANA, e.g. 'Africa/Nairobi').
+   * Optional: absent means 'UTC'. Validated fail-closed at establishment.
+   */
+  timezone?: string;
   activities: ActivityConfigInput[];
 }
 
@@ -134,6 +142,10 @@ export function validateNewChallenge(input: NewChallengeInput): ChallengeGoverni
     goal_unit: null,
     required_consecutive_days: null,
     reset_on_miss: input.reset_on_miss ?? true,
+    // EBC-03: one governing timezone per Challenge (Stage F FR-V2-119),
+    // from Challenge authority — never the participant device. Absent
+    // means UTC; an invalid identifier fails closed here.
+    timezone: input.timezone === undefined ? 'UTC' : assertValidTimezone(input.timezone),
   };
   if (input.challenge_type === 'collective') {
     if (input.goal_value === undefined || !Number.isFinite(input.goal_value) || input.goal_value <= 0) {
@@ -184,6 +196,7 @@ export function normalizeChallengeRow(row: {
   goal_unit: unknown;
   required_consecutive_days: unknown;
   reset_on_miss: unknown;
+  timezone?: unknown;
   activated_at: string | Date | null;
   ended_at: string | Date | null;
   created_at: string | Date;
@@ -207,6 +220,9 @@ export function normalizeChallengeRow(row: {
       ? null
       : Number(row.required_consecutive_days),
     reset_on_miss: Boolean(row.reset_on_miss),
+    // EBC-03: pre-EBC-03 rows predate the mirror column and read as UTC
+    // (matches the migration default; no backfill, no fabrication).
+    timezone: row.timezone == null ? 'UTC' : String(row.timezone),
     activated_at: row.activated_at == null ? null : new Date(row.activated_at).toISOString(),
     ended_at: row.ended_at == null ? null : new Date(row.ended_at).toISOString(),
     created_at: new Date(row.created_at).toISOString(),
@@ -271,8 +287,9 @@ export async function insertChallengeWithConfig(
       `INSERT INTO challenges
          (group_id, created_by_member_id, challenge_type, title, description,
           instructions, start_date, end_date,
-          goal_value, goal_unit, required_consecutive_days, reset_on_miss)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          goal_value, goal_unit, required_consecutive_days, reset_on_miss,
+          timezone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         input.group_id, input.created_by_member_id, input.challenge_type,
@@ -280,6 +297,7 @@ export async function insertChallengeWithConfig(
         basis.start_date, basis.end_date,
         basis.goal_value, basis.goal_unit,
         basis.required_consecutive_days, basis.reset_on_miss,
+        basis.timezone,
       ],
     );
     challenge = normalizeChallengeRow(inserted.rows[0] as never);

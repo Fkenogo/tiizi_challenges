@@ -91,6 +91,25 @@ export interface ChallengeGoverningBasis {
   goal_unit: string | null;
   required_consecutive_days: number | null;
   reset_on_miss: boolean;
+  /**
+   * EBC-03 governing Challenge timezone (IANA, e.g. 'Africa/Nairobi').
+   * The single timezone that defines the Challenge day for Streak temporal
+   * evaluation (Stage F FR-V2-119). 'UTC' for pre-EBC-03 configurations.
+   */
+  timezone: string;
+}
+
+/** EBC-03 fail-closed IANA timezone check (Challenge/config authority). */
+export function assertValidTimezone(timezone: unknown): string {
+  if (typeof timezone !== 'string' || timezone.length < 1 || timezone.length > 100) {
+    fail('timezone must be an IANA identifier string (1..100 chars)');
+  }
+  try {
+    new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(0));
+  } catch {
+    fail(`invalid timezone '${timezone}' (must be an IANA timezone identifier)`);
+  }
+  return timezone;
 }
 
 function fail(message: string): never {
@@ -178,6 +197,9 @@ export function buildConfigSnapshot(
   return {
     challenge_type: challengeType,
     period: { start_date: basis.start_date, end_date: basis.end_date },
+    // EBC-03: the governing timezone is pinned per version, so historical
+    // records replay under the terms that accepted them.
+    timezone: basis.timezone,
     type_params: {
       goal_value: basis.goal_value,
       goal_unit: basis.goal_unit,
@@ -336,6 +358,8 @@ export interface ConfigChangeInput {
   goal_unit?: string | null;
   required_consecutive_days?: number | null;
   reset_on_miss?: boolean;
+  /** EBC-03: replacement governing timezone (absent = carry forward). */
+  timezone?: string;
 }
 
 /**
@@ -360,10 +384,11 @@ export async function addChallengeConfigVersion(
     goal_unit: string | null;
     required_consecutive_days: number | null;
     reset_on_miss: boolean;
+    timezone: string | null;
   }>(
     `SELECT challenge_id, challenge_type, status, start_date, end_date,
             current_config_version, goal_value, goal_unit,
-            required_consecutive_days, reset_on_miss
+            required_consecutive_days, reset_on_miss, timezone
      FROM challenges WHERE challenge_id = $1`,
     [challengeId],
   );
@@ -379,6 +404,11 @@ export async function addChallengeConfigVersion(
       ? change.required_consecutive_days
       : row.required_consecutive_days,
     reset_on_miss: change.reset_on_miss ?? row.reset_on_miss,
+    // EBC-03: a replacement timezone is validated fail-closed; otherwise the
+    // current governing value carries forward (pre-EBC-03 mirrors read UTC).
+    timezone: change.timezone !== undefined
+      ? assertValidTimezone(change.timezone)
+      : (row.timezone ?? 'UTC'),
   };
   const nextVersion = Number(row.current_config_version) + 1;
   return db.transaction(async (tx) => {
@@ -394,12 +424,14 @@ export async function addChallengeConfigVersion(
        SET start_date = $2, end_date = $3,
            goal_value = $4, goal_unit = $5,
            required_consecutive_days = $6, reset_on_miss = $7,
-           current_config_version = $8, updated_at = now()
+           timezone = $8,
+           current_config_version = $9, updated_at = now()
        WHERE challenge_id = $1`,
       [
         challengeId, basis.start_date, basis.end_date,
         basis.goal_value, basis.goal_unit,
         basis.required_consecutive_days, basis.reset_on_miss,
+        basis.timezone,
         nextVersion,
       ],
     );
@@ -481,6 +513,11 @@ export interface GoverningSnapshot {
   goal_unit: string | null;
   required_consecutive_days: number | null;
   reset_on_miss: boolean;
+  /**
+   * EBC-03 governing Challenge timezone. 'UTC' on historical pre-EBC-03
+   * snapshots (parsed default so old configurations stay interpretable).
+   */
+  timezone: string;
   activities: GoverningSnapshotActivity[];
 }
 
@@ -532,6 +569,18 @@ export function parseGoverningSnapshot(raw: unknown): GoverningSnapshot {
     snapshotFail('only streak snapshots carry required_consecutive_days');
   }
   if (typeof resetOnMiss !== 'boolean') snapshotFail('reset_on_miss must be boolean');
+  // EBC-03: the governing timezone pins per version. Historical pre-EBC-03
+  // snapshots carry no timezone and stay interpretable as UTC (no backfill,
+  // no fabrication). A present timezone must be a valid IANA identifier —
+  // acceptance and replay fail closed on an invalid/unreadable value.
+  let timezone = 'UTC';
+  if (snapshot.timezone !== undefined) {
+    try {
+      timezone = assertValidTimezone(snapshot.timezone);
+    } catch {
+      snapshotFail('timezone must be a valid IANA timezone identifier');
+    }
+  }
   if (!Array.isArray(snapshot.activities) || snapshot.activities.length === 0) {
     snapshotFail('at least one snapshot activity is required');
   }
@@ -600,6 +649,7 @@ export function parseGoverningSnapshot(raw: unknown): GoverningSnapshot {
     goal_unit: goalUnit as string | null,
     required_consecutive_days: requiredDays as number | null,
     reset_on_miss: resetOnMiss as boolean,
+    timezone,
     activities,
   };
 }

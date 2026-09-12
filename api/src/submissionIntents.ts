@@ -49,6 +49,11 @@ export const ELIGIBILITY_REASON = {
   ACTIVITY_NOT_CONFIGURED: 'ACTIVITY_NOT_CONFIGURED',
   MEASUREMENT_NOT_COMPATIBLE: 'MEASUREMENT_NOT_COMPATIBLE',
   KNOWLEDGE_MISMATCH: 'KNOWLEDGE_MISMATCH',
+  /**
+   * EBC-03 late-logging rule (Stage F FR-V2-118): a Streak submission whose
+   * governing Challenge day has already closed in the Challenge timezone.
+   */
+  STREAK_DAY_CLOSED: 'STREAK_DAY_CLOSED',
 } as const;
 
 export type EligibilityReason =
@@ -242,7 +247,11 @@ export function isSameSubmissionPayload(
   if (prior.value !== incoming.value) return false;
   if (prior.unit !== incoming.unit) return false;
   if (new Date(prior.occurred_at).getTime() !== incoming.occurred_at.getTime()) return false;
-  if (prior.occurred_day !== String(incoming.occurred_day).slice(0, 10)) return false;
+  // EBC-03: occurred_day is server-derived from occurred_at + the governing
+  // Challenge timezone — it is not client payload identity. The stored day
+  // may differ from a retry's provisional client-tz day while the logical
+  // submission (instant, challenge, measurement) is identical, so it is
+  // excluded from binding. A changed occurred_at instant still conflicts.
   if ((prior.occurred_tz ?? null) !== (incoming.occurred_tz ?? null)) return false;
   return true;
 }

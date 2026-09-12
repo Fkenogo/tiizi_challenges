@@ -87,6 +87,8 @@ export interface ChallengeCreateV2Input {
   goal_unit?: string;
   required_consecutive_days?: number;
   reset_on_miss?: boolean;
+  /** EBC-03 governing Challenge timezone (IANA; absent = UTC). */
+  timezone?: string;
   activities: CliActivityInput[];
   activate?: boolean;
   join_creator?: boolean;
@@ -205,6 +207,13 @@ export function parseChallengeCreateV2Input(raw: unknown): ChallengeCreateV2Inpu
       cliFail(`${field} must be boolean when present`);
     }
   }
+  // EBC-03: optional governing timezone; shape-checked here, validity
+  // proven fail-closed by validateNewChallenge at establishment.
+  if (input.timezone !== undefined
+    && (typeof input.timezone !== 'string'
+      || (input.timezone as string).length < 1 || (input.timezone as string).length > 100)) {
+    cliFail('timezone must be an IANA identifier string (1..100 chars) when present');
+  }
   if (input.reset_on_miss !== undefined && typeof input.reset_on_miss !== 'boolean') {
     cliFail('reset_on_miss must be boolean when present');
   }
@@ -220,6 +229,7 @@ export function parseChallengeCreateV2Input(raw: unknown): ChallengeCreateV2Inpu
     goal_value: goalValue as number | undefined,
     goal_unit: optString(input, 'goal_unit', 40),
     required_consecutive_days: requiredDays as number | undefined,    reset_on_miss: (input.reset_on_miss as boolean | undefined) ?? undefined,
+    timezone: input.timezone as string | undefined,
     activities: parsedActivities,
     activate: (input.activate as boolean | undefined) ?? false,
     join_creator: (input.join_creator as boolean | undefined) ?? false,
@@ -250,6 +260,7 @@ function toNewChallengeInput(
     goal_unit: input.goal_unit,
     required_consecutive_days: input.required_consecutive_days,
     reset_on_miss: input.reset_on_miss,
+    timezone: input.timezone,
     activities,
   };
 }
