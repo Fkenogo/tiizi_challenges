@@ -57,10 +57,12 @@ export function buildApp(deps: AppDeps) {
       reply.status(statusCode).send({ error: { code, message: 'Internal server error' } });
     } else {
       const details = (error as { details?: unknown }).details;
+      const reason = (error as { eligibilityReason?: string }).eligibilityReason;
       reply.status(statusCode).send({
         error: {
           code,
           message: error.message,
+          ...(reason !== undefined ? { reason } : {}),
           ...(details !== undefined ? { details } : {}),
         },
       });

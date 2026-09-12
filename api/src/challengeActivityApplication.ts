@@ -46,9 +46,21 @@
 import type { Db } from './db.js';
 import {
   appendActivityEvent,
+  dayInTimezone,
+  normalizeRow as normalizeEventRow,
   type ActivityEventRow,
   type KnowledgePin as EventKnowledgePin,
 } from './activityEvents.js';
+import {
+  ACCEPTANCE_AUTHORITY,
+  ELIGIBILITY_REASON,
+  findSubmissionIntentByClientKey,
+  findSubmissionIntentByRecordId,
+  recordAcceptedSubmissionIntent,
+  recordRejectedSubmissionIntent,
+  type EligibilityReason,
+  type SubmissionIntentRow,
+} from './submissionIntents.js';
 import {
   getGoverningVersion,
   type ActivityConfigRow,
@@ -92,6 +104,91 @@ function fail(statusCode: number, code: string, message: string): never {
   throw new ApplicationError(statusCode, code, message);
 }
 
+/**
+ * A domain-valid submission that FAILED a governed eligibility check. Carries
+ * the machine-readable eligibility reason so a durable rejected Submission
+ * Intent can be persisted after the acceptance transaction rolls back, and so
+ * a retry of the same rejected intent replays the identical decision.
+ */
+export class SubmissionRejectedError extends ApplicationError {
+  readonly eligibilityReason: EligibilityReason;
+  readonly participationId: string | null;
+
+  constructor(
+    statusCode: number,
+    code: string,
+    message: string,
+    eligibilityReason: EligibilityReason,
+    participationId: string | null = null,
+  ) {
+    super(statusCode, code, message);
+    this.name = 'SubmissionRejectedError';
+    this.eligibilityReason = eligibilityReason;
+    this.participationId = participationId;
+  }
+}
+
+function failEligibility(
+  reason: EligibilityReason,
+  statusCode: number,
+  code: string,
+  message: string,
+  participationId: string | null = null,
+): never {
+  throw new SubmissionRejectedError(statusCode, code, message, reason, participationId);
+}
+
+/**
+ * Canonical eligibility reason -> stable transport rejection. Used to replay a
+ * persisted rejected intent deterministically. Codes reuse the existing
+ * governed error codes (no new transport vocabulary); the machine-readable
+ * identity is the eligibility_reason itself.
+ */
+const REJECTION_DETAILS: Record<EligibilityReason, { statusCode: number; code: string; message: string }> = {
+  [ELIGIBILITY_REASON.GROUP_MEMBERSHIP_REQUIRED]: {
+    statusCode: 403,
+    code: 'no_current_group_membership',
+    message: 'challenge activity logging refused: no current Group Membership under live Group authority',
+  },
+  [ELIGIBILITY_REASON.CHALLENGE_NOT_ACTIVE]: {
+    statusCode: 422,
+    code: 'challenge_not_active',
+    message: 'challenge is not active for logging',
+  },
+  [ELIGIBILITY_REASON.PARTICIPATION_NOT_ELIGIBLE]: {
+    statusCode: 422,
+    code: 'no_participation_episode',
+    message: 'no participation episode owns the Evidence time (before join, in a gap, or after exit)',
+  },
+  [ELIGIBILITY_REASON.OCCURRENCE_OUT_OF_WINDOW]: {
+    statusCode: 422,
+    code: 'outside_challenge_window',
+    message: 'occurred day is outside the governing challenge period',
+  },
+  [ELIGIBILITY_REASON.ACTIVITY_NOT_CONFIGURED]: {
+    statusCode: 422,
+    code: 'wrong_activity',
+    message: 'activity is not configured in this challenge',
+  },
+  [ELIGIBILITY_REASON.MEASUREMENT_NOT_COMPATIBLE]: {
+    statusCode: 422,
+    code: 'wrong_unit',
+    message: 'unit does not match the configured unit for the activity',
+  },
+  [ELIGIBILITY_REASON.KNOWLEDGE_MISMATCH]: {
+    statusCode: 422,
+    code: 'knowledge_mismatch',
+    message: 'activity does not resolve to this challenge\'s configured Knowledge',
+  },
+};
+
+function rejectionErrorFor(reason: EligibilityReason): SubmissionRejectedError {
+  const details = REJECTION_DETAILS[reason];
+  return new SubmissionRejectedError(
+    details.statusCode, details.code, details.message, reason, null,
+  );
+}
+
 export interface ChallengeActivityResolvers {
   resolveKnowledgePin: (canonicalKey: string) => Promise<EventKnowledgePin | null>;
   resolveGroupMembershipAuthority: GroupMembershipAuthority['resolveGroupMembershipAuthority'];
@@ -133,6 +230,8 @@ export interface ActivityRecordRow {
 export interface ApplyChallengeActivityResult {
   event: ActivityEventRow;
   record: ActivityRecordRow;
+  /** The persisted Submission Intent decision (null only on a legacy pre-EBC-02 duplicate replay). */
+  submission: SubmissionIntentRow | null;
   participation: ParticipationDerivedRow;
   challenge: ChallengeDerivedRow;
   completionTriggered: boolean;
@@ -252,7 +351,7 @@ async function requireLiveGroupMember(
       `challenge activity logging refused: membership authority unreachable (${(error as Error).message})`);
   }
   if (!status || status.eligible !== true) {
-    fail(403, 'no_current_group_membership',
+    failEligibility(ELIGIBILITY_REASON.GROUP_MEMBERSHIP_REQUIRED, 403, 'no_current_group_membership',
       'challenge activity logging refused: no current Group Membership under live Group authority');
   }
 }
@@ -268,6 +367,74 @@ export async function applyChallengeActivity(
   if (!UUID_RE.test(challengeId)) fail(404, 'unknown_challenge', 'challenge_id must be a Tiizi challenge UUID');
   validateInput(input);
   const eventVariant = input.activity_variant ?? null;
+  const occurredDay = input.occurred_day ?? dayInTimezone(input.occurred_at, input.occurred_tz ?? null);
+  const intentPayload = {
+    member_id: memberId,
+    challenge_id: challengeId,
+    client_key: input.client_key,
+    activity_kind: input.activity_kind,
+    canonical_key: input.canonical_key,
+    activity_variant: eventVariant,
+    value: input.value,
+    unit: input.unit,
+    occurred_at: input.occurred_at,
+    occurred_day: occurredDay,
+    occurred_tz: input.occurred_tz ?? null,
+  };
+
+  // Deterministic replay of an already-decided submission (accepted or
+  // rejected). A retry never re-validates stored data against current config;
+  // it returns the persisted decision verbatim. A reused key aimed at another
+  // member or Challenge is a conflict, not a replay.
+  const prior = await findSubmissionIntentByClientKey(db, input.client_key);
+  if (prior) {
+    if (prior.member_id !== memberId || prior.challenge_id !== challengeId) {
+      fail(409, 'idempotency_key_conflict', 'client_key is already bound to another submission');
+    }
+    if (prior.acceptance_status === 'rejected') {
+      throw rejectionErrorFor(prior.eligibility_reason as EligibilityReason);
+    }
+    return replayAcceptedSubmission(db, memberId, challengeId, prior);
+  }
+
+  try {
+    return await runSubmission(db, memberId, challengeId, input, resolvers, intentPayload);
+  } catch (error) {
+    // A domain-valid but ineligible submission gets a durable rejected
+    // decision trace OUTSIDE the (rolled-back) acceptance transaction. The
+    // rejection persists but creates no Evidence/Application/Derived effect.
+    if (error instanceof SubmissionRejectedError) {
+      await recordRejectedSubmissionIntent(db, {
+        ...intentPayload,
+        participation_id: error.participationId,
+        eligibility_reason: error.eligibilityReason,
+      });
+    }
+    throw error;
+  }
+}
+
+async function runSubmission(
+  db: Db,
+  memberId: string,
+  challengeId: string,
+  input: NewChallengeActivityInput,
+  resolvers: ChallengeActivityResolvers,
+  intentPayload: {
+    member_id: string;
+    challenge_id: string;
+    client_key: string;
+    activity_kind: 'fitness' | 'wellness';
+    canonical_key: string;
+    activity_variant: string | null;
+    value: number;
+    unit: string;
+    occurred_at: Date;
+    occurred_day: string;
+    occurred_tz: string | null;
+  },
+): Promise<ApplyChallengeActivityResult> {
+  const eventVariant = input.activity_variant ?? null;
 
   // Network-bound checks first (outside the transaction): live Group
   // authority and server-side Knowledge resolution. Both fail closed.
@@ -275,7 +442,7 @@ export async function applyChallengeActivity(
     fail(404, 'unknown_challenge', `unknown challenge ${challengeId}`);
   });
   if (challenge.status !== 'active') {
-    fail(422, 'challenge_not_active',
+    failEligibility(ELIGIBILITY_REASON.CHALLENGE_NOT_ACTIVE, 422, 'challenge_not_active',
       challenge.status === 'ended'
         ? 'challenge has ended: no ordinary logging is accepted'
         : 'challenge is not active yet: logging opens when the challenge is active');
@@ -283,7 +450,7 @@ export async function applyChallengeActivity(
   await requireLiveGroupMember(resolvers, challenge.group_id, memberId);
   const pin = await resolvers.resolveKnowledgePin(input.canonical_key);
   if (!pin) {
-    fail(422, 'unknown_activity',
+    failEligibility(ELIGIBILITY_REASON.ACTIVITY_NOT_CONFIGURED, 422, 'unknown_activity',
       `unknown activity '${input.canonical_key}' (no canonical Knowledge; pins are never invented)`);
   }
 
@@ -311,7 +478,8 @@ export async function applyChallengeActivity(
     }
     const freshChallenge = normalizeChallengeRow(lockedRow.rows[0] as never);
     if (freshChallenge.status !== 'active') {
-      fail(422, 'challenge_not_active', 'challenge is not active for logging');
+      failEligibility(ELIGIBILITY_REASON.CHALLENGE_NOT_ACTIVE, 422, 'challenge_not_active',
+        'challenge is not active for logging');
     }
     const governing: GoverningVersion = await getGoverningVersion(
       tx, challengeId, freshChallenge.current_config_version,
@@ -328,14 +496,14 @@ export async function applyChallengeActivity(
     const config = matchActivityConfig(activities, input.canonical_key, eventVariant);
     if (!config) {
       const keyKnown = activities.some((a) => a.canonical_key === input.canonical_key);
-      fail(422, keyKnown ? 'wrong_variant' : 'wrong_activity',
+      failEligibility(ELIGIBILITY_REASON.ACTIVITY_NOT_CONFIGURED, 422, keyKnown ? 'wrong_variant' : 'wrong_activity',
         keyKnown
           ? `variant '${eventVariant ?? '(none)'}' is not configured for '${input.canonical_key}' in this challenge`
           : `activity '${input.canonical_key}' is not configured in this challenge`);
     }
     const matched = config as ActivityConfigRow;
     if (input.unit !== matched.unit) {
-      fail(422, 'wrong_unit',
+      failEligibility(ELIGIBILITY_REASON.MEASUREMENT_NOT_COMPATIBLE, 422, 'wrong_unit',
         `unit '${input.unit}' does not match the configured unit '${matched.unit}' for '${input.canonical_key}'`);
     }
     // Knowledge boundary: canonical IDENTITY must match the pinned Challenge
@@ -347,13 +515,13 @@ export async function applyChallengeActivity(
     // application identity stays the pinned Challenge config (its terms score
     // the log); the Challenge pin is never rewritten to the newer version.
     if (pin.knowledge_id !== matched.knowledge_id) {
-      fail(422, 'knowledge_mismatch',
+      failEligibility(ELIGIBILITY_REASON.KNOWLEDGE_MISMATCH, 422, 'knowledge_mismatch',
         `activity '${input.canonical_key}' does not resolve to this challenge's configured Knowledge`);
     }
     const episodes = await listParticipations(tx, challengeId, memberId);
     const episode = owningEpisode(episodes, input.occurred_at);
     if (!episode) {
-      fail(422, 'no_participation_episode',
+      failEligibility(ELIGIBILITY_REASON.PARTICIPATION_NOT_ELIGIBLE, 422, 'no_participation_episode',
         'no participation episode owns the Evidence time (before join, in a gap, or after exit)');
     }
     const owned = episode as ParticipationRow;
@@ -405,6 +573,9 @@ export async function applyChallengeActivity(
         fail(409, 'idempotency_key_conflict',
           'client_key is already bound to a Challenge application in another challenge');
       }
+      // Legacy pre-EBC-02 duplicate replays have no Submission Intent; a
+      // concurrent duplicate of a fresh submission finds the winner's intent.
+      const replaySubmission = await findSubmissionIntentByRecordId(tx, record.record_id);
       const partRow = await tx.query(
         `SELECT * FROM challenge_participation_derived WHERE participation_id = $1`,
         [record.participation_id],
@@ -416,6 +587,7 @@ export async function applyChallengeActivity(
       return {
         event: evidence,
         record,
+        submission: replaySubmission,
         participation: normalizeParticipationDerived(partRow.rows[0] as Record<string, unknown>),
         challenge: normalizeChallengeDerived(challRow.rows[0] as Record<string, unknown>),
         completionTriggered: record.completion_triggered,
@@ -428,8 +600,9 @@ export async function applyChallengeActivity(
     // this Evidence, and the current mirrors cannot reinterpret it either.
     if (evidence.occurred_day < pinned.snapshot.start_date
       || evidence.occurred_day > pinned.snapshot.end_date) {
-      fail(422, 'outside_challenge_window',
-        `occurred day ${evidence.occurred_day} is outside the governing challenge period ${pinned.snapshot.start_date}..${pinned.snapshot.end_date}`);
+      failEligibility(ELIGIBILITY_REASON.OCCURRENCE_OUT_OF_WINDOW, 422, 'outside_challenge_window',
+        `occurred day ${evidence.occurred_day} is outside the governing challenge period ${pinned.snapshot.start_date}..${pinned.snapshot.end_date}`,
+        owned.participation_id);
     }
 
     // Server-owned scoring against the governing activity config. The client
@@ -483,6 +656,19 @@ export async function applyChallengeActivity(
       ],
     );
     const record = normalizeRecord(insertedRecord.rows[0] as Record<string, unknown>);
+
+    // Submission Intent (accepted): the durable decision trace linking this
+    // submission to its accepted Evidence event and Challenge application.
+    // Atomic with the record and the Derived Truth writes below — if any
+    // authoritative step fails, the whole transaction (intent included)
+    // rolls back and no falsely accepted submission survives.
+    const submission = await recordAcceptedSubmissionIntent(tx, {
+      ...intentPayload,
+      participation_id: owned.participation_id,
+      event_id: evidence.event_id,
+      record_id: record.record_id,
+      decided_at: acceptedAt.toISOString(),
+    });
 
     await persistParticipationDerived(tx, owned.participation_id, update.part);
 
@@ -545,10 +731,60 @@ export async function applyChallengeActivity(
     return {
       event: evidence,
       record,
+      submission,
       participation: normalizeParticipationDerived(partRow.rows[0] as Record<string, unknown>),
       challenge: normalizeChallengeDerived(challRow.rows[0] as Record<string, unknown>),
       completionTriggered: update.completionTriggered,
       duplicate: false,
     };
   });
+}
+
+/**
+ * Replay a previously ACCEPTED Submission Intent: return the same Evidence
+ * event, Challenge application, and Derived Truth verbatim (duplicate=true).
+ * No second Evidence/application/calculation occurs.
+ */
+async function replayAcceptedSubmission(
+  db: Db,
+  memberId: string,
+  challengeId: string,
+  prior: SubmissionIntentRow,
+): Promise<ApplyChallengeActivityResult> {
+  const eventRow = await db.query(
+    `SELECT * FROM member_activity_events WHERE event_id = $1`,
+    [prior.event_id],
+  );
+  if (eventRow.rows.length === 0) {
+    fail(500, 'application_missing', 'submission references a missing Evidence event');
+  }
+  const event = normalizeEventRow(eventRow.rows[0] as never);
+  const recordRow = await db.query(
+    `SELECT * FROM challenge_activity_records WHERE record_id = $1`,
+    [prior.record_id],
+  );
+  if (recordRow.rows.length === 0) {
+    fail(500, 'application_missing', 'submission references a missing Challenge application');
+  }
+  const record = normalizeRecord(recordRow.rows[0] as Record<string, unknown>);
+  if (record.event_id !== event.event_id) {
+    fail(500, 'application_missing', 'submission application does not reference its Evidence event');
+  }
+  const partRow = await db.query(
+    `SELECT * FROM challenge_participation_derived WHERE participation_id = $1`,
+    [record.participation_id],
+  );
+  const challRow = await db.query(
+    `SELECT * FROM challenge_derived_state WHERE challenge_id = $1`,
+    [challengeId],
+  );
+  return {
+    event,
+    record,
+    submission: prior,
+    participation: normalizeParticipationDerived(partRow.rows[0] as Record<string, unknown>),
+    challenge: normalizeChallengeDerived(challRow.rows[0] as Record<string, unknown>),
+    completionTriggered: record.completion_triggered,
+    duplicate: true,
+  };
 }

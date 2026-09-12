@@ -127,6 +127,14 @@ export function c2bValidatorCompiler({ httpPart }: { httpPart?: string }) {
 
 function toResponse(result: ApplyChallengeActivityResult) {
   return {
+    submission: result.submission
+      ? {
+        submissionId: result.submission.submission_id,
+        acceptanceStatus: result.submission.acceptance_status,
+        acceptanceAuthority: result.submission.acceptance_authority,
+        eligibilityStatus: result.submission.eligibility_status,
+      }
+      : null,
     recordId: result.record.record_id,
     eventId: result.record.event_id,
     participationId: result.record.participation_id,
