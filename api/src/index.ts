@@ -8,7 +8,8 @@ import {
 } from './firestoreGroupAuthority.js';
 import { createFirestoreChallengeCreationAuthority } from './firestoreChallengeCreationAuthority.js';
 import { createAdminGroupMutationStore } from './firestoreGroupMutationStore.js';
-import { createDbKnowledgeEligibilityResolver } from './knowledgeEligibility.js';
+import { createDbKnowledgeIdentityResolver } from './knowledgePins.js';
+import { createDbKnowledgeEligibilityResolverByIdentity } from './knowledgeEligibility.js';
 
 async function main(): Promise<void> {
   const db = createPool(databaseUrl());
@@ -27,7 +28,12 @@ async function main(): Promise<void> {
     },
     challengeCreation: {
       creationAuthority: createFirestoreChallengeCreationAuthority(db, reader),
-      eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
+      // PF-01-CORR-001: normal runtime establishment resolves canonical
+      // Knowledge by immutable identity (UUID / Activity Code) — never by
+      // exact display name. The legacy name seam stays available only where
+      // explicitly injected for historical compatibility/tests.
+      eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolverByIdentity(db, kind)(key),
+      pinsFor: async (kind, key) => createDbKnowledgeIdentityResolver(db, kind)(key),
     },
   });
   const port = Number(process.env.PORT ?? 4000);

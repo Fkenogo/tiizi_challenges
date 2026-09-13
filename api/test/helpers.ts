@@ -18,6 +18,7 @@ import type { KnowledgeEligibility } from '../src/knowledgeEligibility.js';
 export function stubEligibility(): KnowledgeEligibility {
   return {
     knowledgeId: '00000000-0000-4000-8000-000000000000',
+    activityCode: null,
     version: 1,
     kind: 'fitness',
     lifecycle: 'published',

@@ -19,6 +19,7 @@ import { stubVerifier, testDb, seedMember, seedGroup, seedMembership, authHeader
 import type { ChallengeCreationAuthority } from '../src/challengeCreationAuthority.js';
 import { createFirestoreChallengeCreationAuthority } from '../src/firestoreChallengeCreationAuthority.js';
 import { createDbKnowledgeEligibilityResolver } from '../src/knowledgeEligibility.js';
+import { createDbKnowledgeResolver } from '../src/knowledgePins.js';
 import type { GroupMutationStore } from '../src/groupMutations.js';
 
 beforeEach(async () => {
@@ -356,6 +357,8 @@ describe('governed challenge establishment', () => {
           },
         },
         eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(testDb(), kind)(key),
+        // Intentional quarantined-seam coverage (see appFor below).
+        pinsFor: async (kind, key) => createDbKnowledgeResolver(testDb(), kind)(key),
       },
     });
 
@@ -483,10 +486,14 @@ function appFor(w: World, decide: (groupId: string, memberId: string) => Decisio
     db: testDb(),
     verifier: stubVerifier(tokensFor(w)),
     groupMutation: { store: unusedStore() },
-    challengeCreation: {
-      creationAuthority: fakeAuthority(decide),
-      eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(testDb(), kind)(key),
-    },
+      challengeCreation: {
+        creationAuthority: fakeAuthority(decide),
+        eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(testDb(), kind)(key),
+        // Intentional quarantined-seam coverage: these EBC-01 route tests
+        // prove the historical name-based establishment path. New V2
+        // establishment uses identity resolvers (PF-01-CORR-001).
+        pinsFor: async (kind, key) => createDbKnowledgeResolver(testDb(), kind)(key),
+      },
   });
 }
 

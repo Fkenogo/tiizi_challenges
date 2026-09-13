@@ -34,7 +34,7 @@ import { establishChallengeV2 } from './challengeEstablishment.js';
 import type {
   ChallengeCreationAuthority,
 } from './challengeCreationAuthority.js';
-import { createDbKnowledgeResolver } from './knowledgePins.js';
+import { createDbKnowledgeIdentityResolver } from './knowledgePins.js';
 import type { KnowledgeEligibility, KnowledgeEligibilityResolver } from './knowledgeEligibility.js';
 import type { NewChallengeInput } from './challenges.js';
 import type { ActivityConfigInput } from './challengeConfigs.js';
@@ -373,8 +373,12 @@ export function registerChallengeCreationRoutes(
         kindByKey.set(activity.canonical_key, activity.activity_kind);
       }
       const eligibilityFor = deps.eligibilityFor!;
+      // PF-01-CORR-001: NEW V2 establishment pins by immutable identity
+      // (UUID / Activity Code). The default is the identity seam — never
+      // exact display-name resolution. Callers covering the quarantined
+      // historical name seam inject deps.pinsFor explicitly.
       const pinsFor = deps.pinsFor
-        ?? ((kind, key) => createDbKnowledgeResolver(db, kind)(key));
+        ?? ((kind, key) => createDbKnowledgeIdentityResolver(db, kind)(key));
       const kindAwareEligibility: KnowledgeEligibilityResolver = async (key: string) => {
         const kind = kindByKey.get(key);
         if (!kind) return null;

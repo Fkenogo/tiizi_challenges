@@ -28,7 +28,7 @@ import {
   createDbKnowledgeEligibilityResolver,
   type KnowledgeEligibility,
 } from '../src/knowledgeEligibility.js';
-import { resolveKnowledgePinByName } from '../src/knowledgePins.js';
+import { createDbKnowledgeResolver, resolveKnowledgePinByName } from '../src/knowledgePins.js';
 import {
   addChallengeConfigVersion,
   getChallengeConfig,
@@ -47,6 +47,7 @@ let seq = 0;
 function eligibilityFixture(overrides: Partial<KnowledgeEligibility> = {}): KnowledgeEligibility {
   return {
     knowledgeId: '00000000-0000-4000-8000-000000000001',
+    activityCode: null,
     version: 1,
     kind: 'fitness',
     lifecycle: 'published',
@@ -494,6 +495,10 @@ describe('establishment compatibility enforcement (route)', () => {
           },
         },
         eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
+        // Intentional quarantined-seam coverage: this compatibility suite
+        // proves the historical name-based establishment path. New V2
+        // establishment uses identity resolvers (PF-01-CORR-001).
+        pinsFor: async (kind, key) => createDbKnowledgeResolver(db, kind)(key),
       },
     });
   }
@@ -721,6 +726,7 @@ describe('later config versions cannot bypass compatibility (domain seam)', () =
         if (!contract || !pins[key]) return null;
         return {
           knowledgeId: pins[key].knowledge_id,
+          activityCode: null,
           version: pins[key].current_version,
           kind: 'fitness' as const,
           lifecycle: 'published',

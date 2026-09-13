@@ -31,6 +31,17 @@ import type { Db } from './db.js';
  * Firestore document ids appear ONLY as `legacyId` in the compat lookup —
  * never as a domain `id`.
  *
+ * PF-01 canonical V2 Activity Product Contract: UUID identity is joined by
+ * a governed immutable Tiizi Activity Code (`activity_code`, format
+ * AAA-AAA-000, e.g. FIT-STR-001). Display names are localizable content and
+ * never identity. New V2 product contracts resolve by UUID/code; legacy
+ * exact-name resolution is quarantined for historical compatibility
+ * (knowledgePins.resolveKnowledgePinByName,
+ * knowledgeEligibility name resolver) and must not be used by PF-01
+ * contracts. Publication readiness (KCS content satisfied) and Challenge
+ * eligibility (published + ready + governed Metric/Unit contract) are
+ * evaluated server-side and exposed separately on every item.
+ *
  * PKG-2A note: this module is Tiizi Core Engine capability (Canonical
  * Activity / Knowledge authority + KCS publication contract). It does not by
  * itself authorize PKG-1 sequencing or any participant experience.
@@ -59,6 +70,56 @@ export const KNOWLEDGE_ADMIN_ROLES = new Set([
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * PF-01 governed Tiizi Activity Code format.
+ *
+ * Format: AAA-AAA-000 — three uppercase ASCII letters, dash, three
+ * uppercase ASCII letters, dash, three digits (e.g. FIT-STR-001 Push-Up,
+ * WEL-MND-003 Breathing Practice). Properties (Founder PF-01 §1):
+ * - immutable after creation (database trigger + application gate);
+ * - unique (database UNIQUE constraint);
+ * - language-independent (never localized; translations attach to the UUID);
+ * - human-readable enough for product/editorial references.
+ *
+ * The middle segment is a stable mnemonic captured at creation time from
+ * the approved 118-Activity baseline families (STR, MND, ...). It is NOT a
+ * live classification pointer: recategorising an Activity never changes its
+ * code, so the format encodes no mutable classification assumption. New
+ * codes are allocated from the governed baseline families; PF-01 allocates
+ * exactly two (FIT-STR-001, WEL-MND-003) and invents no catalogue.
+ */
+export const ACTIVITY_CODE_FORMAT = 'AAA-AAA-000';
+
+const ACTIVITY_CODE_RE = /^[A-Z]{3}-[A-Z]{3}-[0-9]{3}$/;
+
+/** True when the value is a well-formed governed Activity Code. */
+export function isActivityCode(value: unknown): value is string {
+  return typeof value === 'string' && ACTIVITY_CODE_RE.test(value);
+}
+
+/**
+ * Parses an Activity Code from creation input. Omission (undefined/null/'')
+ * yields null (quarantined legacy row — permitted so V1 history is never
+ * rewritten). Anything else must match the governed format exactly: no case
+ * folding, no slug/name coercion — malformed codes reject fail-closed.
+ */
+export function parseActivityCode(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'activityCode must be a string');
+  }
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (!ACTIVITY_CODE_RE.test(trimmed)) {
+    throw new KnowledgeError(
+      400,
+      'invalid_knowledge',
+      `Invalid activityCode '${trimmed}': governed format is ${ACTIVITY_CODE_FORMAT} (e.g. FIT-STR-001)`,
+    );
+  }
+  return trimmed;
+}
 
 /** Upper bound per list request so the seam cannot be used to dump the table. */
 const MAX_LIST_ROWS = 500;
@@ -124,6 +185,12 @@ export function isUuid(value: string): boolean {
 
 export interface ApiKnowledgeItem {
   id: string;
+  /**
+   * PF-01 dual identity: UUID `id` is the authoritative internal PK/FK;
+   * `activityCode` is the stable product/API/editorial identifier. NULL
+   * marks quarantined pre-PF-01 rows (never rewritten by migration).
+   */
+  activityCode: string | null;
   kind: KnowledgeKind;
   lifecycle: KnowledgeLifecycle;
   knowledgeVersion: number;
@@ -171,12 +238,29 @@ export interface ApiKnowledgeItem {
   avoidanceCondition: string;
   semanticDefinition: string;
   safetyNotes: string[];
+  /**
+   * PF-01 product contract (server-owned, derived — never client-set):
+   * - publicationReady: current content satisfies the KCS minima for its
+   *   applicable classes (assessPublicationReadiness is empty). A pure
+   *   content property, independent of lifecycle.
+   * - challengeEligible: published AND publication-ready AND carrying a
+   *   valid governed Metric/Unit contract. Invalid configuration fails
+   *   closed (eligible is false with machine-readable issues).
+   * The two states are deliberately distinct: a published item without a
+   * governed measurement contract is catalogue-visible but NOT eligible.
+   */
+  publicationReady: boolean;
+  publicationIssues: KcsReadinessIssue[];
+  challengeEligible: boolean;
+  challengeEligibilityIssues: ChallengeEligibilityIssue[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface KnowledgeContentInput {
   name?: unknown;
+  /** PF-01: revisions must never change the code; a differing code rejects. */
+  activityCode?: unknown;
   category?: unknown;
   subcategory?: unknown;
   difficulty?: unknown;
@@ -228,15 +312,43 @@ export interface KnowledgeIdentityMapping {
 }
 
 /**
- * Stable per-kind vocabularies, mirroring the existing product validation
- * (adminExerciseService tier/difficulty sets; WellnessCategory /
- * WellnessDifficulty types). The API rejects anything outside these sets so
- * the migration cannot weaken creation-time guarantees.
+ * PF-01 V2 governed taxonomy (Founder-approved 118-Activity working
+ * baseline, EKG-01 §5). Six Fitness + six Wellness categories. This is the
+ * ONLY taxonomy the new V2 product path accepts — do not redesign it here.
  */
-const FITNESS_CATEGORIES = new Set(['Core', 'Upper Body', 'Lower Body', 'Full Body']);
-const FITNESS_SUBCATEGORIES = new Set(['Strength', 'Cardio', 'Balance', 'Mobility', 'Power']);
-const FITNESS_DIFFICULTIES = new Set(['Beginner', 'Intermediate', 'Advanced']);
-const WELLNESS_CATEGORIES = new Set([
+export const V2_FITNESS_CATEGORIES = [
+  'Strength',
+  'Cardio & Conditioning',
+  'Mobility & Flexibility',
+  'Balance & Stability',
+  'Power, Speed & Agility',
+  'Sports & Recreation',
+] as const;
+
+export const V2_WELLNESS_CATEGORIES = [
+  'Sleep & Rest',
+  'Mind & Emotional Wellbeing',
+  'Nutrition & Hydration',
+  'Daily Living',
+  'Personal Growth',
+  'Social Wellbeing',
+] as const;
+
+const V2_FITNESS_CATEGORY_SET = new Set<string>(V2_FITNESS_CATEGORIES);
+const V2_WELLNESS_CATEGORY_SET = new Set<string>(V2_WELLNESS_CATEGORIES);
+
+/**
+ * Legacy pre-V2 category vocabularies — QUARANTINED for historical
+ * compatibility. Rows created without an Activity Code (pre-PF-01 data,
+ * legacy import path, existing tests) keep validating against these sets so
+ * history is never rewritten. The governed V2 path (creation WITH an
+ * Activity Code, and every revision of a coded item) rejects every value
+ * below that is not also a V2 category.
+ */
+const LEGACY_FITNESS_CATEGORIES = new Set(['Core', 'Upper Body', 'Lower Body', 'Full Body']);
+const LEGACY_FITNESS_SUBCATEGORIES = new Set(['Strength', 'Cardio', 'Balance', 'Mobility', 'Power']);
+const LEGACY_FITNESS_DIFFICULTIES = new Set(['Beginner', 'Intermediate', 'Advanced']);
+const LEGACY_WELLNESS_CATEGORIES = new Set([
   'fasting',
   'hydration',
   'sleep',
@@ -248,7 +360,13 @@ const WELLNESS_CATEGORIES = new Set([
   'movement',
   'health-monitoring',
 ]);
-const WELLNESS_DIFFICULTIES = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
+const LEGACY_WELLNESS_DIFFICULTIES = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
+
+const FITNESS_CATEGORIES = LEGACY_FITNESS_CATEGORIES;
+const FITNESS_SUBCATEGORIES = LEGACY_FITNESS_SUBCATEGORIES;
+const FITNESS_DIFFICULTIES = LEGACY_FITNESS_DIFFICULTIES;
+const WELLNESS_CATEGORIES = LEGACY_WELLNESS_CATEGORIES;
+const WELLNESS_DIFFICULTIES = LEGACY_WELLNESS_DIFFICULTIES;
 
 function asTrimmed(value: unknown, maxLength: number): string {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
@@ -559,10 +677,19 @@ export interface ValidatedKnowledgeContent {
  * Full-content validation shared by create and content revision. Revisions
  * require the same complete, valid content as creation — partial merges would
  * let callers blank out canonical fields by omission.
+ *
+ * PF-01 dual path: `v2Governed` selects the governed V2 product contract.
+ * - true (creation WITH an Activity Code, or revision of a coded item):
+ *   category MUST be one of the approved V2 six+six; legacy V1 categories
+ *   reject fail-closed. Subcategory is free editorial refinement text (the
+ *   baseline sub-families are not a second governed taxonomy in PF-01).
+ * - false (quarantined legacy path): the pre-V2 vocabularies keep applying
+ *   so V1 history and the legacy import path are never rewritten.
  */
 export function validateKnowledgeContent(
   kind: KnowledgeKind,
   input: KnowledgeContentInput,
+  v2Governed = false,
 ): ValidatedKnowledgeContent {
   const name = asTrimmed(input.name, 200);
   if (!name) throw new KnowledgeError(400, 'invalid_knowledge', 'name is required');
@@ -572,7 +699,31 @@ export function validateKnowledgeContent(
   const metricUnit = asTrimmed(input.metricUnit, 50);
   if (!metricUnit) throw new KnowledgeError(400, 'invalid_knowledge', 'metricUnit is required');
 
-  if (kind === 'fitness') {
+  if (v2Governed) {
+    if (kind === 'fitness') {
+      if (!V2_FITNESS_CATEGORY_SET.has(category)) {
+        throw new KnowledgeError(
+          400,
+          'invalid_knowledge',
+          `Invalid fitness category: ${category} (V2 governed categories: ${V2_FITNESS_CATEGORIES.join(' | ')})`,
+        );
+      }
+      if (!FITNESS_DIFFICULTIES.has(difficulty)) {
+        throw new KnowledgeError(400, 'invalid_knowledge', `Invalid fitness difficulty: ${difficulty}`);
+      }
+    } else {
+      if (!V2_WELLNESS_CATEGORY_SET.has(category)) {
+        throw new KnowledgeError(
+          400,
+          'invalid_knowledge',
+          `Invalid wellness category: ${category} (V2 governed categories: ${V2_WELLNESS_CATEGORIES.join(' | ')})`,
+        );
+      }
+      if (!WELLNESS_DIFFICULTIES.has(difficulty)) {
+        throw new KnowledgeError(400, 'invalid_knowledge', `Invalid wellness difficulty: ${difficulty}`);
+      }
+    }
+  } else if (kind === 'fitness') {
     if (!FITNESS_CATEGORIES.has(category)) {
       throw new KnowledgeError(400, 'invalid_knowledge', `Invalid fitness category: ${category}`);
     }
@@ -663,6 +814,7 @@ export function validateKnowledgeContent(
 
 interface KnowledgeRow {
   knowledge_id: string;
+  activity_code: string | null;
   kind: string;
   lifecycle: string;
   current_version: number;
@@ -747,9 +899,44 @@ function parseDetails(value: KnowledgeRow['details']): Record<string, unknown> {
 }
 
 export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
+  const kind = row.kind as KnowledgeKind;
+  const declared = parseContentClasses(row.content_classes);
+  const snapshot: KcsContentSnapshot = {
+    name: row.name,
+    description: row.description ?? '',
+    category: row.category ?? '',
+    metricUnit: row.metric_unit ?? '',
+    measurementGuidance: row.measurement_guidance ?? '',
+    unitSemantics: row.unit_semantics ?? '',
+    setup: row.setup ?? '',
+    execution: row.execution ?? '',
+    techniqueReference: row.technique_reference ?? '',
+    formCues: parseStringList(row.form_cues),
+    commonMistakes: parseStringList(row.common_mistakes),
+    equipment: row.equipment ?? '',
+    environment: row.environment ?? '',
+    adaptation: row.adaptation ?? '',
+    protocolSteps: parseProtocolSteps(row.protocol_steps),
+    sessionFraming: row.session_framing ?? '',
+    completionMeaning: row.completion_meaning ?? '',
+    avoidanceCondition: row.avoidance_condition ?? '',
+    semanticDefinition: row.semantic_definition ?? '',
+    safetyNotes: parseStringList(row.safety_notes),
+  };
+  const publicationIssues = assessPublicationReadiness(kind, declared, snapshot);
+  const challengeEligibilityIssues = assessChallengeEligibility({
+    lifecycle: row.lifecycle,
+    kind,
+    declared,
+    snapshot,
+    primaryMetrics: parseStringList(row.primary_metrics),
+    secondaryMetrics: parseStringList(row.secondary_metrics),
+    compatibleUnits: parseStringList(row.compatible_units),
+  });
   return {
     id: String(row.knowledge_id),
-    kind: row.kind as KnowledgeKind,
+    activityCode: row.activity_code ?? null,
+    kind,
     lifecycle: row.lifecycle as KnowledgeLifecycle,
     knowledgeVersion: Number(row.current_version),
     name: row.name,
@@ -792,12 +979,16 @@ export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
     avoidanceCondition: row.avoidance_condition ?? '',
     semanticDefinition: row.semantic_definition ?? '',
     safetyNotes: parseStringList(row.safety_notes),
+    publicationReady: publicationIssues.length === 0,
+    publicationIssues,
+    challengeEligible: challengeEligibilityIssues.length === 0,
+    challengeEligibilityIssues,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
   };
 }
 
-const ITEM_COLUMNS = `knowledge_id, kind, lifecycle, current_version, name, category,
+const ITEM_COLUMNS = `knowledge_id, activity_code, kind, lifecycle, current_version, name, category,
   subcategory, difficulty, icon, description, metric_unit, target_value,
   target_type, frequency, points, image_url, tags, details, content_classes,
   default_locale, grandfathered, primary_metrics, secondary_metrics,
@@ -948,6 +1139,79 @@ export function isCurrentVersionEstablishmentReady(
 }
 
 /**
+ * PF-01 Challenge eligibility issue (machine-readable, fail-closed).
+ * Codes: not_published | kcs_not_ready | no_primary_metric |
+ * no_compatible_unit | incoherent_contract.
+ */
+export interface ChallengeEligibilityIssue {
+  code: string;
+  reason: string;
+}
+
+export interface ChallengeEligibilityAssessmentInput {
+  lifecycle: string;
+  kind: KnowledgeKind;
+  declared: KcsClass[];
+  snapshot: KcsContentSnapshot;
+  primaryMetrics: string[];
+  secondaryMetrics: string[];
+  compatibleUnits: string[];
+}
+
+/**
+ * PF-01 server-owned Challenge eligibility evaluation, kept explicitly
+ * distinct from publication readiness (TASK 6):
+ *
+ * PUBLISHED = approved canonical Knowledge in the Runtime Catalogue
+ * (lifecycle only).
+ * PUBLICATION-READY = current content satisfies the KCS minima for its
+ * applicable classes (content property, lifecycle-independent).
+ * CHALLENGE-ELIGIBLE = published AND publication-ready AND carrying a
+ * valid governed Metric/Unit contract (at least one primary Metric, at
+ * least one compatible Unit, every Unit coherent with a declared Metric).
+ *
+ * Returns every blocking issue; empty means eligible. Never throws for
+ * content reasons (invalid configuration fails closed via `eligible`).
+ */
+export function assessChallengeEligibility(
+  input: ChallengeEligibilityAssessmentInput,
+): ChallengeEligibilityIssue[] {
+  const issues: ChallengeEligibilityIssue[] = [];
+  if (input.lifecycle !== 'published') {
+    issues.push({
+      code: 'not_published',
+      reason: `lifecycle is '${input.lifecycle}', must be 'published'`,
+    });
+  }
+  for (const kcs of assessPublicationReadiness(input.kind, input.declared, input.snapshot)) {
+    issues.push({ code: 'kcs_not_ready', reason: `${kcs.field}: ${kcs.reason}` });
+  }
+  const declared = new Set([...input.primaryMetrics, ...input.secondaryMetrics]);
+  if (input.primaryMetrics.length === 0) {
+    issues.push({
+      code: 'no_primary_metric',
+      reason: 'a governed primary Metric is required before Challenge use',
+    });
+  }
+  if (input.compatibleUnits.length === 0) {
+    issues.push({
+      code: 'no_compatible_unit',
+      reason: 'at least one governed compatible Unit is required before Challenge use',
+    });
+  }
+  for (const unit of input.compatibleUnits) {
+    const unitMetric = metricForUnit(unit);
+    if (!unitMetric || !declared.has(unitMetric)) {
+      issues.push({
+        code: 'incoherent_contract',
+        reason: `unit '${unit}' expresses Metric '${unitMetric ?? 'ungoverned'}', which is not among the declared Metrics`,
+      });
+    }
+  }
+  return issues;
+}
+
+/**
  * Enforces the KCS publication gate (KRC §6.2, T2 FR-V2-213). Throws 422
  * `kcs_not_ready` with structured missing-field details unless every
  * applicable class minimum is satisfied. Grandfathered items (published
@@ -1095,6 +1359,12 @@ export async function requireKnowledgeAdmin(db: Db, memberId: string): Promise<v
  * default — new records must earn publication through the KCS gate).
  * Requesting published at creation runs the same gate before insert.
  * New items are never grandfathered.
+ *
+ * PF-01: an `activityCode` may be supplied once at creation. It must match
+ * the governed format and be unique (conflicts reject with 409
+ * knowledge_conflict); creation WITH a code follows the governed V2 product
+ * contract (V2 taxonomy). Creation WITHOUT a code follows the quarantined
+ * legacy path so V1 history keeps importing untouched.
  */
 export async function createKnowledgeItem(
   db: Db,
@@ -1104,7 +1374,8 @@ export async function createKnowledgeItem(
   if (kind !== 'fitness' && kind !== 'wellness') {
     throw new KnowledgeError(400, 'invalid_knowledge', 'kind must be fitness or wellness');
   }
-  const content = validateKnowledgeContent(kind, input);
+  const activityCode = parseActivityCode(input.activityCode);
+  const content = validateKnowledgeContent(kind, input, activityCode !== null);
   const lifecycle = input.lifecycle === undefined || input.lifecycle === null
     ? 'draft'
     : String(input.lifecycle);
@@ -1119,18 +1390,23 @@ export async function createKnowledgeItem(
     requirePublicationReady(kind, content.contentClasses, snapshotForReadiness(content), false);
   }
   return db.transaction(async (tx) => {
-    const inserted = await tx.query<KnowledgeRow>(
-      `INSERT INTO knowledge_items
-         (kind, lifecycle, current_version, name, category, subcategory, difficulty,
-          icon, description, metric_unit, target_value, target_type, frequency,
-          points, image_url, tags, details, ${KCS_ITEM_COLUMNS})
-       VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-               $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-               $31, $32, $33, $34, $35)
-       RETURNING ${ITEM_COLUMNS}`,
-      [kind, lifecycle, ...contentParams(content), ...kcsContentParams(content)],
-    );
-    const row = inserted.rows[0];
+    let row: KnowledgeRow;
+    try {
+      const inserted = await tx.query<KnowledgeRow>(
+        `INSERT INTO knowledge_items
+           (kind, activity_code, lifecycle, current_version, name, category, subcategory, difficulty,
+            icon, description, metric_unit, target_value, target_type, frequency,
+            points, image_url, tags, details, ${KCS_ITEM_COLUMNS})
+         VALUES ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+                 $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+                 $31, $32, $33, $34, $35, $36)
+         RETURNING ${ITEM_COLUMNS}`,
+        [kind, activityCode, lifecycle, ...contentParams(content), ...kcsContentParams(content)],
+      );
+      row = inserted.rows[0];
+    } catch (error) {
+      throw mapActivityCodeConflict(error);
+    }
     await tx.query(
       `INSERT INTO knowledge_item_versions
          (item_id, version, ${VERSION_CONTENT_COLUMNS})
@@ -1141,6 +1417,25 @@ export async function createKnowledgeItem(
     );
     return mapKnowledgeRow(row);
   });
+}
+
+/**
+ * Maps a duplicate Activity Code insert to 409 knowledge_conflict.
+ * Drivers surface uniqueness violations differently (node-postgres `23505`,
+ * PGlite message text), so both signals are accepted; anything else
+ * rethrows untouched.
+ */
+function mapActivityCodeConflict(error: unknown): unknown {
+  const code = (error as { code?: unknown }).code;
+  const message = error instanceof Error ? error.message : String(error);
+  if (code === '23505' || /duplicate key|UNIQUE constraint|unique constraint/i.test(message)) {
+    return new KnowledgeError(
+      409,
+      'knowledge_conflict',
+      'Activity Code is already in use (Activity Codes are unique)',
+    );
+  }
+  return error;
 }
 
 /**
@@ -1194,6 +1489,15 @@ function kcsVersionParams(
  * appends an immutable version row. The row lock (SELECT FOR UPDATE) makes
  * concurrent revisions serialize, so two simultaneous edits produce two
  * distinct versions — never a lost update.
+ *
+ * PF-01: the Activity Code is immutable — a revision carrying a code that
+ * differs from the stored code (including adopting a code onto a codeless
+ * legacy row) rejects with 400 immutable_activity_code before any write.
+ * Display-name changes never affect identity. Coded items revalidate under
+ * the governed V2 contract; legacy rows keep the quarantined path.
+ * Locale overrides current at revision time are snapshotted into
+ * knowledge_item_version_texts so the new version stays historically
+ * resolvable after later edits.
  */
 export async function reviseKnowledgeItem(
   db: Db,
@@ -1208,7 +1512,16 @@ export async function reviseKnowledgeItem(
     );
     const row = current.rows[0];
     if (!row) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
-    const content = validateKnowledgeContent(row.kind as KnowledgeKind, input);
+    const storedCode = row.activity_code ?? null;
+    const incomingCode = parseActivityCode(input.activityCode);
+    if (incomingCode !== storedCode) {
+      throw new KnowledgeError(
+        400,
+        'immutable_activity_code',
+        'Activity Code is immutable: revisions cannot change, clear, or adopt a code',
+      );
+    }
+    const content = validateKnowledgeContent(row.kind as KnowledgeKind, input, storedCode !== null);
     // PKG-2A-CORR: a revision that remains published must satisfy the current
     // KCS gate on the NEW content — including grandfathered items, whose
     // exemption covers only their pre-KCS publication, never future versions.
@@ -1258,8 +1571,22 @@ export async function reviseKnowledgeItem(
         compatibleUnits: revised.compatibleUnits,
       })],
     );
+    await snapshotVersionTexts(tx, id, next);
     return revised;
   });
+}
+
+/**
+ * Snapshots the locale overrides current at revision time into the new
+ * version's historical texts. Creation needs no snapshot (texts can only be
+ * set on an existing item, so version 1 starts with none).
+ */
+async function snapshotVersionTexts(db: Db, id: string, version: number): Promise<void> {
+  await db.query(
+    `INSERT INTO knowledge_item_version_texts (item_id, version, locale, field, value)
+     SELECT $1, $2, locale, field, value FROM knowledge_item_texts WHERE item_id = $1`,
+    [id, version],
+  );
 }
 
 const LIFECYCLE_TRANSITIONS: Record<KnowledgeLifecycle, KnowledgeLifecycle[]> = {
@@ -1581,6 +1908,75 @@ export async function getKnowledgeById(db: Db, id: string): Promise<ApiKnowledge
 }
 
 /**
+ * By-code fetch (PF-01 governed V2 resolution). Malformed codes and unknown
+ * codes resolve to null — identity is never invented. Unfiltered by
+ * lifecycle, like the by-UUID read, so retired items stay historically
+ * resolvable.
+ */
+export async function getKnowledgeByCode(db: Db, code: unknown): Promise<ApiKnowledgeItem | null> {
+  if (!isActivityCode(code)) return null;
+  const result = await db.query<KnowledgeRow>(
+    `SELECT ${ITEM_COLUMNS} FROM knowledge_items WHERE activity_code = $1`,
+    [code],
+  );
+  const row = result.rows[0];
+  return row ? mapKnowledgeRow(row) : null;
+}
+
+/**
+ * Historical locale texts snapshotted at revision time (PF-01 version
+ * association). Empty when the version predates its locale overrides.
+ */
+export async function listKnowledgeVersionTexts(
+  db: Db,
+  id: string,
+  version: number,
+): Promise<KnowledgeTextEntry[]> {
+  if (!isUuid(id) || !Number.isInteger(version) || version < 1) return [];
+  const result = await db.query<KnowledgeTextEntry>(
+    `SELECT locale, field, value FROM knowledge_item_version_texts
+     WHERE item_id = $1 AND version = $2 ORDER BY locale, field`,
+    [id, version],
+  );
+  return result.rows;
+}
+
+/**
+ * Localized historical version (PF-01): the version row's base content with
+ * that version's snapshotted locale overrides applied. Later edits to live
+ * texts can never rewrite what a pinned version meant.
+ */
+export async function getLocalizedKnowledgeVersion(
+  db: Db,
+  id: string,
+  version: number,
+  localeInput: unknown,
+): Promise<LocalizedKnowledgeItem | null> {
+  const historic = await getKnowledgeVersion(db, id, version);
+  if (!historic) return null;
+  if (localeInput === undefined || localeInput === null || localeInput === '') {
+    return { ...historic, resolvedLocale: historic.defaultLocale, localeFallback: false };
+  }
+  const locale = validateLocale(localeInput);
+  const textsResult = await db.query<{ locale: string; field: string; value: string }>(
+    `SELECT locale, field, value FROM knowledge_item_version_texts
+     WHERE item_id = $1 AND version = $2 AND locale = $3`,
+    [id, version, locale],
+  );
+  const entries = textsResult.rows.map((entry) => ({
+    locale: entry.locale,
+    field: entry.field,
+    value: entry.value,
+  }));
+  const { item: merged } = applyLocaleOverrides(historic, entries);
+  return {
+    ...merged,
+    resolvedLocale: locale,
+    localeFallback: locale !== historic.defaultLocale,
+  };
+}
+
+/**
  * Historical version lookup (verification/debugging). Content is historical;
  * `lifecycle` always reflects the item's CURRENT state.
  */
@@ -1691,9 +2087,33 @@ const knowledgeItemSchema = {
   required: ['id', 'kind', 'lifecycle', 'knowledgeVersion', 'name'],
   properties: {
     id: { type: 'string', format: 'uuid' },
+    activityCode: { type: ['string', 'null'] },
     kind: { type: 'string', enum: ['fitness', 'wellness'] },
     lifecycle: { type: 'string', enum: ['draft', 'published', 'retired'] },
     knowledgeVersion: { type: 'integer', minimum: 1 },
+    publicationReady: { type: 'boolean' },
+    publicationIssues: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          field: { type: 'string' },
+          class: { type: 'string' },
+          reason: { type: 'string' },
+        },
+      },
+    },
+    challengeEligible: { type: 'boolean' },
+    challengeEligibilityIssues: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          code: { type: 'string' },
+          reason: { type: 'string' },
+        },
+      },
+    },
     name: { type: 'string' },
     category: { type: 'string' },
     subcategory: { type: 'string' },
@@ -1787,6 +2207,21 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     },
   };
 
+  app.get('/v1/knowledge/code/:code', {
+    schema: { response: { 200: knowledgeItemSchema, 404: notFoundSchema } },
+  }, async (request, reply) => {
+    const { code } = request.params as { code: string };
+    const params = (request.query ?? {}) as Record<string, unknown>;
+    const item = await getKnowledgeByCode(db, code);
+    if (!item) {
+      return reply.status(404).send({
+        error: { code: 'knowledge_not_found', message: 'Unknown knowledge item' },
+      });
+    }
+    const [localized] = await localizeKnowledgeItems(db, [item], params.locale ?? undefined);
+    return localized;
+  });
+
   app.get('/v1/knowledge/:id', {
     schema: { response: { 200: knowledgeItemSchema, 404: notFoundSchema } },
   }, async (request, reply) => {
@@ -1805,13 +2240,50 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     schema: { response: { 200: knowledgeItemSchema, 404: notFoundSchema } },
   }, async (request, reply) => {
     const { id, version } = request.params as { id: string; version: string };
-    const item = await getKnowledgeVersion(db, id, Number(version));
+    const params = (request.query ?? {}) as Record<string, unknown>;
+    const item = await getLocalizedKnowledgeVersion(db, id, Number(version), params.locale ?? undefined);
     if (!item) {
       return reply.status(404).send({
         error: { code: 'knowledge_not_found', message: 'Unknown knowledge item or version' },
       });
     }
     return item;
+  });
+
+  app.get('/v1/knowledge/:id/versions/:version/texts', {
+    schema: {
+      response: {
+        200: {
+          type: 'object',
+          required: ['texts'],
+          properties: {
+            texts: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['locale', 'field', 'value'],
+                properties: {
+                  locale: { type: 'string' },
+                  field: { type: 'string' },
+                  value: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        404: notFoundSchema,
+      },
+    },
+  }, async (request, reply) => {
+    const { id, version } = request.params as { id: string; version: string };
+    const texts = await listKnowledgeVersionTexts(db, id, Number(version));
+    const historic = await getKnowledgeVersion(db, id, Number(version));
+    if (!historic) {
+      return reply.status(404).send({
+        error: { code: 'knowledge_not_found', message: 'Unknown knowledge item or version' },
+      });
+    }
+    return { texts };
   });
 
   app.get('/v1/compat/knowledge-ids', {
