@@ -33,7 +33,9 @@
 
 import type { Db } from './db.js';
 import {
+  isActivityCode,
   isCurrentVersionEstablishmentReady,
+  isUuid,
   type KcsClass,
   type KcsContentSnapshot,
 } from './knowledge.js';
@@ -44,6 +46,8 @@ import {
 
 export interface KnowledgeEligibility {
   knowledgeId: string;
+  /** PF-01 governed Activity Code (null for quarantined pre-PF-01 rows). */
+  activityCode: string | null;
   version: number;
   kind: 'fitness' | 'wellness';
   lifecycle: string;
@@ -74,6 +78,7 @@ function asDeclaredClasses(value: unknown): KcsClass[] {
 
 interface EligibilityRow {
   knowledge_id: string;
+  activity_code: string | null;
   current_version: number;
   kind: string;
   lifecycle: string;
@@ -145,12 +150,50 @@ function snapshotFromRow(row: EligibilityRow): KcsContentSnapshot {
 }
 
 /**
+ * Shared establishment gate over one resolved row: current-version KCS
+ * readiness (CORR-001). `grandfathered` is provenance only.
+ */
+function assessEligibilityRow(row: EligibilityRow): KnowledgeEligibility | null {
+  const ready = isCurrentVersionEstablishmentReady(
+    String(row.lifecycle),
+    row.kind as 'fitness' | 'wellness',
+    asDeclaredClasses(row.content_classes),
+    snapshotFromRow(row),
+  );
+  if (!ready) return null;
+  return {
+    knowledgeId: String(row.knowledge_id),
+    activityCode: row.activity_code ?? null,
+    version: Number(row.current_version),
+    kind: row.kind as 'fitness' | 'wellness',
+    lifecycle: String(row.lifecycle),
+    grandfathered: row.grandfathered === true,
+    primaryMetrics: asStringList(row.primary_metrics),
+    secondaryMetrics: asStringList(row.secondary_metrics),
+    compatibleUnits: asStringList(row.compatible_units),
+  };
+}
+
+const ELIGIBILITY_COLUMNS = `knowledge_id, activity_code, current_version, kind, lifecycle, grandfathered,
+               primary_metrics, secondary_metrics, compatible_units,
+               name, description, category, metric_unit, measurement_guidance,
+               unit_semantics, setup, execution, technique_reference,
+               form_cues, common_mistakes, equipment, environment, adaptation,
+               protocol_steps, session_framing, completion_meaning,
+               avoidance_condition, semantic_definition, safety_notes,
+               content_classes`;
+
+/**
  * Database-backed establishment eligibility (CORR-001 current-version
  * readiness). Exact-name, published-only, readiness-gated, fail-closed:
  * unknown keys, drafts, retired items, content-thin items (grandfathered
  * or not) and ambiguous duplicates all resolve to null (the caller
  * rejects; eligibility is never invented). `grandfathered` is returned as
  * provenance only — it never decides eligibility.
+ *
+ * PF-01 quarantine note: exact-name resolution stays for historical
+ * compatibility only. New V2 product contracts MUST use
+ * createDbKnowledgeEligibilityResolverByIdentity (UUID/code) instead.
  */
 export function createDbKnowledgeEligibilityResolver(
   db: Db,
@@ -160,37 +203,40 @@ export function createDbKnowledgeEligibilityResolver(
     if (kind !== 'fitness' && kind !== 'wellness') return null;
     if (!canonicalKey) return null;
     const result = await db.query<EligibilityRow>(
-      `SELECT knowledge_id, current_version, kind, lifecycle, grandfathered,
-              primary_metrics, secondary_metrics, compatible_units,
-              name, description, category, metric_unit, measurement_guidance,
-              unit_semantics, setup, execution, technique_reference,
-              form_cues, common_mistakes, equipment, environment, adaptation,
-              protocol_steps, session_framing, completion_meaning,
-              avoidance_condition, semantic_definition, safety_notes,
-              content_classes
+      `SELECT ${ELIGIBILITY_COLUMNS}
        FROM knowledge_items
        WHERE kind = $1 AND name = $2 AND lifecycle = 'published'`,
       [kind, canonicalKey],
     );
     if (result.rows.length !== 1) return null;
-    const row = result.rows[0];
-    const ready = isCurrentVersionEstablishmentReady(
-      String(row.lifecycle),
-      row.kind as 'fitness' | 'wellness',
-      asDeclaredClasses(row.content_classes),
-      snapshotFromRow(row),
+    return assessEligibilityRow(result.rows[0]);
+  };
+}
+
+/**
+ * PF-01 governed V2 eligibility resolver: resolves by immutable identity
+ * (UUID or Activity Code), published-only, readiness-gated, fail-closed.
+ * Malformed keys, unknown identities, drafts and content-thin items resolve
+ * to null. This is the resolver new V2 Challenge establishment uses;
+ * display names are never consulted.
+ */
+export function createDbKnowledgeEligibilityResolverByIdentity(
+  db: Db,
+  kind: 'fitness' | 'wellness',
+): KnowledgeEligibilityResolver {
+  return async (key: string) => {
+    if (kind !== 'fitness' && kind !== 'wellness') return null;
+    if (!key) return null;
+    const column = isUuid(key) ? 'knowledge_id' : isActivityCode(key) ? 'activity_code' : null;
+    if (!column) return null;
+    const result = await db.query<EligibilityRow>(
+      `SELECT ${ELIGIBILITY_COLUMNS}
+       FROM knowledge_items
+       WHERE kind = $1 AND ${column} = $2 AND lifecycle = 'published'`,
+      [kind, key],
     );
-    if (!ready) return null;
-    return {
-      knowledgeId: String(row.knowledge_id),
-      version: Number(row.current_version),
-      kind: row.kind as 'fitness' | 'wellness',
-      lifecycle: String(row.lifecycle),
-      grandfathered: row.grandfathered === true,
-      primaryMetrics: asStringList(row.primary_metrics),
-      secondaryMetrics: asStringList(row.secondary_metrics),
-      compatibleUnits: asStringList(row.compatible_units),
-    };
+    if (result.rows.length !== 1) return null;
+    return assessEligibilityRow(result.rows[0]);
   };
 }
 

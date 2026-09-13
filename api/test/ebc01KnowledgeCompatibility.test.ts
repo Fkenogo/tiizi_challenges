@@ -47,6 +47,7 @@ let seq = 0;
 function eligibilityFixture(overrides: Partial<KnowledgeEligibility> = {}): KnowledgeEligibility {
   return {
     knowledgeId: '00000000-0000-4000-8000-000000000001',
+    activityCode: null,
     version: 1,
     kind: 'fitness',
     lifecycle: 'published',
@@ -721,6 +722,7 @@ describe('later config versions cannot bypass compatibility (domain seam)', () =
         if (!contract || !pins[key]) return null;
         return {
           knowledgeId: pins[key].knowledge_id,
+          activityCode: null,
           version: pins[key].current_version,
           kind: 'fitness' as const,
           lifecycle: 'published',
