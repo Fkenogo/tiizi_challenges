@@ -28,7 +28,7 @@ import {
   createDbKnowledgeEligibilityResolver,
   type KnowledgeEligibility,
 } from '../src/knowledgeEligibility.js';
-import { resolveKnowledgePinByName } from '../src/knowledgePins.js';
+import { createDbKnowledgeResolver, resolveKnowledgePinByName } from '../src/knowledgePins.js';
 import {
   addChallengeConfigVersion,
   getChallengeConfig,
@@ -495,6 +495,10 @@ describe('establishment compatibility enforcement (route)', () => {
           },
         },
         eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
+        // Intentional quarantined-seam coverage: this compatibility suite
+        // proves the historical name-based establishment path. New V2
+        // establishment uses identity resolvers (PF-01-CORR-001).
+        pinsFor: async (kind, key) => createDbKnowledgeResolver(db, kind)(key),
       },
     });
   }
