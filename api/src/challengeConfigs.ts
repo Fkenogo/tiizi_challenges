@@ -81,6 +81,18 @@ export interface ActivityConfigRow {
   unit: string;
   position: number;
   conditions: Record<string, unknown>;
+  /** PF-03 immutable Activity Code pin. Null ONLY on pre-PF-03 rows. */
+  activity_code: string | null;
+  /** PF-03 pinned required Component ids ([] when the version declares none). */
+  required_components: string[];
+  /** PF-03 Component relationship ('ALL_REQUIRED' exactly when pinned). */
+  component_relationship: string | null;
+  /** PF-03 explicit Load Reporting Basis (Weight configurations only). */
+  load_reporting_basis: string | null;
+  /** PF-03 Duration mode (Duration configurations only). */
+  duration_mode: string | null;
+  /** PF-03 Completion occurrence (Completion configurations only). */
+  completion_occurrence: string | null;
   created_at: string;
 }
 
@@ -262,6 +274,12 @@ function normalizeActivityRow(row: {
   unit: unknown;
   position: unknown;
   conditions: unknown;
+  activity_code?: unknown;
+  required_components?: unknown;
+  component_relationship?: unknown;
+  load_reporting_basis?: unknown;
+  duration_mode?: unknown;
+  completion_occurrence?: unknown;
   created_at: string | Date;
 }): ActivityConfigRow {
   return {
@@ -279,6 +297,22 @@ function normalizeActivityRow(row: {
     conditions: (typeof row.conditions === 'string'
       ? JSON.parse(row.conditions)
       : (row.conditions ?? {})) as Record<string, unknown>,
+    // PF-03 pins: null-tolerant so pre-PF-03 rows (NULL/defaults) stay
+    // interpretable without backfill or fabrication.
+    activity_code: row.activity_code == null ? null : String(row.activity_code),
+    required_components: Array.isArray(row.required_components)
+      ? row.required_components.map(String)
+      : [],
+    component_relationship: row.component_relationship == null
+      ? null
+      : String(row.component_relationship),
+    load_reporting_basis: row.load_reporting_basis == null
+      ? null
+      : String(row.load_reporting_basis),
+    duration_mode: row.duration_mode == null ? null : String(row.duration_mode),
+    completion_occurrence: row.completion_occurrence == null
+      ? null
+      : String(row.completion_occurrence),
     created_at: new Date(row.created_at).toISOString(),
   };
 }
@@ -385,16 +419,28 @@ export async function addChallengeConfigVersion(
     required_consecutive_days: number | null;
     reset_on_miss: boolean;
     timezone: string | null;
+    finalized_at: string | Date | null;
   }>(
     `SELECT challenge_id, challenge_type, status, start_date, end_date,
             current_config_version, goal_value, goal_unit,
-            required_consecutive_days, reset_on_miss, timezone
+            required_consecutive_days, reset_on_miss, timezone, finalized_at
      FROM challenges WHERE challenge_id = $1`,
     [challengeId],
   );
   if (current.rows.length === 0) fail(`unknown challenge ${challengeId}`);
   const row = current.rows[0];
   if (row.status === 'ended') fail('ended challenges are historically complete: configuration cannot change');
+  // PF-03: finalized terminal truth is frozen (EBC-04). Finalization never
+  // reverses, and no definition mutation may touch a finalized Challenge.
+  if (row.finalized_at != null) {
+    fail('finalized challenges are frozen: configuration cannot change');
+  }
+  // PF-03: reset_on_miss=false is not a valid V2 option (a missed day
+  // resets Current Streak; no ordinary grace period). Legacy rows keep
+  // their stored value; new versions can never introduce false.
+  if (change.reset_on_miss === false) {
+    fail('reset_on_miss=false is not a valid V2 option (missed days reset Current Streak)');
+  }
   const basis: ChallengeGoverningBasis = {
     start_date: change.start_date ?? toDayString(row.start_date),
     end_date: change.end_date ?? toDayString(row.end_date),
@@ -503,6 +549,29 @@ export interface GoverningSnapshotActivity {
   unit: string;
   position: number;
   conditions: Record<string, unknown>;
+  /**
+   * PF-03 definition pins. Present on snapshots written by PF-03 code;
+   * absent (null) ONLY on historical pre-PF-03 snapshots (parsed as null
+   * so old configurations stay interpretable without backfill).
+   */
+  activity_code: string | null;
+  required_components: string[];
+  component_relationship: string | null;
+  load_reporting_basis: string | null;
+  duration_mode: string | null;
+  completion_occurrence: string | null;
+}
+
+export interface TemporalConditionWindow {
+  start: string;
+  end: string;
+}
+
+export interface GoverningTemporalConditions {
+  at: string | null;
+  before: string | null;
+  after: string | null;
+  within: TemporalConditionWindow | null;
 }
 
 export interface GoverningSnapshot {
@@ -519,6 +588,14 @@ export interface GoverningSnapshot {
    */
   timezone: string;
   activities: GoverningSnapshotActivity[];
+  /**
+   * PF-03 definition marker + Challenge-level temporal conditions.
+   * definition_kind is 'pf03-v1' on PF-03 snapshots, null on historical
+   * pre-PF-03 snapshots. temporal_conditions is null when the definition
+   * carries none.
+   */
+  definition_kind: string | null;
+  temporal_conditions: GoverningTemporalConditions | null;
 }
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -612,6 +689,42 @@ export function parseGoverningSnapshot(raw: unknown): GoverningSnapshot {
     if (metric !== undefined && metric !== null && !isCanonicalMetric(metric)) {
       snapshotFail(`activities[${index}].metric must be a canonical Metric when present`);
     }
+    // PF-03 pins: absent (null) ONLY on historical pre-PF-03 snapshots
+    // (parsed as null so old configurations stay interpretable); present
+    // values are lightly validated (strict validation lives in the PF-03
+    // definition validator — snapshots are never invented here).
+    const activityCode = activity.activity_code;
+    if (activityCode !== undefined && activityCode !== null
+      && (typeof activityCode !== 'string' || !/^[A-Z]{3}-[A-Z]{3}-[0-9]{3}$/.test(activityCode))) {
+      snapshotFail(`activities[${index}].activity_code must be a governed Activity Code when present`);
+    }
+    const requiredComponents = activity.required_components;
+    if (requiredComponents !== undefined && requiredComponents !== null
+      && (!Array.isArray(requiredComponents) || requiredComponents.some((c) => typeof c !== 'string'))) {
+      snapshotFail(`activities[${index}].required_components must be a string array when present`);
+    }
+    const relationship = activity.component_relationship;
+    if (relationship !== undefined && relationship !== null && relationship !== 'ALL_REQUIRED') {
+      snapshotFail(`activities[${index}].component_relationship must be ALL_REQUIRED when present`);
+    }
+    const basis = activity.load_reporting_basis;
+    if (basis !== undefined && basis !== null
+      && (typeof basis !== 'string' || ![
+        'TOTAL_LOADED_IMPLEMENT', 'PER_IMPLEMENT', 'SINGLE_IMPLEMENT', 'PER_SIDE',
+        'MACHINE_DISPLAYED_LOAD',
+      ].includes(basis))) {
+      snapshotFail(`activities[${index}].load_reporting_basis must be an authorized basis when present`);
+    }
+    const durationMode = activity.duration_mode;
+    if (durationMode !== undefined && durationMode !== null
+      && durationMode !== 'CONTINUOUS' && durationMode !== 'ACCUMULATED') {
+      snapshotFail(`activities[${index}].duration_mode must be CONTINUOUS|ACCUMULATED when present`);
+    }
+    const occurrence = activity.completion_occurrence;
+    if (occurrence !== undefined && occurrence !== null
+      && (typeof occurrence !== 'string' || occurrence.length < 1 || occurrence.length > 500)) {
+      snapshotFail(`activities[${index}].completion_occurrence must be 1..500 chars when present`);
+    }
     return {
       canonical_key: activity.canonical_key as string,
       activity_variant: variant as string | null,
@@ -624,6 +737,12 @@ export function parseGoverningSnapshot(raw: unknown): GoverningSnapshot {
       conditions: activity.conditions == null
         ? {}
         : asRecord(activity.conditions) as Record<string, unknown>,
+      activity_code: (activityCode ?? null) as string | null,
+      required_components: ((requiredComponents ?? []) as unknown[]).map(String),
+      component_relationship: (relationship ?? null) as string | null,
+      load_reporting_basis: (basis ?? null) as string | null,
+      duration_mode: (durationMode ?? null) as string | null,
+      completion_occurrence: (occurrence ?? null) as string | null,
     };
   });
   // C3A: a malformed collective snapshot already persisted in the DB must
@@ -651,7 +770,56 @@ export function parseGoverningSnapshot(raw: unknown): GoverningSnapshot {
     reset_on_miss: resetOnMiss as boolean,
     timezone,
     activities,
+    definition_kind: typeof snapshot.definition_kind === 'string'
+      ? snapshot.definition_kind as string
+      : null,
+    temporal_conditions: parseSnapshotTemporalConditions(snapshot.temporal_conditions),
   };
+}
+
+const SNAPSHOT_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/**
+ * PF-03 Challenge-level temporal conditions inside a persisted snapshot.
+ * Absent (null) on historical pre-PF-03 snapshots; lightly validated when
+ * present (strict validation lives in the PF-03 definition validator).
+ */
+export function parseSnapshotTemporalConditions(value: unknown): GoverningTemporalConditions | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    snapshotFail('temporal_conditions must be an object when present');
+  }
+  const record = value as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    if (key !== 'at' && key !== 'before' && key !== 'after' && key !== 'within') {
+      snapshotFail(`temporal_conditions key '${key}' is not authorized (at|before|after|within only)`);
+    }
+  }
+  const asTime = (entry: unknown, field: string): string | null => {
+    if (entry === undefined || entry === null) return null;
+    if (typeof entry !== 'string' || !SNAPSHOT_TIME_RE.test(entry)) {
+      snapshotFail(`temporal_conditions.${field} must be HH:MM when present`);
+    }
+    return entry;
+  };
+  const at = asTime(record.at, 'at');
+  const before = asTime(record.before, 'before');
+  const after = asTime(record.after, 'after');
+  let within: TemporalConditionWindow | null = null;
+  if (record.within !== undefined) {
+    const w = record.within;
+    if (typeof w !== 'object' || w === null || Array.isArray(w)) {
+      snapshotFail('temporal_conditions.within must be an object when present');
+    }
+    const wr = w as Record<string, unknown>;
+    const start = asTime(wr.start, 'within.start');
+    const end = asTime(wr.end, 'within.end');
+    if (start === null || end === null || end <= start) {
+      snapshotFail('temporal_conditions.within requires start and end with end after start');
+    }
+    within = { start, end };
+  }
+  return { at, before, after, within };
 }
 
 export interface GoverningVersion {
@@ -715,6 +883,30 @@ export function assertSnapshotActivitiesConsistent(
       || row.target_value !== expected.target_value
       || row.unit !== expected.unit) {
       fail(`version ${version}: activity row diverges from snapshot for '${expected.canonical_key}'`);
+    }
+    // PF-03 pins: compared exactly when the snapshot carries them
+    // (pre-PF-03 snapshots carry none and stay interpretable).
+    if (expected.activity_code != null && row.activity_code !== expected.activity_code) {
+      fail(`version ${version}: activity_code diverges from snapshot for '${expected.canonical_key}'`);
+    }
+    if ([...expected.required_components].sort().join('\u0000')
+      !== [...row.required_components].sort().join('\u0000')) {
+      fail(`version ${version}: required_components diverge from snapshot for '${expected.canonical_key}'`);
+    }
+    if (expected.component_relationship != null
+      && row.component_relationship !== expected.component_relationship) {
+      fail(`version ${version}: component_relationship diverges from snapshot for '${expected.canonical_key}'`);
+    }
+    if (expected.load_reporting_basis != null
+      && row.load_reporting_basis !== expected.load_reporting_basis) {
+      fail(`version ${version}: load_reporting_basis diverges from snapshot for '${expected.canonical_key}'`);
+    }
+    if (expected.duration_mode != null && row.duration_mode !== expected.duration_mode) {
+      fail(`version ${version}: duration_mode diverges from snapshot for '${expected.canonical_key}'`);
+    }
+    if (expected.completion_occurrence != null
+      && row.completion_occurrence !== expected.completion_occurrence) {
+      fail(`version ${version}: completion_occurrence diverges from snapshot for '${expected.canonical_key}'`);
     }
   }
 }
