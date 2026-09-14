@@ -16,6 +16,7 @@ import {
   registerChallengeCreationRoutes,
   type ChallengeCreationRouteDeps,
 } from './challengeCreationRoutes.js';
+import { registerChallengeDefinitionRoutes } from './challengeDefinition.js';
 import {
   registerGroupMutationRoutes,
   type GroupMutationRouteDeps,
@@ -109,5 +110,8 @@ export function buildApp(deps: AppDeps) {
   // charter-aware live creation authority, KCS-ready + tuple validation;
   // absent deps fail closed instead of establishing.
   registerChallengeCreationRoutes(app, deps.db, deps.challengeCreation ?? {});
+  // PF-05 Wizard seams (read-only): Composer activity options + Composer
+  // draft preview through the single PF-03 validator. Writes nothing.
+  registerChallengeDefinitionRoutes(app, deps.db);
   return app;
 }

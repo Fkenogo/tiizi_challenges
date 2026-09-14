@@ -44,9 +44,11 @@
  * Provider-neutral: pure domain + `Db`. No Firebase, no routes.
  */
 
+import type { FastifyInstance } from 'fastify';
 import type { Db } from './db.js';
 import {
   assessConfigurationEligibility,
+  describeActivityOptions,
   type ConfigurationEligibilityInput,
 } from './activityComponents.js';
 import {
@@ -644,4 +646,41 @@ export async function insertChallengeDefinitionVersion(
   }
   const reread = await getChallengeConfig(tx, challengeId, version);
   return { snapshot, activities: reread.activities };
+}
+
+/**
+ * PF-05 Wizard seams (read-only; writes nothing):
+ * - GET /v1/knowledge/:id/options — valid Composer configuration choices
+ *   for one Activity, derived from canonical Knowledge;
+ * - POST /v1/challenge-definitions/preview — Composer Draft → mapping →
+ *   validateChallengeDefinition → normalized definition OR structured
+ *   failure. The same PF-03 validator used by establishment stays the
+ *   authority; no second validator exists.
+ */
+export function registerChallengeDefinitionRoutes(app: FastifyInstance, db: Db): void {
+  app.get('/v1/knowledge/:id/options', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const options = await describeActivityOptions(db, id);
+    if (!options) {
+      return reply.status(404).send({
+        error: { code: 'knowledge_not_found', message: 'Unknown or unpublished Knowledge item' },
+      });
+    }
+    return options;
+  });
+
+  app.post('/v1/challenge-definitions/preview', async (request, reply) => {
+    const draft = request.body as Record<string, unknown>;
+    if (typeof draft !== 'object' || draft === null || Array.isArray(draft)) {
+      return reply.status(400).send({
+        error: { code: 'invalid_composer_draft', message: 'Preview body must be a Composer draft object' },
+      });
+    }
+    const { previewChallengeComposer } = await import('./challengeComposer.js');
+    const preview = await previewChallengeComposer(db, draft as never);
+    if (!preview.ok) {
+      return reply.status(422).send({ ok: false, issues: preview.issues });
+    }
+    return { ok: true, definition: preview.definition };
+  });
 }

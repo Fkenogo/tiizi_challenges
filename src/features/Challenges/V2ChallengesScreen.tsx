@@ -92,6 +92,12 @@ function V2ChallengesScreen() {
           {!isLoading && !isError && challenges.length === 0 && (
             <p className="text-[14px] text-slate-500">No V2 challenges yet. New V2 challenges are created by the controlled establishment flow.</p>
           )}
+          <button
+            className="st-btn-primary w-full"
+            onClick={() => navigate('/app/challenges/v2/create')}
+          >
+            New V2 Challenge
+          </button>
           {challenges.map((summary) => (
             <article
               key={summary.challengeId}

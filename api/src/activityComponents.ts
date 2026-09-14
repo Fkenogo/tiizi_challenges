@@ -46,6 +46,7 @@ import type { Db } from './db.js';
 import {
   advanceProductContractVersion,
   assessChallengeEligibility,
+  getKnowledgeById,
   KnowledgeError,
   type ChallengeEligibilityAssessmentInput,
   type ChallengeEligibilityIssue,
@@ -276,6 +277,45 @@ export async function listVersionComponents(
     [itemId, version],
   );
   return result.rows.map(mapComponentRow);
+}
+
+export interface ActivityComposerOptions {
+  knowledgeId: string;
+  activityCode: string | null;
+  kind: 'fitness' | 'wellness';
+  currentVersion: number;
+  primaryMetrics: string[];
+  secondaryMetrics: string[];
+  compatibleUnits: string[];
+  components: ActivityComponentSpec[];
+  supportedLoadBases: string[];
+}
+
+/**
+ * PF-05 Wizard support: the valid configuration choices for one Activity,
+ * derived from canonical Knowledge (never hard-coded). Published current
+ * items only — drafts/retired items and unknown identities resolve to
+ * null (options are never invented). Pure read; writes nothing.
+ */
+export async function describeActivityOptions(
+  db: Db,
+  knowledgeId: string,
+): Promise<ActivityComposerOptions | null> {
+  const item = await getKnowledgeById(db, knowledgeId);
+  if (!item || item.lifecycle !== 'published') return null;
+  const pin = await resolveActivityVersionPin(db, knowledgeId, item.knowledgeVersion);
+  if (!pin) return null;
+  return {
+    knowledgeId,
+    activityCode: pin.activityCode,
+    kind: item.kind,
+    currentVersion: item.knowledgeVersion,
+    primaryMetrics: pin.primaryMetrics,
+    secondaryMetrics: pin.secondaryMetrics,
+    compatibleUnits: pin.compatibleUnits,
+    components: pin.components,
+    supportedLoadBases: pin.supportedLoadBases,
+  };
 }
 
 export interface ActivityVersionPin {
