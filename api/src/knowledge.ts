@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { isCanonicalMetric, metricForUnit } from './measurementVocabulary.js';
+import { normalizeComponentSpecs, snapshotVersionComponents } from './activityComponents.js';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 
@@ -297,6 +298,13 @@ export interface KnowledgeContentInput {
 export interface CreateKnowledgeInput extends KnowledgeContentInput {
   kind?: unknown;
   lifecycle?: unknown;
+  /**
+   * PF-02: optional governed Component specs for the new Activity.
+   * Absent/undefined means an ordinary non-component Activity (the PF-01
+   * path, unchanged). Provided specs are validated exactly like
+   * setActivityComponents and snapshotted into version 1.
+   */
+  components?: unknown;
 }
 
 export interface KnowledgeIdentityMapping {
@@ -1389,6 +1397,9 @@ export async function createKnowledgeItem(
   if (lifecycle === 'published') {
     requirePublicationReady(kind, content.contentClasses, snapshotForReadiness(content), false);
   }
+  // PF-02: validate Component specs before any write so a bad Component
+  // set rejects without creating the Activity.
+  const components = normalizeComponentSpecs(input.components);
   return db.transaction(async (tx) => {
     let row: KnowledgeRow;
     try {
@@ -1415,6 +1426,16 @@ export async function createKnowledgeItem(
                $30, $31, $32, $33, $34, $35)`,
       [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content)],
     );
+    // PF-02: pin the creation-time Component set into version 1 (no-op for
+    // non-component Activities).
+    for (const [position, spec] of components.entries()) {
+      await tx.query(
+        `INSERT INTO activity_components (item_id, component_id, display_name, relationship, position)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [row.knowledge_id, spec.componentId, spec.displayName, spec.relationship, position],
+      );
+    }
+    await snapshotVersionComponents(tx, row.knowledge_id, 1);
     return mapKnowledgeRow(row);
   });
 }
@@ -1572,6 +1593,10 @@ export async function reviseKnowledgeItem(
       })],
     );
     await snapshotVersionTexts(tx, id, next);
+    // PF-02: pin the Component set current at revision time into the new
+    // version (no-op for non-component Activities). Component edits are
+    // current-state administration; the revision is what pins them.
+    await snapshotVersionComponents(tx, id, next);
     return revised;
   });
 }
