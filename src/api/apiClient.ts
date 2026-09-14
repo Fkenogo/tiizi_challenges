@@ -7,11 +7,15 @@ import {
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
+  /** Parsed response body when the server answered with JSON (e.g.
+   * structured validation issues on 422 preview/definition responses). */
+  readonly body?: unknown;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, body?: unknown) {
     super(message);
     this.status = status;
     this.code = code;
+    this.body = body;
   }
 }
 
@@ -71,16 +75,18 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
   if (!response.ok) {
     let code = 'request_error';
     let message = `Request failed (${response.status})`;
+    let body: unknown;
     try {
-      const body = (await response.json()) as {
+      body = (await response.json()) as {
         error?: { code?: string; message?: string };
       };
-      if (body.error?.code) code = body.error.code;
-      if (body.error?.message) message = body.error.message;
+      const errorBody = body as { error?: { code?: string; message?: string } };
+      if (errorBody.error?.code) code = errorBody.error.code;
+      if (errorBody.error?.message) message = errorBody.error.message;
     } catch {
       // Keep the generic message when the body is not JSON.
     }
-    throw new ApiError(response.status, code, message);
+    throw new ApiError(response.status, code, message, body);
   }
   return (await response.json()) as T;
 }

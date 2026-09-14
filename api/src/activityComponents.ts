@@ -46,7 +46,10 @@ import type { Db } from './db.js';
 import {
   advanceProductContractVersion,
   assessChallengeEligibility,
+  getKnowledgeByCode,
   getKnowledgeById,
+  isActivityCode,
+  isUuid,
   KnowledgeError,
   type ChallengeEligibilityAssessmentInput,
   type ChallengeEligibilityIssue,
@@ -293,14 +296,24 @@ export interface ActivityComposerOptions {
 
 /**
  * PF-05 Wizard support: the valid configuration choices for one Activity,
- * derived from canonical Knowledge (never hard-coded). Published current
- * items only — drafts/retired items and unknown identities resolve to
- * null (options are never invented). Pure read; writes nothing.
+ * derived from canonical Knowledge (never hard-coded). Identity may be the
+ * Knowledge UUID OR the immutable Activity Code — both resolve to the same
+ * canonical Activity (PF-03/PF-04 identity rules; display names never
+ * resolve). Published current items only — drafts/retired items, unknown
+ * identities and names resolve to null (options are never invented).
+ * Pure read; writes nothing.
  */
 export async function describeActivityOptions(
   db: Db,
-  knowledgeId: string,
+  identity: string,
 ): Promise<ActivityComposerOptions | null> {
+  let knowledgeId: string | null = null;
+  if (typeof identity === 'string' && isUuid(identity)) {
+    knowledgeId = identity;
+  } else if (isActivityCode(identity)) {
+    knowledgeId = (await getKnowledgeByCode(db, identity))?.id ?? null;
+  }
+  if (!knowledgeId) return null;
   const item = await getKnowledgeById(db, knowledgeId);
   if (!item || item.lifecycle !== 'published') return null;
   const pin = await resolveActivityVersionPin(db, knowledgeId, item.knowledgeVersion);

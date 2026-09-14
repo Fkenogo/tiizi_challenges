@@ -102,8 +102,8 @@ check('4. type cards update draft', wizard.includes("updateDraft({ challengeType
 
 // 5. Canonical Activity identity stored.
 check('5. identity stored as code-or-UUID', wizard.includes('activity: item.activityCode ?? item.id'));
-check('5. options fetched by UUID', wizard.includes('ensureOptions(activity.activity)')
-  || wizard.includes('fetchV2ActivityOptions'));
+check('5. options fetched by Composer identity', wizard.includes('fetchV2ActivityOptions(identity)')
+  || wizard.includes('void ensureOptions(activity.activity)'));
 
 // 6. Display name does not become identity.
 check('6. no name-as-identity', !wizard.includes('activity: item.name')
@@ -180,7 +180,7 @@ check('18. issues shown with stage edit actions', wizard.includes("previewState.
 // 19. Finish calls V2 POST /v1/challenges.
 check('19. establishment via V2 route', apiSeam.includes("'/v1/challenges', { method: 'POST'")
   && wizard.includes('establishV2Challenge(')
-  && wizard.includes('definitionToRouteBody(previewState.definition, groupId)'));
+  && wizard.includes('establishmentGroupId'));
 
 // 20. No Firebase Challenge creation call.
 {
@@ -213,8 +213,29 @@ check('24. list entry point exists', v2List.includes('/app/challenges/v2/create'
 
 // 25. Group context is preserved.
 check('25. groupId from route context into establishment', wizard.includes("searchParams.get('groupId')")
-  && wizard.includes('definitionToRouteBody(previewState.definition, groupId)')
+  && wizard.includes('definitionToRouteBody(previewState.definition, establishmentGroupId)')
   && appRoutes.includes('RequireGroupRoute><V2CreateChallengeWizard'));
+
+// PF-05-CORR-001 corrections.
+const composerApi = read('api/src/activityComponents.ts');
+const knowledgeApi = read('api/src/knowledge.ts');
+check('CORR-A. options seam accepts UUID or Code', composerApi.includes('getKnowledgeByCode')
+  && composerApi.includes('isActivityCode')
+  && wizard.includes('identityToUuid'));
+check('CORR-A. single canonical cache key', wizard.includes('[options.knowledgeId]')
+  && wizard.includes('[identity]: options.knowledgeId'));
+check('CORR-B. composer-selectable catalogue boundary', knowledgeApi.includes('composerSelectable')
+  && knowledgeApi.includes('activity_code IS NOT NULL')
+  && knowledgeApi.includes('item.publicationReady && item.challengeEligible')
+  && apiSeam.includes("composerSelectable: 'true'"));
+check('CORR-C. group UUID translation seam', apiSeam.includes('resolveEstablishmentGroupId')
+  && apiSeam.includes('resolveTiiziGroupId')
+  && wizard.includes('resolveEstablishmentGroupId(groupId)')
+  && wizard.includes('setEstablishmentGroupId'));
+check('CORR-C. unmapped groups fail closed', apiSeam.includes('not linked for V2 Challenge creation'));
+check('CORR-D. runtime integration test exists', read('src/features/Challenges/V2/V2CreateChallengeWizard.runtime.test.tsx').includes('react-test-renderer'));
+check('CORR-E. structured preview issues survive transport', apiSeam.includes('error.body')
+  || read('src/api/apiClient.ts').includes('body?: unknown'));
 
 // Mapping behavior (runtime, pure module).
 {

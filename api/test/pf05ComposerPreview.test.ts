@@ -15,6 +15,12 @@ import {
   setMeasurementCompatibility,
   type CreateKnowledgeInput,
 } from '../src/knowledge.js';
+import {
+  BREATHING_PRACTICE_CONTRACT,
+  breathingPracticeExemplarInput,
+  pushUpExemplarInput,
+  PUSH_UP_CONTRACT,
+} from '../src/pf01Exemplars.js';
 import { authHeaders, seedGroup, seedMember, stubVerifier, testDb } from './helpers.js';
 
 function holdContent(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -72,13 +78,13 @@ describe('PF-05 activity options seam', () => {
   it('returns Knowledge-derived choices for a published Activity', async () => {
     const created = await seedPublishedHold('FIT-TST-931');
     const app = await readWorld('opt-token');
-    const response = await app.inject({
+    const byUuid = await app.inject({
       method: 'GET',
       url: `/v1/knowledge/${created.id}/options`,
       headers: authHeaders('opt-token'),
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({
+    expect(byUuid.statusCode).toBe(200);
+    expect(byUuid.json()).toMatchObject({
       knowledgeId: created.id,
       activityCode: 'FIT-TST-931',
       kind: 'fitness',
@@ -86,11 +92,19 @@ describe('PF-05 activity options seam', () => {
       compatibleUnits: ['seconds'],
       supportedLoadBases: [],
     });
-    const body = response.json() as { components: Array<{ componentId: string }> };
+    const body = byUuid.json() as { components: Array<{ componentId: string }> };
     expect(body.components.map((c) => c.componentId)).toEqual(['LEFT', 'RIGHT']);
+    // PF-05-CORR-001: the immutable Activity Code resolves identically.
+    const byCode = await app.inject({
+      method: 'GET',
+      url: `/v1/knowledge/FIT-TST-931/options`,
+      headers: authHeaders('opt-token'),
+    });
+    expect(byCode.statusCode).toBe(200);
+    expect(byCode.json()).toEqual(byUuid.json());
   });
 
-  it('404s unknown, draft, and malformed identities', async () => {
+  it('404s unknown, draft, malformed identities — and display names', async () => {
     const app = await readWorld('opt2-token');
     const unknown = await app.inject({
       method: 'GET',
@@ -109,6 +123,123 @@ describe('PF-05 activity options seam', () => {
       headers: authHeaders('opt2-token'),
     });
     expect(draftResponse.statusCode).toBe(404);
+    // Display names never resolve (identity is UUID/Code only).
+    const byName = await app.inject({
+      method: 'GET',
+      url: `/v1/knowledge/PF-05%20Options%20Hold/options`,
+      headers: authHeaders('opt2-token'),
+    });
+    expect(byName.statusCode).toBe(404);
+  });
+});
+
+describe('PF-05-CORR-001 composer-selectable catalogue boundary', () => {
+  async function seedCatalogueMatrix() {
+    const db = testDb();
+    // 1. Coded, published, ready, contracted fitness Activity: candidate.
+    const ready = await createKnowledgeItem(
+      db,
+      holdContent({ activityCode: 'FIT-TST-941', name: 'Selectable Hold' }) as CreateKnowledgeInput,
+    );
+    await setMeasurementCompatibility(db, ready.id, {
+      primaryMetrics: ['duration'],
+      secondaryMetrics: [],
+      compatibleUnits: ['seconds'],
+    });
+    await setKnowledgeLifecycle(db, ready.id, 'published');
+    // 2. Coded draft: excluded.
+    await createKnowledgeItem(
+      db,
+      holdContent({ activityCode: 'FIT-TST-942', name: 'Draft Hold' }) as CreateKnowledgeInput,
+    );
+    // 3. Coded retired: excluded.
+    const retired = await createKnowledgeItem(
+      db,
+      holdContent({ activityCode: 'FIT-TST-943', name: 'Retired Hold' }) as CreateKnowledgeInput,
+    );
+    await setMeasurementCompatibility(db, retired.id, {
+      primaryMetrics: ['duration'],
+      secondaryMetrics: [],
+      compatibleUnits: ['seconds'],
+    });
+    await setKnowledgeLifecycle(db, retired.id, 'published');
+    await setKnowledgeLifecycle(db, retired.id, 'retired');
+    // 4. Coded but KCS-thin legacy content: excluded (readiness fails).
+    await db.query(
+      `INSERT INTO knowledge_items
+         (kind, name, activity_code, lifecycle, grandfathered, description, category,
+          metric_unit, measurement_guidance, safety_notes,
+          primary_metrics, secondary_metrics, compatible_units)
+       VALUES ('fitness', 'Thin Hold', 'FIT-TST-944', 'published', TRUE,
+         '', '', '', '', '{}', '{}', '{}', '{}')`,
+    );
+    // 5. Codeless legacy V1 row: excluded (quarantined whatever its state).
+    await db.query(
+      `INSERT INTO knowledge_items
+         (kind, name, lifecycle, grandfathered, description, category,
+          metric_unit, measurement_guidance, safety_notes,
+          primary_metrics, secondary_metrics, compatible_units)
+       VALUES ('fitness', 'Legacy V1 Press', 'published', TRUE,
+         'Pre-PF-01 evidence row.', 'Core', 'reps',
+         'Count reps.', ARRAY['Be careful'],
+         ARRAY['repetitions'], ARRAY[]::TEXT[], ARRAY['reps'])`,
+    );
+    // 6+7. Wellness domain: breathing exemplar candidate (via API so the
+    // version history exists exactly like production authoring).
+    const pushUp = await createKnowledgeItem(db, pushUpExemplarInput());
+    await setMeasurementCompatibility(db, pushUp.id, PUSH_UP_CONTRACT);
+    await setKnowledgeLifecycle(db, pushUp.id, 'published');
+    const breathing = await createKnowledgeItem(db, breathingPracticeExemplarInput());
+    await setMeasurementCompatibility(db, breathing.id, BREATHING_PRACTICE_CONTRACT);
+    await setKnowledgeLifecycle(db, breathing.id, 'published');
+  }
+
+  async function candidateCodes(kind?: string): Promise<string[]> {
+    const token = `cat-${kind ?? 'all'}`;
+    const app = await readWorld(token);
+    const query = new URLSearchParams({ composerSelectable: 'true' });
+    if (kind) query.set('kind', kind);
+    const response = await app.inject({
+      method: 'GET',
+      url: `/v1/knowledge?${query.toString()}`,
+      headers: authHeaders(token),
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { items: Array<{ activityCode: string | null; name: string }> };
+    return body.items.map((item) => item.activityCode ?? item.name);
+  }
+
+  it('lists only NEW-V2 candidates across both domains', async () => {
+    await seedCatalogueMatrix();
+    const codes = await candidateCodes();
+    expect(codes).toContain('FIT-TST-941');
+    expect(codes).toContain('FIT-STR-001');
+    expect(codes).toContain('WEL-MND-003');
+    expect(codes).not.toContain('FIT-TST-942');
+    expect(codes).not.toContain('FIT-TST-943');
+    expect(codes).not.toContain('FIT-TST-944');
+    expect(codes).not.toContain('Legacy V1 Press');
+    const wellness = await candidateCodes('wellness');
+    expect(wellness).toContain('WEL-MND-003');
+    expect(wellness).not.toContain('FIT-STR-001');
+    const fitness = await candidateCodes('fitness');
+    expect(fitness).toContain('FIT-TST-941');
+    expect(fitness).toContain('FIT-STR-001');
+  });
+
+  it('plain published listing is unchanged (boundary is opt-in)', async () => {
+    await seedCatalogueMatrix();
+    const app = await readWorld('cat-plain-x');
+    const response = await app.inject({
+      method: 'GET',
+      url: `/v1/knowledge?kind=fitness`,
+      headers: authHeaders('cat-plain-x'),
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { items: Array<{ name: string }> };
+    const names = body.items.map((item) => item.name);
+    // Legacy/admin-visible rows still list without the boundary flag.
+    expect(names).toContain('Legacy V1 Press');
   });
 });
 

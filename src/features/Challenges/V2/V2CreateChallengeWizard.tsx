@@ -34,6 +34,7 @@ import {
   loadBasisLabel,
   LOAD_BASIS_DESCRIPTIONS,
   previewV2Draft,
+  resolveEstablishmentGroupId,
   type V2ActivityOptions,
   type V2NormalizedDefinition,
   type V2PreviewIssue,
@@ -106,7 +107,11 @@ export default function V2CreateChallengeWizard() {
   const [catalogueLoading, setCatalogueLoading] = useState(false);
   const [catalogueError, setCatalogueError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  // Options are cached by canonical Knowledge UUID (single entry per
+  // Activity); Composer immutable identities (UUID or Code) map onto the
+  // canonical key, so coded Activities never create competing cache keys.
   const [optionsCache, setOptionsCache] = useState<Record<string, V2ActivityOptions>>({});
+  const [identityToUuid, setIdentityToUuid] = useState<Record<string, string>>({});
   const [previewState, setPreviewState] = useState<
     | { status: 'idle' }
     | { status: 'loading' }
@@ -115,6 +120,30 @@ export default function V2CreateChallengeWizard() {
   >({ status: 'idle' });
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
+  // Tiizi Group UUID for establishment (translated from Group UI context
+  // through the identity bridge — never a Firestore id downstream).
+  const [establishmentGroupId, setEstablishmentGroupId] = useState<string | null>(null);
+  const [groupError, setGroupError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setEstablishmentGroupId(null);
+    setGroupError(null);
+    if (!groupId) return;
+    resolveEstablishmentGroupId(groupId).then(
+      (resolved) => {
+        if (!cancelled) setEstablishmentGroupId(resolved);
+      },
+      (error: unknown) => {
+        if (!cancelled) {
+          setGroupError(error instanceof Error ? error.message : 'Group could not be resolved.');
+        }
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId]);
 
   const updateDraft = useCallback((patch: Partial<ComposerDraft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -156,17 +185,28 @@ export default function V2CreateChallengeWizard() {
     }
   }, [entered, stage, catalogue.length, catalogueLoading, loadCatalogue]);
 
-  const ensureOptions = useCallback(async (knowledgeId: string): Promise<V2ActivityOptions | null> => {
-    const cached = optionsCache[knowledgeId];
+  // One canonical identity strategy end to end: the options seam accepts
+  // the Composer immutable identity (UUID or Code) and answers with the
+  // canonical UUID, which becomes the single cache key.
+  const ensureOptions = useCallback(async (identity: string): Promise<V2ActivityOptions | null> => {
+    const known = identityToUuid[identity];
+    const cached = optionsCache[known ?? identity];
     if (cached) return cached;
     try {
-      const options = await fetchV2ActivityOptions(knowledgeId);
-      setOptionsCache((prev) => ({ ...prev, [knowledgeId]: options }));
+      const options = await fetchV2ActivityOptions(identity);
+      setOptionsCache((prev) => ({ ...prev, [options.knowledgeId]: options }));
+      setIdentityToUuid((prev) => ({ ...prev, [identity]: options.knowledgeId }));
       return options;
     } catch {
       return null;
     }
-  }, [optionsCache]);
+  }, [optionsCache, identityToUuid]);
+
+  const optionsFor = useCallback(
+    (identity: string): V2ActivityOptions | undefined =>
+      optionsCache[identityToUuid[identity] ?? identity],
+    [optionsCache, identityToUuid],
+  );
 
   const selectActivity = useCallback(
     async (item: V2PublishedActivity) => {
@@ -222,8 +262,11 @@ export default function V2CreateChallengeWizard() {
     async (index: number) => {
       const entry = draft.activities[index];
       if (!entry) return;
+      // Explicit refresh through the same identity seam (Code or UUID):
+      // options stay available under the canonical cache key.
       const options = await fetchV2ActivityOptions(entry.activity);
-      setOptionsCache((prev) => ({ ...prev, [entry.activity]: options }));
+      setOptionsCache((prev) => ({ ...prev, [options.knowledgeId]: options }));
+      setIdentityToUuid((prev) => ({ ...prev, [entry.activity]: options.knowledgeId }));
       updateActivity(index, { observedVersion: options.currentVersion });
     },
     [draft.activities, updateActivity],
@@ -231,11 +274,17 @@ export default function V2CreateChallengeWizard() {
 
   const finish = useCallback(async () => {
     if (previewState.status !== 'ok' || finishing) return;
+    if (!establishmentGroupId) {
+      setFinishError(
+        groupError ?? 'Group context is still resolving. Wait a moment and try again.',
+      );
+      return;
+    }
     setFinishing(true);
     setFinishError(null);
     try {
       const response = await establishV2Challenge(
-        definitionToRouteBody(previewState.definition, groupId),
+        definitionToRouteBody(previewState.definition, establishmentGroupId),
       );
       navigate(`/app/challenge/v2/${response.challengeId}`);
     } catch (error) {
@@ -243,7 +292,7 @@ export default function V2CreateChallengeWizard() {
     } finally {
       setFinishing(false);
     }
-  }, [previewState, finishing, groupId, navigate]);
+  }, [previewState, finishing, establishmentGroupId, groupError, navigate]);
 
   const stageIndex = useMemo(() => WIZARD_STAGE_ORDER.indexOf(stage), [stage]);
   const blocking = useMemo(() => missingForStage(draft, stage), [draft, stage]);
@@ -295,6 +344,11 @@ export default function V2CreateChallengeWizard() {
         </div>
 
         <main className="st-form-max mt-5 space-y-4">
+          {groupError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3" role="alert">
+              <p className="text-[13px] font-bold text-red-700">{groupError}</p>
+            </div>
+          )}
           {!entered && (
             <section aria-label="Start options" className="space-y-3">
               <h2 className="text-[17px] font-black text-slate-900">How do you want to start?</h2>
@@ -440,7 +494,7 @@ export default function V2CreateChallengeWizard() {
                 <MeasurementCard
                   key={`${activity.activity}-${index}`}
                   activity={activity}
-                  options={optionsCache[activity.activity]}
+                  options={optionsFor(activity.activity)}
                   onLoadOptions={() => void ensureOptions(activity.activity)}
                   onChange={(patch) => updateActivity(index, patch)}
                 />
@@ -733,6 +787,16 @@ export default function V2CreateChallengeWizard() {
             </section>
           )}
 
+          {entered && stage === 'REVIEW' && (
+            <div className="flex items-center justify-between gap-3 pt-2">
+              <button
+                className="st-btn-secondary flex items-center gap-1"
+                onClick={() => setStage('RULES')}
+              >
+                <ChevronLeft size={16} /> Back
+              </button>
+            </div>
+          )}
           {entered && stage !== 'REVIEW' && (
             <div className="flex items-center justify-between gap-3 pt-2">
               <button

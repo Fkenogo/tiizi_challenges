@@ -13,7 +13,9 @@
  * Template services. No V1 Exercise/Wellness catalogue services.
  */
 
-import { apiFetch } from './apiClient';
+import { apiFetch, ApiError } from './apiClient';
+import { resolveLegacyGroupId, resolveTiiziGroupId } from './groupIdentityBridge';
+import { isV2ChallengeId } from './v2ChallengeMode';
 import {
   definitionToRouteBody as mapDefinitionToRouteBody,
   DURATION_MODE_DESCRIPTIONS,
@@ -131,14 +133,20 @@ interface KnowledgeListResponse {
   }>;
 }
 
-/** Canonical published Activities for Wizard selection (both domains). */
+/** Canonical published Activities for Wizard selection (both domains).
+ *
+ * Composer-selectable candidates only (composerSelectable): published V2
+ * Activities with an immutable code, current readiness and a governed
+ * contract. Legacy/draft/retired/KCS-thin/codeless Knowledge never
+ * appears here — that quarantine is server-owned.
+ */
 export async function fetchV2PublishedActivities(
   search?: string,
 ): Promise<V2PublishedActivity[]> {
   const kinds = ['fitness', 'wellness'] as const;
   const lists = await Promise.all(
     kinds.map(async (kind) => {
-      const query = new URLSearchParams({ kind });
+      const query = new URLSearchParams({ kind, composerSelectable: 'true' });
       if (search && search.trim().length > 0) query.set('search', search.trim());
       const response = await apiFetch<KnowledgeListResponse>(
         `/v1/knowledge?${query.toString()}`,
@@ -163,12 +171,29 @@ export function fetchV2ActivityOptions(knowledgeId: string): Promise<V2ActivityO
   );
 }
 
-/** Server preview of a Composer draft (writes nothing). */
-export function previewV2Draft(draft: unknown): Promise<V2PreviewResult> {
-  return apiFetch<V2PreviewResult>('/v1/challenge-definitions/preview', {
-    method: 'POST',
-    body: draft,
-  });
+/** Server preview of a Composer draft (writes nothing).
+ *
+ * The preview seam answers 422 with structured {ok:false, issues} when the
+ * draft is incomplete or semantically invalid. apiFetch surfaces non-2xx
+ * as ApiError, so a 422 preview body is converted back into the
+ * V2PreviewResult here — the Wizard always receives structured issues,
+ * never a bare transport error.
+ */
+export async function previewV2Draft(draft: unknown): Promise<V2PreviewResult> {
+  try {
+    return await apiFetch<V2PreviewResult>('/v1/challenge-definitions/preview', {
+      method: 'POST',
+      body: draft,
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 422) {
+      const body = error.body as { ok?: unknown; issues?: V2PreviewIssue[] } | undefined;
+      if (body && body.ok === false && Array.isArray(body.issues)) {
+        return { ok: false, issues: body.issues };
+      }
+    }
+    throw error;
+  }
 }
 
 /**
@@ -187,4 +212,45 @@ export function definitionToRouteBody(
 /** Governed establishment through the existing V2 route (PG truth). */
 export function establishV2Challenge(body: Record<string, unknown>): Promise<V2EstablishResponse> {
   return apiFetch<V2EstablishResponse>('/v1/challenges', { method: 'POST', body });
+}
+
+export interface GroupBridgeDeps {
+  resolveLegacyId: (legacyId: string) => Promise<string | null>;
+  resolveUuid: (uuid: string) => Promise<string | null>;
+}
+
+const defaultGroupBridge: GroupBridgeDeps = {
+  resolveLegacyId: (legacyId) => resolveTiiziGroupId(legacyId),
+  resolveUuid: (uuid) => resolveLegacyGroupId(uuid),
+};
+
+/**
+ * V2 establishment Group resolution (bounded translation at the V2
+ * application seam): POST /v1/challenges requires the authoritative Tiizi
+ * Group UUID, but Group UI context may carry a Firestore document id.
+ * UUID-shaped input is verified through the identity bridge (never
+ * trusted on shape alone); legacy ids translate to the Tiizi UUID;
+ * unmapped groups reject (fail closed — never a guessed identity).
+ * PostgreSQL membership shadow is never consulted here; live Firestore
+ * authority still decides creation authorization at establishment.
+ */
+export async function resolveEstablishmentGroupId(
+  rawGroupId: string,
+  bridge: GroupBridgeDeps = defaultGroupBridge,
+): Promise<string> {
+  if (!rawGroupId) throw new Error('A Group context is required to create a V2 Challenge.');
+  if (isV2ChallengeId(rawGroupId)) {
+    const confirmed = await bridge.resolveUuid(rawGroupId);
+    if (confirmed) return rawGroupId;
+    throw new Error(
+      'This Group is not linked for V2 Challenge creation (unknown Tiizi Group identity).',
+    );
+  }
+  const translated = await bridge.resolveLegacyId(rawGroupId);
+  if (!translated) {
+    throw new Error(
+      'This Group is not linked for V2 Challenge creation (no Tiizi Group identity found).',
+    );
+  }
+  return translated;
 }
