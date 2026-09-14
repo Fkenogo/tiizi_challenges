@@ -166,6 +166,11 @@ export function validateNewChallenge(input: NewChallengeInput): ChallengeGoverni
     if (input.goal_value !== undefined || input.goal_unit !== undefined) {
       fail('goal_value/goal_unit belong to collective challenges only');
     }
+    // PF-03: reset_on_miss=false is not a valid V2 option (a missed day
+    // resets Current Streak; no ordinary grace period). Absent means true.
+    if (input.reset_on_miss !== undefined && input.reset_on_miss !== true) {
+      fail('reset_on_miss=false is not a valid V2 option (missed days reset Current Streak)');
+    }
     basis.required_consecutive_days = input.required_consecutive_days;
   } else {
     if (input.goal_value !== undefined || input.goal_unit !== undefined) {
