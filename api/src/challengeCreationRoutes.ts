@@ -1,5 +1,5 @@
 /**
- * EBC-01 governed V2 Challenge establishment route — the minimum
+ * PF-03-CORR-001 governed V2 Challenge establishment route — the minimum
  * API/domain boundary for governed V2 Challenge creation.
  *
  * - POST /v1/challenges — establish a V2 Challenge atomically.
@@ -15,10 +15,15 @@
  * - creation authority (live group + live membership + existing Charter
  *   allowMemberChallenges rule) is proven through the injected
  *   ChallengeCreationAuthority — the PG membership shadow cannot authorize;
- * - every activity proves current-version establishment eligibility
- *   (current KCS readiness, never grandfathered provenance) and the exact
- *   (Activity, Metric, Unit) governed tuple; raw IDs/strings bypass nothing
- *   because resolution is server-side from canonical_key + activity_kind;
+ * - semantic validation has ONE authority: validateChallengeDefinition
+ *   (api/src/challengeDefinition.ts). Transport validation here checks
+ *   JSON shape/types only; every meaning decision (identity, version
+ *   currency, compatibility, Components, load basis, Duration mode,
+ *   occurrence, window, type rules) is the validator's. There is no
+ *   second semantic validator on this path;
+ * - Activity identity is the immutable UUID/Code pin (never a display
+ *   name); new definitions pin the CURRENT Activity version (stale
+ *   versions reject; history stays read-only);
  * - without the wired governed dependencies the route fails closed (503)
  *   instead of establishing;
  * - no Firestore Challenge write exists on this path (PG-only); no V1
@@ -30,14 +35,18 @@
 import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
-import { establishChallengeV2 } from './challengeEstablishment.js';
+import { establishChallengeDefinitionV2 } from './challengeEstablishment.js';
+import {
+  validateChallengeDefinition,
+  type ChallengeDefinitionInput,
+} from './challengeDefinition.js';
 import type {
   ChallengeCreationAuthority,
 } from './challengeCreationAuthority.js';
-import { createDbKnowledgeIdentityResolver } from './knowledgePins.js';
-import type { KnowledgeEligibility, KnowledgeEligibilityResolver } from './knowledgeEligibility.js';
-import type { NewChallengeInput } from './challenges.js';
-import type { ActivityConfigInput } from './challengeConfigs.js';
+import type {
+  KnowledgeEligibility,
+  KnowledgeEligibilityResolver,
+} from './knowledgeEligibility.js';
 
 export class ChallengeCreationRouteError extends Error {
   readonly statusCode: number;
@@ -86,6 +95,12 @@ export function mapChallengeCreationError(error: unknown): never {
   }
   if (message.includes('knowledge-eligibility:')) {
     routeFail(422, 'incompatible_measurement', message);
+  }
+  // PF-03-CORR-001: the single semantic authority speaks challenge-
+  // definition. Every meaning rejection maps to 422 with the validator's
+  // machine-readable message (codes in brackets).
+  if (message.includes('challenge-definition:')) {
+    routeFail(422, 'invalid_challenge_definition', message);
   }
   if (message.includes('idempotency key was already used for a different establishment request')) {
     routeFail(409, 'idempotency_conflict', 'Idempotency key was already used for a different request');
@@ -146,6 +161,7 @@ const ALLOWED_TOP_FIELDS = new Set([
   'required_consecutive_days',
   'reset_on_miss',
   'timezone',
+  'temporal_conditions',
   'activities',
   'activate',
   'join_creator',
@@ -155,10 +171,16 @@ const ALLOWED_TOP_FIELDS = new Set([
 const ALLOWED_ACTIVITY_FIELDS = new Set([
   'activity_kind',
   'canonical_key',
+  'version',
   'activity_variant',
   'metric',
   'target_value',
   'unit',
+  'component_ids',
+  'load_basis',
+  'duration_mode',
+  'completion_occurrence',
+  'position',
 ]);
 
 type ValidatorResult = boolean | { error: Error };
@@ -202,6 +224,30 @@ function checkActivity(data: unknown): string | null {
   if (typeof activity.target_value !== 'number') return 'target_value must be a number';
   if (typeof activity.unit !== 'string' || activity.unit.length < 1 || activity.unit.length > 40) {
     return 'unit is required (1..40 chars)';
+  }
+  // PF-03 transport shape (types only — every meaning decision belongs to
+  // validateChallengeDefinition, the single semantic authority).
+  if (activity.version !== undefined
+    && (!Number.isInteger(activity.version) || (activity.version as number) < 1)) {
+    return 'version must be an integer >= 1 when present (it must equal the current Activity version)';
+  }
+  if (activity.component_ids !== undefined
+    && (!Array.isArray(activity.component_ids)
+      || activity.component_ids.some((entry) => typeof entry !== 'string'))) {
+    return 'component_ids must be an array of Component machine identifiers when present';
+  }
+  if (activity.load_basis !== undefined && typeof activity.load_basis !== 'string') {
+    return 'load_basis must be a string when present';
+  }
+  if (activity.duration_mode !== undefined && typeof activity.duration_mode !== 'string') {
+    return 'duration_mode must be a string when present';
+  }
+  if (activity.completion_occurrence !== undefined && typeof activity.completion_occurrence !== 'string') {
+    return 'completion_occurrence must be a string when present';
+  }
+  if (activity.position !== undefined
+    && (!Number.isInteger(activity.position) || (activity.position as number) < 0)) {
+    return 'position must be an integer >= 0 when present';
   }
   return null;
 }
@@ -253,6 +299,12 @@ function checkCreationBody(data: unknown): string | null {
     && (typeof body.timezone !== 'string' || body.timezone.length < 1 || body.timezone.length > 100)) {
     return 'timezone must be an IANA identifier string (1..100 chars) when present';
   }
+  if (body.temporal_conditions !== undefined
+    && (typeof body.temporal_conditions !== 'object'
+      || body.temporal_conditions === null
+      || Array.isArray(body.temporal_conditions))) {
+    return 'temporal_conditions must be an object when present (at|before|after|within only)';
+  }
   if (!Array.isArray(body.activities) || body.activities.length < 1 || body.activities.length > 50) {
     return 'activities must list 1..50 configured activities';
   }
@@ -286,10 +338,16 @@ const activitySchema = {
   properties: {
     activity_kind: { type: 'string', enum: ['fitness', 'wellness'] },
     canonical_key: { type: 'string', minLength: 1, maxLength: 200 },
+    version: { type: 'integer', minimum: 1 },
     activity_variant: { type: 'string', minLength: 1, maxLength: 120 },
     metric: { type: 'string', enum: METRICS },
     target_value: { type: 'number' },
     unit: { type: 'string', minLength: 1, maxLength: 40 },
+    component_ids: { type: 'array', items: { type: 'string' } },
+    load_basis: { type: 'string' },
+    duration_mode: { type: 'string' },
+    completion_occurrence: { type: 'string', maxLength: 500 },
+    position: { type: 'integer', minimum: 0 },
   },
 } as const;
 
@@ -310,6 +368,7 @@ const createBodySchema = {
     required_consecutive_days: { type: 'integer', minimum: 1 },
     reset_on_miss: { type: 'boolean' },
     timezone: { type: 'string', minLength: 1, maxLength: 100 },
+    temporal_conditions: { type: 'object' },
     activities: { type: 'array', minItems: 1, maxItems: 50, items: activitySchema },
     activate: { type: 'boolean' },
     join_creator: { type: 'boolean' },
@@ -320,10 +379,16 @@ const createBodySchema = {
 interface RouteActivity {
   activity_kind: 'fitness' | 'wellness';
   canonical_key: string;
+  version?: number;
   activity_variant?: string;
   metric: string;
   target_value: number;
   unit: string;
+  component_ids?: string[];
+  load_basis?: string;
+  duration_mode?: string;
+  completion_occurrence?: string;
+  position?: number;
 }
 
 interface RouteBody {
@@ -339,6 +404,7 @@ interface RouteBody {
   required_consecutive_days?: number;
   reset_on_miss?: boolean;
   timezone?: string;
+  temporal_conditions?: Record<string, unknown>;
   activities: RouteActivity[];
   activate?: boolean;
   join_creator?: boolean;
@@ -368,65 +434,79 @@ export function registerChallengeCreationRoutes(
         routeFail(503, 'creation_authority_unavailable', 'Challenge creation authority is not configured');
       }
       const body = request.body as RouteBody;
-      const kindByKey = new Map<string, 'fitness' | 'wellness'>();
-      for (const activity of body.activities) {
-        kindByKey.set(activity.canonical_key, activity.activity_kind);
-      }
-      const eligibilityFor = deps.eligibilityFor!;
-      // PF-01-CORR-001: NEW V2 establishment pins by immutable identity
-      // (UUID / Activity Code). The default is the identity seam — never
-      // exact display-name resolution. Callers covering the quarantined
-      // historical name seam inject deps.pinsFor explicitly.
-      const pinsFor = deps.pinsFor
-        ?? ((kind, key) => createDbKnowledgeIdentityResolver(db, kind)(key));
-      const kindAwareEligibility: KnowledgeEligibilityResolver = async (key: string) => {
-        const kind = kindByKey.get(key);
-        if (!kind) return null;
-        return eligibilityFor(kind, key);
-      };
       try {
-        const activities: ActivityConfigInput[] = body.activities.map((activity) => ({
-          canonical_key: activity.canonical_key,
-          activity_variant: activity.activity_variant ?? null,
-          metric: activity.metric,
-          target_value: activity.target_value,
-          unit: activity.unit,
-        }));
-        const input: NewChallengeInput = {
-          group_id: body.group_id,
-          created_by_member_id: member.memberId,
-          challenge_type: body.challenge_type,
+        // PF-03-CORR-001 deliberate transport mapping (snake_case route
+        // naming retained; camelCase definition contract). Shape/types were
+        // checked above; every meaning decision below belongs to
+        // validateChallengeDefinition — the single semantic authority.
+        const definitionInput: ChallengeDefinitionInput = {
+          challengeType: body.challenge_type,
           title: body.title,
-          description: body.description,
-          instructions: body.instructions,
-          start_date: body.start_date,
-          end_date: body.end_date,
-          goal_value: body.goal_value,
-          goal_unit: body.goal_unit,
-          required_consecutive_days: body.required_consecutive_days,
-          reset_on_miss: body.reset_on_miss,
-          timezone: body.timezone,
-          activities,
+          ...(body.description !== undefined ? { description: body.description } : {}),
+          ...(body.instructions !== undefined ? { instructions: body.instructions } : {}),
+          startDate: body.start_date,
+          endDate: body.end_date,
+          ...(body.timezone !== undefined ? { timezone: body.timezone } : {}),
+          ...(body.goal_value !== undefined ? { goalValue: body.goal_value } : {}),
+          ...(body.goal_unit !== undefined ? { goalUnit: body.goal_unit } : {}),
+          ...(body.required_consecutive_days !== undefined
+            ? { requiredConsecutiveDays: body.required_consecutive_days }
+            : {}),
+          ...(body.reset_on_miss !== undefined ? { resetOnMiss: body.reset_on_miss } : {}),
+          ...(body.temporal_conditions !== undefined
+            ? { temporalConditions: body.temporal_conditions }
+            : {}),
+          activities: body.activities.map((activity) => ({
+            activity: activity.canonical_key,
+            ...(activity.version !== undefined ? { version: activity.version } : {}),
+            ...(activity.activity_variant !== undefined
+              ? { activityVariant: activity.activity_variant }
+              : {}),
+            metric: activity.metric,
+            targetValue: activity.target_value,
+            unit: activity.unit,
+            ...(activity.component_ids !== undefined ? { componentIds: activity.component_ids } : {}),
+            ...(activity.load_basis !== undefined ? { loadBasis: activity.load_basis } : {}),
+            ...(activity.duration_mode !== undefined ? { durationMode: activity.duration_mode } : {}),
+            ...(activity.completion_occurrence !== undefined
+              ? { completionOccurrence: activity.completion_occurrence }
+              : {}),
+            ...(activity.position !== undefined ? { position: activity.position } : {}),
+          })),
         };
-        const established = await establishChallengeV2(
+        const normalized = await validateChallengeDefinition(db, definitionInput);
+        // activity_kind is transport only: it must agree with Knowledge
+        // truth (never override it). A mismatch rejects rather than
+        // silently resolving a different domain.
+        for (const [index, activity] of body.activities.entries()) {
+          if (activity.activity_kind !== normalized.activities[index].kind) {
+            routeFail(
+              422,
+              'invalid_challenge_definition',
+              `challenge-definition: [activities[${index}]_kind_mismatch] activity_kind `
+              + `'${activity.activity_kind}' does not match canonical Knowledge kind `
+              + `'${normalized.activities[index].kind}' (kind is server truth, never client input)`,
+            );
+          }
+        }
+        const established = await establishChallengeDefinitionV2(
           db,
           {
-            ...input,
+            definition: normalized,
+            groupId: body.group_id,
+            creatorMemberId: member.memberId,
             activate: body.activate ?? false,
             joinCreator: body.join_creator ?? false,
             ...(body.idempotency_key !== undefined ? { idempotencyKey: body.idempotency_key } : {}),
           },
           {
-            // Governed path: kind-aware pins + kind-aware eligibility from
-            // the proven resolvers. The legacy group-authority seams are
-            // unreachable here (creationAuthority decides); they throw
-            // loudly if ever called.
-            resolveKnowledgePin: async (key: string) => {
-              const kind = kindByKey.get(key);
-              if (!kind) return null;
-              return pinsFor(kind, key);
-            },
-            resolveKnowledgeEligibility: kindAwareEligibility,
+            // Governed path: live Group authority only. Knowledge
+            // resolution already happened inside validateChallengeDefinition
+            // (server-side, current-version, fail-closed); the legacy
+            // group-authority seams are unreachable here (creationAuthority
+            // decides); they throw loudly if ever called.
+            resolveKnowledgePin: async () => null,
+            resolveKnowledgeEligibility: async () => null,
             resolveGroupAuthority: unusedAuthority,
             resolveGroupMembershipAuthority: unusedAuthority,
           },

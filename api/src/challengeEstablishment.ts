@@ -55,11 +55,16 @@ import {
   activateChallenge,
   getChallenge,
   insertChallengeWithConfig,
+  normalizeChallengeRow,
   validateNewChallenge,
   type ChallengeCreationResolvers,
   type ChallengeRow,
   type NewChallengeInput,
 } from './challenges.js';
+import {
+  insertChallengeDefinitionVersion,
+  type NormalizedChallengeDefinition,
+} from './challengeDefinition.js';
 import { insertParticipationEpisode } from './challengeParticipations.js';
 import {
   requireCurrentGroupMember,
@@ -340,6 +345,179 @@ export async function establishChallengeV2(
         challenge: { ...created.challenge, status },
         version: created.version,
         activities: created.activities,
+        activated,
+        creatorParticipationId,
+        idempotentReplay: false,
+      };
+    });
+  } catch (error) {
+    if (error instanceof IdempotencyConflict) {
+      return replayEstablishment(db, error.key, requestHash!);
+    }
+    throw error;
+  }
+}
+
+/**
+ * PF-03-CORR-001 canonical request hash binding an idempotency key to ONE
+ * PF-03 definition establishment. The normalized definition carries every
+ * meaning-bearing field (identity/version pins, metric/unit/target,
+ * Components, load basis, Duration mode, occurrence, temporal conditions,
+ * window/timezone, type configuration), so two semantically different
+ * PF-03 requests can never collide. The 'pf03-v1' discriminator keeps this
+ * namespace disjoint from the legacy establishment hash.
+ */
+export function hashDefinitionRequest(input: {
+  groupId: string;
+  creatorMemberId: string;
+  definition: NormalizedChallengeDefinition;
+  activate: boolean;
+  joinCreator: boolean;
+}): string {
+  const canonical = {
+    path: 'pf03-v1',
+    group_id: input.groupId,
+    created_by_member_id: input.creatorMemberId,
+    definition: input.definition,
+    activate: input.activate,
+    joinCreator: input.joinCreator,
+  };
+  return createHash('sha256').update(JSON.stringify(canonical), 'utf8').digest('hex');
+}
+
+export interface DefinitionEstablishmentInput {
+  /** Already validated by validateChallengeDefinition (the single authority). */
+  definition: NormalizedChallengeDefinition;
+  groupId: string;
+  creatorMemberId: string;
+  /** establishment -> active inside the same transaction when true. */
+  activate: boolean;
+  /** Open a creator participation episode inside the same transaction. */
+  joinCreator: boolean;
+  /** Bounded retry contract (same semantics as the legacy seam). */
+  idempotencyKey?: string;
+}
+
+/**
+ * PF-03-CORR-001 authoritative V2 establishment: the ONLY governed path
+ * that persists new Challenges. The definition arrives already validated
+ * by validateChallengeDefinition (no second semantic validator exists);
+ * this seam proves live Group/creation authority (unchanged logic,
+ * Firestore stays live authority), then commits challenge row + immutable
+ * PF-03 definition v1 (+ idempotency claim, activation, creator join) as
+ * ONE PostgreSQL transaction. No legacy config snapshot is persisted for
+ * a PF-03 establishment; no Firestore Challenge write; no V1 dual-write.
+ */
+export async function establishChallengeDefinitionV2(
+  db: Db,
+  input: DefinitionEstablishmentInput,
+  resolvers: ChallengeCreationResolvers,
+  options: EstablishmentOptions = {},
+): Promise<EstablishmentResult> {
+  const { definition } = input;
+  const idempotencyKey = input.idempotencyKey === undefined
+    ? undefined
+    : validateIdempotencyKey(input.idempotencyKey);
+  const requestHash = idempotencyKey === undefined
+    ? null
+    : hashDefinitionRequest({
+      groupId: input.groupId,
+      creatorMemberId: input.creatorMemberId,
+      definition,
+      activate: input.activate,
+      joinCreator: input.joinCreator,
+    });
+
+  // Live Group authority, outside the transaction (fail closed) — the same
+  // proofs as the legacy seam, unchanged.
+  if (options.creationAuthority) {
+    await requireChallengeCreationAuthority(
+      options.creationAuthority,
+      input.groupId,
+      input.creatorMemberId,
+      'challenge establishment',
+    );
+  } else {
+    const groupAuthority = await resolvers.resolveGroupAuthority(input.groupId);
+    if (!groupAuthority || groupAuthority.status !== 'active') {
+      fail('group is not available for challenge establishment under current Group authority');
+    }
+    await requireCurrentGroupMember(
+      resolvers,
+      input.groupId,
+      input.creatorMemberId,
+      'challenge establishment',
+    );
+  }
+
+  try {
+    return await db.transaction(async (tx) => {
+      const inserted = await tx.query(
+        `INSERT INTO challenges
+           (group_id, created_by_member_id, challenge_type, title, description,
+            instructions, start_date, end_date,
+            goal_value, goal_unit, required_consecutive_days, reset_on_miss,
+            timezone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         RETURNING *`,
+        [
+          input.groupId, input.creatorMemberId, definition.challengeType,
+          definition.title, definition.description, definition.instructions,
+          definition.window.startDate, definition.window.endDate,
+          definition.goalValue, definition.goalUnit,
+          definition.requiredConsecutiveDays, definition.resetOnMiss,
+          definition.window.timezone,
+        ],
+      );
+      const challengeRow = normalizeChallengeRow(inserted.rows[0] as never);
+      const { activities } = await insertChallengeDefinitionVersion(
+        tx,
+        challengeRow.challenge_id,
+        1,
+        definition,
+      );
+      if (idempotencyKey !== undefined && requestHash !== null) {
+        try {
+          await tx.query(
+            `INSERT INTO challenge_establishment_keys
+               (idempotency_key, challenge_id, created_by_member_id, request_hash)
+             VALUES ($1, $2, $3, $4)`,
+            [idempotencyKey, challengeRow.challenge_id, input.creatorMemberId, requestHash],
+          );
+        } catch (error) {
+          if (isUniqueViolation(error)) throw new IdempotencyConflict(idempotencyKey);
+          throw error;
+        }
+      }
+      let status = challengeRow.status;
+      let activated = false;
+      if (input.activate && status !== 'active') {
+        const next = await activateChallenge(tx, challengeRow.challenge_id);
+        status = next.status;
+        activated = true;
+      }
+      let creatorParticipationId: string | null = null;
+      if (input.joinCreator) {
+        const episode = await insertParticipationEpisode(
+          tx,
+          challengeRow.challenge_id,
+          input.creatorMemberId,
+          1,
+        );
+        creatorParticipationId = episode.participation_id;
+      }
+      if (idempotencyKey !== undefined) {
+        await tx.query(
+          `UPDATE challenge_establishment_keys
+           SET creator_participation_id = $2 WHERE idempotency_key = $1`,
+          [idempotencyKey, creatorParticipationId],
+        );
+      }
+      const version = await getChallengeConfig(tx, challengeRow.challenge_id, 1);
+      return {
+        challenge: { ...challengeRow, status },
+        version: version.version,
+        activities: version.activities,
         activated,
         creatorParticipationId,
         idempotentReplay: false,

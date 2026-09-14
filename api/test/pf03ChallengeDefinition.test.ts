@@ -40,7 +40,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { evaluateActivitySatisfaction, setActivityComponents } from '../src/activityComponents.js';
+import {
+  evaluateActivitySatisfaction,
+  resolveActivityVersionPin,
+  setActivityComponents,
+} from '../src/activityComponents.js';
 import {
   buildDefinitionSnapshot,
   insertChallengeDefinitionVersion,
@@ -234,7 +238,7 @@ async function pinnedConfigResolvers(
 }
 
 describe('PF-03 identity and pinning (proofs 1-2)', () => {
-  it('1. UUID/code/version pin resolves the exact Activity version', async () => {
+  it('1. UUID/code pin resolves the current Activity version; stale versions reject', async () => {
     const db = testDb();
     const created = await createKnowledgeItem(
       db,
@@ -250,14 +254,14 @@ describe('PF-03 identity and pinning (proofs 1-2)', () => {
       description: 'A revised governed static hold for definition tests.',
     });
     await setKnowledgeLifecycle(db, created.id, 'published');
-    // By code, pinned to version 2 (the contract version).
+    // By code, explicit current version (3: creation v1, contract v2, revision v3).
     const byCode = await validateChallengeDefinition(db, {
       challengeType: 'competitive',
       title: 'Pin check',
       ...window_(),
       activities: [{
         activity: 'FIT-TST-701',
-        version: 2,
+        version: 3,
         metric: 'duration',
         unit: 'seconds',
         targetValue: 60,
@@ -266,8 +270,8 @@ describe('PF-03 identity and pinning (proofs 1-2)', () => {
     } as ChallengeDefinitionInput);
     expect(byCode.activities[0].knowledgeId).toBe(created.id);
     expect(byCode.activities[0].activityCode).toBe('FIT-TST-701');
-    expect(byCode.activities[0].knowledgeVersion).toBe(2);
-    // By UUID, current version (3 after the content revision).
+    expect(byCode.activities[0].knowledgeVersion).toBe(3);
+    // By UUID, omitted version pins current.
     const byUuid = await validateChallengeDefinition(db, {
       challengeType: 'competitive',
       title: 'Pin check uuid',
@@ -281,20 +285,24 @@ describe('PF-03 identity and pinning (proofs 1-2)', () => {
       }],
     } as ChallengeDefinitionInput);
     expect(byUuid.activities[0].knowledgeVersion).toBe(3);
-    // Unresolvable versions are never invented.
+    // Superseded versions are stale for NEW definitions (never upgraded).
     await expect(validateChallengeDefinition(db, {
       challengeType: 'competitive',
-      title: 'Pin check bad',
+      title: 'Pin check stale',
       ...window_(),
       activities: [{
         activity: 'FIT-TST-701',
-        version: 99,
+        version: 2,
         metric: 'duration',
         unit: 'seconds',
         targetValue: 60,
         durationMode: 'CONTINUOUS',
       }],
-    } as ChallengeDefinitionInput)).rejects.toThrow(/unresolvable_version/);
+    } as ChallengeDefinitionInput)).rejects.toThrow(/stale_activity_version/);
+    // ...while historical versions stay resolvable for reads/audit.
+    const historic = await resolveActivityVersionPin(db, created.id, 2);
+    expect(historic?.compatibleUnits).toEqual(['seconds']);
+    expect((await resolveActivityVersionPin(db, created.id, 99))).toBeNull();
     await expect(validateChallengeDefinition(db, {
       challengeType: 'competitive',
       title: 'Pin check unknown',

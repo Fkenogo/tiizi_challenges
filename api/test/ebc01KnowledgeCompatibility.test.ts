@@ -446,6 +446,7 @@ describe('establishment compatibility enforcement (route)', () => {
     w: EstablishmentWorld,
     items: Array<{
       name: string;
+      code?: string;
       lifecycle?: string;
       grandfathered?: boolean;
       primary?: string[];
@@ -457,14 +458,20 @@ describe('establishment compatibility enforcement (route)', () => {
     const db = testDb();
     for (const item of items) {
       const ready = item.readyContent ?? true;
-      await db.query(
+      // PF-03-CORR-001: PF-03 establishment pins immutable identity (code)
+      // and resolves through the version history. Fixtures that must
+      // establish carry both (like API-created items); rejection-path
+      // fixtures stay minimal.
+      const inserted = await db.query<{ knowledge_id: string }>(
         `INSERT INTO knowledge_items
-           (kind, name, lifecycle, grandfathered, description, category,
+           (kind, name, activity_code, lifecycle, grandfathered, description, category,
             metric_unit, measurement_guidance, safety_notes,
             primary_metrics, secondary_metrics, compatible_units)
-         VALUES ('fitness', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+         VALUES ('fitness', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         RETURNING knowledge_id`,
         [
           item.name,
+          item.code ?? null,
           item.lifecycle ?? 'published',
           item.grandfathered ?? false,
           ready ? 'A governed test movement' : '',
@@ -477,6 +484,24 @@ describe('establishment compatibility enforcement (route)', () => {
           item.units ?? ['reps'],
         ],
       );
+      if (item.code !== undefined) {
+        await db.query(
+          `INSERT INTO knowledge_item_versions
+             (item_id, version, name, category, description, metric_unit,
+              measurement_guidance, safety_notes, content_classes,
+              primary_metrics, secondary_metrics, compatible_units)
+           VALUES ($1, 1, $2, 'Upper Body', 'A governed test movement', 'reps',
+             'Count full-range repetitions', ARRAY['Stop on sharp pain'], '{}',
+             $3, $4, $5)`,
+          [
+            String(inserted.rows[0].knowledge_id),
+            item.name,
+            item.primary ?? ['repetitions'],
+            item.secondary ?? [],
+            item.units ?? ['reps'],
+          ],
+        );
+      }
     }
     return buildApp({
       db,
@@ -624,6 +649,9 @@ describe('establishment compatibility enforcement (route)', () => {
     const app = await establishmentApp(w, [
       {
         name: `grand-ready-${w.token}`,
+        // PF-03-CORR-001: the V2 route pins immutable identity, never the
+        // display name — the fixture carries a code and establishes by it.
+        code: 'FIT-TST-802',
         grandfathered: true,
         primary: ['repetitions'],
         units: ['reps'],
@@ -633,7 +661,7 @@ describe('establishment compatibility enforcement (route)', () => {
       method: 'POST',
       url: '/v1/challenges',
       headers: authHeaders(w.token),
-      payload: body(w, `grand-ready-${w.token}`),
+      payload: body(w, 'FIT-TST-802'),
     });
     // Content satisfies the current KCS gate, so the item establishes even
     // though historical provenance remains grandfathered = TRUE.

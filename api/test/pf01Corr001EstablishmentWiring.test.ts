@@ -237,8 +237,11 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
       payload: body(w, { canonical_key: 'Push-Up' }),
     });
     expect(response.statusCode).toBe(422);
+    // PF-03-CORR-001: the single definition authority rejects (code
+    // consolidated to invalid_challenge_definition; the not_identity
+    // bracket code carries the meaning).
     expect(response.json()).toMatchObject({
-      error: expect.objectContaining({ code: 'knowledge_not_eligible' }),
+      error: expect.objectContaining({ code: 'invalid_challenge_definition' }),
     });
     expect(await challengeCount()).toBe(before);
   });
@@ -260,8 +263,10 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
       },
     });
     expect(response.statusCode).toBe(422);
+    // PF-03-CORR-001: single authority — metric_not_permitted now arrives
+    // as invalid_challenge_definition with a bracket code.
     expect(response.json()).toMatchObject({
-      error: expect.objectContaining({ code: 'incompatible_measurement' }),
+      error: expect.objectContaining({ code: 'invalid_challenge_definition' }),
     });
     expect(await challengeCount()).toBe(before);
   });

@@ -16,8 +16,9 @@
  *
  * Settled semantics encoded here (never invented):
  * - challenge types: collective | competitive | streak (no new types);
- * - identity by UUID / immutable Activity Code / pinned Knowledge
- *   version — display names are never identity;
+ * - identity by UUID / immutable Activity Code / CURRENT pinned Knowledge
+ *   version — display names are never identity; supplied versions must
+ *   equal current (stale versions reject; history stays read-only);
  * - PF-02 exact (Activity, Metric, Unit) compatibility, no Cartesian
  *   inference, six governed Metrics unchanged;
  * - Components: required ids pinned, ALL_REQUIRED only, per-Component
@@ -197,6 +198,8 @@ export interface NormalizedDefinitionActivity {
   knowledgeId: string;
   activityCode: string | null;
   knowledgeVersion: number;
+  /** Fitness or Wellness domain of the pinned Activity version. */
+  kind: 'fitness' | 'wellness';
   metric: CanonicalMetric;
   unit: string;
   /** Challenge-owned target (never stored in Activity Knowledge). */
@@ -312,14 +315,22 @@ async function normalizeActivity(
   if (item.lifecycle !== 'published') {
     fail(`[${where}_not_published] Activity '${item.activityCode ?? knowledgeId}' is not published (Published != Challenge Eligible; drafts never establish)`);
   }
-  // 2. Pinned version: explicit or current; must resolve historically.
-  let version = item.knowledgeVersion;
-  if (raw.version !== undefined) {
-    if (!Number.isInteger(raw.version) || (raw.version as number) < 1) {
-      fail(`[${where}_invalid_version] version must be an integer >= 1 when present`);
-    }
-    version = raw.version as number;
+  // PF-03-CORR-001 current-version gate: NEW Challenge Definitions pin the
+  // CURRENT canonical Activity version only. An omitted version pins
+  // current; a supplied version MUST equal current, otherwise the request
+  // is stale (the preview/template was built against a superseded
+  // contract and must be reviewed — never silently upgraded). Historical
+  // versions remain resolvable for established snapshots, reads, replay
+  // and audit (resolveActivityVersionPin / getGoverningVersion), but they
+  // are not selectable for new creation. Eligibility/readiness is therefore
+  // always evaluated coherently from the same current contract.
+  const currentVersion = item.knowledgeVersion;
+  if (raw.version !== undefined && raw.version !== currentVersion) {
+    fail(`[${where}_stale_activity_version] version ${String(raw.version)} is not current `
+      + `(current version is ${currentVersion}): new Challenges pin the current Activity version; `
+      + `revalidate the definition against v${currentVersion} (silent upgrade is never performed)`);
   }
+  const version = currentVersion;
   const pin = await resolveActivityVersionPin(db, knowledgeId, version);
   if (!pin) {
     fail(`[${where}_unresolvable_version] Activity version ${version} does not resolve (historical versions are never invented)`);
@@ -332,9 +343,15 @@ async function normalizeActivity(
   if (typeof raw.unit !== 'string' || raw.unit.length === 0) {
     fail(`[${where}_invalid_unit] unit is required`);
   }
-  // Target: explicit, finite, >= 0. Challenge-owned (never Knowledge).
+  // Target: explicit and Challenge-owned (never Knowledge). Numeric
+  // Metrics require a meaningful positive target (zero is not a
+  // Challenge); Completion keeps engine-compatible >= 0 with the
+  // occurrence as the participant-facing requirement.
   if (typeof raw.targetValue !== 'number' || !Number.isFinite(raw.targetValue) || raw.targetValue < 0) {
     fail(`[${where}_invalid_target] targetValue must be a finite number >= 0 (the target belongs to the Challenge Definition, never to Activity Knowledge)`);
+  }
+  if (metric !== 'completion' && (raw.targetValue as number) <= 0) {
+    fail(`[${where}_meaningless_target] targetValue must be > 0 for ${metric} (a zero target is not a Challenge; no zero-target exception exists)`);
   }
   const eligibilityInput: ConfigurationEligibilityInput = {
     lifecycle: item.lifecycle,
@@ -402,6 +419,7 @@ async function normalizeActivity(
     knowledgeId,
     activityCode: pin.activityCode,
     knowledgeVersion: version,
+    kind: item.kind,
     metric,
     unit: raw.unit,
     targetValue,

@@ -87,6 +87,8 @@ interface World {
   creatorUid: string;
   creatorMemberId: string;
   knowledgeName: string;
+  /** PF-03 identity: immutable Activity Code pin for the seeded item. */
+  knowledgeCode: string;
 }
 
 function tokensFor(w: World): Record<string, string> {
@@ -99,17 +101,31 @@ function tokensFor(w: World): Record<string, string> {
  * (description, category, metric unit, measurement guidance, safety
  * notes) plus a governed measurement contract.
  */
-async function seedEligibleKnowledge(name: string): Promise<void> {
-  await testDb().query(
+async function seedEligibleKnowledge(name: string, code: string): Promise<void> {
+  const inserted = await testDb().query<{ knowledge_id: string }>(
     `INSERT INTO knowledge_items
-       (kind, name, lifecycle, grandfathered, description, category,
+       (kind, name, activity_code, lifecycle, grandfathered, description, category,
         metric_unit, measurement_guidance, safety_notes,
         primary_metrics, secondary_metrics, compatible_units)
-     VALUES ('fitness', $1, 'published', FALSE,
+     VALUES ('fitness', $1, $2, 'published', FALSE,
        'A governed test movement', 'Upper Body', 'reps',
        'Count full-range repetitions', ARRAY['Stop on sharp pain'],
+       ARRAY['repetitions'], ARRAY[]::TEXT[], ARRAY['reps'])
+     RETURNING knowledge_id`,
+    [name, code],
+  );
+  // PF-03 pins resolve through the immutable version history, so the
+  // fixture carries its version-1 row like API-created items do.
+  const itemId = String(inserted.rows[0].knowledge_id);
+  await testDb().query(
+    `INSERT INTO knowledge_item_versions
+       (item_id, version, name, category, description, metric_unit,
+        measurement_guidance, safety_notes, content_classes,
+        primary_metrics, secondary_metrics, compatible_units)
+     VALUES ($1, 1, $2, 'Upper Body', 'A governed test movement', 'reps',
+       'Count full-range repetitions', ARRAY['Stop on sharp pain'], '{}',
        ARRAY['repetitions'], ARRAY[]::TEXT[], ARRAY['reps'])`,
-    [name],
+    [itemId, name],
   );
 }
 
@@ -120,8 +136,12 @@ async function world(): Promise<World> {
   const creatorMemberId = await seedMember(db, creatorUid);
   const groupId = await seedGroup(db, { name: `Creation Group ${tag}` });
   const knowledgeName = `push-up-${tag}`;
-  await seedEligibleKnowledge(knowledgeName);
-  return { groupId, creatorToken: `token-${tag}`, creatorUid, creatorMemberId, knowledgeName };
+  // PF-03-CORR-001: establishment pins immutable identity (code), never
+  // the display name. Knowledge tables truncate between tests, so one
+  // fixed code per seeded item is sufficient.
+  const knowledgeCode = 'FIT-TST-801';
+  await seedEligibleKnowledge(knowledgeName, knowledgeCode);
+  return { groupId, creatorToken: `token-${tag}`, creatorUid, creatorMemberId, knowledgeName, knowledgeCode };
 }
 
 describe('governed challenge establishment', () => {
@@ -509,7 +529,7 @@ function validBody(w: World, overrides: Record<string, unknown> = {}) {
     activities: [
       {
         activity_kind: 'fitness',
-        canonical_key: w.knowledgeName,
+        canonical_key: w.knowledgeCode,
         metric: 'repetitions',
         target_value: 20,
         unit: 'reps',
