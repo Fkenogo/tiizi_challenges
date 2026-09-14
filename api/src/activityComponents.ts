@@ -22,13 +22,18 @@
  *   Challenge Definition business; PF-02 evaluates each Component report
  *   against the configured requirement with the same threshold comparison
  *   for every Metric.
- * - Weight boundary: Weight stays a governed Metric with the governed
- *   grams/kilograms vocabulary and passes through the exact gate like every
- *   other Metric. No Load Reporting Convention is invented here: no
- *   total/per-side semantics, no auto-authorization of Weight across
- *   Activities, no unit conversion beyond the governed vocabulary (which
- *   itself infers none), no reps x weight scoring. Weight eligibility stays
- *   constrained to Activities whose governed contract declares it.
+ * - Weight boundary (PF-02-CORR-001 settled Founder/Product Load Reporting
+ *   Convention): Weight stays a governed Metric with the governed
+ *   grams/kilograms vocabulary. Every Challenge-eligible Weight
+ *   configuration carries one explicit basis from the five authorized
+ *   Load Reporting Bases (TOTAL_LOADED_IMPLEMENT, PER_IMPLEMENT,
+ *   SINGLE_IMPLEMENT, PER_SIDE, MACHINE_DISPLAYED_LOAD); the Activity
+ *   declares the bases it supports (versioned with its contract) and the
+ *   configuration selects one explicitly. No total/per-side semantics are
+ *   decided beyond the basis label, Weight is never auto-authorized, no
+ *   unit conversion beyond governed g/kg vocabulary (which itself infers
+ *   none), no reps x weight scoring, no body-weight or system-load
+ *   arithmetic, no unequal-paired-load scalars.
  *
  * Deliberately NOT built: generic composite/workflow abstractions, PF-03
  * Challenge Definition and snapshots, wizard, Verification/Recognition/
@@ -39,6 +44,7 @@
 
 import type { Db } from './db.js';
 import {
+  advanceProductContractVersion,
   assessChallengeEligibility,
   KnowledgeError,
   type ChallengeEligibilityAssessmentInput,
@@ -48,6 +54,58 @@ import { isCanonicalMetric, metricForUnit } from './measurementVocabulary.js';
 
 /** The only Component relationship authorized in PF-02. */
 export const COMPONENT_RELATIONSHIP_ALL_REQUIRED = 'ALL_REQUIRED' as const;
+
+/**
+ * PF-02-CORR-001 settled Founder/Product Load Reporting Convention:
+ * the initial authorized vocabulary ONLY. Weight remains one governed
+ * Metric; every Challenge-eligible Weight configuration carries one
+ * explicit basis from this set. No other value is authorized, and no
+ * mapping between bases exists (each basis is opaque: PER_IMPLEMENT
+ * never totalizes, PER_SIDE never converts to a total,
+ * MACHINE_DISPLAYED_LOAD claims no cross-machine equivalence).
+ */
+export const LOAD_REPORTING_BASES = [
+  'TOTAL_LOADED_IMPLEMENT',
+  'PER_IMPLEMENT',
+  'SINGLE_IMPLEMENT',
+  'PER_SIDE',
+  'MACHINE_DISPLAYED_LOAD',
+] as const;
+
+export type LoadReportingBasis = (typeof LOAD_REPORTING_BASES)[number];
+
+const LOAD_BASIS_SET = new Set<string>(LOAD_REPORTING_BASES);
+
+export function isLoadReportingBasis(value: unknown): value is LoadReportingBasis {
+  return typeof value === 'string' && LOAD_BASIS_SET.has(value);
+}
+
+/**
+ * Validate a governed Load Reporting Basis set. `undefined` means "none
+ * declared". Unknown bases reject with 400 unknown_load_basis; values
+ * normalize deterministically (dedupe + sort), mirroring the Metric/Unit
+ * contract normalization. Bases are never inferred from Activity names
+ * and never auto-assigned: only explicitly declared values persist.
+ */
+export function normalizeLoadReportingBases(value: unknown): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'loadReportingBases must be an array');
+  }
+  const out: string[] = [];
+  for (const entry of value) {
+    if (!isLoadReportingBasis(entry)) {
+      throw new KnowledgeError(
+        400,
+        'unknown_load_basis',
+        `loadReportingBases entry '${String(entry)}' is not an authorized Load Reporting Basis `
+        + `(${LOAD_REPORTING_BASES.join('|')})`,
+      );
+    }
+    if (!out.includes(entry)) out.push(entry);
+  }
+  return out.sort();
+}
 
 export type ComponentRelationship = typeof COMPONENT_RELATIONSHIP_ALL_REQUIRED;
 
@@ -139,11 +197,13 @@ function mapComponentRow(row: ComponentRow): ActivityComponentSpec {
 
 /**
  * Governed Component administration: replaces the current Component set of
- * one Knowledge item. Current-state governance (mirrors
- * setMeasurementCompatibility): setting Components never mints a Knowledge
- * version — creation and content revisions snapshot the current set into
- * the version history (see snapshotVersionComponents). Unknown items
- * reject with 404 knowledge_not_found.
+ * one Knowledge item.
+ *
+ * PF-02-CORR-001 contract version integrity: replacing the Component set
+ * is a semantic product-contract mutation, so it atomically advances
+ * current_version and mints a complete snapshot (see
+ * advanceProductContractVersion) instead of leaving the current version
+ * stale. Unknown items reject with 404 knowledge_not_found.
  */
 export async function setActivityComponents(
   db: Db,
@@ -151,28 +211,14 @@ export async function setActivityComponents(
   specs: unknown,
 ): Promise<ActivityComponentSpec[]> {
   const normalized = normalizeComponentSpecs(specs);
-  return db.transaction(async (tx) => {
-    const item = await tx.query<{ knowledge_id: string }>(
-      'SELECT knowledge_id FROM knowledge_items WHERE knowledge_id = $1',
-      [itemId],
+  try {
+    await db.transaction(async (tx) =>
+      advanceProductContractVersion(tx, itemId, { components: normalized }),
     );
-    if (item.rows.length === 0) {
-      throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
-    }
-    await tx.query('DELETE FROM activity_components WHERE item_id = $1', [itemId]);
-    for (const [position, spec] of normalized.entries()) {
-      try {
-        await tx.query(
-          `INSERT INTO activity_components (item_id, component_id, display_name, relationship, position)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [itemId, spec.componentId, spec.displayName, spec.relationship, position],
-        );
-      } catch (error) {
-        throw mapComponentConflict(error);
-      }
-    }
-    return normalized;
-  });
+  } catch (error) {
+    throw mapComponentConflict(error);
+  }
+  return normalized;
 }
 
 /**
@@ -240,6 +286,12 @@ export interface ActivityVersionPin {
   secondaryMetrics: string[];
   compatibleUnits: string[];
   components: ActivityComponentSpec[];
+  /**
+   * PF-02-CORR-001: Load Reporting Bases supported by this version, so a
+   * historical Weight value stays interpretable (e.g. 20 kg +
+   * PER_IMPLEMENT remains "20 kg per implement").
+   */
+  supportedLoadBases: string[];
 }
 
 /**
@@ -269,8 +321,9 @@ export async function resolveActivityVersionPin(
     primary_metrics: unknown;
     secondary_metrics: unknown;
     compatible_units: unknown;
+    load_reporting_bases: unknown;
   }>(
-    `SELECT primary_metrics, secondary_metrics, compatible_units
+    `SELECT primary_metrics, secondary_metrics, compatible_units, load_reporting_bases
      FROM knowledge_item_versions WHERE item_id = $1 AND version = $2`,
     [itemId, version],
   );
@@ -283,6 +336,7 @@ export async function resolveActivityVersionPin(
     primaryMetrics: asList(contract.rows[0].primary_metrics),
     secondaryMetrics: asList(contract.rows[0].secondary_metrics),
     compatibleUnits: asList(contract.rows[0].compatible_units),
+    supportedLoadBases: asList(contract.rows[0].load_reporting_bases),
     components: await listVersionComponents(db, itemId, version),
   };
 }
@@ -373,15 +427,42 @@ export function isComponentRequirementSatisfied(
  * satisfied only when every required Component is satisfied. Reports for
  * undeclared Components are ignored here (the establishment gate in
  * assertComponentCoverage rejects them fail-closed before evaluation).
+ *
+ * PF-02-CORR-001 hardening: as an authoritative domain evaluation path
+ * this function fails closed instead of guessing. Duplicate reports for
+ * one Component, reports for undeclared Components, and malformed
+ * reports (missing identifiers, non-string Metric/Unit, non-finite
+ * values) throw `knowledge-eligibility` errors rather than producing
+ * ambiguous truth — a previously valid establishment coverage never
+ * excuses ambiguous evaluation input.
  */
 export function evaluateActivitySatisfaction(
   components: ActivityComponentSpec[],
   requirement: ComponentRequirement,
   reports: ComponentReport[],
 ): { satisfied: boolean; perComponent: ComponentSatisfaction[] } {
+  const declared = new Set(components.map((component) => component.componentId));
   const byComponent = new Map<string, ComponentReport>();
-  for (const report of reports) {
-    if (!byComponent.has(report.componentId)) byComponent.set(report.componentId, report);
+  for (const [index, report] of reports.entries()) {
+    const where = `reports[${index}]`;
+    if (
+      !report
+      || typeof report.componentId !== 'string'
+      || report.componentId.length === 0
+      || typeof report.metric !== 'string'
+      || typeof report.unit !== 'string'
+      || typeof report.value !== 'number'
+      || !Number.isFinite(report.value)
+    ) {
+      eligibilityFail(`${where} is malformed (Component report requires a componentId, string metric/unit and a finite value) [malformed_component_report]`);
+    }
+    if (!declared.has(report.componentId)) {
+      eligibilityFail(`${where} component '${report.componentId}' is not a declared Component of this Activity [undeclared_component_report]`);
+    }
+    if (byComponent.has(report.componentId)) {
+      eligibilityFail(`${where} duplicates the report for Component '${report.componentId}' (one report per Component; values are never combined) [duplicate_component_report]`);
+    }
+    byComponent.set(report.componentId, report);
   }
   const perComponent = components.map((component) => {
     const report = byComponent.get(component.componentId);
@@ -402,12 +483,23 @@ export interface ConfigurationEligibilityInput extends ChallengeEligibilityAsses
   components: ActivityComponentSpec[];
   /** Component ids addressed by this configuration (undefined = none named). */
   componentIds?: unknown;
+  /**
+   * PF-02-CORR-001: Load Reporting Bases the Activity supports (its
+   * versioned contract set). Only consulted for Weight configurations.
+   */
+  supportedLoadBases: string[];
+  /**
+   * PF-02-CORR-001: explicit Load Reporting Basis carried by this
+   * configuration. Required for Weight, rejected on non-Weight.
+   */
+  loadBasis?: unknown;
 }
 
 /**
  * PF-02 configuration-sensitive eligibility: the PF-01 activity-level
  * assessment (published + KCS-ready + coherent governed contract) PLUS the
- * exact configured (Metric, Unit) tuple PLUS required-Component coverage.
+ * exact configured (Metric, Unit) tuple PLUS required-Component coverage
+ * PLUS the Load Reporting Basis for Weight configurations.
  * Returns every blocking issue; empty means this CONFIGURATION is
  * eligible. A published Activity therefore stays distinguishable from its
  * configurations: Published does not imply every configuration eligible,
@@ -495,6 +587,49 @@ export function assessConfigurationEligibility(
       code: 'missing_required_components',
       reason: `configuration is missing required Components (${missing.join(', ')}) `
         + `(relationship ALL_REQUIRED: every required Component must satisfy the configured requirement)`,
+    });
+  }
+  // PF-02-CORR-001 Load Reporting Convention eligibility. A Weight
+  // configuration is eligible only with an explicit authorized basis the
+  // Activity supports, plus explicit reporting meaning (measurement
+  // guidance and unit semantics); anything else fails closed. Non-Weight
+  // configurations never require a basis — carrying one rejects, so a
+  // stray basis cannot silently attach to an innocent configuration.
+  const supportedBases = Array.isArray(input.supportedLoadBases)
+    ? input.supportedLoadBases.filter((basis) => typeof basis === 'string')
+    : [];
+  if (metric === 'weight') {
+    if (input.loadBasis === undefined) {
+      issues.push({
+        code: 'missing_load_basis',
+        reason: 'Weight configurations require one explicit authorized Load Reporting Basis '
+          + `(${LOAD_REPORTING_BASES.join('|')})`,
+      });
+    } else if (!isLoadReportingBasis(input.loadBasis)) {
+      issues.push({
+        code: 'unknown_load_basis',
+        reason: `Load Reporting Basis '${String(input.loadBasis)}' is not authorized `
+          + `(${LOAD_REPORTING_BASES.join('|')})`,
+      });
+    } else if (!supportedBases.includes(input.loadBasis)) {
+      issues.push({
+        code: 'unsupported_load_basis',
+        reason: `Load Reporting Basis '${input.loadBasis}' is not supported by this Activity `
+          + `(supported: ${[...supportedBases].sort().join(', ') || 'none'})`,
+      });
+    }
+    if (input.snapshot.measurementGuidance.trim().length === 0
+      || input.snapshot.unitSemantics.trim().length === 0) {
+      issues.push({
+        code: 'missing_weight_reporting_meaning',
+        reason: 'Weight configurations require explicit reporting meaning '
+          + '(measurement guidance and unit semantics must both be present)',
+      });
+    }
+  } else if (input.loadBasis !== undefined) {
+    issues.push({
+      code: 'unexpected_load_basis',
+      reason: `Load Reporting Basis '${String(input.loadBasis)}' does not apply to non-Weight configurations`,
     });
   }
   return issues;

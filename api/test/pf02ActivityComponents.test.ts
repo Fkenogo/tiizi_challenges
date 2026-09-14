@@ -50,6 +50,7 @@ import {
   getKnowledgeById,
   reviseKnowledgeItem,
   setKnowledgeLifecycle,
+  setLoadReportingBases,
   setMeasurementCompatibility,
   snapshotItemForReadiness,
   type CreateKnowledgeInput,
@@ -118,6 +119,7 @@ async function configInputFor(
     primaryMetrics: item.primaryMetrics,
     secondaryMetrics: item.secondaryMetrics,
     compatibleUnits: item.compatibleUnits,
+    supportedLoadBases: item.loadReportingBases,
     components: await listActivityComponents(db, id),
     metric: 'duration',
     unit: 'seconds',
@@ -504,16 +506,24 @@ describe('PF-02 historical truth (proof 12)', () => {
     expect(pin1?.version).toBe(1);
     expect(pin1?.components.map((component) => component.componentId)).toEqual(['LEFT', 'RIGHT']);
     expect(pin1?.components[0].relationship).toBe('ALL_REQUIRED');
-    // A content revision pins the current Component set into the new version
+    expect(pin1?.supportedLoadBases).toEqual([]);
+    // PF-02-CORR-001: declaring the governed contract advances the version
+    // (v1 creation -> v2 contract) instead of leaving v1 stale, and a
+    // content revision pins the current Component set into the new version
     // alongside the contract current at revision time.
-    await reviseKnowledgeItem(db, created.id, {
-      ...(durationContent({ activityCode: 'FIT-TST-515' }) as Record<string, unknown>),
-      description: 'A revised governed static side-hold test movement.',
-    });
+    expect((await getKnowledgeById(db, created.id))?.knowledgeVersion).toBe(2);
     const pin2 = await resolveActivityVersionPin(db, created.id, 2);
     expect(pin2?.components.map((component) => component.componentId)).toEqual(['LEFT', 'RIGHT']);
     expect(pin2?.primaryMetrics).toEqual(['duration']);
     expect(pin2?.compatibleUnits).toEqual(['seconds']);
+    await reviseKnowledgeItem(db, created.id, {
+      ...(durationContent({ activityCode: 'FIT-TST-515' }) as Record<string, unknown>),
+      description: 'A revised governed static side-hold test movement.',
+    });
+    expect((await getKnowledgeById(db, created.id))?.knowledgeVersion).toBe(3);
+    const pin3 = await resolveActivityVersionPin(db, created.id, 3);
+    expect(pin3?.components.map((component) => component.componentId)).toEqual(['LEFT', 'RIGHT']);
+    expect(pin3?.primaryMetrics).toEqual(['duration']);
     expect((await listVersionComponents(db, created.id, 1)).map((c) => c.componentId)).toEqual([
       'LEFT',
       'RIGHT',
@@ -535,7 +545,7 @@ describe('PF-02 historical truth (proof 12)', () => {
   });
 });
 
-describe('PF-02 weight boundary (proof 14)', () => {
+describe('PF-02 weight boundary (proof 14; Load Basis governed by PF-02-CORR-001)', () => {
   it('14. Weight stays governed without inventing load semantics', async () => {
     // No new Units entered the governed vocabulary for PF-02.
     expect(GOVERNED_UNITS).not.toContain('pounds');
@@ -559,13 +569,49 @@ describe('PF-02 weight boundary (proof 14)', () => {
       secondaryMetrics: [],
       compatibleUnits: ['grams'],
     });
-    const base = await configInputFor(db, created.id);
-    expect(assessConfigurationEligibility({ ...base, metric: 'weight', unit: 'grams' })).toEqual([]);
+    // PF-02-CORR-001: a Weight configuration without an explicit Load
+    // Reporting Basis fails closed, even when the tuple is governed.
+    const noBasis = await configInputFor(db, created.id);
     expect(
-      assessConfigurationEligibility({ ...base, metric: 'weight', unit: 'kilograms' }).map(
+      assessConfigurationEligibility({ ...noBasis, metric: 'weight', unit: 'grams' }).map(
         (issue) => issue.code,
       ),
+    ).toContain('missing_load_basis');
+    // Declare governed bases (versioned), then the explicit basis proves.
+    await setLoadReportingBases(db, created.id, ['PER_IMPLEMENT', 'PER_SIDE']);
+    const base = await configInputFor(db, created.id);
+    expect(
+      assessConfigurationEligibility({
+        ...base,
+        metric: 'weight',
+        unit: 'grams',
+        loadBasis: 'PER_IMPLEMENT',
+      }),
+    ).toEqual([]);
+    expect(
+      assessConfigurationEligibility({
+        ...base,
+        metric: 'weight',
+        unit: 'grams',
+        loadBasis: 'MACHINE_DISPLAYED_LOAD',
+      }).map((issue) => issue.code),
+    ).toContain('unsupported_load_basis');
+    expect(
+      assessConfigurationEligibility({
+        ...base,
+        metric: 'weight',
+        unit: 'kilograms',
+        loadBasis: 'PER_IMPLEMENT',
+      }).map((issue) => issue.code),
     ).toContain('unit_not_compatible');
+    expect(
+      assessConfigurationEligibility({
+        ...base,
+        metric: 'weight',
+        unit: 'grams',
+        loadBasis: 'PER_HAND_WAVE',
+      }).map((issue) => issue.code),
+    ).toContain('unknown_load_basis');
     // No cross-Metric computation exists: a repetitions report never
     // satisfies a weight requirement (and no reps x weight scoring).
     expect(
