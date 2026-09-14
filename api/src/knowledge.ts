@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { isCanonicalMetric, metricForUnit } from './measurementVocabulary.js';
+import {
+  normalizeComponentSpecs,
+  normalizeLoadReportingBases,
+  snapshotVersionComponents,
+  type ActivityComponentSpec,
+} from './activityComponents.js';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 
@@ -222,6 +228,12 @@ export interface ApiKnowledgeItem {
   primaryMetrics: string[];
   secondaryMetrics: string[];
   compatibleUnits: string[];
+  /**
+   * PF-02-CORR-001: governed Load Reporting Bases this Activity supports
+   * for its Weight configurations (empty when no load semantics declared).
+   * Server-owned, versioned with the product contract.
+   */
+  loadReportingBases: string[];
   measurementGuidance: string;
   unitSemantics: string;
   setup: string;
@@ -297,6 +309,13 @@ export interface KnowledgeContentInput {
 export interface CreateKnowledgeInput extends KnowledgeContentInput {
   kind?: unknown;
   lifecycle?: unknown;
+  /**
+   * PF-02: optional governed Component specs for the new Activity.
+   * Absent/undefined means an ordinary non-component Activity (the PF-01
+   * path, unchanged). Provided specs are validated exactly like
+   * setActivityComponents and snapshotted into version 1.
+   */
+  components?: unknown;
 }
 
 export interface KnowledgeIdentityMapping {
@@ -838,6 +857,7 @@ interface KnowledgeRow {
   primary_metrics: string[] | string | null;
   secondary_metrics: string[] | string | null;
   compatible_units: string[] | string | null;
+  load_reporting_bases: string[] | string | null;
   measurement_guidance: string | null;
   unit_semantics: string | null;
   setup: string | null;
@@ -963,6 +983,7 @@ export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
     primaryMetrics: parseStringList(row.primary_metrics),
     secondaryMetrics: parseStringList(row.secondary_metrics),
     compatibleUnits: parseStringList(row.compatible_units),
+    loadReportingBases: parseStringList(row.load_reporting_bases),
     measurementGuidance: row.measurement_guidance ?? '',
     unitSemantics: row.unit_semantics ?? '',
     setup: row.setup ?? '',
@@ -995,7 +1016,7 @@ const ITEM_COLUMNS = `knowledge_id, activity_code, kind, lifecycle, current_vers
   compatible_units, measurement_guidance, unit_semantics, setup,
   execution, technique_reference, form_cues, common_mistakes, equipment,
   environment, adaptation, protocol_steps, session_framing, completion_meaning,
-  avoidance_condition, semantic_definition, safety_notes, created_at, updated_at`;
+  avoidance_condition, semantic_definition, safety_notes, load_reporting_bases, created_at, updated_at`;
 
 /**
  * Content columns mirrored into knowledge_item_versions. content_classes is
@@ -1010,7 +1031,7 @@ const VERSION_CONTENT_COLUMNS = `name, category, subcategory, difficulty, icon,
   execution, technique_reference, form_cues, common_mistakes, equipment,
   environment, adaptation, protocol_steps, session_framing, completion_meaning,
   avoidance_condition, semantic_definition, safety_notes, content_classes,
-  primary_metrics, secondary_metrics, compatible_units`;
+  primary_metrics, secondary_metrics, compatible_units, load_reporting_bases`;
 
 function contentParams(content: ValidatedKnowledgeContent): unknown[] {
   return [
@@ -1232,11 +1253,16 @@ export function assessChallengeEligibility(
  * - values normalize deterministically (dedupe + sort).
  *
  * Current-state governance (like content classes): setting the contract
- * never mints a Knowledge version and never changes lifecycle or
- * grandfathered state; revisions capture the contract current at revision
+ * never changes lifecycle or grandfathered state; revisions capture the contract current at revision
  * time. Grandfathered items may carry a contract; establishment requires
  * current-version KCS readiness (CORR-001), never non-grandfathered
  * provenance — readability vs establishment, §8.
+ *
+ * PF-02-CORR-001 contract version integrity: setting the contract is a
+ * semantic product-contract mutation, so it atomically advances
+ * current_version and mints a complete contract snapshot (see
+ * advanceProductContractVersion). The live contract can never diverge
+ * from the snapshot identified by current_version.
  */
 export async function setMeasurementCompatibility(
   db: Db,
@@ -1271,17 +1297,38 @@ export async function setMeasurementCompatibility(
       );
     }
   }
-  const updated = await db.query<KnowledgeRow>(
-    `UPDATE knowledge_items
-     SET primary_metrics = $2, secondary_metrics = $3, compatible_units = $4,
-         updated_at = now()
-     WHERE knowledge_id = $1
-     RETURNING ${ITEM_COLUMNS}`,
-    [id, primary, secondary, units],
+  const updated = await db.transaction(async (tx) =>
+    advanceProductContractVersion(tx, id, {
+      primaryMetrics: primary,
+      secondaryMetrics: secondary,
+      compatibleUnits: units,
+    }),
   );
-  const row = updated.rows[0];
-  if (!row) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
-  return mapKnowledgeRow(row);
+  return updated;
+}
+
+/**
+ * PF-02-CORR-001 governed Load Reporting Basis administration: declares
+ * which of the five authorized Load Reporting Bases an Activity supports
+ * for its Weight configurations. Values normalize deterministically
+ * (dedupe + sort); unknown bases reject with 400 unknown_load_basis.
+ * Like the measurement contract, this is a semantic product-contract
+ * mutation: it atomically advances current_version with a complete
+ * snapshot. Non-empty bases require Weight among the declared Metrics
+ * (400 load_basis_without_weight) — Weight eligibility stays constrained
+ * until governed bases are declared, and bases are never auto-assigned.
+ * Unknown items reject with 404 knowledge_not_found.
+ */
+export async function setLoadReportingBases(
+  db: Db,
+  id: string,
+  bases: unknown,
+): Promise<ApiKnowledgeItem> {
+  if (!isUuid(id)) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
+  const normalized = normalizeLoadReportingBases(bases);
+  return db.transaction(async (tx) =>
+    advanceProductContractVersion(tx, id, { loadReportingBases: normalized }),
+  );
 }
 
 function normalizeMetricList(value: unknown, field: string): string[] {
@@ -1389,6 +1436,9 @@ export async function createKnowledgeItem(
   if (lifecycle === 'published') {
     requirePublicationReady(kind, content.contentClasses, snapshotForReadiness(content), false);
   }
+  // PF-02: validate Component specs before any write so a bad Component
+  // set rejects without creating the Activity.
+  const components = normalizeComponentSpecs(input.components);
   return db.transaction(async (tx) => {
     let row: KnowledgeRow;
     try {
@@ -1412,9 +1462,19 @@ export async function createKnowledgeItem(
          (item_id, version, ${VERSION_CONTENT_COLUMNS})
        VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
                $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
-               $30, $31, $32, $33, $34, $35)`,
-      [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content)],
+               $30, $31, $32, $33, $34, $35, $36)`,
+      [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content, EMPTY_CONTRACT, [])],
     );
+    // PF-02: pin the creation-time Component set into version 1 (no-op for
+    // non-component Activities).
+    for (const [position, spec] of components.entries()) {
+      await tx.query(
+        `INSERT INTO activity_components (item_id, component_id, display_name, relationship, position)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [row.knowledge_id, spec.componentId, spec.displayName, spec.relationship, position],
+      );
+    }
+    await snapshotVersionComponents(tx, row.knowledge_id, 1);
     return mapKnowledgeRow(row);
   });
 }
@@ -1459,6 +1519,7 @@ const EMPTY_CONTRACT: MeasurementContractValues = {
 function kcsVersionParams(
   content: ValidatedKnowledgeContent,
   contract: MeasurementContractValues = EMPTY_CONTRACT,
+  loadReportingBases: string[] = [],
 ): unknown[] {
   return [
     content.measurementGuidance,
@@ -1481,7 +1542,105 @@ function kcsVersionParams(
     contract.primaryMetrics,
     contract.secondaryMetrics,
     contract.compatibleUnits,
+    loadReportingBases,
   ];
+}
+
+/**
+ * PF-02-CORR-001 product-contract revision helper: the smallest coherent
+ * implementation of "semantic Activity-contract mutation => atomic version
+ * advancement + complete contract snapshot".
+ *
+ * Runs inside the caller's transaction (which must hold the row lock):
+ * applies the contract and/or Component and/or Load Reporting Basis
+ * changes to the live item, advances current_version exactly once, mints
+ * one immutable version row carrying the live content with the NEW
+ * contract, and snapshots the Component set and locale texts into that
+ * version. Either the whole advancement lands or nothing does — a version
+ * number can never describe two different contracts, and the live
+ * contract can never diverge from the snapshot identified by
+ * current_version.
+ *
+ * Every public administration operation that mutates the canonical
+ * product contract (setMeasurementCompatibility, setActivityComponents,
+ * setLoadReportingBases) funnels through this helper, so no second
+ * versioning system exists.
+ */
+export interface ProductContractChanges {
+  primaryMetrics?: string[];
+  secondaryMetrics?: string[];
+  compatibleUnits?: string[];
+  /** Undefined leaves the Component set untouched; an array replaces it. */
+  components?: ActivityComponentSpec[];
+  loadReportingBases?: string[];
+}
+
+const VERSION_CONTRACT_TAIL = new Set([
+  'primary_metrics',
+  'secondary_metrics',
+  'compatible_units',
+  'load_reporting_bases',
+]);
+
+export async function advanceProductContractVersion(
+  tx: Db,
+  itemId: string,
+  changes: ProductContractChanges,
+): Promise<ApiKnowledgeItem> {
+  const current = await tx.query<KnowledgeRow>(
+    `SELECT ${ITEM_COLUMNS} FROM knowledge_items WHERE knowledge_id = $1 FOR UPDATE`,
+    [itemId],
+  );
+  const row = current.rows[0];
+  if (!row) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
+  const primary = changes.primaryMetrics ?? parseStringList(row.primary_metrics);
+  const secondary = changes.secondaryMetrics ?? parseStringList(row.secondary_metrics);
+  const units = changes.compatibleUnits ?? parseStringList(row.compatible_units);
+  const bases = changes.loadReportingBases ?? parseStringList(row.load_reporting_bases);
+  // Coherence: declared Load Reporting Bases require Weight among the
+  // resulting declared Metrics (mirrors the unit/contract coherence rule).
+  if (bases.length > 0 && ![...primary, ...secondary].includes('weight')) {
+    throw new KnowledgeError(
+      400,
+      'load_basis_without_weight',
+      'Load Reporting Bases require Weight among the declared Metrics '
+      + '(declare the Weight contract first, or clear the bases)',
+    );
+  }
+  const next = Number(row.current_version) + 1;
+  if (changes.components !== undefined) {
+    await tx.query('DELETE FROM activity_components WHERE item_id = $1', [itemId]);
+    for (const [position, spec] of changes.components.entries()) {
+      await tx.query(
+        `INSERT INTO activity_components (item_id, component_id, display_name, relationship, position)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [itemId, spec.componentId, spec.displayName, spec.relationship, position],
+      );
+    }
+  }
+  const updated = await tx.query<KnowledgeRow>(
+    `UPDATE knowledge_items
+     SET primary_metrics = $2, secondary_metrics = $3, compatible_units = $4,
+         load_reporting_bases = $5, current_version = $6, updated_at = now()
+     WHERE knowledge_id = $1
+     RETURNING ${ITEM_COLUMNS}`,
+    [itemId, primary, secondary, units, bases, next],
+  );
+  // Mint the version from the live content columns with the NEW contract:
+  // content travels untouched, so one statement cannot partially succeed.
+  const contentOnly = VERSION_CONTENT_COLUMNS.split(',')
+    .map((column) => column.trim())
+    .filter((column) => !VERSION_CONTRACT_TAIL.has(column))
+    .join(', ');
+  await tx.query(
+    `INSERT INTO knowledge_item_versions (item_id, version, ${VERSION_CONTENT_COLUMNS})
+     SELECT $1, $2, ${contentOnly}, $3, $4, $5, $6
+     FROM knowledge_items WHERE knowledge_id = $1`,
+    [itemId, next, primary, secondary, units, bases],
+  );
+  await snapshotVersionComponents(tx, itemId, next);
+  await snapshotVersionTexts(tx, itemId, next);
+  return mapKnowledgeRow(updated.rows[0]);
 }
 
 /**
@@ -1564,14 +1723,18 @@ export async function reviseKnowledgeItem(
          (item_id, version, ${VERSION_CONTENT_COLUMNS})
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
                $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-               $31, $32, $33, $34, $35, $36)`,
+               $31, $32, $33, $34, $35, $36, $37)`,
       [id, next, ...contentParams(content), ...kcsVersionParams(content, {
         primaryMetrics: revised.primaryMetrics,
         secondaryMetrics: revised.secondaryMetrics,
         compatibleUnits: revised.compatibleUnits,
-      })],
+      }, parseStringList(row.load_reporting_bases))],
     );
     await snapshotVersionTexts(tx, id, next);
+    // PF-02: pin the Component set current at revision time into the new
+    // version (no-op for non-component Activities). Component edits are
+    // current-state administration; the revision is what pins them.
+    await snapshotVersionComponents(tx, id, next);
     return revised;
   });
 }

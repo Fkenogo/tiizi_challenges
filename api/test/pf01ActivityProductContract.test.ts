@@ -542,7 +542,11 @@ describe('PF-01 exemplars, establishment, quarantine (proofs 17-20)', () => {
     const pinByUuid = (await resolveKnowledgePinByIdentity(db, 'fitness', created.id))!;
     expect(pinByCode).toEqual(pinByUuid);
     expect(pinByCode.knowledge_id).toBe(created.id);
-    expect(pinByCode.current_version).toBe(1);
+    // PF-02-CORR-001 contract version integrity: declaring the governed
+    // measurement contract is a semantic product-contract mutation, so it
+    // advances current_version (creation v1 -> contract v2) with a complete
+    // snapshot instead of leaving version 1 describing a new contract.
+    expect(pinByCode.current_version).toBe(2);
 
     // Eligibility proves by code with the governed contract attached.
     const eligibility =

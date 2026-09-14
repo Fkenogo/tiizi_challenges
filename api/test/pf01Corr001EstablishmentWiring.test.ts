@@ -190,10 +190,15 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
       [challengeId],
     );
     expect(configs.rows).toHaveLength(1);
+    // PF-02-CORR-001 contract version integrity: the world() fixture
+    // declares the governed measurement contract after creation, which
+    // advances current_version (v1 creation -> v2 contract). The pinned
+    // version therefore identifies the contract version, not the creation
+    // version.
     expect(configs.rows[0]).toMatchObject({
       canonical_key: PUSH_UP_ACTIVITY_CODE,
       knowledge_id: w.knowledgeId,
-      knowledge_version: 1,
+      knowledge_version: 2,
       metric: 'repetitions',
       target_value: 20,
       unit: 'reps',
@@ -216,7 +221,9 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
       [challengeId],
     );
     expect(String(configs.rows[0].knowledge_id)).toBe(w.knowledgeId);
-    expect(Number(configs.rows[0].knowledge_version)).toBe(1);
+    // PF-02-CORR-001: pinned version follows the contract version (v2),
+    // see test B above.
+    expect(Number(configs.rows[0].knowledge_version)).toBe(2);
   });
 
   it('D. display name alone does NOT establish (no V1 identity on the V2 path)', async () => {
