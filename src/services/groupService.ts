@@ -15,6 +15,9 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { isFirebaseEmulatorPreview } from '../lib/firebaseApp';
+import { isTiiziApiEnabled } from '../api/apiClient';
+import { createPreviewGovernedGroup } from '../api/previewGroupApi';
 import { Group } from '../types';
 import { buildGroupDefaults, isGroupActive } from '../utils/groupLifecycle';
 
@@ -156,6 +159,12 @@ class GroupService {
   }
 
   async createGroup(input: CreateGroupInput): Promise<Group> {
+    if (isFirebaseEmulatorPreview()) {
+      if (!isTiiziApiEnabled()) {
+        throw new Error('Local Firebase preview Group creation requires VITE_TIIZI_API_ENABLED=true');
+      }
+      return createPreviewGovernedGroup(input);
+    }
     const inviteCodeBase = normalizeInviteCode(input.name || 'GROUP');
     const defaults = buildGroupDefaults({
       name: input.name,

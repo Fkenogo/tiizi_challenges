@@ -1,4 +1,7 @@
 import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { configureFirebaseEmulators, shouldUseFirebaseEmulators } from './firebaseEmulator';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,3 +13,16 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+
+const useFirebaseEmulators = shouldUseFirebaseEmulators(
+  import.meta.env.VITE_FIREBASE_USE_EMULATORS,
+  import.meta.env.DEV,
+);
+
+configureFirebaseEmulators(auth, db, useFirebaseEmulators);
+
+export function isFirebaseEmulatorPreview(): boolean {
+  return useFirebaseEmulators;
+}

@@ -64,10 +64,35 @@ function resolveFirebaseProjectId(): string | undefined {
   return raw ? raw : undefined;
 }
 
+function isLocalEmulatorHost(raw: string | undefined): boolean {
+  const value = raw?.trim();
+  if (!value) return false;
+  try {
+    const parsed = new URL(`http://${value}`);
+    return parsed.hostname === '127.0.0.1'
+      || parsed.hostname === 'localhost'
+      || parsed.hostname === '::1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Both services must be explicitly configured for a loopback emulator before
+ * the API bypasses ADC. A partial emulator configuration remains fail-closed
+ * through the normal production credential path.
+ */
+export function isLocalFirebaseEmulatorRuntime(): boolean {
+  return isLocalEmulatorHost(process.env.FIREBASE_AUTH_EMULATOR_HOST)
+    && isLocalEmulatorHost(process.env.FIRESTORE_EMULATOR_HOST);
+}
+
 /**
  * Explicit, idempotent Firebase Admin initialization seam for the standalone API.
  *
  * - Reuses the default app when one already exists (CLI paths, tests, warm runtime).
+ * - In the explicitly local Auth + Firestore emulator runtime, initializes with
+ *   only FIREBASE_PROJECT_ID so ADC is never needed or consulted.
  * - Otherwise initializes exactly once via Application Default Credentials, which
  *   honors GOOGLE_APPLICATION_CREDENTIALS locally and workload identity in production.
  * - Honors FIREBASE_PROJECT_ID when explicitly configured; never hard-codes a project.
@@ -78,6 +103,14 @@ export function ensureFirebaseAdmin(): App {
   if (existing.length > 0) return existing[0] as App;
   const projectId = resolveFirebaseProjectId();
   try {
+    if (isLocalFirebaseEmulatorRuntime()) {
+      if (!projectId) {
+        throw new FirebaseAdminInitError(
+          'Firebase emulator initialization requires FIREBASE_PROJECT_ID.',
+        );
+      }
+      return initializeApp({ projectId });
+    }
     return initializeApp({
       credential: applicationDefault(),
       ...(projectId ? { projectId } : {}),

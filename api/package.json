@@ -6,6 +6,9 @@
   "description": "Provider-neutral Tiizi Application API (Phase A foundation).",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "preview:api": "tsx src/index.ts",
+    "preview:auth:seed": "tsx src/previewAuthSeedCli.ts",
+    "preview:seed": "tsx src/previewMemberSeedCli.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",

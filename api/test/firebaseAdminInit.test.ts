@@ -48,7 +48,12 @@ describe('firebase admin initialization seam', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    for (const key of ['FIREBASE_PROJECT_ID', 'GOOGLE_APPLICATION_CREDENTIALS'] as const) {
+    for (const key of [
+      'FIREBASE_PROJECT_ID',
+      'GOOGLE_APPLICATION_CREDENTIALS',
+      'FIREBASE_AUTH_EMULATOR_HOST',
+      'FIRESTORE_EMULATOR_HOST',
+    ] as const) {
       envBackup[key] = process.env[key];
       delete process.env[key];
     }
@@ -109,6 +114,20 @@ describe('firebase admin initialization seam', () => {
 
     const options = mockInitializeApp.mock.calls[0]?.[0] as Record<string, unknown>;
     expect('projectId' in options).toBe(false);
+  });
+
+  it('does not require ADC when both Firebase services are explicitly local emulators', () => {
+    process.env.FIREBASE_PROJECT_ID = 'tiizi-preview';
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
+    process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+    const app = fakeApp();
+    mockGetApps.mockReturnValue([] as never);
+    mockInitializeApp.mockReturnValue(app as never);
+
+    ensureFirebaseAdmin();
+
+    expect(mockApplicationDefault).not.toHaveBeenCalled();
+    expect(mockInitializeApp).toHaveBeenCalledWith({ projectId: 'tiizi-preview' });
   });
 
   it('keeps existing TokenVerifier behavior for valid, invalid, and subject-less tokens', async () => {

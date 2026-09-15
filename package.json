@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "dev:mobile": "vite --host 127.0.0.1 --port 5173",
+    "preview:emulators": "firebase emulators:start --only auth,firestore",
+    "preview:api": "npm run preview:api --prefix api",
+    "preview:web": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "sync:mockups": "node scripts/syncScreenLayouts.mjs",
@@ -43,6 +46,7 @@
     "test:v2-frontend": "tsx scripts/testV2FrontendGuards.ts",
     "test:pf05-wizard": "tsx scripts/testPF05WizardGuards.ts",
     "test:pf05-wizard-runtime": "vitest run --config vitest.pf05.config.ts",
+    "test:local-preview-harness": "node scripts/testLocalPreviewHarnessGuards.mjs",
     "test:knowledge-aggregates": "tsx scripts/testKnowledgeAggregates.ts",
     "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts",
     "test:group-lifecycle": "tsx scripts/testGroupLifecycle.ts",
