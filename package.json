@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:mobile": "vite --host 127.0.0.1 --port 5173",
-    "preview:emulators": "firebase emulators:start --only auth,firestore",
+    "preview:emulators": "firebase emulators:start --only auth,firestore --project demo-tiizi-pf05-preview",
     "preview:api": "npm run preview:api --prefix api",
     "preview:web": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc -b && vite build",

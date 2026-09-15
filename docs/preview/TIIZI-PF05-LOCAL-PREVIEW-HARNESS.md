@@ -11,7 +11,7 @@ hosted Firebase.
 | --- | --- |
 | Firebase Auth emulator | `127.0.0.1:9099` |
 | Firestore emulator | `127.0.0.1:8080` |
-| Firebase Emulator UI | `http://127.0.0.1:4400` |
+| Firebase Emulator UI | `http://127.0.0.1:4401` |
 | Tiizi API | `http://localhost:4000` |
 | Vite web app | `http://127.0.0.1:5173` |
 
@@ -103,7 +103,7 @@ data or Knowledge; the Wizard continues to use its existing governed flow.
 - The browser connects to emulators only when
   `VITE_FIREBASE_USE_EMULATORS=true` in a development build.
 - The API skips ADC only when both Firebase emulator hosts are explicit,
-  loopback addresses and `FIREBASE_PROJECT_ID=tiizi-preview` is supplied.
+  loopback addresses and `FIREBASE_PROJECT_ID=demo-tiizi-pf05-preview` is supplied.
 - The Auth seed rejects non-local or non-9099 targets and never logs its
   password.
 - The Member seed rejects a non-local PostgreSQL hostname and never writes

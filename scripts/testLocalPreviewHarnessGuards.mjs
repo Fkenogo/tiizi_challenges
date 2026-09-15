@@ -14,10 +14,13 @@ function check(name, condition) {
 console.log('PF-05 local preview harness guards');
 
 const firebase = JSON.parse(read('firebase.json'));
+const packageJson = JSON.parse(read('package.json'));
 check('Firebase Auth emulator uses 9099', firebase.emulators?.auth?.port === 9099);
 check('Firestore emulator uses 8080', firebase.emulators?.firestore?.port === 8080);
-check('Emulator UI uses 4400, not API port 4000', firebase.emulators?.ui?.port === 4400
+check('Emulator UI uses 4401, not API port 4000', firebase.emulators?.ui?.port === 4401
   && firebase.emulators?.ui?.port !== 4000);
+check('emulator command selects the isolated demo project', packageJson.scripts?.['preview:emulators']
+  === 'firebase emulators:start --only auth,firestore --project demo-tiizi-pf05-preview');
 
 const app = read('src/lib/firebaseApp.ts');
 check('frontend emulator use requires explicit local flag', app.includes('VITE_FIREBASE_USE_EMULATORS')
@@ -44,7 +47,8 @@ check('no EBC-05 UI code is imported into the harness', !/ebc-05|EBC-05|V2Establ
 
 const previewEnv = read('.env.preview.example');
 const apiPreviewEnv = read('api/.env.preview.example');
-check('preview examples contain only local placeholder Firebase config', previewEnv.includes('VITE_FIREBASE_PROJECT_ID=tiizi-preview')
+check('preview examples use the isolated demo Firebase project', previewEnv.includes('VITE_FIREBASE_PROJECT_ID=demo-tiizi-pf05-preview')
+  && apiPreviewEnv.includes('FIREBASE_PROJECT_ID=demo-tiizi-pf05-preview')
   && !/GOOGLE_APPLICATION_CREDENTIALS|firebase-adminsdk|AIza/.test(`${previewEnv}\n${apiPreviewEnv}`));
 
 if (failures > 0) {
