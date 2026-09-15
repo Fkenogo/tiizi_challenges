@@ -94,10 +94,33 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-[12px] font-bold text-red-600">{message}</p>;
 }
 
-export default function V2CreateChallengeWizard() {
+export interface V2CreateChallengeWizardProps {
+  /**
+   * Local PF-05 component review only. This changes presentation/navigation
+   * containment, not the Composer, Definition, establishment, or Group
+   * authority paths.
+   */
+  componentPreview?: boolean;
+  /** Firestore Group identity returned by the preview's verified context. */
+  previewGroupId?: string;
+  previewGroupName?: string;
+  previewReturnPath?: string;
+  previewResultPath?: string;
+}
+
+export default function V2CreateChallengeWizard({
+  componentPreview = false,
+  previewGroupId,
+  previewGroupName,
+  previewReturnPath,
+  previewResultPath,
+}: V2CreateChallengeWizardProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const groupId = searchParams.get('groupId') ?? '';
+  const groupId = previewGroupId ?? searchParams.get('groupId') ?? '';
+  const returnPath = componentPreview && previewReturnPath
+    ? previewReturnPath
+    : '/app/challenges/v2';
   const enabled = isV2ChallengesEnabled();
 
   const [entered, setEntered] = useState(false);
@@ -286,13 +309,17 @@ export default function V2CreateChallengeWizard() {
       const response = await establishV2Challenge(
         definitionToRouteBody(previewState.definition, establishmentGroupId),
       );
-      navigate(`/app/challenge/v2/${response.challengeId}`);
+      navigate(
+        componentPreview && previewResultPath
+          ? previewResultPath.replace(':id', response.challengeId)
+          : `/app/challenge/v2/${response.challengeId}`,
+      );
     } catch (error) {
       setFinishError(error instanceof Error ? error.message : 'Establishment failed.');
     } finally {
       setFinishing(false);
     }
-  }, [previewState, finishing, establishmentGroupId, groupError, navigate]);
+  }, [previewState, finishing, establishmentGroupId, groupError, navigate, componentPreview, previewResultPath]);
 
   const stageIndex = useMemo(() => WIZARD_STAGE_ORDER.indexOf(stage), [stage]);
   const blocking = useMemo(() => missingForStage(draft, stage), [draft, stage]);
@@ -303,12 +330,12 @@ export default function V2CreateChallengeWizard() {
         <div className="st-frame st-bottom-safe pb-[108px]">
           <main className="st-form-max mt-10 text-center">
             <p className="text-[15px] font-bold text-slate-900">V2 Challenge creation is not enabled.</p>
-            <button className="st-btn-primary mt-6" onClick={() => navigate('/app/challenges/v2')}>
+            <button className="st-btn-primary mt-6" onClick={() => navigate(returnPath)}>
               Back to V2 Challenges
             </button>
           </main>
         </div>
-        <BottomNav active="home" />
+        {!componentPreview && <BottomNav active="home" />}
       </Screen>
     );
   }
@@ -321,13 +348,18 @@ export default function V2CreateChallengeWizard() {
             <button
               aria-label="Back"
               className="h-10 w-10 flex items-center justify-center"
-              onClick={() => navigate('/app/challenges/v2')}
+              onClick={() => navigate(returnPath)}
             >
               <ArrowLeft size={22} className="text-slate-900" />
             </button>
             <h1 className="st-page-title">New V2 Challenge</h1>
             <span className="w-10" />
           </header>
+          {componentPreview && (
+            <p className="st-form-max mt-1 text-[12px] font-semibold text-slate-500">
+              Component preview · {previewGroupName ?? 'Verified preview Group'}
+            </p>
+          )}
           {entered && (
             <div className="st-form-max mt-2 flex items-center gap-1" aria-label="Wizard progress">
               {WIZARD_STAGE_ORDER.filter((s) => s !== 'FINISH').map((s) => (
@@ -821,7 +853,7 @@ export default function V2CreateChallengeWizard() {
           )}
         </main>
       </div>
-      <BottomNav active="home" />
+      {!componentPreview && <BottomNav active="home" />}
     </Screen>
   );
 }

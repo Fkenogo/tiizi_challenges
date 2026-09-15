@@ -7,6 +7,7 @@ import { RequireOnboardedRoute } from './components/Auth/RequireOnboardedRoute';
 import { RequireOnboardingRoute } from './components/Auth/RequireOnboardingRoute';
 import { AdminRoute } from './components/Auth/AdminRoute';
 import { RequireGroupRoute } from './components/Auth/RequireGroupRoute';
+import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import { LoadingSpinner } from './components/Mobile';
@@ -14,6 +15,7 @@ import { useAuth } from './hooks/useAuth';
 import { dailyGoalsService } from './services/dailyGoalsService';
 import { groupService } from './services/groupService';
 import { challengeService } from './services/challengeService';
+import { isV2ComponentPreviewEnabled } from './api/v2ComponentPreviewMode';
 
 const ExerciseLibraryScreen = lazy(() => import('./features/Exercises/ExerciseLibraryScreen'));
 const WellnessActivitiesLibraryScreen = lazy(() => import('./features/Wellness/WellnessActivitiesLibraryScreen'));
@@ -31,6 +33,9 @@ const ChallengeDetailScreen = lazy(() => import('./features/Challenges/Challenge
 const V2ChallengesScreen = lazy(() => import('./features/Challenges/V2ChallengesScreen'));
 const V2ChallengeDetailScreen = lazy(() => import('./features/Challenges/V2ChallengeDetailScreen'));
 const V2CreateChallengeWizard = lazy(() => import('./features/Challenges/V2/V2CreateChallengeWizard'));
+const ChallengeCreationComponentPreview = import.meta.env.DEV
+  ? lazy(() => import('./features/Challenges/V2/ChallengeCreationComponentPreview'))
+  : null;
 const CreateChallengeWizard = lazy(() => import('./features/Challenges/CreateChallengeWizard'));
 const SuggestedChallengesScreen = lazy(() => import('./features/Challenges/SuggestedChallengesScreen'));
 const WellnessTemplateGalleryScreen = lazy(() => import('./features/Challenges/WellnessTemplateGalleryScreen'));
@@ -217,6 +222,18 @@ function App() {
                 <Route path="/privacy" element={<PrivacyScreen />} />
                 <Route path="/app/login" element={<LoginScreen />} />
                 <Route path="/app/signup" element={<SignupScreen />} />
+                {isV2ComponentPreviewEnabled() && ChallengeCreationComponentPreview && (
+                  <>
+                    <Route
+                      path="/preview/v2/challenge-creation"
+                      element={<ProtectedRoute><ChallengeCreationComponentPreview /></ProtectedRoute>}
+                    />
+                    <Route
+                      path="/preview/v2/challenge-creation/result/:id"
+                      element={<ProtectedRoute><V2ChallengeDetailScreen componentPreview previewReturnPath="/preview/v2/challenge-creation" /></ProtectedRoute>}
+                    />
+                  </>
+                )}
                 <Route path="/app/flow" element={<RequireOnboardedRoute><FlowHubScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/quick-actions" element={<RequireOnboardedRoute><QuickActionsScreen /></RequireOnboardedRoute>} />
                 <Route path="/app/welcome" element={<WelcomeScreen />} />

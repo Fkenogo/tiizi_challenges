@@ -29,11 +29,20 @@ import {
 import { isV2ChallengesEnabled } from '../../api/v2ChallengeMode';
 import { mapV2ApiError } from '../../services/v2ActivityPayload';
 
-function V2ChallengeDetailScreen() {
+interface V2ChallengeDetailScreenProps {
+  /** Local PF-05 component review: no V1 navigation or participation actions. */
+  componentPreview?: boolean;
+  previewReturnPath?: string;
+}
+
+function V2ChallengeDetailScreen({ componentPreview = false, previewReturnPath }: V2ChallengeDetailScreenProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const enabled = isV2ChallengesEnabled();
+  const returnPath = componentPreview && previewReturnPath
+    ? previewReturnPath
+    : '/app/challenges/v2';
   const { data: detail, isLoading, isError, refetch } = useV2ChallengeDetail(enabled ? id : undefined);
   const join = useV2JoinChallenge();
   const withdraw = useV2WithdrawChallenge();
@@ -100,12 +109,12 @@ function V2ChallengeDetailScreen() {
         <div className="st-frame st-bottom-safe pb-[108px]">
           <main className="st-form-max mt-10 text-center">
             <p className="text-[15px] font-bold text-slate-900">V2 Challenges are not enabled.</p>
-            <button className="st-btn-primary mt-6" onClick={() => navigate('/app/challenges')}>
+            <button className="st-btn-primary mt-6" onClick={() => navigate(returnPath)}>
               Back to Challenges
             </button>
           </main>
         </div>
-        <BottomNav active="home" />
+        {!componentPreview && <BottomNav active="home" />}
       </Screen>
     );
   }
@@ -119,7 +128,7 @@ function V2ChallengeDetailScreen() {
       <div className="st-frame st-bottom-safe pb-[108px]">
         <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200 pb-3">
           <header className="st-form-max flex items-center justify-between">
-            <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate('/app/challenges/v2')}>
+            <button className="h-10 w-10 flex items-center justify-center" onClick={() => navigate(returnPath)}>
               <ArrowLeft size={22} className="text-slate-900" />
             </button>
             <h1 className="st-page-title truncate">{detail?.title ?? 'V2 Challenge'}</h1>
@@ -142,6 +151,22 @@ function V2ChallengeDetailScreen() {
               <p className="text-[12px] text-slate-500">
                 {detail.challengeType} · {detail.status} · {detail.startDate} → {detail.endDate}
               </p>
+
+              {componentPreview && (
+                <section aria-label="Challenge creation result" className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.1em] text-primary">Established challenge</p>
+                  <dl className="mt-2 space-y-1 text-[13px] text-slate-700">
+                    <div><dt className="inline font-bold">Identity: </dt><dd className="inline">{detail.challengeId}</dd></div>
+                    <div><dt className="inline font-bold">Group: </dt><dd className="inline">{detail.groupId}</dd></div>
+                    <div><dt className="inline font-bold">Schedule: </dt><dd className="inline">{detail.config.period.startDate} → {detail.config.period.endDate}</dd></div>
+                    <div><dt className="inline font-bold">Timezone: </dt><dd className="inline">{detail.config.timezone}</dd></div>
+                    {detail.config.requiredConsecutiveDays != null && (
+                      <div><dt className="inline font-bold">Streak requirement: </dt><dd className="inline">{detail.config.requiredConsecutiveDays} consecutive days</dd></div>
+                    )}
+                    <div><dt className="inline font-bold">State: </dt><dd className="inline">{detail.status}</dd></div>
+                  </dl>
+                </section>
+              )}
 
               {detail.challengeType === 'collective' && (
                 <div className="rounded-xl bg-primary/5 border border-primary/20 px-4 py-4 flex flex-col gap-2">
@@ -210,7 +235,7 @@ function V2ChallengeDetailScreen() {
                 </div>
               </section>
 
-              {!participation && (
+              {!componentPreview && !participation && (
                 <button
                   className="w-full h-12 rounded-2xl bg-primary text-white text-[15px] font-black transition-opacity active:opacity-80"
                   disabled={join.isPending}
@@ -219,7 +244,7 @@ function V2ChallengeDetailScreen() {
                   {join.isPending ? 'Joining…' : 'Join Challenge'}
                 </button>
               )}
-              {activeParticipation && logLinks.length > 0 && (
+              {!componentPreview && activeParticipation && logLinks.length > 0 && (
                 <div className="space-y-2">
                   {logLinks.map((link) => (
                     <button
@@ -232,7 +257,7 @@ function V2ChallengeDetailScreen() {
                   ))}
                 </div>
               )}
-              {participation && participation.status === 'active' && (
+              {!componentPreview && participation && participation.status === 'active' && (
                 <button
                   className="w-full h-12 rounded-2xl border border-red-200 bg-red-50 text-red-600 text-[14px] font-bold disabled:opacity-60"
                   disabled={withdraw.isPending}
@@ -245,7 +270,7 @@ function V2ChallengeDetailScreen() {
           )}
         </main>
       </div>
-      <BottomNav active="home" />
+      {!componentPreview && <BottomNav active="home" />}
     </Screen>
   );
 }

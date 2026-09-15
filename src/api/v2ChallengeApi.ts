@@ -65,12 +65,14 @@ export interface V2ConfigActivity {
 }
 
 export interface V2ChallengeDetail extends V2ChallengeSummary {
+  timezone: string;
   instructions: string;
   activatedAt: string | null;
   endedAt: string | null;
   config: {
     version: number;
     period: { startDate: string; endDate: string };
+    timezone: string;
     requiredConsecutiveDays: number | null;
     activities: V2ConfigActivity[];
   };

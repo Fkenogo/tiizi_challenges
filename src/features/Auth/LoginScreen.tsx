@@ -6,6 +6,7 @@ import { Screen } from '../../components/Layout';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../lib/firebaseAuth';
+import { isV2ComponentPreviewEnabled } from '../../api/v2ComponentPreviewMode';
 import { getFirebaseAuthErrorCode, isPasswordResetVisibleError, normalizeFirebaseAuthError } from '../../utils/firebaseAuthErrors';
 
 const EMAIL_PATTERN = /\S+@\S+\.\S+/;
@@ -107,7 +108,9 @@ function LoginScreen() {
   const nextPath = (() => {
     const raw = params.get('next');
     if (!raw) return '/app/home';
-    return raw.startsWith('/app') ? raw : '/app/home';
+    const localComponentPreview = isV2ComponentPreviewEnabled()
+      && raw.startsWith('/preview/');
+    return raw.startsWith('/app') || localComponentPreview ? raw : '/app/home';
   })();
 
   useEffect(() => {

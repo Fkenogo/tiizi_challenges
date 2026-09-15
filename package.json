@@ -46,6 +46,8 @@
     "test:v2-frontend": "tsx scripts/testV2FrontendGuards.ts",
     "test:pf05-wizard": "tsx scripts/testPF05WizardGuards.ts",
     "test:pf05-wizard-runtime": "vitest run --config vitest.pf05.config.ts",
+    "test:pf05-component-preview": "node scripts/testPF05ComponentPreviewGuards.mjs",
+    "test:pf05-component-preview:production": "node scripts/testPF05ComponentPreviewProductionBuild.mjs",
     "test:local-preview-harness": "node scripts/testLocalPreviewHarnessGuards.mjs",
     "test:knowledge-aggregates": "tsx scripts/testKnowledgeAggregates.ts",
     "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts",

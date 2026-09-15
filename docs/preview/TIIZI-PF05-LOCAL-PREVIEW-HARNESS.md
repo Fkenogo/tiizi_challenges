@@ -66,7 +66,7 @@ Terminal 3:
 npm run preview:web
 ```
 
-## Seed identities and Members
+## Seed identities, Members, and the governed preview Group
 
 With the emulators running, run these once (both are idempotent):
 
@@ -74,6 +74,7 @@ With the emulators running, run these once (both are idempotent):
 TIIZI_PREVIEW_PASSWORD="$TIIZI_PREVIEW_PASSWORD" npm run preview:auth:seed --prefix api
 DATABASE_URL='postgresql://theo@127.0.0.1:5432/tiizi_pf05_preview' npm run preview:seed --prefix api
 DATABASE_URL='postgresql://theo@127.0.0.1:5432/tiizi_pf05_preview' npm run preview:seed --prefix api -- --apply
+DATABASE_URL='postgresql://theo@127.0.0.1:5432/tiizi_pf05_preview' npm run preview:component-group --prefix api
 ```
 
 The member seed is a dry run unless `--apply` is present. The Auth seed
@@ -85,18 +86,28 @@ configuration and creates only:
 | `preview-founder-01` | `founder1@tiizi.local` |
 | `preview-founder-02` | `founder2@tiizi.local` |
 
+`preview:component-group` is idempotent and creates no Challenge data. It
+uses the existing governed Group mutation authority: a live Firestore Group
+and active owner Membership are created first, then PostgreSQL is synchronized
+as a shadow/identity anchor. Before every browser preview, the API verifies
+that same live Firestore owner Membership again; a PG row alone never grants
+context or establishment permission.
+
 ## Founder preview path
 
-Sign in at the local web app with either synthetic email and the password
-exported for the Auth seed. First create a Group from the existing **Create
-Group** screen. In explicit emulator mode, that screen uses the existing
-governed `POST /v1/groups` API route: it writes the live Firestore Group and
-owner Membership first, then synchronizes the PostgreSQL shadow. No Group is
-seeded in PostgreSQL, and no Firestore authority is bypassed.
+Open this exact local component URL:
 
-Then select the Group and enter the PF-05 Wizard at
-`/app/challenges/v2/create`. The harness deliberately does not seed Challenge
-data or Knowledge; the Wizard continues to use its existing governed flow.
+```text
+http://127.0.0.1:5173/preview/v2/challenge-creation
+```
+
+If not already signed in, the local-only route redirects to Login and returns
+directly to the component after authentication. No legacy Home, BottomNav,
+Groups UI, Challenge list, or Create Group journey is rendered or required.
+The component uses the real PF-04 Composer, PF-03 validation, governed V2
+establishment route, and V2 detail read model. On establishment it opens a
+neutral result inspection view at
+`/preview/v2/challenge-creation/result/:id`, never the V1 Challenge UI.
 
 ## Safety boundaries
 
@@ -104,6 +115,10 @@ data or Knowledge; the Wizard continues to use its existing governed flow.
   `VITE_FIREBASE_USE_EMULATORS=true` in a development build.
 - The API skips ADC only when both Firebase emulator hosts are explicit,
   loopback addresses and `FIREBASE_PROJECT_ID=demo-tiizi-pf05-preview` is supplied.
+- The component route is emitted only with both a development build and
+  `VITE_TIIZI_V2_COMPONENT_PREVIEW=true`; its API context route is registered
+  only under the same strict demo-emulator runtime. Production has neither
+  route, and the fixture command rejects every non-demo/non-loopback target.
 - The Auth seed rejects non-local or non-9099 targets and never logs its
   password.
 - The Member seed rejects a non-local PostgreSQL hostname and never writes

@@ -188,6 +188,20 @@ async function renderWizard(): Promise<TestNode> {
   return renderer.root;
 }
 
+async function renderComponentPreviewWizard(): Promise<TestNode> {
+  const { default: Wizard } = await import('./V2CreateChallengeWizard.js');
+  let renderer: TestRenderer.ReactTestRenderer | undefined;
+  await act(async () => {
+    renderer = TestRenderer.create(
+      <MemoryRouter initialEntries={['/preview/v2/challenge-creation']}>
+        <Wizard componentPreview previewGroupId="legacy-group-1" previewGroupName="Preview Group" />
+      </MemoryRouter>,
+    );
+  });
+  if (!renderer) throw new Error('renderer not created');
+  return renderer.root;
+}
+
 async function advanceToReview(root: TestNode): Promise<void> {
   clickButton(root, 'Start from scratch');
   await act(async () => {});
@@ -322,5 +336,12 @@ describe('PF-05-CORR wizard runtime flow', () => {
     await act(async () => {});
     await act(async () => {});
     expect(buttonTexts(root)).toContain('Finish & Create Challenge');
+  });
+
+  it('renders the real Wizard as a neutral component preview without legacy navigation', async () => {
+    const root = await renderComponentPreviewWizard();
+
+    expect(root.findAllByType('nav')).toHaveLength(0);
+    expect(root.findAllByType('p').map((node) => nodeText(node)).join(' ')).toContain('Preview Group');
   });
 });

@@ -21,6 +21,10 @@ import {
   registerGroupMutationRoutes,
   type GroupMutationRouteDeps,
 } from './groupMutationRoutes.js';
+import {
+  registerPreviewComponentRoutes,
+  type PreviewComponentRouteDeps,
+} from './previewComponentRoutes.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -37,6 +41,8 @@ export interface AppDeps {
   groupMutation?: GroupMutationRouteDeps;
   /** EBC-01 governed Challenge establishment. Absent: route fails closed. */
   challengeCreation?: ChallengeCreationRouteDeps;
+  /** Local PF-05 component preview only. Absent means its route does not exist. */
+  previewComponent?: PreviewComponentRouteDeps;
 }
 
 export function buildApp(deps: AppDeps) {
@@ -113,5 +119,8 @@ export function buildApp(deps: AppDeps) {
   // PF-05 Wizard seams (read-only): Composer activity options + Composer
   // draft preview through the single PF-03 validator. Writes nothing.
   registerChallengeDefinitionRoutes(app, deps.db);
+  if (deps.previewComponent) {
+    registerPreviewComponentRoutes(app, deps.db, deps.previewComponent);
+  }
   return app;
 }
