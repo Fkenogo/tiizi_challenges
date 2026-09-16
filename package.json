@@ -42,6 +42,7 @@
     "test:knowledge-authority-mode": "tsx scripts/testKnowledgeAuthorityMode.ts",
     "test:v2-frontend": "tsx scripts/testV2FrontendGuards.ts",
     "test:v2-experience-boundary": "node scripts/testV2ExperienceBoundary.mjs",
+    "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:knowledge-aggregates": "tsx scripts/testKnowledgeAggregates.ts",
     "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts",
     "test:group-lifecycle": "tsx scripts/testGroupLifecycle.ts",

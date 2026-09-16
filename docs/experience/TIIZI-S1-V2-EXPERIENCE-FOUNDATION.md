@@ -2,7 +2,8 @@
 
 **Work package:** S1 — V2 Experience Foundation (first authorised experience slice)
 
-**Status:** IMPLEMENTED candidate — verification + Founder preview pending (NOT marked COMPLETE)
+**Status:** IMPLEMENTED candidate / AWAITING FOUNDER EXPERIENCE REVIEW
+(CORR-001 V1-auth-experience-leak correction applied on this branch; NOT marked COMPLETE; NOT merged)
 
 **Date:** 2026-09-16
 
@@ -35,10 +36,11 @@ NEW V2 SHELL ≠ V1 SHELL MODIFIED TO LOOK LIKE THE PROTOTYPE.
 | Brand carry-forward | `src/v2/brand.tsx` | Class A (see §3) |
 | Localisation scaffolding | `src/v2/i18n/V2Locale.tsx` | English first (`V2LocaleProvider`, `useV2Locale`, friendly day labels) |
 | Group context | `src/v2/group/V2GroupScope.tsx` | Contextual scope only; no global active-group state |
-| Auth/entry boundary | `V2Authenticated` in `src/v2/routes.tsx` | `ProtectedRoute` only (Class C); entry lands at `/v2/today` |
+| Auth/entry boundary | `V2Authenticated` in `src/v2/auth/V2AuthGuard.tsx` + public `src/v2/auth/V2SignInPage.tsx` / `V2SignUpPage.tsx` | New V2 auth experience (CORR-001); session truth from shared `ProtectedRoute` with an explicit V2 entry; entry lands at `/v2/today` |
 
 **Route structure (all under `/v2`, none under `/app`):**
 
+- Public V2 auth experience: `/v2/sign-in`, `/v2/sign-up` (new V2 surfaces; unauthenticated `/v2/*` lands on `/v2/sign-in?next=…` and returns to the requested V2 route)
 - Member: `/v2/today`, `/v2/challenges`, `/v2/groups`, `/v2/guide`, `/v2/profile`, `/v2/notifications` (`/v2` → `/v2/today`)
 - Operator: `/v2/operator/overview|users|groups|activities|challenges|templates|review|support|content|access|health|audit|settings` (`/v2/operator` → `overview`)
 
@@ -57,23 +59,39 @@ commercial model (S10). Placeholders state the next slice where useful.
 - **B. NEUTRAL TECHNICAL PRIMITIVE:** `ProtectedRoute` (+ `useAuth`/`AuthContext` session),
   `react-router-dom`, `@tanstack/react-query` setup (untouched), Tailwind design tokens.
   New V2 presentational primitives in `src/v2/components/` (no V1 experience import).
-- **C. GOVERNED PRODUCT/DOMAIN CAPABILITY:** Firebase Auth identity boundary (via
-  `ProtectedRoute` → existing login at `/app/login`). No domain read models bound yet.
+- **C. GOVERNED PRODUCT/DOMAIN CAPABILITY (extracted/adapted in CORR-001):** Firebase Auth identity boundary
+  (session state + email/password + Google credential handling via `AuthContext`/`useAuth`; recovery delivery via
+  `sendPasswordResetEmail` + neutral error copy in `src/utils/firebaseAuthErrors.ts`). The shared session gate
+  (`ProtectedRoute`) keeps a configurable entry (`loginPath`; V1 default preserved) and V2 supplies its own
+  (`/v2/sign-in`). The V1 Login/Sign-up screens, welcome, onboarding, and `/app/*`-only return-path defaults were
+  NOT reused. No domain read models bound yet.
 - **D. V1 EXPERIENCE COMPONENT:** NONE reused. No authorisation sought or granted.
 
 ## 4. V1 experience modules explicitly NOT reused
 
-V1 shell/route hierarchy (`/app/*` in `src/App.tsx`), V1 bottom navigation,
+V1 shell/route hierarchy (`/app/*` in `src/App.tsx`), V1 auth experience (`LoginScreen`/`SignupScreen`
+at `/app/login`/`/app/signup`, V1 welcome, V1 return-path defaults), V1 bottom navigation,
 V1 Home composition, V1 Group journey (screens + `RequireGroupRoute` + group prerequisite),
 V1 onboarding journey (`RequireOnboardedRoute`/`RequireOnboardingRoute`/`RequireProfileSetup`),
 V1 challenge navigation (all legacy challenge screens), V1 Profile composition,
 V1 feed/navigation assumptions, V1 return paths, V1 operator authority (`AdminRoute`).
 
-## 5. V1 imports: expected ZERO — confirmed ZERO
+## 5. V1 imports: expected ZERO — confirmed ZERO; runtime crossover guarded (CORR-001)
 
 `npm run test:v2-experience-boundary` (`scripts/testV2ExperienceBoundary.mjs`):
 zero frozen-V1 experience imports in `src/v2/**`; no V1 bottom navigation;
 no `/app/` return paths; `/v2/*` mounted as a sibling of `/app/*`.
+CORR-001 extension: no `/app/login` or `/app/signup` entry referenced from
+`src/v2/**`; no frozen V1 journey/gate identifiers (`LoginScreen`,
+`SignupScreen`, `WelcomeScreen`, `OnboardingSlides`, `RequireOnboardedRoute`,
+`RequireOnboardingRoute`, `RequireGroupRoute`, `RequireProfileSetup`,
+`AdminRoute`) used in V2 composition; V2 sign-in/sign-up routes exist and are
+public (outside the authenticated scope); V2 guard supplies its own entry;
+shared session gate keeps the configurable `loginPath` override.
+
+`npm run test:v2-auth-returns` (`scripts/testV2AuthReturnPaths.ts`):
+return-path contract — V2 routes pass through, V1 return paths and
+open-redirect shapes fall back to `/v2/today`.
 
 ## 6. Product Truth boundaries preserved
 
@@ -97,10 +115,33 @@ npm run dev        # → http://localhost:5173
 
 Sign in with any existing account (governed auth boundary is reused), then visit:
 
+- Signed-out entry: open `http://localhost:5173/v2/today` while signed out → NEW V2 sign-in
+  experience at `/v2/sign-in?next=%2Fv2%2Ftoday` (never the V1 login). Sign in → returns to `/v2/today`.
 - Member shell: `http://localhost:5173/v2/today` (resize for mobile bottom bar ↔ desktop top treatment)
 - Member routes: `/v2/challenges`, `/v2/groups`, `/v2/guide`, `/v2/profile`, `/v2/notifications`
 - Operator shell: `http://localhost:5173/v2/operator/overview` (+ the 12 other sections)
-- Brand check: orange-led `tiizi / Together We Move` mark in both shells; approved favicon/app icon
+- Brand check: orange-led `tiizi / Together We Move` mark in both shells and the auth experience; approved favicon/app icon
 - Placeholders/states: every route shows title + human explanation + empty state + next slice
 
-Unauthenticated visits redirect to the existing login and return to the requested `/v2/…` path.
+Unauthenticated visits land on the V2 sign-in experience and return to the requested `/v2/…` path.
+Sign-up (`/v2/sign-up`) returns to the requested V2 route — never into V1 onboarding/profile setup.
+
+## 8. CORR-001 — V1 auth experience leak: root cause + correction record
+
+**Founder review finding:** unauthenticated `/v2/today` redirected to `/app/login?next=%2Fv2%2Ftoday`
+and rendered the frozen V1 Login/Sign-up experience.
+
+**Root cause:** `V2Authenticated` reused the shared `ProtectedRoute` session gate whose
+unauthenticated entry was hardcoded to the V1 login route. The S1 import guard only scanned
+`src/v2/**` source, so the runtime redirect into V1 experience escaped it.
+
+**Correction (experience only; auth Product Truth unchanged):**
+new V2 auth experience (`src/v2/auth/`: `V2AuthLayout`, `V2SignInPage` incl. password-recovery
+dialog, `V2SignUpPage`, `V2AuthGuard`, `v2NextPath` return-path resolver) in the V2 visual
+language; `ProtectedRoute` gained a `loginPath` override (V1 default `/app/login` preserved);
+V2 supplies `/v2/sign-in`; return paths accept V2 routes only (fallback `/v2/today`); no
+onboarding/profile/group gates on the S1 path. Firebase Auth, providers, session semantics,
+and configuration untouched; no mock users; no production data changes.
+
+S1 disposition: IMPLEMENTED CANDIDATE / FOUNDER REVIEW FAILED ON V1 AUTH EXPERIENCE LEAK
+→ CORRECTION APPLIED → AWAITING FOUNDER EXPERIENCE REVIEW. S1 NOT marked COMPLETE; NOT merged.
