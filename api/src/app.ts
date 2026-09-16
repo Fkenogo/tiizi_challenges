@@ -20,6 +20,7 @@ import {
   registerGroupMutationRoutes,
   type GroupMutationRouteDeps,
 } from './groupMutationRoutes.js';
+import { registerChallengeCreationSeamRoutes } from './challengeCreationSeamRoutes.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -109,5 +110,9 @@ export function buildApp(deps: AppDeps) {
   // charter-aware live creation authority, KCS-ready + tuple validation;
   // absent deps fail closed instead of establishing.
   registerChallengeCreationRoutes(app, deps.db, deps.challengeCreation ?? {});
+  // S2a challenge-creation API seam (read-only, transport only): Composer
+  // activity options + Composer draft preview through the single PF-03
+  // validator. Additive; persists nothing; no new domain authority.
+  registerChallengeCreationSeamRoutes(app, deps.db);
   return app;
 }

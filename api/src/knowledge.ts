@@ -1994,6 +1994,16 @@ export interface KnowledgeListQuery {
   kind?: KnowledgeKind;
   search?: string;
   lifecycle?: KnowledgeLifecycle;
+  /**
+   * S2a Composer-selectable candidates: NEW-V2 Challenge catalogue only.
+   * Published + immutable V2 Activity Code + current KCS/publication
+   * readiness + a governed measurement contract sufficient to enter the
+   * Composer (challengeEligible). Drafts, retired items, KCS-thin legacy
+   * rows and codeless V1 history never qualify. Config-specific failures
+   * (Metric/Unit/basis/Components) stay options/preview concerns and are
+   * NOT filtered here. Opt-in: existing callers are unaffected.
+   */
+  composerSelectable?: boolean;
 }
 
 /**
@@ -2011,6 +2021,11 @@ export async function listPublishedKnowledge(
     params.push(query.kind);
     conditions.push(`kind = $${params.length}`);
   }
+  if (query.composerSelectable === true) {
+    // V1 quarantine at the SQL layer: codeless legacy Knowledge never
+    // qualifies as a NEW-V2 candidate, whatever its lifecycle.
+    conditions.push(`activity_code IS NOT NULL`);
+  }
   const search = (query.search ?? '').trim().slice(0, 100);
   if (search) {
     params.push(`%${search}%`);
@@ -2023,7 +2038,12 @@ export async function listPublishedKnowledge(
      LIMIT ${MAX_LIST_ROWS}`,
     params,
   );
-  return result.rows.map(mapKnowledgeRow);
+  const items = result.rows.map(mapKnowledgeRow);
+  if (query.composerSelectable !== true) return items;
+  // Server-owned readiness/eligibility (same functions as establishment):
+  // Published != Challenge Eligible — only contract-sufficient Activities
+  // enter the Composer. Metric/Unit/basis/Component choices stay later.
+  return items.filter((item) => item.publicationReady && item.challengeEligible);
 }
 
 /** Admin listing: all lifecycle states, filterable by kind/lifecycle. */
@@ -2354,7 +2374,8 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     const params = (request.query ?? {}) as Record<string, unknown>;
     const kind = params.kind === 'fitness' || params.kind === 'wellness' ? params.kind : undefined;
     const search = typeof params.search === 'string' ? params.search : undefined;
-    const items = await listPublishedKnowledge(db, { kind, search });
+    const composerSelectable = params.composerSelectable === 'true';
+    const items = await listPublishedKnowledge(db, { kind, search, composerSelectable });
     return { items: await localizeKnowledgeItems(db, items, params.locale ?? undefined) };
   });
 
