@@ -4,7 +4,7 @@
 
 **Authority boundary:** This guide explains the programme. It does not replace the [Tiizi V2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md), constitutional instruments, Founder decisions, or controlled programme evidence.
 
-**Current governed baseline:** Master Programme v1.31; Stage E0 — Governance Architecture In Progress; CGP-02D In Progress; D-01 prepared; D-02 complete (WRQ-01–WRQ-10, 10/10 Accepted); D-03 Founder Accepted; D-04 Complete — PASS (302/302, 0 exceptions); D-05 In Progress (D-05A discovery complete, 0 CONFLICT, 0 PRE-APPROVAL ACTION REQUIRED, awaiting Founder/ChatGPT review).
+**Current governed baseline:** The [Tiizi V2 Master Programme](TIIZI-V2-MASTER-PROGRAMME.md) is authoritative for current stage, version and status. Read it before relying on the stage narrative below, which is orientation only and may lag the Master Programme. Adopted Product Experience Architecture: the Tiizi Experience Reference (`Fkenogo/tiizi-prototye` @ `cfa696fb`) — see §17.
 
 ---
 
@@ -334,3 +334,56 @@ This guide:
 - changes no constitutional proposition;
 - changes no V1 implementation;
 - does not classify any legacy implementation decision as automatically valid for V2.
+
+---
+
+## 17. Experience Reference Adoption (EA-01)
+
+**TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation** is
+**COMPLETE / FOUNDER APPROVED FOR MERGE** (EA-01-CORR-001). The Founder has
+formally decided **ADOPT** of the Tiizi Experience Reference as Tiizi's primary
+Product Experience Architecture reference.
+
+- **Adopted repository:** `Fkenogo/tiizi-prototye` (independent prototype)
+- **Adopted commit:** `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6`
+- **Core formula:** `PRODUCT TRUTH + ADOPTED EXPERIENCE REFERENCE = TIIZI PRODUCT ASSEMBLY`
+
+Governing principle:
+
+- **Product Truth determines what Tiizi does** (constitution, entity and
+  operational governance, Stage F product/technical contracts, engines and
+  domain authority).
+- **The adopted Experience Reference determines how that truth is assembled
+  into a coherent human-facing product** (shell, navigation, journeys,
+  information architecture, composition, presentation).
+
+V1 product experience is **FROZEN — REFERENCE ONLY** and **cannot host V2**. V1
+is not the V2 shell, host, compatibility target or authority for V2 navigation,
+hierarchy, journeys or composition. V2 receives a **completely new shell**
+assembled from the adopted Experience Reference and bound to existing Tiizi
+Product Truth:
+
+```text
+NEW V2 SHELL ≠ V1 SHELL MODIFIED TO LOOK LIKE THE PROTOTYPE
+```
+
+V1 physical retirement/deletion timing is an **implementation sequencing
+matter**, not an open Founder decision; temporary physical presence of V1
+routes/code creates no compatibility obligation. V1 reuse is governed by
+classification A–D (brand asset · neutral technical primitive · governed
+product/domain capability · V1 experience component — the last frozen and
+requiring explicit review before reuse).
+
+The Experience Reference may not establish domain authority, permissions,
+lifecycle, scoring, Challenge or Knowledge semantics, Group authority, Member
+eligibility or result truth.
+
+Records: [`docs/experience/TIIZI-EXPERIENCE-REFERENCE-ADOPTION-RECORD.md`](../experience/TIIZI-EXPERIENCE-REFERENCE-ADOPTION-RECORD.md) ·
+[`docs/experience/TIIZI-EA-01-PRODUCT-TRUTH-RECONCILIATION.md`](../experience/TIIZI-EA-01-PRODUCT-TRUTH-RECONCILIATION.md) ·
+[`docs/experience/TIIZI-EXPERIENCE-INTEGRATION-MAP.md`](../experience/TIIZI-EXPERIENCE-INTEGRATION-MAP.md)
+
+EA-01 authorises no implementation. The next authorised implementation work is
+**S1 — V2 Experience Foundation**, which creates the new shell from the adopted
+Experience Reference (and must not adapt the V1 shell or copy V1 Home/Groups/
+onboarding/challenge navigation/Profile composition). PF-05 remains unmerged with
+its experience assembly **NOT APPROVED**, and PF-06 remains **NOT BEGUN**.
