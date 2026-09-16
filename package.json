@@ -43,6 +43,8 @@
     "test:v2-frontend": "tsx scripts/testV2FrontendGuards.ts",
     "test:v2-experience-boundary": "node scripts/testV2ExperienceBoundary.mjs",
     "test:s2a-challenge-creation-api-seam": "node scripts/testS2aChallengeCreationApiSeamGuards.mjs",
+    "test:s2b-challenge-creation": "tsx scripts/testS2bChallengeCreationGuards.ts",
+    "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:firebase-emulator-mode": "tsx scripts/testFirebaseEmulatorMode.ts",
     "preview:v2-auth:reset": "tsx scripts/previewV2AuthReset.ts",

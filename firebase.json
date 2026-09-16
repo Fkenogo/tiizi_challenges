@@ -14,6 +14,11 @@
     "firestore": {
       "host": "127.0.0.1",
       "port": 8080
+    },
+    "ui": {
+      "enabled": true,
+      "host": "127.0.0.1",
+      "port": 4001
     }
   },
   "hosting": {    "public": "dist",
