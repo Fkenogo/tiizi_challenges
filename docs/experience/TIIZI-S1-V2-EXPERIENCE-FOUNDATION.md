@@ -2,8 +2,9 @@
 
 **Work package:** S1 — V2 Experience Foundation (first authorised experience slice)
 
-**Status:** IMPLEMENTED candidate / AWAITING FOUNDER EXPERIENCE REVIEW
-(CORR-001 V1-auth-experience-leak correction applied on this branch; NOT marked COMPLETE; NOT merged)
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED (merge `d5183c8` of approved head
+`dbb1ba7` into canonical main `a3c05a9`, 2026-09-16; PR #27, CI green; non-fast-forward
+merge commit, no squash, no rebase, no force-push)
 
 **Date:** 2026-09-16
 
@@ -220,5 +221,40 @@ resolved V2 return path; no `/app/*` navigation, no V1 onboarding/profile/group 
 no V1 UI renders. Background only: user-document bootstrap write + V1 warmup data
 prefetches (caught, non-blocking) — left for a later integration slice, not an S1 violation.
 
-S1 disposition unchanged: IMPLEMENTED CANDIDATE / AWAITING FOUNDER EXPERIENCE REVIEW.
-S1 NOT marked COMPLETE; NOT merged.
+## 11. Closure — Founder preview acceptance and merge (TIIZI-S1-CLOSE-MERGE-001)
+
+Founder completed the local S1 experience preview and accepted the foundation for its
+bounded purpose. Confirmed manually:
+
+1. Local Auth emulator starts successfully.
+2. Deterministic preview Founder account reset works.
+3. V2 sign-in succeeds.
+4. Signed-out `/v2/today` routes to the NEW V2 sign-in experience.
+5. Successful authentication returns to `/v2/today`.
+6. No V1 Login, Welcome, onboarding, group-prerequisite journey, or V1 shell appears.
+7. V2 member shell renders successfully.
+8. Member navigation works for Today, Challenges, Groups, Activity Guide, Profile, Notifications.
+9. Operator transition works.
+10. V2 Operator shell renders separately with its intended 13-section navigation.
+11. Local preview clearly indicates Firebase emulator mode.
+12. S1 accepted as a FOUNDATION slice: placeholders stay placeholders; no surfaces polished;
+    no S2/S3+ implementation; Product Truth, engines, and domain semantics unchanged.
+
+Architectural boundary preserved at closure: V1 = FROZEN / REFERENCE ONLY; V1 cannot host
+V2; no compatibility obligation exists; the adopted Experience Reference
+(`Fkenogo/tiizi-prototye` @ `cfa696fb`) remains the experience authority beneath Product
+Truth (`PRODUCT TRUTH + ADOPTED EXPERIENCE REFERENCE = TIIZI PRODUCT ASSEMBLY`);
+S1 establishes the NEW V2 composition root (`src/v2/`); `NEW V2 SHELL ≠ V1 SHELL MODIFIED
+TO LOOK LIKE THE PROTOTYPE`.
+
+Merge: PR #27, approved head `dbb1ba7`, base `a3c05a9` (no drift), CI green (api,
+api-image, functions, web), merged as non-fast-forward commit `d5183c8` — no squash, no
+rebase, no force-push. Approved head is an ancestor of main. No deployment occurred.
+
+Next authorised implementation slice: **S2 — GROUP CONTEXT & CHALLENGE CREATION**
+(NOT IMPLEMENTED in this task). Subsequent slices are vertical product assembly slices
+(Product Truth / engine authority → existing governed domain capability → adopted
+Experience Reference → V2 working experience) — not a sequence of independently polished
+placeholder screens.
+
+Final status: **TIIZI-S1 — V2 EXPERIENCE FOUNDATION: COMPLETE / FOUNDER ACCEPTED / MERGED.**
