@@ -166,9 +166,19 @@ export interface ApiChallengeDetail extends ApiChallengeSummary {
       /** Authoritative configured kind (fitness|wellness) from the pinned
        *  Knowledge item — never inferred from name/unit/prefix. */
       activityKind: 'fitness' | 'wellness';
+      /** Governing Metric of this configuration. Null ONLY on pre-PF-03 rows. */
+      metric: string | null;
       targetValue: number;
       unit: string;
       position: number;
+      /** PF-03 pinned required Component ids ([] when the Activity declares none). */
+      requiredComponents: string[];
+      /** PF-03 explicit Load Reporting Basis (Weight configurations only). */
+      loadReportingBasis: string | null;
+      /** PF-03 Duration mode (Duration configurations only). */
+      durationMode: string | null;
+      /** PF-03 Completion occurrence (Completion configurations only). */
+      completionOccurrence: string | null;
     }>;
   };
 }
@@ -568,9 +578,14 @@ function toConfigContract(
         canonicalKey: a.canonical_key,
         activityVariant: a.activity_variant,
         activityKind: kind!,
+        metric: a.metric,
         targetValue: a.target_value,
         unit: a.unit,
         position: a.position,
+        requiredComponents: Array.isArray(a.required_components) ? [...a.required_components] : [],
+        loadReportingBasis: a.load_reporting_basis,
+        durationMode: a.duration_mode,
+        completionOccurrence: a.completion_occurrence,
       };
     }),
   };
