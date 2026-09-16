@@ -45,6 +45,8 @@
     "test:s2a-challenge-creation-api-seam": "node scripts/testS2aChallengeCreationApiSeamGuards.mjs",
     "test:s2g-group-establishment": "tsx scripts/testS2GroupEstablishmentGuards.ts",
     "preview:s2g:identity": "tsx scripts/previewS2gIdentity.ts",
+    "test:s2b-challenge-creation": "tsx scripts/testS2bChallengeCreationGuards.ts",
+    "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:firebase-emulator-mode": "tsx scripts/testFirebaseEmulatorMode.ts",
     "preview:v2-auth:reset": "tsx scripts/previewV2AuthReset.ts",
