@@ -176,3 +176,49 @@ and never block the V2 shell.
 
 S1 disposition unchanged: IMPLEMENTED CANDIDATE / AWAITING FOUNDER EXPERIENCE REVIEW.
 S1 NOT marked COMPLETE; NOT merged.
+
+## 10. CORR-003 — deterministic local V2 preview identity
+
+**Finding:** historical local preview credentials were rejected (stale/unknown emulator state;
+no repo seeder ever created Auth accounts). Resolution: stop preserving old credentials;
+reset one known local identity deterministically.
+
+**Workflow (local development only):** `npm run preview:v2-auth:reset` + `npm run preview:v2-auth:list`
+(`scripts/previewV2Auth*.ts`). Loopback-only (127.0.0.1:9099, fail-closed), refuses
+NODE_ENV=production, password via `TIIZI_V2_PREVIEW_PASSWORD` (never printed), project
+resolution prefers `VITE_FIREBASE_PROJECT_ID` so seeder and browser share one namespace,
+drift fails closed. Identity: `founder1@tiizi.local`. Safety proofs:
+`npm run test:preview-v2-auth-workflow`.
+
+**Founder procedure (forget old accounts/passwords):**
+
+Terminal 1 — start the Auth emulator (repo root):
+```sh
+firebase emulators:start --only auth --project "$VITE_FIREBASE_PROJECT_ID"
+```
+(Use the same project ID as the frontend `.env.local`. `firebase.json` pins auth to 127.0.0.1:9099.)
+
+Terminal 2 — reset the deterministic preview account (same worktree):
+```sh
+export TIIZI_V2_PREVIEW_PASSWORD='choose-a-local-password'
+npm run preview:v2-auth:reset
+npm run preview:v2-auth:list   # shows email/uid/disabled; never secrets
+```
+
+Terminal 3 — start Vite with emulator mode (same worktree, `.env.local` holds
+`VITE_USE_FIREBASE_EMULATORS=true`):
+```sh
+npm run dev
+```
+
+Browser: open `/v2/today` → V2 sign-in → `founder1@tiizi.local` + the Terminal 2
+password → `/v2/today`. The browser console shows
+`[tiizi] Auth emulator mode: connected to http://127.0.0.1:9099` (development only).
+
+**Post-auth V1 check (CORR-003):** successful V2 authentication navigates only to the
+resolved V2 return path; no `/app/*` navigation, no V1 onboarding/profile/group gates,
+no V1 UI renders. Background only: user-document bootstrap write + V1 warmup data
+prefetches (caught, non-blocking) — left for a later integration slice, not an S1 violation.
+
+S1 disposition unchanged: IMPLEMENTED CANDIDATE / AWAITING FOUNDER EXPERIENCE REVIEW.
+S1 NOT marked COMPLETE; NOT merged.

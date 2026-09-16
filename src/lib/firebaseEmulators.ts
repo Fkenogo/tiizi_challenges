@@ -62,5 +62,9 @@ export function connectAuthEmulatorOnce(auth: Auth): boolean {
   if (scope[CONNECTED_KEY] === true) return true;
   connectAuthEmulator(auth, AUTH_EMULATOR_URL);
   scope[CONNECTED_KEY] = true;
+  // Development-only diagnostic so the Founder can observe the emulator
+  // binding in the browser console. This branch is unreachable in
+  // production builds (DEV is statically false there).
+  console.info(`[tiizi] Auth emulator mode: connected to ${AUTH_EMULATOR_URL} (development preview only)`);
   return true;
 }
