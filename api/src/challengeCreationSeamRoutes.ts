@@ -8,6 +8,9 @@
  * - GET  /v1/knowledge/:id/options
  *     → describeComposerActivityOptions (PF-04 Composer — valid Metric /
  *       Unit / Component / Load-basis choices for one canonical Activity).
+ *       Adds a purely derived `unitsByMetric` presentation grouping (the
+ *       SAME governed Unit→Metric vocabulary the validator enforces — no
+ *       second compatibility opinion; the client never re-derives it).
  * - POST /v1/challenge-definitions/preview
  *     → previewChallengeComposer (PF-04)
  *       → validateChallengeDefinition (PF-03 semantic validation).
@@ -28,6 +31,27 @@ import {
   type ChallengeComposerDraft,
 } from './challengeComposer.js';
 import type { Db } from './db.js';
+import { metricForUnit } from './measurementVocabulary.js';
+
+/**
+ * Derived presentation grouping ONLY: buckets the Activity's governed
+ * compatible Units by the Metric each Unit expresses, using the single
+ * governed measurement vocabulary (metricForUnit). This invents no
+ * compatibility — it restates the authority's own mapping so the Wizard
+ * can offer a Metric first and then only the Units that express it. The
+ * server still validates the exact (Activity, Metric, Unit) tuple.
+ */
+function unitsByMetric(units: readonly string[]): Record<string, string[]> {
+  const grouped: Record<string, string[]> = {};
+  for (const unit of units) {
+    const metric = metricForUnit(unit);
+    if (!metric) continue;
+    const bucket = grouped[metric] ?? (grouped[metric] = []);
+    if (!bucket.includes(unit)) bucket.push(unit);
+  }
+  for (const key of Object.keys(grouped)) grouped[key].sort();
+  return grouped;
+}
 
 export function registerChallengeCreationSeamRoutes(app: FastifyInstance, db: Db): void {
   /**
@@ -39,7 +63,8 @@ export function registerChallengeCreationSeamRoutes(app: FastifyInstance, db: Db
   app.get('/v1/knowledge/:id/options', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
-      return await describeComposerActivityOptions(db, id);
+      const options = await describeComposerActivityOptions(db, id);
+      return { ...options, unitsByMetric: unitsByMetric(options.compatibleUnits) };
     } catch (error) {
       return reply.status(404).send({
         error: {
