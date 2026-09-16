@@ -145,3 +145,34 @@ and configuration untouched; no mock users; no production data changes.
 
 S1 disposition: IMPLEMENTED CANDIDATE / FOUNDER REVIEW FAILED ON V1 AUTH EXPERIENCE LEAK
 → CORRECTION APPLIED → AWAITING FOUNDER EXPERIENCE REVIEW. S1 NOT marked COMPLETE; NOT merged.
+
+## 9. CORR-002 — safe local Auth emulator support for Founder preview
+
+**Finding:** the corrected V2 sign-in reached Firebase Auth, but the browser SDK was not wired
+to the running local Auth emulator (127.0.0.1:9099), so existing seeded Founder preview
+credentials were rejected. Repository search confirmed zero `connectAuthEmulator`/emulator
+wiring; `firebase.json` carries no emulators section (the emulator is started externally).
+
+**Correction (local-preview integration only; auth Product Truth unchanged):**
+neutral helper `src/lib/firebaseEmulators.ts` + one wiring line in `src/lib/firebaseAuth.ts`.
+Emulator mode activates if and only if DEV is true AND `VITE_USE_FIREBASE_EMULATORS=true`
+(explicit, narrow opt-in; localhost serving alone never enables it; production builds never
+connect to localhost; duplicate connection prevented via a `globalThis` marker across HMR
+reloads). Default Firebase behaviour unchanged when the flag is absent. No secrets; no
+provider/project/credential/semantics changes; no mock or bypassed authentication.
+
+**Founder preview:** Auth emulator already running on 127.0.0.1:9099; set
+`VITE_USE_FIREBASE_EMULATORS=true` in local `.env.local` (never committed); `npm run dev`;
+open `/v2/today` → `/v2/sign-in` → existing Founder credentials → `/v2/today`.
+
+**Guard:** `npm run test:firebase-emulator-mode` (`scripts/testFirebaseEmulatorMode.ts`) proves
+opt-in connects (A), localhost alone never enables (B), production never activates (C), and
+default production configuration is unchanged (D).
+
+**Shell dependencies:** S1 surfaces bind no read models — Firestore/PostgreSQL/API are NOT
+required to display the shell. On sign-in, the pre-existing user-document bootstrap and V1
+warmup prefetches may log failed writes/reads against the default config; they are caught
+and never block the V2 shell.
+
+S1 disposition unchanged: IMPLEMENTED CANDIDATE / AWAITING FOUNDER EXPERIENCE REVIEW.
+S1 NOT marked COMPLETE; NOT merged.
