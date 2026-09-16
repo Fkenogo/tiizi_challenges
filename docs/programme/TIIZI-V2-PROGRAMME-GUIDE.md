@@ -385,5 +385,7 @@ Records: [`docs/experience/TIIZI-EXPERIENCE-REFERENCE-ADOPTION-RECORD.md`](../ex
 EA-01 authorises no implementation. The next authorised implementation work is
 **S1 — V2 Experience Foundation**, which creates the new shell from the adopted
 Experience Reference (and must not adapt the V1 shell or copy V1 Home/Groups/
-onboarding/challenge navigation/Profile composition). PF-05 remains unmerged with
-its experience assembly **NOT APPROVED**, and PF-06 remains **NOT BEGUN**.
+onboarding/challenge navigation/Profile composition). S1 is **IN PROGRESS /
+IMPLEMENTED candidate** on branch `impl/s1-v2-experience-foundation-001`
+(unmerged, undeployed; traceability: `docs/experience/TIIZI-S1-V2-EXPERIENCE-FOUNDATION.md`).
+PF-05 remains unmerged with its experience assembly **NOT APPROVED**, and PF-06 remains **NOT BEGUN**.

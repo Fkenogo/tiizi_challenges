@@ -120,6 +120,8 @@ const SystemLogsScreen = lazy(() => import('./features/Admin/Settings/SystemLogs
 const DonateScreen = lazy(() => import('./features/Donate/DonateScreen'));
 const BooksLibraryScreen = lazy(() => import('./features/Library/BooksLibraryScreen'));
 const BookReaderScreen = lazy(() => import('./features/Library/BookReaderScreen'));
+// TIIZI S1 — new V2 experience root (isolated shell; sibling of /app/*, never nested inside V1).
+const V2Routes = lazy(() => import('./v2/routes').then((m) => ({ default: m.V2Routes })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -314,6 +316,8 @@ function App() {
                 <Route path="/app/onboarding/intro" element={<RequireOnboardingRoute><OnboardingSlides /></RequireOnboardingRoute>} />
                 <Route path="/app/profile/learn-tiizi" element={<RequireOnboardedRoute><LearnTiiziScreen /></RequireOnboardedRoute>} />
                 <Route path="/app" element={<Navigate to="/app/welcome" replace />} />
+                {/* TIIZI S1 — V2 experience entry. Sibling of /app/*; authenticated V2 entry lands in the new shell. */}
+                <Route path="/v2/*" element={<V2Routes />} />
 
                 <Route path="/" element={<Navigate to="/app/welcome" replace />} />
                 <Route path="*" element={<NotFoundScreen />} />
