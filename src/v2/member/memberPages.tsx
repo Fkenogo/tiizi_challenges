@@ -21,18 +21,11 @@ export function V2TodayPage() {
   );
 }
 
-export function V2ChallengesPage() {
-  return (
-    <V2Placeholder
-      eyebrow="Challenges"
-      title="Challenges"
-      explanation="Move together or race each other — find a challenge that fits how you like to move."
-      emptyTitle="No challenges to show yet"
-      emptyMessage="Challenges you join or are invited to will appear here. You can browse by how they work: together, race, or streak."
-      nextSlice="Challenge experience (S3)"
-    />
-  );
-}
+/**
+ * Challenges is no longer a placeholder: S2b binds the real V2 Challenges
+ * read + creation journey (see src/v2/challenges/**). The route lives in
+ * routes.tsx.
+ */
 
 /**
  * Groups is no longer a placeholder: S2-G binds the real V2 Groups surface

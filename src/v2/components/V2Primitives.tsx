@@ -146,21 +146,100 @@ export function V2Button({
   children: React.ReactNode;
   onClick?: () => void;
   type?: 'button' | 'submit';
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'success';
   disabled?: boolean;
 }) {
   const tone =
     variant === 'primary'
       ? 'bg-primary text-white hover:brightness-95'
-      : variant === 'secondary'
-        ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
-        : 'text-slate-600 hover:bg-slate-100';
+      : variant === 'success'
+        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+        : variant === 'secondary'
+          ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+          : 'text-slate-600 hover:bg-slate-100';
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
       className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Selectable card used for type and Group choices. */
+export function V2ChoiceCard({
+  selected,
+  onClick,
+  title,
+  subtitle,
+  description,
+  badge,
+  trailing,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  badge?: string;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`flex h-full w-full flex-col rounded-2xl border p-4 text-left transition-colors ${
+        selected
+          ? 'border-primary bg-orange-50 ring-2 ring-primary/30'
+          : 'border-slate-200 bg-white hover:border-slate-300'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-black text-slate-900">{title}</p>
+          {subtitle && <p className="mt-0.5 text-xs font-bold text-primary">{subtitle}</p>}
+        </div>
+        {selected ? (
+          <span
+            aria-hidden
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-black text-white"
+          >
+            ✓
+          </span>
+        ) : trailing}
+      </div>
+      {description && <p className="mt-2 text-xs leading-5 text-slate-600">{description}</p>}
+      {badge && (
+        <span className="mt-3 w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** Small selectable chip (duration, filters, pickers). */
+export function V2Chip({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+        selected ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+      }`}
     >
       {children}
     </button>
@@ -197,18 +276,21 @@ export function V2TextInput({
   placeholder,
   type = 'text',
   maxLength,
+  min,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: 'text' | 'number' | 'date';
   maxLength?: number;
+  min?: string;
 }) {
   return (
     <input
       type={type}
       value={value}
       maxLength={maxLength}
+      min={min}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       className={V2_INPUT_CLASS}
@@ -242,6 +324,32 @@ export function V2TextArea({
 }
 
 /** Surface card for grouping content. */
+export function V2Select({
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  disabled?: boolean;
+}) {
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+      className={V2_INPUT_CLASS}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
 export function V2Card({
   children,
   className = '',
@@ -253,6 +361,45 @@ export function V2Card({
     <div className={`rounded-2xl border border-slate-200 bg-white p-4 ${className}`}>
       {children}
     </div>
+  );
+}
+
+/** Step progress indicator for the wizard. */
+export function V2StepProgress({
+  steps,
+  current,
+  onSelect,
+}: {
+  steps: ReadonlyArray<{ id: string; label: string }>;
+  current: number;
+  onSelect?: (index: number) => void;
+}) {
+  return (
+    <ol className="flex flex-wrap items-center gap-x-2 gap-y-1" aria-label="Challenge creation steps">
+      {steps.map((step, index) => {
+        const state = index === current ? 'current' : index < current ? 'done' : 'todo';
+        const label = `${index + 1}. ${step.label}`;
+        return (
+          <li key={step.id}>
+            <button
+              type="button"
+              onClick={onSelect ? () => onSelect(index) : undefined}
+              disabled={!onSelect}
+              aria-current={state === 'current' ? 'step' : undefined}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                state === 'current'
+                  ? 'bg-primary text-white'
+                  : state === 'done'
+                    ? 'bg-orange-50 text-primary'
+                    : 'bg-slate-100 text-slate-500'
+              }`}
+            >
+              {label}
+            </button>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
