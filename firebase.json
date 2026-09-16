@@ -6,8 +6,13 @@
   "storage": {
     "rules": "storage.rules"
   },
-  "hosting": {
-    "public": "dist",
+  "emulators": {
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
+    }
+  },
+  "hosting": {    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
