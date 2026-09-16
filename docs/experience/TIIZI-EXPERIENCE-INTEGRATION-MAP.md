@@ -4,7 +4,7 @@
 
 **Work package:** TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation
 
-**Status:** RECORDED
+**Status:** COMPLETE / FOUNDER APPROVED FOR MERGE (EA-01-CORR-001, 2026-09-16)
 
 **Date:** 2026-09-16
 
@@ -30,6 +30,25 @@ TIIZI PRODUCT ASSEMBLY
 
 Product Truth determines **what Tiizi does**. The adopted Experience Reference
 determines **how that truth is assembled into a coherent human-facing product**.
+
+### 1.1 Implementation consequence — a new V2 shell
+
+```text
+NEW V2 SHELL
+≠
+V1 SHELL MODIFIED TO LOOK LIKE THE PROTOTYPE
+```
+
+The new V2 shell is **assembled from the adopted Experience Reference** and
+**bound to existing Tiizi Product Truth**. V2 does not adapt the V1 shell, does
+not import `BottomNav`, and does not preserve `/app` as a V2 experience
+constraint. Any proposed V1 experience reuse requires explicit classification
+and review before reuse (§10).
+
+**May legitimately carry forward** (and does not make the V2 shell a derivative
+of the V1 shell): approved Tiizi brand identity/assets; logo/icon/favicon/app
+icons; brand colours; typography where appropriate; neutral reusable technical
+primitives; shared infrastructure; governed Product Truth / domain capabilities.
 
 ## 2. Layer map
 
@@ -232,8 +251,8 @@ Founder/authority gates:
 | Preview infrastructure | S1/S2 tooling | RETAIN (reference/tooling) |
 | `V2CreateChallengeWizard.tsx` | S2 | REWORK |
 | `V2ChallengesScreen.tsx` / `V2ChallengeDetailScreen.tsx` | S3 | REWORK |
-| `App.tsx` mixed root | S1 | REWORK |
-| `BottomNav`, `/app/*` V1 containment, V1 onboarding/return paths | — | RETIRE from V2 |
+| `App.tsx` mixed root | S1 | REPLACE with the new V2 composition root |
+| `BottomNav`, `/app/*` V1 containment, V1 onboarding/return paths | — | RETIRE from V2 (physical retirement/deletion timing = implementation sequencing matter, IS-1; temporary physical presence creates no compatibility obligation) |
 | `TIIZI-V1-PRODUCT-EXPERIENCE-FREEZE.md` (branch) | PF-05 disposition | REFERENCE ONLY; amend status |
 
 ## 9. Invariants that must survive every slice
@@ -255,3 +274,57 @@ Founder/authority gates:
    rule; there is exactly one Accountable Steward at a time.
 10. No implementation slice begins without its dependencies and Founder gates
     satisfied.
+11. The V2 shell is **new**, assembled from the adopted Experience Reference —
+    never the V1 shell adapted. V1 **cannot host V2**.
+12. V1's physical presence in the repository creates no compatibility
+    obligation; its physical retirement/deletion timing is an implementation
+    sequencing matter, not an open Founder decision.
+
+## 10. V1 reuse classification
+
+Reuse of anything from V1 requires explicit classification **before** reuse. Do
+not silently copy category D.
+
+### A. BRAND ASSET — may carry forward where approved
+
+- Tiizi logo / icon
+- favicon / app icons
+- brand colours
+- approved visual identity assets
+
+### B. NEUTRAL TECHNICAL PRIMITIVE — may be reused when it does not carry V1
+journey/composition assumptions
+
+- auth context/route protection (subject to the Firebase Auth boundary)
+- API transport and query infrastructure
+- neutral display / error / loading primitives
+- generic control primitives and design tokens (subject to slice review)
+- local emulator / preview wiring
+
+### C. GOVERNED PRODUCT / DOMAIN CAPABILITY — preserve and bind into the new
+experience
+
+- V2 domain and API (`api/src/**`), PostgreSQL V2 model, read models
+- PF-01 Knowledge, PF-02 Metrics/Units/components, PF-03 Challenge Definition,
+  PF-04 Composer
+- engines, finalization and result contracts
+- Group authority and live Membership eligibility
+- Group identity bridge / V2 establishment seam
+- Firebase Auth identity boundary
+
+### D. V1 EXPERIENCE COMPONENT — frozen / reference-only; explicit review and
+authorisation required before any reuse in V2
+
+Examples (non-exhaustive):
+
+- `BottomNav`
+- V1 Home composition
+- V1 Groups journey
+- V1 challenge navigation
+- V1 onboarding journey
+- V1 Profile composition
+- V1 feed / navigation assumptions
+- V1 return paths
+
+Category D carries V1 journey, navigation, hierarchy or composition assumptions
+and must not enter V2 merely because it already exists.

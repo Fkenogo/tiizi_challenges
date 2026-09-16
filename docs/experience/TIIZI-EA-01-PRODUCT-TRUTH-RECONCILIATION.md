@@ -4,7 +4,10 @@
 
 **Work package:** TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation
 
-**Status:** RECORDED
+**Status:** COMPLETE / FOUNDER APPROVED FOR MERGE (EA-01-CORR-001, 2026-09-16)
+
+**Correction:** TIIZI-EA-01-CORR-001 — closed the adoption boundary (V1
+architectural disposition is decided, not open) and prepared EA-01 for merge.
 
 **Date:** 2026-09-16
 
@@ -172,7 +175,7 @@ contract; **HAD** = Stage G Hybrid Architecture Decision.
 
 | # | Item | Experience Reference expectation | Product Truth source | Current implementation | Mismatch / gap | Disposition | Security / integrity / privacy / scope | Recommended slice |
 | - | ---- | -------------------------------- | -------------------- | ---------------------- | -------------- | ----------- | -------------------------------------- | ----------------- |
-| M1 | Authenticated shell | Mobile-first member shell; primary nav Today/Challenges/Groups; tablet/desktop shells; header (brand, bell, profile); Reference tools isolated from product UI | Identity boundary is Firebase Auth (HAD); no V2 shell in Product Truth | V1 `/app/*` shell + `BottomNav`; V2 routes bolted onto mixed `App.tsx` (PF-05 branch, unmerged) | No V2 shell exists; V1 containment remains the de-facto shell | **IMPLEMENT** (+ **ADAPT** to retire V1 containment) | Auth boundary must not be replaced; security-critical | **S1** |
+| M1 | Authenticated shell | Mobile-first member shell; primary nav Today/Challenges/Groups; tablet/desktop shells; header (brand, bell, profile); Reference tools isolated from product UI | Identity boundary is Firebase Auth (HAD); no V2 shell in Product Truth | V1 `/app/*` shell + `BottomNav`; V2 routes bolted onto mixed `App.tsx` (PF-05 branch, unmerged) | No V2 shell exists; V1 `/app/*` remains the de-facto container (temporary; creates no compatibility obligation) | **IMPLEMENT** (new V2 shell assembled from the adopted Experience Reference; independent of the V1 shell) | Auth boundary must not be replaced; security-critical | **S1** |
 | M2 | Today | Action home ordered: required activity → challenge attention → invitations → upcoming → community moments. No generic dashboard | T1 §O ("Home is not a Feed"); T2 FR-V2-128 (no separate Home Feed; Group Feed is single community stream) | None in V2; V1 Home is frozen | Today's "community moments" must not become a second feed | **ADAPT** (bounded recent-community summary linking to Group Feed) + **IMPLEMENT** | Privacy: avoid duplicating/auto-broadcasting community stream | **S5** |
 | M3 | Navigation | Primary Today/Challenges/Groups + contextual Activity Guide; secondary via profile drawer/footer; no crowding | Product Truth silent (experience decision) | V1 `BottomNav` (frozen) | V1 nav must not carry forward | **IMPLEMENT**; reference supplies decision where PT silent | None | **S1** |
 | M4 | Onboarding | Explains what Tiizi is, why groups, challenges/participation, join/create/discover; states brand new / no group / in-group-no-challenge / invited group / invited challenge / active commitments; no forced setup | Admission modes EOG §6; membership ≠ participation EOG §2/§11 | V1 Onboarding frozen | V1 onboarding assumptions must not carry forward | **IMPLEMENT** + **ADAPT** | None | **S1** |
@@ -275,24 +278,29 @@ architecture (beyond the PF-05 sequencing in C1–C3).
 ## C.2 Documentation amendments made by EA-01
 
 1. **`docs/programme/TIIZI-V2-MASTER-PROGRAMME.md`**
-   - Version 1.65 → **1.66**; metrics table updated.
+   - Version 1.65 → **1.66** (adoption) → **1.67** (EA-01-CORR-001 boundary
+     closure); metrics table updated.
    - Stage G dashboard row: PF-05 restated as **IMPLEMENTED / UNMERGED /
-     experience NOT APPROVED**; EA-01 recorded; V2 Experience Foundation
-     recorded as the next experience step; PF-06 remains not begun and is
-     explicitly gated on Experience Reference integration.
-   - §4 "Next Action": EA-01 recorded; PF-05 experience disposition recorded;
-     PF-06 dependency recorded.
-   - §23 Programme Change Log: **v1.66** row added.
+     experience NOT APPROVED**; EA-01 recorded as **COMPLETE / FOUNDER APPROVED
+     FOR MERGE**; the V1 architectural disposition recorded as decided; S1 — V2
+     Experience Foundation recorded as the next authorised implementation work;
+     PF-06 remains not begun and is explicitly gated on Experience Reference
+     integration.
+   - §4 "Next Action": EA-01 completion, V1 disposition, PF-05 experience
+     disposition and PF-06 dependency recorded.
+   - §23 Programme Change Log: **v1.66** and **v1.67** rows added.
 2. **`docs/programme/TIIZI-V2-PROGRAMME-GUIDE.md`**
    - "Current governed baseline" line re-pointed to the Master Programme as
      authoritative instead of restating a stale version.
    - New section **"17. Experience Reference Adoption (EA-01)"** recording the
-     adoption, the formula, the V1 freeze boundary, and pointers to
-     `docs/experience/**`.
-3. **`docs/experience/TIIZI-EXPERIENCE-REFERENCE-ADOPTION-RECORD.md`** (new).
+     adoption, the formula, the new-shell consequence, the V1 freeze boundary
+     and reuse classification, and pointers to `docs/experience/**`.
+3. **`docs/experience/TIIZI-EXPERIENCE-REFERENCE-ADOPTION-RECORD.md`** (new;
+   formula + §2.1 new-shell consequence + §6 completion state).
 4. **`docs/experience/TIIZI-EA-01-PRODUCT-TRUTH-RECONCILIATION.md`** (new,
-   this document).
-5. **`docs/experience/TIIZI-EXPERIENCE-INTEGRATION-MAP.md`** (new).
+   this document; §F.1a closes the adoption boundary; §D.4 defines S1).
+5. **`docs/experience/TIIZI-EXPERIENCE-INTEGRATION-MAP.md`** (new; §1.1
+   new-shell consequence, §10 reuse classification A–D).
 
 **Not amended (correctly):** constitutional instruments, domain standards,
 EOG-E1-01, the Stage F package, and the adopted Experience Reference source.
@@ -309,21 +317,27 @@ EOG-E1-01, the Stage F package, and the adopted Experience Reference source.
 
 # PART D — Programme transition
 
-## D.1 Proposed bounded transition
+## D.1 Bounded transition — COMPLETE / FOUNDER APPROVED FOR MERGE
 
-It is recommended that the following is recorded as the **immediate bounded
-transition before further PF-05/PF-06 experience implementation**:
+> **TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation:
+> COMPLETE / FOUNDER APPROVED FOR MERGE.**
+>
+> **Next authorised implementation work: S1 — V2 Experience Foundation.**
 
-> **TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation**
+The following is recorded as the immediate bounded transition that preceded
+further PF-05/PF-06 experience implementation:
 
 Scope: adopt the Experience Reference; freeze V1 as reference-only; establish
 experience precedence; reconcile every member/operator surface; dispose of
 PF-05; amend programme/direction wording; propose the vertical sequence. **No
 UI implementation.**
 
-Status after EA-01: the adoption is recorded; the reconciliation and integration
-map are filed; PF-05 remains unmerged with its experience assembly NOT
-APPROVED; PF-06 remains NOT BEGUN; no implementation is authorised.
+Status after EA-01: **COMPLETE / FOUNDER APPROVED FOR MERGE** (EA-01-CORR-001);
+the reconciliation and integration map are filed; the V1 architectural
+disposition is **decided** (V1 frozen/reference-only; V1 cannot host V2; V2
+receives a new shell from the adopted Experience Reference); PF-05 remains
+unmerged with its experience assembly NOT APPROVED; PF-06 remains NOT BEGUN; the
+next authorised implementation work is **S1 — V2 Experience Foundation**.
 
 ## D.2 Validation of the proposed ordering
 
@@ -335,10 +349,13 @@ The expected direction was:
 
 **Validated with corrections:**
 
-1. **Foundation first — correct and mandatory.** Every slice mounts in the V2
-   shell. Foundation must also resolve V1 containment (`/app/*`, `BottomNav`
-   retirement) and provide the member/operator frame, routing and localisation
-   scaffolding. Without it every later slice would re-host itself in V1.
+1. **Foundation first — correct and mandatory.** Every slice mounts in a **new
+   V2 shell**. Foundation must build that new shell from the adopted Experience
+   Reference — **not** adapt the V1 shell — and must provide the
+   member/operator frame, routing and localisation scaffolding. Without it every
+   later slice would re-host itself in V1, which is prohibited. V1's physical
+   retirement/deletion timing is an implementation sequencing matter (§F.1a),
+   **not** a Foundation dependency and **not** an open Founder decision.
 2. **Challenge Creation must be preceded by Group context, not necessarily the
    full Groups Experience.** The Creation slice needs a host-Group context and
    the creation-authority gate (already implemented in `api/src`), plus a
@@ -374,8 +391,8 @@ The expected direction was:
 
 | Slice | Name | Depends on | Entry condition |
 | ----- | ---- | ---------- | --------------- |
-| **EA-01** | Experience Reference Adoption & Product-Truth Reconciliation | — | **Recorded** |
-| **S1** | **V2 Experience Foundation** — authenticated member/operator shell, primary navigation (Today/Challenges/Groups), contextual Activity Guide entry, routing, design tokens, localisation scaffolding, V1 containment retirement | EA-01; Firebase Auth boundary | EA-01 recorded |
+| **EA-01** | Experience Reference Adoption & Product-Truth Reconciliation | — | **COMPLETE / FOUNDER APPROVED FOR MERGE** |
+| **S1** | **V2 Experience Foundation** — **new** authenticated member/operator shell assembled from the adopted Experience Reference, primary navigation (Today/Challenges/Groups), contextual Activity Guide entry, routing, design tokens, localisation scaffolding | EA-01; Firebase Auth boundary | EA-01 approved for merge |
 | **S2** | **Group Context & Challenge Creation vertical slice** — host-Group context, creation-authority gate, PF-04 Composer → PF-03 preview → V2 establishment, explicit creator-participation decision | S1; PF-01→PF-04; EBC-01 | S1 assembled |
 | **S3** | **Challenge Experience** — discovery/list, detail, join/request/invite, logging, Together/Race/Streak progress, results/finalization, Run Again; governed notification event mapping | S2; EBC-02/03/04; participation domain | S2 assembled |
 | **S4** | **Groups Experience** — list, detail, roster, Accountable Steward + delegation, Charter visibility, Council visibility, rules, creation-permission, join requests | S1; Group/Membership authority (HAD) | S1 assembled; Founder moderation-scope decision for reports/flags |
@@ -386,22 +403,45 @@ The expected direction was:
 | **S9** | **Operator management surfaces** — Overview, Users, Groups, Activities & Knowledge, Challenges, Templates, Review & Attention, Donations/Support, Content & Localisation, Access & Roles, Platform Health, Audit Log, Settings | S2–S8; Access & Roles decision | Read/detail may start once member truth exists; actions gated on operator-authority decision |
 | **S10** | **Commercial / subscription placeholder** | Founder commercial model decision | Decision recorded |
 
-## D.4 Proposed first implementation slice
+## D.4 Next authorised implementation slice — S1 (NOT implemented in EA-01)
 
 **S1 — V2 Experience Foundation.**
 
+```text
+NEW V2 SHELL
+≠
+V1 SHELL MODIFIED TO LOOK LIKE THE PROTOTYPE
+```
+
+The new V2 shell is **assembled from the adopted Experience Reference** and
+**bound to existing Tiizi Product Truth**. S1 creates the shell; it does not
+adapt the V1 shell.
+
 Smallest coherent vertical output:
 
-- an authenticated member shell that renders real identity and the reference's
-  primary navigation (Today / Challenges / Groups + contextual Activity Guide);
+- a **new** authenticated member shell that renders real identity and the
+  reference's primary navigation (Today / Challenges / Groups + contextual
+  Activity Guide);
 - the operator surface frame reachable by surface switch (dormant sections
   permitted);
 - responsive member (mobile-first) and operator (desktop-first) shells;
 - design tokens and neutral primitives bound to the reference presentation;
 - localisation scaffolding with English source and fallback;
-- retirement of V1 containment as the V2 host (`BottomNav` no longer imported
-  by any V2 experience module; V1 `/app/*` no longer the V2 entry);
 - governed empty/loading/error states for the shell.
+
+**S1 must NOT:**
+
+- adapt the old V1 shell;
+- import `BottomNav`;
+- preserve the `/app` hierarchy as a V2 experience constraint;
+- copy V1 Home;
+- copy the V1 Groups experience;
+- copy V1 onboarding;
+- copy V1 challenge navigation;
+- copy the V1 Profile composition.
+
+**S1 MAY reuse:** brand assets; neutral primitives; auth/infrastructure; design
+tokens where suitable; governed APIs/domain capabilities.
 
 **Not in S1:** domain behaviour, Challenge creation, logging, engine exposure,
 recognition, support, operator actions.
@@ -498,7 +538,29 @@ later slices — not blockers to EA-01:
 | FD-5 | **Moderation / reports / flags authority** | M22, O4, O8 | Unallocated authority; integrity/fairness |
 | FD-6 | **Commercial / subscription model** | O15 / S10 | Product-scope + commercial |
 | FD-7 | **Localisation priority (which locales, when)** | M34 / O10 | Product-scope |
-| FD-8 | **V1 containment retirement timing** (when V1 UI is removed) | S1 | Scope; recommended: retire V1 as the V2 host at S1, keep V1 files as reference until an authorised retirement task |
+
+**Founder decisions genuinely required: FD-1 → FD-7.** No further Founder
+decision is required for the V1 / Experience-Reference architectural
+disposition.
+
+### F.1a Implementation sequencing matter — already decided, not a Founder decision
+
+| # | Matter | Status |
+| - | ------ | ------ |
+| IS-1 | **V1 physical retirement / deletion timing** (when obsolete V1 code and routes are physically removed) | **DISPOSITION DECIDED — TIMING ONLY.** V1 is frozen / reference-only and **cannot host V2**. V2 receives a **completely new shell** assembled from the adopted Experience Reference. Old V1 routes/code may remain **physically present temporarily only while replacement coverage is built**; their physical presence creates **no compatibility obligation**. The physical deletion/retirement timing may be decided during implementation sequencing. This is an **implementation sequencing matter**, and **must not** be represented as an unresolved Founder decision about whether V1 may continue hosting V2. |
+
+**V1 architectural disposition — decided (not open):**
+
+- V1 Product Experience is **FROZEN / REFERENCE ONLY**.
+- V1 is **not** the V2 shell; **not** the V2 experience host; **not** a V2
+  compatibility target; **not** an authority for V2 navigation, hierarchy,
+  journeys or composition.
+- The adopted Tiizi Experience Reference is the basis of a **completely new V2
+  experience shell**.
+- V1 experience components must not enter V2 merely because they already exist;
+  any proposed V1 experience reuse requires explicit classification and review
+  before reuse (see the reuse classification in
+  [`TIIZI-EXPERIENCE-INTEGRATION-MAP.md`](TIIZI-EXPERIENCE-INTEGRATION-MAP.md) §10).
 
 ## F.2 Genuine risks (resolved by disposition, not blockers)
 
@@ -524,8 +586,15 @@ later slices — not blockers to EA-01:
 ## Closing statement
 
 Product Truth is unchanged. The adopted Experience Reference is unchanged. The
-bounded transition is recorded, programme wording is aligned, PF-05 is
-dispositioned, the vertical sequence is validated with corrections, and the
-first implementation slice is proposed. No UI was implemented, no prototype
-source was copied, no PF-05 work was merged, no PF-06 work began, nothing was
-deployed, and no production data was modified.
+bounded transition is complete and Founder approved for merge; programme wording
+is aligned, PF-05 is dispositioned, the vertical sequence is validated with
+corrections, and the first implementation slice is defined.
+
+**EA-01-CORR-001** closes the adoption boundary: the V1 architectural
+disposition is **decided** (V1 frozen/reference-only; V1 cannot host V2; V2
+receives a new shell from the adopted Experience Reference; V1 physical
+retirement/deletion timing is an implementation sequencing matter only).
+
+No UI was implemented, no prototype source was copied, no PF-05 work was merged,
+no PF-06 work began, nothing was deployed, no migration was applied, and no
+production data was modified.

@@ -4,7 +4,8 @@
 
 **Work package:** TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation
 
-**Status:** RECORDED — Founder disposition ADOPT (this record)
+**Status:** COMPLETE / FOUNDER APPROVED FOR MERGE — Founder disposition ADOPT
+(EA-01-CORR-001, 2026-09-16)
 
 **Date:** 2026-09-16
 
@@ -53,6 +54,37 @@ adopted Experience Reference into incidental programme wording.
 
 The formula is expressed in full in
 [`TIIZI-EXPERIENCE-INTEGRATION-MAP.md`](TIIZI-EXPERIENCE-INTEGRATION-MAP.md).
+
+### 2.1 Implementation consequence — a new V2 shell
+
+```text
+NEW V2 SHELL
+≠
+V1 SHELL MODIFIED TO LOOK LIKE THE PROTOTYPE
+```
+
+The new V2 shell is **assembled from the adopted Experience Reference** and
+**bound to existing Tiizi Product Truth**.
+
+- The adopted Experience Reference is the basis of a **completely new V2
+  experience shell**.
+- V1 is **not** the V2 shell, **not** the V2 experience host, **not** a V2
+  compatibility target, and **not** an authority for V2 navigation, hierarchy,
+  journeys or composition.
+- V1 experience components must not enter V2 merely because they already exist.
+  Any proposed V1 experience reuse requires explicit classification and review
+  before reuse (see the reuse classification in
+  [`TIIZI-EXPERIENCE-INTEGRATION-MAP.md`](TIIZI-EXPERIENCE-INTEGRATION-MAP.md) §10).
+- Old V1 routes/code may remain physically present temporarily only while
+  replacement coverage is built. Their physical presence creates **no
+  compatibility obligation**, and their physical retirement/deletion timing is
+  an **implementation sequencing matter** — not an open Founder decision.
+
+**May legitimately carry forward where appropriate** (and does not make the V2
+shell a derivative of the V1 shell): approved Tiizi brand identity/assets;
+logo/icon/favicon/app icons; brand colours; typography where appropriate;
+neutral reusable technical primitives; shared infrastructure; governed
+Product Truth / domain capabilities.
 
 ## 3. What is adopted
 
@@ -127,15 +159,22 @@ Determinations:
   assembly.
 - V1 product experience is **FROZEN — REFERENCE ONLY** and must not determine
   V2 navigation, shell, journeys, information architecture or interaction
-  composition.
+  composition. V1 **cannot host V2**.
+- The V2 experience is a **completely new shell** assembled from the adopted
+  Experience Reference and bound to existing Tiizi Product Truth.
 - Existing documentation and existing V1 implementation do **not** determine
   V2 experience composition.
 - Further V2 experience implementation must be preceded by the bounded
   transition TIIZI-EA-01.
+- **EA-01 is COMPLETE / FOUNDER APPROVED FOR MERGE** (EA-01-CORR-001). The next
+  authorised implementation work is **S1 — V2 Experience Foundation**, which
+  creates the new shell from the adopted Experience Reference (see
+  [`TIIZI-EA-01-PRODUCT-TRUTH-RECONCILIATION.md`](TIIZI-EA-01-PRODUCT-TRUTH-RECONCILIATION.md) §D.4).
 
 **Effect not established by this record**
 
-- No implementation is authorised.
+- No implementation is authorised by EA-01 itself beyond recording S1 as the
+  next slice; S1 is not implemented here.
 - No UI is implemented or merged.
 - PF-05 is not merged and its experience assembly remains **NOT APPROVED**.
 - PF-06 is not begun.

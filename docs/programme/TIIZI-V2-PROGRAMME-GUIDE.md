@@ -340,8 +340,9 @@ This guide:
 ## 17. Experience Reference Adoption (EA-01)
 
 **TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation** is
-recorded. The Founder has formally decided **ADOPT** of the Tiizi Experience
-Reference as Tiizi's primary Product Experience Architecture reference.
+**COMPLETE / FOUNDER APPROVED FOR MERGE** (EA-01-CORR-001). The Founder has
+formally decided **ADOPT** of the Tiizi Experience Reference as Tiizi's primary
+Product Experience Architecture reference.
 
 - **Adopted repository:** `Fkenogo/tiizi-prototye` (independent prototype)
 - **Adopted commit:** `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6`
@@ -356,16 +357,33 @@ Governing principle:
   into a coherent human-facing product** (shell, navigation, journeys,
   information architecture, composition, presentation).
 
-V1 product experience is **FROZEN — REFERENCE ONLY**. V1 UI and existing
-implementation must not determine V2 shell, navigation, journeys, information
-architecture or interaction composition. The Experience Reference may not
-establish domain authority, permissions, lifecycle, scoring, Challenge or
-Knowledge semantics, Group authority, Member eligibility or result truth.
+V1 product experience is **FROZEN — REFERENCE ONLY** and **cannot host V2**. V1
+is not the V2 shell, host, compatibility target or authority for V2 navigation,
+hierarchy, journeys or composition. V2 receives a **completely new shell**
+assembled from the adopted Experience Reference and bound to existing Tiizi
+Product Truth:
+
+```text
+NEW V2 SHELL ≠ V1 SHELL MODIFIED TO LOOK LIKE THE PROTOTYPE
+```
+
+V1 physical retirement/deletion timing is an **implementation sequencing
+matter**, not an open Founder decision; temporary physical presence of V1
+routes/code creates no compatibility obligation. V1 reuse is governed by
+classification A–D (brand asset · neutral technical primitive · governed
+product/domain capability · V1 experience component — the last frozen and
+requiring explicit review before reuse).
+
+The Experience Reference may not establish domain authority, permissions,
+lifecycle, scoring, Challenge or Knowledge semantics, Group authority, Member
+eligibility or result truth.
 
 Records: [`docs/experience/TIIZI-EXPERIENCE-REFERENCE-ADOPTION-RECORD.md`](../experience/TIIZI-EXPERIENCE-REFERENCE-ADOPTION-RECORD.md) ·
 [`docs/experience/TIIZI-EA-01-PRODUCT-TRUTH-RECONCILIATION.md`](../experience/TIIZI-EA-01-PRODUCT-TRUTH-RECONCILIATION.md) ·
 [`docs/experience/TIIZI-EXPERIENCE-INTEGRATION-MAP.md`](../experience/TIIZI-EXPERIENCE-INTEGRATION-MAP.md)
 
-EA-01 authorises no implementation. The proposed first implementation slice is
-the **V2 Experience Foundation**; PF-05 remains unmerged with its experience
-assembly **NOT APPROVED**, and PF-06 remains **NOT BEGUN**.
+EA-01 authorises no implementation. The next authorised implementation work is
+**S1 — V2 Experience Foundation**, which creates the new shell from the adopted
+Experience Reference (and must not adapt the V1 shell or copy V1 Home/Groups/
+onboarding/challenge navigation/Profile composition). PF-05 remains unmerged with
+its experience assembly **NOT APPROVED**, and PF-06 remains **NOT BEGUN**.
