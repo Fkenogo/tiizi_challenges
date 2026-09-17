@@ -224,7 +224,12 @@ Experience and is not redefined by this slice.
 
 ## 12. Status
 
-S2-G is **IMPLEMENTED CANDIDATE / AWAITING FOUNDER PRODUCT PREVIEW**. S2 remains **IN PROGRESS**
-and is NOT complete. S2a remains closed as merged. S2b remains **IMPLEMENTED CANDIDATE / HELD
-PENDING S2-G ACCEPTANCE** (NOT merged). PF-05 is NOT merged; PF-06 has NOT begun. V1 remains
-FROZEN / reference-only. No deployment and no production mutation occurred.
+S2-G is **COMPLETE / FOUNDER ACCEPTED** (TIIZI-S2G-ACCEPT-MERGE-001; approved head `8767d82`;
+merged to main). Founder Product Preview evidence: authenticated through the local preview; initial
+Groups state genuinely empty; "Tiizi Founders Fitness Group" created through `/v2/groups/new` via
+the governed establishment path; the Group listed with the Founder as "Accountable Steward";
+persistence verified across browser refresh. S2 remains **IN PROGRESS** (S2b not accepted/merged)
+and is NOT complete. S2a remains closed as merged. S2b remains **IMPLEMENTED CANDIDATE / HELD**
+(NOT merged; NOT modified; to be rebased/aligned onto the accepted S2-G baseline). PF-05 is NOT
+merged; PF-06 has NOT begun. V1 remains FROZEN / reference-only. No deployment and no production
+mutation occurred.
