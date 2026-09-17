@@ -2,14 +2,15 @@
 
 **Work package:** S2b — V2 Group Context + Challenge Creation (first vertical product assembly slice)
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING FOUNDER PRODUCT PREVIEW (branch
-`impl/s2b-v2-challenge-creation-001`; **STOP BEFORE MERGE**)
+**Status:** COMPLETE / FOUNDER ACCEPTED (alignment branch
+`impl/s2b-s2g-alignment-001`, accepted head `7e044da`; merged main lineage recorded in the
+Master Programme; **STOP BEFORE MERGE** — merge is a separate governed step)
 
-**Date:** 2026-09-16
+**Date:** 2026-09-17
 
-**Base:** `origin/main` @ `b97fbf618dce864206594db61d29680e86c5382c`
+**Base:** `origin/main` @ `e6686c86333dea865b375986c5b41af61c5dba95` (S2-G COMPLETE / FOUNDER ACCEPTED)
 
-**Branch:** `impl/s2b-v2-challenge-creation-001`
+**Branch:** `impl/s2b-s2g-alignment-001` (replayed from held `dd1332c`; see §18)
 
 **Adopted Experience Reference:** `Fkenogo/tiizi-prototye` @
 `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6`
@@ -240,6 +241,13 @@ Templates / PF-06, Support Tiizi contribution configuration, Donations, Communit
 Recognition, commercial/subscription behaviour, operator controls, moderation, full S3
 discovery/detail/results. No fake controls imply these work.
 
+Founder observations deferred at acceptance (recorded, not implemented — no architecture
+invented here; for subsequent product/architecture treatment):
+- Custom duration: keep the 7/14/21/30-day presets; a future Challenge experience should
+  additionally support Custom, permitting valid non-preset durations (e.g. 10 days).
+- Challenge image: optional image support belongs to a later slice and must establish the
+  canonical media/reference contract and persistence boundary rather than UI-only state.
+
 ## 17. Verification performed
 
 - API: `npm test` in `api/` (full suite) including the new `s2bChallengeCreation.test.ts`
@@ -256,8 +264,33 @@ discovery/detail/results. No fake controls imply these work.
 
 ## 18. Status
 
-S2b is **IMPLEMENTED CANDIDATE / S2-G ALIGNED / AWAITING TECHNICAL REVALIDATION**. S2 remains
-**IN PROGRESS** and is NOT complete. S2a remains closed as merged; S2-G remains
-**COMPLETE / FOUNDER ACCEPTED** and is NOT modified here. S1/EA-01 remain closed. PF-05 is NOT
-merged and NOT cherry-picked; PF-06 has NOT begun. No deployment and no production mutation
-occurred.
+S2b is **COMPLETE / FOUNDER ACCEPTED** (TIIZI-S2B-FOUNDER-ACCEPT-001; accepted head `7e044da`).
+S2 remains **IN PROGRESS** (S3+ not started) and is NOT complete. S2a remains closed as merged;
+S2-G remains **COMPLETE / FOUNDER ACCEPTED** and is NOT modified here. S1/EA-01 remain closed.
+PF-05 is NOT merged and NOT cherry-picked; PF-06 has NOT begun. No deployment and no production
+mutation occurred.
+
+## 19. Founder acceptance evidence and date investigation (TIIZI-S2B-FOUNDER-ACCEPT-001)
+Founder browser preview (candidate `7e044da`, ITR-002 disposition B) completed the full
+assembly proof: sign in → genuine empty Groups → created "test group1" through the S2-G
+journey (Founder as Accountable Steward, persisted across refresh) → Challenges → Create
+Challenge → WHO IS HOSTING showed the new Group immediately with no reload/wait/refocus
+(runtime evidence that CORR-001 closes the stale-membership-cache defect) → selected the
+governed host → catalogue rendered (Push-Up selected) → six-step wizard → Review & Create →
+created "Test challenge1" → persisted detail rendered → refresh retained it → Challenges
+listing showed it. Persisted authority state verified read-only: PG group `5c20fa01…`
+("test group1", active) + owner membership for the preview member; PG challenge `56adbcbc…`
+("Test challenge1", collective, active) hosted in that Group.
+
+Date observation (NOT a blocker; acceptance remains valid): the wizard showed
+17 Sep 2026 → 30 Sep 2026 (14 days, Nairobi time) while the detail rendered
+16 Sep → 29 Sep. Trace: wizard strings (`2026-09-17`/`2026-09-30`) → establishment body →
+persisted Postgres DATE `2026-09-17`/`2026-09-30` + `timezone Africa/Nairobi` (correct —
+canonical definition intact) → read path `normalizeChallengeRow` → `toDayString`
+(`api/src/challengeConfigs.ts:132`), which stringifies via `toISOString()` (UTC) and yields
+`2026-09-16`/`2026-09-29` on a UTC+2/3 server → served and rendered verbatim by the
+TZ-neutral `formatDay`. Disposition: API/read-model transformation defect with
+display-visible effect; persistence and the canonical definition are correct. Recommended
+correction location: `toDayString` (calendar-component conversion), which also removes the
+latent carry-forward at `challengeConfigs.ts:445-446` for date-less version bumps. No
+correction made here; recorded for a bounded follow-up.
