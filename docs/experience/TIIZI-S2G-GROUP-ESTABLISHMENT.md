@@ -77,6 +77,7 @@ are covered automatically).
 | Placeholder removal | `src/v2/member/memberPages.tsx` |
 | API acceptance tests | `api/test/s2gGroupEstablishment.test.ts` |
 | Boundary guards | `scripts/testS2GroupEstablishmentGuards.ts` |
+| Preview identity link (no product state) | `scripts/previewS2gIdentity.ts` |
 | Programme record | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (v1.72) |
 
 ## 5. Minimum Create Group journey
@@ -145,6 +146,51 @@ experience".
   new localId) is preview **tooling** behaviour, not Product Truth. With real Group creation the
   membership is created by the product against the live identity, eliminating the need for a
   seed-after-reset workaround.
+
+### 9.1 Founder local preview commands
+
+`scripts/previewS2gIdentity.ts` (`npm run preview:s2g:identity`) prepares the legitimate preview
+identity link **only** — it resolves the Auth-emulator account and upserts the `members` row. It
+creates **no** Group, **no** group membership and **no** Firestore document. The Group must be
+created through `/v2/groups`.
+
+Prerequisites: local PostgreSQL with migrations `001–017` applied; the Firebase Auth and Firestore
+emulators running for the shared project; the API running with the emulator hosts set.
+
+```sh
+# Terminal 1 — emulators (auth + firestore) for the same project as the frontend .env.local
+firebase emulators:start --only auth,firestore --project "$VITE_FIREBASE_PROJECT_ID"
+
+# Terminal 1b — local PostgreSQL with migrations 001–017
+docker compose up -d postgres
+cd api && DATABASE_URL='postgresql://tiizi:tiizi@localhost:5432/tiizi' npm run migrate && cd ..
+
+# Terminal 2 — deterministic preview identity (auth) + API identity link (members row only)
+export TIIZI_V2_PREVIEW_PASSWORD='choose-a-local-password'
+npm run preview:v2-auth:reset
+npm run preview:s2g:identity        # creates NO Group and NO membership
+
+# Terminal 3 — API wired to the emulators (no Group/membership is seeded)
+cd api
+FIREBASE_PROJECT_ID="$VITE_FIREBASE_PROJECT_ID" \
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+TIIZI_ALLOWED_ORIGINS=http://localhost:5173 \
+DATABASE_URL='postgresql://tiizi:tiizi@localhost:5432/tiizi' \
+npm run dev
+
+# Terminal 4 — Vite (`.env.local`: VITE_USE_FIREBASE_EMULATORS=true,
+#              VITE_TIIZI_API_ENABLED=true, VITE_TIIZI_API_BASE_URL=http://localhost:4000)
+npm run dev        # → http://localhost:5173
+```
+
+Acceptance journey (then STOP — do not attempt S2b Challenge creation):
+
+1. Sign in at `/v2/sign-in` as `founder1@tiizi.local` with the Terminal 2 password.
+2. Open `/v2/groups` — confirm **no manufactured Group exists** (empty state).
+3. **Create a Group** → enter a name + optional description → Create.
+4. Confirm the Group appears on `/v2/groups` showing "Accountable Steward".
+5. **Refresh the browser** — confirm the Group persists.
 
 ## 10. Verification performed
 

@@ -188,6 +188,17 @@ check('Groups screen renders the stewardship label, not raw role codes',
 check('no raw internal state codes rendered',
   !/>\s*'?(active|pending|joined)'?\s*</.test(groupsScreen));
 
+// ─── 9. Preview fixture manufactures no product state ────────────────────
+console.log('preview fixture');
+const previewIdentity = read('scripts/previewS2gIdentity.ts');
+check('preview links identity only (no Group/membership insert)',
+  /INSERT INTO members/.test(previewIdentity)
+  && !/INSERT INTO groups\b|INSERT INTO group_memberships\b/.test(previewIdentity));
+check('preview creates no Firestore Group or membership',
+  !/firebase-admin|getFirestore|collection\(['"]groups|groupMembers\//.test(previewIdentity));
+check('preview contains no manufactured Group fixture',
+  !/PREVIEW_GROUP|seedFirestore|Founder Preview Group/i.test(previewIdentity));
+
 if (failures > 0) {
   console.error(`\nS2-G group establishment guards: ${failures} failure(s).`);
   process.exit(1);
