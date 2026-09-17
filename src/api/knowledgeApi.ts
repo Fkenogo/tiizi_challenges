@@ -86,6 +86,11 @@ export function fetchKnowledgeById(id: string): Promise<ApiKnowledgeItem> {
   return apiFetch<ApiKnowledgeItem>(`/v1/knowledge/${encodeURIComponent(id)}`);
 }
 
+/** By immutable Activity Code (unfiltered lifecycle — historical resolution). */
+export function fetchKnowledgeByCode(code: string): Promise<ApiKnowledgeItem> {
+  return apiFetch<ApiKnowledgeItem>(`/v1/knowledge/code/${encodeURIComponent(code)}`);
+}
+
 /** Admin listing across lifecycle states. */
 export async function fetchAdminKnowledgeList(
   kind?: ApiKnowledgeKind,

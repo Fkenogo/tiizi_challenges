@@ -50,13 +50,13 @@ export interface ApiRequestInit {
   body?: unknown;
 }
 
-export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<T> {
+/** Authenticated transport shared by apiFetch and apiFetchRaw. */
+async function authorizedFetch(path: string, init?: ApiRequestInit): Promise<Response> {
   const token = await auth.currentUser?.getIdToken();
   if (!token) throw new ApiError(401, 'not_signed_in', 'Sign-in is required');
 
-  let response: Response;
   try {
-    response = await fetch(`${apiBaseUrl()}${path}`, {
+    return await fetch(`${apiBaseUrl()}${path}`, {
       method: init?.method ?? 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -67,6 +67,10 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
   } catch {
     throw new ApiError(503, 'api_unreachable', 'Tiizi API is unreachable');
   }
+}
+
+export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<T> {
+  const response = await authorizedFetch(path, init);
 
   if (!response.ok) {
     let code = 'request_error';
@@ -83,6 +87,31 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
     throw new ApiError(response.status, code, message);
   }
   return (await response.json()) as T;
+}
+
+/** Non-throwing transport result for endpoints whose error body carries data. */
+export interface ApiRawResult<T> {
+  status: number;
+  ok: boolean;
+  data: T | null;
+}
+
+/**
+ * Same authenticated transport as apiFetch, but does NOT throw on a non-2xx
+ * response. Use only where the governed error body itself is meaningful to
+ * the caller (e.g. the S2a preview seam returns 422 `{ ok:false, issues }`).
+ * Network/credential failures still throw ApiError so callers never treat an
+ * unreachable API as a domain answer.
+ */
+export async function apiFetchRaw<T>(path: string, init?: ApiRequestInit): Promise<ApiRawResult<T>> {
+  const response = await authorizedFetch(path, init);
+  let data: T | null = null;
+  try {
+    data = (await response.json()) as T;
+  } catch {
+    data = null;
+  }
+  return { status: response.status, ok: response.ok, data };
 }
 
 /**

@@ -6,7 +6,6 @@ import { V2SignInPage } from './auth/V2SignInPage';
 import { V2SignUpPage } from './auth/V2SignUpPage';
 import { V2MemberShell } from './member/MemberShell';
 import {
-  V2ChallengesPage,
   V2GuidePage,
   V2NotificationsPage,
   V2ProfilePage,
@@ -16,6 +15,9 @@ import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
 import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
+import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
+import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
+import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
 
 /**
  * TIIZI S1 — V2 composition root (CORR-001: V2 owns its auth entry).
@@ -53,7 +55,9 @@ export function V2Routes() {
           <Route element={<V2MemberShell />}>
             <Route index element={<Navigate to="today" replace />} />
             <Route path="today" element={<V2TodayPage />} />
-            <Route path="challenges" element={<V2ChallengesPage />} />
+            <Route path="challenges" element={<V2ChallengeListScreen />} />
+            <Route path="challenges/new" element={<V2ChallengeCreationWizard />} />
+            <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />
             <Route path="guide" element={<V2GuidePage />} />

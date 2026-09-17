@@ -76,21 +76,11 @@ const FROZEN_V1_EXPERIENCE_IMPORTS = [
   { path: 'src/features/Donate' },
   { path: 'src/features/Install' },
   { path: 'src/features/Mockups' },
-  { path: 'src/features/Challenges/CreateChallengeWizard' },
-  { path: 'src/features/Challenges/WellnessTemplate' },
-  { path: 'src/features/Challenges/BrowseChallenges' },
-  { path: 'src/features/Challenges/SuggestedChallenges' },
-  { path: 'src/features/Challenges/ChallengePreview' },
-  { path: 'src/features/Challenges/CompetitiveChallenge' },
-  { path: 'src/features/Challenges/CollectiveChallenge' },
-  { path: 'src/features/Challenges/StreakChallenge' },
-  { path: 'src/features/Challenges/ChallengeLeaderboard' },
-  { path: 'src/features/Challenges/ChallengeCompleted' },
-  { path: 'src/features/Challenges/CompletedChallenges' },
-  { path: 'src/features/Challenges/ChallengeDetailScreen' },
-  { path: 'src/features/Challenges/V2ChallengeDetailScreen' },
-  { path: 'src/features/Challenges/V2ChallengesScreen' },
-  { path: 'src/features/Challenges/V2' },
+  // S2b: the WHOLE frozen V1/V2-in-V1 Challenge experience tree is off limits
+  // (V1 challenge screens, CreateChallengeWizard, and the unapproved PF-05
+  // V2 screens that live under it). New V2 Challenge experience lives in
+  // src/v2/challenges/** and never imports any of it.
+  { path: 'src/features/Challenges' },
   { path: 'src/components/Auth/RequireOnboardedRoute' },
   { path: 'src/components/Auth/RequireOnboardingRoute' },
   { path: 'src/components/Auth/RequireGroupRoute' },
@@ -202,6 +192,42 @@ check(
   'zero frozen-V1 experience imports in new V2 shell',
   violations.length === 0,
   violations.length > 0 ? `    violations:\n${violations.map((v) => `    - ${v}`).join('\n')}` : undefined,
+);
+
+// S2b — the unapproved PF-05 V2 challenge-creation UI must never be reused,
+// even by name (the whole tree is already import-forbidden above).
+const FROZEN_PF05_IDENTIFIERS = [
+  'V2CreateChallengeWizard',
+  'V2ChallengesScreen',
+  'V2ChallengeDetailScreen',
+];
+const pf05Violations = FROZEN_PF05_IDENTIFIERS.flatMap((name) => {
+  const pattern = new RegExp(`\\b${name}\\b`);
+  return hasMatch(pattern).map((path) => `${path}::${name}`);
+});
+check(
+  'no PF-05 V2 challenge-creation UI identifiers inside src/v2',
+  pf05Violations.length === 0,
+  pf05Violations.length > 0 ? `    violations:\n${pf05Violations.map((v) => `    - ${v}`).join('\n')}` : undefined,
+);
+
+// S2b — the new V2 Challenge experience must never perform a direct
+// Firestore/Firebase Challenge write (establishment is server-authoritative).
+const s2bFiles = walk('src/v2/challenges').filter((path) => /\.(ts|tsx)$/.test(path));
+check('new V2 Challenge experience module exists', s2bFiles.length > 0);
+const directWriteViolations = s2bFiles.flatMap((path) => {
+  const source = read(path);
+  const tokens = [];
+  if (/firebase\/firestore|firebase\/database|lib\/firebase/.test(source)) tokens.push('firebase-import');
+  if (/\b(addDoc|setDoc|updateDoc|deleteDoc|runTransaction|writeBatch)\b/.test(source)) tokens.push('firestore-write');
+  return tokens.map((token) => `${path}::${token}`);
+});
+check(
+  'V2 challenge-creation experience has no direct Firestore/Firebase write',
+  directWriteViolations.length === 0,
+  directWriteViolations.length > 0
+    ? `    violations:\n${directWriteViolations.map((v) => `    - ${v}`).join('\n')}`
+    : undefined,
 );
 
 if (failures > 0) {

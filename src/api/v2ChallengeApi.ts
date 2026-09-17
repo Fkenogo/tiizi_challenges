@@ -46,6 +46,8 @@ export interface V2ChallengeSummary {
   status: V2ChallengeStatus;
   startDate: string;
   endDate: string;
+  /** Governing Challenge timezone (friendly label rendered client-side). */
+  timezone: string;
   currentConfigVersion: number;
   goalValue: number | null;
   goalUnit: string | null;
@@ -59,9 +61,16 @@ export interface V2ConfigActivity {
   canonicalKey: string;
   activityVariant: string | null;
   activityKind: 'fitness' | 'wellness';
+  /** Governing Metric of the configuration (null only on pre-PF-03 rows). */
+  metric?: string | null;
   targetValue: number;
   unit: string;
   position: number;
+  /** PF-03 pinned required Component ids ([] when the Activity declares none). */
+  requiredComponents?: string[];
+  loadReportingBasis?: string | null;
+  durationMode?: string | null;
+  completionOccurrence?: string | null;
 }
 
 export interface V2ChallengeDetail extends V2ChallengeSummary {
