@@ -22,6 +22,13 @@
  *
  * Static source assertions + pure-contract assertions (React-free draft
  * module). No emulator, database, or network access.
+ *
+ * SCOPE LIMIT (TIIZI-S2B-S2G-CORR-001): these guards prove static binding
+ * (which contract each path reads, which endpoint establishment posts to,
+ * what the preview harness cannot manufacture). They do NOT prove the
+ * runtime cache lifecycle — a shared key family with timely invalidation.
+ * That lifecycle is proven behaviourally by `npm run test:v2-membership-cache`
+ * over a real TanStack QueryClient.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -86,11 +93,20 @@ check('seed has no membership insert',
 check('seed retains only the member identity link',
   /INSERT INTO members/.test(seed) && /auth_provider/.test(seed));
 
-// ─── C. Step 2 reads real Groups from memberships/me ─────────────────────
+// ─── C. Step 2 binds the memberships/me contract (static binding only) ─
+// Binding only: wizard → hook → client → endpoint use one shared key
+// family (see membershipQueryKeys). Runtime freshness after S2-G creation
+// is proven by test:v2-membership-cache, not here.
 console.log('Step 2 membership binding');
 check('wizard Step 2 binds the memberships hook', wizard.includes('useV2Memberships'));
 check('memberships hook reads the shared client', hooks.includes('fetchMyMemberships'));
 check('shared client reads GET /v1/memberships/me', membershipsApi.includes('/v1/memberships/me'));
+check('S2b host read uses the canonical key factory', hooks.includes('v2MembershipsKey'));
+check('S2-G groups read uses the canonical key factory',
+  read('src/v2/groups/useV2Groups.ts').includes('v2MembershipsKey'));
+check('mismatched legacy key family is gone',
+  !hooks.includes('v2-create-memberships')
+  && !read('src/v2/groups/useV2Groups.ts').includes('v2-create-memberships'));
 check('no second Group read authority in the S2b experience',
   !/\/v1\/groups(\?|'|"|\s*`)/.test(wizard) && !/\/v1\/groups(\?|'|"|\s*`)/.test(hooks));
 

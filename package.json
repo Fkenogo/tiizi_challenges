@@ -47,6 +47,7 @@
     "preview:s2g:identity": "tsx scripts/previewS2gIdentity.ts",
     "test:s2b-challenge-creation": "tsx scripts/testS2bChallengeCreationGuards.ts",
     "test:s2b-s2g-integration": "tsx scripts/testS2bS2gIntegrationGuards.ts",
+    "test:v2-membership-cache": "tsx scripts/testV2MembershipCacheGuards.ts",
     "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:firebase-emulator-mode": "tsx scripts/testFirebaseEmulatorMode.ts",

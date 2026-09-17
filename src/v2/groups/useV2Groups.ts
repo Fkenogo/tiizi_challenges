@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import {
+  invalidateV2Memberships,
+  v2MembershipsKey,
+} from '../memberships/membershipQueryKeys';
+import {
   createGroup,
   fetchMyMemberships,
   type CreateGroupInput,
@@ -18,14 +22,11 @@ import {
  * the read so persistence is proven by the server, not by client state.
  */
 
-/** Shared cache namespace for the member's Groups (single read contract). */
-export const V2_MEMBERSHIPS_QUERY_KEY = 'v2-memberships';
-
 /** The authenticated member's Groups (server read; the only Group list source). */
 export function useV2Groups() {
   const { user } = useAuth();
   return useQuery<MyMembershipsResponse>({
-    queryKey: [V2_MEMBERSHIPS_QUERY_KEY, user?.uid],
+    queryKey: v2MembershipsKey(user?.uid),
     queryFn: () => fetchMyMemberships(),
     enabled: !!user,
   });
@@ -37,7 +38,7 @@ export function useCreateGroup() {
   return useMutation<CreatedGroup, unknown, CreateGroupInput>({
     mutationFn: (input) => createGroup(input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: [V2_MEMBERSHIPS_QUERY_KEY] });
+      await invalidateV2Memberships(queryClient);
     },
   });
 }

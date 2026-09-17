@@ -11,6 +11,7 @@ import {
   type EstablishChallengeResponse,
 } from '../../api/challengeCreationApi';
 import { fetchMyMemberships, type MyMembershipsResponse } from '../../api/membershipsApi';
+import { v2MembershipsKey } from '../memberships/membershipQueryKeys';
 import { getChallengeV2, listChallengesV2, type V2ChallengeDetail, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -32,7 +33,7 @@ function apiConfigured(): boolean {
 export function useV2Memberships() {
   const { user } = useAuth();
   return useQuery<MyMembershipsResponse>({
-    queryKey: ['v2-create-memberships', user?.uid],
+    queryKey: v2MembershipsKey(user?.uid),
     queryFn: () => fetchMyMemberships(),
     enabled: !!user?.uid && apiConfigured(),
     staleTime: 60 * 1000,
