@@ -135,6 +135,127 @@ export function V2EmptyState({
   );
 }
 
+/** Primary/secondary action button in the V2 visual language. */
+export function V2Button({
+  children,
+  onClick,
+  type = 'button',
+  variant = 'primary',
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit';
+  variant?: 'primary' | 'secondary' | 'ghost';
+  disabled?: boolean;
+}) {
+  const tone =
+    variant === 'primary'
+      ? 'bg-primary text-white hover:brightness-95'
+      : variant === 'secondary'
+        ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+        : 'text-slate-600 hover:bg-slate-100';
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Labelled form field wrapper. */
+export function V2Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-600">
+        {label}
+      </span>
+      {children}
+      {hint && <span className="mt-1 block text-xs leading-5 text-slate-500">{hint}</span>}
+    </label>
+  );
+}
+
+const V2_INPUT_CLASS =
+  'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary';
+
+export function V2TextInput({
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  maxLength,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: 'text' | 'number' | 'date';
+  maxLength?: number;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      maxLength={maxLength}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className={V2_INPUT_CLASS}
+    />
+  );
+}
+
+export function V2TextArea({
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+  maxLength,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+  maxLength?: number;
+}) {
+  return (
+    <textarea
+      value={value}
+      rows={rows}
+      maxLength={maxLength}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className={V2_INPUT_CLASS}
+    />
+  );
+}
+
+/** Surface card for grouping content. */
+export function V2Card({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-2xl border border-slate-200 bg-white p-4 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
 /** Loading state. */
 export function V2LoadingState({ label }: { label?: string }) {
   return (
