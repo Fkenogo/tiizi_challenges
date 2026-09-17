@@ -294,3 +294,16 @@ display-visible effect; persistence and the canonical definition are correct. Re
 correction location: `toDayString` (calendar-component conversion), which also removes the
 latent carry-forward at `challengeConfigs.ts:445-446` for date-less version bumps. No
 correction made here; recorded for a bounded follow-up.
+
+Correction applied (TIIZI-CHALLENGE-DATE-READ-CORR-001): `toDayString`
+(`api/src/challengeConfigs.ts`) now recovers the stored calendar day via calendar
+components — UTC components for a UTC-midnight instant (PGlite/tests, ISO date-only
+inputs), server-local components otherwise (node-pg DATE reads) — instead of the UTC
+`toISOString()` projection. The same helper now also serves the expiry check
+(`api/src/challengeFinalization.ts`), removing the early-expiry side effect and the
+version-bump carry-forward vector at `challengeConfigs.ts:445-446`. No arithmetic, no
+timezone special-casing, no Nairobi exception. Authoritative persistence semantics
+unchanged (Postgres DATE in, calendar day out). Proven by
+`api/test/challengeCalendarDates.test.ts` (7 tests) run green under TZ=UTC,
+TZ=Africa/Nairobi and TZ=America/New_York with identical expectations. S2b remains
+COMPLETE / FOUNDER ACCEPTED.

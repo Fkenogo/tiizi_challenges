@@ -128,9 +128,31 @@ function fail(message: string): never {
   throw new Error(`challenge-configs: ${message}`);
 }
 
-/** Coerce a DATE column (string or driver Date) to YYYY-MM-DD. */
+/**
+ * Coerce a DATE column (string or driver Date) to YYYY-MM-DD.
+ *
+ * A PostgreSQL DATE is a calendar date, not an instant, and drivers hand it
+ * to Node as a midnight Date — but disagree on whose midnight: node-pg uses
+ * server-local midnight while PGlite (tests) uses UTC midnight. An instant
+ * exactly at UTC midnight is therefore the UTC calendar day; any other
+ * midnight is the server-local calendar day. Either branch recovers exactly
+ * the stored day on every process timezone (they coincide when the server
+ * timezone is UTC). No arithmetic, no timezone special-casing, and never a
+ * UTC projection of a local midnight (which shifted the day on UTC+ servers).
+ */
 export function toDayString(value: string | Date): string {
-  const day = value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+  let day: string;
+  if (value instanceof Date) {
+    const pad = (part: number): string => String(part).padStart(2, '0');
+    day = value.getUTCHours() === 0
+      && value.getUTCMinutes() === 0
+      && value.getUTCSeconds() === 0
+      && value.getUTCMilliseconds() === 0
+      ? `${value.getUTCFullYear()}-${pad(value.getUTCMonth() + 1)}-${pad(value.getUTCDate())}`
+      : `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  } else {
+    day = String(value).slice(0, 10);
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) fail(`invalid day value '${String(value)}'`);
   return day;
 }

@@ -42,6 +42,7 @@ import { ApplicationError } from './challengeActivityApplication.js';
 import { dayInTimezone } from './activityEvents.js';
 import {
   getGoverningVersion,
+  toDayString,
   type GoverningSnapshot,
 } from './challengeConfigs.js';
 import {
@@ -498,9 +499,9 @@ export async function processExpiredChallenges(
   const outcomes: ExpiredProcessingOutcome[] = [];
   for (const row of active.rows) {
     const challengeId = String(row.challenge_id);
-    const endDate = row.end_date instanceof Date
-      ? row.end_date.toISOString().slice(0, 10)
-      : String(row.end_date).slice(0, 10);
+    // Calendar-date comparison: the stored end DATE must survive any server
+    // timezone (toDayString never projects through UTC).
+    const endDate = toDayString(row.end_date);
     const timezone = row.timezone == null ? 'UTC' : String(row.timezone);
     let expired: boolean;
     try {
