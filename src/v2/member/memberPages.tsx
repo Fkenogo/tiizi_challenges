@@ -34,18 +34,11 @@ export function V2ChallengesPage() {
   );
 }
 
-export function V2GroupsPage() {
-  return (
-    <V2Placeholder
-      eyebrow="Groups"
-      title="Groups"
-      explanation="Your people, your pace. Groups are the friends, family, or colleagues you move with."
-      emptyTitle="You are not in a group yet"
-      emptyMessage="Join a group to share challenges, cheer each other on, and keep the momentum going."
-      nextSlice="Group experience (S4)"
-    />
-  );
-}
+/**
+ * Groups is no longer a placeholder: S2-G binds the real V2 Groups surface
+ * and the minimum Create Group journey (see src/v2/groups/**). The routes
+ * live in routes.tsx.
+ */
 
 export function V2GuidePage() {
   return (

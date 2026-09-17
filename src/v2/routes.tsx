@@ -7,12 +7,13 @@ import { V2SignUpPage } from './auth/V2SignUpPage';
 import { V2MemberShell } from './member/MemberShell';
 import {
   V2ChallengesPage,
-  V2GroupsPage,
   V2GuidePage,
   V2NotificationsPage,
   V2ProfilePage,
   V2TodayPage,
 } from './member/memberPages';
+import { V2GroupsScreen } from './groups/V2GroupsScreen';
+import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
 import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
 
@@ -53,7 +54,8 @@ export function V2Routes() {
             <Route index element={<Navigate to="today" replace />} />
             <Route path="today" element={<V2TodayPage />} />
             <Route path="challenges" element={<V2ChallengesPage />} />
-            <Route path="groups" element={<V2GroupsPage />} />
+            <Route path="groups" element={<V2GroupsScreen />} />
+            <Route path="groups/new" element={<V2CreateGroupScreen />} />
             <Route path="guide" element={<V2GuidePage />} />
             <Route path="profile" element={<V2ProfilePage />} />
             <Route path="notifications" element={<V2NotificationsPage />} />
