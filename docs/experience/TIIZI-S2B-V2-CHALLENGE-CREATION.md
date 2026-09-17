@@ -86,7 +86,8 @@ active-Group workspace model, no V1 Groups prerequisite, and no standalone/perso
 (`toEstablishmentBody` refuses without a host Group; the host step cannot complete without one).
 
 With no memberships the wizard shows a natural blocking state explaining that a Challenge
-belongs to a Group, with a link to the V2 Groups surface (S4 will provide creation/discovery).
+belongs to a Group, with a link to establish one through the governed S2-G journey
+(`/v2/groups/new`, POST /v1/groups). S4 remains the full Groups Experience.
 Group creation-rule authority stays server-side: no pre-emptive Group-rule read is performed;
 governed denials returned by establishment are translated into member-facing copy (see §13).
 
@@ -212,19 +213,23 @@ per configured Activity (additive; semantic fields already persisted by PF-03).
 ## 15. Local preview harness
 
 `scripts/previewS2bSeed.ts` (`npm run preview:s2b:seed`) deterministically prepares, loopback-only
-and idempotently:
+and idempotently, ONLY:
 
 - the Auth-emulator preview member `founder1@tiizi.local` (created by
-  `npm run preview:v2-auth:reset`) mapped to a PostgreSQL `members` row;
-- one active Group with the Firestore↔PostgreSQL identity mapping
-  (`groups.legacy_firestore_id`), the matching PostgreSQL `groups`/`group_memberships` shadow,
-  and the live Firestore `groups/{legacyId}` + `groupMembers/{legacyId}_{uid}` documents the
-  Group authority actually reads;
+  `npm run preview:v2-auth:reset`; local convention password `TiiziPreview2026`, emulator only)
+  mapped to a PostgreSQL `members` row (identity linkage, no product state);
 - eligible canonical Knowledge for Together / Race / Streak examples
   (`FIT-CRD-001` distance, `FIT-STR-001` repetitions, `WEL-MND-003` completion).
 
+It manufactures NO Group, NO Group membership and NO Challenge. The host Group MUST be
+established by the Founder through the governed S2-G journey at `/v2/groups/new`
+(POST /v1/groups); the previous S2b preview manufacture (`s2b-preview-group`,
+`PREVIEW_GROUP_LEGACY_ID`, direct Firestore `groups`/`groupMembers` writes and the PostgreSQL
+Group/membership shadow) was removed on the S2-G alignment and must not be reintroduced. The
+S2b Step 2 picker reads the member's real Groups through `GET /v1/memberships/me`.
+
 No Challenges are seeded — the Founder creates them through the V2 journey. Refuses
-`NODE_ENV=production` and any non-loopback Auth/Firestore target.
+`NODE_ENV=production` and any non-loopback Auth target.
 
 `firebase.json` pins the emulator UI to `127.0.0.1:4001` so the API keeps `:4000` in local
 preview.
@@ -251,6 +256,8 @@ discovery/detail/results. No fake controls imply these work.
 
 ## 18. Status
 
-S2b is **IMPLEMENTED CANDIDATE / AWAITING FOUNDER PRODUCT PREVIEW**. S2 remains **IN PROGRESS**
-and is NOT complete. S2a remains closed as merged; S1/EA-01 remain closed. PF-05 is NOT merged
-and NOT cherry-picked; PF-06 has NOT begun. No deployment and no production mutation occurred.
+S2b is **IMPLEMENTED CANDIDATE / S2-G ALIGNED / AWAITING TECHNICAL REVALIDATION**. S2 remains
+**IN PROGRESS** and is NOT complete. S2a remains closed as merged; S2-G remains
+**COMPLETE / FOUNDER ACCEPTED** and is NOT modified here. S1/EA-01 remain closed. PF-05 is NOT
+merged and NOT cherry-picked; PF-06 has NOT begun. No deployment and no production mutation
+occurred.

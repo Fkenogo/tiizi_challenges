@@ -1,25 +1,33 @@
 /**
- * S2b — deterministic LOCAL Founder preview harness (development only).
+ * S2b — deterministic LOCAL Challenge Creation preview harness (development only).
  *
- * Prepares the minimum deterministic state the V2 Challenge Creation journey
- * needs, without seeding any Challenges (the Founder creates those through the
- * V2 journey):
+ * Prepares ONLY what the V2 Challenge Creation journey needs that the
+ * governed product path does not create itself:
+  *
+ *   A. the authenticated Founder preview member identity link
+ *      (`founder1@tiizi.local` Auth emulator account, created by
+ *      `npm run preview:v2-auth:reset`, linked to a PostgreSQL `members`
+ *      row with auth_provider 'firebase');
+ *   B. enough eligible canonical Knowledge for Together / Race / Streak
+ *      (canonical Knowledge fixtures only — never Group state).
  *
- *   A. the authenticated Founder preview member (Auth emulator identity
- *      `founder1@tiizi.local`, created by `npm run preview:v2-auth:reset`);
- *   B. one valid active Group;
- *   C. the live Firestore membership the Group authority reads
- *      (`groups/{legacyId}`, `groupMembers/{legacyId}_{uid}`);
- *   D. the matching PostgreSQL member/group/membership shadow;
- *   E. the group identity mapping (`groups.legacy_firestore_id`);
- *   F. enough eligible canonical Knowledge for Together / Race / Streak.
+ * It deliberately manufactures NO product state:
+ *
+ *   - NO Group (`groups`, `groups/{id}`);
+ *   - NO Group membership (`group_memberships`, `groupMembers/{id}`);
+ *   - NO Challenge.
+ *
+ * The host Group MUST be established by the Founder through the governed
+ * S2-G journey at `/v2/groups/new` (POST /v1/groups). The S2b Step 2
+ * "Who is hosting?" picker reads the member's real Groups through the
+ * accepted `GET /v1/memberships/me` contract. The previous S2b preview
+ * manufacture of a Group/membership was removed on the S2-G alignment
+ * and must not be reintroduced.
  *
  * Loopback-only, refuses NODE_ENV=production, never touches production
- * Firestore/Auth/PostgreSQL. Idempotent: safe to run repeatedly.
+ * Auth/Firestore/PostgreSQL. Idempotent: safe to run repeatedly.
  */
 import 'dotenv/config';
-import { getApps, initializeApp, deleteApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import { createPool, databaseUrl } from '../api/src/db.js';
 import {
   createKnowledgeItem,
@@ -30,33 +38,15 @@ import {
 } from '../api/src/knowledge.js';
 import type { Db } from '../api/src/db.js';
 import {
-  AUTH_EMULATOR_HOST,
   listPreviewAccounts,
   resolveEmulatorTarget,
   resolveProjectId,
   V2_PREVIEW_EMAIL,
 } from './previewV2Auth.js';
 
-const PREVIEW_GROUP_LEGACY_ID = 's2b-preview-group';
-const PREVIEW_GROUP_NAME = 'Founder Preview Group';
-const FIRESTORE_EMULATOR_PORT = 8080;
-const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
-
 function arg(name: string): string | undefined {
   const index = process.argv.indexOf(name);
   return index >= 0 ? process.argv[index + 1] : undefined;
-}
-
-function resolveFirestoreEmulatorHost(): string {
-  const raw = (process.env.FIRESTORE_EMULATOR_HOST ?? `${AUTH_EMULATOR_HOST}:${FIRESTORE_EMULATOR_PORT}`).trim();
-  const [host, portRaw] = raw.split(':');
-  const port = Number(portRaw ?? FIRESTORE_EMULATOR_PORT);
-  if (!LOOPBACK_HOSTS.has(host.toLowerCase()) || port !== FIRESTORE_EMULATOR_PORT) {
-    throw new Error(
-      `Refusing non-loopback Firestore target '${raw}'. Only 127.0.0.1:${FIRESTORE_EMULATOR_PORT} is allowed.`,
-    );
-  }
-  return `${host}:${port}`;
 }
 
 async function upsertMember(db: Db, uid: string): Promise<string> {
@@ -70,35 +60,6 @@ async function upsertMember(db: Db, uid: string): Promise<string> {
     [uid],
   );
   return String(inserted.rows[0].member_id);
-}
-
-async function upsertGroup(db: Db, legacyId: string, name: string): Promise<string> {
-  const existing = await db.query<{ group_id: string }>(
-    `SELECT group_id FROM groups WHERE legacy_firestore_id = $1`,
-    [legacyId],
-  );
-  if (existing.rows[0]) {
-    await db.query(`UPDATE groups SET name = $2, status = 'active', updated_at = now() WHERE group_id = $1`, [
-      String(existing.rows[0].group_id),
-      name,
-    ]);
-    return String(existing.rows[0].group_id);
-  }
-  const inserted = await db.query<{ group_id: string }>(
-    `INSERT INTO groups (legacy_firestore_id, name, description, is_private, status)
-     VALUES ($1, $2, 'Local Founder preview Group.', FALSE, 'active') RETURNING group_id`,
-    [legacyId, name],
-  );
-  return String(inserted.rows[0].group_id);
-}
-
-async function upsertMembership(db: Db, groupId: string, memberId: string): Promise<void> {
-  await db.query(
-    `INSERT INTO group_memberships (group_id, member_id, role, status)
-     VALUES ($1, $2, 'owner', 'active')
-     ON CONFLICT (group_id, member_id) DO UPDATE SET role = 'owner', status = 'active', updated_at = now()`,
-    [groupId, memberId],
-  );
 }
 
 interface KnowledgeSpec {
@@ -193,39 +154,12 @@ async function ensureKnowledge(db: Db): Promise<string[]> {
   return ready;
 }
 
-async function seedFirestore(projectId: string, uid: string, name: string): Promise<void> {
-  const appName = 's2b-preview-seed';
-  const app = getApps().find((candidate) => candidate.name === appName)
-    ?? initializeApp({ projectId }, appName);
-  try {
-    const firestore = getFirestore(app);
-    await firestore.collection('groups').doc(PREVIEW_GROUP_LEGACY_ID).set(
-      {
-        name,
-        description: 'Local Founder preview Group.',
-        isPrivate: false,
-        status: 'active',
-        allowMemberChallenges: true,
-      },
-      { merge: true },
-    );
-    await firestore
-      .collection('groupMembers')
-      .doc(`${PREVIEW_GROUP_LEGACY_ID}_${uid}`)
-      .set({ groupId: PREVIEW_GROUP_LEGACY_ID, userId: uid, role: 'owner', status: 'active' }, { merge: true });
-  } finally {
-    await deleteApp(app);
-  }
-}
-
 async function main(): Promise<void> {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Refusing: the S2b preview harness must not run with NODE_ENV=production.');
   }
   const projectId = resolveProjectId({ cliProject: arg('--project') });
   const target = resolveEmulatorTarget({});
-  const firestoreHost = resolveFirestoreEmulatorHost();
-  process.env.FIRESTORE_EMULATOR_HOST = firestoreHost;
 
   const accounts = await listPreviewAccounts({ projectId, target });
   const account = accounts.find((candidate) => candidate.email === V2_PREVIEW_EMAIL);
@@ -238,21 +172,16 @@ async function main(): Promise<void> {
   const db = createPool(databaseUrl(), { max: 2 });
   try {
     const memberId = await upsertMember(db, account.uid);
-    const groupId = await upsertGroup(db, PREVIEW_GROUP_LEGACY_ID, PREVIEW_GROUP_NAME);
-    await upsertMembership(db, groupId, memberId);
     const knowledge = await ensureKnowledge(db);
-    await seedFirestore(projectId, account.uid, PREVIEW_GROUP_NAME);
 
-    console.log('\nS2b local Founder preview data ready (local emulators only).');
+    console.log('\nS2b local Challenge Creation preview data ready (local emulators only).');
     console.log(`  project            : ${projectId}`);
     console.log(`  auth emulator      : ${target.url}`);
-    console.log(`  firestore emulator : ${firestoreHost}`);
     console.log(`  preview member     : ${account.email} (uid ${account.uid})`);
-    console.log(`  preview group      : ${PREVIEW_GROUP_NAME} (${PREVIEW_GROUP_LEGACY_ID})`);
-    console.log(`  group uuid (pg)    : ${groupId}`);
-    console.log(`  live membership    : groupMembers/${PREVIEW_GROUP_LEGACY_ID}_${account.uid} = owner/active`);
+    console.log(`  member uuid        : ${memberId}`);
     console.log(`  canonical knowledge: ${knowledge.join(', ')}`);
-    console.log('\nNo Challenges were seeded: create them through the V2 journey at /v2/challenges/new.\n');
+    console.log('\nNo Group was seeded. Establish one through the S2-G journey at /v2/groups/new,');
+    console.log('then create Challenges through the V2 journey at /v2/challenges/new.\n');
   } finally {
     await db.close();
   }

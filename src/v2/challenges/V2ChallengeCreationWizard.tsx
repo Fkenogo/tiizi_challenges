@@ -441,10 +441,10 @@ function StepHosting({
     return (
       <V2EmptyState
         title="A Challenge belongs to a Group"
-        message="Challenges are always hosted inside a Group you are part of. You are not in a Group yet, so there is nothing to host a Challenge in. Group creation and discovery arrive in a later experience."
+        message="Challenges are always hosted inside a Group you are part of. You are not in a Group yet — create one to get started hosting Challenges."
         action={
-          <V2Button variant="secondary" onClick={() => navigate('/v2/groups')}>
-            See Groups
+          <V2Button variant="secondary" onClick={() => navigate('/v2/groups/new')}>
+            Create a Group
           </V2Button>
         }
       />
