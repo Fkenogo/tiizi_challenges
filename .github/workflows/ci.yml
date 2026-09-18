@@ -59,12 +59,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+            functions/package-lock.json
       - run: npm ci
-      # Root typecheck covers scripts/ which import functions/src; those
-      # imports resolve against functions/node_modules.
+      # Root typecheck covers scripts/ which import functions/src and
+      # api/src; those imports resolve against functions/node_modules and
+      # api/node_modules, so both packages must be installed before build.
       - run: npm ci
         working-directory: functions
+      - run: npm ci
+        working-directory: api
       - run: npm run build
 
   functions:
