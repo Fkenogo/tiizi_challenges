@@ -127,6 +127,13 @@ export function resolveOccurrence(at: Date): OccurrenceFields {
  * members see human-readable governed outcomes; the code is preserved on
  * the result for diagnostics. No implementation/provider terminology
  * reaches members.
+ *
+ * S3b: activity-application denials (POST /v1/challenges/:id/activity)
+ * map the same way. Governed rejections (the server's durable decision
+ * that this entry does not count) are NEVER retryable-by-default: the
+ * member must change the entry or accept the decision. Retryable marks
+ * ONLY infrastructure/service failures where the same entry may succeed
+ * on retry (the caller reuses the same client_key).
  */
 export function mapV2ApiError(error: unknown): { message: string; retryable: boolean; code?: string } {
   const failure = asApiFailure(error);
@@ -171,6 +178,99 @@ export function mapV2ApiError(error: unknown): { message: string; retryable: boo
       case 'unknown_challenge':
         return {
           message: 'This challenge is no longer available.',
+          retryable: false,
+          code: failure.code,
+        };
+      // ── S3b: governed activity-application rejections ──────────────
+      // Each is the server's durable decision about THIS entry. Retrying
+      // the identical entry reproduces the decision; the member must
+      // change the entry (or accept it). None is retryable.
+      case 'no_current_group_membership':
+        return {
+          message: 'Only current members of the hosting group can log activity right now.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'challenge_not_active':
+        return {
+          message: 'This Challenge is not open for logging right now.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'no_participation_episode':
+        return {
+          message: 'You are not currently taking part in this Challenge, so this entry cannot be recorded.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'outside_challenge_window':
+        return {
+          message: 'This entry falls outside the Challenge window, so it cannot be counted.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'wrong_activity':
+      case 'wrong_variant':
+      case 'unknown_activity':
+        return {
+          message: 'This activity is not part of what counts for this Challenge.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'wrong_unit':
+        return {
+          message: 'This measurement does not match what this Challenge counts. Check the unit and try again.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'knowledge_mismatch':
+        return {
+          message: 'This activity does not match the Challenge configured activity.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'streak_day_closed':
+        return {
+          message: 'That day is already closed for this Challenge — entries cannot be added late.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'occurred_day_mismatch':
+        return {
+          message: 'The day for this entry does not line up with the Challenge timezone. It was not recorded.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'invalid_occurred_at':
+      case 'future_occurred_at':
+      case 'invalid_value':
+      case 'invalid_unit':
+        return {
+          message: 'Please check the amount and the date/time for this entry.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'server_derived_field':
+        return {
+          message: 'This entry included a value only the server may set. It was not recorded.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'idempotency_key_conflict':
+        return {
+          message: 'This entry conflicts with an earlier one and was not recorded.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'challenge_closed_during_acceptance':
+        return {
+          message: 'This Challenge closed while recording. The entry was not counted.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'evidence_rejected':
+        return {
+          message: 'This entry could not be recorded. Check the details and try again.',
           retryable: false,
           code: failure.code,
         };
