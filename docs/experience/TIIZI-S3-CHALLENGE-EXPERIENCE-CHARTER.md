@@ -4,10 +4,13 @@
 
 **Base:** `origin/main` @ `e6324d369382585c653f2449ea3aaa07c252fb96` (verified; no drift)
 
-**Master Programme:** v1.78 (S3 chartered; implementation NOT STARTED / NOT AUTHORISED)
+**Master Programme:** v1.79 (S3 CHARTER APPROVED / IMPLEMENTATION AUTHORISED;
+S3a authorised, NOT STARTED)
 
-**Status:** CHARTERED — AWAITING FOUNDER CHARTER APPROVAL. No S3 slice is started,
-authorised for implementation, complete, or merged.
+**Status:** APPROVED / MERGE AUTHORISED (TIIZI-S3-CHARTER-APPROVE-MERGE-001).
+Founder decisions FD-S3-001 → FD-S3-005 recorded in §12. Next authorised
+implementation task is TIIZI-S3A-PARTICIPATION-ACCESS-001 (authorised, NOT STARTED —
+S3a has not begun; no S3 slice is complete or in progress).
 
 **Charter rule (engine-first):** canonical Tiizi/domain truth → governed authority →
 persistence/read models → experience binding. S3 exposes existing Tiizi truth. The
@@ -219,9 +222,10 @@ requires API/read binding (seam exists) · (C) requires missing domain capabilit
   already implements standard competition ranking) **+ E**.
 - Completion/final result (sealed banner, logging disabled, frozen totals/placements):
   **A/B + E** (frozen finals already immutable).
-- Run Again (new challenge, zero participants, affirmative rejoin): **binding-only** —
-  reuses `POST /v1/challenges` with copied config; no fork endpoint, no new domain.
-  In scope for S3d as a re-establishment shortcut UX, not as new engine.
+- Run Again: REMOVED from S3 scope (FD-S3-003). Re-creating a Challenge is a
+  creation/re-creation affordance, deferred for later placement (potentially alongside
+  Templates/S7 or a separately authorised creation-experience enhancement). Not
+  implemented in S3.
 - Deferred to later stages (**D**): group hosting/permission surfaces (S4), Today
   prioritization (S5), catalogue/knowledge detail (S6), template gallery/use/authoring
   (S7), Profile/recognition/notifications/Kudos/support/donations (S8), operator console/
@@ -267,7 +271,7 @@ field, no upload UI, no invented media architecture in this charter.
   MERGED. S3 must not merge, cherry-pick, or resurrect it. S3 detail/logging/progress UX
   is new V2 assembly bound to §2 seams.
 - **PF-06** (Challenge Template System & Admin Management): NOT BEGUN; remains Templates
-  work (S7). No template browse/use/author in S3 (Run Again reuses establishment only).
+  work (S7). No template browse/use/author in S3.
 - **EBC-05** (revised PKG-1 exposure, `impl/ebc-05-engine-founder-preview-001`): UNMERGED /
   reference-only; must not be merged wholesale; not the V2 product path. S3 binds EBC-01→
   EBC-04 truth only.
@@ -277,9 +281,12 @@ field, no upload UI, no invented media architecture in this charter.
 ## 9. Proposed S3 slice sequence (derived from authority topology)
 
 Four vertical slices, each binding real engine truth to Founder-previewable experience.
-Reads before writes; lifecycle mutations stay CLI/ops. Names/boundaries below are the
-charter proposal (not pre-approved) — Founder charter approval authorises the sequence,
-not implementation.
+The sequence follows the authority/lifecycle order — participant establishment
+→ activity application → derived/live Challenge truth → final/frozen Challenge truth —
+which corresponds to S3a → S3b → S3c → S3d below. Lifecycle mutations stay CLI/ops.
+The sequence is Founder-approved (FD-S3-001); S3a implementation is authorised
+(TIIZI-S3A-PARTICIPATION-ACCESS-001, NOT STARTED); S3b–S3d proceed in order, each
+reaching a Founder-preview boundary before the next begins.
 
 ### S3a — Challenge participation / access
 
@@ -323,24 +330,24 @@ not implementation.
   Competitive (own accumulation, live position, N-of-M finished, null-until-finished);
   Streak (today requirements, current/best, day states, governing-tz temporal status,
   never terminally complete while live).
-- Non-goals: finalized results, Run Again, recognition, Kudos.
+- Non-goals: finalized results, recognition, Kudos.
 - Preview: multi-participant logging across all three types showing diverging live truth.
 - Evidence: read payloads vs rendered state for each type.
 
 ### S3d — Results / finalized experience
 
-- Purpose: see completion and frozen final results; start again where authorised.
+- Purpose: see completion and frozen final results. S3d ends with authoritative
+  final/frozen Challenge truth; Run Again is out of scope (FD-S3-003).
 - Authority reused: frozen finals (`challenge_finalizations`,
   `challenge_participation_finals`) + `finalResult` + frozen leaderboard positions (§2E).
   Finals are produced via existing CLI/ops finalization — S3 adds no mutation seam.
-- Seams: detail `finalResult` + frozen leaderboard (exist). Run Again reuses
-  `POST /v1/challenges` (exist).
+- Seams: detail `finalResult` + frozen leaderboard (exist). No new API.
 - Experience: read-only sealed results (totals/placements/streak outcomes preserved),
-  logging disabled, Run Again as zero-participant re-establishment shortcut.
-- Non-goals: manual end/finalize/rebuild UI (S9 ops), recognition issuance, scheduling.
-- Preview: CLI `finalize` → sealed results per type → Run Again creates a fresh
-  zero-participant Challenge.
-- Evidence: frozen rows + sealed rendering + new-challenge establishment record.
+  logging disabled.
+- Non-goals: manual end/finalize/rebuild UI (S9 ops), recognition issuance, scheduling,
+  Run Again / re-creation.
+- Preview: CLI `finalize` → sealed results per type.
+- Evidence: frozen rows + sealed rendering.
 
 ## 10. S3 acceptance model
 
@@ -352,35 +359,46 @@ deployment):
    CLI finalize → sealed total + contributor shares.
 2. Competitive: create → join (2+ members) → log → live tied positions (1,2,2) → finish
    → CLI finalize → frozen placements.
-3. Streak: create → join → log across governing-tz days → current/best/day-states evolve
+3. Streak: create → join → log across governing-tz days (controlled local temporal
+   setup permitted per FD-S3-004; behaviour still processed through canonical engine
+   truth, never manufactured in UI) → current/best/day-states evolve
    → closed-day log rejected → CLI finalize → terminal completion from best streak; live
    UI never claimed early completion.
 
 Each slice is previewed per §9; whole-S3 acceptance runs the three journeys end to end
 on a local preview with read-only persistence verification.
 
-## 11. Programme status after this charter
+## 11. Programme status after charter approval
 
 - S2 remains COMPLETE / FOUNDER ACCEPTED / MERGED (unchanged).
-- S3 is CHARTERED (this document) — implementation NOT STARTED and NOT AUTHORISED
-  pending Founder charter approval.
-- No S3 slice (S3a–S3d) is complete, in progress, or merged.
+- S3 is CHARTER APPROVED / IMPLEMENTATION AUTHORISED (TIIZI-S3-CHARTER-APPROVE-MERGE-001).
+- Next authorised implementation task: TIIZI-S3A-PARTICIPATION-ACCESS-001 (authorised,
+  NOT STARTED — S3a has not begun).
+- No S3 slice (S3a–S3d) is complete or in progress.
+- Slices proceed S3a → S3b → S3c → S3d per FD-S3-001, each to a Founder-preview
+  boundary before the next begins.
 - No later stage (S4–S9) is pulled into S3; no PF-05 resurrection; no PF-06 work; no
   EBC-05 merge; V1 remains frozen.
-- No source/API/schema/migration/workflow/package change in this charter.
+- No source/API/schema/migration/workflow/package change in this approval.
 
-## 12. Risks / open questions requiring Founder decision
+## 12. Founder decisions (TIIZI-S3-CHARTER-APPROVE-MERGE-001 — all five resolved)
 
-1. Charter approval model: does S3 proceed slice-by-slice (S3a→S3d) with per-slice
-   preview, or require whole-S3 approval before S3a implementation? (Recommended: approve
-   charter now; authorise S3a as first implementation task.)
-2. Finalization operations: CLI-driven finalization suffices for preview; is a governed
-   scheduled/operator finalization path (S9) required before any shared Founder preview
-   with real time windows? (Recommended: defer to S9; use CLI for S3 previews.)
-3. Run Again placement: S3d shortcut vs Templates (S7) primitive? (Recommended: S3d
-   re-establishment shortcut only; full template semantics stay S7/PF-06.)
-4. Streak preview logistics: multi-day streak journeys need either real elapsed days or
-   an ops-controlled clock; Founder to accept CLI/test-window approach for previews.
-5. External check note: `ci` workflow on the base is green; the external
-   `Workers Builds: tiizi-challenges` check reports failure on the base commit and is
-   outside the repo `ci` workflow — Founder to confirm it is not a charter gate.
+1. **FD-S3-001 — Implementation cadence: slice-by-slice S3a → S3b → S3c → S3d.**
+   Each slice establishes a coherent vertical capability and reaches a Founder-preview
+   boundary before the next proceeds. No unnecessary governance micro-slices.
+2. **FD-S3-002 — Finalisation: existing CLI finalisation is sufficient** for S3
+   development and Founder preview. S3 consumes authoritative finalisation/frozen-final
+   truth. Production scheduling/operational finalisation belongs to the operator/
+   operations stage (currently S9). No scheduler in S3.
+3. **FD-S3-003 — Run Again removed from S3d.** S3d ends with authoritative final/frozen
+   results. Run Again is a creation/re-creation affordance, deferred for later placement
+   (potentially alongside Templates/S7 or a separately authorised creation-experience
+   enhancement). Not implemented in S3.
+4. **FD-S3-004 — Streak preview without waiting real days.** Controlled local
+   preview/test preparation may establish the temporal conditions for streak behaviour.
+   Behaviour must still be processed through canonical engine truth; the UI must not
+   manufacture streak progress/completion.
+5. **FD-S3-005 — External Workers Build is NOT an S3 engineering gate.** The repository
+   `ci` workflow remains the engineering gate. The external check is not modified or
+   suppressed here; its deployment relevance may be investigated separately when that
+   deployment path becomes relevant.
