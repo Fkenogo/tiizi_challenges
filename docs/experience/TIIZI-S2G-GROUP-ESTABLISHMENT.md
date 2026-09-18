@@ -3,8 +3,10 @@
 **Work package:** S2-G — Group Establishment Prerequisite (minimum real V2 Group
 establishment vertical)
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING FOUNDER PRODUCT PREVIEW
-(branch `impl/s2g-group-establishment-001`; **STOP BEFORE MERGE**)
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED
+(PR #29, merge `e6686c8` of approved head `8767d82` to `origin/main`; S2 closed under TIIZI-S2-CLOSE-001, Master Programme 1.77.
+Historical state at authoring time is preserved below: IMPLEMENTED CANDIDATE / AWAITING FOUNDER PRODUCT PREVIEW
+on branch `impl/s2g-group-establishment-001` with **STOP BEFORE MERGE**.)
 
 **Date:** 2026-09-17
 
@@ -126,6 +128,10 @@ by client declaration. The client cannot submit `ownerId`, `userId`, `role` or `
 
 ## 8. S2b integration readiness
 
+[TIIZI-S2-CLOSE-001 note: this section preserves the authoring-time readiness analysis written
+before S2b alignment; the rebase/alignment has since completed and merged (PR #30, merge
+`5d4ac3b`).]
+
 The read contract is deliberately the SAME contract S2b already consumes:
 `GET /v1/memberships/me` (`src/api/membershipsApi.ts`). After S2-G merges, S2b consumes the Group
 naturally with no second Group integration mechanism. S2b is not merged, rebased or changed here
@@ -228,8 +234,9 @@ S2-G is **COMPLETE / FOUNDER ACCEPTED** (TIIZI-S2G-ACCEPT-MERGE-001; approved he
 merged to main). Founder Product Preview evidence: authenticated through the local preview; initial
 Groups state genuinely empty; "Tiizi Founders Fitness Group" created through `/v2/groups/new` via
 the governed establishment path; the Group listed with the Founder as "Accountable Steward";
-persistence verified across browser refresh. S2 remains **IN PROGRESS** (S2b not accepted/merged)
-and is NOT complete. S2a remains closed as merged. S2b remains **IMPLEMENTED CANDIDATE / HELD**
-(NOT merged; NOT modified; to be rebased/aligned onto the accepted S2-G baseline). PF-05 is NOT
+persistence verified across browser refresh. [TIIZI-S2-CLOSE-001 reconciliation: S2b has since become COMPLETE / FOUNDER
+ACCEPTED / MERGED (PR #30, merge `5d4ac3b`), post-acceptance corrections have merged (PR #31
+date-read correction; PR #32 CI web baseline correction, main CI green), and S2 is COMPLETE /
+FOUNDER ACCEPTED / MERGED (Master Programme 1.77).] S2a remains closed as merged. PF-05 is NOT
 merged; PF-06 has NOT begun. V1 remains FROZEN / reference-only. No deployment and no production
 mutation occurred.
