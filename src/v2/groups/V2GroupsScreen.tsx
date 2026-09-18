@@ -9,6 +9,7 @@ import {
   V2SectionHeader,
 } from '../components/V2Primitives';
 import { groupRoleLabel } from './groupDraft';
+import { groupsViewFor, V2_GROUPS_NEW_PATH } from './groupsView';
 import { useV2Groups } from './useV2Groups';
 
 /**
@@ -28,6 +29,12 @@ export function V2GroupsScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const groups = useV2Groups();
+  const view = groupsViewFor({
+    isLoading: groups.isLoading,
+    isError: groups.isError,
+    isSuccess: groups.isSuccess,
+    memberships: groups.data?.memberships,
+  });
   const memberships = groups.data?.memberships ?? [];
   const createdGroupName = (location.state as { createdGroupName?: string } | null)?.createdGroupName;
 
@@ -39,7 +46,7 @@ export function V2GroupsScreen() {
         description="Your people, your pace. Groups are the friends, family, or colleagues you move with."
         action={
           memberships.length > 0 ? (
-            <V2Button onClick={() => navigate('/v2/groups/new')}>Create Group</V2Button>
+            <V2Button onClick={() => navigate(V2_GROUPS_NEW_PATH)}>Create Group</V2Button>
           ) : undefined
         }
       />
@@ -55,7 +62,7 @@ export function V2GroupsScreen() {
 
       {groups.isLoading && <V2LoadingState label="Loading your Groups…" />}
 
-      {groups.isError && (
+      {view.kind === 'error' && (
         <V2ErrorState
           title="We could not load your Groups"
           message="Something went wrong on the way. Please try again."
@@ -63,17 +70,17 @@ export function V2GroupsScreen() {
         />
       )}
 
-      {groups.isSuccess && memberships.length === 0 && (
+      {view.kind === 'empty' && (
         <V2EmptyState
           title="You are not in a Group yet"
           message="A Group is where you and your people move together. Create one to start sharing Challenges, or join one you are invited to."
-          action={<V2Button onClick={() => navigate('/v2/groups/new')}>Create a Group</V2Button>}
+          action={<V2Button onClick={() => navigate(V2_GROUPS_NEW_PATH)}>Create a Group</V2Button>}
         />
       )}
 
-      {groups.isSuccess && memberships.length > 0 && (
+      {view.kind === 'list' && (
         <ul className="space-y-3">
-          {memberships.map((membership) => (
+          {view.memberships.map((membership) => (
             <li key={membership.groupId}>
               <V2Card>
                 <div className="flex items-start justify-between gap-3">
