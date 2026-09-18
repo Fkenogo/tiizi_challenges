@@ -2,9 +2,13 @@
 
 **Work package:** S2b — V2 Group Context + Challenge Creation (first vertical product assembly slice)
 
-**Status:** COMPLETE / FOUNDER ACCEPTED (alignment branch
-`impl/s2b-s2g-alignment-001`, accepted head `7e044da`; merged main lineage recorded in the
-Master Programme; **STOP BEFORE MERGE** — merge is a separate governed step)
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED
+(PR #30, merge `5d4ac3b` of accepted head `7e044da` on alignment branch
+`impl/s2b-s2g-alignment-001` to `origin/main`; post-acceptance corrections merged
+(PR #31 date-read correction, merge `2638ceb`; PR #32 CI web baseline correction, merge
+`dcc8690`); S2 closed under TIIZI-S2-CLOSE-001, Master Programme 1.77.
+Historical state at authoring time is preserved below: accepted head `7e044da`
+with **STOP BEFORE MERGE** as a separate governed step.)
 
 **Date:** 2026-09-17
 
@@ -264,9 +268,8 @@ invented here; for subsequent product/architecture treatment):
 
 ## 18. Status
 
-S2b is **COMPLETE / FOUNDER ACCEPTED** (TIIZI-S2B-FOUNDER-ACCEPT-001; accepted head `7e044da`).
-S2 remains **IN PROGRESS** (S3+ not started) and is NOT complete. S2a remains closed as merged;
-S2-G remains **COMPLETE / FOUNDER ACCEPTED** and is NOT modified here. S1/EA-01 remain closed.
+S2b is **COMPLETE / FOUNDER ACCEPTED / MERGED** (TIIZI-S2B-FOUNDER-ACCEPT-001; accepted head `7e044da`; merged to main via PR #30, merge `5d4ac3b`). [TIIZI-S2-CLOSE-001 reconciliation: S2 is COMPLETE / FOUNDER ACCEPTED / MERGED (Master Programme 1.77); post-acceptance corrections merged (PR #31 date-read correction; PR #32 CI web baseline correction, main CI green).] S2a remains closed as merged;
+S2-G remains **COMPLETE / FOUNDER ACCEPTED / MERGED** and is NOT modified here. S1/EA-01 remain closed.
 PF-05 is NOT merged and NOT cherry-picked; PF-06 has NOT begun. No deployment and no production
 mutation occurred.
 
