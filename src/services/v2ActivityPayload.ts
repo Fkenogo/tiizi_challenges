@@ -122,10 +122,61 @@ export function resolveOccurrence(at: Date): OccurrenceFields {
 /**
  * Map V2 API failures to displayable messages. NEVER fall back to V1
  * writes: a failed V2 request stays failed/retryable.
+ *
+ * S3a: participation denials (join/withdraw) map by server `code` first so
+ * members see human-readable governed outcomes; the code is preserved on
+ * the result for diagnostics. No implementation/provider terminology
+ * reaches members.
  */
-export function mapV2ApiError(error: unknown): { message: string; retryable: boolean } {
+export function mapV2ApiError(error: unknown): { message: string; retryable: boolean; code?: string } {
   const failure = asApiFailure(error);
   if (failure) {
+    switch (failure.code) {
+      case 'no_group_membership':
+        return {
+          message: 'Only current members of the hosting group can take part right now.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'challenge_ended':
+        return {
+          message: 'This Challenge has ended, so joining is closed.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'participation_exists':
+        return {
+          message: 'You are already taking part in this Challenge.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'no_active_participation':
+        return {
+          message: 'You are not currently taking part in this Challenge.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'participation_closed':
+        return {
+          message: 'This participation is already closed.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'group_authority_unavailable':
+        return {
+          message: 'We could not confirm group membership right now. You can retry.',
+          retryable: true,
+          code: failure.code,
+        };
+      case 'unknown_challenge':
+        return {
+          message: 'This challenge is no longer available.',
+          retryable: false,
+          code: failure.code,
+        };
+      default:
+        break;
+    }
     switch (failure.status) {
       case 401:
         return { message: 'Please sign in again to continue.', retryable: false };

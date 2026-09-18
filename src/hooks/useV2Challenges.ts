@@ -19,6 +19,7 @@ import {
 } from '../api/v2ChallengeApi';
 import { isV2ChallengesEnabled } from '../api/v2ChallengeMode';
 import { useAuth } from './useAuth';
+import { invalidateV2ChallengeReads } from '../v2/challenges/challengeQueryKeys';
 
 export function useV2ChallengeList() {
   const { user } = useAuth();
@@ -56,23 +57,20 @@ export function useV2JoinChallenge() {
   return useMutation({
     mutationFn: (challengeId: string) => joinChallengeV2(challengeId),
     onSuccess: async (_data, challengeId) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['v2-challenges'] }),
-        queryClient.invalidateQueries({ queryKey: ['v2-challenge', challengeId] }),
-      ]);
+      // S3a: invalidate the canonical S2b/S3a families AND the legacy
+      // family through the shared contract — never one side alone.
+      await invalidateV2ChallengeReads(queryClient, user?.uid, challengeId);
     },
   });
 }
 
 export function useV2WithdrawChallenge() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: (challengeId: string) => withdrawChallengeV2(challengeId),
     onSuccess: async (_data, challengeId) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['v2-challenges'] }),
-        queryClient.invalidateQueries({ queryKey: ['v2-challenge', challengeId] }),
-      ]);
+      await invalidateV2ChallengeReads(queryClient, user?.uid, challengeId);
     },
   });
 }
@@ -85,17 +83,17 @@ export interface V2LogVariables {
 
 export function useV2LogActivity() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     // No automatic retry: a retry must reuse the SAME client_key, which the
     // caller holds. TanStack mutations do not retry by default; keep it so.
     mutationFn: async (variables: V2LogVariables): Promise<V2ActivityResult> =>
       logChallengeActivityV2(variables.challengeId, variables.payload),
     onSuccess: async (result) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['v2-challenge', result.challengeId] }),
-        queryClient.invalidateQueries({ queryKey: ['v2-challenges'] }),
-        queryClient.invalidateQueries({ queryKey: ['v2-leaderboard', result.challengeId] }),
-      ]);
+      // S3a coherence: activity acceptance also changes derived truth read
+      // through the canonical families — invalidate both sides together.
+      await invalidateV2ChallengeReads(queryClient, user?.uid, result.challengeId);
+      await queryClient.invalidateQueries({ queryKey: ['v2-leaderboard', result.challengeId] });
     },
   });
 }

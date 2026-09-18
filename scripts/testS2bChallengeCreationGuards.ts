@@ -276,7 +276,9 @@ check('created screen shows measurement summary', /MeasurementSummary/.test(crea
 const hooksSource = read('src/v2/challenges/useChallengeCreation.ts');
 check('detail hook uses GET /v1/challenges/:id client', hooksSource.includes('getChallengeV2'));
 check('list hook uses GET /v1/challenges client', hooksSource.includes('listChallengesV2'));
-check('list invalidated after creation', hooksSource.includes("['v2-challenge-list']"));
+check('list invalidated after creation', hooksSource.includes("['v2-challenge-list']")
+  // S3a canonical cache contract: the same scope via the shared constant.
+  || hooksSource.includes('V2_CHALLENGE_LIST_SCOPE'));
 const listSource = read('src/v2/challenges/V2ChallengeListScreen.tsx');
 check('list screen renders create action + states', listSource.includes('Create Challenge')
   && listSource.includes('V2EmptyState') && listSource.includes('V2LoadingState'));
