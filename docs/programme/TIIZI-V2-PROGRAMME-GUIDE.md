@@ -388,5 +388,8 @@ Experience Reference (and must not adapt the V1 shell or copy V1 Home/Groups/
 onboarding/challenge navigation/Profile composition). S1 is **COMPLETE / FOUNDER
 ACCEPTED / MERGED** (merge `d5183c8` of approved head `dbb1ba7`; traceability:
 `docs/experience/TIIZI-S1-V2-EXPERIENCE-FOUNDATION.md`). The next authorised
-implementation slice is **S2 — GROUP CONTEXT & CHALLENGE CREATION** (NOT IMPLEMENTED).
+implementation slice is **S2 — GROUP CONTEXT & CHALLENGE CREATION** (**COMPLETE /
+FOUNDER ACCEPTED / MERGED**, v1.77). **S3 — CHALLENGE EXPERIENCE** is **CHARTERED**
+(v1.78; `docs/experience/TIIZI-S3-CHALLENGE-EXPERIENCE-CHARTER.md`; implementation NOT
+STARTED / NOT AUTHORISED pending Founder charter approval).
 PF-05 remains unmerged with its experience assembly **NOT APPROVED**, and PF-06 remains **NOT BEGUN**.
