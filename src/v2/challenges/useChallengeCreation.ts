@@ -12,7 +12,21 @@ import {
 } from '../../api/challengeCreationApi';
 import { fetchMyMemberships, type MyMembershipsResponse } from '../../api/membershipsApi';
 import { v2MembershipsKey } from '../memberships/membershipQueryKeys';
-import { getChallengeV2, listChallengesV2, type V2ChallengeDetail, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
+import {
+  getChallengeV2,
+  joinChallengeV2,
+  listChallengesV2,
+  withdrawChallengeV2,
+  type V2ChallengeDetail,
+  type V2ChallengeSummary,
+  type V2ParticipationResponse,
+} from '../../api/v2ChallengeApi';
+import {
+  invalidateV2ChallengeReads,
+  V2_CHALLENGE_LIST_SCOPE,
+  v2ChallengeDetailKey,
+  v2ChallengeListKey,
+} from './challengeQueryKeys';
 import { useAuth } from '../../hooks/useAuth';
 
 /**
@@ -76,9 +90,7 @@ export function useEstablishChallenge() {
   return useMutation<EstablishChallengeResponse, Error, EstablishChallengeBody>({
     mutationFn: (body) => establishChallengeV2(body),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['v2-challenge-list'] }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: [V2_CHALLENGE_LIST_SCOPE] });
     },
   });
 }
@@ -87,7 +99,7 @@ export function useEstablishChallenge() {
 export function useChallengeListV2() {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['v2-challenge-list', user?.uid],
+    queryKey: v2ChallengeListKey(user?.uid),
     queryFn: () => listChallengesV2(),
     enabled: !!user?.uid && apiConfigured(),
     staleTime: 30 * 1000,
@@ -98,10 +110,45 @@ export function useChallengeListV2() {
 export function useChallengeDetailV2(challengeId: string | undefined) {
   const { user } = useAuth();
   return useQuery<V2ChallengeDetail>({
-    queryKey: ['v2-challenge-detail', challengeId, user?.uid],
+    queryKey: v2ChallengeDetailKey(challengeId, user?.uid),
     queryFn: () => getChallengeV2(challengeId as string),
     enabled: !!user?.uid && apiConfigured() && !!challengeId,
     staleTime: 10 * 1000,
+  });
+}
+
+/**
+ * S3a — governed join over the existing `POST /v1/challenges/:id/join`
+ * seam. The server is the sole authority; success only marks the
+ * canonical + legacy Challenge reads stale (see `challengeQueryKeys.ts`)
+ * so the authoritative refetch determines final `myParticipation` state.
+ * No optimistic canonical participation state is manufactured.
+ */
+export function useJoinChallengeV2() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation<V2ParticipationResponse, Error, string>({
+    mutationFn: (challengeId) => joinChallengeV2(challengeId),
+    onSuccess: async (_data, challengeId) => {
+      await invalidateV2ChallengeReads(queryClient, user?.uid, challengeId);
+    },
+  });
+}
+
+/**
+ * S3a — governed withdraw over the existing
+ * `POST /v1/challenges/:id/withdraw` seam. Closes the caller's active
+ * episode; history is preserved server-side. Same refetch-only truth
+ * contract as join: no client-derived participation state.
+ */
+export function useWithdrawChallengeV2() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation<V2ParticipationResponse, Error, string>({
+    mutationFn: (challengeId) => withdrawChallengeV2(challengeId),
+    onSuccess: async (_data, challengeId) => {
+      await invalidateV2ChallengeReads(queryClient, user?.uid, challengeId);
+    },
   });
 }
 

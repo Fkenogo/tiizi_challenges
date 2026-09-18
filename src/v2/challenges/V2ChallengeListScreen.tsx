@@ -23,6 +23,18 @@ function statusTone(status: string): string {
   return 'bg-amber-100 text-amber-800';
 }
 
+function participationLabel(challenge: V2ChallengeSummary): { text: string; className: string } | null {
+  // Bound directly to the authoritative read model — never inferred.
+  if (challenge.myParticipation?.status === 'active') {
+    return { text: 'Taking part', className: 'bg-emerald-100 text-emerald-800' };
+  }
+  if (challenge.status === 'ended') return null;
+  if (challenge.myParticipation) {
+    return { text: 'Not taking part', className: 'bg-slate-100 text-slate-600' };
+  }
+  return { text: 'Not joined', className: 'bg-slate-100 text-slate-600' };
+}
+
 export function V2ChallengeListScreen() {
   const navigate = useNavigate();
   const challenges = useChallengeListV2();
@@ -65,7 +77,9 @@ export function V2ChallengeListScreen() {
 
       {challenges.isSuccess && challenges.data.challenges.length > 0 && (
         <ul className="space-y-3">
-          {challenges.data.challenges.map((challenge: V2ChallengeSummary) => (
+          {challenges.data.challenges.map((challenge: V2ChallengeSummary) => {
+            const participation = participationLabel(challenge);
+            return (
             <li key={challenge.challengeId}>
               <button
                 type="button"
@@ -79,6 +93,11 @@ export function V2ChallengeListScreen() {
                   <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${statusTone(challenge.status)}`}>
                     {statusLabel(challenge.status)}
                   </span>
+                  {participation && (
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${participation.className}`}>
+                      {participation.text}
+                    </span>
+                  )}
                   <span className="text-[11px] font-bold text-slate-400">
                     {groupName(challenge.groupId) ?? 'Your group'}
                   </span>
@@ -92,7 +111,8 @@ export function V2ChallengeListScreen() {
                 </p>
               </button>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </V2Page>

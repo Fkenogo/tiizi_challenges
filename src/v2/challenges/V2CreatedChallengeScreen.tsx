@@ -19,14 +19,17 @@ import {
   timezoneLabel,
 } from './challengeCreationDraft';
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
+import { V2ParticipationSection } from './V2ParticipationSection';
 
 /**
- * S2b — created-Challenge context.
+ * S2b — created-Challenge context, extended by S3a with the governed
+ * participation/access slice.
  *
- * The bounded destination after a successful creation (and the post-refresh
- * landing): everything shown comes from the persisted V2 read
+ * Everything shown comes from the persisted V2 read
  * (GET /v1/challenges/:id) plus neutral name resolution — there is no
- * mock-only success screen. Deliberately NOT the full S3 Challenge Detail.
+ * mock-only success screen. S3a binds the existing join/withdraw seams
+ * here (the V2 Challenge detail route); deliberately NOT logging (S3b),
+ * progress dashboards (S3c), or results (S3d).
  */
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -109,22 +112,27 @@ export function V2CreatedChallengeScreen() {
     memberships.data?.memberships.find((membership) => membership.groupId === challenge.groupId)?.group.name
     ?? 'Your group';
   const participation = challenge.myParticipation;
+  const participationSentence = participation?.status === 'active'
+    ? 'You are taking part in this Challenge.'
+    : participation
+      ? 'You are not taking part in this Challenge right now.'
+      : 'You are not taking part in this Challenge yet.';
 
   return (
     <V2Page>
       <V2SectionHeader
-        eyebrow="Challenge created"
+        eyebrow={`${challengeTypeLabel(challenge.challengeType)} · Hosted by ${groupName}`}
         title={challenge.title}
-        description="This is the Challenge as it now exists. Refreshing this page shows the same persisted Challenge."
+        description={`${statusLabel(challenge.status)} · ${formatDayRange(challenge.startDate, challenge.endDate)} · ${participationSentence}`}
       />
 
       <div className="space-y-4">
         <V2Card className="border-emerald-200 bg-emerald-50">
           <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Created</p>
           <p className="mt-1 text-sm font-medium text-emerald-900">
-            {participation
+            {participation?.status === 'active'
               ? 'You are taking part in this Challenge.'
-              : 'You created this Challenge without joining it as a participant.'}
+              : 'This Challenge exists as persisted truth. Refreshing this page shows the same Challenge.'}
           </p>
         </V2Card>
 
@@ -156,6 +164,8 @@ export function V2CreatedChallengeScreen() {
             </p>
           )}
         </V2Card>
+
+        <V2ParticipationSection detail={challenge} />
 
         <V2Card>
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">

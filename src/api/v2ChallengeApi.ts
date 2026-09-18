@@ -48,6 +48,10 @@ export interface V2ChallengeSummary {
   endDate: string;
   /** Governing Challenge timezone (friendly label rendered client-side). */
   timezone: string;
+  /** EBC-04: true once the terminal result is computed and frozen (already
+   * served by GET /v1/challenges list/detail; typed here for S3a
+   * read-only gating — no server change). */
+  finalized: boolean;
   currentConfigVersion: number;
   goalValue: number | null;
   goalUnit: string | null;
