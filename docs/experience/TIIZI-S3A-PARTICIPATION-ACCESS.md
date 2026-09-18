@@ -2,9 +2,9 @@
 
 **Work package:** S3a — Challenge participation / access (first S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** COMPLETE / FOUNDER ACCEPTED / READY TO MERGE
-(PR #35, accepted head `24d25d7` on branch `impl/s3a-participation-access-001`
-to `origin/main` @ `3219494`; merge by normal merge commit — NOT yet merged.)
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED
+(PR #35, normal merge commit `3b7dcee` of accepted head `a732f72` on branch
+`impl/s3a-participation-access-001` to `origin/main` @ `3219494`.)
 
 **Date:** 2026-09-18
 
@@ -178,8 +178,10 @@ Groups Experience remains S4.
 
 ## 11. Status
 
-S3a is **COMPLETE / FOUNDER ACCEPTED / READY TO MERGE** (TIIZI-S3A-FOUNDER-ACCEPT-MERGE-001;
-accepted head `24d25d7`; PR #35; Master Programme 1.81). **S3 remains IMPLEMENTATION IN
-PROGRESS. S3b has NOT begun** — the next programme slice after successful merge is S3b,
+S3a is **COMPLETE / FOUNDER ACCEPTED / MERGED** (TIIZI-S3A-FOUNDER-ACCEPT-MERGE-001;
+accepted head `a732f72` (v1.80 implementation + TIIZI-S3A-FOUNDER-PREVIEW-CORR-001
+Groups zero-state correction, plus v1.81 acceptance record); merged to main via PR #35,
+normal merge commit `3b7dcee`; candidate verified ancestor of `origin/main`).
+**S3 remains IMPLEMENTATION IN PROGRESS. S3b has NOT begun** — the next programme slice after successful merge is S3b,
 which requires its own authorised task. S2 remains COMPLETE / FOUNDER ACCEPTED / MERGED.
 No deployment and no production mutation occurred.
