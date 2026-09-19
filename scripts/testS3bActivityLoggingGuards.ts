@@ -42,12 +42,13 @@ import { readFileSync } from 'node:fs';
 import { QueryClient } from '@tanstack/react-query';
 import type { V2ChallengeDetail } from '../src/api/v2ChallengeApi.js';
 import {
+  buildS3bActivityPayload,
   buildV2ActivityPayload,
   mapV2ApiError,
   newClientKey,
   resolveOccurrence,
 } from '../src/services/v2ActivityPayload.js';
-import { loggingViewFor } from '../src/v2/challenges/loggingView.js';
+import { loggingSectionStateFor, loggingViewFor } from '../src/v2/challenges/loggingView.js';
 import {
   invalidateV2ChallengeReads,
   v2ChallengeDetailKey,
@@ -175,9 +176,11 @@ check('finalized challenge -> hidden (read-only)',
     myParticipation: activeParticipation(),
     config: configuredDetail().config,
   })).kind === 'hidden');
-check('joined but nothing configured -> hidden (no-configured-activities)',
+check('joined but nothing configured -> honest empty (no-configured-activities)',
   JSON.stringify(loggingViewFor(detail({ myParticipation: activeParticipation() })))
-    === JSON.stringify({ kind: 'hidden', reason: 'no-configured-activities' }));
+    === JSON.stringify({ kind: 'empty', reason: 'no-configured-activities' }));
+check('empty zero-activity state renders (not silent null)',
+  loggingSectionStateFor(detail({ myParticipation: activeParticipation() }), null).render === 'empty');
 check('view never invents configuration values',
   JSON.stringify(loggingViewFor(configuredDetail()))
     === JSON.stringify(loggingViewFor(configuredDetail())));
@@ -204,6 +207,18 @@ if (firstChoice) {
       .every((k) => k in payload));
   check('payload unit is the locked config unit', payload.unit === 'reps');
   check('occurrence derives ISO time + day', payload.occurred_at.endsWith('Z') && (payload.occurred_day ?? '').length === 10);
+  const s3bPayload = buildS3bActivityPayload({
+    activityKind: firstChoice.activityKind,
+    canonicalKey: firstChoice.canonicalKey,
+    activityVariant: firstChoice.activityVariant,
+    value: 25,
+    unit: firstChoice.unit,
+    occurredAt: new Date('2026-09-18T08:00:00.000Z'),
+    clientKey: 'v2-test-key-1-s3b',
+  });
+  check('S3b submission omits client occurred_day (server derives governing day)',
+    !('occurred_day' in s3bPayload) && s3bPayload.occurred_day === undefined
+    && s3bPayload.occurred_at.endsWith('Z'));
   let threw = false;
   try {
     buildV2ActivityPayload({
@@ -237,7 +252,7 @@ console.log('denial mapping');
 const governedCases: Array<[string, number, RegExp]> = [
   ['no_current_group_membership', 403, /hosting group/i],
   ['challenge_not_active', 422, /not open for logging/i],
-  ['no_participation_episode', 422, /not currently taking part/i],
+  ['no_participation_episode', 422, /participation period/i],
   ['outside_challenge_window', 422, /outside the Challenge window/i],
   ['wrong_activity', 422, /not part of what counts/i],
   ['wrong_variant', 422, /not part of what counts/i],
@@ -246,7 +261,7 @@ const governedCases: Array<[string, number, RegExp]> = [
   ['knowledge_mismatch', 422, /configured activity/i],
   ['streak_day_closed', 422, /already closed.*late|late/i],
   ['occurred_day_mismatch', 422, /timezone/i],
-  ['idempotency_key_conflict', 409, /conflicts with an earlier one/i],
+  ['idempotency_key_conflict', 409, /start a new entry/i],
   ['challenge_closed_during_acceptance', 409, /closed while recording/i],
 ];
 for (const [code, status, messageRe] of governedCases) {
@@ -290,17 +305,27 @@ check('section binds the governed seam only (via the hook, never direct)',
   section.includes('useLogActivityV2') && !section.includes('logChallengeActivityV2('));
 check('section renders ONLY when the canonical view permits (hidden -> null)',
   section.includes("view.kind === 'hidden'") && section.includes('return null'));
+check('accepted result survives ended reads (rendered before the hidden gate)',
+  section.includes('shouldShowAcceptedResult') && section.includes('allowNewEntry'));
 check('acceptance renders the server result honestly',
   section.includes('accepted.value') && section.includes('accepted.unit')
     && section.includes('accepted.pointsAwarded') && section.includes('accepted.occurredDay'));
+check('duplicate replay renders honestly without a second effect',
+  section.includes('accepted.duplicate') && section.includes('No duplicate was created.'));
+check('S3b submission carries no client occurred_day (server derives governing day)',
+  section.includes('buildS3bActivityPayload') && payloadSrc.includes('omitOccurredDay'));
+check('selector never exposes a UUID label',
+  section.includes('choiceOptionLabel') && !section.includes('`${choice.canonicalKey}'));
+check('zero configured activities renders an honest empty state',
+  section.includes('NO_CONFIGURED_ACTIVITIES_COPY'));
 check('duplicate replay renders honestly without a second effect',
   section.includes('accepted.duplicate') && section.includes('No duplicate was created.'));
 check('acceptance is announced as server truth',
   section.includes('role="status"') && (section.includes('Recorded.') || section.includes('Already recorded.')));
 check('rejection creates no accepted state (accepted set only from result)',
   section.includes('setAccepted(result)') && !section.includes('setAccepted({'));
-check('retry reuses the SAME client_key; fresh entries mint a new one',
-  section.includes('void submit(clientKey)') && section.includes('setClientKey(newClientKey())'));
+check('intent keys derive at submit time (same facts reuse, changed facts mint)',
+  section.includes('deriveSubmitKey') && section.includes('setLastAttempt'));
 check('retry affordance only for retryable; governed gets a fresh entry',
   section.includes('denial.retryable') && section.includes('Retry') && section.includes('Start a new entry'));
 check('denials map with codes preserved', section.includes('mapV2ApiError') && section.includes('denial.code'));
@@ -313,8 +338,8 @@ check('no S3c live-progress assembly',
   !/leaderboard|Leaderboard|collectiveTotal|collectiveGoalReached|completionsCount|contributor|Contributor|share/i.test(section));
 check('no streak day-state experience',
   !/currentStreak|bestStreak|dayStates|daysCompleted|completionRate|cumulativeTotal/i.test(section));
-check('no S3d results/finalization assembly',
-  !/finalResult|finalized|Run Again|runAgain|finalize|placement|position/i.test(section));
+check('no S3d results assembly (no finals/run-again/placement experience)',
+  !/finalResult|Run Again|runAgain|placement|position|finalizeChallenge/i.test(section));
 check('no financial/support/media concepts in the logging surface',
   !/donation|pledge|escrow|M-Pesa|Amount Raised|community-reported|\bcover\b|\bCover\b|\bimage\b|\bImage\b|\bsupport\b|\bSupport\b|\bcause\b|\bCause\b/i.test(section)
     && !/donation|support|cause|pledge|escrow/i.test(view)

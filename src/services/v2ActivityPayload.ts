@@ -30,6 +30,13 @@ export interface V2LogInput {
   /** Truthful occurrence time (selected time, else intentional logging time). */
   occurredAt: Date;
   clientKey: string;
+  /**
+   * CORR-001 (bounded S3b): omit the client-derived `occurred_day` so the
+   * server derives the authoritative governing day from `occurred_at` and
+   * the pinned Challenge timezone. Default false preserves the existing
+   * behavior of frozen/reference surfaces sharing this builder.
+   */
+  omitOccurredDay?: boolean;
 }
 
 /** Build the exact C2B payload. Throws on invalid inputs (fail fast, no send). */
@@ -52,19 +59,34 @@ export function buildV2ActivityPayload(input: V2LogInput): V2ActivityPayload {
   if (!input.clientKey || input.clientKey.length > 300) {
     throw new Error('clientKey is required (1..300 chars)');
   }
-  const { occurred_at, occurred_day, occurred_tz } = resolveOccurrence(input.occurredAt);
+  const { occurred_at, occurred_tz } = resolveOccurrence(input.occurredAt);
   const payload: V2ActivityPayload = {
     activity_kind: input.activityKind,
     canonical_key: input.canonicalKey,
     value: input.value,
     unit: input.unit,
     occurred_at,
-    occurred_day,
     client_key: input.clientKey,
   };
+  if (!input.omitOccurredDay) {
+    payload.occurred_day = resolveOccurrence(input.occurredAt).occurred_day;
+  }
   if (input.activityVariant) payload.activity_variant = input.activityVariant;
   if (occurred_tz) payload.occurred_tz = occurred_tz;
   return payload;
+}
+
+/**
+ * CORR-001 bounded S3b submission builder.
+ *
+ * The S3b path MUST NOT send a client-derived `occurred_day`: the server
+ * derives the authoritative governing day from `occurred_at` and the pinned
+ * Challenge timezone. `occurred_tz` is kept as client provenance only. The
+ * governing day shown to the participant comes from the authoritative
+ * server result (`V2ActivityResult.occurredDay`), never from this payload.
+ */
+export function buildS3bActivityPayload(input: Omit<V2LogInput, 'omitOccurredDay'>): V2ActivityPayload {
+  return buildV2ActivityPayload({ ...input, omitOccurredDay: true });
 }
 
 /**
@@ -117,6 +139,21 @@ export function resolveOccurrence(at: Date): OccurrenceFields {
   };
   if (timeZone) fields.occurred_tz = timeZone;
   return fields;
+}
+
+export interface S3bOccurrenceFields {
+  occurred_at: string;
+  occurred_tz?: string;
+}
+
+/**
+ * CORR-001 S3b occurrence: ISO timestamp + IANA tz provenance ONLY. No
+ * client-derived calendar day leaves the device on the S3b path; the
+ * server derives the governing day from `occurred_at` + Challenge timezone.
+ */
+export function resolveS3bOccurrence(at: Date): S3bOccurrenceFields {
+  const { occurred_at, occurred_tz } = resolveOccurrence(at);
+  return occurred_tz ? { occurred_at, occurred_tz } : { occurred_at };
 }
 
 /**
@@ -199,7 +236,7 @@ export function mapV2ApiError(error: unknown): { message: string; retryable: boo
         };
       case 'no_participation_episode':
         return {
-          message: 'You are not currently taking part in this Challenge, so this entry cannot be recorded.',
+          message: 'This entry falls outside your current participation period, so it cannot be recorded.',
           retryable: false,
           code: failure.code,
         };
@@ -258,7 +295,7 @@ export function mapV2ApiError(error: unknown): { message: string; retryable: boo
         };
       case 'idempotency_key_conflict':
         return {
-          message: 'This entry conflicts with an earlier one and was not recorded.',
+          message: 'This entry uses a key that was already used. Start a new entry — if your earlier entry was recorded, it is unchanged.',
           retryable: false,
           code: failure.code,
         };

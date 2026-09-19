@@ -2,8 +2,10 @@
 
 **Work package:** S3b — Activity logging / application (second S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW
-(STOP BEFORE MERGE — Founder preview NOT performed, no acceptance claimed.)
+**Status:** IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL
+REVALIDATION (TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001, 2026-09-19;
+STOP BEFORE MERGE — Founder preview NOT performed, no acceptance claimed,
+S3b NOT marked complete.)
 
 **Date:** 2026-09-18
 
@@ -53,10 +55,12 @@ technical primitives, brand assets, and the S1 shell primitives.
 | Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.82 → 1.83 candidate record) |
 | Record | `docs/experience/TIIZI-S3B-ACTIVITY-APPLICATION.md` (this file, new) |
 | Scripts | `package.json` (`test:s3b-activity-logging` guard entry only) |
-| Guards | `scripts/testS3bActivityLoggingGuards.ts` (new) |
-| Error mapping | `src/services/v2ActivityPayload.ts` (S3b activity denial codes appended to `mapV2ApiError`; governed vs retryable) |
+| Guards | `scripts/testS3bActivityLoggingGuards.ts` (updated for CORR-001) |
+| CORR-001 guards | `scripts/testS3bActivityApplicationCorr001.ts` (new: behavioral proofs for the three blockers) |
+| Error mapping | `src/services/v2ActivityPayload.ts` (S3b activity denial codes appended to `mapV2ApiError`; governed vs retryable; CORR-001: bounded `buildS3bActivityPayload` omits client `occurred_day`, shared default preserved; participation-period + new-entry copy corrections) |
 | Hooks | `src/v2/challenges/useChallengeCreation.ts` (`useLogActivityV2` over the governed seam; refetch-only post-acceptance truth) |
-| View model | `src/v2/challenges/loggingView.ts` (new: pure logging view derivation) |
+| Intent model | `src/v2/challenges/loggingIntent.ts` (new, CORR-001: pure submission-intent/key derivation) |
+| View model | `src/v2/challenges/loggingView.ts` (new: pure logging view derivation; CORR-001: `empty` zero-activity state, UUID-free labels, `loggingSectionStateFor` accepted-vs-new-entry separation) |
 | Section | `src/v2/challenges/V2LoggingSection.tsx` (new: governed logging form + authoritative outcome rendering) |
 | Detail | `src/v2/challenges/V2CreatedChallengeScreen.tsx` (embeds the logging section) |
 
@@ -132,6 +136,36 @@ I. streak temporal rejection via authorised controlled local setup (FD-S3-004).
 
 ## 9. Status
 
-S3b is **IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW** (STOP BEFORE MERGE).
+S3b is **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL
+REVALIDATION** (STOP BEFORE MERGE).
 **S3 remains IMPLEMENTATION IN PROGRESS. S3a remains COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3c/S3d NOT STARTED.** No deployment and no production mutation occurred.
+
+## 10. CORR-001 correction record (2026-09-19)
+
+Corrects the three blocking ITR-001 defects with no API/schema/migration/
+domain change (base `e020d7f`, candidate `75a3024`, PR #37 OPEN — not merged):
+
+1. **occurred_day/timezone** — the S3b path uses the bounded
+   `buildS3bActivityPayload` and never sends a client-derived `occurred_day`;
+   the server derives the governing day from `occurred_at` + Challenge
+   timezone and the UI displays the authoritative `occurredDay` from the
+   server result. The shared builder default is unchanged for frozen
+   surfaces; server mismatch validation is untouched.
+2. **Idempotency intent lifecycle** — explicit pure model
+   (`src/v2/challenges/loggingIntent.ts`): same facts → same key; any
+   change to activity/amount/time → new key before submission; governed
+   rejections and post-acceptance changes mint new keys; server binding
+   (`isSameSubmissionPayload`) untouched. "Log another" re-establishes a
+   cleared new-entry intent (amount/time/key/attempt reset).
+3. **Accepted-then-ended rendering** — `loggingSectionStateFor` separates
+   outcome display from new-entry gating: an accepted result stays visible
+   across an active→ended refetch while ended/closed reads forbid new
+   submissions. No progress preserved or manufactured; no S3d surface.
+4. **Bounded UX** — UUID-free selector labels (resolved Knowledge name
+   primary), honest zero-activity empty state, participation-period copy for
+   `no_participation_episode`, new-entry direction for
+   `idempotency_key_conflict` (codes preserved).
+
+Evidence: `test:s3b-activity-application-corr-001` (behavioral) PASS and
+updated `test:s3b-activity-logging` PASS; regression suites green.
