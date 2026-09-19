@@ -2,12 +2,13 @@
 
 **Work package:** S3b — Activity logging / application (second S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED /
-READY FOR FOUNDER PREVIEW (TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001,
-2026-09-19; TIIZI-S3B-ACTIVITY-APPLICATION-ITR-002 disposition B —
-approvable for Founder preview with non-blocking observations;
-STOP BEFORE MERGE — Founder preview NOT performed, no acceptance claimed,
-S3b NOT marked complete.)
+**Status:** IMPLEMENTED CANDIDATE / CORRECTED / FOUNDER REVALIDATION
+REQUIRED (TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001 + TIIZI-S3B-FOUNDER-
+PREVIEW-CORR-002, 2026-09-19; TIIZI-S3B-ACTIVITY-APPLICATION-ITR-002
+disposition B; STOP BEFORE MERGE — Founder revalidation NOT completed,
+no acceptance claimed, S3b NOT marked complete. Two revalidation blockers
+recorded in §11: the activity-event DATE projection, and the external
+port-9099 conflict.)
 
 **Date:** 2026-09-18
 
@@ -54,7 +55,7 @@ technical primitives, brand assets, and the S1 shell primitives.
 
 | Area | File |
 | ---- | ---- |
-| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.83 → 1.84 correction record) |
+| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.84 → 1.85 correction record) |
 | Record | `docs/experience/TIIZI-S3B-ACTIVITY-APPLICATION.md` (this file, new) |
 | Scripts | `package.json` (`test:s3b-activity-logging` guard entry only) |
 | Guards | `scripts/testS3bActivityLoggingGuards.ts` (updated for CORR-001) |
@@ -138,8 +139,8 @@ I. streak temporal rejection via authorised controlled local setup (FD-S3-004).
 
 ## 9. Status
 
-S3b is **IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED /
-READY FOR FOUNDER PREVIEW** (STOP BEFORE MERGE).
+S3b is **IMPLEMENTED CANDIDATE / CORRECTED / FOUNDER REVALIDATION
+REQUIRED** (STOP BEFORE MERGE).
 **S3 remains IMPLEMENTATION IN PROGRESS. S3a remains COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3c/S3d NOT STARTED.** No deployment and no production mutation occurred.
 
@@ -171,3 +172,71 @@ domain change (base `e020d7f`, candidate `75a3024`, PR #37 OPEN — not merged):
 
 Evidence: `test:s3b-activity-application-corr-001` (behavioral) PASS and
 updated `test:s3b-activity-logging` PASS; regression suites green.
+
+## 11. CORR-002 correction record + revalidation blockers (2026-09-19)
+
+### 11.1 Root cause (DEFECT-001, accepted)
+
+V2 governed Challenge establishment (`validateChallengeDefinition` /
+PF-01-CORR-001), the Challenge read model and the S3b client all use
+immutable Knowledge identity (UUID / governed Activity Code) as
+`canonical_key`. The V2 activity-application route
+(`POST /v1/challenges/:id/activity`) injected the quarantined exact-NAME
+resolver (`createDbKnowledgeResolver` → `resolveKnowledgePinByName`), which
+cannot resolve a UUID/Code key. Every valid log on a governed-UI-created
+Challenge therefore failed pin resolution and returned `422 unknown_activity`
+/ `ACTIVITY_NOT_CONFIGURED` (Founder Challenge `e13229fb…`; Community Walk
+UUID `b946a8f8…`).
+
+### 11.2 Correction
+
+`api/src/knowledgePins.ts` gains `createDbKnowledgeIdentityFirstResolver`:
+identity keys (UUID / Activity Code) resolve by identity through the existing
+`resolveKnowledgePinByIdentity`; a key that is not a valid identity falls back
+to the existing exact-name resolver. The fallback is narrowly bounded (exact
+published name only, no fuzzy/partial matching, fail-closed) and is required
+by repository evidence — the existing real-route suites
+`api/test/challengeActivityApplication.test.ts` and
+`api/test/ebc02SubmissionAcceptanceTrace.test.ts` assert the V2
+activity-application contract still applies historical name-pinned configs.
+`api/src/challengeActivityRoutes.ts` wires the new resolver. Establishment is
+unchanged and still rejects display names as identity, so the fallback can
+never create a name-pinned configuration. No API/schema/migration/domain
+change.
+
+### 11.3 Regression coverage
+
+New tracked `api/test/s3bActivityLoggingIntegration.test.ts` (real route:
+governed establishment → persisted Challenge → participation → POST activity →
+`applyChallengeActivity`): (1) Activity-Code-pinned accepted; (2) UUID-pinned
+accepted; (3) unknown immutable identity fail-closed `unknown_activity`;
+(4) valid non-configured identity rejected `wrong_activity`; (5) legacy
+name-pinned config accepted via the bounded fallback.
+
+### 11.4 Revalidation blockers (recorded, NOT silently fixed)
+
+1. **Activity-event DATE projection.** `api/src/activityEvents.ts`
+   `normalizeRow` projects a Postgres `DATE` with
+   `row.occurred_day.toISOString().slice(0, 10)`. The `pg` driver hands a
+   `DATE` as a JS `Date` at **local midnight**; on positive-offset hosts the
+   UTC projection shifts a day back (host `Africa/Bujumbura`, UTC+2: stored
+   `2026-09-19` → `2026-09-18`), so the accepted-path period gate rejects a
+   valid in-window log as `422 outside_challenge_window`. This is the same
+   class already corrected for Challenge dates in v1.76 (`toDayString`,
+   `api/src/challengeConfigs.ts`) but is **not** proven by DEFECT-001 and is
+   outside this bounded correction's scope. PGlite (test) returns `DATE` at
+   UTC midnight, so the new integration tests do not exercise this path — it
+   was reproduced only against the live `pg` runtime. Recommended separate
+   correction: reuse `toDayString` in `normalizeRow` with a TZ-matrix test.
+2. **External port-9099 conflict.** Mid-revalidation the Klockit project's
+   tooling (`firebase emulators:start --only auth --project
+   demo-klockit-local`, cwd `/Volumes/PRODUCTION/Projects/klockit`, PID
+   41922) claimed port 9099 and terminated the S3b Auth/Firestore emulator.
+   No other project's process was touched. The S3b emulator exported a clean
+   recovery set to `/private/tmp/tiizi-s3b-emulator-recovery.dRMjBf`
+   preserving the Founder Auth UID `Tgj1jC3FXyxOfqtdlhvelt69phoI`, so the
+   existing Founder identity/linkage can be restored when 9099 is free
+   (`--import` that directory).
+
+**S3b is NOT marked COMPLETE or FOUNDER ACCEPTED; no merge; no deploy;
+S3c/S3d NOT started.**
