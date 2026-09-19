@@ -93,7 +93,7 @@ flowchart LR
   CH --> CREATE["Challenge Creation (S2)"]
   CH --> DETAIL["Challenge Detail (S3)"]
   CH --> LOG["Activity Logging (S3)"]
-  CH --> RESULTS["Results / Finalization / Run Again (S3)"]
+  CH --> RESULTS["Results / Finalization (S3d; Run Again NOT in S3 per FD-S3-003)"]
   GRP --> STEWARD["Steward / Charter / Council (S4)"]
   GRP --> GPERM["Group creation permissions (S4)"]
   DETAIL --> TYPES["Together · Race · Streak (S3)"]
@@ -112,7 +112,7 @@ flowchart LR
 | Challenge Creation | PF-04 Composer; PF-03 validator; PF-01/02 Knowledge | S2 |
 | Challenge detail / join / logging | EOG §11; participation domain; ACT-03 deferred | S3 |
 | Together / Race / Streak | EBC-04 / EBC-03 engines | S3 |
-| Results / finalization / Run Again | EBC-04; T2 FR-V2-120…127; EOG §17; CIC Inv. #8 | S3 |
+| Results / finalization | EBC-04; T2 FR-V2-120…127; EOG §17; CIC Inv. #8 | S3d (Run Again NOT in S3 per FD-S3-003) |
 | Groups / creation / membership | EOG §3/§6/§7; HAD (Firestore live) | S4 |
 | Stewards / Charter / Council | EOG §3/§5/§28; CG-08; deferred detail | S4 |
 | Group creation permissions | EOG §10/§27 | S2 (enforcement) / S4 (surface) |
@@ -122,7 +122,7 @@ flowchart LR
 | Templates | Master Programme PF-06 direction | S7 |
 | Profile / privacy | EOG privacy/visibility (mechanisms downstream) | S8 |
 | Recognition | EOG §33–36; T1 §U; T2 §24; CIC §4.23; **MOT-01** | S8 |
-| Kudos | EOG §36; T1 §Q; T2 FR-V2-131/132; CIC §4.22 | S3/S8 |
+| Kudos | EOG §36; T1 §Q; T2 FR-V2-131/132; CIC §4.22 | S8 (NOT S3c capability) |
 | Notifications | Stage F Notifications baseline | S8 |
 | Support Tiizi / Cause | T1 §V/§W; T2 §27/§28; CIC §4.24–4.26 | S8 |
 

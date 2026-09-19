@@ -217,7 +217,7 @@ requires API/read binding (seam exists) · (C) requires missing domain capabilit
   Streak today-checklist + countdown + reset banner): Together/Race **A/B + E**; Streak
   countdown/reset copy **E**, semantics already **A** (governing tz, day-closed rejection,
   finalization-only completion).
-- Competitive position (Race 1,2,2 ties, null until finished; Together share-list is not
+- Competitive position (Race 1,1,3 ties, null until finished; Together share-list is not
   a podium; Streak deliberately has no leaderboard): **A** (`computeFinishingPositions`
   already implements standard competition ranking) **+ E**.
 - Completion/final result (sealed banner, logging disabled, frozen totals/placements):
@@ -357,7 +357,7 @@ deployment):
 
 1. Collective: create (S2 path) → join → log → shared total advances → goal crossing or
    CLI finalize → sealed total + contributor shares.
-2. Competitive: create → join (2+ members) → log → live tied positions (1,2,2) → finish
+2. Competitive: create → join (2+ members) → log → live tied positions (1,1,3) → finish
    → CLI finalize → frozen placements.
 3. Streak: create → join → log across governing-tz days (controlled local temporal
    setup permitted per FD-S3-004; behaviour still processed through canonical engine

@@ -21,19 +21,21 @@ import {
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
 import { V2LoggingSection } from './V2LoggingSection';
 import { V2ParticipationSection } from './V2ParticipationSection';
+import { V2ProgressSection } from './V2ProgressSection';
 
 /**
  * S2b — created-Challenge context, extended by S3a with the governed
- * participation/access slice and by S3b with the governed
- * activity-logging slice.
+ * participation/access slice, by S3b with the governed
+ * activity-logging slice, and by S3c with live progress/type-state.
  *
  * Everything shown comes from the persisted V2 read
- * (GET /v1/challenges/:id) plus neutral name resolution — there is no
+ * (GET /v1/challenges/:id) plus the bounded S3c seams (contributors,
+ * competitive leaderboard) plus neutral name resolution — there is no
  * mock-only success screen. S3a binds the existing join/withdraw seams
  * here; S3b binds the existing activity-application seam
  * (POST /v1/challenges/:id/activity) for joined participants on active
- * Challenges. Deliberately NOT progress dashboards (S3c) or
- * results (S3d).
+ * Challenges; S3c binds live progress/type-state reads. Deliberately
+ * NOT results (S3d).
  */
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -172,6 +174,8 @@ export function V2CreatedChallengeScreen() {
         <V2ParticipationSection detail={challenge} />
 
         <V2LoggingSection detail={challenge} />
+
+        <V2ProgressSection detail={challenge} />
 
         <V2Card>
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
