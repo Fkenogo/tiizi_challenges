@@ -85,3 +85,38 @@ export function createDbKnowledgeIdentityResolver(
 ): (key: string) => Promise<KnowledgePin | null> {
   return (key: string) => resolveKnowledgePinByIdentity(db, kind, key);
 }
+
+/**
+ * TIIZI-S3B-FOUNDER-PREVIEW-CORR-002 — governed application pin resolver.
+ *
+ * Identity-first: a key that IS an immutable identity (Knowledge UUID or
+ * governed Activity Code) resolves by identity — exactly as V2 establishment
+ * (`validateChallengeDefinition` / PF-01-CORR-001) and the Challenge read
+ * model do. V2 governed establishment always pins that identity, so this is
+ * the normal path and the DEFECT-001 correction.
+ *
+ * A key that is NOT a valid identity falls back to the quarantined
+ * exact-NAME resolver, preserving the historical pre-PF-01 name-pinned
+ * Challenge contract that the V2 activity-application seam still supports
+ * (legacy C2A configs/fixtures). The fallback is narrowly bounded:
+ * - it runs ONLY for keys that are not a UUID/Activity Code (no identity key
+ *   is ever reinterpreted as a name);
+ * - exact published name only — never partial/fuzzy/ambiguous matching;
+ * - fail-closed (unknown keys resolve to null; pins are never invented).
+ *
+ * This is application-side only. Current PF-01/PF-03 establishment is
+ * unchanged and still rejects display names as identity, so the fallback can
+ * never permit a name-pinned configuration to be created.
+ */
+export function createDbKnowledgeIdentityFirstResolver(
+  db: Db,
+  kind: 'fitness' | 'wellness',
+): (key: string) => Promise<KnowledgePin | null> {
+  return async (key: string) => {
+    if (!key) return null;
+    if (isUuid(key) || isActivityCode(key)) {
+      return resolveKnowledgePinByIdentity(db, kind, key);
+    }
+    return resolveKnowledgePinByName(db, kind, key);
+  };
+}

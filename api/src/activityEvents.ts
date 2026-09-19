@@ -60,6 +60,7 @@
  */
 
 import type { Db } from './db.js';
+import { toDayString } from './challengeConfigs.js';
 
 export type ActivityKind = 'fitness' | 'wellness';
 
@@ -316,9 +317,13 @@ export function normalizeRow(
   const metadata = typeof row.metadata === 'string'
     ? (JSON.parse(row.metadata) as Record<string, unknown>)
     : ((row.metadata ?? {}) as Record<string, unknown>);
-  const occurredDay = row.occurred_day instanceof Date
-    ? row.occurred_day.toISOString().slice(0, 10)
-    : String(row.occurred_day).slice(0, 10);
+  // TIIZI-S3B-FOUNDER-PREVIEW-CORR-003: `occurred_day` is a PostgreSQL
+  // DATE (a calendar day, never an instant). node-postgres hands it as a
+  // JS Date at *server-local* midnight, so a UTC projection
+  // (toISOString) shifts the day back on positive-offset hosts. Reuse the
+  // canonical DATE-safe `toDayString` (v1.76) so the stored calendar day is
+  // recovered exactly on every process timezone.
+  const occurredDay = toDayString(row.occurred_day);
   return {
     ...row,
     event_id: String(row.event_id),

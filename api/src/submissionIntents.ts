@@ -31,6 +31,7 @@
  */
 
 import type { Db } from './db.js';
+import { toDayString } from './challengeConfigs.js';
 
 /** Stable non-human automatic acceptance authority identity. */
 export const ACCEPTANCE_AUTHORITY = 'automatic_system' as const;
@@ -124,9 +125,11 @@ const INTENT_COLUMNS = [
 export function normalizeSubmissionIntentRow(
   row: Record<string, unknown>,
 ): SubmissionIntentRow {
-  const day = row.occurred_day instanceof Date
-    ? (row.occurred_day as Date).toISOString().slice(0, 10)
-    : String(row.occurred_day).slice(0, 10);
+  // CORR-003: DATE-only calendar day via the canonical DATE-safe helper.
+  // This is the value bound by idempotency (`isSameSubmissionPayload`), so a
+  // UTC projection previously made a legitimate retry look like a different
+  // payload on positive-offset hosts.
+  const day = toDayString(row.occurred_day as string | Date);
   return {
     submission_id: String(row.submission_id),
     member_id: String(row.member_id),

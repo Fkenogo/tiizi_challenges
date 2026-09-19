@@ -19,17 +19,21 @@ import {
   timezoneLabel,
 } from './challengeCreationDraft';
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
+import { V2LoggingSection } from './V2LoggingSection';
 import { V2ParticipationSection } from './V2ParticipationSection';
 
 /**
  * S2b — created-Challenge context, extended by S3a with the governed
- * participation/access slice.
+ * participation/access slice and by S3b with the governed
+ * activity-logging slice.
  *
  * Everything shown comes from the persisted V2 read
  * (GET /v1/challenges/:id) plus neutral name resolution — there is no
  * mock-only success screen. S3a binds the existing join/withdraw seams
- * here (the V2 Challenge detail route); deliberately NOT logging (S3b),
- * progress dashboards (S3c), or results (S3d).
+ * here; S3b binds the existing activity-application seam
+ * (POST /v1/challenges/:id/activity) for joined participants on active
+ * Challenges. Deliberately NOT progress dashboards (S3c) or
+ * results (S3d).
  */
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -166,6 +170,8 @@ export function V2CreatedChallengeScreen() {
         </V2Card>
 
         <V2ParticipationSection detail={challenge} />
+
+        <V2LoggingSection detail={challenge} />
 
         <V2Card>
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">

@@ -30,6 +30,13 @@ export interface V2LogInput {
   /** Truthful occurrence time (selected time, else intentional logging time). */
   occurredAt: Date;
   clientKey: string;
+  /**
+   * CORR-001 (bounded S3b): omit the client-derived `occurred_day` so the
+   * server derives the authoritative governing day from `occurred_at` and
+   * the pinned Challenge timezone. Default false preserves the existing
+   * behavior of frozen/reference surfaces sharing this builder.
+   */
+  omitOccurredDay?: boolean;
 }
 
 /** Build the exact C2B payload. Throws on invalid inputs (fail fast, no send). */
@@ -52,19 +59,34 @@ export function buildV2ActivityPayload(input: V2LogInput): V2ActivityPayload {
   if (!input.clientKey || input.clientKey.length > 300) {
     throw new Error('clientKey is required (1..300 chars)');
   }
-  const { occurred_at, occurred_day, occurred_tz } = resolveOccurrence(input.occurredAt);
+  const { occurred_at, occurred_tz } = resolveOccurrence(input.occurredAt);
   const payload: V2ActivityPayload = {
     activity_kind: input.activityKind,
     canonical_key: input.canonicalKey,
     value: input.value,
     unit: input.unit,
     occurred_at,
-    occurred_day,
     client_key: input.clientKey,
   };
+  if (!input.omitOccurredDay) {
+    payload.occurred_day = resolveOccurrence(input.occurredAt).occurred_day;
+  }
   if (input.activityVariant) payload.activity_variant = input.activityVariant;
   if (occurred_tz) payload.occurred_tz = occurred_tz;
   return payload;
+}
+
+/**
+ * CORR-001 bounded S3b submission builder.
+ *
+ * The S3b path MUST NOT send a client-derived `occurred_day`: the server
+ * derives the authoritative governing day from `occurred_at` and the pinned
+ * Challenge timezone. `occurred_tz` is kept as client provenance only. The
+ * governing day shown to the participant comes from the authoritative
+ * server result (`V2ActivityResult.occurredDay`), never from this payload.
+ */
+export function buildS3bActivityPayload(input: Omit<V2LogInput, 'omitOccurredDay'>): V2ActivityPayload {
+  return buildV2ActivityPayload({ ...input, omitOccurredDay: true });
 }
 
 /**
@@ -119,6 +141,21 @@ export function resolveOccurrence(at: Date): OccurrenceFields {
   return fields;
 }
 
+export interface S3bOccurrenceFields {
+  occurred_at: string;
+  occurred_tz?: string;
+}
+
+/**
+ * CORR-001 S3b occurrence: ISO timestamp + IANA tz provenance ONLY. No
+ * client-derived calendar day leaves the device on the S3b path; the
+ * server derives the governing day from `occurred_at` + Challenge timezone.
+ */
+export function resolveS3bOccurrence(at: Date): S3bOccurrenceFields {
+  const { occurred_at, occurred_tz } = resolveOccurrence(at);
+  return occurred_tz ? { occurred_at, occurred_tz } : { occurred_at };
+}
+
 /**
  * Map V2 API failures to displayable messages. NEVER fall back to V1
  * writes: a failed V2 request stays failed/retryable.
@@ -127,6 +164,13 @@ export function resolveOccurrence(at: Date): OccurrenceFields {
  * members see human-readable governed outcomes; the code is preserved on
  * the result for diagnostics. No implementation/provider terminology
  * reaches members.
+ *
+ * S3b: activity-application denials (POST /v1/challenges/:id/activity)
+ * map the same way. Governed rejections (the server's durable decision
+ * that this entry does not count) are NEVER retryable-by-default: the
+ * member must change the entry or accept the decision. Retryable marks
+ * ONLY infrastructure/service failures where the same entry may succeed
+ * on retry (the caller reuses the same client_key).
  */
 export function mapV2ApiError(error: unknown): { message: string; retryable: boolean; code?: string } {
   const failure = asApiFailure(error);
@@ -171,6 +215,99 @@ export function mapV2ApiError(error: unknown): { message: string; retryable: boo
       case 'unknown_challenge':
         return {
           message: 'This challenge is no longer available.',
+          retryable: false,
+          code: failure.code,
+        };
+      // ── S3b: governed activity-application rejections ──────────────
+      // Each is the server's durable decision about THIS entry. Retrying
+      // the identical entry reproduces the decision; the member must
+      // change the entry (or accept it). None is retryable.
+      case 'no_current_group_membership':
+        return {
+          message: 'Only current members of the hosting group can log activity right now.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'challenge_not_active':
+        return {
+          message: 'This Challenge is not open for logging right now.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'no_participation_episode':
+        return {
+          message: 'This entry falls outside your current participation period, so it cannot be recorded.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'outside_challenge_window':
+        return {
+          message: 'This entry falls outside the Challenge window, so it cannot be counted.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'wrong_activity':
+      case 'wrong_variant':
+      case 'unknown_activity':
+        return {
+          message: 'This activity is not part of what counts for this Challenge.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'wrong_unit':
+        return {
+          message: 'This measurement does not match what this Challenge counts. Check the unit and try again.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'knowledge_mismatch':
+        return {
+          message: 'This activity does not match the Challenge configured activity.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'streak_day_closed':
+        return {
+          message: 'That day is already closed for this Challenge — entries cannot be added late.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'occurred_day_mismatch':
+        return {
+          message: 'The day for this entry does not line up with the Challenge timezone. It was not recorded.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'invalid_occurred_at':
+      case 'future_occurred_at':
+      case 'invalid_value':
+      case 'invalid_unit':
+        return {
+          message: 'Please check the amount and the date/time for this entry.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'server_derived_field':
+        return {
+          message: 'This entry included a value only the server may set. It was not recorded.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'idempotency_key_conflict':
+        return {
+          message: 'This entry uses a key that was already used. Start a new entry — if your earlier entry was recorded, it is unchanged.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'challenge_closed_during_acceptance':
+        return {
+          message: 'This Challenge closed while recording. The entry was not counted.',
+          retryable: false,
+          code: failure.code,
+        };
+      case 'evidence_rejected':
+        return {
+          message: 'This entry could not be recorded. Check the details and try again.',
           retryable: false,
           code: failure.code,
         };

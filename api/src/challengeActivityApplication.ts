@@ -71,6 +71,7 @@ import {
 } from './submissionIntents.js';
 import {
   getGoverningVersion,
+  toDayString,
   type ActivityConfigRow,
   type GoverningVersion,
 } from './challengeConfigs.js';
@@ -273,9 +274,9 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const FUTURE_SKEW_MS = 5 * 60 * 1000;
 
 function normalizeRecord(row: Record<string, unknown>): ActivityRecordRow {
-  const day = row.occurred_day instanceof Date
-    ? (row.occurred_day as Date).toISOString().slice(0, 10)
-    : String(row.occurred_day).slice(0, 10);
+  // CORR-003: DATE-only calendar day — recover via the canonical DATE-safe
+  // helper, never a UTC projection of a server-local midnight.
+  const day = toDayString(row.occurred_day as string | Date);
   return {
     record_id: String(row.record_id),
     event_id: String(row.event_id),

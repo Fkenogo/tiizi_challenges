@@ -16,7 +16,10 @@ import {
   getChallengeV2,
   joinChallengeV2,
   listChallengesV2,
+  logChallengeActivityV2,
   withdrawChallengeV2,
+  type V2ActivityPayload,
+  type V2ActivityResult,
   type V2ChallengeDetail,
   type V2ChallengeSummary,
   type V2ParticipationResponse,
@@ -148,6 +151,28 @@ export function useWithdrawChallengeV2() {
     mutationFn: (challengeId) => withdrawChallengeV2(challengeId),
     onSuccess: async (_data, challengeId) => {
       await invalidateV2ChallengeReads(queryClient, user?.uid, challengeId);
+    },
+  });
+}
+
+/**
+ * S3b — governed activity logging over the existing
+ * `POST /v1/challenges/:id/activity` seam. The server is the sole
+ * authority: it decides acceptance/rejection, scores server-side, and
+ * replays idempotent duplicates. Success only marks the canonical +
+ * legacy Challenge reads stale (see `challengeQueryKeys.ts`) so the
+ * authoritative refetch determines final truth — no client-derived
+ * score/progress is ever injected. The caller owns ONE stable
+ * client_key per intentional action and reuses it across retries of
+ * THAT submission; a new intentional action always generates a new key.
+ */
+export function useLogActivityV2() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation<V2ActivityResult, Error, { challengeId: string; payload: V2ActivityPayload }>({
+    mutationFn: (variables) => logChallengeActivityV2(variables.challengeId, variables.payload),
+    onSuccess: async (_result, variables) => {
+      await invalidateV2ChallengeReads(queryClient, user?.uid, variables.challengeId);
     },
   });
 }

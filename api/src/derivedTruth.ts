@@ -30,6 +30,7 @@ import { isParticipationActiveAt, type ParticipationRow } from './challengeParti
 import {
   canonicalActivityIdentity,
   getGoverningVersion,
+  toDayString,
   type ActivityConfigRow,
   type GoverningSnapshot,
 } from './challengeConfigs.js';
@@ -413,8 +414,14 @@ function asNumberMap(value: unknown): Record<string, number> {
 
 function toDayOrNull(value: string | Date | null | undefined): string | null {
   if (value == null) return null;
-  const day = value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
-  return DAY_RE.test(day) ? day : null;
+  // CORR-003: DATE-only calendar day via the canonical DATE-safe helper.
+  // Preserve the null-on-invalid contract (toDayString throws on invalid).
+  try {
+    const day = toDayString(value);
+    return DAY_RE.test(day) ? day : null;
+  } catch {
+    return null;
+  }
 }
 
 export function normalizeParticipationDerived(row: Record<string, unknown>): ParticipationDerivedRow {
@@ -609,9 +616,8 @@ export async function recomputeChallengeDerived(
     activity_config_id: String(row.activity_config_id),
     value: Number(row.value),
     unit: String(row.unit),
-    occurred_day: String((row.occurred_day as string | Date) instanceof Date
-      ? (row.occurred_day as Date).toISOString().slice(0, 10)
-      : String(row.occurred_day)).slice(0, 10),
+    // CORR-003: DATE-only calendar day via the canonical DATE-safe helper.
+    occurred_day: toDayString(row.occurred_day as string | Date),
     points_awarded: Number(row.points_awarded),
     accepted_at: new Date(row.accepted_at as string).toISOString(),
   })) as ReplayRecord[];

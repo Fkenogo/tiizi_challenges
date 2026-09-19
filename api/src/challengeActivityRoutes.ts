@@ -23,7 +23,7 @@ import {
 } from './challengeActivityApplication.js';
 import type { Db } from './db.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
-import { createDbKnowledgeResolver } from './knowledgePins.js';
+import { createDbKnowledgeIdentityFirstResolver } from './knowledgePins.js';
 
 export interface ChallengeActivityRouteDeps {
   groupMembershipAuthority?: GroupMembershipAuthority;
@@ -235,7 +235,18 @@ export function registerChallengeActivityRoutes(
         occurred_tz: body.occurred_tz ?? null,
         client_key: body.client_key,
       }, {
-        resolveKnowledgePin: createDbKnowledgeResolver(db, body.activity_kind),
+        // TIIZI-S3B-FOUNDER-PREVIEW-CORR-002 (DEFECT-001): identity-first pin
+        // resolution. V2 governed establishment pins `canonical_key` to an
+        // immutable Knowledge identity (UUID / Activity Code) and never to a
+        // display name, so the previous exact-NAME-only resolver could never
+        // resolve an identity-pinned V2 activity and rejected every valid log
+        // as `unknown_activity`. Identity keys now resolve exactly as
+        // establishment/read do; the narrowly bounded exact-name fallback
+        // preserves the historical pre-PF-01 name-pinned contract (legacy C2A
+        // configs/fixtures). Unknown identities still fail closed (pins are
+        // never invented); lifecycle/kind/governing-version authority are
+        // unchanged.
+        resolveKnowledgePin: createDbKnowledgeIdentityFirstResolver(db, body.activity_kind),
         resolveGroupMembershipAuthority: authority.resolveGroupMembershipAuthority,
       });
       return toResponse(result);
