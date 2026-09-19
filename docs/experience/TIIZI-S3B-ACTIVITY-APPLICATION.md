@@ -3,12 +3,12 @@
 **Work package:** S3b — Activity logging / application (second S3 vertical product assembly slice, per FD-S3-001)
 
 **Status:** IMPLEMENTED CANDIDATE / CORRECTED / FOUNDER REVALIDATION
-REQUIRED (TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001 + TIIZI-S3B-FOUNDER-
-PREVIEW-CORR-002 + TIIZI-S3B-FOUNDER-PREVIEW-CORR-003, 2026-09-19;
+PASSED / AWAITING FOUNDER ACCEPTANCE (TIIZI-S3B-ACTIVITY-APPLICATION-
+CORR-001 + TIIZI-S3B-FOUNDER-PREVIEW-CORR-002 + TIIZI-S3B-FOUNDER-PREVIEW-
+CORR-003 + TIIZI-S3B-FOUNDER-REVALIDATION-RESUME-001, 2026-09-19;
 TIIZI-S3B-ACTIVITY-APPLICATION-ITR-002 disposition B; STOP BEFORE MERGE —
-Founder revalidation NOT completed, no acceptance claimed, S3b NOT marked
-complete. CORR-003 closes the DATE projection defect; the live revalidation
-remains blocked solely by the external port-9099 conflict recorded in §12.)
+live Founder journey PASSED (§13), no acceptance claimed, S3b NOT marked
+complete. Final acceptance remains a Founder disposition.)
 
 **Date:** 2026-09-18
 
@@ -55,7 +55,7 @@ technical primitives, brand assets, and the S1 shell primitives.
 
 | Area | File |
 | ---- | ---- |
-| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.85 → 1.86 correction record) |
+| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.86 → 1.87 resumed-revalidation record) |
 | Record | `docs/experience/TIIZI-S3B-ACTIVITY-APPLICATION.md` (this file, new) |
 | Scripts | `package.json` (`test:s3b-activity-logging` guard entry only) |
 | Guards | `scripts/testS3bActivityLoggingGuards.ts` (updated for CORR-001) |
@@ -298,3 +298,45 @@ UID `Tgj1jC3FXyxOfqtdlhvelt69phoI`, so the existing identity/linkage can be
 restored (`--import` that directory + migrations/DBs unchanged) once 9099 is
 free. No accepted activity record was created; the Founder Challenge, Group
 and rejected intents are unchanged.
+
+## 13. FOUNDER-REVALIDATION-RESUME-001 — live journey PASSED (2026-09-19)
+
+The external port-9099 conflict cleared; the S3b Auth/Firestore emulators were
+restored from `/private/tmp/tiizi-s3b-emulator-recovery.dRMjBf` under the
+authorised config (project `demo-tiizi-s3b`). The Founder account
+`founder1@tiizi.local` came back at the **same UID
+`Tgj1jC3FXyxOfqtdlhvelt69phoI`**, still linked to PostgreSQL member
+`7acce992-8450-4f6b-9431-9939fca56cad` (port 5435). No replacement identity was
+created; the existing Group (`ae24cde5…` "test group1"), Challenge
+(`e13229fb…`, collective/Together, active 2026-09-19..2026-10-02, Africa/Nairobi,
+Community Walk `b946a8f8…`) and participation (`25ac9602…`, active) were
+retained, and the four historical rejected intents were preserved.
+
+**Live journey through the real UI (headless Chromium, no direct writes):**
+1. signed in as the restored Founder;
+2. opened the SAME Challenge; the logging surface rendered "Community Walk"
+   without any raw UUID;
+3. submitted **30 km** → `200 accepted` (`occurredDay 2026-09-19`,
+   `pointsAwarded 6`, `duplicate false`; **no `unknown_activity`, no
+   `outside_challenge_window`**) with the confirmation card
+   "Recorded. 30 kilometres counted for this Challenge. Points awarded: 6 ·
+   Day: 2026-09-19";
+4. **Log another** cleared the amount, reset the occurrence time and minted a
+   fresh intent key;
+5. submitted **40 km** → `200 accepted` (`pointsAwarded 8`, same governing
+   day);
+6. refresh remained coherent.
+
+**Persisted after the journey:** `challenge_activity_records = 3`,
+`member_activity_events = 3`, `activity_submission_intents = 7` (3 accepted + 4
+rejected preserved), distinct client keys = 3, **no duplicate records**;
+derived `participation logs=3 / points=14 / cumulative=90`, `challenge
+collective_total=90` (goal not reached). A preceding capture run additionally
+accepted a 20 km entry (`pointsAwarded 0`, below the 5% minimum-effort ratio)
+whose UI confirmation was lost to an over-eager reload; it is retained as
+committed evidence (3 total accepted records, not 2).
+
+**CORR-002 (identity) and CORR-003 (DATE) both work in the assembled product;
+no implementation correction was required by this task.** S3b is
+**FOUNDER REVALIDATION PASSED / AWAITING FOUNDER ACCEPTANCE** — not COMPLETE,
+not Founder Accepted, no merge, no deploy, S3c/S3d not started.
