@@ -37,9 +37,22 @@ export const V2_CHALLENGE_LIST_SCOPE = 'v2-challenge-list';
 /** Canonical cache family scope for one V2 Challenge detail read. */
 export const V2_CHALLENGE_DETAIL_SCOPE = 'v2-challenge-detail';
 
+/**
+ * S3c — canonical cache family scope for the collective contributor
+ * projection (`GET /v1/challenges/:id/contributors`).
+ */
+export const V2_CHALLENGE_CONTRIBUTORS_SCOPE = 'v2-challenge-contributors';
+
+/**
+ * S3c — canonical cache family scope for the competitive leaderboard
+ * (`GET /v1/challenges/:id/leaderboard`) as consumed by V2 S3c screens.
+ */
+export const V2_CHALLENGE_LEADERBOARD_SCOPE = 'v2-challenge-leaderboard';
+
 /** Legacy family scopes (V1-shell hooks). Deprecated — invalidated only. */
 export const V2_LEGACY_CHALLENGE_LIST_SCOPE = 'v2-challenges';
 export const V2_LEGACY_CHALLENGE_SCOPE = 'v2-challenge';
+export const V2_LEGACY_LEADERBOARD_SCOPE = 'v2-leaderboard';
 
 /** Canonical key for the caller's visible-Challenge list. */
 export function v2ChallengeListKey(uid: string | undefined): [string, string | undefined] {
@@ -54,11 +67,28 @@ export function v2ChallengeDetailKey(
   return [V2_CHALLENGE_DETAIL_SCOPE, challengeId, uid];
 }
 
+/** S3c — canonical key for one Challenge contributor projection. */
+export function v2ChallengeContributorsKey(
+  challengeId: string | undefined,
+  uid: string | undefined,
+): [string, string | undefined, string | undefined] {
+  return [V2_CHALLENGE_CONTRIBUTORS_SCOPE, challengeId, uid];
+}
+
+/** S3c — canonical key for one Challenge competitive leaderboard read. */
+export function v2ChallengeLeaderboardKey(
+  challengeId: string | undefined,
+  uid: string | undefined,
+): [string, string | undefined, string | undefined] {
+  return [V2_CHALLENGE_LEADERBOARD_SCOPE, challengeId, uid];
+}
+
 /**
- * S3a success boundary: mark every V2 Challenge list/detail read stale
- * after a successful join/withdraw — canonical AND legacy families.
+ * S3a success boundary (extended by S3b/S3c): mark every V2 Challenge
+ * list/detail read stale after a successful join/withdraw/log — canonical
+ * AND legacy families, plus the S3c contributor/leaderboard reads.
  * Never injects participation state client-side; the next read re-proves
- * `myParticipation` from the server.
+ * `myParticipation` and progress from the server.
  */
 export async function invalidateV2ChallengeReads(
   queryClient: QueryClient,
@@ -87,6 +117,20 @@ export async function invalidateV2ChallengeReads(
         challengeId === undefined
           ? [V2_LEGACY_CHALLENGE_SCOPE]
           : [V2_LEGACY_CHALLENGE_SCOPE, challengeId],
+    }),
+    queryClient.invalidateQueries({ queryKey: [V2_LEGACY_LEADERBOARD_SCOPE] }),
+    // S3c live-progress families (same contract — no independent family).
+    queryClient.invalidateQueries({
+      queryKey:
+        challengeId === undefined
+          ? [V2_CHALLENGE_CONTRIBUTORS_SCOPE]
+          : [V2_CHALLENGE_CONTRIBUTORS_SCOPE, challengeId],
+    }),
+    queryClient.invalidateQueries({
+      queryKey:
+        challengeId === undefined
+          ? [V2_CHALLENGE_LEADERBOARD_SCOPE]
+          : [V2_CHALLENGE_LEADERBOARD_SCOPE, challengeId],
     }),
   ];
   await Promise.all(tasks);

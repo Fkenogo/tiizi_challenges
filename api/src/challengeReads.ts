@@ -13,6 +13,9 @@
  * - GET /v1/challenges — challenges the caller is entitled to see;
  * - GET /v1/challenges/:challengeId — detail + governing config + own progress;
  * - GET /v1/challenges/:challengeId/leaderboard — competitive only.
+ * - GET /v1/challenges/:challengeId/contributors — collective only (S3c
+ *   contribution visibility, NOT a leaderboard: no rank, no position,
+ *   no ordering semantics beyond display convenience).
  *
  * No personal activity-history/diary API (Stage F: Tiizi is not a personal
  * activity logger; C1 deliberate omission stands).
@@ -31,6 +34,7 @@
 
 import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
+import { dayInTimezone } from './activityEvents.js';
 import type { Db } from './db.js';
 import { normalizeChallengeRow, type ChallengeRow } from './challenges.js';
 import {
@@ -154,6 +158,14 @@ export interface ApiChallengeDetail extends ApiChallengeSummary {
   finalizedAt: string | null;
   /** EBC-04 frozen terminal result (NULL = not finalized). */
   finalResult: ApiFinalResult | null;
+  /**
+   * S3c — server-authoritative governing Challenge day (YYYY-MM-DD in the
+   * Challenge timezone at read time). The client may format this value but
+   * must never determine the Challenge day from the device clock.
+   */
+  governingToday: string;
+  /** S3c — server wall-clock instant (ISO) the governing day was derived from. */
+  serverNow: string;
   config: {
     version: number;
     period: { startDate: string; endDate: string };
@@ -193,6 +205,36 @@ export interface ApiLeaderboardEntry {
   completedAt: string | null;
   /** Competition ranking (1, 2, 2, 4); null for non-completers. */
   position: number | null;
+}
+
+/**
+ * S3c — bounded collective contributor projection (Together / Collective
+ * only). Contribution visibility, NOT a leaderboard: by design this shape
+ * carries NO position, NO rank, NO winner and NO ordering semantics. Entry
+ * order is display convenience only (largest contribution first) and must
+ * never be presented as a placing.
+ */
+export interface ApiContributorEntry {
+  memberId: string;
+  participationId: string;
+  participationStatus: 'active' | 'withdrawn' | 'removed';
+  /** Authoritative cumulative accepted contribution (goal unit). */
+  contributionTotal: number;
+  /**
+   * Share of the current collective total (0..1, above 1 with overshoot);
+   * null while the collective total is 0 (no share is defined yet).
+   */
+  share: number | null;
+  logsAccepted: number;
+}
+
+export interface ApiChallengeContributors {
+  challengeId: string;
+  challengeType: 'collective';
+  collectiveTotal: number;
+  goalValue: number | null;
+  goalUnit: string | null;
+  contributors: ApiContributorEntry[];
 }
 
 // ─── Internal assembly ─────────────────────────────────────────────────────
@@ -416,6 +458,12 @@ async function toSummary(
 
 export interface ChallengeReadDeps {
   groupMembershipAuthority: GroupMembershipAuthority;
+  /**
+   * S3c — acceptance clock for the server-authoritative governing day.
+   * Production passes nothing (wall clock governs); tests drive time
+   * explicitly for deterministic day-boundary proofs.
+   */
+  now?: Date;
 }
 
 /**
@@ -517,6 +565,10 @@ export async function getChallengeDetail(
   const finalization = await getChallengeFinal(db, challengeId);
   const finals = await getParticipationFinals(db, challengeId);
   const episodeFinal = episode ? finals.get(episode.participation_id) : undefined;
+  // S3c — server-authoritative governing day: derived from the server clock
+  // in the Challenge timezone. The client formats this value; it never
+  // determines the Challenge day from the device clock.
+  const now = deps.now ?? new Date();
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
@@ -527,6 +579,8 @@ export async function getChallengeDetail(
     startDate: challenge.start_date,
     endDate: challenge.end_date,
     timezone: challenge.timezone,
+    governingToday: dayInTimezone(now, challenge.timezone),
+    serverNow: now.toISOString(),
     finalized: challenge.finalized_at != null,
     currentConfigVersion: challenge.current_config_version,
     goalValue: challenge.goal_value,
@@ -689,6 +743,68 @@ export async function getChallengeLeaderboard(
   return { challengeId, challengeType: challenge.challenge_type, entries };
 }
 
+/**
+ * S3c — bounded collective contributor projection (Together / Collective
+ * only). Latest episode per member (history stays put; the current episode
+ * carries the member's contribution). Contributions come ONLY from governed
+ * participation Derived Truth; overshoot is preserved in the shared total
+ * and therefore in shares. 404 for competitive/streak (no share-of-total
+ * semantics there): competitive placement stays on the leaderboard seam,
+ * streaks have no cross-member aggregation at all.
+ */
+export async function getChallengeContributors(
+  db: Db,
+  memberId: string,
+  challengeId: string,
+  deps: ChallengeReadDeps,
+): Promise<ApiChallengeContributors> {
+  const challenge = await readChallenge(db, challengeId);
+  await requireChallengeVisible(db, challenge, memberId, deps.groupMembershipAuthority);
+  if (challenge.challenge_type !== 'collective') {
+    readFail(404, 'contributors_not_available', `No contributor rollup for ${challenge.challenge_type} challenges`);
+  }
+  const latest = await db.query(
+    `SELECT DISTINCT ON (member_id) * FROM challenge_participations
+     WHERE challenge_id = $1
+     ORDER BY member_id, joined_at DESC, participation_id DESC`,
+    [challengeId],
+  );
+  const episodes = (latest.rows as never[]).map(normalizeParticipationRow);
+  const derived = await fetchParticipationDerived(
+    db,
+    episodes.map((e) => e.participation_id),
+  );
+  const challengeDerived = await fetchChallengeDerived(db, [challengeId]);
+  // A missing derived row means "no accepted activity yet" (zero-state).
+  const total = challengeDerived.get(challengeId)?.collectiveTotal ?? 0;
+  const contributors: ApiContributorEntry[] = episodes.map((episode) => {
+    const row = derived.get(episode.participation_id);
+    const progress = toProgress(row ?? zeroParticipationDerived(episode));
+    return {
+      memberId: episode.member_id,
+      participationId: episode.participation_id,
+      participationStatus: episode.status,
+      contributionTotal: progress.cumulativeTotal,
+      share: total > 0 ? progress.cumulativeTotal / total : null,
+      logsAccepted: progress.logsAccepted,
+    };
+  });
+  // Display convenience only (largest contribution first, stable by member):
+  // carries no rank semantics — there is no position field by design.
+  contributors.sort((a, b) => {
+    if (b.contributionTotal !== a.contributionTotal) return b.contributionTotal - a.contributionTotal;
+    return a.memberId < b.memberId ? -1 : a.memberId > b.memberId ? 1 : 0;
+  });
+  return {
+    challengeId,
+    challengeType: 'collective',
+    collectiveTotal: total,
+    goalValue: challenge.goal_value,
+    goalUnit: challenge.goal_unit,
+    contributors,
+  };
+}
+
 // ─── HTTP routes ───────────────────────────────────────────────────────────
 
 export interface ChallengeReadRouteDeps {
@@ -755,6 +871,24 @@ export function registerChallengeReadRoutes(
       const member = authenticatedMember(request);
       const params = request.params as { challengeId: string };
       return getChallengeLeaderboard(db, member.memberId, params.challengeId, readDeps);
+    },
+  );
+
+  app.get(
+    '/v1/challenges/:challengeId/contributors',
+    {
+      schema: {
+        params: {
+          type: 'object',
+          required: ['challengeId'],
+          properties: { challengeId: { type: 'string', format: 'uuid' } },
+        },
+      },
+    },
+    async (request) => {
+      const member = authenticatedMember(request);
+      const params = request.params as { challengeId: string };
+      return getChallengeContributors(db, member.memberId, params.challengeId, readDeps);
     },
   );
 }
