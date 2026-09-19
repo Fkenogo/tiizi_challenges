@@ -2,7 +2,7 @@
 
 **Work package:** S3b — Activity logging / application (second S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** COMPLETE / FOUNDER ACCEPTED (TIIZI-S3B-FOUNDER-ACCEPT-MERGE-001,
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED (TIIZI-S3B-FOUNDER-ACCEPT-MERGE-001,
 2026-09-19 — see §14). Founder acceptance followed the technically corrected
 and live-revalidated candidate: TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001 +
 TIIZI-S3B-FOUNDER-PREVIEW-CORR-002 + TIIZI-S3B-FOUNDER-PREVIEW-CORR-003 +
@@ -364,7 +364,7 @@ application-route correction (CORR-002) passed; the PostgreSQL DATE projection
 correction (CORR-003) passed; multiple accepted submissions were persisted
 without duplication. **CORR-002 and CORR-003 remain CLOSED.**
 
-**S3b: COMPLETE / FOUNDER ACCEPTED.** Merge of PR #37 into canonical main is
+**S3b: COMPLETE / FOUNDER ACCEPTED / MERGED.** PR #37 was merged into canonical `origin/main` by normal merge commit `99e2d4959cfafaab262563e941c5ffa7e3421709` of accepted head `d09b507ca035450a48dd99ca7f7e2de591bcc1f2`; the accepted head is verified ancestor of main; post-merge `ci` green (api, api-image, functions, web). Merge of PR #37 into canonical main is
 authorised under this entry via the normal merge-commit path (accepted head
 `9ad0ef2`; no squash, no rebase, no force-push; merge commit recorded by the
 follow-up merged-state entry). S3 remains IMPLEMENTATION IN PROGRESS; S3a
