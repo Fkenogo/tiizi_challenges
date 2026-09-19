@@ -2,8 +2,10 @@
 
 **Work package:** S3b — Activity logging / application (second S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL
-REVALIDATION (TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001, 2026-09-19;
+**Status:** IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED /
+READY FOR FOUNDER PREVIEW (TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001,
+2026-09-19; TIIZI-S3B-ACTIVITY-APPLICATION-ITR-002 disposition B —
+approvable for Founder preview with non-blocking observations;
 STOP BEFORE MERGE — Founder preview NOT performed, no acceptance claimed,
 S3b NOT marked complete.)
 
@@ -52,7 +54,7 @@ technical primitives, brand assets, and the S1 shell primitives.
 
 | Area | File |
 | ---- | ---- |
-| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.82 → 1.83 candidate record) |
+| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.83 → 1.84 correction record) |
 | Record | `docs/experience/TIIZI-S3B-ACTIVITY-APPLICATION.md` (this file, new) |
 | Scripts | `package.json` (`test:s3b-activity-logging` guard entry only) |
 | Guards | `scripts/testS3bActivityLoggingGuards.ts` (updated for CORR-001) |
