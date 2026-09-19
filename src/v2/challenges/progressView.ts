@@ -145,6 +145,22 @@ export function isOwnBoardEntry(entry: V2LeaderboardEntry, detail: V2ChallengeDe
   return ownId !== undefined && entry.participationId === ownId;
 }
 
+/**
+ * CORR-001 Blocker 2 — S3c query enablement for the competitive
+ * leaderboard. S3c consumes LIVE positions only: the query is enabled
+ * exactly while the Challenge is competitive AND unfinalized. Once
+ * finalized the route switches to frozen final_position authority
+ * (reserved for S3d), so the S3c query must not run — disabling beats
+ * hiding text after final data was already consumed. Other families
+ * never have a leaderboard.
+ */
+export function competitiveLeaderboardEnabledForS3c(
+  challengeType: string | undefined,
+  finalized: boolean,
+): boolean {
+  return challengeType === 'competitive' && !finalized;
+}
+
 // ─── Streak (Daily Streak) ───────────────────────────────────────────────
 
 export interface S3cStreakRequirement {

@@ -23,7 +23,15 @@ import {
  * live state only.
  */
 export function V2CompetitiveProgress({ detail }: { detail: V2ChallengeDetail }) {
-  const board = useCompetitiveLeaderboardV2(detail.challengeId, detail.challengeType);
+  // Hooks stay unconditional (Rules of Hooks); the query itself is
+  // disabled once finalized, so no frozen final_position is ever fetched
+  // as S3c live state.
+  const board = useCompetitiveLeaderboardV2(detail.challengeId, detail.challengeType, detail.finalized);
+  // CORR-001 Blocker 2: once finalized the leaderboard route serves
+  // frozen end-state authority reserved for the later results slice.
+  // The S3c live surface unmounts here instead of displaying final truth
+  // as "live" — nothing is manufactured in its place.
+  if (detail.finalized) return null;
   const entries = board.data?.entries ?? [];
   const view = competitiveProgressFor(detail, entries);
   const split = raceBoardFor(entries);

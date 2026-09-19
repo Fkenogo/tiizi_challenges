@@ -30,6 +30,7 @@ import type {
 } from '../src/api/v2ChallengeApi.js';
 import {
   collectiveProgressFor,
+  competitiveLeaderboardEnabledForS3c,
   competitiveProgressFor,
   contributorsCarryNoRanking,
   isOwnBoardEntry,
@@ -252,6 +253,19 @@ console.log('competitive server positions');
     isOwnBoardEntry(entries[0], d) && !isOwnBoardEntry(entries[2], d));
 }
 
+// ─── 3b. CORR-001 Blocker 2: finalized gating ─────────────────────────────
+console.log('finalized gating (CORR-001 Blocker 2)');
+{
+  check('live competitive + unfinalized enables the S3c query',
+    competitiveLeaderboardEnabledForS3c('competitive', false) === true);
+  check('finalized disables the S3c query (frozen truth is S3d-owned)',
+    competitiveLeaderboardEnabledForS3c('competitive', true) === false);
+  check('other families never enable the leaderboard seam',
+    competitiveLeaderboardEnabledForS3c('collective', false) === false
+    && competitiveLeaderboardEnabledForS3c('streak', false) === false
+    && competitiveLeaderboardEnabledForS3c(undefined, false) === false);
+}
+
 // ─── 4. Streak server day ────────────────────────────────────────────────
 console.log('streak server day');
 {
@@ -318,6 +332,11 @@ check('detail embeds the S3c progress section after logging, before What counts'
   screenSrc.includes('<V2ProgressSection')
   && screenSrc.indexOf('<V2LoggingSection') < screenSrc.indexOf('<V2ProgressSection')
   && screenSrc.indexOf('<V2ProgressSection') < screenSrc.indexOf('What counts'));
+check('finalized competitive unmounts the S3c live surface (no final-as-live)',
+  competitiveSrc.includes('if (detail.finalized) return null'));
+check('leaderboard hook gates on the S3c enablement (finalized disables fetch)',
+  hookSrc.includes('competitiveLeaderboardEnabledForS3c')
+  && hookSrc.includes('finalized'));
 
 // ─── 8. Cache coherence for S3c families (runtime) ───────────────────────
 console.log('s3c cache coherence');

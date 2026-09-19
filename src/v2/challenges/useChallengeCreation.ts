@@ -36,6 +36,7 @@ import {
   v2ChallengeLeaderboardKey,
   v2ChallengeListKey,
 } from './challengeQueryKeys';
+import { competitiveLeaderboardEnabledForS3c } from './progressView';
 import { useAuth } from '../../hooks/useAuth';
 
 /**
@@ -206,17 +207,23 @@ export function useChallengeContributorsV2(
  * S3c — competitive leaderboard over the existing
  * `GET /v1/challenges/:id/leaderboard` seam (Race / Competitive only).
  * Server positions only (standard competition ranking); the client never
- * ranks. Refetch-only truth under the canonical contract.
+ * ranks. Refetch-only truth under the canonical contract. CORR-001
+ * Blocker 2: enabled for live (unfinalized) Challenges only — frozen
+ * final_position belongs to S3d and is never fetched as S3c live state.
  */
 export function useCompetitiveLeaderboardV2(
   challengeId: string | undefined,
   challengeType: string | undefined,
+  finalized?: boolean,
 ) {
   const { user } = useAuth();
   return useQuery<{ challengeId: string; challengeType: string; entries: V2LeaderboardEntry[] }>({
     queryKey: v2ChallengeLeaderboardKey(challengeId, user?.uid),
     queryFn: () => getCompetitiveLeaderboardV2(challengeId as string),
-    enabled: !!user?.uid && apiConfigured() && !!challengeId && challengeType === 'competitive',
+    enabled: !!user?.uid
+      && apiConfigured()
+      && !!challengeId
+      && competitiveLeaderboardEnabledForS3c(challengeType, finalized === true),
     staleTime: 10 * 1000,
   });
 }

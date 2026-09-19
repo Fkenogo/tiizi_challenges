@@ -111,6 +111,9 @@ export interface V2LeaderboardEntry {
 /**
  * S3c — bounded collective contributor projection. Contribution
  * visibility, NOT a leaderboard: no position, no rank, no winner.
+ * CORR-001: identity is member-level — contributionTotal aggregates the
+ * member's governed accepted contribution across all of their episodes;
+ * participationId is their current episode (for "You" behaviour).
  */
 export interface V2ContributorEntry {
   memberId: string;

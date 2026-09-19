@@ -2,7 +2,7 @@
 
 **Work package:** S3c — Live progress / type-state (third S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW (TIIZI-S3C-LIVE-PROGRESS-001).
+**Status:** IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL REVALIDATION (TIIZI-S3C-LIVE-PROGRESS-CORR-001).
 S3 remains IMPLEMENTATION IN PROGRESS. S3d NOT STARTED. No merge, no deploy, no Founder preview yet.
 
 **Date:** 2026-09-19
@@ -106,6 +106,29 @@ Reference: adopted Tiizi Experience Reference (experience guidance only; engine/
 
 ## 10. Status
 
-S3c is **IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW** (STOP BEFORE MERGE).
+S3c is **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL REVALIDATION** (STOP BEFORE MERGE).
 **S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3d NOT STARTED.** No deployment and no production mutation occurred.
+
+## 11. CORR-001 correction record (ITR-001 blockers)
+
+Independent review (TIIZI-S3C-LIVE-PROGRESS-ITR-001) proved two blockers; both corrected
+on the PR #38 branch with no scope expansion:
+
+1. **Collective contributor reconciliation.** The projection read the latest episode per
+   member, so leave/rejoin histories under-reported (70 shown vs 110 canonical). Now
+   member-level: contributionTotal/logsAccepted aggregate governed Derived Truth across
+   all episodes; the exposed participationId is the current episode (active, else latest
+   joined — the detail display-episode rule, so "You" still resolves); records stay
+   attached to original episodes (no migration/reassignment); canonical collective
+   truth untouched. A-class route regression `api/test/s3cLiveProgressCorr001.test.ts`:
+   join → 40 → withdraw → rejoin → 70 → GET contributors proves total 110 / member 110 /
+   share 1 / episode-2 currency / episode-1 history intact, plus multi-member
+   sum/share reconciliation and visibility/isolation.
+2. **Finalized competitive boundary.** Once finalized the leaderboard route serves
+   frozen final authority (preserved for S3d — proven: frozen positions still served
+   after `finalizeChallenge`). S3c no longer consumes it: `useCompetitiveLeaderboardV2`
+   enables only for competitive + unfinalized (pure `competitiveLeaderboardEnabledForS3c`,
+   guard-proven), and `V2CompetitiveProgress` returns null once finalized instead of
+   rendering final truth as "live". Ended-but-unfinalized keeps live positions (still
+   live authority, no frozen truth exists).

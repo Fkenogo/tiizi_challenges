@@ -216,9 +216,19 @@ export interface ApiLeaderboardEntry {
  */
 export interface ApiContributorEntry {
   memberId: string;
+  /**
+   * CORR-001: the member's current episode (active, else latest joined) —
+   * identity for "You"/current-participation behaviour. History stays on
+   * its original episodes internally; contributionTotal aggregates across
+   * all of them.
+   */
   participationId: string;
   participationStatus: 'active' | 'withdrawn' | 'removed';
-  /** Authoritative cumulative accepted contribution (goal unit). */
+  /**
+   * CORR-001: authoritative cumulative accepted contribution (goal unit),
+   * aggregated across ALL of the member's episodes of this Challenge.
+   * Reconciles exactly with the canonical collectiveTotal.
+   */
   contributionTotal: number;
   /**
    * Share of the current collective total (0..1, above 1 with overshoot);
@@ -744,13 +754,21 @@ export async function getChallengeLeaderboard(
 }
 
 /**
- * S3c — bounded collective contributor projection (Together / Collective
- * only). Latest episode per member (history stays put; the current episode
- * carries the member's contribution). Contributions come ONLY from governed
- * participation Derived Truth; overshoot is preserved in the shared total
- * and therefore in shares. 404 for competitive/streak (no share-of-total
- * semantics there): competitive placement stays on the leaderboard seam,
- * streaks have no cross-member aggregation at all.
+  * S3c — bounded collective contributor projection (Together / Collective
+ * only). CORR-001: contributor identity is MEMBER-level within the
+ * Challenge. A member who leaves and rejoins holds several participation
+ * episodes; every episode keeps its own history (records stay attached to
+ * the episode that earned them — nothing is migrated or reassigned), but
+ * the member's contributionTotal aggregates governed accepted
+ * contribution across ALL of their episodes, so contributor totals
+ * reconcile exactly with the canonical collectiveTotal. The exposed
+ * participationId is the member's current episode (active when present,
+ * else latest joined — the same display-episode rule as the detail read)
+ * for "You"/current-participation behaviour. Contributions come ONLY
+ * from governed participation Derived Truth; overshoot is preserved in
+ * the shared total and therefore in shares. 404 for competitive/streak
+ * (no share-of-total semantics there): competitive placement stays on
+ * the leaderboard seam, streaks have no cross-member aggregation at all.
  */
 export async function getChallengeContributors(
   db: Db,
@@ -764,12 +782,21 @@ export async function getChallengeContributors(
     readFail(404, 'contributors_not_available', `No contributor rollup for ${challenge.challenge_type} challenges`);
   }
   const latest = await db.query(
-    `SELECT DISTINCT ON (member_id) * FROM challenge_participations
+    `SELECT * FROM challenge_participations
      WHERE challenge_id = $1
      ORDER BY member_id, joined_at DESC, participation_id DESC`,
     [challengeId],
   );
   const episodes = (latest.rows as never[]).map(normalizeParticipationRow);
+  // CORR-001: group every episode by member. The member's contribution is
+  // the exact sum of governed Derived Truth across their episodes; the
+  // exposed identity is their current episode (active, else latest joined).
+  const episodesByMember = new Map<string, ParticipationRow[]>();
+  for (const episode of episodes) {
+    const group = episodesByMember.get(episode.member_id);
+    if (group) group.push(episode);
+    else episodesByMember.set(episode.member_id, [episode]);
+  }
   const derived = await fetchParticipationDerived(
     db,
     episodes.map((e) => e.participation_id),
@@ -777,16 +804,24 @@ export async function getChallengeContributors(
   const challengeDerived = await fetchChallengeDerived(db, [challengeId]);
   // A missing derived row means "no accepted activity yet" (zero-state).
   const total = challengeDerived.get(challengeId)?.collectiveTotal ?? 0;
-  const contributors: ApiContributorEntry[] = episodes.map((episode) => {
-    const row = derived.get(episode.participation_id);
-    const progress = toProgress(row ?? zeroParticipationDerived(episode));
+  const contributors: ApiContributorEntry[] = [...episodesByMember].map(([member, memberEpisodes]) => {
+    let contributionTotal = 0;
+    let logsAccepted = 0;
+    for (const episode of memberEpisodes) {
+      const progress = toProgress(derived.get(episode.participation_id) ?? zeroParticipationDerived(episode));
+      contributionTotal += progress.cumulativeTotal;
+      logsAccepted += progress.logsAccepted;
+    }
+    // Current episode mirrors the detail display-episode rule (active when
+    // present, else latest joined — episodes arrive latest-first).
+    const current = memberEpisodes.find((e) => e.status === 'active') ?? memberEpisodes[0];
     return {
-      memberId: episode.member_id,
-      participationId: episode.participation_id,
-      participationStatus: episode.status,
-      contributionTotal: progress.cumulativeTotal,
-      share: total > 0 ? progress.cumulativeTotal / total : null,
-      logsAccepted: progress.logsAccepted,
+      memberId: member,
+      participationId: current.participation_id,
+      participationStatus: current.status,
+      contributionTotal,
+      share: total > 0 ? contributionTotal / total : null,
+      logsAccepted,
     };
   });
   // Display convenience only (largest contribution first, stable by member):
