@@ -2,7 +2,7 @@
 
 - **Task ID:** TIIZI-CF-001
 - **Mode:** Assessment only. No deployment, DNS, auth, data-migration or runtime change is authorised or performed.
-- **Status:** Prepared for Founder review
+- **Status:** ~~Prepared for Founder review~~ → **ACCEPTED — ASSESSMENT COMPLETE (Founder disposition, see §16)**
 - **Assessment date:** 2026-09-19
 - **Base SHA (local checkout `main`):** `5a012396700fde9aee8aa2b72663a2c7e5564bd3`
 - **Canonical head SHA assessed:** `e020d7f30e319b8bb050e1993be47f5dcda4b971` (`origin/main`, Master Programme v1.82)
@@ -268,6 +268,44 @@ Reviewing every stop condition: no engine/domain redesign, no premature experien
 - **Does Tiizi have a legitimate deployable runtime?** Yes (`api/`), with an authorised plan-only deployment runbook; deployment is a separate governed work package.
 - **Is a bounded live pilot justified now?** **Yes** — exactly one (preview exposure), as scoped in §13.
 - **Merge status:** not merged, per execution boundary.
+
+---
+
+## 16. Founder disposition & closure (TIIZI-CF-001)
+
+- **Disposition:** **ACCEPTED — ASSESSMENT COMPLETE**
+- **Closed:** 2026-09-19, Founder review and acceptance
+
+### 16.1 Accepted architectural position
+
+Cloudflare is recognised as a potentially useful **replaceable perimeter and controlled-review capability**, not as Tiizi's application architecture. The accepted position:
+
+- Tiizi's engine/domain architecture remains authoritative.
+- The server-owned portable API remains authoritative.
+- PostgreSQL remains authoritative business-data storage.
+- Existing application authentication architecture remains separate from Cloudflare.
+- Cloudflare must not become the source of Tiizi domain truth.
+- Cloudflare-specific persistence is not authorised for authoritative business data.
+- Workers, Containers, Pages, Queues, D1 and Durable Objects are not part of the current Tiizi runtime architecture.
+- R2 may be reconsidered later only for the already-recognised portable object-storage requirement.
+- DNS/TLS/CDN/WAF/DDoS/rate-limiting/bot-protection/Turnstile remain later perimeter considerations when deployment/public exposure requires them.
+- Cloudflare Access + Tunnel is recognised as a technically suitable optional capability for controlled remote Founder/mobile preview access.
+
+### 16.2 Pilot disposition
+
+**NO PILOT NOW.**
+
+Although §13 found that a bounded Access + Tunnel pilot would be technically viable, there is no current programme need to interrupt Tiizi implementation to run it. No follow-on Cloudflare work package is created. Access + Tunnel may be reconsidered only when there is an actual need for remote Founder review, mobile/device testing outside the local network, protected external review, or deployment-candidate review. Localhost remains the normal development/Founder-preview workflow where sufficient.
+
+**This is a sequencing decision, not a rejection of the capability.**
+
+### 16.3 Closure effect
+
+- TIIZI-CF-001 is CLOSED. All Cloudflare work stops here; no Cloudflare implementation phase, infrastructure, DNS, runtime, database, authentication, or object-storage change is authorised by this document.
+- The programme continues under the authoritative Master Programme: **assemble Tiizi engine first → establish organisation capability → assemble participant/user experience**.
+- Assessment conclusions in §0–§15 remain unchanged; this section records the Founder disposition only.
+- This assessment was not a registered Master Programme work package, so the Master Programme record is not amended; this document is the complete disposition record.
+
 
 
 
