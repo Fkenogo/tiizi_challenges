@@ -4,11 +4,11 @@
 
 **Status:** IMPLEMENTED CANDIDATE / CORRECTED / FOUNDER REVALIDATION
 REQUIRED (TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001 + TIIZI-S3B-FOUNDER-
-PREVIEW-CORR-002, 2026-09-19; TIIZI-S3B-ACTIVITY-APPLICATION-ITR-002
-disposition B; STOP BEFORE MERGE — Founder revalidation NOT completed,
-no acceptance claimed, S3b NOT marked complete. Two revalidation blockers
-recorded in §11: the activity-event DATE projection, and the external
-port-9099 conflict.)
+PREVIEW-CORR-002 + TIIZI-S3B-FOUNDER-PREVIEW-CORR-003, 2026-09-19;
+TIIZI-S3B-ACTIVITY-APPLICATION-ITR-002 disposition B; STOP BEFORE MERGE —
+Founder revalidation NOT completed, no acceptance claimed, S3b NOT marked
+complete. CORR-003 closes the DATE projection defect; the live revalidation
+remains blocked solely by the external port-9099 conflict recorded in §12.)
 
 **Date:** 2026-09-18
 
@@ -55,7 +55,7 @@ technical primitives, brand assets, and the S1 shell primitives.
 
 | Area | File |
 | ---- | ---- |
-| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.84 → 1.85 correction record) |
+| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.85 → 1.86 correction record) |
 | Record | `docs/experience/TIIZI-S3B-ACTIVITY-APPLICATION.md` (this file, new) |
 | Scripts | `package.json` (`test:s3b-activity-logging` guard entry only) |
 | Guards | `scripts/testS3bActivityLoggingGuards.ts` (updated for CORR-001) |
@@ -240,3 +240,61 @@ name-pinned config accepted via the bounded fallback.
 
 **S3b is NOT marked COMPLETE or FOUNDER ACCEPTED; no merge; no deploy;
 S3c/S3d NOT started.**
+
+## 12. CORR-003 correction record — PostgreSQL DATE projection (2026-09-19)
+
+### 12.1 Root cause (confirmed)
+
+A PostgreSQL `DATE` is a calendar day, never an instant. `node-postgres`
+returns a `DATE` as a JS `Date` at **server-local midnight**; projecting it
+with `toISOString().slice(0, 10)` (UTC) shifts the stored day back on
+positive-offset hosts (`Africa/Bujumbura`, UTC+2: stored `2026-09-19` →
+`2026-09-18`). The accepted-path period gate in `applyChallengeActivity`
+compared that mis-projected day to the pinned window, rejecting a valid
+in-window log as `422 outside_challenge_window` (Founder Challenge
+`e13229fb…`, window 2026-09-19..2026-10-02).
+
+### 12.2 Correction (representation-only)
+
+Reuse the canonical DATE-safe `toDayString` (v1.76, `api/src/challengeConfigs.ts`)
+in every affected occurrence-day DATE projection on the activity/Challenge
+path:
+- `api/src/activityEvents.ts` `normalizeRow` (the proven blocker);
+- `api/src/challengeActivityApplication.ts` `normalizeRecord` (accepted
+  response `occurredDay`);
+- `api/src/derivedTruth.ts` `toDayOrNull` + replay normalization;
+- `api/src/submissionIntents.ts` `normalizeSubmissionIntentRow` (idempotency
+  payload binding — the bad projection could make a legitimate retry look
+  like a changed payload).
+
+No schema/migration. Challenge-window validation, governing-day authority,
+`occurred_at` semantics, `occurred_tz` provenance, `STREAK_DAY_CLOSED`/no-grace
+and participation-episode validation are unchanged. `dayInTimezone` (a
+timestamptz helper) and `previousDay` (pure UTC string arithmetic) are not
+DATE projections and were left unchanged.
+
+### 12.3 Regression coverage
+
+`api/test/activityEventDateProjection.test.ts` (new):
+(a) driver-Date / UTC-midnight / string normalization across
+`2026-09-19`, `2026-09-30`, `2026-10-01`, `2026-12-31`, `2027-01-01`,
+plus the event, submission-intent and participation-derived normalizers;
+(b) real application-path boundary: window 2026-09-19..2026-10-02 with a
+governing day of 2026-09-19 is accepted (not `outside_challenge_window`).
+Proven to FAIL against pre-CORR-003 code under `TZ=Africa/Nairobi`
+(`expected '2026-09-18' to be '2026-09-19'`) and PASS under `TZ=UTC`,
+`TZ=Africa/Bujumbura`, `TZ=Africa/Nairobi`, `TZ=America/New_York`.
+
+### 12.4 Live revalidation status
+
+**Blocked (external).** The Klockit project's emulator
+(`firebase emulators:start --only auth --project demo-klockit-local`, cwd
+`/Volumes/PRODUCTION/Projects/klockit`, PID 41922) still exclusively owns
+port 9099, which Tiizi Auth requires by committed product configuration
+(`src/lib/firebaseEmulators.ts`, `scripts/previewV2Auth.ts` refuse any other
+port). No other project's process was touched. The S3b emulator recovery set
+`/private/tmp/tiizi-s3b-emulator-recovery.dRMjBf` preserves the Founder Auth
+UID `Tgj1jC3FXyxOfqtdlhvelt69phoI`, so the existing identity/linkage can be
+restored (`--import` that directory + migrations/DBs unchanged) once 9099 is
+free. No accepted activity record was created; the Founder Challenge, Group
+and rejected intents are unchanged.
