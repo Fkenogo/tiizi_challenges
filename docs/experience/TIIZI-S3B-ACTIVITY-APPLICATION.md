@@ -138,8 +138,8 @@ I. streak temporal rejection via authorised controlled local setup (FD-S3-004).
 
 ## 9. Status
 
-S3b is **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL
-REVALIDATION** (STOP BEFORE MERGE).
+S3b is **IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED /
+READY FOR FOUNDER PREVIEW** (STOP BEFORE MERGE).
 **S3 remains IMPLEMENTATION IN PROGRESS. S3a remains COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3c/S3d NOT STARTED.** No deployment and no production mutation occurred.
 
