@@ -2,13 +2,14 @@
 
 **Work package:** S3b — Activity logging / application (second S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / CORRECTED / FOUNDER REVALIDATION
-PASSED / AWAITING FOUNDER ACCEPTANCE (TIIZI-S3B-ACTIVITY-APPLICATION-
-CORR-001 + TIIZI-S3B-FOUNDER-PREVIEW-CORR-002 + TIIZI-S3B-FOUNDER-PREVIEW-
-CORR-003 + TIIZI-S3B-FOUNDER-REVALIDATION-RESUME-001, 2026-09-19;
-TIIZI-S3B-ACTIVITY-APPLICATION-ITR-002 disposition B; STOP BEFORE MERGE —
-live Founder journey PASSED (§13), no acceptance claimed, S3b NOT marked
-complete. Final acceptance remains a Founder disposition.)
+**Status:** COMPLETE / FOUNDER ACCEPTED (TIIZI-S3B-FOUNDER-ACCEPT-MERGE-001,
+2026-09-19 — see §14). Founder acceptance followed the technically corrected
+and live-revalidated candidate: TIIZI-S3B-ACTIVITY-APPLICATION-CORR-001 +
+TIIZI-S3B-FOUNDER-PREVIEW-CORR-002 + TIIZI-S3B-FOUNDER-PREVIEW-CORR-003 +
+TIIZI-S3B-FOUNDER-REVALIDATION-RESUME-001 (ITR-002 disposition B). Merge of
+PR #37 into main is authorised under TIIZI-S3B-FOUNDER-ACCEPT-MERGE-001
+(normal merge-commit path). S3 remains IMPLEMENTATION IN PROGRESS; S3c/S3d
+NOT STARTED.
 
 **Date:** 2026-09-18
 
@@ -55,7 +56,7 @@ technical primitives, brand assets, and the S1 shell primitives.
 
 | Area | File |
 | ---- | ---- |
-| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.86 → 1.87 resumed-revalidation record) |
+| Programme | `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (1.87 → 1.88 Founder-acceptance record) |
 | Record | `docs/experience/TIIZI-S3B-ACTIVITY-APPLICATION.md` (this file, new) |
 | Scripts | `package.json` (`test:s3b-activity-logging` guard entry only) |
 | Guards | `scripts/testS3bActivityLoggingGuards.ts` (updated for CORR-001) |
@@ -340,3 +341,31 @@ committed evidence (3 total accepted records, not 2).
 no implementation correction was required by this task.** S3b is
 **FOUNDER REVALIDATION PASSED / AWAITING FOUNDER ACCEPTANCE** — not COMPLETE,
 not Founder Accepted, no merge, no deploy, S3c/S3d not started.
+
+## 14. FOUNDER ACCEPTED (TIIZI-S3B-FOUNDER-ACCEPT-MERGE-001, 2026-09-19)
+
+The Founder completed the final S3b preview on candidate `9ad0ef2` and
+**ACCEPTS S3b**. Founder-observed evidence:
+
+- the existing Founder-created Challenge loaded successfully;
+- activity logging succeeded through the normal UI;
+- the UI displayed **"Recorded. 20 kilometres counted for this Challenge.
+  Points awarded: 0 · Day: 2026-09-19"**;
+- **"Log another"** was exercised and reset the form for a new activity;
+- a normal refresh loaded the Challenge with no error;
+- no Founder-observed error.
+
+The **0-point result is expected governed server behaviour** for that entry
+(20 km of a 500 km target = 4 %, below the 5 % minimum-effort ratio) and is
+**not a defect**.
+
+Retained technical/live evidence: the immutable Knowledge identity
+application-route correction (CORR-002) passed; the PostgreSQL DATE projection
+correction (CORR-003) passed; multiple accepted submissions were persisted
+without duplication. **CORR-002 and CORR-003 remain CLOSED.**
+
+**S3b: COMPLETE / FOUNDER ACCEPTED.** Merge of PR #37 into canonical main is
+authorised under this entry via the normal merge-commit path (accepted head
+`9ad0ef2`; no squash, no rebase, no force-push; merge commit recorded by the
+follow-up merged-state entry). S3 remains IMPLEMENTATION IN PROGRESS; S3a
+COMPLETE / FOUNDER ACCEPTED / MERGED; S3c/S3d NOT STARTED. No deployment.
