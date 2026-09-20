@@ -2,8 +2,8 @@
 
 **Work package:** S3c — Live progress / type-state (third S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL REVALIDATION (TIIZI-S3C-LIVE-PROGRESS-CORR-001).
-S3 remains IMPLEMENTATION IN PROGRESS. S3d NOT STARTED. No merge, no deploy, no Founder preview yet.
+**Status:** IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED / READY FOR FOUNDER PREVIEW (TIIZI-S3C-LIVE-PROGRESS-ITR-002; TIIZI-S3C-FOUNDER-PREVIEW-PREP-001).
+S3 remains IMPLEMENTATION IN PROGRESS. S3d NOT STARTED. No merge, no deploy, no Founder acceptance.
 
 **Date:** 2026-09-19
 
@@ -106,7 +106,7 @@ Reference: adopted Tiizi Experience Reference (experience guidance only; engine/
 
 ## 10. Status
 
-S3c is **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL REVALIDATION** (STOP BEFORE MERGE).
+S3c is **IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED / READY FOR FOUNDER PREVIEW** (STOP BEFORE MERGE).
 **S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3d NOT STARTED.** No deployment and no production mutation occurred.
 
@@ -132,3 +132,26 @@ on the PR #38 branch with no scope expansion:
    guard-proven), and `V2CompetitiveProgress` returns null once finalized instead of
    rendering final truth as "live". Ended-but-unfinalized keeps live positions (still
    live authority, no frozen truth exists).
+
+## 12. Technical revalidation and Founder preview readiness
+
+TIIZI-S3C-LIVE-PROGRESS-ITR-002 independently revalidated CORR-001 at candidate
+`85bbbcf18bb8c0c3bbae6baa4ea97f160882e7ef` and returned **B — APPROVABLE FOR
+FOUNDER PREVIEW WITH NON-BLOCKING OBSERVATIONS**. It independently proved the actual
+competitive hook transport boundary: finalized → 0 leaderboard transport calls;
+active/unfinalized → 1 call. The equivalent permanent repository regression remains a
+non-blocking S3c closure/acceptance follow-up unless Founder preview changes the implementation.
+
+TIIZI-S3C-FOUNDER-PREVIEW-PREP-001 then assembled an isolated local preview from that exact
+candidate using real PostgreSQL persistence, Firebase Auth/Firestore emulators, production HTTP
+routes and governed activity application. Browser verification covered Together (150/200;
+contributors 80/50/20/0), Race (live 1,1,3,null; 3 of 4 finished), and Streak (Africa/Nairobi
+governing day 2026-09-20; current/best 2; days done 2 of 5; Done/Pending today), including hard
+refresh coherence and console inspection. No S3c errors, raw UUID labels, malformed numeric
+rendering, S3d final-result UI, Kudos, Support or media functionality were observed. Existing
+React Router future-flag warnings are unrelated. Presentation observations reserved for Founder
+review: Streak requirements show canonical Activity Codes rather than resolved display names,
+and the timezone sentence repeats “time”. Neither changes product truth.
+
+This readiness state does **not** mark S3c COMPLETE or FOUNDER ACCEPTED, authorize merge/deploy,
+or start S3d.
