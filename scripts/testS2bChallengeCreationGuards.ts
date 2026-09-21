@@ -272,7 +272,8 @@ console.log('created context + list binding');
 const createdSource = read('src/v2/challenges/V2CreatedChallengeScreen.tsx');
 check('created screen reads persisted detail', createdSource.includes('useChallengeDetailV2'));
 check('created screen shows participation state', /myParticipation/.test(createdSource));
-check('created screen shows measurement summary', /MeasurementSummary/.test(createdSource));
+check('created screen renders persisted detail progress (measurement config no longer duplicated)',
+  /V2ProgressSection/.test(createdSource) && !/MeasurementSummary/.test(createdSource));
 const hooksSource = read('src/v2/challenges/useChallengeCreation.ts');
 check('detail hook uses GET /v1/challenges/:id client', hooksSource.includes('getChallengeV2'));
 check('list hook uses GET /v1/challenges client', hooksSource.includes('listChallengesV2'));

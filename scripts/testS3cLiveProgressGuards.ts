@@ -328,14 +328,14 @@ check('no manufactured canonical progress in S3c files',
   s3cSources.every((src) => !/setQueryData|computeActivityScore/.test(src)));
 check('no client ranking engine in S3c files',
   s3cSources.every((src) => !/computeFinishingPositions|\.sort\(\(a, b\) => a\.position/.test(src)));
-check('detail assembles hero → live progress → supporting info (no permanent logging form)',
+check('detail assembles hero → live progress → secondary actions (no permanent logging form)',
   screenSrc.includes('<V2ChallengeHero')
     && screenSrc.includes('<V2ProgressSection')
     && screenSrc.includes('<V2ParticipationSection')
-    && screenSrc.includes('What counts')
+    && screenSrc.includes("navigate('/v2/challenges/new')")
     && screenSrc.indexOf('<V2ChallengeHero') < screenSrc.indexOf('<V2ProgressSection')
     && screenSrc.indexOf('<V2ProgressSection') < screenSrc.indexOf('<V2ParticipationSection')
-    && screenSrc.indexOf('<V2ParticipationSection') < screenSrc.indexOf('What counts')
+    && screenSrc.indexOf('<V2ParticipationSection') < screenSrc.indexOf("navigate('/v2/challenges/new')")
     && !screenSrc.includes('<V2LoggingSection'));
 check('finalized competitive unmounts the S3c live surface (no final-as-live)',
   competitiveSrc.includes('if (detail.finalized) return null'));
@@ -427,6 +427,32 @@ check('leave converges through the canonical refetch contract',
 check('Log Activity CTA and type progress remain intact',
   screenSrc.includes('onLogActivity={() => setLogOpen(true)}')
     && screenSrc.includes('<V2ProgressSection'));
+
+// ─── 7d. DETAIL-CLEANUP-001 redundant What Counts removal (static) ────────
+console.log('detail cleanup — redundant What Counts surface');
+const loggingViewSrc = read('src/v2/challenges/loggingView.ts');
+check('joined challenge detail does not render a standalone What Counts card',
+  !/>\s*What counts\s*</.test(screenSrc)
+    && !screenSrc.includes('MeasurementSummary')
+    && !/Shared goal:/.test(screenSrc));
+check('Log Activity overlay still exposes governed activity names and units',
+  dialogSrc.includes('resolvedChoiceOptionLabel')
+    && dialogSrc.includes('useActivityDisplayNames')
+    && dialogSrc.includes('Amount (${selected.unit})')
+    && loggingViewSrc.includes('target ${choice.targetValue} ${choice.unit}'));
+check('type-specific progress surfaces remain present per type',
+  screenSrc.includes('<V2ProgressSection')
+    && sectionSrc.includes('V2CollectiveProgress')
+    && sectionSrc.includes('V2CompetitiveProgress')
+    && sectionSrc.includes('V2StreakProgress'));
+check('streak duration rule preserved once inside the Daily Consistency surface',
+  streakSrc.includes('must be complete for {view.requiredDays} days in a row')
+    && streakSrc.includes('requiredDays !== null'));
+check('no canonical Challenge truth deleted to hide the surface',
+  screenSrc.includes('useChallengeDetailV2')
+    && screenSrc.includes('loggingViewFor(challenge)')
+    && screenSrc.includes('<V2ParticipationSection')
+    && read('src/v2/challenges/V2ProgressSection.tsx').includes('detail.challengeType'));
 
 // ─── 8. Cache coherence for S3c families (runtime) ───────────────────────
 console.log('s3c cache coherence');

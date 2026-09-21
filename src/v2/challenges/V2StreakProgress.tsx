@@ -93,6 +93,11 @@ export function V2StreakProgress({ detail }: { detail: V2ChallengeDetail }) {
       )}
 
       <p className="mt-3 text-xs leading-5 text-slate-500">
+        {view.requiredDays !== null && (
+          <>
+            Every daily requirement must be complete for {view.requiredDays} days in a row.{' '}
+          </>
+        )}
         Days roll over at midnight {timezoneLabel(view.timezone)}. A missed day resets the
         current streak — there is no late logging. The final outcome seals when the Challenge ends.
       </p>
