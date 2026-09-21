@@ -106,12 +106,34 @@ export interface ApiParticipationProgress {
   finalPosition: number | null;
 }
 
+/**
+ * S3d — frozen per-participation final block, projected read-only from
+ * `challenge_participation_finals` (the sealed authority). Null while the
+ * Challenge is unfinalized. For Race this is the member's GOVERNING (earliest
+ * completed) episode — the PR #41 member-identity result — while identity and
+ * gating stay on the display episode. It is a projection of existing authority:
+ * no recomputation, no schema, no second results authority.
+ */
+export interface ApiParticipationFinal {
+  completed: boolean;
+  completedAt: string | null;
+  daysCompleted: number;
+  bestStreak: number;
+  /** Frozen terminal streak (challenge_participation_finals.final_streak). */
+  finalStreak: number;
+  /** Frozen standard-competition position; null for non-finishers and streaks. */
+  finalPosition: number | null;
+  finalizedAt: string;
+}
+
 export interface ApiOwnParticipation {
   participationId: string;
   status: 'active' | 'withdrawn' | 'removed';
   joinedAt: string;
   joinedConfigVersion: number;
   progress: ApiParticipationProgress;
+  /** S3d — frozen final block (null while unfinalized). */
+  final: ApiParticipationFinal | null;
 }
 
 export interface ApiChallengeSummary {
@@ -445,14 +467,32 @@ async function requireChallengeVisible(
 function toOwnParticipation(
   episode: ParticipationRow,
   derived: ParticipationDerivedRow | undefined,
-  finalPosition: number | null = null,
+  final: ParticipationFinalRow | null | undefined = null,
 ): ApiOwnParticipation {
   return {
     participationId: episode.participation_id,
     status: episode.status,
     joinedAt: episode.joined_at,
     joinedConfigVersion: episode.joined_config_version,
-    progress: toProgress(derived ?? zeroParticipationDerived(episode), finalPosition),
+    progress: toProgress(derived ?? zeroParticipationDerived(episode), final?.final_position ?? null),
+    final: final ? toFinalBlock(final) : null,
+  };
+}
+
+/**
+ * S3d — project the sealed participation final row into the read contract.
+ * Pure projection: every field is copied from frozen authority (never derived
+ * from the live derived row, which for Streak can contradict `final_streak`).
+ */
+function toFinalBlock(final: ParticipationFinalRow): ApiParticipationFinal {
+  return {
+    completed: final.completed,
+    completedAt: final.completed_at,
+    daysCompleted: final.days_completed,
+    bestStreak: final.best_streak,
+    finalStreak: final.final_streak,
+    finalPosition: final.final_position,
+    finalizedAt: final.finalized_at,
   };
 }
 
@@ -493,7 +533,7 @@ async function toSummary(
       ? toOwnParticipation(
         episode,
         participationDerived.get(resultEpisode!.participation_id),
-        participationFinals.get(resultEpisode!.participation_id)?.final_position ?? null,
+        participationFinals.get(resultEpisode!.participation_id),
       )
       : null,
   };
@@ -640,7 +680,7 @@ export async function getChallengeDetail(
     collectiveGoalReached: derived.collectiveGoalReached,
     completionsCount: derived.completionsCount,
     myParticipation: episode
-      ? toOwnParticipation(episode, participationDerived, episodeFinal?.final_position ?? null)
+      ? toOwnParticipation(episode, participationDerived, episodeFinal)
       : null,
     instructions: challenge.instructions,
     activatedAt: challenge.activated_at,
