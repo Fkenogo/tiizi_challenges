@@ -373,6 +373,48 @@ Client / guards:
 
 ## 13. Programme status statement
 
-This assessment does **not** start S3d, does **not** mark anything implemented, does **not** reopen S3c (COMPLETE / FOUNDER ACCEPTED / MERGED), authorises no deployment, and changes no Master Programme state. Recording this assessment in the Master Programme is left to the Founder disposition step (precedent: RECON-001 was recorded by its separate closure task).
+This assessment does **not** start S3d, does **not** mark anything implemented, does **not** reopen S3c (COMPLETE / FOUNDER ACCEPTED / MERGED), authorises no deployment, and changes no Master Programme state. Recording this assessment in the Master Programme was left to the Founder disposition step (precedent: RECON-001); that record is now made in §14 and Master Programme v1.97.
 
-**Assessment status: COMPLETE — awaiting Founder disposition (STOP BEFORE MERGE).**
+**Assessment status: COMPLETE — Founder disposition recorded in §14 (TIIZI-S3D-READINESS-DISPOSITION-001). Sections 1–13 are preserved as originally assessed.**
+
+---
+
+## 14. Founder disposition (TIIZI-S3D-READINESS-DISPOSITION-001)
+
+**Founder disposition: the readiness assessment is ACCEPTED** with the following decisions. This section records them; §§1–13 are unchanged.
+
+### 14.1 Decisions
+
+| Decision | Disposition | Record |
+| -------- | ----------- | ------ |
+| **FD-S3D-1** — Ended / not-yet-finalized experience | **APPROVED** | When a Challenge has ended but canonical finalization has not completed, present a neutral transitional state: "Challenge ended" / "Final results are being confirmed." Read-only; logging unavailable; provisional results never presented as final; no winner/podium/success/failure/recognition semantics; once canonical finalization exists, render the sealed result experience. No new engine semantics. (Resolves §10.3 FD-S3D-1 (a); it also covers the window-expired-unprocessed D-state 2 of §2.4.) |
+| **FD-S3D-2A** — Streak final projection | **APPROVED** | S3d may expose existing frozen Streak final truth through the V2 read model, including the canonical frozen `final_streak` and an appropriate frozen per-participation final block. Projection of existing authority, not new domain behaviour. Live `currentStreak` must not be used as the final Streak result where frozen truth exists. No schema/migration or new finalization semantics. (Resolves §10.3 FD-S3D-1 (b): the projection is inside S3d's authority.) |
+| **FD-S3D-3** — Results vocabulary | **APPROVED** | Together: *Final result, Group total, Your contribution*. Race: *Final results, Final standings, Final position, Finished*. Streak: *Final result, Best streak, Days completed, Final streak*. Transitional: *Challenge ended, Final results are being confirmed.* **Not authorised:** Winner, Podium, Success, Failure, recognition tiers, badges/rewards — unless separate existing authority explicitly requires them. "Final standings" is approved as presentation language for canonical frozen Race positions. |
+| **FD-S3D-2 (RACE-EDGE)** | **Founder product rule; bounded resolution required before S3d implementation** | *A member represents ONE competitive participant in a Race Challenge. Leaving and rejoining MUST NOT create multiple competitive identities in final Race results. Historical participation episodes remain preserved.* The S3d UI must not solve this by renumbering, hiding rows or fabricating client-side positions. |
+
+### 14.2 Race edge — verified, root-caused, corrected (candidate PR #41)
+
+Reproduced on `origin/main` `494ee23` through the production HTTP routes (join / withdraw / activity) and the canonical `finalizeChallenge` seam (the same seam `processExpiredChallenges` drives):
+
+| Scenario | Frozen finals (before) | Served board (before) | `completions_count` (before) |
+| -------- | ---------------------- | --------------------- | ---------------------------- |
+| A finishes → leaves → rejoins → finishes again; B finishes; C partial | A-ep1=1, B=2, A-ep2=3, C=null | **B=2, A=3, C=null** — no #1 | **3** for 2 finishers |
+| A finishes → leaves → rejoins (nothing more logged); B finishes; C partial | A-ep1=1, B=2, A-ep2=null, C=null | **B=2, C=null, A=null (0 progress)** — the first finisher shown unfinished | 2 |
+
+**Root cause.** The competitive identity in the domain was the participation **episode**: `challenge_participation_derived` (completion per episode), `evaluateTerminalTruth` → `computeFinishingPositions` over *all* episode ids, `completions_count` (three counting sites: rebuild fold, acceptance-seam SQL count, finalization). The Race read model displayed the **member** (latest episode) but took its position from that episode's frozen row — so a member's frozen rank slots and the displayed rows disagreed.
+
+**Correction (classification C — finalization aggregation + read model; not D).** No schema/migration, no evidence rewrite, no client repair:
+
+- One competitive identity = the member. A member has finished when any episode completed; the **earliest completion governs** (Stage F K.6 — position follows who reached the target first; K.7 — a later second reach cannot improve it). Episode progress itself is unchanged.
+- Finalization freezes one `final_position` per finishing member, on that member's earliest completed episode; every episode still gets its frozen row and its own `completed`/`completed_at` (history preserved); standard competition ranking (1,1,3) is computed over members; `completions_count` is the number of distinct finishing members (also in the live acceptance count and rebuild).
+- New finalizations stamp `ebc04/v2`; verification evaluates each frozen finalization with the rule its own stamp names, so `ebc04/v1` (episode-identity) history verifies unchanged — sealed rows are never reinterpreted or rewritten.
+- Read model: the leaderboard returns one entry per member (`participationId` = the member's current episode for "You"; result from the governing episode — the S3c CORR-001 contributors precedent); the own detail/list result comes from the governing episode while identity/status/Leave/Log gating stay on the current episode.
+- Not broadened: Collective already completes at most one active episode per member; Streak results are personal (own display episode) and its episode-level `completions_count` is not part of the approved vocabulary — recorded here as an observation, not corrected.
+
+Implemented and regression-proven on **PR #41** (`fix/s3d-race-member-identity-001`, UNMERGED, awaiting Founder review): `api/test/s3dRaceMemberIdentity.test.ts` (12 tests; failing on the unmodified code), full API suite 664 passed / 8 skipped.
+
+### 14.3 Remaining gate and status
+
+- S3d remains **NOT STARTED**. The S3d results UI, the Streak projection (FD-S3D-2A), the transitional state (FD-S3D-1), client final-result typing and every other S3d experience are authorised direction for the **next** implementation task, gated on Founder review/merge of PR #41 (Race identity).
+- §11.2 test **T-6** (Race multi-episode finalization) is delivered by PR #41; **T-7** (DB immutability actually rejects UPDATE/DELETE) is also covered there for the finals tables. T-1…T-5, T-8 and G-1…G-5 remain requirements for S3d implementation.
+- Master Programme recorded as **v1.97**.
