@@ -30,7 +30,7 @@ export function V2CollectiveProgress({ detail }: { detail: V2ChallengeDetail }) 
   return (
     <V2Card>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-        Live shared progress
+        Group progress
       </p>
 
       <div className="mt-2">

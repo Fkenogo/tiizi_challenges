@@ -61,7 +61,7 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
   return (
     <V2Card>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-        Your participation
+        Taking part
       </p>
 
       {view.kind === 'read-only' && (

@@ -1,7 +1,7 @@
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { V2Card } from '../components/V2Primitives';
 import { formatDay, timezoneLabel } from './challengeCreationDraft';
-import { humanizeCanonicalKey } from './loggingView';
+import { resolveActivityDisplayName, useActivityDisplayNames } from './activityNames';
 import { streakProgressFor } from './progressView';
 
 /**
@@ -23,6 +23,9 @@ import { streakProgressFor } from './progressView';
  */
 export function V2StreakProgress({ detail }: { detail: V2ChallengeDetail }) {
   const view = streakProgressFor(detail);
+  // CORR-002 §7: requirement rows show the governed Knowledge name, never
+  // the raw Activity Code, as the primary label.
+  const names = useActivityDisplayNames(view.requirements.map((req) => req.canonicalKey));
 
   return (
     <V2Card>
@@ -35,27 +38,27 @@ export function V2StreakProgress({ detail }: { detail: V2ChallengeDetail }) {
           {view.todayComplete ? 'Today done' : 'Pending today'}
         </p>
         <p className="mt-0.5 text-sm text-slate-600">
-          {formatDay(view.governingToday)} · {timezoneLabel(view.timezone)} time
+          {formatDay(view.governingToday)} · {timezoneLabel(view.timezone)}
         </p>
       </div>
 
       <dl className="mt-3 grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-orange-50 px-3 py-2">
-          <dt className="text-[11px] font-bold uppercase tracking-wider text-orange-700">Current</dt>
+          <dt className="text-[11px] font-bold uppercase tracking-wider text-orange-700">Current streak</dt>
           <dd className="text-xl font-black text-orange-900">
             {view.currentStreak}
             <span className="text-xs font-bold"> day{view.currentStreak === 1 ? '' : 's'}</span>
           </dd>
         </div>
         <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Best</dt>
+          <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Best streak</dt>
           <dd className="text-xl font-black text-slate-900">
             {view.bestStreak}
             <span className="text-xs font-bold"> day{view.bestStreak === 1 ? '' : 's'}</span>
           </dd>
         </div>
         <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Days done</dt>
+          <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Days completed</dt>
           <dd className="text-xl font-black text-slate-900">
             {view.daysCompleted}
             {view.requiredDays !== null && (
@@ -79,7 +82,7 @@ export function V2StreakProgress({ detail }: { detail: V2ChallengeDetail }) {
                 }`}
               >
                 <span>
-                  {humanizeCanonicalKey(req.canonicalKey)}
+                  {resolveActivityDisplayName(req.canonicalKey, names)}
                   {req.activityVariant ? ` (${req.activityVariant})` : ''} · {req.targetValue} {req.unit}
                 </span>
                 <span className="font-black">{req.doneToday ? 'Done' : 'Pending'}</span>
@@ -90,7 +93,7 @@ export function V2StreakProgress({ detail }: { detail: V2ChallengeDetail }) {
       )}
 
       <p className="mt-3 text-xs leading-5 text-slate-500">
-        Days roll over at midnight {timezoneLabel(view.timezone)} time. A missed day resets the
+        Days roll over at midnight {timezoneLabel(view.timezone)}. A missed day resets the
         current streak — there is no late logging. The final outcome seals when the Challenge ends.
       </p>
     </V2Card>

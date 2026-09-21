@@ -314,8 +314,9 @@ check('duplicate replay renders honestly without a second effect',
   section.includes('accepted.duplicate') && section.includes('No duplicate was created.'));
 check('S3b submission carries no client occurred_day (server derives governing day)',
   section.includes('buildS3bActivityPayload') && payloadSrc.includes('omitOccurredDay'));
-check('selector never exposes a UUID label',
-  section.includes('choiceOptionLabel') && !section.includes('`${choice.canonicalKey}'));
+check('selector never exposes a UUID label (governed names primary)',
+  section.includes('resolvedChoiceOptionLabel') && section.includes('useActivityDisplayNames')
+    && !section.includes('`${choice.canonicalKey}'));
 check('zero configured activities renders an honest empty state',
   section.includes('NO_CONFIGURED_ACTIVITIES_COPY'));
 check('duplicate replay renders honestly without a second effect',
@@ -346,10 +347,13 @@ check('no financial/support/media concepts in the logging surface',
     && !/donation|support|cause|pledge|escrow/i.test(payloadSrc));
 check('hook invalidates only via the shared contract',
   hookSrc.includes('invalidateV2ChallengeReads') && !/invalidateQueries\(\{\s*queryKey:\s*\['v2-challenge/.test(hookSrc));
-check('detail embeds the S3b logging section after participation',
-  screenSrc.includes('<V2LoggingSection')
-    && screenSrc.indexOf('<V2ParticipationSection') < screenSrc.indexOf('<V2LoggingSection')
-    && screenSrc.indexOf('<V2LoggingSection') < screenSrc.indexOf('What counts'));
+check('detail routes logging through the hero CTA dialog (no permanent form)',
+  screenSrc.includes('<V2LogActivityDialog')
+    && screenSrc.includes('setLogOpen(true)')
+    && !screenSrc.includes('<V2LoggingSection')
+    && section.includes('V2LogActivityDialog')
+    && section.includes('V2LogActivityForm')
+    && section.includes('V2Sheet'));
 
 // ─── Cache coherence after accepted activity (runtime) ─────────────────
 console.log('post-acceptance cache coherence');

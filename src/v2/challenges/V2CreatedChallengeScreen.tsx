@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchKnowledgeByCode, fetchKnowledgeById } from '../../api/knowledgeApi';
 import type { V2ConfigActivity } from '../../api/v2ChallengeApi';
 import {
   V2Button,
@@ -8,52 +7,47 @@ import {
   V2ErrorState,
   V2LoadingState,
   V2Page,
-  V2SectionHeader,
 } from '../components/V2Primitives';
 import {
-  challengeTypeLabel,
   formatDayRange,
   loadBasisLabel,
   metricLabel,
   statusLabel,
   timezoneLabel,
 } from './challengeCreationDraft';
+import { loggingViewFor } from './loggingView';
+import { V2ActivityName } from './activityNames';
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
-import { V2LoggingSection } from './V2LoggingSection';
+import { V2LogActivityDialog } from './V2LoggingSection';
 import { V2ParticipationSection } from './V2ParticipationSection';
 import { V2ProgressSection } from './V2ProgressSection';
+import { V2ChallengeHero } from './V2ChallengeHero';
 
 /**
- * S2b — created-Challenge context, extended by S3a with the governed
- * participation/access slice, by S3b with the governed
- * activity-logging slice, and by S3c with live progress/type-state.
+ * S3c — created-Challenge context, reassembled by CORR-002 around the
+ * participant-facing hierarchy (Experience Reference assembly, canonical
+ * S3c truth preserved):
+ *
+ * A. Back to Challenges
+ * B. Challenge hero (identity, host, schedule, purpose, Log Activity CTA)
+ * C. Concise challenge context (status + participation in one line)
+ * D. Type-specific live progress (Together / Race / Streak truth unchanged)
+ * E. Supporting information (taking part incl. Leave, what counts,
+ *    secondary metadata) — present but no longer dominant.
  *
  * Everything shown comes from the persisted V2 read
  * (GET /v1/challenges/:id) plus the bounded S3c seams (contributors,
  * competitive leaderboard) plus neutral name resolution — there is no
  * mock-only success screen. S3a binds the existing join/withdraw seams
- * here; S3b binds the existing activity-application seam
- * (POST /v1/challenges/:id/activity) for joined participants on active
- * Challenges; S3c binds live progress/type-state reads. Deliberately
- * NOT results (S3d).
+ * below the progress; S3b binds the existing activity-application seam
+ * (POST /v1/challenges/:id/activity) through the hero CTA dialog for
+ * joined participants on active Challenges; S3c binds live
+ * progress/type-state reads. Deliberately NOT results (S3d).
+ *
+ * Removed by CORR-002: the CREATED card, the CHALLENGE TYPE / STATUS grid
+ * card, and the permanently expanded Log Activity form — valid facts that
+ * must not dominate the participant journey.
  */
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function ActivityName({ canonicalKey }: { canonicalKey: string }) {
-  const query = useQuery({
-    queryKey: ['v2-activity-name', canonicalKey],
-    queryFn: () =>
-      UUID_RE.test(canonicalKey)
-        ? fetchKnowledgeById(canonicalKey)
-        : fetchKnowledgeByCode(canonicalKey),
-    enabled: !!canonicalKey,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-  if (query.isLoading) return <span className="text-slate-400">Activity…</span>;
-  return <span>{query.data?.name ?? 'Activity'}</span>;
-}
 
 function durationModeLabel(mode: string | null | undefined): string | null {
   if (mode === 'CONTINUOUS') return 'all at once';
@@ -73,7 +67,7 @@ function MeasurementSummary({ activity }: { activity: V2ConfigActivity }) {
   return (
     <li className="rounded-xl bg-slate-50 px-3 py-2">
       <p className="text-sm font-bold text-slate-900">
-        <ActivityName canonicalKey={activity.canonicalKey} />
+        <V2ActivityName canonicalKey={activity.canonicalKey} />
       </p>
       <p className="mt-0.5 text-xs text-slate-600">
         {metricLabel(activity.metric)} · {parts.join(' · ')}
@@ -92,6 +86,7 @@ export function V2CreatedChallengeScreen() {
   const navigate = useNavigate();
   const detail = useChallengeDetailV2(challengeId);
   const memberships = useV2Memberships();
+  const [logOpen, setLogOpen] = useState(false);
 
   if (detail.isLoading) {
     return (
@@ -123,59 +118,36 @@ export function V2CreatedChallengeScreen() {
     : participation
       ? 'You are not taking part in this Challenge right now.'
       : 'You are not taking part in this Challenge yet.';
+  const loggable = loggingViewFor(challenge).kind === 'loggable';
 
   return (
     <V2Page>
-      <V2SectionHeader
-        eyebrow={`${challengeTypeLabel(challenge.challengeType)} · Hosted by ${groupName}`}
-        title={challenge.title}
-        description={`${statusLabel(challenge.status)} · ${formatDayRange(challenge.startDate, challenge.endDate)} · ${participationSentence}`}
-      />
+      <div className="mb-3">
+        <button
+          type="button"
+          onClick={() => navigate('/v2/challenges')}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+        >
+          <span aria-hidden>←</span>
+          <span>Back to Challenges</span>
+        </button>
+      </div>
 
       <div className="space-y-4">
-        <V2Card className="border-emerald-200 bg-emerald-50">
-          <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Created</p>
-          <p className="mt-1 text-sm font-medium text-emerald-900">
-            {participation?.status === 'active'
-              ? 'You are taking part in this Challenge.'
-              : 'This Challenge exists as persisted truth. Refreshing this page shows the same Challenge.'}
-          </p>
-        </V2Card>
+        <V2ChallengeHero
+          detail={challenge}
+          groupName={groupName}
+          loggable={loggable}
+          onLogActivity={() => setLogOpen(true)}
+        />
 
-        <V2Card>
-          <dl className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Challenge type</dt>
-              <dd className="text-sm font-bold text-slate-900">{challengeTypeLabel(challenge.challengeType)}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Host Group</dt>
-              <dd className="text-sm font-bold text-slate-900">{groupName}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Status</dt>
-              <dd className="text-sm font-bold text-slate-900">{statusLabel(challenge.status)}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Schedule</dt>
-              <dd className="text-sm font-bold text-slate-900">
-                {formatDayRange(challenge.startDate, challenge.endDate)}
-              </dd>
-              <dd className="text-xs text-slate-500">{timezoneLabel(challenge.timezone)}</dd>
-            </div>
-          </dl>
-          {challenge.description && (
-            <p className="mt-3 border-t border-slate-100 pt-3 text-sm leading-6 text-slate-600">
-              {challenge.description}
-            </p>
-          )}
-        </V2Card>
-
-        <V2ParticipationSection detail={challenge} />
-
-        <V2LoggingSection detail={challenge} />
+        <p className="text-xs font-medium text-slate-500">
+          {statusLabel(challenge.status)} · {formatDayRange(challenge.startDate, challenge.endDate)} · {timezoneLabel(challenge.timezone)} · {participationSentence}
+        </p>
 
         <V2ProgressSection detail={challenge} />
+
+        <V2ParticipationSection detail={challenge} />
 
         <V2Card>
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -198,13 +170,14 @@ export function V2CreatedChallengeScreen() {
           )}
         </V2Card>
 
-        <div className="flex flex-wrap gap-2">
-          <V2Button onClick={() => navigate('/v2/challenges')}>Back to Challenges</V2Button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <V2Button variant="secondary" onClick={() => navigate('/v2/challenges/new')}>
             Create another Challenge
           </V2Button>
         </div>
       </div>
+
+      <V2LogActivityDialog detail={challenge} open={logOpen} onClose={() => setLogOpen(false)} />
     </V2Page>
   );
 }

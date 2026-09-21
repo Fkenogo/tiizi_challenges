@@ -328,15 +328,70 @@ check('no manufactured canonical progress in S3c files',
   s3cSources.every((src) => !/setQueryData|computeActivityScore/.test(src)));
 check('no client ranking engine in S3c files',
   s3cSources.every((src) => !/computeFinishingPositions|\.sort\(\(a, b\) => a\.position/.test(src)));
-check('detail embeds the S3c progress section after logging, before What counts',
-  screenSrc.includes('<V2ProgressSection')
-  && screenSrc.indexOf('<V2LoggingSection') < screenSrc.indexOf('<V2ProgressSection')
-  && screenSrc.indexOf('<V2ProgressSection') < screenSrc.indexOf('What counts'));
+check('detail assembles hero → live progress → supporting info (no permanent logging form)',
+  screenSrc.includes('<V2ChallengeHero')
+    && screenSrc.includes('<V2ProgressSection')
+    && screenSrc.includes('<V2ParticipationSection')
+    && screenSrc.includes('What counts')
+    && screenSrc.indexOf('<V2ChallengeHero') < screenSrc.indexOf('<V2ProgressSection')
+    && screenSrc.indexOf('<V2ProgressSection') < screenSrc.indexOf('<V2ParticipationSection')
+    && screenSrc.indexOf('<V2ParticipationSection') < screenSrc.indexOf('What counts')
+    && !screenSrc.includes('<V2LoggingSection'));
 check('finalized competitive unmounts the S3c live surface (no final-as-live)',
   competitiveSrc.includes('if (detail.finalized) return null'));
 check('leaderboard hook gates on the S3c enablement (finalized disables fetch)',
   hookSrc.includes('competitiveLeaderboardEnabledForS3c')
   && hookSrc.includes('finalized'));
+
+// ─── 7b. CORR-002 experience-reference alignment (static) ─────────────────
+console.log('corr-002 experience alignment');
+const heroSrc = read('src/v2/challenges/V2ChallengeHero.tsx');
+const dialogSrc = read('src/v2/challenges/V2LoggingSection.tsx');
+const namesSrc = read('src/v2/challenges/activityNames.tsx');
+const corr002Sources = [viewSrc, collectiveSrc, competitiveSrc, streakSrc, sectionSrc, heroSrc, screenSrc];
+check('hero consolidates identity for all three types (badge/title/host/schedule/purpose/CTA)',
+  heroSrc.includes('challengeTypeLabel(detail.challengeType)')
+    && heroSrc.includes('Hosted by')
+    && heroSrc.includes('formatDayRange')
+    && heroSrc.includes('timezoneLabel')
+    && heroSrc.includes('Log activity')
+    && heroSrc.includes('onLogActivity'));
+check('hero imagery is a bounded CSS fallback (no fabricated media state)',
+  !/<img|image_url|coverImage/.test(heroSrc)
+    && heroSrc.includes('NO governed image/media field'));
+check('Log Activity is a CTA opening the overlay (form absent while closed)',
+  screenSrc.includes('setLogOpen(true)')
+    && screenSrc.includes('<V2LogActivityDialog')
+    && screenSrc.includes('open={logOpen}')
+    && dialogSrc.includes('V2LogActivityDialog')
+    && dialogSrc.includes('V2LogActivityForm')
+    && dialogSrc.includes('V2Sheet')
+    && !screenSrc.includes('V2LogActivityForm'));
+check('overlay reuses the governed logging path (same seam, same invalidation)',
+  dialogSrc.includes('useLogActivityV2')
+    && dialogSrc.includes('buildS3bActivityPayload')
+    && dialogSrc.includes('deriveSubmitKey')
+    && !/setQueryData|computeActivityScore/.test(dialogSrc));
+check('participant language replaces backend labels',
+  !/Live race state|LIVE RACE STATE/.test(competitiveSrc)
+    && competitiveSrc.includes('Race progress')
+    && collectiveSrc.includes('Group progress')
+    && !/Live shared progress/.test(collectiveSrc)
+    && !/} time/.test(streakSrc));
+check('governed activity names resolve everywhere codes leaked',
+  dialogSrc.includes('useActivityDisplayNames')
+    && dialogSrc.includes('resolvedChoiceOptionLabel')
+    && streakSrc.includes('useActivityDisplayNames')
+    && streakSrc.includes('resolveActivityDisplayName')
+    && namesSrc.includes('fetchKnowledgeByCode')
+    && namesSrc.includes('fetchKnowledgeById'));
+check('no hard-coded code-to-name mapping (names resolve from Knowledge)',
+  !/Push-Up|Breathing Practice|Community Walk|FIT STR|WEL MND|FIT CRD/.test(namesSrc)
+    && !/Push-Up|Breathing Practice|Community Walk|FIT STR|WEL MND|FIT CRD/.test(dialogSrc)
+    && !/Push-Up|Breathing Practice|Community Walk|FIT STR|WEL MND|FIT CRD/.test(streakSrc));
+check('no S3d/deferred vocabulary in the CORR-002 assembly',
+  corr002Sources.every((src) => !/finalResult|finalPosition|winner|Winner|podium|Podium|recognition|Recognition|Run Again|runAgain/i.test(src.replace(/contributorsCarryNoRanking[\s\S]*?\n\}/, '')))
+  && corr002Sources.every((src) => !/donation|Donation|pledge|escrow|M-Pesa|support tiizi|Support Tiizi|social cause|Social Cause|kudos|Kudos|cover|Cover|image_url/.test(src)));
 
 // ─── 8. Cache coherence for S3c families (runtime) ───────────────────────
 console.log('s3c cache coherence');

@@ -2,7 +2,9 @@
 
 **Work package:** S3c — Live progress / type-state (third S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED / READY FOR FOUNDER PREVIEW (TIIZI-S3C-LIVE-PROGRESS-ITR-002; TIIZI-S3C-FOUNDER-PREVIEW-PREP-001).
+**Status:** IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED /
+FOUNDER PREVIEW FUNCTIONALLY PASSED / EXPERIENCE ALIGNMENT CORRECTED /
+AWAITING FOUNDER ACCEPTANCE (TIIZI-S3C-FOUNDER-PREVIEW-CORR-002).
 S3 remains IMPLEMENTATION IN PROGRESS. S3d NOT STARTED. No merge, no deploy, no Founder acceptance.
 
 **Date:** 2026-09-19
@@ -155,3 +157,57 @@ and the timezone sentence repeats “time”. Neither changes product truth.
 
 This readiness state does **not** mark S3c COMPLETE or FOUNDER ACCEPTED, authorize merge/deploy,
 or start S3d.
+
+## 13. CORR-002 experience-reference alignment record (Founder preview correction)
+
+Founder preview functionally passed the S3c engine/product truth (Together/Race/Streak live
+loops, streak transitions, ITR-002 no technical blocker) but found the challenge-detail pages
+too close to technical/verification surfaces. CORR-002 reassembles the existing S3c truth into
+the intended participant-facing experience against the adopted Tiizi Experience Reference
+(`Fkenogo/tiizi-prototye`; hierarchy/interaction/terminology direction only — fixture data,
+prototype ranking notation and prototype-only dimensions are NOT reproduced). **No engine,
+domain, ranking, streak, acceptance, projection, cache, finalization or S3c/S3d change.**
+
+- S3c engine/product truth was Founder-preview validated; this correction was required for
+  participant-facing assembly; the Experience Reference controls presentation/hierarchy; the
+  canonical implementation controls domain truth where the two differ.
+- Common shell (`V2CreatedChallengeScreen`): Back to Challenges → `V2ChallengeHero` →
+  one-line concise context (status · schedule · timezone · participation) → `V2ProgressSection`
+  (canonical per-type truth unchanged) → supporting info (Taking part incl. Leave, What counts,
+  secondary Create-another). Removed as dominant surfaces: the CREATED card, the
+  CHALLENGE TYPE/STATUS grid card, and the permanently expanded Log Activity form.
+- Hero (`V2ChallengeHero`, all three types): type badge, title, host Group, schedule/timezone,
+  purpose statement, primary Log Activity CTA when the canonical view permits logging.
+  Imagery fallback (bounded, documented): `V2ChallengeDetail` exposes no governed media field
+  and cover media remains blocked on an authorised media contract (S3a acceptance), so the hero
+  uses a type-tinted CSS treatment — no image element, no fabricated URL, no false domain state,
+  no UI-only persistence.
+- Log Activity CTA + overlay (`V2LogActivityDialog` over the unchanged `V2LogActivityForm` via
+  the existing `V2Sheet` primitive): same allowed activities, identity, units, validation,
+  timestamp handling, API path, success handling and `invalidateV2ChallengeReads` convergence;
+  accepted confirmation stays rendered with Done/Log-another; closing unmounts the form so each
+  opening starts a fresh intent. No `setQueryData` fabrication.
+- Participant language: Group progress, Race progress / Race standings, Today's Daily
+  Consistency, Current/Best streak, Days completed, Taking part; removed `Live race state` and
+  the `… (UTC+3) time` duplication (timezone labels themselves unchanged, as are governing-day
+  calculations).
+- Activity names (CORR-002 §7): `activityNames.tsx` resolves the governed Knowledge name via
+  `fetchKnowledgeByCode`/`fetchKnowledgeById` (batch `useActivityDisplayNames` for synchronous
+  labels, `V2ActivityName` for single labels); logging selector, choice detail and Streak
+  requirement rows show it primary with a transient humanized fallback while resolving. No
+  hard-coded code→name mapping; canonical identity and submission payloads unchanged.
+- Together/Race/Streak assemblies preserve every canonical truth listed in §§9–11 of the
+  authorising task (shared total/goal/percent/share/projection/overshoot; own total/target/
+  live 1,1,3 positions/N-of-M/finishers/still-progressing; server governingToday/streaks/
+  Done-Pending/rollover/reset/no-late-logging) — only hierarchy and copy changed.
+- Permanent finalized-query regression: `scripts/testS3cFinalizedQueryLifecycle.ts`
+  (`test:s3c-finalized-query`) proves finalized → 0 leaderboard transport calls and
+  active/unfinalized → 1 through a real QueryClient with the hook's real key/enablement,
+  coupled to the actual hook source.
+- Explicit Experience Reference deviations (product truth wins): standard competition ranking
+  1,1,3 rendered (prototype 1,2,2 NOT reproduced); no other-member Streak state; no Kudos,
+  Recent Activity, Support, media, social, podiums, winners, final results, recognition,
+  Run Again, or S3d surfaces.
+
+Validation and fresh Founder evidence are recorded in the return report held with the
+candidate commit.

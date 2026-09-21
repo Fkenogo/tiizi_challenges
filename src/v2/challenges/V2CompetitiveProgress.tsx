@@ -41,7 +41,7 @@ export function V2CompetitiveProgress({ detail }: { detail: V2ChallengeDetail })
   return (
     <V2Card>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-        Live race state
+        Race progress
       </p>
 
       {view.hasJoined && (
@@ -86,7 +86,7 @@ export function V2CompetitiveProgress({ detail }: { detail: V2ChallengeDetail })
 
       <div className="mt-3 border-t border-slate-100 pt-3">
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          Standings
+          Race standings
           {board.data && (
             <span className="ml-1 font-medium normal-case">
               · {split.finishedCount} of {split.participantCount} finished

@@ -144,7 +144,10 @@ check('list never invents participation', !/useState<[^>]*articipat/i.test(list)
 const createdScreen = read('src/v2/challenges/V2CreatedChallengeScreen.tsx');
 check('detail embeds the S3a participation section', createdScreen.includes('V2ParticipationSection'));
 check('detail states host group + participation truth',
-  createdScreen.includes('Hosted by') && createdScreen.includes('participationSentence'));
+  createdScreen.includes('participationSentence')
+    && (createdScreen.includes('Hosted by')
+      || (createdScreen.includes('<V2ChallengeHero')
+        && read('src/v2/challenges/V2ChallengeHero.tsx').includes('Hosted by'))));
 
 if (failures > 0) {
   console.error(`\nS3a participation experience guards: ${failures} failure(s)`);
