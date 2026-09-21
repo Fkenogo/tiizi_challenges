@@ -470,6 +470,117 @@ describe('Race member identity — sealed, idempotent, verifiable', () => {
   });
 });
 
+async function derivedByEpisode(fx: RaceFixture) {
+  const result = await fx.db.query(
+    `SELECT participation_id, cumulative_total, completion_status, logs_accepted
+     FROM challenge_participation_derived WHERE challenge_id = $1`,
+    [fx.challengeId],
+  );
+  const out: Record<string, { cumulativeTotal: number; completionStatus: string; logsAccepted: number }> = {};
+  for (const r of result.rows as Array<Record<string, unknown>>) {
+    out[String(r.participation_id)] = {
+      cumulativeTotal: Number(r.cumulative_total),
+      completionStatus: String(r.completion_status),
+      logsAccepted: Number(r.logs_accepted),
+    };
+  }
+  return out;
+}
+
+describe('Race member identity — ITR-001(A): unfinished progress never accumulates across rejoin', () => {
+  it('6 + leave + 6 stays 6 on the current episode; member unfinished; no frozen place', async () => {
+    const fx = await raceFixture(['A']);
+    const ep1 = await join(fx, 'A');
+    await log(fx, 'A', 6);
+    await leave(fx, 'A');
+    const ep2 = await join(fx, 'A');
+    await log(fx, 'A', 6);
+    expect(ep2).not.toBe(ep1);
+    expect((await episodesOf(fx, 'A')).map((e) => e.id)).toEqual([ep1, ep2]);
+    const derived = await derivedByEpisode(fx);
+    expect(derived[ep1].cumulativeTotal).toBe(6);
+    expect(derived[ep1].completionStatus).toBe('in_progress');
+    expect(derived[ep2].cumulativeTotal).toBe(6);
+    expect(derived[ep2].completionStatus).toBe('in_progress');
+    const live = await board(fx);
+    expect(live.entries).toHaveLength(1);
+    expect(live.entries[0].memberId).toBe(fx.racers.A.memberId);
+    expect(live.entries[0].participationId).toBe(ep2);
+    expect(live.entries[0].completionStatus).toBe('in_progress');
+    expect(live.entries[0].cumulativeTotal).toBe(6);
+    expect(live.entries[0].position).toBeNull();
+    const detail = await detailOf(fx, 'A');
+    expect(detail.myParticipation?.participationId).toBe(ep2);
+    expect(detail.myParticipation?.status).toBe('active');
+    expect(detail.myParticipation?.progress.cumulativeTotal).toBe(6);
+    expect(detail.myParticipation?.progress.completionStatus).toBe('in_progress');
+    await finalize(fx);
+    const final = await board(fx);
+    expect(final.entries).toHaveLength(1);
+    expect(final.entries[0].participationId).toBe(ep2);
+    expect(final.entries[0].completionStatus).toBe('in_progress');
+    expect(final.entries[0].cumulativeTotal).toBe(6);
+    expect(final.entries[0].position).toBeNull();
+    const rows = await finalsRows(fx);
+    expect(rows).toHaveLength(2);
+    const byId = Object.fromEntries(rows.map((r) => [r.participation_id, r]));
+    expect(byId[ep1].completed).toBe(false);
+    expect(byId[ep1].final_position).toBeNull();
+    expect(byId[ep2].completed).toBe(false);
+    expect(byId[ep2].final_position).toBeNull();
+    expect(await frozenCompletionsCount(fx)).toBe(0);
+  });
+});
+
+describe('Race member identity — ITR-001(B): completed member with an unfinished rejoin', () => {
+  it('live board keeps the earlier completion: earliest episode governs, rejoin erases nothing', async () => {
+    const fx = await raceFixture(['A', 'B']);
+    await join(fx, 'A');
+    await join(fx, 'B');
+    await log(fx, 'A', TARGET);
+    await leave(fx, 'A');
+    await join(fx, 'A');
+    await log(fx, 'A', 2);
+    const eps = await episodesOf(fx, 'A');
+    const ep1 = eps[0];
+    const ep2 = eps[1];
+    const live = await board(fx);
+    expect(live.entries).toHaveLength(2);
+    const byMember = Object.fromEntries(live.entries.map((e) => [e.memberId, e]));
+    const a = byMember[fx.racers.A.memberId];
+    expect(a.participationId).toBe(ep2.id);
+    expect(a.completionStatus).toBe('completed');
+    expect(a.cumulativeTotal).toBe(TARGET);
+    expect(a.completedAt).not.toBeNull();
+    expect(a.position).toBe(1);
+    expect(live.entries.map((e) => e.position)).toEqual([1, null]);
+    const derived = await derivedByEpisode(fx);
+    expect(derived[ep1.id].completionStatus).toBe('completed');
+    expect(derived[ep1.id].cumulativeTotal).toBe(TARGET);
+    expect(derived[ep2.id].completionStatus).toBe('in_progress');
+    expect(derived[ep2.id].cumulativeTotal).toBe(2);
+    const detailA = await detailOf(fx, 'A');
+    expect(detailA.myParticipation?.participationId).toBe(ep2.id);
+    expect(detailA.myParticipation?.status).toBe('active');
+    expect(detailA.myParticipation?.progress.completionStatus).toBe('completed');
+    expect(detailA.myParticipation?.progress.cumulativeTotal).toBe(TARGET);
+    expect(detailA.myParticipation?.progress.finalPosition).toBeNull();
+    await finalize(fx);
+    const rows = await finalsRows(fx);
+    const byId = Object.fromEntries(rows.map((r) => [r.participation_id, r]));
+    expect(byId[ep1.id].completed).toBe(true);
+    expect(byId[ep1.id].final_position).toBe(1);
+    expect(byId[ep2.id].completed).toBe(false);
+    expect(byId[ep2.id].final_position).toBeNull();
+    expect(await frozenCompletionsCount(fx)).toBe(1);
+    const final = await board(fx);
+    const fa = Object.fromEntries(final.entries.map((e) => [e.memberId, e]))[fx.racers.A.memberId];
+    expect(fa.participationId).toBe(ep2.id);
+    expect(fa.completionStatus).toBe('completed');
+    expect(fa.position).toBe(1);
+  });
+});
+
 describe('Race member identity — pure ranking properties', () => {
   const at = (n: number): string => new Date(Date.UTC(2026, 5, 1, 10, n)).toISOString();
 
