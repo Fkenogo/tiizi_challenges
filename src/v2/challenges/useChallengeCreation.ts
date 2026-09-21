@@ -13,23 +13,30 @@ import {
 import { fetchMyMemberships, type MyMembershipsResponse } from '../../api/membershipsApi';
 import { v2MembershipsKey } from '../memberships/membershipQueryKeys';
 import {
+  getChallengeContributorsV2,
   getChallengeV2,
+  getCompetitiveLeaderboardV2,
   joinChallengeV2,
   listChallengesV2,
   logChallengeActivityV2,
   withdrawChallengeV2,
   type V2ActivityPayload,
   type V2ActivityResult,
+  type V2ChallengeContributors,
   type V2ChallengeDetail,
   type V2ChallengeSummary,
+  type V2LeaderboardEntry,
   type V2ParticipationResponse,
 } from '../../api/v2ChallengeApi';
 import {
   invalidateV2ChallengeReads,
   V2_CHALLENGE_LIST_SCOPE,
+  v2ChallengeContributorsKey,
   v2ChallengeDetailKey,
+  v2ChallengeLeaderboardKey,
   v2ChallengeListKey,
 } from './challengeQueryKeys';
+import { competitiveLeaderboardEnabledForS3c } from './progressView';
 import { useAuth } from '../../hooks/useAuth';
 
 /**
@@ -174,6 +181,50 @@ export function useLogActivityV2() {
     onSuccess: async (_result, variables) => {
       await invalidateV2ChallengeReads(queryClient, user?.uid, variables.challengeId);
     },
+  });
+}
+
+/**
+ * S3c — collective contributor projection over the bounded
+ * `GET /v1/challenges/:id/contributors` seam (Together / Collective only).
+ * Contribution visibility, NOT a leaderboard: the response carries no
+ * position/rank. Refetch-only truth under the canonical contract.
+ */
+export function useChallengeContributorsV2(
+  challengeId: string | undefined,
+  challengeType: string | undefined,
+) {
+  const { user } = useAuth();
+  return useQuery<V2ChallengeContributors>({
+    queryKey: v2ChallengeContributorsKey(challengeId, user?.uid),
+    queryFn: () => getChallengeContributorsV2(challengeId as string),
+    enabled: !!user?.uid && apiConfigured() && !!challengeId && challengeType === 'collective',
+    staleTime: 10 * 1000,
+  });
+}
+
+/**
+ * S3c — competitive leaderboard over the existing
+ * `GET /v1/challenges/:id/leaderboard` seam (Race / Competitive only).
+ * Server positions only (standard competition ranking); the client never
+ * ranks. Refetch-only truth under the canonical contract. CORR-001
+ * Blocker 2: enabled for live (unfinalized) Challenges only — frozen
+ * final_position belongs to S3d and is never fetched as S3c live state.
+ */
+export function useCompetitiveLeaderboardV2(
+  challengeId: string | undefined,
+  challengeType: string | undefined,
+  finalized?: boolean,
+) {
+  const { user } = useAuth();
+  return useQuery<{ challengeId: string; challengeType: string; entries: V2LeaderboardEntry[] }>({
+    queryKey: v2ChallengeLeaderboardKey(challengeId, user?.uid),
+    queryFn: () => getCompetitiveLeaderboardV2(challengeId as string),
+    enabled: !!user?.uid
+      && apiConfigured()
+      && !!challengeId
+      && competitiveLeaderboardEnabledForS3c(challengeType, finalized === true),
+    staleTime: 10 * 1000,
   });
 }
 

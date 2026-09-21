@@ -1,19 +1,17 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import type { V2ActivityResult, V2ChallengeDetail } from '../../api/v2ChallengeApi';
-import { fetchKnowledgeByCode, fetchKnowledgeById } from '../../api/knowledgeApi';
 import {
   buildS3bActivityPayload,
   mapV2ApiError,
   newClientKey,
 } from '../../services/v2ActivityPayload';
-import { V2Button, V2Card, V2Field, V2Select, V2TextInput } from '../components/V2Primitives';
+import { V2Button, V2Field, V2Select, V2Sheet, V2TextInput } from '../components/V2Primitives';
 import { useLogActivityV2 } from './useChallengeCreation';
 import {
-  choiceOptionLabel,
   isNewEntryAllowed,
   loggingViewFor,
   NO_CONFIGURED_ACTIVITIES_COPY,
+  resolvedChoiceOptionLabel,
   shouldShowAcceptedResult,
   type S3bLoggableChoice,
 } from './loggingView';
@@ -22,23 +20,10 @@ import {
   factsForSubmit,
   type LoggingAttempt,
 } from './loggingIntent';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function ChoiceName({ canonicalKey }: { canonicalKey: string }) {
-  const query = useQuery({
-    queryKey: ['v2-activity-name', canonicalKey],
-    queryFn: () =>
-      UUID_RE.test(canonicalKey)
-        ? fetchKnowledgeById(canonicalKey)
-        : fetchKnowledgeByCode(canonicalKey),
-    enabled: !!canonicalKey,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-  if (query.isLoading) return <span className="text-slate-400">Activity…</span>;
-  return <span>{query.data?.name ?? 'Activity'}</span>;
-}
+import {
+  useActivityDisplayNames,
+  V2ActivityName,
+} from './activityNames';
 
 function toDatetimeLocalValue(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -46,12 +31,12 @@ function toDatetimeLocalValue(date: Date): string {
 }
 
 /**
- * S3b — Challenge activity logging section (CORR-001).
+ * S3b — Challenge activity logging (CORR-001, as amended by CORR-002).
  *
  * Binds the existing governed activity-application seam
  * (`POST /v1/challenges/:id/activity`) to the V2 Challenge detail.
  *
- * CORR-001 corrections:
+ * CORR-001 corrections (preserved):
  * - The S3b payload NEVER sends a client-derived `occurred_day`; the
  *   server derives the governing day from `occurred_at` + Challenge
  *   timezone and the accepted result's `occurredDay` is displayed.
@@ -61,6 +46,14 @@ function toDatetimeLocalValue(date: Date): string {
  * - An authoritative accepted result already received stays visible even
  *   if the refetched Challenge becomes ended/finalized; ended state only
  *   gates NEW submissions, never the rendered outcome.
+ *
+ * CORR-002 amendment: the permanently expanded page form is gone. The
+ * same governed interaction now renders ONLY inside `V2LogActivityDialog`
+ * (opened from the hero "Log activity" CTA). No application logic changed:
+ * identical allowed activities, identity, units, validation, timestamp
+ * handling, API path, success handling and invalidation. Post-acceptance
+ * truth stays refetch-only (the canonical invalidation contract — the form
+ * never writes canonical progress into the cache itself).
  *
  * Rendered ONLY where canonical state permits submission (joined +
  * open + configured activities, via `loggingViewFor`); a joined
@@ -80,7 +73,13 @@ function toDatetimeLocalValue(date: Date): string {
  * recorded entry (amount, awarded points, day, duplicate notice). No
  * wider Challenge-state views live here — those belong to later slices.
  */
-export function V2LoggingSection({ detail }: { detail: V2ChallengeDetail }) {
+export function V2LogActivityForm({
+  detail,
+  onClose,
+}: {
+  detail: V2ChallengeDetail;
+  onClose?: () => void;
+}) {
   const view = loggingViewFor(detail);
   const log = useLogActivityV2();
   const [optionId, setOptionId] = useState<string | null>(null);
@@ -103,14 +102,7 @@ export function V2LoggingSection({ detail }: { detail: V2ChallengeDetail }) {
 
   // Bounded honest empty state: joined but nothing is configured to log.
   if (view.kind === 'empty' && !showAccepted) {
-    return (
-      <V2Card>
-        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          Log activity
-        </p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
-      </V2Card>
-    );
+    return <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>;
   }
 
   const choices: S3bLoggableChoice[] =
@@ -201,64 +193,118 @@ export function V2LoggingSection({ detail }: { detail: V2ChallengeDetail }) {
   // current read still permits logging.
   if (showAccepted && accepted) {
     return (
-      <V2Card>
-        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          Log activity
+      <div role="status">
+        <p className="text-sm font-black text-slate-900">
+          {accepted.duplicate ? 'Already recorded.' : 'Recorded.'}
         </p>
-        <div className="mt-2" role="status">
-          <p className="text-sm font-black text-slate-900">
-            {accepted.duplicate ? 'Already recorded.' : 'Recorded.'}
-          </p>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          {accepted.value} {accepted.unit} counted for this Challenge.
+        </p>
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          Points awarded: {accepted.pointsAwarded} · Day: {accepted.occurredDay}
+        </p>
+        {accepted.duplicate && (
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            {accepted.value} {accepted.unit} counted for this Challenge.
+            No duplicate was created.
           </p>
+        )}
+        {!allowNewEntry && (
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            Points awarded: {accepted.pointsAwarded} · Day: {accepted.occurredDay}
+            This Challenge is no longer open for new entries.
           </p>
-          {accepted.duplicate && (
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              No duplicate was created.
-            </p>
-          )}
-          {!allowNewEntry && (
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              This Challenge is no longer open for new entries.
-            </p>
-          )}
+        )}
+        <div className="mt-3 flex flex-wrap gap-2">
           {allowNewEntry && (
-            <div className="mt-3">
-              <V2Button variant="secondary" onClick={startFreshEntry}>
-                Log another
-              </V2Button>
-            </div>
+            <V2Button variant="secondary" onClick={startFreshEntry}>
+              Log another
+            </V2Button>
+          )}
+          {onClose && (
+            <V2Button onClick={onClose}>
+              Done
+            </V2Button>
           )}
         </div>
-      </V2Card>
+      </div>
     );
   }
 
   if (view.kind !== 'loggable' || !selected) return null;
 
   return (
-    <V2Card>
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-        Log activity
-      </p>
+    <LogActivityFields
+      choices={choices}
+      selected={selected}
+      onSelect={setOptionId}
+      amount={amount}
+      onAmount={(next) => { setAmount(next); setLocalError(null); }}
+      when={when}
+      onWhen={(next) => { setWhen(next); setLocalError(null); }}
+      pending={log.isPending}
+      onSubmit={handleSubmit}
+      localError={localError}
+      denial={denial}
+      onRetry={handleRetry}
+      onFreshEntry={startFreshEntry}
+    />
+  );
+}
 
-      <div className="mt-2 space-y-3">
+/**
+ * Entry fields for one governed logging intent. Pure presentation over the
+ * caller-owned intent state — the canonical submission path above is the
+ * only writer. Activity labels resolve the governed Knowledge name
+ * (CORR-002 §7); the canonical code/UUID is never the primary label.
+ */
+function LogActivityFields({
+  choices,
+  selected,
+  onSelect,
+  amount,
+  onAmount,
+  when,
+  onWhen,
+  pending,
+  onSubmit,
+  localError,
+  denial,
+  onRetry,
+  onFreshEntry,
+}: {
+  choices: S3bLoggableChoice[];
+  selected: S3bLoggableChoice;
+  onSelect: (optionId: string) => void;
+  amount: string;
+  onAmount: (next: string) => void;
+  when: string;
+  onWhen: (next: string) => void;
+  pending: boolean;
+  onSubmit: () => void;
+  localError: string | null;
+  denial: { message: string; retryable: boolean; code?: string } | null;
+  onRetry: () => void;
+  onFreshEntry: () => void;
+}) {
+  const names = useActivityDisplayNames(choices.map((choice) => choice.canonicalKey));
+  return (
+    <div>
+      <div className="space-y-3">
         <V2Field
           label="Activity"
           hint="Only what the Challenge counts is offered here."
         >
           <V2Select
             value={selected.optionId}
-            onChange={setOptionId}
-            options={choices.map((choice) => ({ value: choice.optionId, label: choiceOptionLabel(choice) }))}
+            onChange={onSelect}
+            options={choices.map((choice) => ({
+              value: choice.optionId,
+              label: resolvedChoiceOptionLabel(choice, names.get(choice.canonicalKey)),
+            }))}
           />
         </V2Field>
         <div className="rounded-xl bg-slate-50 px-3 py-2">
           <p className="text-sm font-bold text-slate-900">
-            <ChoiceName canonicalKey={selected.canonicalKey} />
+            <V2ActivityName canonicalKey={selected.canonicalKey} />
           </p>
           <p className="mt-0.5 text-xs text-slate-600">
             Target {selected.targetValue} {selected.unit}
@@ -270,7 +316,7 @@ export function V2LoggingSection({ detail }: { detail: V2ChallengeDetail }) {
             type="number"
             min="0"
             value={amount}
-            onChange={(next) => { setAmount(next); setLocalError(null); }}
+            onChange={(next) => onAmount(next)}
             placeholder={`e.g. ${selected.targetValue}`}
           />
         </V2Field>
@@ -278,13 +324,13 @@ export function V2LoggingSection({ detail }: { detail: V2ChallengeDetail }) {
           <input
             type="datetime-local"
             value={when}
-            onChange={(event) => { setWhen(event.target.value); setLocalError(null); }}
+            onChange={(event) => onWhen(event.target.value)}
             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary"
           />
         </V2Field>
         <div>
-          <V2Button onClick={handleSubmit} disabled={log.isPending}>
-            {log.isPending ? 'Recording…' : 'Log activity'}
+          <V2Button onClick={onSubmit} disabled={pending}>
+            {pending ? 'Recording…' : 'Log activity'}
           </V2Button>
         </div>
       </div>
@@ -295,7 +341,7 @@ export function V2LoggingSection({ detail }: { detail: V2ChallengeDetail }) {
         </div>
       )}
 
-      {denial && !accepted && (
+      {denial && (
         <div
           role="alert"
           className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-800"
@@ -306,17 +352,48 @@ export function V2LoggingSection({ detail }: { detail: V2ChallengeDetail }) {
           )}
           <div className="mt-2 flex flex-wrap gap-2">
             {denial.retryable ? (
-              <V2Button variant="secondary" onClick={handleRetry} disabled={log.isPending}>
-                {log.isPending ? 'Retrying…' : 'Retry'}
+              <V2Button variant="secondary" onClick={onRetry} disabled={pending}>
+                {pending ? 'Retrying…' : 'Retry'}
               </V2Button>
             ) : (
-              <V2Button variant="secondary" onClick={startFreshEntry}>
+              <V2Button variant="secondary" onClick={onFreshEntry}>
                 Start a new entry
               </V2Button>
             )}
           </div>
         </div>
       )}
-    </V2Card>
+    </div>
+  );
+}
+
+/**
+ * CORR-002 §5 — the Log Activity overlay.
+ *
+ * Opened from the hero "Log activity" CTA via the existing `V2Sheet`
+ * primitive (bottom sheet on mobile, centred dialog on larger screens).
+ * Wraps the unchanged governed `V2LogActivityForm`: same allowed
+ * activities, identity, units, validation, timestamp handling,
+ * API/application path, success handling and invalidation. Closing the
+ * sheet unmounts the form, so every opening starts a fresh intent.
+ */
+export function V2LogActivityDialog({
+  detail,
+  open,
+  onClose,
+}: {
+  detail: V2ChallengeDetail;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const view = loggingViewFor(detail);
+  return (
+    <V2Sheet open={open} onClose={onClose} title="Log activity">
+      {view.kind === 'empty' ? (
+        <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
+      ) : (
+        <V2LogActivityForm detail={detail} onClose={onClose} />
+      )}
+    </V2Sheet>
   );
 }

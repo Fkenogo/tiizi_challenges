@@ -53,6 +53,8 @@
     "test:s3a-groups-zero-state": "tsx scripts/testS3aGroupsZeroStateGuards.ts",
     "test:s3b-activity-logging": "tsx scripts/testS3bActivityLoggingGuards.ts",
     "test:s3b-activity-application-corr-001": "tsx scripts/testS3bActivityApplicationCorr001.ts",
+    "test:s3c-live-progress": "tsx scripts/testS3cLiveProgressGuards.ts",
+    "test:s3c-finalized-query": "tsx scripts/testS3cFinalizedQueryLifecycle.ts",
     "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:firebase-emulator-mode": "tsx scripts/testFirebaseEmulatorMode.ts",

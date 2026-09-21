@@ -25,14 +25,83 @@ import { useJoinChallengeV2, useWithdrawChallengeV2 } from './useChallengeCreati
  */
 export { participationViewFor, type S3aParticipationView } from './participationView';
 
+/**
+ * CORR-003 — confirmed Leave Challenge dialog.
+ *
+ * Opened ONLY from the hero's secondary "Leave Challenge" action. Reuses
+ * the existing governed withdraw path (`useWithdrawChallengeV2` →
+ * `POST /v1/challenges/:id/withdraw`) with the same refetch-only truth
+ * contract — no second endpoint, no client-manufactured membership state.
+ * The first selection opens this confirmation; only explicit confirmation
+ * executes the leave. Cancellation performs no mutation. After a confirmed
+ * leave the canonical refetch re-derives the view (withdrawn episode →
+ * not-joined → the existing "Join again" card).
+ */
+export function V2LeaveChallengeDialog({
+  detail,
+  open,
+  onClose,
+}: {
+  detail: V2ChallengeDetail;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const withdraw = useWithdrawChallengeV2();
+  const [notice, setNotice] = useState<{ message: string; code?: string } | null>(null);
+
+  const handleConfirm = async () => {
+    setNotice(null);
+    try {
+      await withdraw.mutateAsync(detail.challengeId);
+      onClose();
+    } catch (error) {
+      const mapped = mapV2ApiError(error);
+      setNotice({ message: mapped.message, code: mapped.code });
+    }
+  };
+
+  return (
+    <V2Sheet open={open} onClose={onClose} title="Leave this Challenge?">
+      <p className="text-sm leading-6 text-slate-600">
+        Leaving ends your current participation in “{detail.title}”.
+        Your Challenge history will be kept.
+      </p>
+      {notice && (
+        <div
+          role="alert"
+          className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-800"
+        >
+          <p>{notice.message}</p>
+          {notice.code && (
+            <p className="mt-0.5 font-mono text-[11px] opacity-70">Code: {notice.code}</p>
+          )}
+        </div>
+      )}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <V2Button variant="secondary" onClick={onClose} disabled={withdraw.isPending}>
+          Stay in Challenge
+        </V2Button>
+        <V2Button onClick={() => void handleConfirm()} disabled={withdraw.isPending}>
+          {withdraw.isPending ? 'Leaving…' : 'Leave Challenge'}
+        </V2Button>
+      </div>
+    </V2Sheet>
+  );
+}
+
 export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }) {
   const join = useJoinChallengeV2();
-  const withdraw = useWithdrawChallengeV2();
-  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string; code?: string } | null>(null);
 
   const view = participationViewFor(detail);
-  const busy = join.isPending || withdraw.isPending;
+
+  // CORR-003: active participants get no permanent card — the hero owns
+  // the secondary Leave action with confirmation disclosure
+  // (`V2LeaveChallengeDialog`). Join / rejoin / read-only states below are
+  // unchanged canonical truth.
+  if (view.kind === 'joined') return null;
+
+  const busy = join.isPending;
 
   const handleJoin = async () => {
     setNotice(null);
@@ -45,23 +114,10 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
     }
   };
 
-  const handleWithdraw = async () => {
-    setNotice(null);
-    try {
-      await withdraw.mutateAsync(detail.challengeId);
-      setConfirmWithdraw(false);
-      setNotice({ tone: 'success', message: 'You left this Challenge. Your history is kept.' });
-    } catch (error) {
-      const mapped = mapV2ApiError(error);
-      setConfirmWithdraw(false);
-      setNotice({ tone: 'error', message: mapped.message, code: mapped.code });
-    }
-  };
-
   return (
     <V2Card>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-        Your participation
+        Taking part
       </p>
 
       {view.kind === 'read-only' && (
@@ -78,20 +134,6 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
               ? 'Results for this Challenge are sealed, so joining and leaving are closed.'
               : 'This Challenge has ended, so joining and leaving are closed.'}
           </p>
-        </div>
-      )}
-
-      {view.kind === 'joined' && (
-        <div className="mt-2">
-          <p className="text-sm font-black text-slate-900">You are taking part in this Challenge.</p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            Leaving ends your current participation. Your history is kept.
-          </p>
-          <div className="mt-3">
-            <V2Button variant="secondary" onClick={() => setConfirmWithdraw(true)} disabled={busy}>
-              {withdraw.isPending ? 'Leaving…' : 'Leave Challenge'}
-            </V2Button>
-          </div>
         </div>
       )}
 
@@ -126,21 +168,6 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
           )}
         </div>
       )}
-
-      <V2Sheet open={confirmWithdraw} onClose={() => setConfirmWithdraw(false)} title="Leave this Challenge?">
-        <p className="text-sm leading-6 text-slate-600">
-          Leaving ends your current participation in “{detail.title}”. Your history is kept and
-          nothing else changes.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <V2Button variant="secondary" onClick={() => setConfirmWithdraw(false)} disabled={withdraw.isPending}>
-            Keep taking part
-          </V2Button>
-          <V2Button onClick={() => void handleWithdraw()} disabled={withdraw.isPending}>
-            {withdraw.isPending ? 'Leaving…' : 'Leave Challenge'}
-          </V2Button>
-        </div>
-      </V2Sheet>
     </V2Card>
   );
 }

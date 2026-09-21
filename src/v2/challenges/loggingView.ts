@@ -90,6 +90,23 @@ export function choiceOptionLabel(choice: S3bLoggableChoice): string {
 }
 
 /**
+ * CORR-002 §7 — participant-facing selector label with the governed
+ * Knowledge name primary. `displayName` is the resolved governed name (or
+ * undefined while resolving); the synchronous humanized fallback is
+ * transient only. The canonical code/UUID is never the primary label and a
+ * UUID is never exposed. Canonical identity and the submitted payload are
+ * unchanged.
+ */
+export function resolvedChoiceOptionLabel(
+  choice: S3bLoggableChoice,
+  displayName: string | undefined,
+): string {
+  const variant = choice.activityVariant ? ` (${choice.activityVariant})` : '';
+  const name = displayName ?? humanizeCanonicalKey(choice.canonicalKey);
+  return `${name}${variant} — target ${choice.targetValue} ${choice.unit}`;
+}
+
+/**
  * CORR-001 Blocker 3: separate "can submit another activity" from "show
  * the authoritative outcome just received".
  *

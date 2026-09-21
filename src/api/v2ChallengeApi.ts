@@ -81,6 +81,14 @@ export interface V2ChallengeDetail extends V2ChallengeSummary {
   instructions: string;
   activatedAt: string | null;
   endedAt: string | null;
+  /**
+   * S3c — server-authoritative governing Challenge day (YYYY-MM-DD in the
+   * Challenge timezone at read time). Format it; never determine the
+   * Challenge day from the device clock.
+   */
+  governingToday: string;
+  /** S3c — server wall-clock instant (ISO) the governing day derives from. */
+  serverNow: string;
   config: {
     version: number;
     period: { startDate: string; endDate: string };
@@ -98,6 +106,31 @@ export interface V2LeaderboardEntry {
   completionStatus: V2CompletionStatus;
   completedAt: string | null;
   position: number | null;
+}
+
+/**
+ * S3c — bounded collective contributor projection. Contribution
+ * visibility, NOT a leaderboard: no position, no rank, no winner.
+ * CORR-001: identity is member-level — contributionTotal aggregates the
+ * member's governed accepted contribution across all of their episodes;
+ * participationId is their current episode (for "You" behaviour).
+ */
+export interface V2ContributorEntry {
+  memberId: string;
+  participationId: string;
+  participationStatus: V2ParticipationStatus;
+  contributionTotal: number;
+  share: number | null;
+  logsAccepted: number;
+}
+
+export interface V2ChallengeContributors {
+  challengeId: string;
+  challengeType: 'collective';
+  collectiveTotal: number;
+  goalValue: number | null;
+  goalUnit: string | null;
+  contributors: V2ContributorEntry[];
 }
 
 export interface V2ParticipationResponse {
@@ -169,6 +202,10 @@ export function getCompetitiveLeaderboardV2(
   challengeId: string,
 ): Promise<{ challengeId: string; challengeType: string; entries: V2LeaderboardEntry[] }> {
   return apiFetch(`/v1/challenges/${challengeId}/leaderboard`);
+}
+
+export function getChallengeContributorsV2(challengeId: string): Promise<V2ChallengeContributors> {
+  return apiFetch<V2ChallengeContributors>(`/v1/challenges/${challengeId}/contributors`);
 }
 
 export function joinChallengeV2(challengeId: string): Promise<V2ParticipationResponse> {
