@@ -52,14 +52,29 @@ import {
 } from './challenges.js';
 import {
   computeFinishingPositions,
+  countCompletingMembers,
   DERIVED_ENGINE_VERSION,
   DERIVED_SCORING_VERSION,
+  memberFinishingPositions,
   recomputeChallengeDerived,
   type ParticipationTruthState,
 } from './derivedTruth.js';
 
-/** Code version stamped on every finalization (provenance, never reinterpreted). */
-export const FINALIZATION_VERSION = 'ebc04/v1';
+/**
+ * Code version stamped on every finalization (provenance, never
+ * reinterpreted).
+ *
+ * `ebc04/v1` — competitive finishing positions ranked per participation
+ *   EPISODE (a member who left and rejoined could hold several positions).
+ * `ebc04/v2` — competitive finishing positions ranked per MEMBER (Founder
+ *   rule: one member = one competitive participant; TIIZI-S3D-READINESS-
+ *   DISPOSITION-001). Non-competitive families are identical in both.
+ * Frozen rows keep the version they were written under; verification
+ * re-evaluates each with the rule its stamp names, so sealed history is
+ * never reinterpreted.
+ */
+export const FINALIZATION_VERSION = 'ebc04/v2';
+const EPISODE_IDENTITY_VERSION = 'ebc04/v1';
 
 function fail(statusCode: number, code: string, message: string): never {
   // ApplicationError (not a bare Error) so callers, routes, and CLIs map
@@ -189,16 +204,27 @@ export function evaluateTerminalTruth(
   states: Record<string, ParticipationTruthState>,
   episodeIds: string[],
   finalizedAt: string,
+  /** Participation id -> member id (required for member-identity Race ranking). */
+  memberByParticipation: Map<string, string> = new Map(),
+  /** Competitive identity rule of the finalization being evaluated (see FINALIZATION_VERSION). */
+  finalizationVersion: string = FINALIZATION_VERSION,
 ): TerminalEvaluation {
   const episodes: TerminalEvaluation['episodes'] = {};
+  const memberIdentity = finalizationVersion !== EPISODE_IDENTITY_VERSION;
   if (snapshot.challenge_type === 'competitive') {
     const completions = episodeIds.map((id) => ({
       participation_id: id,
+      member_id: memberByParticipation.get(id) ?? id,
       completed_at: states[id]?.completionStatus === 'completed'
         ? states[id].completedAt
         : null,
     }));
-    const positions = computeFinishingPositions(completions, episodeIds);
+    // Member identity: one position per member, on the member's earliest
+    // completed episode. Episode identity (v1, legacy verification only):
+    // one position per completed episode.
+    const positions = memberIdentity
+      ? memberFinishingPositions(completions, episodeIds)
+      : computeFinishingPositions(completions, episodeIds);
     for (const id of episodeIds) {
       const state = states[id];
       const completed = state?.completionStatus === 'completed';
@@ -212,6 +238,18 @@ export function evaluateTerminalTruth(
         finalStreak: state?.currentStreak ?? 0,
         finalPosition: completed ? (positions[id] ?? null) : null,
       };
+    }
+    if (memberIdentity) {
+      // Completions are counted per competitive member: an episode-level
+      // `completed` fact is preserved above, but the Challenge-level count
+      // can never exceed the distinct members who finished.
+      const completionsCount = countCompletingMembers(
+        episodeIds.map((id) => ({
+          member_id: memberByParticipation.get(id) ?? id,
+          completed: episodes[id].completed,
+        })),
+      );
+      return { episodes, challengeResult: { completions_count: completionsCount }, completionsCount };
     }
   } else if (snapshot.challenge_type === 'streak') {
     // Terminal completion is evaluated here — never during live logging:
@@ -394,7 +432,10 @@ export async function finalizeChallenge(
       episodeRows.map((row) => [String(row.participation_id), String(row.member_id)]),
     );
     const episodeIds = [...memberByParticipation.keys()].sort();
-    const terminal = evaluateTerminalTruth(snapshot, recomputed.participations, episodeIds, finalizedAt);
+    const terminal = evaluateTerminalTruth(
+      snapshot, recomputed.participations, episodeIds, finalizedAt,
+      memberByParticipation, FINALIZATION_VERSION,
+    );
 
     // Challenge-level frozen payload: terminal aggregates. Collective
     // freezes its exact total (overshoot retained); every family freezes
@@ -655,8 +696,14 @@ async function verifyFinalizedHistory(db: Db, challengeId: string): Promise<Rebu
   const governing = await getGoverningVersion(db, challengeId, finals.config_version);
   const recomputed = await recomputeChallengeDerived(db, challengeId);
   const episodeIds = [...episodeFinals.keys()].sort();
+  const memberByParticipation = new Map(
+    [...episodeFinals.entries()].map(([id, row]) => [id, row.member_id]),
+  );
+  // Each frozen finalization is verified with the identity rule its own
+  // version stamp names (sealed history is never reinterpreted).
   const terminal = evaluateTerminalTruth(
     governing.snapshot, recomputed.participations, episodeIds, finals.finalized_at,
+    memberByParticipation, finals.finalization_version,
   );
   const mismatches: string[] = [];
   const result = finals.result;

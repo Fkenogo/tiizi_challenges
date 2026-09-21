@@ -378,6 +378,61 @@ export function computeFinishingPositions(
   return positions;
 }
 
+/**
+ * Race competitive identity (TIIZI-S3D-READINESS-DISPOSITION-001).
+ *
+ * Founder product rule: a MEMBER is one competitive participant in a
+ * Race Challenge. Leaving and rejoining opens further participation
+ * EPISODES (history, and the evidence attached to each, stay preserved),
+ * but must never create several competitive identities in Race results.
+ *
+ * A member's competitive result is selected from their episodes: the
+ * member has finished when ANY episode completed, and the EARLIEST
+ * completion governs (Stage F K.6 — position follows who reached the
+ * target first; K.7 — a later, second reach cannot improve it). Episode
+ * progress itself is unchanged (each episode folds its own evidence).
+ *
+ * Returns positions keyed by participation id: the single position of a
+ * finished member sits on that member's governing (earliest completed)
+ * episode; every other episode — and every unfinished member — is null.
+ * Ranking is the same standard competition ranking as
+ * `computeFinishingPositions` (1, 1, 3), computed over MEMBERS.
+ */
+export function memberFinishingPositions(
+  completions: Array<{ participation_id: string; member_id: string; completed_at: string | null }>,
+  allIds: string[],
+): Record<string, number | null> {
+  const governing = new Map<string, { id: string; at: number; iso: string }>();
+  for (const completion of completions) {
+    if (completion.completed_at == null) continue;
+    const at = Date.parse(completion.completed_at);
+    if (!Number.isFinite(at)) continue;
+    const current = governing.get(completion.member_id);
+    if (
+      !current
+      || at < current.at
+      || (at === current.at && completion.participation_id < current.id)
+    ) {
+      governing.set(completion.member_id, {
+        id: completion.participation_id, at, iso: completion.completed_at,
+      });
+    }
+  }
+  return computeFinishingPositions(
+    [...governing.values()].map((entry) => ({
+      participation_id: entry.id, completed_at: entry.iso,
+    })),
+    allIds,
+  );
+}
+
+/** Distinct members holding at least one completed episode. */
+export function countCompletingMembers(
+  episodes: Array<{ member_id: string; completed: boolean }>,
+): number {
+  return new Set(episodes.filter((e) => e.completed).map((e) => e.member_id)).size;
+}
+
 // ─── Persistence (seam-owned; clients never write these tables) ────────────
 
 function parseJsonObject(value: unknown): Record<string, unknown> {
@@ -581,11 +636,12 @@ export async function recomputeChallengeDerived(
   db: Db,
   challengeId: string,
 ): Promise<RecomputedTruth> {
-  const challengeResult = await db.query<{ challenge_id: string }>(
-    `SELECT challenge_id FROM challenges WHERE challenge_id = $1`,
+  const challengeResult = await db.query<{ challenge_id: string; challenge_type: string }>(
+    `SELECT challenge_id, challenge_type FROM challenges WHERE challenge_id = $1`,
     [challengeId],
   );
   if (challengeResult.rows.length === 0) fail(`unknown challenge ${challengeId}`);
+  const challengeType = String(challengeResult.rows[0].challenge_type);
 
   const episodeResult = await db.query(
     `SELECT * FROM challenge_participations WHERE challenge_id = $1
@@ -667,7 +723,19 @@ export async function recomputeChallengeDerived(
       }
     }
   }
-  challengeState.completionsCount = Object.values(partStates)
-    .filter((s) => s.completionStatus === 'completed').length;
+  // Race: completions are counted per competitive MEMBER, never per
+  // episode, so leave/rejoin cannot make the count exceed the members who
+  // actually finished. Other families keep their per-episode count (a
+  // Collective episode completes only while active, so it is already at
+  // most one per member).
+  const memberOfEpisode = new Map(episodes.map((e) => [e.participation_id, e.member_id]));
+  challengeState.completionsCount = challengeType === 'competitive'
+    ? countCompletingMembers(
+      Object.entries(partStates).map(([id, state]) => ({
+        member_id: memberOfEpisode.get(id) ?? id,
+        completed: state.completionStatus === 'completed',
+      })),
+    )
+    : Object.values(partStates).filter((s) => s.completionStatus === 'completed').length;
   return { participations: partStates, challenge: challengeState, recordsReplayed: records.length };
 }

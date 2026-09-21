@@ -48,9 +48,9 @@ import {
   type ParticipationRow,
 } from './challengeParticipations.js';
 import {
-  computeFinishingPositions,
   emptyChallengeState,
   emptyParticipationState,
+  memberFinishingPositions,
   normalizeChallengeDerived,
   normalizeParticipationDerived,
   type ChallengeDerivedRow,
@@ -360,6 +360,35 @@ function displayEpisode(episodes: ParticipationRow[]): ParticipationRow | null {
 }
 
 /**
+ * Race competitive identity (Founder rule: one member = ONE competitive
+ * participant per Race Challenge). A member who left and rejoined holds
+ * several participation episodes; their competitive result is the one
+ * governing episode — the EARLIEST completed episode (Stage F K.6/K.7:
+ * position follows who reached the target first) — and null when no
+ * episode completed. Read-only selection: history is never rewritten,
+ * and the same rule the finalization computation applies
+ * (`memberFinishingPositions`).
+ */
+function governingCompetitiveEpisode(
+  episodes: ParticipationRow[],
+  derived: Map<string, ParticipationDerivedRow>,
+): ParticipationRow | null {
+  let best: { episode: ParticipationRow; at: number } | null = null;
+  for (const episode of episodes) {
+    const row = derived.get(episode.participation_id);
+    if (row?.completionStatus !== 'completed' || row.completedAt == null) continue;
+    const at = Date.parse(row.completedAt);
+    if (!Number.isFinite(at)) continue;
+    if (
+      !best
+      || at < best.at
+      || (at === best.at && episode.participation_id < best.episode.participation_id)
+    ) best = { episode, at };
+  }
+  return best?.episode ?? null;
+}
+
+/**
  * Live-authority eligibility for a (group, member) pair. The PG shadow is
  * never consulted here: null/ineligible under live authority means "not
  * entitled". Authority outages throw ChallengeReadError(503) so reads fail
@@ -435,7 +464,13 @@ async function toSummary(
   participationFinals: Map<string, ParticipationFinalRow>,
 ): Promise<ApiChallengeSummary> {
   const derived = challengeDerived.get(challenge.challenge_id) ?? zeroChallengeDerived(challenge);
-  const episode = displayEpisode(episodesByChallenge.get(challenge.challenge_id) ?? []);
+  const episodes = episodesByChallenge.get(challenge.challenge_id) ?? [];
+  const episode = displayEpisode(episodes);
+  // Race: the member's result is their governing (earliest completed)
+  // episode; identity/status/gating stay on the current display episode.
+  const resultEpisode = (challenge.challenge_type === 'competitive' && episode
+    ? governingCompetitiveEpisode(episodes, participationDerived)
+    : null) ?? episode;
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
@@ -457,8 +492,8 @@ async function toSummary(
     myParticipation: episode
       ? toOwnParticipation(
         episode,
-        participationDerived.get(episode.participation_id),
-        participationFinals.get(episode.participation_id)?.final_position ?? null,
+        participationDerived.get(resultEpisode!.participation_id),
+        participationFinals.get(resultEpisode!.participation_id)?.final_position ?? null,
       )
       : null,
   };
@@ -568,13 +603,19 @@ export async function getChallengeDetail(
   const derivedMap = await fetchChallengeDerived(db, [challengeId]);
   const derived = derivedMap.get(challengeId) ?? zeroChallengeDerived(challenge);
   const episode = displayEpisode(episodes);
-  const participationDerived = episode
-    ? (await fetchParticipationDerived(db, [episode.participation_id])).get(episode.participation_id)
+  const ownDerived = await fetchParticipationDerived(db, episodes.map((e) => e.participation_id));
+  // Race: the member's result comes from their governing (earliest
+  // completed) episode; identity/status/gating stay on the display episode.
+  const resultEpisode = (challenge.challenge_type === 'competitive' && episode
+    ? governingCompetitiveEpisode(episodes, ownDerived)
+    : null) ?? episode;
+  const participationDerived = resultEpisode
+    ? ownDerived.get(resultEpisode.participation_id)
     : undefined;
   // EBC-04 frozen terminal result + frozen rank (absent when unfinalized).
   const finalization = await getChallengeFinal(db, challengeId);
   const finals = await getParticipationFinals(db, challengeId);
-  const episodeFinal = episode ? finals.get(episode.participation_id) : undefined;
+  const episodeFinal = resultEpisode ? finals.get(resultEpisode.participation_id) : undefined;
   // S3c — server-authoritative governing day: derived from the server clock
   // in the Challenge timezone. The client formats this value; it never
   // determines the Challenge day from the device clock.
@@ -689,55 +730,66 @@ export async function getChallengeLeaderboard(
     // (one shared pool, not positions).
     readFail(404, 'leaderboard_not_available', `No leaderboard for ${challenge.challenge_type} challenges`);
   }
-  // Latest episode per member: history stays put, ranking reflects the
-  // current episode of each participant.
-  const latest = await db.query(
-    `SELECT DISTINCT ON (member_id) * FROM challenge_participations
+  // Competitive identity is the MEMBER (Founder rule): every episode is
+  // read (history stays put), grouped per member, and each member appears
+  // ONCE. The entry's participationId is the member's current episode
+  // (active, else latest joined — "You"/current-participation identity);
+  // completion, position and progress come from the member's governing
+  // episode: the earliest completed one, else the current episode.
+  const all = await db.query(
+    `SELECT * FROM challenge_participations
      WHERE challenge_id = $1
      ORDER BY member_id, joined_at DESC, participation_id DESC`,
     [challengeId],
   );
-  const episodes = (latest.rows as never[]).map(normalizeParticipationRow);
+  const episodes = (all.rows as never[]).map(normalizeParticipationRow);
   const derived = await fetchParticipationDerived(
     db,
     episodes.map((e) => e.participation_id),
   );
   // EBC-04: finalized Challenges serve frozen finishing positions so the
   // rank can never shift under read-time recalculation. Unfinalized
-  // Challenges keep the live deterministic computation.
+  // Challenges keep the live deterministic computation (same member-level
+  // rule as finalization).
   const frozen = challenge.finalized_at != null
     ? await getParticipationFinals(db, challengeId)
     : new Map<string, ParticipationFinalRow>();
-  const positions: Record<string, number | null> = {};
-  if (challenge.finalized_at != null) {
-    for (const episode of episodes) {
-      positions[episode.participation_id] = frozen.get(episode.participation_id)?.final_position ?? null;
-    }
-  } else {
-    const completions = episodes.map((episode) => {
-      const row = derived.get(episode.participation_id);
-      return {
-        participation_id: episode.participation_id,
-        completed_at: row?.completedAt ?? null,
-      };
-    });
-    Object.assign(
-      positions,
-      computeFinishingPositions(completions, episodes.map((e) => e.participation_id)),
+  const livePositions = challenge.finalized_at != null
+    ? {}
+    : memberFinishingPositions(
+      episodes.map((episode) => {
+        const row = derived.get(episode.participation_id);
+        return {
+          participation_id: episode.participation_id,
+          member_id: episode.member_id,
+          completed_at: row?.completionStatus === 'completed' ? row.completedAt : null,
+        };
+      }),
+      episodes.map((e) => e.participation_id),
     );
+  const episodesByMember = new Map<string, ParticipationRow[]>();
+  for (const episode of episodes) {
+    const group = episodesByMember.get(episode.member_id);
+    if (group) group.push(episode);
+    else episodesByMember.set(episode.member_id, [episode]);
   }
-  const entries: ApiLeaderboardEntry[] = episodes.map((episode) => {
-    const row = derived.get(episode.participation_id);
-    const progress = toProgress(row ?? zeroParticipationDerived(episode));
+  const entries: ApiLeaderboardEntry[] = [...episodesByMember.values()].map((memberEpisodes) => {
+    const current = memberEpisodes[0];
+    const governing = governingCompetitiveEpisode(memberEpisodes, derived) ?? current;
+    const row = derived.get(governing.participation_id);
+    const progress = toProgress(row ?? zeroParticipationDerived(governing));
+    const position = challenge.finalized_at != null
+      ? (frozen.get(governing.participation_id)?.final_position ?? null)
+      : (livePositions[governing.participation_id] ?? null);
     return {
-      memberId: episode.member_id,
-      participationId: episode.participation_id,
+      memberId: governing.member_id,
+      participationId: current.participation_id,
       totalPoints: progress.totalPoints,
       cumulativeTotal: progress.cumulativeTotal,
       logsAccepted: progress.logsAccepted,
       completionStatus: progress.completionStatus,
       completedAt: progress.completedAt,
-      position: positions[episode.participation_id] ?? null,
+      position,
     };
   });
   entries.sort((a, b) => {

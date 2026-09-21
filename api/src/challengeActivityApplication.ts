@@ -798,9 +798,14 @@ async function runSubmission(
       }
     }
 
+    // Race counts completions per competitive MEMBER (leave/rejoin episodes
+    // must not double-count one finisher); other families count episodes.
     const completions = await tx.query(
-      `SELECT COUNT(*) AS count FROM challenge_participation_derived
-       WHERE challenge_id = $1 AND completion_status = 'completed'`,
+      pinned.snapshot.challenge_type === 'competitive'
+        ? `SELECT COUNT(DISTINCT member_id) AS count FROM challenge_participation_derived
+           WHERE challenge_id = $1 AND completion_status = 'completed'`
+        : `SELECT COUNT(*) AS count FROM challenge_participation_derived
+           WHERE challenge_id = $1 AND completion_status = 'completed'`,
       [challengeId],
     );
     await persistChallengeDerived(tx, challengeId, {
