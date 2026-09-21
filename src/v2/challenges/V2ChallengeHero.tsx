@@ -29,12 +29,22 @@ export function V2ChallengeHero({
   groupName,
   loggable,
   onLogActivity,
+  showLeave,
+  onLeave,
 }: {
   detail: V2ChallengeDetail;
   groupName: string;
   /** True while the canonical logging view permits a new submission. */
   loggable: boolean;
   onLogActivity: () => void;
+  /**
+   * CORR-003 — true for active participants: the hero carries a visually
+   * secondary Leave action, clearly subordinate to the primary Log Activity
+   * CTA. Selecting it only opens the confirmation dialog; it never leaves
+   * directly. No explanatory history text lives in the hero.
+   */
+  showLeave: boolean;
+  onLeave: () => void;
 }) {
   const tone = HERO_TONE[detail.challengeType] ?? 'from-slate-800 via-slate-700 to-slate-600';
   return (
@@ -71,15 +81,26 @@ export function V2ChallengeHero({
             </p>
           )}
         </div>
-        {loggable && (
-          <div className="shrink-0">
-            <button
-              type="button"
-              onClick={onLogActivity}
-              className="w-full rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-orange-600/20 transition-all hover:brightness-95 sm:w-auto"
-            >
-              + Log activity
-            </button>
+        {(loggable || showLeave) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {loggable && (
+              <button
+                type="button"
+                onClick={onLogActivity}
+                className="w-full rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-orange-600/20 transition-all hover:brightness-95 sm:w-auto"
+              >
+                + Log activity
+              </button>
+            )}
+            {showLeave && (
+              <button
+                type="button"
+                onClick={onLeave}
+                className="w-full rounded-xl px-4 py-2.5 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 sm:w-auto"
+              >
+                Leave Challenge
+              </button>
+            )}
           </div>
         )}
       </div>

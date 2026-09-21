@@ -19,7 +19,7 @@ import { loggingViewFor } from './loggingView';
 import { V2ActivityName } from './activityNames';
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
 import { V2LogActivityDialog } from './V2LoggingSection';
-import { V2ParticipationSection } from './V2ParticipationSection';
+import { participationViewFor, V2LeaveChallengeDialog, V2ParticipationSection } from './V2ParticipationSection';
 import { V2ProgressSection } from './V2ProgressSection';
 import { V2ChallengeHero } from './V2ChallengeHero';
 
@@ -87,6 +87,7 @@ export function V2CreatedChallengeScreen() {
   const detail = useChallengeDetailV2(challengeId);
   const memberships = useV2Memberships();
   const [logOpen, setLogOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   if (detail.isLoading) {
     return (
@@ -119,6 +120,10 @@ export function V2CreatedChallengeScreen() {
       ? 'You are not taking part in this Challenge right now.'
       : 'You are not taking part in this Challenge yet.';
   const loggable = loggingViewFor(challenge).kind === 'loggable';
+  // CORR-003: active participants leave via the hero's secondary action +
+  // confirmation dialog; the standalone card only serves join/rejoin and
+  // read-only states (it returns null while joined).
+  const joined = participationViewFor(challenge).kind === 'joined';
 
   return (
     <V2Page>
@@ -139,6 +144,8 @@ export function V2CreatedChallengeScreen() {
           groupName={groupName}
           loggable={loggable}
           onLogActivity={() => setLogOpen(true)}
+          showLeave={joined}
+          onLeave={() => setLeaveOpen(true)}
         />
 
         <p className="text-xs font-medium text-slate-500">
@@ -178,6 +185,7 @@ export function V2CreatedChallengeScreen() {
       </div>
 
       <V2LogActivityDialog detail={challenge} open={logOpen} onClose={() => setLogOpen(false)} />
+      <V2LeaveChallengeDialog detail={challenge} open={leaveOpen} onClose={() => setLeaveOpen(false)} />
     </V2Page>
   );
 }

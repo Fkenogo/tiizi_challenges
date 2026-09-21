@@ -393,6 +393,41 @@ check('no S3d/deferred vocabulary in the CORR-002 assembly',
   corr002Sources.every((src) => !/finalResult|finalPosition|winner|Winner|podium|Podium|recognition|Recognition|Run Again|runAgain/i.test(src.replace(/contributorsCarryNoRanking[\s\S]*?\n\}/, '')))
   && corr002Sources.every((src) => !/donation|Donation|pledge|escrow|M-Pesa|support tiizi|Support Tiizi|social cause|Social Cause|kudos|Kudos|cover|Cover|image_url/.test(src)));
 
+// ─── 7c. CORR-003 leave interaction (static) ────────────────────────────
+console.log('corr-003 leave interaction');
+const participationSrc = read('src/v2/challenges/V2ParticipationSection.tsx');
+check('active participant sees Leave Challenge as a secondary hero action',
+  heroSrc.includes('showLeave')
+    && heroSrc.includes('onLeave')
+    && heroSrc.includes('Leave Challenge')
+    && screenSrc.includes('showLeave={joined}')
+    && screenSrc.includes('onLeave={() => setLeaveOpen(true)}'));
+check('hero Leave stays subordinate to the primary Log Activity CTA',
+  heroSrc.includes('+ Log activity')
+    && heroSrc.indexOf('+ Log activity') < heroSrc.indexOf('Leave Challenge'));
+check('permanent Taking Part card is not rendered for active participants',
+  participationSrc.includes("if (view.kind === 'joined') return null")
+    && !/You are taking part in this Challenge\.<\/p>/.test(participationSrc));
+check('initial Leave selection only opens confirmation (no mutation in hero)',
+  !/mutateAsync|withdrawChallengeV2|useWithdrawChallengeV2/.test(heroSrc)
+    && screenSrc.includes('<V2LeaveChallengeDialog'));
+check('confirmation dialog explains leave + kept history with stay/leave actions',
+  participationSrc.includes('V2LeaveChallengeDialog')
+    && participationSrc.includes('Leaving ends your current participation')
+    && participationSrc.includes('history will be kept')
+    && participationSrc.includes('Stay in Challenge'));
+check('cancellation performs no mutation (Stay only closes)',
+  participationSrc.includes('onClick={onClose}'));
+check('confirmation invokes the governed leave path exactly once',
+  participationSrc.includes('useWithdrawChallengeV2')
+    && (participationSrc.match(/withdraw\.mutateAsync\(detail\.challengeId\)/g) ?? []).length === 1
+    && participationSrc.includes('disabled={withdraw.isPending}'));
+check('leave converges through the canonical refetch contract',
+  read('src/v2/challenges/useChallengeCreation.ts').includes('invalidateV2ChallengeReads'));
+check('Log Activity CTA and type progress remain intact',
+  screenSrc.includes('onLogActivity={() => setLogOpen(true)}')
+    && screenSrc.includes('<V2ProgressSection'));
+
 // ─── 8. Cache coherence for S3c families (runtime) ───────────────────────
 console.log('s3c cache coherence');
 async function cacheProof(): Promise<void> {

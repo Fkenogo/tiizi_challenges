@@ -211,3 +211,27 @@ domain, ranking, streak, acceptance, projection, cache, finalization or S3c/S3d 
 
 Validation and fresh Founder evidence are recorded in the return report held with the
 candidate commit.
+
+## 14. CORR-003 leave-interaction record (bounded Founder-preview correction)
+
+Founder accepted the CORR-002 challenge hierarchy, Together/Race/Streak differentiation, hero,
+Log Activity CTA/overlay, human-readable activity names and the CSS hero fallback for the
+current slice — but rejected the standalone TAKING PART card as unnecessary clutter. CORR-003
+moves Leave Challenge to a secondary hero action with confirmation disclosure. **No new
+product semantics; no membership, history, engine or domain change.**
+
+- Permanent participation card removed for active participants (`V2ParticipationSection`
+  returns null while joined; join/rejoin/read-only states unchanged).
+- Hero (`V2ChallengeHero`, all three types) carries a subordinate Leave Challenge action next
+  to the primary + Log activity CTA; no explanatory history text in the hero.
+- `V2LeaveChallengeDialog` (existing `V2Sheet` primitive): "Leave this Challenge?" with
+  "Leaving ends your current participation … Your Challenge history will be kept." and
+  Stay in Challenge / Leave Challenge actions. First selection only opens the dialog;
+  cancellation performs no mutation; confirmation executes the existing governed
+  `POST /v1/challenges/:id/withdraw` path exactly once (pending-disabled) with canonical
+  invalidation/refetch; post-leave truth re-derives to the existing Join-again state.
+- CORR-003 guards added to `test:s3c-live-progress` proving visibility, card absence,
+  open-only first click, mutation-free cancellation, exactly-once governed leave, and intact
+  Log Activity/progress surfaces.
+
+S3c is NOT finally Founder-accepted; final acceptance remains with Founder after preview.
