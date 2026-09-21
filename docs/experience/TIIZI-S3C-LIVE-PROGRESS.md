@@ -292,3 +292,28 @@ PR #38 merged into canonical `origin/main` by normal merge commit
 `af1d67e`; no drift; pre-merge repo `ci` green on the accepted head and post-merge `ci`
 green on the merge commit). S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain
 COMPLETE / FOUNDER ACCEPTED / MERGED. S3d NOT STARTED.
+
+## 16. Post-acceptance presentation cleanup (TIIZI-S3C-DETAIL-CLEANUP-001)
+
+Bounded presentation cleanup identified during continued Founder visual review,
+**after** S3c acceptance and merge. It does **not** reopen S3c, alter its acceptance,
+or change any product truth.
+
+- The standalone "What counts" card is removed from the joined Challenge detail
+  (Together / Race / Streak). The participant surfaces already express the same
+  information: Together — Group Progress with shared total/goal plus contributors;
+  Race — Race Progress with target plus Race Standings; Streak — Today's Daily
+  Consistency with requirements and Done/Pending. The governed Log Activity overlay
+  additionally exposes the governed activity names and units at the point of logging.
+- The Streak duration rule ("Every daily requirement must be complete for N days in a
+  row.") is preserved **once**, inside Today's Daily Consistency, driven by the
+  governed `requiredConsecutiveDays` — no new semantics or wording.
+- Presentation only: no canonical Challenge truth, contract, read projection, logging
+  eligibility, activity identity, target, unit, progress calculation, race ranking,
+  streak semantics, participation semantics, Log Activity overlay or Leave Challenge
+  flow changed; no migration.
+- Guarded by `test:s3c-live-progress` (detail-cleanup block) plus the reconciled S2b
+  created-screen guard.
+
+Branch `fix/s3c-detail-cleanup-001`; PR #39 (NOT merged). S3c remains **COMPLETE /
+FOUNDER ACCEPTED / MERGED**. S3d NOT STARTED. No deploy.
