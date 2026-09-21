@@ -392,7 +392,7 @@ This assessment does **not** start S3d, does **not** mark anything implemented, 
 | **FD-S3D-3** — Results vocabulary | **APPROVED** | Together: *Final result, Group total, Your contribution*. Race: *Final results, Final standings, Final position, Finished*. Streak: *Final result, Best streak, Days completed, Final streak*. Transitional: *Challenge ended, Final results are being confirmed.* **Not authorised:** Winner, Podium, Success, Failure, recognition tiers, badges/rewards — unless separate existing authority explicitly requires them. "Final standings" is approved as presentation language for canonical frozen Race positions. |
 | **FD-S3D-2 (RACE-EDGE)** | **Founder product rule; bounded resolution required before S3d implementation** | *A member represents ONE competitive participant in a Race Challenge. Leaving and rejoining MUST NOT create multiple competitive identities in final Race results. Historical participation episodes remain preserved.* The S3d UI must not solve this by renumbering, hiding rows or fabricating client-side positions. |
 
-### 14.2 Race edge — verified, root-caused, corrected (candidate PR #41)
+### 14.2 Race edge — verified, root-caused, corrected (PR #41 MERGED)
 
 Reproduced on `origin/main` `494ee23` through the production HTTP routes (join / withdraw / activity) and the canonical `finalizeChallenge` seam (the same seam `processExpiredChallenges` drives):
 
@@ -411,10 +411,21 @@ Reproduced on `origin/main` `494ee23` through the production HTTP routes (join /
 - Read model: the leaderboard returns one entry per member (`participationId` = the member's current episode for "You"; result from the governing episode — the S3c CORR-001 contributors precedent); the own detail/list result comes from the governing episode while identity/status/Leave/Log gating stay on the current episode.
 - Not broadened: Collective already completes at most one active episode per member; Streak results are personal (own display episode) and its episode-level `completions_count` is not part of the approved vocabulary — recorded here as an observation, not corrected.
 
-Implemented and regression-proven on **PR #41** (`fix/s3d-race-member-identity-001`, UNMERGED, awaiting Founder review): `api/test/s3dRaceMemberIdentity.test.ts` (12 tests; failing on the unmodified code), full API suite 664 passed / 8 skipped.
+Implemented and regression-proven on **PR #41** (`fix/s3d-race-member-identity-001`): `api/test/s3dRaceMemberIdentity.test.ts` (12 tests, independently verified failing on the unmodified code), full API suite 664 passed / 8 skipped; ITR-001 hardening added before merge (two permanent regression cases: unfinished 6 + leave + 6 stays 6 on the current episode, and live completed-member-with-unfinished-rejoin governed by the earliest completed episode), suite 14 passed; repo `ci` green on the final head; Workers Builds non-gating per FD-S3-005.
 
 ### 14.3 Remaining gate and status
 
-- S3d remains **NOT STARTED**. The S3d results UI, the Streak projection (FD-S3D-2A), the transitional state (FD-S3D-1), client final-result typing and every other S3d experience are authorised direction for the **next** implementation task, gated on Founder review/merge of PR #41 (Race identity).
-- §11.2 test **T-6** (Race multi-episode finalization) is delivered by PR #41; **T-7** (DB immutability actually rejects UPDATE/DELETE) is also covered there for the finals tables. T-1…T-5, T-8 and G-1…G-5 remain requirements for S3d implementation.
-- Master Programme recorded as **v1.97**.
+- S3d remains **NOT STARTED**. The S3d results UI, the Streak projection (FD-S3D-2A), the transitional state (FD-S3D-1), client final-result typing and every other S3d experience are authorised direction for the **next** implementation task. The PR #41 (Race identity) gate is now CLOSED: member-scoped competitive identity verified, progress/evidence participation-episode scoped, `ebc04/v2` on the new member-scoped finalization semantics with historical `ebc04/v1` results verified under V1 semantics.
+- §11.2 test **T-6** (Race multi-episode finalization) is delivered by PR #41 (MERGED); **T-7** (DB immutability actually rejects UPDATE/DELETE) is also covered there for the finals tables. T-1…T-5, T-8 and G-1…G-5 remain requirements for S3d implementation.
+- Master Programme recorded as **v1.97**; closure recorded in §14.4 and Master Programme v1.98.
+
+### 14.4 Closure (TIIZI-S3D-RACE-MEMBER-IDENTITY-CLOSE-001)
+
+- The Race member-identity issue was independently verified (disposition B — approvable with non-blocking observations).
+- PR #41 corrected it and is MERGED by normal merge commit (accepted head verified ancestor of main; pre-merge main recorded; merge-base equalled pre-merge main — no drift).
+- Competitive identity is member-scoped; progress/evidence remains participation-episode scoped.
+- Unfinished progress does not accumulate across leave/rejoin (6 + leave + 6 stays 6 on the current episode; each episode retains its own derived progress; member unfinished; `final_position` null after finalization).
+- An already-completed member remains completed based on the earliest completed episode (live board and own reads govern from the earliest completion while identity stays on the current episode; the unfinished rejoin erases nothing).
+- `ebc04/v2` applies to the new member-scoped finalization semantics; historical `ebc04/v1` results remain verified under V1 semantics.
+- Race blocker is CLOSED. S3c remains COMPLETE / FOUNDER ACCEPTED / MERGED (not reopened). S3d readiness assessment is CLOSED; S3d is READY FOR IMPLEMENTATION but NOT STARTED.
+- Next authorised programme action is bounded S3d implementation only: neutral ended/not-yet-finalized state; frozen Streak projection including `final_streak`/`final` block; finalized results presentation for Together/Race/Streak; required client typing; remaining approved S3d regression/guard coverage. No scheduler. No Run Again. No recognition issuance. No Kudos/Support. No deployment. No S3d implementation in this task.
