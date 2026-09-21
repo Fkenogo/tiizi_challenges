@@ -2,10 +2,10 @@
 
 **Work package:** S3c — Live progress / type-state (third S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED /
-FOUNDER PREVIEW FUNCTIONALLY PASSED / EXPERIENCE ALIGNMENT CORRECTED /
-AWAITING FOUNDER ACCEPTANCE (TIIZI-S3C-FOUNDER-PREVIEW-CORR-002).
-S3 remains IMPLEMENTATION IN PROGRESS. S3d NOT STARTED. No merge, no deploy, no Founder acceptance.
+**Status:** COMPLETE / FOUNDER ACCEPTED / READY TO MERGE
+(TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001).
+S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain COMPLETE / FOUNDER ACCEPTED /
+MERGED. S3d NOT STARTED. No deploy.
 
 **Date:** 2026-09-19
 
@@ -108,7 +108,8 @@ Reference: adopted Tiizi Experience Reference (experience guidance only; engine/
 
 ## 10. Status
 
-S3c is **IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED / READY FOR FOUNDER PREVIEW** (STOP BEFORE MERGE).
+S3c is **COMPLETE / FOUNDER ACCEPTED / READY TO MERGE**
+(TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001; merge authorised, STOP BEFORE S3d).
 **S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3d NOT STARTED.** No deployment and no production mutation occurred.
 
@@ -235,3 +236,50 @@ product semantics; no membership, history, engine or domain change.**
   Log Activity/progress surfaces.
 
 S3c is NOT finally Founder-accepted; final acceptance remains with Founder after preview.
+
+## 15. Founder acceptance (TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001)
+
+Founder reviewed S3c in localhost preview on the accepted candidate (head `2286b6a`)
+and accepted:
+
+- Together live progress experience (Walk Nairobi Together);
+- Race live progress / standings experience (Push-Up Finish Line);
+- Streak daily-consistency experience (Daily Strength & Calm);
+- common challenge hero hierarchy;
+- CSS hero fallback for this slice (canonical media still deferred behind its
+  authorised contract);
+- Log Activity CTA + overlay;
+- human-readable activity names;
+- removal of technical/backend-facing page language;
+- Create Another Challenge placement;
+- Leave Challenge as secondary hero action;
+- Leave Challenge confirmation interaction (dialog disclosure, history kept);
+- cancellation preserving participation.
+
+CORR-003 was the final bounded S3c experience correction. Founder disposition:
+**S3c live progress / type-state ACCEPTED.**
+
+Accepted-candidate verification performed:
+
+- Guards: `test:s3c-live-progress` (incl. CORR-002 alignment + CORR-003 leave
+  interaction), `test:s3c-finalized-query`, `test:s3b-activity-logging`,
+  `test:s3b-activity-application-corr-001`, `test:s3a-participation-experience`,
+  `test:s3a-participation-cache`, `test:s2b-challenge-creation`,
+  `test:v2-membership-cache`, `test:v2-frontend`, `test:v2-experience-boundary` —
+  all PASS.
+- API: typecheck clean; build clean; full suite 652 passed / 8 skipped
+  (46 files passed, 1 skipped), including participation and S3c route suites.
+- Root: `tsc -b` clean; `vite build` clean.
+- Functions: build clean.
+- `git diff --check` clean.
+- Repository `ci` on the exact accepted head green (api, api-image, functions,
+  web). External `Workers Builds: tiizi-challenges` failure is NOT an S3 gate
+  per FD-S3-005.
+- Negative scope proofs: no engine/domain/ranking/streak/acceptance/projection/
+  cache/finalization change; no S3d; no Kudos/Support/media/social/podiums/winners;
+  no migration; no deployment; no production mutation.
+- Preview: localhost re-verified on all three challenges (dialog opens, cancel
+  preserves, isolated confirmed-leave proof on scratch state; shared fixtures intact).
+
+S3c is **COMPLETE / FOUNDER ACCEPTED** (merge authorised by this record; MERGED
+status recorded post-merge). S3 remains IMPLEMENTATION IN PROGRESS. S3d NOT STARTED.
