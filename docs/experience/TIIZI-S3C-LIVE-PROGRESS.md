@@ -2,8 +2,10 @@
 
 **Work package:** S3c — Live progress / type-state (third S3 vertical product assembly slice, per FD-S3-001)
 
-**Status:** COMPLETE / FOUNDER ACCEPTED / READY TO MERGE
-(TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001).
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED
+(TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001; merged via PR #38, normal merge commit
+`144e516fe2be6ce6142442acf587ac282e5a0afa` of accepted head
+`2286b6a7eb065724c4d324d3b0a59cb2182a2d22`).
 S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3d NOT STARTED. No deploy.
 
@@ -108,8 +110,10 @@ Reference: adopted Tiizi Experience Reference (experience guidance only; engine/
 
 ## 10. Status
 
-S3c is **COMPLETE / FOUNDER ACCEPTED / READY TO MERGE**
-(TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001; merge authorised, STOP BEFORE S3d).
+S3c is **COMPLETE / FOUNDER ACCEPTED / MERGED**
+(TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001; PR #38 merged by normal merge commit
+`144e516` of accepted head `2286b6a`; accepted head verified ancestor of main;
+STOP BEFORE S3d).
 **S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain COMPLETE / FOUNDER ACCEPTED /
 MERGED. S3d NOT STARTED.** No deployment and no production mutation occurred.
 
@@ -281,5 +285,10 @@ Accepted-candidate verification performed:
 - Preview: localhost re-verified on all three challenges (dialog opens, cancel
   preserves, isolated confirmed-leave proof on scratch state; shared fixtures intact).
 
-S3c is **COMPLETE / FOUNDER ACCEPTED** (merge authorised by this record; MERGED
-status recorded post-merge). S3 remains IMPLEMENTATION IN PROGRESS. S3d NOT STARTED.
+S3c is **COMPLETE / FOUNDER ACCEPTED / MERGED** (TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001;
+PR #38 merged into canonical `origin/main` by normal merge commit
+`144e516fe2be6ce6142442acf587ac282e5a0afa` of accepted head
+`2286b6a7eb065724c4d324d3b0a59cb2182a2d22`, verified ancestor of main; pre-merge main
+`af1d67e`; no drift; pre-merge repo `ci` green on the accepted head and post-merge `ci`
+green on the merge commit). S3 remains IMPLEMENTATION IN PROGRESS. S3a/S3b remain
+COMPLETE / FOUNDER ACCEPTED / MERGED. S3d NOT STARTED.
