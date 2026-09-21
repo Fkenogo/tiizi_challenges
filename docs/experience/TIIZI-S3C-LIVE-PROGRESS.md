@@ -315,5 +315,8 @@ or change any product truth.
 - Guarded by `test:s3c-live-progress` (detail-cleanup block) plus the reconciled S2b
   created-screen guard.
 
-Branch `fix/s3c-detail-cleanup-001`; PR #39 (NOT merged). S3c remains **COMPLETE /
-FOUNDER ACCEPTED / MERGED**. S3d NOT STARTED. No deploy.
+Branch `fix/s3c-detail-cleanup-001`; PR #39 **MERGED** by normal merge commit
+`e9cec23cb4d610db5f594420ddfb464297254f61` of accepted head
+`6ae21d72cb1ea229c64ca80ab9ebe080e32d96b7` (accepted head verified ancestor of main;
+pre-merge main `43720f7`; repo CI green on the accepted head and post-merge). S3c remains
+**COMPLETE / FOUNDER ACCEPTED / MERGED** (not reopened). S3d NOT STARTED. No deploy.
