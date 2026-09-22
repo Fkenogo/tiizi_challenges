@@ -1,5 +1,5 @@
 /**
- * TIIZI-MOBILE-PRIMARY-NAV-CORR-001 — mobile primary navigation guard
+ * TIIZI-MOBILE-PRIMARY-NAV-CORR-001 / CORR-002 — mobile primary navigation guard
  * (run: npm run test:mobile-primary-nav).
  *
  * The web app has no rendered-component test runner; like the other guard
@@ -7,11 +7,12 @@
  * rendered behaviour is proven separately in a real browser (mobile widths).
  *
  * Proves:
- * A. desktop primary navigation (Today / Challenges / Groups) still renders;
- * B. mobile has a discoverable primary navigation (bottom member bar) that
- *    exposes Today, Challenges and Groups;
+ * A. desktop primary navigation is exactly Today / Challenges / Groups;
+ * B. mobile primary navigation is EXACTLY Today / Challenges / Groups —
+ *    Activity Guide and Profile are NOT primary mobile destinations;
  * C. the active destination is represented in both navigations;
- * D. navigation destinations are exactly /v2/today, /v2/challenges, /v2/groups;
+ * D. Activity Guide remains reachable as a contextual secondary entry
+ *    (Challenges experience + creation activity step) and its route survives;
  * E. mobile navigation does not depend on any public/Cloudflare URL;
  * F. authenticated landing behaviour is unchanged (index -> today, guarded);
  * G. no product routes were added by this correction;
@@ -38,34 +39,62 @@ function check(name: string, condition: boolean, detail = ''): void {
 const shell = read('src/v2/member/MemberShell.tsx');
 const routes = read('src/v2/routes.tsx');
 const emulators = read('src/lib/firebaseEmulators.ts');
+const listScreen = read('src/v2/challenges/V2ChallengeListScreen.tsx');
+const wizard = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
 
-// ─── A. Desktop primary navigation still renders ──────────────────────────
+/** Isolate the mobile member <nav> block. */
+const memberNavStart = shell.indexOf('aria-label="Member"');
+const memberNavEnd = shell.indexOf('</nav>', memberNavStart);
+const memberNav = memberNavStart >= 0 && memberNavEnd >= 0
+  ? shell.slice(shell.lastIndexOf('<nav', memberNavStart), memberNavEnd)
+  : '';
+/** Isolate the desktop primary <nav> block. */
+const primaryNavStart = shell.indexOf('aria-label="Primary"');
+const primaryNavEnd = shell.indexOf('</nav>', primaryNavStart);
+const primaryNav = primaryNavStart >= 0 && primaryNavEnd >= 0
+  ? shell.slice(shell.lastIndexOf('<nav', primaryNavStart), primaryNavEnd)
+  : '';
+
+/** The PRIMARY destination set (Today / Challenges / Groups). */
+const primaryConst = (shell.match(/const PRIMARY = \[([\s\S]*?)\] as const;/) ?? [])[1] ?? '';
+const primaryTos = [...primaryConst.matchAll(/to: '([^']+)'/g)].map((m) => m[1]);
+
+// ─── A. Desktop primary navigation = Today / Challenges / Groups ──────────
 console.log('A. desktop primary navigation');
-check('desktop primary nav element exists', shell.includes('aria-label="Primary"'));
-check('desktop primary nav is md:flex (shown from tablet up)', /hidden[^"]*md:flex/.test(shell));
-check('desktop primary nav maps the PRIMARY items', /PRIMARY\.map/.test(shell));
+check('desktop primary nav element exists', primaryNav !== '');
+check('desktop primary nav is md:flex', /hidden[^"]*md:flex/.test(primaryNav));
+check('desktop primary nav maps PRIMARY', /PRIMARY\.map/.test(primaryNav));
+check('PRIMARY is exactly today/challenges/groups',
+  JSON.stringify(primaryTos) === JSON.stringify(['/v2/today', '/v2/challenges', '/v2/groups']),
+  JSON.stringify(primaryTos));
 
-// ─── B. Mobile discoverable primary navigation ────────────────────────────
+// ─── B. Mobile primary navigation = exactly Today / Challenges / Groups ───
 console.log('B. mobile primary navigation');
-check('mobile member nav element exists', shell.includes('aria-label="Member"'));
-check('mobile member nav is md:hidden (shown on phones)', /md:hidden/.test(shell));
-check('mobile member nav is fixed to the bottom', /fixed[^"]*bottom-0/.test(shell));
-check('mobile member nav maps the PRIMARY items', /\[\.\.\.PRIMARY/.test(shell));
-for (const [label, to] of [['Today', '/v2/today'], ['Challenges', '/v2/challenges'], ['Groups', '/v2/groups']] as const) {
-  check(`mobile primary item present: ${label}`, shell.includes(`to: '${to}'`) && shell.includes(`key: '${label.toLowerCase()}'`));
-}
+check('mobile member nav element exists', memberNav !== '');
+check('mobile member nav is md:hidden', /md:hidden/.test(memberNav));
+check('mobile member nav is fixed to the bottom', /fixed[^"]*bottom-0/.test(memberNav));
+check('mobile member nav maps PRIMARY', /PRIMARY\.map/.test(memberNav));
+check('mobile member nav lays out exactly three columns', /grid-cols-3/.test(memberNav));
+check('mobile member nav has NO Activity Guide entry', !/\/v2\/guide/.test(memberNav) && !/shell\.guide/.test(memberNav));
+check('mobile member nav has NO Profile / "You" entry', !/\/v2\/profile/.test(memberNav) && !/>\s*You\s*</.test(memberNav));
+check('mobile member nav does NOT hardcode a fourth/fifth destination', (memberNav.match(/<NavLink/g) ?? []).length === 1,
+  'expected a single PRIMARY.map NavLink renderer');
 
 // ─── C. Active state represented ──────────────────────────────────────────
 console.log('C. active state');
-const isActiveCount = (shell.match(/isActive/g) ?? []).length;
-check('NavLink isActive used by both navigations (>= 3 usages)', isActiveCount >= 3, `found ${isActiveCount}`);
-check('mobile active indicator bar uses isActive', /isActive \? 'bg-primary'/.test(shell));
+check('NavLink isActive used by both navigations', (shell.match(/isActive/g) ?? []).length >= 3);
+check('mobile active indicator bar uses isActive', /isActive \? 'bg-primary'/.test(memberNav));
 
-// ─── D. Destinations are correct and bounded ──────────────────────────────
-console.log('D. destinations');
-for (const to of ['/v2/today', '/v2/challenges', '/v2/groups']) {
-  check(`route target ${to} defined`, shell.includes(`'${to}'`));
-}
+// ─── D. Activity Guide retained as contextual secondary + route survives ──
+console.log('D. Activity Guide (contextual secondary, not primary)');
+check('Activity Guide route remains defined', /<Route path="guide"/.test(routes) || /path="guide"/.test(routes));
+check('Challenges screen exposes a contextual Activity Guide entry', /navigate\('\/v2\/guide'\)/.test(listScreen));
+check('Challenges entry is visually subordinate to Create Challenge',
+  listScreen.indexOf('Create Challenge') < listScreen.indexOf('/v2/guide'));
+check('creation activity step links to the Activity Guide', /to="\/v2\/guide"/.test(wizard));
+check('desktop secondary row keeps Activity Guide / Profile / Notifications',
+  /const SECONDARY = \[([\s\S]*?)\] as const;/.test(shell)
+  && ['/v2/guide', '/v2/profile', '/v2/notifications'].every((to) => shell.includes(`'${to}'`)));
 
 // ─── E. No public/Cloudflare dependency in the shell ──────────────────────
 console.log('E. no public URL dependency');
@@ -94,18 +123,13 @@ const expectedMember = [
   'profile:V2ProfilePage',
   'notifications:V2NotificationsPage',
 ];
-check(
-  'member route set is exactly the known nine (no additions)',
-  JSON.stringify(memberPaths) === JSON.stringify(expectedMember),
-  JSON.stringify(memberPaths),
-);
+check('member route set is exactly the known nine (no additions)',
+  JSON.stringify(memberPaths) === JSON.stringify(expectedMember), JSON.stringify(memberPaths));
 
 // ─── H. Root cause closed: emulator banner cannot occlude the nav ─────────
 console.log('H. root cause (emulator banner) closed');
-check(
-  'connectAuthEmulator disables the SDK warning banner',
-  /connectAuthEmulator\(\s*auth,\s*AUTH_EMULATOR_URL,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(emulators),
-);
+check('connectAuthEmulator disables the SDK warning banner',
+  /connectAuthEmulator\(\s*auth,\s*AUTH_EMULATOR_URL,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(emulators));
 
 if (failures > 0) {
   console.error(`\nMobile primary navigation guard: ${failures} failure(s).`);

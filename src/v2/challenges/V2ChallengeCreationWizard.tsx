@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   fetchActivityOptions,
@@ -516,7 +516,11 @@ function StepActivities({
   return (
     <div className="space-y-4">
       <p className="text-sm leading-6 text-slate-600">
-        Choose from the activity guide.{' '}
+        Choose from the{' '}
+        <Link to="/v2/guide" className="font-bold text-primary underline underline-offset-2">
+          Activity Guide
+        </Link>
+        .{' '}
         {multi
           ? 'A Streak can include more than one daily activity.'
           : 'Together and Race work best with a single activity.'}
