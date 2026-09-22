@@ -99,8 +99,23 @@ async function setupJoinableChallenge(
   return { groupId, memberId, subject, challengeId: challenge.challenge_id };
 }
 
+/**
+ * CORR-001: the participation-mutation lifecycle authority is now governed by
+ * the server clock, so the fixture clock is pinned inside the
+ * 2026-06-01..2026-06-30 window these tests exercise. (The expired-window
+ * rejection is proven separately by s3dResultsFinalizedCorr001.test.ts.)
+ */
 function appFor(subject: string, authority: GroupMembershipAuthority) {
-  return buildTestApp({ 'token-c3b': subject }, { challengeActivity: { groupMembershipAuthority: authority } });
+  return buildTestApp(
+    { 'token-c3b': subject },
+    {
+      challengeActivity: { groupMembershipAuthority: authority },
+      participation: {
+        groupMembershipAuthority: authority,
+        now: new Date('2026-06-15T12:00:00Z'),
+      },
+    },
+  );
 }
 
 const UNKNOWN_UUID = '00000000-0000-4000-8000-000000000000';

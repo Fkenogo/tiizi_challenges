@@ -31,7 +31,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
     <V2Card>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Final results</p>
 
-      {view.hasTakenPart && (
+      {view.hasFinalTruth && view.hasTakenPart && (
         <div className="mt-2">
           <p className="text-2xl font-black text-slate-900">
             {view.ownTotal.toLocaleString()}
@@ -65,7 +65,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
                 {view.finished && view.position === null && (
                   <span className="font-medium text-slate-500"> · Finished</span>
                 )}
-                {!view.finished && (
+                {view.finished === false && (
                   <span className="font-medium text-slate-500">
                     {' '}· Progress at close
                   </span>
@@ -154,7 +154,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
           </div>
         )}
         <p className="mt-2 text-xs text-slate-500">
-          Final positions come from the Challenge server. Tied finishers share a position.
+          Tied finishers share a position.
         </p>
       </div>
 

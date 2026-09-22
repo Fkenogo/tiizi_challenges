@@ -30,6 +30,7 @@ import {
   loggingAvailableForEndState,
   participationMutableForEndState,
 } from '../src/v2/challenges/challengeEndState.js';
+import { participationViewFor } from '../src/v2/challenges/participationView.js';
 import {
   collectiveFinalResultFor,
   competitiveFinalResultFor,
@@ -136,6 +137,15 @@ console.log('G-2 lifecycle end-state');
     participationMutableForEndState('live') === true
     && participationMutableForEndState('ended-pending') === false
     && participationMutableForEndState('finalized') === false);
+  // CORR-001: UI authority agrees with the backend participation lifecycle.
+  check('CORR-001 UI: window-expired active is read-only (no Join/Leave)',
+    participationViewFor(detail({ status: 'active', governingToday: '2026-06-10' })).kind === 'read-only');
+  check('CORR-001 UI: in-window non-participant can still join',
+    participationViewFor(detail({ status: 'active', governingToday: '2026-06-03' })).kind === 'not-joined');
+  check('CORR-001 UI: ended-pending has no Join even with no episode',
+    participationViewFor(detail({ status: 'ended', governingToday: '2026-06-10' })).kind === 'read-only');
+  check('CORR-001 UI: finalized is read-only',
+    participationViewFor(detail({ status: 'ended', finalized: true, governingToday: '2026-06-10' })).kind === 'read-only');
 }
 
 // ─── G-1 Collective derivation ──────────────────────────────────────────────
@@ -247,6 +257,55 @@ console.log('G-1 race frozen positions');
     split.progressing[0].position === null && split.progressing[0].cumulativeTotal === 4);
 }
 
+// ─── CORR-001 finalized-source fail-closed (no live substitution) ───────────
+console.log('CORR-001 finalized-source fail-closed');
+{
+  // A finalized detail whose frozen result is absent must NEVER fall back to
+  // the mutable live-derived values (the ITR-001 divergence attack).
+  const noFrozen = detail({
+    challengeType: 'collective', status: 'ended', finalized: true,
+    finalizedAt: '2026-06-10T12:00:00.000Z', finalResult: null,
+    goalValue: 100, goalUnit: 'reps', collectiveTotal: 999, collectiveGoalReached: true,
+  });
+  const collective = collectiveFinalResultFor(noFrozen);
+  check('collective: missing frozen total does not substitute live 999',
+    collective.total === null && collective.goalReached === null
+    && collective.hasFinalTruth === false && collective.percent === null);
+
+  const race = competitiveFinalResultFor(detail({
+    challengeType: 'competitive', status: 'ended', finalized: true,
+    finalizedAt: '2026-07-10T12:00:00.000Z', finalResult: null,
+    config: {
+      version: 1, period: { startDate: '2026-06-01', endDate: '2026-06-30' },
+      requiredConsecutiveDays: null,
+      activities: [{ canonicalKey: 'push-up', activityVariant: null, activityKind: 'fitness', targetValue: 10, unit: 'reps', position: 0 }],
+    },
+    myParticipation: participation({
+      progress: { cumulativeTotal: 999, completionStatus: 'completed', finalPosition: 1 },
+      final: null,
+    }),
+  }));
+  check('race: missing frozen final does not present live completion/position as final',
+    race.finished === null && race.position === null && race.hasFinalTruth === false);
+
+  const streak = streakFinalResultFor(detail({
+    challengeType: 'streak', status: 'ended', finalized: true,
+    finalizedAt: '2026-06-10T12:00:00.000Z', finalResult: null,
+    config: {
+      version: 1, period: { startDate: '2026-06-01', endDate: '2026-06-05' },
+      requiredConsecutiveDays: 3,
+      activities: [{ canonicalKey: 'push-up', activityVariant: null, activityKind: 'fitness', targetValue: 20, unit: 'reps', position: 0 }],
+    },
+    myParticipation: participation({
+      progress: { currentStreak: 3, bestStreak: 3, daysCompleted: 3, completionStatus: 'completed' },
+      final: null,
+    }),
+  }));
+  check('streak: missing frozen final does not substitute live streak/days',
+    streak.daysCompleted === null && streak.bestStreak === null
+    && streak.finalStreak === null && streak.hasFinalTruth === false);
+}
+
 // ─── G-3 finalized standings lifecycle (real QueryClient) ───────────────────
 console.log('G-3 finalized standings lifecycle');
 {
@@ -344,6 +403,8 @@ check('no backend terminology in S3d copy',
   !/terminal truth|frozen result|finalized collective state|sealed authority/i.test(s3dCopy));
 check('no permanence promise in S3d copy',
   !/can never change|cannot be changed|never change/i.test(s3dCopy));
+check('CORR-001 participant copy: no server-technical final-position wording',
+  !/Challenge server/i.test(stripComments(competitiveSrc)));
 
 // ─── G-5 V1 boundary is owned by test:v2-experience-boundary ─────────────────
 console.log('boundary note');

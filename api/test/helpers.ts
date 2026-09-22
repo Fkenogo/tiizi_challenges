@@ -145,7 +145,10 @@ beforeEach(async () => {
 
 export function buildTestApp(
   uidByToken: Record<string, string>,
-  extra?: { challengeActivity?: import('../src/app.js').AppDeps['challengeActivity'] },
+  extra?: {
+    challengeActivity?: import('../src/app.js').AppDeps['challengeActivity'];
+    participation?: import('../src/app.js').AppDeps['participation'];
+  },
 ) {
   return buildApp({ db: testDb(), verifier: stubVerifier(uidByToken), ...(extra ?? {}) });
 }

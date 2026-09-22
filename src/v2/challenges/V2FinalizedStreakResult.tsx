@@ -16,6 +16,22 @@ import { streakFinalResultFor, streakPeriodDays } from './resultsView';
 export function V2FinalizedStreakResult({ detail }: { detail: V2ChallengeDetail }) {
   const view = streakFinalResultFor(detail);
   const period = streakPeriodDays(detail.config.period.startDate, detail.config.period.endDate);
+  const daysCompleted = view.daysCompleted;
+  const bestStreak = view.bestStreak;
+
+  // CORR-001 fail closed: the sealed personal result is the only source of
+  // truth; without it nothing is presented as a final result (the live
+  // currentStreak/daysCompleted are never substituted).
+  if (!view.hasFinalTruth || daysCompleted === null || bestStreak === null) {
+    return (
+      <V2Card>
+        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Final result</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Your final result is not available right now. Please try again.
+        </p>
+      </V2Card>
+    );
+  }
 
   const outcome = view.completed === true
     ? view.requiredDays !== null
@@ -23,8 +39,8 @@ export function V2FinalizedStreakResult({ detail }: { detail: V2ChallengeDetail 
       : 'Reached the required streak.'
     : view.completed === false
       ? view.requiredDays !== null
-        ? `Best streak: ${view.bestStreak} of ${view.requiredDays} required.`
-        : `Best streak: ${view.bestStreak}.`
+        ? `Best streak: ${bestStreak} of ${view.requiredDays} required.`
+        : `Best streak: ${bestStreak}.`
       : null;
 
   return (
@@ -32,7 +48,7 @@ export function V2FinalizedStreakResult({ detail }: { detail: V2ChallengeDetail 
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Final result</p>
 
       <p className="mt-2 text-2xl font-black text-slate-900">
-        {view.daysCompleted}
+        {daysCompleted}
         {view.periodDays !== null && (
           <span className="text-base font-bold text-slate-400"> of {view.periodDays} days completed</span>
         )}
@@ -54,14 +70,14 @@ export function V2FinalizedStreakResult({ detail }: { detail: V2ChallengeDetail 
         <div className="rounded-xl bg-slate-50 px-3 py-2">
           <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Best streak</dt>
           <dd className="text-xl font-black text-slate-900">
-            {view.bestStreak}
-            <span className="text-xs font-bold"> day{view.bestStreak === 1 ? '' : 's'}</span>
+            {bestStreak}
+            <span className="text-xs font-bold"> day{bestStreak === 1 ? '' : 's'}</span>
           </dd>
         </div>
         <div className="rounded-xl bg-slate-50 px-3 py-2">
           <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Days completed</dt>
           <dd className="text-xl font-black text-slate-900">
-            {view.daysCompleted}
+            {daysCompleted}
             {view.periodDays !== null && (
               <span className="text-xs font-bold"> of {view.periodDays}</span>
             )}

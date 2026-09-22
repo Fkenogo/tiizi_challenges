@@ -19,6 +19,20 @@ export function V2FinalizedCollectiveResult({ detail }: { detail: V2ChallengeDet
   const view = collectiveFinalResultFor(detail);
   const contributors = useChallengeContributorsV2(detail.challengeId, detail.challengeType);
   const ownId = detail.myParticipation?.participationId;
+  const total = view.total;
+
+  // CORR-001 fail closed: without sealed terminal truth nothing is presented
+  // as a final result — the mutable live-derived total is never substituted.
+  if (!view.hasFinalTruth || total === null) {
+    return (
+      <V2Card>
+        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Final result</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          The final result is not available right now. Please try again.
+        </p>
+      </V2Card>
+    );
+  }
 
   const percentLabel = view.percent !== null ? `${view.percent}%` : '—';
   const barWidth = view.percent !== null ? Math.min(100, view.percent) : 0;
@@ -29,7 +43,7 @@ export function V2FinalizedCollectiveResult({ detail }: { detail: V2ChallengeDet
 
       <div className="mt-2">
         <p className="text-2xl font-black text-slate-900">
-          {view.total.toLocaleString()}
+          {total.toLocaleString()}
           {view.unit ? <span className="text-base font-bold text-slate-500"> {view.unit}</span> : null}
           {view.goal !== null && (
             <span className="text-base font-bold text-slate-400">
@@ -69,13 +83,13 @@ export function V2FinalizedCollectiveResult({ detail }: { detail: V2ChallengeDet
           </>
         ) : view.goal !== null ? (
           <>
-            The group finished with {view.total.toLocaleString()}
+            The group finished with {total.toLocaleString()}
             {view.unit ? ` ${view.unit}` : ''} of {view.goal.toLocaleString()}
             {view.unit ? ` ${view.unit}` : ''}
             {view.percent !== null ? ` (${view.percent}%)` : ''}.
           </>
         ) : (
-          <>The group finished with {view.total.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}.</>
+          <>The group finished with {total.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}.</>
         )}
       </p>
 

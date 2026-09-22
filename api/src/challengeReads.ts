@@ -53,13 +53,17 @@ import {
   memberFinishingPositions,
   normalizeChallengeDerived,
   normalizeParticipationDerived,
+  recomputeChallengeDerived,
   type ChallengeDerivedRow,
   type ParticipationDerivedRow,
+  type ParticipationTruthState,
 } from './derivedTruth.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
 import {
   getChallengeFinal,
+  getChallengeFinals,
   getParticipationFinals,
+  type ChallengeFinalRow,
   type ParticipationFinalRow,
 } from './challengeFinalization.js';
 
@@ -272,7 +276,7 @@ export interface ApiChallengeContributors {
 // ─── Internal assembly ─────────────────────────────────────────────────────
 
 function toProgress(
-  derived: ParticipationDerivedRow,
+  derived: ParticipationTruthState,
   finalPosition: number | null = null,
 ): ApiParticipationProgress {
   return {
@@ -393,7 +397,7 @@ function displayEpisode(episodes: ParticipationRow[]): ParticipationRow | null {
  */
 function governingCompetitiveEpisode(
   episodes: ParticipationRow[],
-  derived: Map<string, ParticipationDerivedRow>,
+  derived: Map<string, ParticipationTruthState>,
 ): ParticipationRow | null {
   let best: { episode: ParticipationRow; at: number } | null = null;
   for (const episode of episodes) {
@@ -466,7 +470,7 @@ async function requireChallengeVisible(
 
 function toOwnParticipation(
   episode: ParticipationRow,
-  derived: ParticipationDerivedRow | undefined,
+  derived: ParticipationTruthState | undefined,
   final: ParticipationFinalRow | null | undefined = null,
 ): ApiOwnParticipation {
   return {
@@ -496,12 +500,73 @@ function toFinalBlock(final: ParticipationFinalRow): ApiParticipationFinal {
   };
 }
 
+/**
+ * CORR-001 finalized-result source rule.
+ *
+ * A read labelled/presented as FINAL RESULTS must never combine sealed
+ * Challenge truth with mutable live-derived truth. For a finalized Challenge
+ * the Challenge-level result fields come from the sealed
+ * `challenge_finalizations` row (class F); per-participation result fields
+ * come from immutable governed evidence deterministically reconstructed
+ * through the authorised engine fold (`recomputeChallengeDerived`, class I) —
+ * never from the mutable `challenge_*_derived` projections (class L). Missing
+ * frozen truth fails closed instead of substituting live values.
+ */
+function frozenNumber(result: Record<string, unknown>, key: string): number | null {
+  const value = result[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+interface FinalizedChallengeResult {
+  collectiveTotal: number;
+  collectiveGoalReached: boolean;
+  completionsCount: number;
+}
+
+/** Sealed Challenge-level result fields (fails closed on missing frozen truth). */
+function finalizedChallengeResult(
+  final: ChallengeFinalRow,
+  challengeType: string,
+): FinalizedChallengeResult {
+  const result = final.result;
+  const completionsCount = frozenNumber(result, 'completions_count');
+  if (completionsCount === null) {
+    readFail(500, 'finalization_missing', 'finalized Challenge has no frozen completions_count');
+  }
+  if (challengeType === 'collective') {
+    const total = frozenNumber(result, 'collective_total');
+    if (total === null) {
+      readFail(500, 'finalization_missing', 'finalized collective Challenge has no frozen collective_total');
+    }
+    return {
+      collectiveTotal: total,
+      collectiveGoalReached: result.collective_goal_reached === true,
+      completionsCount,
+    };
+  }
+  return { collectiveTotal: 0, collectiveGoalReached: false, completionsCount };
+}
+
+/**
+ * CORR-001 — immutable per-participation reconstruction for a FINALIZED
+ * Challenge: replay accepted governed evidence through the authorised engine
+ * fold. Read-only; writes nothing; never consults the mutable derived rows.
+ */
+async function reconstructFinalizedParticipations(
+  db: Db,
+  challengeId: string,
+): Promise<Map<string, ParticipationTruthState>> {
+  const recomputed = await recomputeChallengeDerived(db, challengeId);
+  return new Map(Object.entries(recomputed.participations));
+}
+
 async function toSummary(
   challenge: ChallengeRow,
   challengeDerived: Map<string, ChallengeDerivedRow>,
   episodesByChallenge: Map<string, ParticipationRow[]>,
-  participationDerived: Map<string, ParticipationDerivedRow>,
+  participationDerived: Map<string, ParticipationTruthState>,
   participationFinals: Map<string, ParticipationFinalRow>,
+  challengeFinal: ChallengeFinalRow | null,
 ): Promise<ApiChallengeSummary> {
   const derived = challengeDerived.get(challenge.challenge_id) ?? zeroChallengeDerived(challenge);
   const episodes = episodesByChallenge.get(challenge.challenge_id) ?? [];
@@ -511,6 +576,14 @@ async function toSummary(
   const resultEpisode = (challenge.challenge_type === 'competitive' && episode
     ? governingCompetitiveEpisode(episodes, participationDerived)
     : null) ?? episode;
+  // CORR-001: challenge-level result fields are sealed once finalized.
+  const resultFields = challengeFinal
+    ? finalizedChallengeResult(challengeFinal, challenge.challenge_type)
+    : {
+      collectiveTotal: derived.collectiveTotal,
+      collectiveGoalReached: derived.collectiveGoalReached,
+      completionsCount: derived.completionsCount,
+    };
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
@@ -526,9 +599,9 @@ async function toSummary(
     currentConfigVersion: challenge.current_config_version,
     goalValue: challenge.goal_value,
     goalUnit: challenge.goal_unit,
-    collectiveTotal: derived.collectiveTotal,
-    collectiveGoalReached: derived.collectiveGoalReached,
-    completionsCount: derived.completionsCount,
+    collectiveTotal: resultFields.collectiveTotal,
+    collectiveGoalReached: resultFields.collectiveGoalReached,
+    completionsCount: resultFields.completionsCount,
     myParticipation: episode
       ? toOwnParticipation(
         episode,
@@ -609,9 +682,20 @@ export async function listVisibleChallenges(
       participationFinals.set(participationId, final);
     }
   }
+  // CORR-001: sealed Challenge-level results for finalized Challenges in the
+  // list (challenge-level fields only — the S3d results experience is the
+  // detail read, which additionally reconstructs per-participation truth).
+  const challengeFinals = await getChallengeFinals(db, ids);
   const summaries = await Promise.all(
     challenges.map((challenge) =>
-      toSummary(challenge, challengeDerived, episodesByChallenge, participationDerived, participationFinals),
+      toSummary(
+        challenge,
+        challengeDerived,
+        episodesByChallenge,
+        participationDerived,
+        participationFinals,
+        challengeFinals.get(challenge.challenge_id) ?? null,
+      ),
     ),
   );
   // A corrupt governing version fails the whole list closed (loud integrity
@@ -643,7 +727,21 @@ export async function getChallengeDetail(
   const derivedMap = await fetchChallengeDerived(db, [challengeId]);
   const derived = derivedMap.get(challengeId) ?? zeroChallengeDerived(challenge);
   const episode = displayEpisode(episodes);
-  const ownDerived = await fetchParticipationDerived(db, episodes.map((e) => e.participation_id));
+  const isFinalized = challenge.finalized_at != null;
+  // EBC-04 frozen terminal result + frozen rank (absent when unfinalized).
+  const finalization = await getChallengeFinal(db, challengeId);
+  const finals = await getParticipationFinals(db, challengeId);
+  // CORR-001: a Challenge marked finalized without sealed truth fails closed —
+  // live derived values are never substituted for a missing final result.
+  if (isFinalized && !finalization) {
+    readFail(500, 'finalization_missing', 'challenge is marked finalized without a stored finalization');
+  }
+  // CORR-001: finalized per-participation result fields are reconstructed from
+  // immutable governed evidence (class I); the mutable derived projection
+  // (class L) is never presented as final truth.
+  const ownDerived: Map<string, ParticipationTruthState> = isFinalized
+    ? await reconstructFinalizedParticipations(db, challengeId)
+    : await fetchParticipationDerived(db, episodes.map((e) => e.participation_id));
   // Race: the member's result comes from their governing (earliest
   // completed) episode; identity/status/gating stay on the display episode.
   const resultEpisode = (challenge.challenge_type === 'competitive' && episode
@@ -652,10 +750,16 @@ export async function getChallengeDetail(
   const participationDerived = resultEpisode
     ? ownDerived.get(resultEpisode.participation_id)
     : undefined;
-  // EBC-04 frozen terminal result + frozen rank (absent when unfinalized).
-  const finalization = await getChallengeFinal(db, challengeId);
-  const finals = await getParticipationFinals(db, challengeId);
   const episodeFinal = resultEpisode ? finals.get(resultEpisode.participation_id) : undefined;
+  // CORR-001: sealed Challenge-level result fields once finalized; live
+  // derived only while unfinalized (the S3c live surface).
+  const resultFields = finalization
+    ? finalizedChallengeResult(finalization, challenge.challenge_type)
+    : {
+      collectiveTotal: derived.collectiveTotal,
+      collectiveGoalReached: derived.collectiveGoalReached,
+      completionsCount: derived.completionsCount,
+    };
   // S3c — server-authoritative governing day: derived from the server clock
   // in the Challenge timezone. The client formats this value; it never
   // determines the Challenge day from the device clock.
@@ -672,13 +776,13 @@ export async function getChallengeDetail(
     timezone: challenge.timezone,
     governingToday: dayInTimezone(now, challenge.timezone),
     serverNow: now.toISOString(),
-    finalized: challenge.finalized_at != null,
+    finalized: isFinalized,
     currentConfigVersion: challenge.current_config_version,
     goalValue: challenge.goal_value,
     goalUnit: challenge.goal_unit,
-    collectiveTotal: derived.collectiveTotal,
-    collectiveGoalReached: derived.collectiveGoalReached,
-    completionsCount: derived.completionsCount,
+    collectiveTotal: resultFields.collectiveTotal,
+    collectiveGoalReached: resultFields.collectiveGoalReached,
+    completionsCount: resultFields.completionsCount,
     myParticipation: episode
       ? toOwnParticipation(episode, participationDerived, episodeFinal)
       : null,
@@ -783,18 +887,28 @@ export async function getChallengeLeaderboard(
     [challengeId],
   );
   const episodes = (all.rows as never[]).map(normalizeParticipationRow);
-  const derived = await fetchParticipationDerived(
-    db,
-    episodes.map((e) => e.participation_id),
-  );
+  const isFinalized = challenge.finalized_at != null;
+  if (isFinalized) {
+    const finalization = await getChallengeFinal(db, challengeId);
+    if (!finalization) {
+      readFail(500, 'finalization_missing', 'challenge is marked finalized without a stored finalization');
+    }
+  }
+  // CORR-001: finalized standings progress comes from immutable governed
+  // evidence (class I) — the mutable derived projection (class L) is never
+  // presented as final Race truth. Unfinalized Challenges keep the S3c live
+  // projection unchanged.
+  const derived: Map<string, ParticipationTruthState> = isFinalized
+    ? await reconstructFinalizedParticipations(db, challengeId)
+    : await fetchParticipationDerived(db, episodes.map((e) => e.participation_id));
   // EBC-04: finalized Challenges serve frozen finishing positions so the
   // rank can never shift under read-time recalculation. Unfinalized
   // Challenges keep the live deterministic computation (same member-level
   // rule as finalization).
-  const frozen = challenge.finalized_at != null
+  const frozen = isFinalized
     ? await getParticipationFinals(db, challengeId)
     : new Map<string, ParticipationFinalRow>();
-  const livePositions = challenge.finalized_at != null
+  const livePositions = isFinalized
     ? {}
     : memberFinishingPositions(
       episodes.map((episode) => {
@@ -818,7 +932,7 @@ export async function getChallengeLeaderboard(
     const governing = governingCompetitiveEpisode(memberEpisodes, derived) ?? current;
     const row = derived.get(governing.participation_id);
     const progress = toProgress(row ?? zeroParticipationDerived(governing));
-    const position = challenge.finalized_at != null
+    const position = isFinalized
       ? (frozen.get(governing.participation_id)?.final_position ?? null)
       : (livePositions[governing.participation_id] ?? null);
     return {
@@ -889,13 +1003,40 @@ export async function getChallengeContributors(
     if (group) group.push(episode);
     else episodesByMember.set(episode.member_id, [episode]);
   }
-  const derived = await fetchParticipationDerived(
-    db,
-    episodes.map((e) => e.participation_id),
-  );
-  const challengeDerived = await fetchChallengeDerived(db, [challengeId]);
-  // A missing derived row means "no accepted activity yet" (zero-state).
-  const total = challengeDerived.get(challengeId)?.collectiveTotal ?? 0;
+  // CORR-001: finalized contributor totals are reconstructed from immutable
+  // governed evidence (class I) and anchored to the sealed Challenge total
+  // (class F); the mutable derived projection (class L) is never presented as
+  // final truth. Unfinalized Challenges keep the S3c live projection.
+  const isFinalized = challenge.finalized_at != null;
+  let derived: Map<string, ParticipationTruthState>;
+  let total: number;
+  if (isFinalized) {
+    const finalization = await getChallengeFinal(db, challengeId);
+    if (!finalization) {
+      readFail(500, 'finalization_missing', 'challenge is marked finalized without a stored finalization');
+    }
+    const sealedTotal = frozenNumber(finalization.result, 'collective_total');
+    if (sealedTotal === null) {
+      readFail(500, 'finalization_missing', 'finalized collective Challenge has no frozen collective_total');
+    }
+    const recomputed = await recomputeChallengeDerived(db, challengeId);
+    derived = new Map(Object.entries(recomputed.participations));
+    // Contributor totals must reconcile with the sealed Challenge truth.
+    // A divergence means immutable evidence changed after finalization, which
+    // is prohibited — fail closed rather than present a fabricated split.
+    const reconstructedSum = [...derived.values()]
+      .reduce((sum, state) => sum + state.cumulativeTotal, 0);
+    if (reconstructedSum !== sealedTotal) {
+      readFail(500, 'final_result_divergence',
+        'reconstructed contributions do not reconcile with the sealed collective total');
+    }
+    total = sealedTotal;
+  } else {
+    derived = await fetchParticipationDerived(db, episodes.map((e) => e.participation_id));
+    const challengeDerived = await fetchChallengeDerived(db, [challengeId]);
+    // A missing derived row means "no accepted activity yet" (zero-state).
+    total = challengeDerived.get(challengeId)?.collectiveTotal ?? 0;
+  }
   const contributors: ApiContributorEntry[] = [...episodesByMember].map(([member, memberEpisodes]) => {
     let contributionTotal = 0;
     let logsAccepted = 0;

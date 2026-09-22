@@ -21,6 +21,13 @@ export function participationViewFor(detail: V2ChallengeDetail): S3aParticipatio
     // further join/withdraw CTA is offered.
     return { kind: 'read-only', reason: detail.finalized ? 'finalized' : 'ended' };
   }
+  // CORR-001: an active-status Challenge whose governed server day is past
+  // endDate is ended-pending (window expired, not yet processed). Joining and
+  // leaving are closed under the same server-authoritative rule the backend
+  // enforces; never the device clock.
+  if (detail.status === 'active' && detail.governingToday > detail.endDate) {
+    return { kind: 'read-only', reason: 'ended' };
+  }
   if (detail.myParticipation?.status === 'active') return { kind: 'joined' };
   return {
     kind: 'not-joined',

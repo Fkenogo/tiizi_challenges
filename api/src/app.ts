@@ -11,7 +11,10 @@ import {
   type ChallengeActivityRouteDeps,
 } from './challengeActivityRoutes.js';
 import { registerChallengeReadRoutes } from './challengeReads.js';
-import { registerParticipationRoutes } from './challengeParticipationRoutes.js';
+import {
+  registerParticipationRoutes,
+  type ParticipationRouteDeps,
+} from './challengeParticipationRoutes.js';
 import {
   registerChallengeCreationRoutes,
   type ChallengeCreationRouteDeps,
@@ -33,6 +36,12 @@ export interface AppDeps {
   /** C2B runtime deps. Absent in tests unless the test wires them; requests
    * then fail closed (group authority unavailable) instead of authorizing. */
   challengeActivity?: ChallengeActivityRouteDeps;
+  /**
+   * C3B participation-mutation deps (join/withdraw). Optional; falls back to
+   * `challengeActivity` so existing wiring keeps working. Carries the
+   * CORR-001 server clock for deterministic lifecycle tests.
+   */
+  participation?: ParticipationRouteDeps;
   /** EBC-01 governed Group mutation boundary. Absent: routes fail closed. */
   groupMutation?: GroupMutationRouteDeps;
   /** EBC-01 governed Challenge establishment. Absent: route fails closed. */
@@ -102,7 +111,7 @@ export function buildApp(deps: AppDeps) {
   registerChallengeReadRoutes(app, deps.db, deps.challengeActivity ?? {});
   // C3B V2 participation mutations (join/withdraw). Same live authority as
   // C2B; absent authority fails closed per-route instead of authorizing.
-  registerParticipationRoutes(app, deps.db, deps.challengeActivity ?? {});
+  registerParticipationRoutes(app, deps.db, deps.participation ?? deps.challengeActivity ?? {});
   // EBC-01 governed Group mutations (create/join/leave). Server-side
   // Firestore authority boundary; absent store fails closed per-route.
   registerGroupMutationRoutes(app, deps.db, deps.groupMutation ?? {});
