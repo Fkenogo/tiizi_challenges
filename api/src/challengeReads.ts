@@ -151,6 +151,13 @@ export interface ApiChallengeSummary {
   endDate: string;
   /** EBC-03 governing Challenge timezone (IANA) defining the Challenge day. */
   timezone: string;
+  /**
+   * S3d — server-projected governing Challenge day (YYYY-MM-DD in the
+   * Challenge timezone at read time). The SAME governed value the detail read
+   * exposes; the list presentation derives the governed end state from it and
+   * never reads the device clock. Read projection only — no domain change.
+   */
+  governingToday: string;
   /** EBC-04: true once the terminal result is computed and frozen. */
   finalized: boolean;
   currentConfigVersion: number;
@@ -567,6 +574,7 @@ async function toSummary(
   participationDerived: Map<string, ParticipationTruthState>,
   participationFinals: Map<string, ParticipationFinalRow>,
   challengeFinal: ChallengeFinalRow | null,
+  now: Date,
 ): Promise<ApiChallengeSummary> {
   const derived = challengeDerived.get(challenge.challenge_id) ?? zeroChallengeDerived(challenge);
   const episodes = episodesByChallenge.get(challenge.challenge_id) ?? [];
@@ -594,6 +602,9 @@ async function toSummary(
     startDate: challenge.start_date,
     endDate: challenge.end_date,
     timezone: challenge.timezone,
+    // S3d — the same server-governed day the detail read projects, so list
+    // presentation can resolve the governed end state without a device clock.
+    governingToday: dayInTimezone(now, challenge.timezone),
     // EBC-04: finalized once the terminal result is frozen (NULL marker = no).
     finalized: challenge.finalized_at != null,
     currentConfigVersion: challenge.current_config_version,
@@ -686,6 +697,7 @@ export async function listVisibleChallenges(
   // list (challenge-level fields only — the S3d results experience is the
   // detail read, which additionally reconstructs per-participation truth).
   const challengeFinals = await getChallengeFinals(db, ids);
+  const now = deps.now ?? new Date();
   const summaries = await Promise.all(
     challenges.map((challenge) =>
       toSummary(
@@ -695,6 +707,7 @@ export async function listVisibleChallenges(
         participationDerived,
         participationFinals,
         challengeFinals.get(challenge.challenge_id) ?? null,
+        now,
       ),
     ),
   );
