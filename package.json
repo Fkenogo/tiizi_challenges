@@ -59,6 +59,7 @@
     "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:firebase-emulator-mode": "tsx scripts/testFirebaseEmulatorMode.ts",
+    "test:mobile-primary-nav": "tsx scripts/testMobilePrimaryNavGuards.ts",
     "preview:v2-auth:reset": "tsx scripts/previewV2AuthReset.ts",
     "preview:v2-auth:list": "tsx scripts/previewV2AuthList.ts",
     "test:preview-v2-auth-workflow": "tsx scripts/testPreviewV2AuthWorkflow.ts",

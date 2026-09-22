@@ -74,6 +74,10 @@ check(
   'SDK connect call exists exactly once',
   (helper.match(/connectAuthEmulator\(auth,/g) ?? []).length === 1,
 );
+check(
+  'SDK emulator warning banner is disabled (it occludes the mobile bottom nav)',
+  /connectAuthEmulator\(\s*auth,\s*AUTH_EMULATOR_URL,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(helper),
+);
 
 if (failures > 0) {
   console.error(`\nFirebase emulator-mode guard: ${failures} failure(s).`);
