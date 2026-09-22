@@ -2,7 +2,7 @@ import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { V2Card, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
 import { formatDayRange } from './challengeCreationDraft';
 import { formatResultDay } from './resultsFormat';
-import { collectiveFinalResultFor } from './resultsView';
+import { collectiveFinalResultFor, collectiveOutcomeFor } from './resultsView';
 import { useChallengeContributorsV2 } from './useChallengeCreation';
 
 /**
@@ -36,21 +36,17 @@ export function V2FinalizedCollectiveResult({ detail }: { detail: V2ChallengeDet
 
   const percentLabel = view.percent !== null ? `${view.percent}%` : '—';
   const barWidth = view.percent !== null ? Math.min(100, view.percent) : 0;
+  const outcome = collectiveOutcomeFor(view);
 
   return (
     <V2Card>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Final result</p>
 
       <div className="mt-2">
-        <p className="text-2xl font-black text-slate-900">
-          {total.toLocaleString()}
-          {view.unit ? <span className="text-base font-bold text-slate-500"> {view.unit}</span> : null}
-          {view.goal !== null && (
-            <span className="text-base font-bold text-slate-400">
-              {' '}of {view.goal.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}
-            </span>
-          )}
-        </p>
+        <p className="text-2xl font-black text-slate-900">{outcome.primary}</p>
+        {outcome.secondary && (
+          <p className="mt-1 text-base font-bold text-slate-500">{outcome.secondary}</p>
+        )}
         {view.percent !== null && (
           <div className="mt-2">
             <div
@@ -75,23 +71,11 @@ export function V2FinalizedCollectiveResult({ detail }: { detail: V2ChallengeDet
         )}
       </div>
 
-      <p className="mt-3 text-sm leading-6 text-slate-700">
-        {view.goalReached ? (
-          <>
-            Goal reached
-            {view.goalCompletedAt ? ` on ${formatResultDay(view.goalCompletedAt, detail.timezone)}` : ''}.
-          </>
-        ) : view.goal !== null ? (
-          <>
-            The group finished with {total.toLocaleString()}
-            {view.unit ? ` ${view.unit}` : ''} of {view.goal.toLocaleString()}
-            {view.unit ? ` ${view.unit}` : ''}
-            {view.percent !== null ? ` (${view.percent}%)` : ''}.
-          </>
-        ) : (
-          <>The group finished with {total.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}.</>
-        )}
-      </p>
+      {view.goalReached === true && view.goalCompletedAt && (
+        <p className="mt-3 text-sm leading-6 text-slate-700">
+          Reached on {formatResultDay(view.goalCompletedAt, detail.timezone)}.
+        </p>
+      )}
 
       {view.hasTakenPart && (
         <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2">

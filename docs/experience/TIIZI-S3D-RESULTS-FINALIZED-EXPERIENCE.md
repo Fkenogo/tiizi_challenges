@@ -2,9 +2,9 @@
 
 **Slice:** S3d — Results / Finalized Experience
 **Task:** TIIZI-S3D-RESULTS-FINALIZED-EXPERIENCE-001
-**Status:** **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL REVALIDATION** (NOT COMPLETE, NOT FOUNDER ACCEPTED, NOT MERGED)
+**Status:** **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING FOUNDER ACCEPTANCE** (NOT COMPLETE, NOT FOUNDER ACCEPTED, NOT MERGED)
 **Branch:** `impl/s3d-results-finalized-experience-001`
-**Entry:** `origin/main` @ `f98a71bf0ba3db9e932571ffaee4bd88a5da5f6e` (Master Programme v1.98); no drift. ITR-001 disposition **C — CORRECTION REQUIRED BEFORE FOUNDER PREVIEW**; corrected by TIIZI-S3D-RESULTS-FINALIZED-EXPERIENCE-CORR-001 (Master Programme v2.00).
+**Entry:** `origin/main` @ `f98a71bf0ba3db9e932571ffaee4bd88a5da5f6e` (Master Programme v1.98); no drift. ITR-001 disposition **C — CORRECTION REQUIRED BEFORE FOUNDER PREVIEW**; corrected by TIIZI-S3D-RESULTS-FINALIZED-EXPERIENCE-CORR-001 (Master Programme v2.00). Founder-preview presentation corrected by TIIZI-S3D-RESULTS-EXPERIENCE-CORR-002 (§11; Master Programme v2.01).
 **Authority:** `docs/programme/TIIZI-S3D-PREIMPLEMENTATION-READINESS-001.md` (Founder disposition §14: FD-S3D-1, FD-S3D-2A, FD-S3D-3, FD-S3D-2 Race rule) + `docs/experience/TIIZI-S3-CHALLENGE-EXPERIENCE-CHARTER.md` §9/§12.
 **No deployment. No S3d merge. S3c remains CLOSED (COMPLETE / FOUNDER ACCEPTED / MERGED, not reopened).**
 
@@ -239,7 +239,62 @@ fields are frozen from `challenge_finalizations`.
 
 ## 10. Status statement
 
-S3d is an **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING TECHNICAL
-REVALIDATION**. This record does **not** mark S3d COMPLETE, FOUNDER ACCEPTED or
-MERGED, authorises no deployment, and changes no code-merge state. Technical
-revalidation and Founder disposition remain outstanding. S3c is not reopened.
+S3d is an **IMPLEMENTED CANDIDATE / CORRECTED / AWAITING FOUNDER ACCEPTANCE**.
+This record does **not** mark S3d COMPLETE, FOUNDER ACCEPTED or MERGED,
+authorises no deployment, and changes no code-merge state. Founder disposition
+remains outstanding. S3c is not reopened.
+
+## 11. CORR-002 — finalized presentation hierarchy (Founder-preview correction)
+
+Bounded, presentation-only correction arising from Founder review of the live
+S3d preview. No Challenge semantics, finalization, frozen truth, lifecycle
+authority, Race member identity, schema, migration, activity acceptance,
+ranking, recognition or result derivation changed.
+
+**11.1 Outcome-first hierarchy (all three types).** Each finalized result now
+leads with a human-readable outcome and keeps the governed numeric facts
+beneath it (pure helpers `collectiveOutcomeFor` / `competitiveOutcomeFor` /
+`streakOutcomeFor` in `resultsView.ts`):
+
+- **Together** — reached: primary "Goal reached", actual total and goal
+  immediately below, uncapped percentage and overshoot retained; not reached:
+  neutral "{actual} of {goal} {unit} completed" with no failure/success
+  recognition. Collective calculations and contributor ordering unchanged.
+- **Race** — a participant with a served frozen position: primary
+  "You finished #{position}"; a participant without one: primary
+  "You reached {progress} of {target} {unit}" with "Progress at close"
+  retained. Governed progress and Final standings retained; server-projected
+  positions remain authoritative; no winner/podium/medal/recognition and no
+  client-side ranking.
+- **Streak** — when frozen final truth says the required run was reached:
+  primary "You reached the {requiredDays}-day streak"; Best streak, Final
+  streak, Days completed, the required run and day-by-day history remain
+  supporting governed facts. Final Streak continues to render the frozen
+  `final_streak` value (including 0) and is never derived from
+  `currentStreak`. Not reached: neutral factual wording only.
+
+**11.2 Finalized "Taking part" card removed.** The separate card
+("TAKING PART" / "You took part in this Challenge." / "Results for this
+Challenge are sealed, so joining and leaving are closed.") is no longer
+rendered on finalized results. The underlying participation/lifecycle
+authority is unchanged: `participationViewFor` still reports finalized as
+read-only, and Join, Leave and Log Activity remain unavailable after
+finalization. The live/ended participation UI is otherwise unchanged.
+
+**11.3 Ended-pending hero status.** A window-expired-but-unprocessed
+Challenge (server still reports `status: 'active'`) previously rendered
+"Running" beside "Challenge ended / Final results are being confirmed". The
+metadata label is now derived from the existing server-governed `endStateFor`
+path (`statusLabelForEndState`): anything the server has effectively ended
+reads "Finished". No device clock (`Date`/`Date.now`) is used, no lifecycle
+status is added to the domain and no status is mutated for presentation. The
+pending card still reads "Challenge ended / Final results are being
+confirmed".
+
+**11.4 Evidence.** `scripts/testS3dResultsGuards.ts` gains 13 CORR-002 checks
+covering the twelve required proofs (Together reached/missed, Race
+positioned/unfinished, Streak completed/non-completed with frozen
+`finalStreak = 0` represented, finalized card absence, no Join/Leave/Log
+Activity when finalized, ended-pending never "Running", pending copy intact,
+server-governed end state only, and re-asserted CORR-001 fail-closed
+discriminators). The CORR-001 fail-closed discriminators remain green.

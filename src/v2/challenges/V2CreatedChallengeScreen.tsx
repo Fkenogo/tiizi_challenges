@@ -8,11 +8,15 @@ import {
 } from '../components/V2Primitives';
 import {
   formatDayRange,
-  statusLabel,
   timezoneLabel,
 } from './challengeCreationDraft';
 import { loggingViewFor } from './loggingView';
-import { endStateFor, loggingAvailableForEndState, participationMutableForEndState } from './challengeEndState';
+import {
+  endStateFor,
+  loggingAvailableForEndState,
+  participationMutableForEndState,
+  statusLabelForEndState,
+} from './challengeEndState';
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
 import { V2LogActivityDialog } from './V2LoggingSection';
 import { participationViewFor, V2LeaveChallengeDialog, V2ParticipationSection } from './V2ParticipationSection';
@@ -133,7 +137,7 @@ export function V2CreatedChallengeScreen() {
         />
 
         <p className="text-xs font-medium text-slate-500">
-          {statusLabel(challenge.status)} · {formatDayRange(challenge.startDate, challenge.endDate)} · {timezoneLabel(challenge.timezone)} · {participationSentence}
+          {statusLabelForEndState(challenge.status, endState)} · {formatDayRange(challenge.startDate, challenge.endDate)} · {timezoneLabel(challenge.timezone)} · {participationSentence}
         </p>
 
         {endState === 'live'

@@ -2,7 +2,7 @@ import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { V2Card } from '../components/V2Primitives';
 import { formatDay } from './challengeCreationDraft';
 import { formatResultDay } from './resultsFormat';
-import { streakFinalResultFor, streakPeriodDays } from './resultsView';
+import { streakFinalResultFor, streakOutcomeFor, streakPeriodDays } from './resultsView';
 
 /**
  * S3d — finalized Daily Streak result.
@@ -33,29 +33,16 @@ export function V2FinalizedStreakResult({ detail }: { detail: V2ChallengeDetail 
     );
   }
 
-  const outcome = view.completed === true
-    ? view.requiredDays !== null
-      ? `Reached the required ${view.requiredDays}-day streak.`
-      : 'Reached the required streak.'
-    : view.completed === false
-      ? view.requiredDays !== null
-        ? `Best streak: ${bestStreak} of ${view.requiredDays} required.`
-        : `Best streak: ${bestStreak}.`
-      : null;
+  const outcome = streakOutcomeFor(view);
 
   return (
     <V2Card>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Final result</p>
 
-      <p className="mt-2 text-2xl font-black text-slate-900">
-        {daysCompleted}
-        {view.periodDays !== null && (
-          <span className="text-base font-bold text-slate-400"> of {view.periodDays} days completed</span>
-        )}
-        {view.periodDays === null && (
-          <span className="text-base font-bold text-slate-400"> days completed</span>
-        )}
-      </p>
+      <p className="mt-2 text-2xl font-black text-slate-900">{outcome.primary}</p>
+      {outcome.secondary && (
+        <p className="mt-1 text-sm font-medium text-slate-500">{outcome.secondary}</p>
+      )}
 
       <dl className="mt-3 grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-orange-50 px-3 py-2">
@@ -84,15 +71,6 @@ export function V2FinalizedStreakResult({ detail }: { detail: V2ChallengeDetail 
           </dd>
         </div>
       </dl>
-
-      {outcome && (
-        <p className="mt-3 text-sm leading-6 text-slate-700">
-          {outcome}
-          {view.requiredDays !== null && (
-            <span className="font-medium text-slate-500"> Required run: {view.requiredDays} days in a row.</span>
-          )}
-        </p>
-      )}
 
       {period.length > 0 && (
         <div className="mt-3 border-t border-slate-100 pt-3">

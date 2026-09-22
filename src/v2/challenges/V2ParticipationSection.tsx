@@ -101,6 +101,13 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
   // unchanged canonical truth.
   if (view.kind === 'joined') return null;
 
+  // CORR-002: a FINALIZED Challenge's sealed results already carry the
+  // participant-facing outcome, so the separate "Taking part" card adds no
+  // useful result information and is removed. The underlying participation
+  // authority is untouched: participationViewFor still reports finalized as
+  // read-only, and logging/leave remain unavailable via the end-state gates.
+  if (view.kind === 'read-only' && view.reason === 'finalized') return null;
+
   const busy = join.isPending;
 
   const handleJoin = async () => {
@@ -125,14 +132,10 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
           <p className="text-sm font-black text-slate-900">
             {detail.myParticipation?.status === 'active'
               ? 'You took part in this Challenge.'
-              : detail.myParticipation
-                ? 'You are not taking part in this Challenge.'
-                : 'You are not taking part in this Challenge.'}
+              : 'You are not taking part in this Challenge.'}
           </p>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            {view.reason === 'finalized'
-              ? 'Results for this Challenge are sealed, so joining and leaving are closed.'
-              : 'This Challenge has ended, so joining and leaving are closed.'}
+            This Challenge has ended, so joining and leaving are closed.
           </p>
         </div>
       )}

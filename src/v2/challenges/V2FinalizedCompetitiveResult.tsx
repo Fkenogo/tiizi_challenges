@@ -3,6 +3,7 @@ import { V2Card, V2ErrorState, V2LoadingState } from '../components/V2Primitives
 import { formatResultDay } from './resultsFormat';
 import {
   competitiveFinalResultFor,
+  competitiveOutcomeFor,
   isOwnStandingsEntry,
   raceStandingsFor,
 } from './resultsView';
@@ -26,6 +27,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
   const percentLabel = view.percent !== null ? `${view.percent}%` : '—';
   const entries = standings.data?.entries ?? [];
   const split = raceStandingsFor(entries);
+  const outcome = competitiveOutcomeFor(view);
 
   return (
     <V2Card>
@@ -33,15 +35,10 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
 
       {view.hasFinalTruth && view.hasTakenPart && (
         <div className="mt-2">
-          <p className="text-2xl font-black text-slate-900">
-            {view.ownTotal.toLocaleString()}
-            {view.unit ? <span className="text-base font-bold text-slate-500"> {view.unit}</span> : null}
-            {view.target > 0 && (
-              <span className="text-base font-bold text-slate-400">
-                {' '}of {view.target.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}
-              </span>
-            )}
-          </p>
+          <p className="text-2xl font-black text-slate-900">{outcome.primary}</p>
+          {outcome.secondary && (
+            <p className="mt-1 text-base font-bold text-slate-500">{outcome.secondary}</p>
+          )}
           {view.percent !== null && (
             <div className="mt-2">
               <div
@@ -57,20 +54,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
                   style={{ width: `${Math.min(100, view.percent)}%` }}
                 />
               </div>
-              <p className="mt-1 text-sm font-bold text-slate-700">
-                {percentLabel}
-                {view.finished && view.position !== null && (
-                  <span className="font-medium text-sky-700"> · Finished · Final position #{view.position}</span>
-                )}
-                {view.finished && view.position === null && (
-                  <span className="font-medium text-slate-500"> · Finished</span>
-                )}
-                {view.finished === false && (
-                  <span className="font-medium text-slate-500">
-                    {' '}· Progress at close
-                  </span>
-                )}
-              </p>
+              <p className="mt-1 text-sm font-bold text-slate-700">{percentLabel}</p>
             </div>
           )}
         </div>

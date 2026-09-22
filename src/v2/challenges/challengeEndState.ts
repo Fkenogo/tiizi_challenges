@@ -1,4 +1,5 @@
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
+import { statusLabel } from './challengeCreationDraft';
 
 /**
  * S3d — Challenge end-state derivation (pure, React-free so it is directly
@@ -45,4 +46,24 @@ export function loggingAvailableForEndState(state: V2ChallengeEndState): boolean
 /** Hero Leave action is offered only while the Challenge is genuinely live. */
 export function participationMutableForEndState(state: V2ChallengeEndState): boolean {
   return state === 'live';
+}
+
+/**
+ * CORR-002 — participant-facing lifecycle label for the detail metadata line.
+ *
+ * A window-expired-but-unprocessed Challenge is still served `status: 'active'`
+ * (the engine has not processed the ending yet), which previously rendered
+ * "Running" next to "Challenge ended / Final results are being confirmed".
+ * The label is therefore derived from the already server-governed end state,
+ * never the raw status alone and never the device clock: anything the server
+ * has effectively ended (ended-pending or finalized) reads as "Finished",
+ * consistent with the existing Tiizi vocabulary. No lifecycle status is added
+ * to the domain and no status is mutated for presentation.
+ */
+export function statusLabelForEndState(
+  status: string | null | undefined,
+  endState: V2ChallengeEndState,
+): string {
+  if (endState !== 'live') return 'Finished';
+  return statusLabel(status);
 }

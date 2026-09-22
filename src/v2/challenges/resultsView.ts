@@ -41,6 +41,17 @@ function frozenString(detail: V2ChallengeDetail, key: string): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+/**
+ * CORR-002 — outcome-first hierarchy copy. Pure presentation strings derived
+ * ONLY from projected values; no truth is recomputed and no ranking is added.
+ * `primary` is the human-readable outcome the participant reads first;
+ * `secondary` carries the governed numeric fact beneath it.
+ */
+export interface S3dOutcome {
+  primary: string;
+  secondary: string | null;
+}
+
 // ─── Together / Collective ─────────────────────────────────────────────────
 
 export interface S3dCollectiveResult {
@@ -100,10 +111,36 @@ export function collectiveFinalResultFor(detail: V2ChallengeDetail): S3dCollecti
   };
 }
 
+/**
+ * CORR-002 — Together outcome hierarchy. A reached goal leads with the plain
+ * outcome ("Goal reached") and keeps the actual total and goal directly below;
+ * a goal that was not reached states the neutral fact
+ * "{actual} of {goal} {unit} completed" and introduces no failure/success
+ * recognition. Percentage and overshoot stay uncapped in the component.
+ */
+export function collectiveOutcomeFor(view: S3dCollectiveResult): S3dOutcome {
+  const unit = view.unit ? ` ${view.unit}` : '';
+  if (view.total === null) return { primary: '', secondary: null };
+  if (view.goalReached === true) {
+    return {
+      primary: 'Goal reached',
+      secondary: view.goal !== null
+        ? `${view.total.toLocaleString()}${unit} of ${view.goal.toLocaleString()}${unit}`
+        : `${view.total.toLocaleString()}${unit}`,
+    };
+  }
+  if (view.goal !== null) {
+    return {
+      primary: `${view.total.toLocaleString()} of ${view.goal.toLocaleString()}${unit} completed`,
+      secondary: null,
+    };
+  }
+  return { primary: `${view.total.toLocaleString()}${unit}`, secondary: null };
+}
+
 // ─── Race / Competitive ────────────────────────────────────────────────────
 
-export interface S3dCompetitiveResult {
-  /**
+export interface S3dCompetitiveResult {  /**
    * Own progress at close. Served per-participation progress is reconstructed
    * from immutable governed evidence for a finalized Challenge (class I).
    */
@@ -149,6 +186,28 @@ export function competitiveFinalResultFor(detail: V2ChallengeDetail): S3dCompeti
     hasTakenPart: detail.myParticipation != null,
     hasFinalTruth: detail.finalized === true && detail.finalResult != null && final != null,
   };
+}
+
+/**
+ * CORR-002 — Race outcome hierarchy. A participant with a frozen finishing
+ * position leads with "You finished #{position}"; a participant without one
+ * leads with progress at close ("You reached {progress} of {target} {unit}").
+ * The position is a served passthrough; the client never ranks.
+ */
+export function competitiveOutcomeFor(view: S3dCompetitiveResult): S3dOutcome {
+  const unit = view.unit ? ` ${view.unit}` : '';
+  if (view.position !== null) {
+    return {
+      primary: `You finished #${view.position}`,
+      secondary: view.target > 0
+        ? `${view.ownTotal.toLocaleString()}${unit} of ${view.target.toLocaleString()}${unit}`
+        : `${view.ownTotal.toLocaleString()}${unit}`,
+    };
+  }
+  const progress = view.target > 0
+    ? `${view.ownTotal.toLocaleString()} of ${view.target.toLocaleString()}${unit}`
+    : `${view.ownTotal.toLocaleString()}${unit}`;
+  return { primary: `You reached ${progress}`, secondary: 'Progress at close' };
 }
 
 export interface S3dRaceStandings {
@@ -231,6 +290,33 @@ export function streakFinalResultFor(detail: V2ChallengeDetail): S3dStreakResult
     hasTakenPart: detail.myParticipation != null,
     hasFinalTruth: detail.finalized === true && detail.finalResult != null && final != null,
   };
+}
+
+/**
+ * CORR-002 — Streak outcome hierarchy. When frozen final truth says the
+ * required run was reached, the primary outcome is
+ * "You reached the {requiredDays}-day streak"; the final streak, best streak,
+ * days completed, required run and day-by-day history remain supporting
+ * governed facts. Otherwise the wording stays neutral and factual
+ * ("{days} of {period} days completed"). No failure/lost/recognition wording.
+ */
+export function streakOutcomeFor(view: S3dStreakResult): S3dOutcome {
+  const required = view.requiredDays;
+  const requiredLine = required !== null ? `Required run: ${required} days in a row.` : null;
+  if (view.completed === true) {
+    return {
+      primary: required !== null
+        ? `You reached the ${required}-day streak`
+        : 'You reached the required streak',
+      secondary: requiredLine,
+    };
+  }
+  const days = view.daysCompleted;
+  const period = view.periodDays;
+  if (days !== null && period !== null) {
+    return { primary: `${days} of ${period} days completed`, secondary: requiredLine };
+  }
+  return { primary: days !== null ? `${days} days completed` : '', secondary: requiredLine };
 }
 
 /**

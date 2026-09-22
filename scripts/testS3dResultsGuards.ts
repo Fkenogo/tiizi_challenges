@@ -29,15 +29,19 @@ import {
   endStateFor,
   loggingAvailableForEndState,
   participationMutableForEndState,
+  statusLabelForEndState,
 } from '../src/v2/challenges/challengeEndState.js';
 import { participationViewFor } from '../src/v2/challenges/participationView.js';
 import {
   collectiveFinalResultFor,
+  collectiveOutcomeFor,
   competitiveFinalResultFor,
+  competitiveOutcomeFor,
   finalizedStandingsEnabledForS3d,
   inclusivePeriodDays,
   raceStandingsFor,
   streakFinalResultFor,
+  streakOutcomeFor,
   streakPeriodDays,
 } from '../src/v2/challenges/resultsView.js';
 
@@ -306,6 +310,146 @@ console.log('CORR-001 finalized-source fail-closed');
     && streak.finalStreak === null && streak.hasFinalTruth === false);
 }
 
+// ─── CORR-002 outcome-first presentation hierarchy ──────────────────────────
+console.log('CORR-002 outcome hierarchy');
+{
+  const participationSrc = read('src/v2/challenges/V2ParticipationSection.tsx');
+  const screenSrcCorr2 = read('src/v2/challenges/V2CreatedChallengeScreen.tsx');
+  const endStateSrcCorr2 = read('src/v2/challenges/challengeEndState.ts');
+
+  // 1. Together reached-goal outcome hierarchy.
+  const togetherReached = collectiveOutcomeFor(collectiveFinalResultFor(detail({
+    challengeType: 'collective', status: 'ended', finalized: true,
+    goalValue: 200, goalUnit: 'reps', collectiveTotal: 220, collectiveGoalReached: true,
+    finalResult: {
+      finalizedAt: '2026-06-10T12:00:00.000Z', configVersion: 1, finalizationVersion: 'ebc04/v2',
+      engineVersion: 'v2', scoringVersion: 'computeActivityScore/v1',
+      result: { collective_total: 220, collective_goal_reached: true, goal_completed_at: '2026-06-04T09:00:00.000Z', completions_count: 3 },
+    },
+  })));
+  check('CORR-002 Together reached: "Goal reached" primary with actual total + goal below',
+    togetherReached.primary === 'Goal reached' && togetherReached.secondary === '220 reps of 200 reps');
+
+  // 2. Together missed-goal neutral wording.
+  const togetherMissed = collectiveOutcomeFor(collectiveFinalResultFor(detail({
+    challengeType: 'collective', status: 'ended', finalized: true,
+    goalValue: 100, goalUnit: 'reps', collectiveTotal: 40, collectiveGoalReached: false,
+    finalResult: {
+      finalizedAt: '2026-06-10T12:00:00.000Z', configVersion: 1, finalizationVersion: 'ebc04/v2',
+      engineVersion: 'v2', scoringVersion: 'computeActivityScore/v1',
+      result: { collective_total: 40, collective_goal_reached: false, goal_completed_at: null, completions_count: 0 },
+    },
+  })));
+  check('CORR-002 Together missed: neutral factual wording, no failure/recognition',
+    togetherMissed.primary === '40 of 100 reps completed'
+    && !/fail|lost|unsuccess|recognition|badge|award/i.test(`${togetherMissed.primary} ${togetherMissed.secondary ?? ''}`));
+
+  // 3. Race positioned participant primary outcome.
+  const racePositioned = competitiveOutcomeFor(competitiveFinalResultFor(detail({
+    challengeType: 'competitive', status: 'ended', finalized: true,
+    config: {
+      version: 1, period: { startDate: '2026-06-01', endDate: '2026-06-30' },
+      requiredConsecutiveDays: null,
+      activities: [{ canonicalKey: 'push-up', activityVariant: null, activityKind: 'fitness', targetValue: 10, unit: 'reps', position: 0 }],
+    },
+    myParticipation: participation({
+      progress: { cumulativeTotal: 10, completionStatus: 'completed', finalPosition: 1 },
+      final: { completed: true, completedAt: '2026-06-02T10:00:00.000Z', daysCompleted: 0, bestStreak: 0, finalStreak: 0, finalPosition: 1, finalizedAt: '2026-07-10T12:00:00.000Z' },
+    }),
+  })));
+  check('CORR-002 Race positioned: "You finished #1" primary with governed progress',
+    racePositioned.primary === 'You finished #1' && racePositioned.secondary === '10 reps of 10 reps');
+
+  // 4. Race unfinished participant progress-at-close outcome.
+  const raceUnfinished = competitiveOutcomeFor(competitiveFinalResultFor(detail({
+    challengeType: 'competitive', status: 'ended', finalized: true,
+    config: {
+      version: 1, period: { startDate: '2026-06-01', endDate: '2026-06-30' },
+      requiredConsecutiveDays: null,
+      activities: [{ canonicalKey: 'push-up', activityVariant: null, activityKind: 'fitness', targetValue: 10, unit: 'reps', position: 0 }],
+    },
+    myParticipation: participation({
+      progress: { cumulativeTotal: 4, completionStatus: 'in_progress', finalPosition: null },
+      final: { completed: false, completedAt: null, daysCompleted: 0, bestStreak: 0, finalStreak: 0, finalPosition: null, finalizedAt: '2026-07-10T12:00:00.000Z' },
+    }),
+  })));
+  check('CORR-002 Race unfinished: progress-at-close primary',
+    raceUnfinished.primary === 'You reached 4 of 10 reps' && raceUnfinished.secondary === 'Progress at close');
+
+  // 5. Streak completed required-run primary outcome + frozen finalStreak=0 visible.
+  const streakCompletedView = streakFinalResultFor(detail({
+    challengeType: 'streak', status: 'ended', finalized: true,
+    config: {
+      version: 1, period: { startDate: '2026-06-01', endDate: '2026-06-05' },
+      requiredConsecutiveDays: 3,
+      activities: [{ canonicalKey: 'push-up', activityVariant: null, activityKind: 'fitness', targetValue: 20, unit: 'reps', position: 0 }],
+    },
+    myParticipation: participation({
+      progress: { currentStreak: 3, bestStreak: 3, daysCompleted: 3, completionStatus: 'completed' },
+      final: { completed: true, completedAt: '2026-06-10T12:00:00.000Z', daysCompleted: 3, bestStreak: 3, finalStreak: 0, finalPosition: null, finalizedAt: '2026-06-10T12:00:00.000Z' },
+    }),
+  }));
+  const streakCompleted = streakOutcomeFor(streakCompletedView);
+  check('CORR-002 Streak completed: "You reached the 3-day streak" primary',
+    streakCompleted.primary === 'You reached the 3-day streak'
+    && streakCompleted.secondary === 'Required run: 3 days in a row.');
+  check('CORR-002 Streak frozen finalStreak=0 remains visibly represented (never hidden)',
+    streakCompletedView.finalStreak === 0
+    && /view\.finalStreak !== null \? view\.finalStreak/.test(read('src/v2/challenges/V2FinalizedStreakResult.tsx')));
+
+  // 6. Streak non-completed case uses neutral wording.
+  const streakMissed = streakOutcomeFor(streakFinalResultFor(detail({
+    challengeType: 'streak', status: 'ended', finalized: true,
+    config: {
+      version: 1, period: { startDate: '2026-06-01', endDate: '2026-06-05' },
+      requiredConsecutiveDays: 3,
+      activities: [{ canonicalKey: 'push-up', activityVariant: null, activityKind: 'fitness', targetValue: 20, unit: 'reps', position: 0 }],
+    },
+    myParticipation: participation({
+      progress: { currentStreak: 1, bestStreak: 1, daysCompleted: 2, completionStatus: 'in_progress' },
+      final: { completed: false, completedAt: null, daysCompleted: 2, bestStreak: 1, finalStreak: 0, finalPosition: null, finalizedAt: '2026-06-10T12:00:00.000Z' },
+    }),
+  })));
+  check('CORR-002 Streak not reached: neutral factual wording only',
+    streakMissed.primary === '2 of 5 days completed'
+    && !/fail|lost|unsuccess|recognition|badge|award/i.test(`${streakMissed.primary} ${streakMissed.secondary ?? ''}`));
+
+  // 7. Finalized results do not render the TAKING PART card.
+  check('CORR-002 finalized results do not render the TAKING PART card',
+    /view\.kind === 'read-only' && view\.reason === 'finalized'\) return null/.test(participationSrc)
+    && !/Results for this Challenge are sealed/.test(participationSrc));
+
+  // 8. Finalized state still exposes no Join / Leave / Log Activity.
+  check('CORR-002 finalized state still exposes no Join / Leave / Log Activity',
+    participationViewFor(detail({ status: 'ended', finalized: true, governingToday: '2026-06-10' })).kind === 'read-only'
+    && loggingAvailableForEndState('finalized') === false
+    && participationMutableForEndState('finalized') === false);
+
+  // 9. Ended-pending hero does not say Running.
+  check('CORR-002 ended-pending status label is never "Running"',
+    statusLabelForEndState('active', 'ended-pending') === 'Finished'
+    && statusLabelForEndState('active', 'ended-pending') !== 'Running'
+    && statusLabelForEndState('active', 'live') === 'Running'
+    && statusLabelForEndState('ended', 'finalized') === 'Finished');
+
+  // 10. Ended-pending state still renders "Final results are being confirmed".
+  check('CORR-002 ended-pending still renders "Final results are being confirmed"',
+    read('src/v2/challenges/V2ResultsPendingCard.tsx').includes('Final results are being confirmed')
+    && read('src/v2/challenges/V2ResultsPendingCard.tsx').includes('Challenge ended'));
+
+  // 11. Lifecycle presentation uses server-governed end state only — no device clock.
+  check('CORR-002 lifecycle presentation uses the server-governed end state only',
+    /governingToday/.test(endStateSrcCorr2)
+    && !/Date\.now|new Date\(\)/.test(endStateSrcCorr2)
+    && screenSrcCorr2.includes('statusLabelForEndState(challenge.status, endState)')
+    && !/statusLabel\(challenge\.status\)/.test(screenSrcCorr2));
+
+  // 12. CORR-001 frozen/live divergence discriminators remain (re-asserted here).
+  check('CORR-002 CORR-001 frozen/live divergence discriminators remain green',
+    collectiveFinalResultFor(detail({ finalized: true, finalResult: null, collectiveTotal: 999 })).total === null
+    && competitiveFinalResultFor(detail({ challengeType: 'competitive', finalized: true, finalResult: null, myParticipation: participation({ progress: { cumulativeTotal: 999 } }) })).position === null);
+}
+
 // ─── G-3 finalized standings lifecycle (real QueryClient) ───────────────────
 console.log('G-3 finalized standings lifecycle');
 {
@@ -392,6 +536,21 @@ check('type-specific finalized routing present',
   && routerSrc.includes('V2FinalizedStreakResult')
   && routerSrc.includes("endState === 'ended-pending'")
   && routerSrc.includes('V2ResultsPendingCard'));
+// CORR-002: components render the outcome-first helpers (hierarchy tied to source).
+check('CORR-002 finalized components render the outcome-first helpers',
+  collectiveSrc.includes('collectiveOutcomeFor(view)')
+  && competitiveSrc.includes('competitiveOutcomeFor(view)')
+  && streakSrc.includes('streakOutcomeFor(view)'));
+check('CORR-002 legacy non-hierarchical phrasing removed from finalized copy',
+  !/The group finished with|Best streak: \$\{bestStreak\} of/.test(
+    [collectiveSrc, streakSrc].map(stripComments).join('\n'),
+  ));
+check('CORR-002 Together keeps uncapped percent + overshoot',
+  collectiveSrc.includes('view.overshoot') && collectiveSrc.includes('view.percent'));
+check('CORR-002 Race keeps governed progress + final standings, no winner/podium',
+  competitiveSrc.includes('Final standings')
+  && competitiveSrc.includes('percentLabel')
+  && !/winner|podium|medal|recognition|champion/i.test(stripComments(competitiveSrc)));
 
 // G-5: no failure/winner/podium/recognition vocabulary in S3d user copy.
 const s3dCopy = [
