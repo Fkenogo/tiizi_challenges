@@ -49,7 +49,18 @@ export function V2ChallengeListScreen() {
     ?? null;
 
   const createAction = (
-    <V2Button onClick={() => navigate('/v2/challenges/new')}>Create Challenge</V2Button>
+    <div className="flex flex-col items-end gap-1">
+      <V2Button onClick={() => navigate('/v2/challenges/new')}>Create Challenge</V2Button>
+      {/* Activity Guide is supporting Challenge guidance — a contextual
+          secondary entry near Create Challenge, never a primary destination. */}
+      <button
+        type="button"
+        onClick={() => navigate('/v2/guide')}
+        className="text-[11px] font-bold text-slate-500 underline decoration-slate-300 underline-offset-2 transition-colors hover:text-slate-900"
+      >
+        View Activity Guide
+      </button>
+    </div>
   );
 
   return (

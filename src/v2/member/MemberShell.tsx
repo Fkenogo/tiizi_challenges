@@ -111,13 +111,15 @@ export function V2MemberShell() {
         <Outlet />
       </main>
 
-      {/* Mobile-first navigation: distinct V2 bar (Today / Challenges / Groups + Guide / You) */}
+      {/* Mobile primary navigation: exactly Today / Challenges / Groups.
+          Activity Guide is contextual (Challenges), not a primary destination;
+          Profile / Notifications stay in the header (account sheet + bell). */}
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white px-2 pb-[env(safe-area-inset-bottom)] pt-1.5 md:hidden"
         aria-label="Member"
       >
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-5">
-          {[...PRIMARY, { to: '/v2/guide', key: 'guide', labelKey: 'shell.guide' } as const].map((item) => (
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-3">
+          {PRIMARY.map((item) => (
             <NavLink key={item.key} to={item.to} className={({ isActive }) => navClass(isActive)}>
               {({ isActive }) => (
                 <>
@@ -130,9 +132,6 @@ export function V2MemberShell() {
               )}
             </NavLink>
           ))}
-          <NavLink to="/v2/profile" className={({ isActive }) => navClass(isActive)}>
-            You
-          </NavLink>
         </div>
       </nav>
 
