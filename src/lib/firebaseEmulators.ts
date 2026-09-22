@@ -55,12 +55,22 @@ const CONNECTED_KEY = '__tiiziAuthEmulatorConnected';
  * lives on globalThis, which survives module re-execution, so the
  * SDK is never connected twice. Returns true when emulator mode is
  * active (connected now or on an earlier pass).
+ *
+ * `disableWarnings` is deliberate (TIIZI-MOBILE-PRIMARY-NAV-CORR-001):
+ * the SDK's default emulator warning is a `position: fixed; bottom: 0;
+ * z-index: 10000` banner injected into `document.body`, which occludes the
+ * V2 member shell's mobile bottom navigation (Today / Challenges / Groups)
+ * and leaves the Founder with no discoverable primary navigation on a
+ * phone. Suppressing the SDK banner restores that existing approved mobile
+ * navigation; the emulator binding is still announced through the
+ * development-only console line below. This branch is unreachable in
+ * production builds (DEV is statically false there).
  */
 export function connectAuthEmulatorOnce(auth: Auth): boolean {
   if (!isAuthEmulatorModeEnabled()) return false;
   const scope = globalThis as unknown as Record<string, unknown>;
   if (scope[CONNECTED_KEY] === true) return true;
-  connectAuthEmulator(auth, AUTH_EMULATOR_URL);
+  connectAuthEmulator(auth, AUTH_EMULATOR_URL, { disableWarnings: true });
   scope[CONNECTED_KEY] = true;
   // Development-only diagnostic so the Founder can observe the emulator
   // binding in the browser console. This branch is unreachable in
