@@ -307,6 +307,28 @@ export async function getChallengeFinal(
   return normalizeChallengeFinal(result.rows[0] as Record<string, unknown>);
 }
 
+/**
+ * Batch read of frozen Challenge-level finalizations (CORR-001 list read).
+ * A missing id is simply absent from the map (unfinalized).
+ */
+export async function getChallengeFinals(
+  db: Db,
+  challengeIds: string[],
+): Promise<Map<string, ChallengeFinalRow>> {
+  const out = new Map<string, ChallengeFinalRow>();
+  if (challengeIds.length === 0) return out;
+  const placeholders = challengeIds.map((_, i) => `$${i + 1}`).join(', ');
+  const result = await db.query(
+    `SELECT * FROM challenge_finalizations WHERE challenge_id IN (${placeholders})`,
+    challengeIds,
+  );
+  for (const row of result.rows as Record<string, unknown>[]) {
+    const final = normalizeChallengeFinal(row);
+    out.set(final.challenge_id, final);
+  }
+  return out;
+}
+
 export async function getParticipationFinals(
   db: Db,
   challengeId: string,

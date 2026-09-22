@@ -8,14 +8,20 @@ import {
 } from '../components/V2Primitives';
 import {
   formatDayRange,
-  statusLabel,
   timezoneLabel,
 } from './challengeCreationDraft';
 import { loggingViewFor } from './loggingView';
+import {
+  endStateFor,
+  loggingAvailableForEndState,
+  participationMutableForEndState,
+  statusLabelForEndState,
+} from './challengeEndState';
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
 import { V2LogActivityDialog } from './V2LoggingSection';
 import { participationViewFor, V2LeaveChallengeDialog, V2ParticipationSection } from './V2ParticipationSection';
 import { V2ProgressSection } from './V2ProgressSection';
+import { V2ChallengeResults } from './V2ChallengeResults';
 import { V2ChallengeHero } from './V2ChallengeHero';
 
 /**
@@ -37,7 +43,10 @@ import { V2ChallengeHero } from './V2ChallengeHero';
  * below the progress; S3b binds the existing activity-application seam
  * (POST /v1/challenges/:id/activity) through the hero CTA dialog for
  * joined participants on active Challenges; S3c binds live
- * progress/type-state reads. Deliberately NOT results (S3d).
+ * progress/type-state reads. S3d routes the progress slot by honest
+ * end-state: a live Challenge keeps the S3c surfaces unchanged, while an
+ * ended/window-expired Challenge shows the neutral results-pending state and
+ * a finalized Challenge shows the sealed results (V2ChallengeResults).
  *
  * Removed by CORR-002: the CREATED card, the CHALLENGE TYPE / STATUS grid
  * card, and the permanently expanded Log Activity form — valid facts that
@@ -92,11 +101,17 @@ export function V2CreatedChallengeScreen() {
     : participation
       ? 'You are not taking part in this Challenge right now.'
       : 'You are not taking part in this Challenge yet.';
-  const loggable = loggingViewFor(challenge).kind === 'loggable';
+  // S3d — route the progress slot by honest end-state. Logging and Leave are
+  // live-only; ended, window-expired-unprocessed and finalized Challenges
+  // never offer a mutation and never present live truth as final.
+  const endState = endStateFor(challenge);
+  const loggable = loggingAvailableForEndState(endState)
+    && loggingViewFor(challenge).kind === 'loggable';
   // CORR-003: active participants leave via the hero's secondary action +
   // confirmation dialog; the standalone card only serves join/rejoin and
   // read-only states (it returns null while joined).
-  const joined = participationViewFor(challenge).kind === 'joined';
+  const joined = participationMutableForEndState(endState)
+    && participationViewFor(challenge).kind === 'joined';
 
   return (
     <V2Page>
@@ -122,10 +137,12 @@ export function V2CreatedChallengeScreen() {
         />
 
         <p className="text-xs font-medium text-slate-500">
-          {statusLabel(challenge.status)} · {formatDayRange(challenge.startDate, challenge.endDate)} · {timezoneLabel(challenge.timezone)} · {participationSentence}
+          {statusLabelForEndState(challenge.status, endState)} · {formatDayRange(challenge.startDate, challenge.endDate)} · {timezoneLabel(challenge.timezone)} · {participationSentence}
         </p>
 
-        <V2ProgressSection detail={challenge} />
+        {endState === 'live'
+          ? <V2ProgressSection detail={challenge} />
+          : <V2ChallengeResults detail={challenge} endState={endState} />}
 
         <V2ParticipationSection detail={challenge} />
 

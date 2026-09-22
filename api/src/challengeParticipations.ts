@@ -27,12 +27,34 @@
  */
 
 import type { Db } from './db.js';
+import { dayInTimezone } from './activityEvents.js';
+import { getGoverningVersion } from './challengeConfigs.js';
 import {
   requireCurrentGroupMember,
   type GroupMembershipAuthority,
 } from './groupMembershipAuthority.js';
 
 export type ParticipationStatus = 'active' | 'withdrawn' | 'removed';
+
+/**
+ * CORR-001 — server-authoritative participation-mutation clock. Production
+ * passes nothing (the wall clock governs); tests drive time explicitly for
+ * deterministic window-expiry proofs. Never derived from a client/device.
+ */
+export interface ParticipationMutationOptions {
+  now?: Date;
+}
+
+/**
+ * Canonical participation-lifecycle rejection messages. Distinct phrases so
+ * the route layer maps every closed-window case to the same governed error
+ * (`challenge_ended`) without inventing a new lifecycle status, while the
+ * ended-Challenge phrase stays stable for existing domain expectations.
+ */
+const PARTICIPATION_ENDED =
+  'cannot join an ended challenge (run-again creates a new challenge)';
+const PARTICIPATION_WINDOW_EXPIRED =
+  'challenge window has ended: participation is closed (governed server day is past the end date)';
 
 export interface ParticipationRow {
   participation_id: string;
@@ -84,18 +106,64 @@ export function normalizeParticipationRow(row: {
 }
 
 /**
+ * CORR-001 — server-authoritative participation-mutability authority shared by
+ * join and voluntary withdrawal. A Challenge is participation-mutable only
+ * while it is genuinely live under governed truth:
+ *
+ *   - status must not be `ended` (finalization implies ended);
+ *   - the finalization marker must be absent (a finalized Challenge is sealed);
+ *   - the governing Challenge day (derived from the pinned timezone, exactly
+ *     as activity acceptance does) must not be past the pinned end date.
+ *
+ * The window test reuses the SAME `getGoverningVersion` + `dayInTimezone`
+ * authority as activity acceptance — never the device clock, never a new
+ * lifecycle status. Browser/device time is never consulted.
+ */
+async function requireParticipationMutable(
+  db: Db,
+  challengeId: string,
+  now: Date,
+): Promise<void> {
+  const result = await db.query<{
+    status: string;
+    finalized_at: string | Date | null;
+    current_config_version: number;
+  }>(
+    `SELECT status, finalized_at, current_config_version
+     FROM challenges WHERE challenge_id = $1`,
+    [challengeId],
+  );
+  if (result.rows.length === 0) fail(`unknown challenge ${challengeId}`);
+  const row = result.rows[0];
+  if (row.status === 'ended' || row.finalized_at != null) {
+    fail(PARTICIPATION_ENDED);
+  }
+  const governing = await getGoverningVersion(
+    db,
+    challengeId,
+    Number(row.current_config_version),
+  );
+  if (dayInTimezone(now, governing.snapshot.timezone) > governing.snapshot.end_date) {
+    fail(PARTICIPATION_WINDOW_EXPIRED);
+  }
+}
+
+/**
  * Affirmative join: opens a new participation episode. Requires: challenge
- * exists and is not ended; member holds CURRENT Group Membership in the
- * challenge's group under live membership authority (the PG
- * group_memberships shadow is reference data only and never authorizes
- * joining — a stale active-looking shadow row grants nothing); no currently
- * ACTIVE episode for the pair (closed episodes never block a later episode).
+ * exists and is participation-mutable under governed server lifecycle truth
+ * (not ended, not finalized, governing day not past the pinned end date —
+ * CORR-001); member holds CURRENT Group Membership in the challenge's group
+ * under live membership authority (the PG group_memberships shadow is
+ * reference data only and never authorizes joining — a stale active-looking
+ * shadow row grants nothing); no currently ACTIVE episode for the pair
+ * (closed episodes never block a later episode).
  */
 export async function joinChallenge(
   db: Db,
   challengeId: string,
   memberId: string,
   membershipAuthority: GroupMembershipAuthority,
+  options: ParticipationMutationOptions = {},
 ): Promise<ParticipationRow> {
   if (!UUID_RE.test(challengeId)) fail('challenge_id must be a Tiizi challenge UUID');
   if (!UUID_RE.test(memberId)) fail('member_id must be a member UUID');
@@ -110,8 +178,8 @@ export async function joinChallenge(
     [challengeId],
   );
   if (challenge.rows.length === 0) fail(`unknown challenge ${challengeId}`);
-  const { group_id: groupId, status, current_config_version: configVersion } = challenge.rows[0];
-  if (status === 'ended') fail('cannot join an ended challenge (run-again creates a new challenge)');
+  const { group_id: groupId, current_config_version: configVersion } = challenge.rows[0];
+  await requireParticipationMutable(db, challengeId, options.now ?? new Date());
   await requireCurrentGroupMember(membershipAuthority, String(groupId), memberId, 'challenge joining');
   return insertParticipationEpisode(db, challengeId, memberId, Number(configVersion));
 }
@@ -146,13 +214,21 @@ export async function insertParticipationEpisode(
   }
 }
 
-/** Voluntary withdrawal: ends active participation, preserves history. */
+/**
+ * Voluntary withdrawal: ends active participation, preserves history.
+ * CORR-001 — withdrawal is a participation mutation and is refused once the
+ * Challenge is no longer participation-mutable (ended, finalized, or an
+ * active-status Challenge whose governed window has expired). UI hiding is
+ * never the authority; history is never changed by a rejected withdrawal.
+ */
 export async function withdrawParticipation(
   db: Db,
   participationId: string,
+  options: ParticipationMutationOptions = {},
 ): Promise<ParticipationRow> {
   const current = await readParticipation(db, participationId);
   if (current.status !== 'active') fail(`only active participations can withdraw (status=${current.status})`);
+  await requireParticipationMutable(db, current.challenge_id, options.now ?? new Date());
   const result = await db.query(
     `UPDATE challenge_participations
      SET status = 'withdrawn', exited_at = now(), exit_reason = 'withdrawn', updated_at = now()

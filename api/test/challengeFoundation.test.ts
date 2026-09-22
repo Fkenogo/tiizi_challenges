@@ -16,10 +16,10 @@ import {
 import {
   getActiveParticipation,
   isParticipationActiveAt,
-  joinChallenge,
+  joinChallenge as joinChallengeImpl,
   listParticipations,
   removeParticipation,
-  withdrawParticipation,
+  withdrawParticipation as withdrawParticipationImpl,
 } from '../src/challengeParticipations.js';
 import { appendActivityEvent, listEffectiveEvents } from '../src/activityEvents.js';
 import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from './helpers.js';
@@ -32,6 +32,19 @@ beforeEach(async () => {
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * CORR-001: join/withdraw are now governed by the server-authoritative
+ * participation lifecycle. These C2A fixtures use the 2026-06 window, so the
+ * governed clock is pinned inside it — the lifecycle rejection itself is
+ * proven separately (s3dResultsFinalizedCorr001.test.ts). Call sites are
+ * unchanged.
+ */
+const LIVE_NOW = new Date('2026-06-15T12:00:00Z');
+const joinChallenge: typeof joinChallengeImpl = (db, challengeId, memberId, authority) =>
+  joinChallengeImpl(db, challengeId, memberId, authority, { now: LIVE_NOW });
+const withdrawParticipation: typeof withdrawParticipationImpl = (db, participationId) =>
+  withdrawParticipationImpl(db, participationId, { now: LIVE_NOW });
 
 let seq = 0;
 

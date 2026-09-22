@@ -27,6 +27,31 @@ export interface V2ParticipationProgress {
   daysCompleted: number;
   completionStatus: V2CompletionStatus;
   completedAt: string | null;
+  /**
+   * EBC-04 frozen standard-competition finishing position, served from sealed
+   * finals. Null for non-finishers, streaks and unfinalized Challenges. The
+   * client renders this value verbatim and never computes a rank (S3c/S3d).
+   */
+  finalPosition: number | null;
+}
+
+/**
+ * S3d — frozen per-participation final block (projected read-only from
+ * `challenge_participation_finals`). Null while the Challenge is unfinalized.
+ * For Race this is the member's governing (earliest completed) episode result.
+ * `finalStreak` is the frozen terminal streak and MUST be preferred over the
+ * live `currentStreak` for the final Streak result.
+ */
+export interface V2ParticipationFinal {
+  completed: boolean;
+  completedAt: string | null;
+  daysCompleted: number;
+  bestStreak: number;
+  /** Frozen terminal streak (`challenge_participation_finals.final_streak`). */
+  finalStreak: number;
+  /** Frozen finishing position; null for non-finishers and streaks. */
+  finalPosition: number | null;
+  finalizedAt: string;
 }
 
 export interface V2OwnParticipation {
@@ -35,6 +60,19 @@ export interface V2OwnParticipation {
   joinedAt: string;
   joinedConfigVersion: number;
   progress: V2ParticipationProgress;
+  /** S3d — frozen final block (null while unfinalized). */
+  final: V2ParticipationFinal | null;
+}
+
+/** S3d — frozen terminal result for an ended + finalized Challenge. */
+export interface V2FinalResult {
+  finalizedAt: string;
+  configVersion: number;
+  finalizationVersion: string;
+  engineVersion: string;
+  scoringVersion: string;
+  /** Type-specific terminal payload (collective aggregate, completions). */
+  result: Record<string, unknown>;
 }
 
 export interface V2ChallengeSummary {
@@ -48,6 +86,12 @@ export interface V2ChallengeSummary {
   endDate: string;
   /** Governing Challenge timezone (friendly label rendered client-side). */
   timezone: string;
+  /**
+   * S3d — server-projected governing Challenge day (YYYY-MM-DD in the
+   * Challenge timezone). The list presentation derives the governed end state
+   * from it, never from the device clock.
+   */
+  governingToday: string;
   /** EBC-04: true once the terminal result is computed and frozen (already
    * served by GET /v1/challenges list/detail; typed here for S3a
    * read-only gating — no server change). */
@@ -81,6 +125,14 @@ export interface V2ChallengeDetail extends V2ChallengeSummary {
   instructions: string;
   activatedAt: string | null;
   endedAt: string | null;
+  /**
+   * S3d — EBC-04 finalization marker (null while unfinalized). The client
+   * uses it to render the sealed results experience only when frozen truth
+   * exists; it never fabricates results before this is set.
+   */
+  finalizedAt: string | null;
+  /** S3d — frozen terminal result (null while unfinalized). */
+  finalResult: V2FinalResult | null;
   /**
    * S3c — server-authoritative governing Challenge day (YYYY-MM-DD in the
    * Challenge timezone at read time). Format it; never determine the

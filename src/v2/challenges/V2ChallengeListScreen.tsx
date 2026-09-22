@@ -4,9 +4,9 @@ import { useChallengeListV2, useV2Memberships } from './useChallengeCreation';
 import {
   challengeTypeLabel,
   formatDayRange,
-  statusLabel,
   timezoneLabel,
 } from './challengeCreationDraft';
+import { endStateFor, statusLabelForEndState, type V2ChallengeEndState } from './challengeEndState';
 import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
 
 /**
@@ -15,12 +15,16 @@ import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
  * Real read binding to GET /v1/challenges (persisted V2 truth) with loading,
  * empty and populated states, and the Create Challenge action that starts the
  * V2 creation journey. Deliberately NOT full S3 discovery/detail/results.
+ *
+ * S3d (CORR-002 alignment) — the list lifecycle badge is derived from the
+ * server-governed end state (`governingToday` vs `endDate`, plus `finalized`),
+ * the SAME authority the detail hero uses. A window-expired-but-unprocessed
+ * Challenge reads "Finished", never the raw domain status "Running"; the
+ * device clock is never consulted.
  */
 
-function statusTone(status: string): string {
-  if (status === 'active') return 'bg-emerald-100 text-emerald-800';
-  if (status === 'ended') return 'bg-slate-200 text-slate-600';
-  return 'bg-amber-100 text-amber-800';
+function statusTone(endState: V2ChallengeEndState): string {
+  return endState === 'live' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600';
 }
 
 function participationLabel(challenge: V2ChallengeSummary): { text: string; className: string } | null {
@@ -79,6 +83,7 @@ export function V2ChallengeListScreen() {
         <ul className="space-y-3">
           {challenges.data.challenges.map((challenge: V2ChallengeSummary) => {
             const participation = participationLabel(challenge);
+            const endState = endStateFor(challenge);
             return (
             <li key={challenge.challengeId}>
               <button
@@ -90,8 +95,8 @@ export function V2ChallengeListScreen() {
                   <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-bold text-primary">
                     {challengeTypeLabel(challenge.challengeType)}
                   </span>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${statusTone(challenge.status)}`}>
-                    {statusLabel(challenge.status)}
+                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${statusTone(endState)}`}>
+                    {statusLabelForEndState(challenge.status, endState)}
                   </span>
                   {participation && (
                     <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${participation.className}`}>

@@ -64,8 +64,14 @@ export function mapParticipationError(error: unknown): never {
   if (message.includes('an active participation episode already exists')) {
     routeFail(409, 'participation_exists', 'An active participation already exists');
   }
-  if (message.includes('cannot join an ended challenge')) {
-    routeFail(422, 'challenge_ended', 'Ended challenges cannot be joined');
+  // CORR-001: governed participation lifecycle closed (ended, finalized or
+  // active-status window expired). Same governed error for join and withdraw;
+  // no new lifecycle status and no client/device time.
+  if (
+    message.includes('cannot join an ended challenge')
+    || message.includes('challenge window has ended')
+  ) {
+    routeFail(422, 'challenge_ended', 'This Challenge has ended; joining and leaving are no longer available');
   }
   if (message.includes('unknown participation') || message.includes('no active participation')) {
     routeFail(404, 'no_active_participation', 'No active participation for this Challenge');
@@ -91,6 +97,12 @@ function toParticipationResponse(episode: ParticipationRow) {
 
 export interface ParticipationRouteDeps {
   groupMembershipAuthority?: GroupMembershipAuthority;
+  /**
+   * CORR-001 — server-authoritative participation-mutation clock. Production
+   * passes nothing (wall clock governs); tests drive time explicitly for
+   * deterministic window-expiry proofs. Never a client/device value.
+   */
+  now?: Date;
 }
 
 function missingAuthority(): GroupMembershipAuthority {
@@ -123,7 +135,9 @@ export function registerParticipationRoutes(
       try {
         // 404 when the Challenge does not exist (readChallenge throws).
         await getChallenge(db, params.challengeId);
-        const episode = await joinChallenge(db, params.challengeId, member.memberId, authority);
+        const episode = await joinChallenge(
+          db, params.challengeId, member.memberId, authority, { now: deps.now },
+        );
         return toParticipationResponse(episode);
       } catch (error) {
         if (error instanceof ParticipationRouteError) throw error;
@@ -145,7 +159,9 @@ export function registerParticipationRoutes(
         if (!active) {
           routeFail(404, 'no_active_participation', 'No active participation for this Challenge');
         }
-        const closed = await withdrawParticipation(db, (active as ParticipationRow).participation_id);
+        const closed = await withdrawParticipation(
+          db, (active as ParticipationRow).participation_id, { now: deps.now },
+        );
         return toParticipationResponse(closed);
       } catch (error) {
         if (error instanceof ParticipationRouteError) throw error;
