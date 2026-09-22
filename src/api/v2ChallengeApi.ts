@@ -86,6 +86,12 @@ export interface V2ChallengeSummary {
   endDate: string;
   /** Governing Challenge timezone (friendly label rendered client-side). */
   timezone: string;
+  /**
+   * S3d — server-projected governing Challenge day (YYYY-MM-DD in the
+   * Challenge timezone). The list presentation derives the governed end state
+   * from it, never from the device clock.
+   */
+  governingToday: string;
   /** EBC-04: true once the terminal result is computed and frozen (already
    * served by GET /v1/challenges list/detail; typed here for S3a
    * read-only gating — no server change). */

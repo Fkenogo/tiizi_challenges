@@ -450,6 +450,33 @@ console.log('CORR-002 outcome hierarchy');
     && competitiveFinalResultFor(detail({ challengeType: 'competitive', finalized: true, finalResult: null, myParticipation: participation({ progress: { cumulativeTotal: 999 } }) })).position === null);
 }
 
+// ─── G-2b list lifecycle presentation (CORR-002 alignment) ──────────────────
+console.log('G-2b list lifecycle presentation');
+{
+  const listSrc = read('src/v2/challenges/V2ChallengeListScreen.tsx');
+  const readsSrc = read('api/src/challengeReads.ts');
+  const apiTypeSrc = read('src/api/v2ChallengeApi.ts');
+  const expired = { status: 'active', finalized: false, governingToday: '2026-06-11', endDate: '2026-06-10' };
+  check('list derives the governed end state (never the raw domain status)',
+    /endStateFor\(challenge\)/.test(listSrc)
+    && listSrc.includes('statusLabelForEndState(challenge.status, endState)')
+    && !/statusLabel\(challenge\.status\)/.test(listSrc));
+  check('list presentation never reads the device clock',
+    !/Date\.now|new Date\(\)/.test(listSrc));
+  check('list summary carries the server-governed governingToday (read projection)',
+    /governingToday: dayInTimezone\(now, challenge\.timezone\)/.test(readsSrc)
+    && /governingToday: string;/.test(apiTypeSrc));
+  check('window-expired unprocessed list item resolves to Finished, never Running',
+    endStateFor(expired) === 'ended-pending'
+    && statusLabelForEndState('active', endStateFor(expired)) === 'Finished');
+  check('live list item still reads Running',
+    endStateFor({ status: 'active', finalized: false, governingToday: '2026-06-10', endDate: '2026-06-10' }) === 'live'
+    && statusLabelForEndState('active', 'live') === 'Running');
+  check('finalized list item reads Finished',
+    endStateFor({ status: 'ended', finalized: true, governingToday: '2026-06-11', endDate: '2026-06-10' }) === 'finalized'
+    && statusLabelForEndState('ended', 'finalized') === 'Finished');
+}
+
 // ─── G-3 finalized standings lifecycle (real QueryClient) ───────────────────
 console.log('G-3 finalized standings lifecycle');
 {

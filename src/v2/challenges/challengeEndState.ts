@@ -1,4 +1,3 @@
-import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { statusLabel } from './challengeCreationDraft';
 
 /**
@@ -22,13 +21,24 @@ import { statusLabel } from './challengeCreationDraft';
  */
 export type V2ChallengeEndState = 'live' | 'ended-pending' | 'finalized';
 
-export function endStateFor(detail: V2ChallengeDetail): V2ChallengeEndState {
-  if (detail.finalized) return 'finalized';
-  if (detail.status === 'ended') return 'ended-pending';
+/**
+ * Minimal governed input shared by the detail read and the list summary —
+ * both now carry the server-projected `governingToday`.
+ */
+export interface ChallengeEndStateInput {
+  finalized: boolean;
+  status: string;
+  governingToday: string;
+  endDate: string;
+}
+
+export function endStateFor(challenge: ChallengeEndStateInput): V2ChallengeEndState {
+  if (challenge.finalized) return 'finalized';
+  if (challenge.status === 'ended') return 'ended-pending';
   // Window-expired but not yet processed: `active` under a server day past
   // the pinned end date. Both are YYYY-MM-DD, so string comparison is the
   // governing-day comparison (`isWindowExpired` server-side).
-  if (detail.status === 'active' && detail.governingToday > detail.endDate) {
+  if (challenge.status === 'active' && challenge.governingToday > challenge.endDate) {
     return 'ended-pending';
   }
   return 'live';
