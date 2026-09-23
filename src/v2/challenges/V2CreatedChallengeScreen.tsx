@@ -130,6 +130,7 @@ export function V2CreatedChallengeScreen() {
         <V2ChallengeHero
           detail={challenge}
           groupName={groupName}
+          groupId={challenge.groupId}
           loggable={loggable}
           onLogActivity={() => setLogOpen(true)}
           showLeave={joined}

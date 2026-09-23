@@ -123,6 +123,16 @@ export interface ApiGroupDetail {
   /** Server-derived viewer relationship — never client-declared. */
   viewerRelationship: ViewerRelationship;
   createdAt: string | null;
+  /**
+   * S4a CORR-001 richer identity (live-document mirror, read-model only).
+   * coverId/tagline/location/focusTags are pre-join appropriate and appear
+   * on both projections; rules bind members, so the subset hides them.
+   */
+  coverId: string | null;
+  tagline: string;
+  location: string;
+  focusTags: string[];
+  rules: string[] | null;
 }
 
 /** Server-side viewer identity (never client-supplied; null when unlinkable). */
@@ -192,6 +202,16 @@ export async function getGroupDetail(
   const memberCount = typeof live.memberCount === 'number' && Number.isFinite(live.memberCount)
     ? live.memberCount
     : null;
+  // CORR-001 richer identity, read-model only (live-document mirror).
+  const coverId = typeof live.coverId === 'string' ? live.coverId : null;
+  const tagline = typeof live.tagline === 'string' ? live.tagline : '';
+  const location = typeof live.location === 'string' ? live.location : '';
+  const focusTags = Array.isArray(live.focusTags)
+    ? (live.focusTags as unknown[]).filter((t): t is string => typeof t === 'string')
+    : [];
+  const rules = Array.isArray(live.rules)
+    ? (live.rules as unknown[]).filter((t): t is string => typeof t === 'string')
+    : [];
   if (relationship === 'none' || relationship === 'pending') {
     // Private Groups are invisible outside active membership: 404,
     // indistinguishable from unknown — no existence or state leak.
@@ -211,6 +231,11 @@ export async function getGroupDetail(
         relationship === 'pending' ? { status: 'pending', role: membershipRole } : null,
       viewerRelationship: relationship,
       createdAt: null,
+      coverId,
+      tagline,
+      location,
+      focusTags,
+      rules: null,
     };
   }
   // Full member projection. Absent flags fall back to the governed defaults
@@ -228,6 +253,11 @@ export async function getGroupDetail(
     viewerMembership: { status: membershipStatus ?? 'active', role: membershipRole },
     viewerRelationship: relationship,
     createdAt: typeof live.createdAt === 'string' ? live.createdAt : null,
+    coverId,
+    tagline,
+    location,
+    focusTags,
+    rules,
   };
 }
 
@@ -270,6 +300,11 @@ const groupDetailResponseSchema = {
     },
     viewerRelationship: { type: 'string', enum: ['steward', 'member', 'pending', 'none'] },
     createdAt: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    tagline: { type: 'string' },
+    location: { type: 'string' },
+    focusTags: { type: 'array', items: { type: 'string' } },
+    rules: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
   },
 } as const;
 

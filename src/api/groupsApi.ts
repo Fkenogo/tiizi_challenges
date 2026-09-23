@@ -18,6 +18,15 @@ export interface CreateGroupInput {
   isPrivate?: boolean;
   requireAdminApproval?: boolean;
   allowMemberChallenges?: boolean;
+  /**
+   * CORR-001 richer identity (all optional presentation-level authority
+   * fields; omitted when empty so the server's own defaults apply).
+   */
+  coverId?: string;
+  tagline?: string;
+  location?: string;
+  focusTags?: string[];
+  rules?: string[];
 }
 
 /**
@@ -58,6 +67,13 @@ export function createGroup(input: CreateGroupInput): Promise<CreatedGroup> {
       ...(input.allowMemberChallenges !== undefined
         ? { allowMemberChallenges: input.allowMemberChallenges }
         : {}),
+      // CORR-001 richer identity: only set values travel; the server
+      // validates catalogue membership, lengths, and counts fail-closed.
+      ...(input.coverId !== undefined ? { coverId: input.coverId } : {}),
+      ...(input.tagline !== undefined ? { tagline: input.tagline } : {}),
+      ...(input.location !== undefined ? { location: input.location } : {}),
+      ...(input.focusTags !== undefined ? { focusTags: input.focusTags } : {}),
+      ...(input.rules !== undefined ? { rules: input.rules } : {}),
     },
   });
 }
@@ -86,6 +102,12 @@ export interface V2GroupDetail {
   viewerMembership: { status: string; role: string } | null;
   viewerRelationship: V2ViewerRelationship;
   createdAt: string | null;
+  /** CORR-001 richer identity (rules stay member-only: null on the subset). */
+  coverId: string | null;
+  tagline: string;
+  location: string;
+  focusTags: string[];
+  rules: string[] | null;
 }
 
 /** Canonical Group detail read — Group Home's only truth source. */

@@ -50,6 +50,12 @@ const ALLOWED_CREATE_FIELDS = new Set([
   'isPrivate',
   'requireAdminApproval',
   'allowMemberChallenges',
+  // S4a CORR-001 richer identity (presentation-level; validated fail-closed).
+  'coverId',
+  'tagline',
+  'location',
+  'focusTags',
+  'rules',
 ]);
 
 const UUID_RE =
@@ -93,6 +99,19 @@ function checkCreateBody(data: unknown): string | null {
   for (const field of ['isPrivate', 'requireAdminApproval', 'allowMemberChallenges'] as const) {
     if (body[field] !== undefined && typeof body[field] !== 'boolean') {
       return `${field} must be boolean when present`;
+    }
+  }
+  if (body.coverId !== undefined && typeof body.coverId !== 'string') {
+    return 'coverId must be a catalogue key when present';
+  }
+  for (const field of ['tagline', 'location'] as const) {
+    if (body[field] !== undefined && typeof body[field] !== 'string') {
+      return `${field} must be a string when present`;
+    }
+  }
+  for (const field of ['focusTags', 'rules'] as const) {
+    if (body[field] !== undefined && !Array.isArray(body[field])) {
+      return `${field} must be an array of strings when present`;
     }
   }
   return null;
@@ -181,6 +200,11 @@ const createGroupBodySchema = {
     isPrivate: { type: 'boolean' },
     requireAdminApproval: { type: 'boolean' },
     allowMemberChallenges: { type: 'boolean' },
+    coverId: { type: 'string', minLength: 1, maxLength: 32 },
+    tagline: { type: 'string', maxLength: 140 },
+    location: { type: 'string', maxLength: 120 },
+    focusTags: { type: 'array', maxItems: 8, items: { type: 'string', maxLength: 30 } },
+    rules: { type: 'array', maxItems: 5, items: { type: 'string', maxLength: 200 } },
   },
 } as const;
 

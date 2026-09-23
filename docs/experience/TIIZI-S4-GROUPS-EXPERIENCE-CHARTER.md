@@ -174,3 +174,79 @@ No Activity browsing, categories, search, detail, instructions, cautions, equipm
 - Rejected/deferred reference concepts explicitly identified (§3 table, §§9–10).
 - `git diff --check` clean; only the two authorised documentation files changed (§14 of the task record is satisfied in the return report).
 - S4a NOT marked implemented; S4 NOT marked complete.
+
+---
+
+## 14. S4a Founder-preview correction (CORR-001) — Group formation & experience assembly
+
+**Task:** TIIZI-S4A-FOUNDER-PREVIEW-CORR-001 (correction candidate — NOT Founder accepted, NOT complete, NOT merged).
+
+**Base:** PR #46 branch `impl/s4a-group-creation-home-001` @ `303bc9a` (S4a IMPLEMENTED CANDIDATE / TECHNICALLY REVALIDATED, disposition B).
+
+**Founder direction (authoritative):** the S4a assembly is technically sound but under-assembled — creation is too compressed, identity too shallow, cards too sparse, Home too configuration-dominant, hosted Challenges don't feel hosted. Correct the assembly WITHOUT opening S4b/c/d, WITHOUT Group Feed, WITHOUT Charter/Council engines, WITHOUT weakening any existing authority.
+
+### 14.1 Charter / rules / Council reconciliation (task §9: A–F)
+
+**A. Already canonical Group truth:** name, description, discoverability/admission/challenge-permission settings, singular Accountable Steward, voluntary membership lifecycle, member counts (declared authority), hosted Challenges with S3-derived progress/participation, Challenge-creation enforcement (EOG §§2–11/26–28; CIC 4.3/4.4; T2 FR-V2-007/008/015/022–024).
+
+**B. Governance concept / visibility only:** every Group operates under Platform governance (EOG §5 hierarchy — statable without data); Charter lifecycle/versioning, Council composition/procedure, moderation/report authority (EA-01 M20/M21/M22; FD-4/FD-5).
+
+**C. Persistence/API seam exists today:** governed establishment + join/leave mutations; detail + memberships/me + group-scoped Challenge reads (all S4a); Challenge creation authority incl. the stored `allowMemberChallenges` flag.
+
+**D. Absent:** richer identity persistence (tagline/location/focus/norms/cover), provision catalogues, Council data, feed publication authority, moderation workflows.
+
+**E. In CORR-001:** five optional presentation-level fields (below) + curated cover contract; norms display; governance note; Council omitted for lack of data.
+
+**F. Remains S4b/S4d or later:** roster + stewardship transfer/removal/approvals (S4b); settings editing, Charter selection/authoring, provision catalogues (S4d); discovery/invites (S4c); moderation, Council mechanics, Feed (gated/deferred).
+
+### 14.2 Field-by-field classification
+
+| Concept | Verdict | Basis |
+|---|---|---|
+| name / description | SUPPORTED NOW | groups.name/description; existing validation |
+| tagline (≤140, optional) | BOUNDED EXTENSION | No governed field; presentation-only; new optional column + validation |
+| location (≤120, optional, descriptive) | BOUNDED EXTENSION | CIC 4.3 names locationScope as descriptive optionality; never access/filter/discovery |
+| focusTags (≤8×≤30, optional) | BOUNDED EXTENSION | Presentation chips only; never matching/authority (structured PF-taxonomy picker deferred to S6) |
+| rules / core norm (≤5×≤200, create-only display) | BOUNDED EXTENSION | CIC 4.5 customText permits free-form rules; display-only, no versioning/editing/enforcement (Charter engine stays deferred) |
+| coverId (catalogue key) | BOUNDED EXTENSION + authorised media contract (§14.3) | Founder reassessment of the S4 media deferral |
+| isPrivate / requireAdminApproval / allowMemberChallenges | SUPPORTED NOW | Existing governed fields |
+| member/active counts, hosted snapshots, Join/Log CTAs | SUPPORTED NOW | Live counter, group scope, S3 reads/mutations |
+| group-level activity picker | DEFERRED | No group-affinity seam; Challenges carry activities |
+| Charter clauses/versioning/authoring, provision catalogue | DEFERRED | EA-01 M20 REF; no catalogue exists |
+| Council data/mechanics | DEFERRED | No data source; EA-01 M21 |
+| moderation/healthState, plural stewards, mock URLs/tags/search, Run Again, Kudos/comments/feed | REJECTED | FD-4/FD-5, EOG §3, mock fabrication, FD-S3-003, feed deferral |
+
+No field was silently invented: every persisted field is validated fail-closed server-side and mirrored read-only.
+
+### 14.3 Canonical media/reference contract (Founder-authorised reassessment)
+
+Upload pipelines (Storage/signed URLs) and arbitrary URL entry are NOT authorised. The production-safe contract is a **curated cover catalogue**: eight stable ids (`cover-1…cover-8`) rendered from local gradients; the server allowlists ids (`GROUP_COVER_CATALOGUE`, mirrored by a `groups_cover_check` constraint); `cover_id` is nullable (legacy rows render a deterministic fallback — presentation, never persisted). Persisted in the live document + PG shadow (`018_group_richer_identity.sql`); exposed on detail + memberships/me. The same catalogue is reusable for Challenge covers later; Challenge-side assembly is explicitly deferred (challenge hero keeps its documented CSS treatment). Media is therefore a defined contract, not a future idea — with uploads still out of scope.
+
+### 14.4 Experience Reference reconciliation (task §13)
+
+| Reference element | Production | Truth support | Disposition |
+|---|---|---|---|
+| CreateGroupModal fields (name/tagline/location/rule) | 5-step wizard (Identity / Look & focus / How it works / Culture / Review) | Name/desc/settings supported; tagline/location/rule bounded extensions | ADOPT structure, ADAPT (no client-fabricated defaults, no hardcoded image) |
+| Modal hardcoded image/tags/defaults | Curated picker, free chips, empty-by-default | None (mock fabrication) | REJECT |
+| GroupListView card (cover/location/steward/tagline/tags/counts/entry) | Cover banner, location pill, owner-only Steward badge, tagline, focus chips, live counts, Enter | Counts/relationship supported; plural stewards/health/search rejected | ADOPT composition, ADAPT |
+| GroupDetailView hero (cover/identity/steward bar/CTA/good-to-know) | Cover hero, steward line, Launch CTA in hero, membership≠participation strip | All supported | ADOPT |
+| Detail tabs (Challenges/Members/About) | Hosted + About (no Members tab — S4b; no Feed tab — deferred) | Roster deferred, Feed deferred | ADAPT |
+| About (purpose/rules/Charter/Council) | Purpose + norms + governance note + stewardship + setup; no clauses/versioning, no Council section | Visibility supported; engines deferred | ADAPT |
+| ChallengeCard (cover/type/state/progress/counts/Join/Log) | Enriched rows: type/state (neutral Upcoming for establishment), host context, S3 snapshots, counts (live only; streaks none), Join-inline/Log-navigate | S3 reads/mutations; Run Again excluded per FD-S3-003 | ADOPT, ADAPT (no challenge cover yet; no inline logging) |
+| Steward display (plural badges/avatars) | Singular text attribution (no member directory/profile reads in S4a) | EOG §3 singular | ADAPT |
+| healthState/moderation, Kudos, feed, comments | Not implemented | FD-4/FD-5, deferrals | REJECT |
+
+### 14.5 Assembly before → after
+
+- **Creation:** single long form (identity + setup) → 5-step wizard with per-step gating, review summary, single submission, canonical-ID navigation.
+- **Cards:** name/description/role rows → cover banner, location pill, owner-only Steward badge, tagline, focus chips, live member + active counts, Enter.
+- **Home:** Community-Setup-dominated record → cover hero (identity/count/relationship/steward/Launch CTA/good-to-know) → enriched hosted Challenges → secondary About (purpose/focus/norms/stewardship/setup).
+- **Challenge continuity:** hero "Hosted by X" → navigable link back to Group Home (composition only; S3 truth untouched).
+- **Review observations closed:** legacy admin rows read Member (strict badge); establishment Challenges read neutral Upcoming (presentation only).
+
+### 14.6 Validation (correction task)
+
+- New/extended API tests (`s4aCorr001`, memberships shape evolution): 17/17 with the S4a file; full API suite green.
+- New CORR-001 guards + evolved S2-G/mobile-nav expectations (marked, none weakened in intent).
+- Real-browser pass 320/375/390/430/1024/1440 + populated/empty/restricted Homes + full wizard loop (ESTABLISH 201, genuinely scoped) + public-tunnel journey with zero localhost traffic.
+- MP v2.05 records the candidate (NOT accepted/complete/merged).

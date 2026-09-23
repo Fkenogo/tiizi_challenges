@@ -5,6 +5,11 @@ export interface ApiMembershipGroup {
   name: string;
   description: string;
   isPrivate: boolean;
+  /** S4a CORR-001 richer identity (server mirror; absent on legacy rows). */
+  coverId?: string | null;
+  tagline?: string;
+  location?: string;
+  focusTags?: string[];
 }
 
 export interface ApiMembership {

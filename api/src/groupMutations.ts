@@ -122,6 +122,22 @@ export interface CreateGroupTerms {
   isPrivate?: unknown;
   requireAdminApproval?: unknown;
   allowMemberChallenges?: unknown;
+  /**
+   * S4a CORR-001 richer identity (all optional, all presentation-level —
+   * none of these confers authority, membership, or Challenge truth):
+   * - coverId: curated catalogue key (cover catalogue allowlist);
+   * - tagline: short purpose (1..140);
+   * - location: descriptive local context only (1..120; never access,
+   *   filtering, or discovery semantics);
+   * - focusTags: free-text focus chips, presentation only (never authority);
+   * - rules: community norms for About display (no versioning, no
+   *   enforcement, no editing engine — Charter lifecycle stays deferred).
+   */
+  coverId?: unknown;
+  tagline?: unknown;
+  location?: unknown;
+  focusTags?: unknown;
+  rules?: unknown;
 }
 
 export interface GovernedGroupResult {
@@ -152,6 +168,62 @@ function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 6).toUpperCase();
 }
 
+/** S4a CORR-001 curated cover catalogue (canonical media references). */
+export const GROUP_COVER_CATALOGUE = [
+  'cover-1',
+  'cover-2',
+  'cover-3',
+  'cover-4',
+  'cover-5',
+  'cover-6',
+  'cover-7',
+  'cover-8',
+] as const;
+
+export const GROUP_TAGLINE_MAX_LENGTH = 140;
+export const GROUP_LOCATION_MAX_LENGTH = 120;
+export const GROUP_FOCUS_TAGS_MAX_COUNT = 8;
+export const GROUP_FOCUS_TAG_MAX_LENGTH = 30;
+export const GROUP_RULES_MAX_COUNT = 5;
+export const GROUP_RULE_MAX_LENGTH = 200;
+
+function sanitizeCoverId(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !(GROUP_COVER_CATALOGUE as readonly string[]).includes(value)) {
+    fail(400, 'invalid_group', `coverId must be one of ${(GROUP_COVER_CATALOGUE as readonly string[]).join(', ')} when present`);
+  }
+  return value;
+}
+
+function sanitizeShort(value: unknown, field: string, max: number): string {
+  if (value === undefined) return '';
+  if (typeof value !== 'string') fail(400, 'invalid_group', `${field} must be a string up to ${max} chars when present`);
+  const trimmed = (value as string).trim();
+  if (trimmed.length > max) fail(400, 'invalid_group', `${field} must be a string up to ${max} chars when present`);
+  return trimmed;
+}
+
+function sanitizeStringList(value: unknown, field: string, maxCount: number, maxLength: number): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > maxCount) {
+    fail(400, 'invalid_group', `${field} must be an array of up to ${maxCount} strings when present`);
+  }
+  const cleaned: string[] = [];
+  for (const entry of value as unknown[]) {
+    if (typeof entry !== 'string') fail(400, 'invalid_group', `${field} must be an array of up to ${maxCount} strings when present`);
+    const trimmed = (entry as string).trim();
+    if (trimmed.length === 0) continue;
+    if (trimmed.length > maxLength) {
+      fail(400, 'invalid_group', `${field} entries must be up to ${maxLength} chars`);
+    }
+    if (!cleaned.includes(trimmed)) cleaned.push(trimmed);
+    if (cleaned.length > maxCount) {
+      fail(400, 'invalid_group', `${field} must be an array of up to ${maxCount} strings when present`);
+    }
+  }
+  return cleaned;
+}
+
 function validateCreateTerms(terms: CreateGroupTerms): {
   name: string;
   description: string;
@@ -159,6 +231,11 @@ function validateCreateTerms(terms: CreateGroupTerms): {
   isPrivate: boolean;
   requireAdminApproval: boolean;
   allowMemberChallenges: boolean;
+  coverId: string | undefined;
+  tagline: string;
+  location: string;
+  focusTags: string[];
+  rules: string[];
 } {
   if (typeof terms.name !== 'string' || terms.name.trim().length < 1 || terms.name.length > 200) {
     fail(400, 'invalid_group', 'name is required (1..200 chars)');
@@ -186,6 +263,11 @@ function validateCreateTerms(terms: CreateGroupTerms): {
     allowMemberChallenges: terms.allowMemberChallenges === undefined
       ? true
       : asBoolean(terms.allowMemberChallenges),
+    coverId: sanitizeCoverId(terms.coverId),
+    tagline: sanitizeShort(terms.tagline, 'tagline', GROUP_TAGLINE_MAX_LENGTH),
+    location: sanitizeShort(terms.location, 'location', GROUP_LOCATION_MAX_LENGTH),
+    focusTags: sanitizeStringList(terms.focusTags, 'focusTags', GROUP_FOCUS_TAGS_MAX_COUNT, GROUP_FOCUS_TAG_MAX_LENGTH),
+    rules: sanitizeStringList(terms.rules, 'rules', GROUP_RULES_MAX_COUNT, GROUP_RULE_MAX_LENGTH),
   };
 }
 
@@ -207,6 +289,11 @@ export function buildGovernedGroupDocument(
     isPrivate: terms.isPrivate,
     requireAdminApproval: terms.requireAdminApproval,
     allowMemberChallenges: terms.allowMemberChallenges,
+    ...(terms.coverId !== undefined && { coverId: terms.coverId }),
+    tagline: terms.tagline,
+    location: terms.location,
+    focusTags: terms.focusTags,
+    rules: terms.rules,
     inviteCode: `${normalizeInviteCode(terms.name) || 'GROUP'}-${randomSuffix()}`,
     memberCount: 1,
     activeChallenges: 0,
@@ -224,19 +311,46 @@ export function buildGovernedGroupDocument(
 async function upsertGroupShadow(
   db: Db,
   legacyId: string,
-  fields: { name: string; description: string; isPrivate: boolean; active: boolean },
+  fields: {
+    name: string;
+    description: string;
+    isPrivate: boolean;
+    active: boolean;
+    coverId?: string | null;
+    tagline?: string;
+    location?: string;
+    focusTags?: string[];
+    rules?: string[];
+  },
 ): Promise<string> {
   const result = await db.query<{ group_id: string }>(
-    `INSERT INTO groups (legacy_firestore_id, name, description, is_private, status)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO groups (legacy_firestore_id, name, description, is_private, status,
+      cover_id, tagline, location, focus_tags, rules)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (legacy_firestore_id)
      DO UPDATE SET name = EXCLUDED.name,
                    description = EXCLUDED.description,
                    is_private = EXCLUDED.is_private,
                    status = EXCLUDED.status,
+                   cover_id = EXCLUDED.cover_id,
+                   tagline = EXCLUDED.tagline,
+                   location = EXCLUDED.location,
+                   focus_tags = EXCLUDED.focus_tags,
+                   rules = EXCLUDED.rules,
                    updated_at = now()
      RETURNING group_id`,
-    [legacyId, fields.name, fields.description, fields.isPrivate, fields.active ? 'active' : 'inactive'],
+    [
+      legacyId,
+      fields.name,
+      fields.description,
+      fields.isPrivate,
+      fields.active ? 'active' : 'inactive',
+      fields.coverId ?? null,
+      fields.tagline ?? '',
+      fields.location ?? '',
+      fields.focusTags ?? [],
+      fields.rules ?? [],
+    ],
   );
   const row = result.rows[0];
   if (!row) fail(500, 'shadow_sync_failed', 'Group shadow synchronization failed');
@@ -295,6 +409,11 @@ export async function createGovernedGroup(
     description: valid.description,
     isPrivate: valid.isPrivate,
     active: true,
+    coverId: valid.coverId ?? null,
+    tagline: valid.tagline,
+    location: valid.location,
+    focusTags: valid.focusTags,
+    rules: valid.rules,
   });
   await upsertMembershipShadow(db, id, actor.memberId, { role: 'owner', status: 'active' });
   return { id, legacyId, name: valid.name, isPrivate: valid.isPrivate, role: 'owner', status: 'active' };
@@ -375,6 +494,15 @@ export async function joinGovernedGroup(
     description: typeof group!.description === 'string' ? group!.description : '',
     isPrivate: group!.isPrivate === true,
     active: true,
+    coverId: typeof group!.coverId === 'string' ? group!.coverId : null,
+    tagline: typeof group!.tagline === 'string' ? group!.tagline : '',
+    location: typeof group!.location === 'string' ? group!.location : '',
+    focusTags: Array.isArray(group!.focusTags)
+      ? (group!.focusTags as unknown[]).filter((t): t is string => typeof t === 'string')
+      : [],
+    rules: Array.isArray(group!.rules)
+      ? (group!.rules as unknown[]).filter((t): t is string => typeof t === 'string')
+      : [],
   });
   await upsertMembershipShadow(db, groupId, actor.memberId, {
     role,

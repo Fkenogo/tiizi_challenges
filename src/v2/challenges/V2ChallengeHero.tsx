@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { challengeTypeLabel, formatDayRange, timezoneLabel } from './challengeCreationDraft';
 
@@ -27,6 +28,7 @@ const HERO_TONE: Record<string, string> = {
 export function V2ChallengeHero({
   detail,
   groupName,
+  groupId,
   loggable,
   onLogActivity,
   showLeave,
@@ -34,6 +36,11 @@ export function V2ChallengeHero({
 }: {
   detail: V2ChallengeDetail;
   groupName: string;
+  /**
+   * S4a CORR-001 — hosting Group identity for the continuity link back to
+   * Group Home. Composition only: the same governed truth, now navigable.
+   */
+  groupId: string;
   /** True while the canonical logging view permits a new submission. */
   loggable: boolean;
   onLogActivity: () => void;
@@ -61,7 +68,10 @@ export function V2ChallengeHero({
           </span>
         </div>
         <p className="relative mt-3 text-xs font-bold uppercase tracking-wider text-white/80">
-          Hosted by {groupName}
+          Hosted by{' '}
+          <Link to={`/v2/groups/${groupId}`} className="underline decoration-white/50 underline-offset-2 hover:text-white">
+            {groupName}
+          </Link>
         </p>
         <h1 className="relative mt-0.5 text-2xl font-black tracking-tight sm:text-3xl">
           {detail.title}

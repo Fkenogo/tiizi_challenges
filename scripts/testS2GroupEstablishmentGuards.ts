@@ -137,11 +137,14 @@ function objectAfter(source: string, marker: string): string {
 
 const createBody = objectAfter(groupsApi, 'body: {');
 check('client posts to POST /v1/groups', /['"]\/v1\/groups['"]/.test(groupsApi) && groupsApi.includes("method: 'POST'"));
-check('create body carries only identity + governed community setup (S4a)',
+check('create body carries only identity + governed setup + richer identity (S4a/CORR-001)',
   createBody.includes('name,') && createBody.includes('description')
   && createBody.includes('isPrivate') && createBody.includes('requireAdminApproval')
   && createBody.includes('allowMemberChallenges')
-  && !/\b(ownerId|role|status|userId|memberId|created_by|coverImageUrl|location|tagline|charter|council)\b/.test(createBody),
+  && createBody.includes('coverId') && createBody.includes('tagline')
+  && createBody.includes('location') && createBody.includes('focusTags')
+  && createBody.includes('rules')
+  && !/\b(ownerId|role|status|userId|memberId|created_by|coverImageUrl|locationScope|charter|council)\b/.test(createBody),
   createBody);
 check('no client-generated owner/steward authority',
   !/\bownerId\b/.test(groupsApi) && !/\brole\b/.test(createBody) && !/\bstatus\b/.test(createBody));
@@ -218,8 +221,8 @@ const groupsScreen = read('src/v2/groups/V2GroupsScreen.tsx');
 const createScreen = read('src/v2/groups/V2CreateGroupScreen.tsx');
 check('Groups screen never renders legacy ids', !groupsScreen.includes('legacyId'));
 check('Create screen never renders legacy ids', !createScreen.includes('legacyId'));
-check('Groups screen renders the stewardship label, not raw role codes',
-  groupsScreen.includes('groupRoleLabel('));
+check('Groups screen renders the strict stewardship badge, not raw role codes',
+  groupsScreen.includes('stewardBadgeFor('));
 check('no raw internal state codes rendered',
   !/>\s*'?(active|pending|joined)'?\s*</.test(groupsScreen));
 
