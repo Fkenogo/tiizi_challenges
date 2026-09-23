@@ -12,6 +12,10 @@ import {
 } from './challengeActivityRoutes.js';
 import { registerChallengeReadRoutes } from './challengeReads.js';
 import {
+  groupReadDepsFromMutations,
+  registerGroupReadRoutes,
+} from './groupReads.js';
+import {
   registerParticipationRoutes,
   type ParticipationRouteDeps,
 } from './challengeParticipationRoutes.js';
@@ -108,7 +112,14 @@ export function buildApp(deps: AppDeps) {
   registerChallengeActivityRoutes(app, deps.db, deps.challengeActivity ?? {});
   // C3A V2 Challenge reads (list/detail/leaderboard). Same live authority
   // as C2B; absent authority fails closed per-route instead of authorizing.
-  registerChallengeReadRoutes(app, deps.db, deps.challengeActivity ?? {});
+  // S4a: the governed `groupId` list filter shares the EBC-01 Group store.
+  registerChallengeReadRoutes(app, deps.db, {
+    ...(deps.challengeActivity ?? {}),
+    groupStore: deps.groupMutation?.store,
+  });
+  // S4a governed Group detail read (Group Home). Same live store seam as
+  // the governed mutations; absent store fails closed per-route.
+  registerGroupReadRoutes(app, deps.db, groupReadDepsFromMutations(deps.groupMutation ?? {}));
   // C3B V2 participation mutations (join/withdraw). Same live authority as
   // C2B; absent authority fails closed per-route instead of authorizing.
   registerParticipationRoutes(app, deps.db, deps.participation ?? deps.challengeActivity ?? {});

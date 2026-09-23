@@ -246,6 +246,19 @@ export function listChallengesV2(): Promise<{ memberId: string; challenges: V2Ch
   return apiFetch<{ memberId: string; challenges: V2ChallengeSummary[] }>('/v1/challenges');
 }
 
+/**
+ * S4a — governed Group-scoped Challenge list (`GET /v1/challenges?groupId=`).
+ * Transport only: scoping is computed server-side under the same
+ * visibility/entitlement authority as the unfiltered list.
+ */
+export function listGroupChallengesV2(
+  groupId: string,
+): Promise<{ memberId: string; groupId: string; challenges: V2ChallengeSummary[] }> {
+  return apiFetch<{ memberId: string; groupId: string; challenges: V2ChallengeSummary[] }>(
+    `/v1/challenges?groupId=${encodeURIComponent(groupId)}`,
+  );
+}
+
 export function getChallengeV2(challengeId: string): Promise<V2ChallengeDetail> {
   return apiFetch<V2ChallengeDetail>(`/v1/challenges/${challengeId}`);
 }

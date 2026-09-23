@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom';
 import { V2LocaleProvider } from './i18n/V2Locale';
 import { V2GroupScope } from './group/V2GroupScope';
 import { V2Authenticated } from './auth/V2AuthGuard';
@@ -13,6 +13,7 @@ import {
 } from './member/memberPages';
 import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
+import { V2GroupHomeScreen } from './groups/V2GroupHomeScreen';
 import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
 import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
@@ -45,6 +46,20 @@ function V2ProtectedScope() {
   );
 }
 
+/**
+ * TIIZI S4a — Group Home route. The id comes from the route params into the
+ * contextual scope (no global active-group state); the screen re-proves the
+ * Group from the server read on every entry.
+ */
+function V2GroupHomeRoute() {
+  const { groupId } = useParams();
+  return (
+    <V2GroupScope groupId={groupId ?? null}>
+      <V2GroupHomeScreen />
+    </V2GroupScope>
+  );
+}
+
 export function V2Routes() {
   return (
     <V2LocaleProvider>
@@ -60,6 +75,7 @@ export function V2Routes() {
             <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />
+            <Route path="groups/:groupId" element={<V2GroupHomeRoute />} />
             <Route path="guide" element={<V2GuidePage />} />
             <Route path="profile" element={<V2ProfilePage />} />
             <Route path="notifications" element={<V2NotificationsPage />} />

@@ -56,6 +56,7 @@
     "test:s3c-live-progress": "tsx scripts/testS3cLiveProgressGuards.ts",
     "test:s3c-finalized-query": "tsx scripts/testS3cFinalizedQueryLifecycle.ts",
     "test:s3d-results": "tsx scripts/testS3dResultsGuards.ts",
+    "test:s4a-group-home": "tsx scripts/testS4aGroupHomeGuards.ts",
     "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:firebase-emulator-mode": "tsx scripts/testFirebaseEmulatorMode.ts",

@@ -148,6 +148,7 @@ export function buildTestApp(
   extra?: {
     challengeActivity?: import('../src/app.js').AppDeps['challengeActivity'];
     participation?: import('../src/app.js').AppDeps['participation'];
+    groupMutation?: import('../src/app.js').AppDeps['groupMutation'];
   },
 ) {
   return buildApp({ db: testDb(), verifier: stubVerifier(uidByToken), ...(extra ?? {}) });

@@ -4,6 +4,7 @@ import { ApiError } from '../../api/apiClient';
 import {
   V2Button,
   V2Card,
+  V2ChoiceCard,
   V2Field,
   V2Page,
   V2SectionHeader,
@@ -22,17 +23,24 @@ import {
 import { useCreateGroup } from './useV2Groups';
 
 /**
- * TIIZI S2-G — minimum Create Group journey.
+ * TIIZI S4a — comprehensive Create Group journey (evolved from the S2-G minimum).
  *
- * Two fields only: a required name and an optional description. Every other
- * concern (creator becomes Accountable Steward, admission, challenge-creation
- * capability) is a governed default applied by the backend authority — the
- * form never offers cover imagery, taglines, location, rules, admission-mode
- * controls, invitations, Charter, Council, creation permissions, moderation
- * or advanced settings; those belong to S4.
+ * Two progressive sections over the EXISTING governed authority
+ * (`POST /v1/groups` — no new mutation, no schema change):
  *
- * Submission goes through `POST /v1/groups` only. There is no direct
- * Firestore/PostgreSQL write and no client-generated owner/steward authority.
+ * Section 1 — Identity: required name + optional description/purpose.
+ * Section 2 — Community Setup: the governed choices in human language
+ * (Discoverable/Private, Direct join/Approval, Member/Steward Challenge
+ * creation). Every other concern (creator becomes Accountable Steward) is
+ * applied by the backend authority.
+ *
+ * Deliberately NOT offered (no Product Truth / no pipeline): cover imagery,
+ * tagline, location, rules text, Charter editing, Council, invitations,
+ * moderation, admin roles, advanced settings.
+ *
+ * On success the member lands directly inside the persisted Group Home
+ * (`/v2/groups/:groupId` from the canonical returned identity) — never left
+ * on the form, never merely returned to the list.
  */
 
 /** Member-facing copy for governed failures (never raw provider internals). */
@@ -64,7 +72,8 @@ export function V2CreateGroupScreen() {
     if (!canSubmit) return;
     try {
       const created = await createGroup.mutateAsync(toCreateGroupInput(draft));
-      navigate('/v2/groups', {
+      // Canonical returned identity — the Home re-proves it from the server.
+      navigate(`/v2/groups/${created.id}`, {
         replace: true,
         state: { createdGroupName: created.name },
       });
@@ -83,17 +92,20 @@ export function V2CreateGroupScreen() {
       <V2SectionHeader
         eyebrow="Create a Group"
         title="Start a Group"
-        description="Give your Group a name. You will become its Accountable Steward and can invite people once it exists."
+        description="Give your Group a name, then set how it runs. You will become its Accountable Steward."
       />
 
-      <V2Card className="space-y-4">
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleSubmit();
-          }}
-        >
+      <form
+        className="space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit();
+        }}
+      >
+        <V2Card className="space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+            Section 1 — Identity
+          </p>
           <V2Field label="Group name" hint="Something your people will recognise.">
             <V2TextInput
               value={draft.name}
@@ -110,10 +122,7 @@ export function V2CreateGroupScreen() {
             </p>
           )}
 
-          <V2Field
-            label="Description (optional)"
-            hint="A sentence about what this Group is for."
-          >
+          <V2Field label="Description (optional)" hint="A sentence about what this Group is for.">
             <V2TextArea
               value={draft.description}
               onChange={(description) => setDraft((current) => ({ ...current, description }))}
@@ -122,23 +131,98 @@ export function V2CreateGroupScreen() {
               maxLength={GROUP_DESCRIPTION_MAX_LENGTH}
             />
           </V2Field>
+        </V2Card>
 
-          {createGroup.isError && (
-            <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
-              {createGroupErrorMessage(createGroup.error)}
+        <V2Card className="space-y-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Section 2 — Community setup
             </p>
-          )}
-
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <V2Button variant="ghost" onClick={() => navigate('/v2/groups')}>
-              Cancel
-            </V2Button>
-            <V2Button type="submit" disabled={!canSubmit}>
-              {createGroup.isPending ? 'Creating your Group…' : 'Create Group'}
-            </V2Button>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              How people find, join, and create Challenges in your Group.
+            </p>
           </div>
-        </form>
-      </V2Card>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-black text-slate-900">Who can find this Group?</legend>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <V2ChoiceCard
+                selected={!draft.isPrivate}
+                onClick={() => setDraft((current) => ({ ...current, isPrivate: false }))}
+                title="Discoverable"
+                description="Anyone on Tiizi can find this Group."
+              />
+              <V2ChoiceCard
+                selected={draft.isPrivate}
+                onClick={() => setDraft((current) => ({ ...current, isPrivate: true }))}
+                title="Private"
+                description="Only invited people can find and join."
+              />
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-black text-slate-900">How do people join?</legend>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <V2ChoiceCard
+                selected={!draft.requireAdminApproval}
+                onClick={() =>
+                  setDraft((current) => ({ ...current, requireAdminApproval: false }))
+                }
+                title="Join directly"
+                description="New members join right away."
+              />
+              <V2ChoiceCard
+                selected={draft.requireAdminApproval}
+                onClick={() =>
+                  setDraft((current) => ({ ...current, requireAdminApproval: true }))
+                }
+                title="Requires approval"
+                description="You approve new members before they join."
+              />
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-black text-slate-900">
+              Who can create Challenges?
+            </legend>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <V2ChoiceCard
+                selected={draft.allowMemberChallenges}
+                onClick={() =>
+                  setDraft((current) => ({ ...current, allowMemberChallenges: true }))
+                }
+                title="Members can create"
+                description="Any member can host a Challenge here."
+              />
+              <V2ChoiceCard
+                selected={!draft.allowMemberChallenges}
+                onClick={() =>
+                  setDraft((current) => ({ ...current, allowMemberChallenges: false }))
+                }
+                title="Steward creates"
+                description="Only the Accountable Steward hosts new Challenges."
+              />
+            </div>
+          </fieldset>
+        </V2Card>
+
+        {createGroup.isError && (
+          <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+            {createGroupErrorMessage(createGroup.error)}
+          </p>
+        )}
+
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <V2Button variant="ghost" onClick={() => navigate('/v2/groups')}>
+            Cancel
+          </V2Button>
+          <V2Button type="submit" disabled={!canSubmit}>
+            {createGroup.isPending ? 'Creating your Group…' : 'Create Group'}
+          </V2Button>
+        </div>
+      </form>
     </V2Page>
   );
 }

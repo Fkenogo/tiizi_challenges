@@ -1,7 +1,6 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   V2Button,
-  V2Card,
   V2EmptyState,
   V2ErrorState,
   V2LoadingState,
@@ -13,13 +12,14 @@ import { groupsViewFor, V2_GROUPS_NEW_PATH } from './groupsView';
 import { useV2Groups } from './useV2Groups';
 
 /**
- * TIIZI S2-G — V2 Groups surface.
+ * TIIZI S4a — V2 Groups surface (evolved from the S2-G prerequisite surface).
  *
- * The member's Groups, bound to the real read (`GET /v1/memberships/me`).
- * This is the minimum Group establishment prerequisite: it lists the Groups
- * the authenticated member actually belongs to and offers Create Group.
- * Discovery, roster, stewards, Charter, Council, moderation and all other
- * Group experience remain deferred to S4.
+ * My Groups: the member's Groups bound to the real read
+ * (`GET /v1/memberships/me`), each card navigating into its persisted Group
+ * Home (`/v2/groups/:groupId`). Create Group starts the governed creation
+ * journey. Discovery, invites, roster, stewards, Charter, Council,
+ * moderation and all other Group experience remain later S4 slices —
+ * nothing here fabricates them.
  *
  * Only member-facing information is shown (name, description, the member's
  * role). Internal identifiers, provider/legacy ids and state codes are never
@@ -27,7 +27,6 @@ import { useV2Groups } from './useV2Groups';
  */
 export function V2GroupsScreen() {
   const navigate = useNavigate();
-  const location = useLocation();
   const groups = useV2Groups();
   const view = groupsViewFor({
     isLoading: groups.isLoading,
@@ -36,7 +35,6 @@ export function V2GroupsScreen() {
     memberships: groups.data?.memberships,
   });
   const memberships = groups.data?.memberships ?? [];
-  const createdGroupName = (location.state as { createdGroupName?: string } | null)?.createdGroupName;
 
   return (
     <V2Page>
@@ -50,15 +48,6 @@ export function V2GroupsScreen() {
           ) : undefined
         }
       />
-
-      {createdGroupName && groups.isSuccess && (
-        <p
-          role="status"
-          className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800"
-        >
-          {createdGroupName} is ready. You are its Accountable Steward.
-        </p>
-      )}
 
       {groups.isLoading && <V2LoadingState label="Loading your Groups…" />}
 
@@ -82,12 +71,17 @@ export function V2GroupsScreen() {
         <ul className="space-y-3">
           {view.memberships.map((membership) => (
             <li key={membership.groupId}>
-              <V2Card>
+              <button
+                type="button"
+                onClick={() => navigate(`/v2/groups/${membership.groupId}`)}
+                className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-slate-300"
+                aria-label={`Open ${membership.group.name}`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-base font-black text-slate-900">{membership.group.name}</p>
                     {membership.group.description && (
-                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                      <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">
                         {membership.group.description}
                       </p>
                     )}
@@ -96,7 +90,7 @@ export function V2GroupsScreen() {
                     {groupRoleLabel(membership.role)}
                   </span>
                 </div>
-              </V2Card>
+              </button>
             </li>
           ))}
         </ul>

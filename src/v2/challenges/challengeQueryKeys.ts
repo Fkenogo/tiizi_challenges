@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { V2_GROUP_CHALLENGES_SCOPE } from '../groups/groupQueryKeys';
 
 /**
  * S3a — canonical V2 Challenge query-key contract
@@ -84,9 +85,11 @@ export function v2ChallengeLeaderboardKey(
 }
 
 /**
- * S3a success boundary (extended by S3b/S3c): mark every V2 Challenge
+ * S3a success boundary (extended by S3b/S3c/S4a): mark every V2 Challenge
  * list/detail read stale after a successful join/withdraw/log — canonical
- * AND legacy families, plus the S3c contributor/leaderboard reads.
+ * AND legacy families, plus the S3c contributor/leaderboard reads and the
+ * S4a Group-hosted-Challenge family (a Home showing hosted Challenges must
+ * never serve a pre-join snapshot after acting elsewhere).
  * Never injects participation state client-side; the next read re-proves
  * `myParticipation` and progress from the server.
  */
@@ -132,6 +135,8 @@ export async function invalidateV2ChallengeReads(
           ? [V2_CHALLENGE_LEADERBOARD_SCOPE]
           : [V2_CHALLENGE_LEADERBOARD_SCOPE, challengeId],
     }),
+    // S4a Group-hosted-Challenge family (same contract — no independent family).
+    queryClient.invalidateQueries({ queryKey: [V2_GROUP_CHALLENGES_SCOPE] }),
   ];
   await Promise.all(tasks);
 }

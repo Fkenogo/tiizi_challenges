@@ -1,7 +1,7 @@
 import type { CreateGroupInput } from '../../api/groupsApi';
 
 /**
- * TIIZI S2-G — pure Group-establishment draft contract.
+ * TIIZI S4a — Group draft contract (evolved from the S2-G establishment draft).
  *
  * React-free and side-effect-free so it can be asserted directly by the
  * boundary guards. Client validation here decides only basic UX
@@ -19,9 +19,23 @@ export const GROUP_DESCRIPTION_MAX_LENGTH = 2000;
 export interface CreateGroupDraft {
   name: string;
   description: string;
+  /**
+   * S4a Community Setup — governed fields only, in member-chosen form.
+   * Defaults mirror the governed authority (open admission, permitted
+   * creation) so an untouched form establishes exactly what S2-G did.
+   */
+  isPrivate: boolean;
+  requireAdminApproval: boolean;
+  allowMemberChallenges: boolean;
 }
 
-export const EMPTY_GROUP_DRAFT: CreateGroupDraft = { name: '', description: '' };
+export const EMPTY_GROUP_DRAFT: CreateGroupDraft = {
+  name: '',
+  description: '',
+  isPrivate: false,
+  requireAdminApproval: false,
+  allowMemberChallenges: true,
+};
 
 export type GroupDraftIssueCode =
   | 'name_required'
@@ -59,7 +73,12 @@ export function isCreateGroupDraftSubmittable(draft: CreateGroupDraft): boolean 
 export function toCreateGroupInput(draft: CreateGroupDraft): CreateGroupInput {
   const name = draft.name.trim();
   const description = draft.description.trim();
-  return description.length > 0 ? { name, description } : { name };
+  return {
+    ...(description.length > 0 ? { name, description } : { name }),
+    isPrivate: draft.isPrivate,
+    requireAdminApproval: draft.requireAdminApproval,
+    allowMemberChallenges: draft.allowMemberChallenges,
+  };
 }
 
 /**

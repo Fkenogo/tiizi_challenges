@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   fetchActivityOptions,
@@ -122,6 +122,7 @@ function buildWizardActivity(
 
 export function V2ChallengeCreationWizard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const memberships = useV2Memberships();
   const establish = useEstablishChallenge();
@@ -139,19 +140,26 @@ export function V2ChallengeCreationWizard() {
 
   const currentStep = VISIBLE_STEPS[stepIndex];
 
-  // Preselect a Group when the member has exactly one — still a real choice.
+  // Preselect a Group: an explicit Group Home handoff wins when it names a
+  // real membership, otherwise a single membership is still a real choice.
+  // Selection only — establishment still validates host + permission
+  // server-side through the governed Challenge authority.
   useEffect(() => {
     if (preselected.current) return;
     const list = memberships.data?.memberships ?? [];
-    if (list.length === 1) {
+    const hinted = (location.state as { groupId?: unknown } | null)?.groupId;
+    const hintedMatch =
+      typeof hinted === 'string' ? list.find((membership) => membership.groupId === hinted) : undefined;
+    const pick = hintedMatch ?? (list.length === 1 ? list[0] : undefined);
+    if (pick) {
       preselected.current = true;
       setState((prev) => ({
         ...prev,
-        groupId: list[0].groupId,
-        groupName: list[0].group.name,
+        groupId: pick.groupId,
+        groupName: pick.group.name,
       }));
     }
-  }, [memberships.data]);
+  }, [memberships.data, location.state]);
 
   function update(patch: Partial<WizardState>) {
     setState((prev) => ({ ...prev, ...patch }));
