@@ -228,6 +228,11 @@ const listScreen = read('src/v2/groups/V2GroupsScreen.tsx');
 check('cards render cover, location pill, tagline, focus, counts, entry',
   listScreen.includes('coverGradientFor(') && listScreen.includes('Enter →')
   && listScreen.includes('active Challenge') && listScreen.includes('member'));
+check('Groups list stays one full-width card per row until large desktop (1024px)',
+  /<ul className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">/.test(listScreen)
+  && !/sm:grid-cols-2/.test(listScreen));
+check('Groups list does not introduce horizontal card scrolling',
+  !/overflow-x-(auto|scroll)|snap-x|carousel/i.test(stripComments(listScreen)));
 check('cards bind live counts from governed reads (no fabricated zero)',
   listScreen.includes('useV2GroupDetail') && listScreen.includes('useV2GroupChallenges')
   && listScreen.includes('fabricated zero'));

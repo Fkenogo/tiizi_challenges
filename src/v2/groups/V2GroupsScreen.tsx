@@ -72,7 +72,7 @@ export function V2GroupsScreen() {
       )}
 
       {view.kind === 'list' && (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <ul className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
           {view.memberships.map((membership) => (
             <V2GroupCard
               key={membership.groupId}

@@ -249,4 +249,18 @@ Upload pipelines (Storage/signed URLs) and arbitrary URL entry are NOT authorise
 - New/extended API tests (`s4aCorr001`, memberships shape evolution): 17/17 with the S4a file; full API suite green.
 - New CORR-001 guards + evolved S2-G/mobile-nav expectations (marked, none weakened in intent).
 - Real-browser pass 320/375/390/430/1024/1440 + populated/empty/restricted Homes + full wizard loop (ESTABLISH 201, genuinely scoped) + public-tunnel journey with zero localhost traffic.
-- MP v2.05 records the candidate (NOT accepted/complete/merged).
+- MP v2.04 records the CORR-001 candidate (not accepted/complete/merged at that point in the review).
+
+## 15. Founder review + mobile Groups correction (CORR-003)
+
+**Task:** TIIZI-S4A-FOUNDER-ACCEPTANCE-CORR-003. **Disposition:** Founder review of the corrected S4a preview PASSED; the final bounded presentation correction is applied; S4a is AWAITING FINAL ACCEPTANCE / MERGE. This is not a merge authorization and does not mark S4a complete.
+
+Founder assessment retained: Group creation now feels like establishing a community; Group Home coherently presents identity, hosted Challenges and About; Hosted Challenge → Group continuity works. S4a may proceed to final acceptance while the already-authorized S4b Members + Stewardship, S4c Discovery + Join + Invitations, and S4d Settings + Governed Configuration are assembled later. Search/filter/discovery stays in S4c. Charter lifecycle/upload/versioning, Council mechanics, roster, invitations, Feed, structured interest/activity taxonomy and other deferred capabilities remain outside this correction.
+
+**Mobile Groups presentation:** one full-width card per row from phone widths through 1023px; the existing multi-column composition starts at the `lg` breakpoint (1024px). Card information, cover/identity composition, and navigation are unchanged. No carousel, search, filter, pagination, or additional read was added.
+
+**Activity Library remains outstanding — S6:** The V2 Activity Guide route is still a placeholder. Challenge creation currently queries `GET /v1/knowledge?composerSelectable=true` and the governed per-Activity options seam. Choices are canonical published Knowledge records with Activity Codes that pass publication-readiness and Challenge-eligibility checks; they are not hardcoded UI options or test fixtures. The currently available set reflects the populated catalogue, not a completed Activity Library experience. The canonical Activity model, content/publication requirements, taxonomy, metric/unit/component contracts and the 118-candidate baseline / CLU-01 15-Activity validation batch already exist in Stage EK and Stage F / PF-01–PF-04 Product Truth. Full browsing, Activity Guide detail/guidance/safety/measurement surfaces and catalogue assembly remain S6, as already sequenced by the Master Programme and Experience Integration Map. No new stage or Product Truth decision is required before S6 planning/implementation; S6 must consume only published governed Knowledge and preserve the existing eligibility/publication boundaries. No Activity Library implementation occurred here.
+
+**Runtime boundary retained:** CORR-002 remains in force: V2 does not run legacy RouteWarmup prefetches or legacy user-document bootstrap; V2 product reads remain Tiizi API-bound.
+
+**Validation:** focused responsive Groups guard added; exact viewport/browser verification and the regression suite are recorded with TIIZI-S4A-FOUNDER-ACCEPTANCE-CORR-003. S1–S3 remain COMPLETE / FOUNDER ACCEPTED / MERGED. S4a remains pending final Founder acceptance and merge; S4b/c/d remain not started.
