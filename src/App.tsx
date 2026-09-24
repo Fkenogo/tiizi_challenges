@@ -14,6 +14,8 @@ import { useAuth } from './hooks/useAuth';
 import { dailyGoalsService } from './services/dailyGoalsService';
 import { groupService } from './services/groupService';
 import { challengeService } from './services/challengeService';
+import { bootstrapLegacyUserDocument } from './services/legacyUserDocumentBootstrap';
+import { routeProductGeneration } from './runtime/routeProductGeneration.js';
 
 const ExerciseLibraryScreen = lazy(() => import('./features/Exercises/ExerciseLibraryScreen'));
 const WellnessActivitiesLibraryScreen = lazy(() => import('./features/Wellness/WellnessActivitiesLibraryScreen'));
@@ -159,9 +161,11 @@ function RouteViewportMode() {
 
 function RouteWarmup() {
   const queryClient = useQueryClient();
-  const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  const { isAuthenticated, user, profile } = useAuth();
 
   useEffect(() => {
+    if (routeProductGeneration(location.pathname) !== 'v1') return;
     if (!isAuthenticated) return;
 
     // Warm up high-traffic chunks after authentication to improve first navigation latency.
@@ -171,6 +175,9 @@ function RouteWarmup() {
     void import('./features/Challenges/ChallengeDetailScreen');
 
     if (!user?.uid) return;
+    void bootstrapLegacyUserDocument(user, profile?.displayName).catch((error) => {
+      console.error('Failed to bootstrap user document:', error);
+    });
     void queryClient.prefetchQuery({
       queryKey: ['daily-goals', user.uid],
       queryFn: () => dailyGoalsService.getTodayGoals(user.uid),
@@ -186,7 +193,7 @@ function RouteWarmup() {
       queryFn: () => challengeService.getUserAccessibleChallenges(user.uid),
       staleTime: 5 * 60 * 1000,
     });
-  }, [isAuthenticated, queryClient, user?.uid]);
+  }, [isAuthenticated, location.pathname, profile?.displayName, queryClient, user, user?.uid]);
 
   return null;
 }

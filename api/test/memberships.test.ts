@@ -36,6 +36,11 @@ describe('GET /v1/memberships/me', () => {
             name: 'Runners',
             description: '',
             isPrivate: false,
+            // CORR-001 richer identity (shadow defaults for legacy rows).
+            coverId: null,
+            tagline: '',
+            location: '',
+            focusTags: [],
           },
         },
       ],

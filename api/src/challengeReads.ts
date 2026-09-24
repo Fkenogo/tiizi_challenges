@@ -59,6 +59,8 @@ import {
   type ParticipationTruthState,
 } from './derivedTruth.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
+import { isGroupDocActive } from './firestoreGroupAuthority.js';
+import type { GroupMutationStore } from './groupMutations.js';
 import {
   getChallengeFinal,
   getChallengeFinals,
@@ -633,6 +635,12 @@ export interface ChallengeReadDeps {
    * explicitly for deterministic day-boundary proofs.
    */
   now?: Date;
+  /**
+   * S4a — live Group document reader for the governed `groupId` list
+   * filter (existence/liveness gate). Absent: filtered reads fail closed;
+   * the unfiltered list is unaffected.
+   */
+  groupStore?: Pick<GroupMutationStore, 'getGroup'>;
 }
 
 /**
@@ -674,12 +682,28 @@ export async function listVisibleChallenges(
   }
 
   const ids = [...visible];
-  const challenges = await fetchChallenges(db, ids);
   const episodesByChallenge = new Map<string, ParticipationRow[]>();
-  const participationIds: string[] = [];
   for (const challengeId of ids) {
-    const episodes = await listParticipations(db, challengeId, memberId);
-    episodesByChallenge.set(challengeId, episodes);
+    episodesByChallenge.set(challengeId, await listParticipations(db, challengeId, memberId));
+  }
+  return assembleChallengeSummaries(db, ids, episodesByChallenge, deps.now ?? new Date());
+}
+
+/**
+ * Shared list assembly: fetch → derived/finals join → per-challenge
+ * summary → governing-version integrity gate → stable order. Used by the
+ * unfiltered list and the S4a governed `groupId` filter alike, so both
+ * project the SAME truth through the SAME code — no second read model.
+ */
+async function assembleChallengeSummaries(
+  db: Db,
+  ids: string[],
+  episodesByChallenge: Map<string, ParticipationRow[]>,
+  now: Date,
+): Promise<ApiChallengeSummary[]> {
+  const challenges = await fetchChallenges(db, ids);
+  const participationIds: string[] = [];
+  for (const episodes of episodesByChallenge.values()) {
     for (const episode of episodes) participationIds.push(episode.participation_id);
   }
   const [challengeDerived, participationDerived] = await Promise.all([
@@ -697,7 +721,6 @@ export async function listVisibleChallenges(
   // list (challenge-level fields only — the S3d results experience is the
   // detail read, which additionally reconstructs per-participation truth).
   const challengeFinals = await getChallengeFinals(db, ids);
-  const now = deps.now ?? new Date();
   const summaries = await Promise.all(
     challenges.map((challenge) =>
       toSummary(
@@ -720,6 +743,86 @@ export async function listVisibleChallenges(
     a.startDate < b.startDate ? 1 : a.startDate > b.startDate ? -1 : 0,
   );
   return summaries;
+}
+
+export interface ApiGroupChallengeList {
+  memberId: string;
+  groupId: string;
+  challenges: ApiChallengeSummary[];
+}
+
+/**
+ * S4a — governed Group-scoped Challenge list (`GET /v1/challenges?groupId=`).
+ *
+ * The SAME entitlement model as the unfiltered list, scoped to one Group
+ * through the SAME assembly (`assembleChallengeSummaries`) — never a
+ * second read model, never client-side filtering as authority:
+ *
+ * 1. The Group UUID resolves through the PG identity mapping to the live
+ *    document; unknown ids, missing live identities and inactive groups
+ *    are 404 (existence is not leaked); a missing/unreachable live store
+ *    is 503 (fail closed — the filter needs Group truth).
+ * 2. Entitlement is derived from the entitled set itself: the unfiltered
+ *    list is computed first (participation history + live eligibility,
+ *    exactly as S3 proves it), then narrowed to the Group. The filter can
+ *    never widen visibility — genuine scoping by construction.
+ * 3. Non-entitled callers receive the EOG §9 discovery projection for a
+ *    discoverable (non-private) Group — the Group's Challenges with no
+ *    participation projection — and an empty list for a private Group
+ *    (no leak; the Group detail itself is 404 there).
+ *
+ * The unfiltered list path is untouched.
+ */
+export async function listVisibleChallengesInGroup(
+  db: Db,
+  memberId: string,
+  groupId: string,
+  deps: ChallengeReadDeps,
+): Promise<ApiGroupChallengeList> {
+  if (!UUID_RE.test(memberId)) readFail(400, 'invalid_member', 'member must be a member UUID');
+  if (!UUID_RE.test(groupId)) readFail(400, 'invalid_group', 'groupId must be a Tiizi group UUID');
+  const shadow = await db.query<{ legacy_firestore_id: string | null }>(
+    `SELECT legacy_firestore_id FROM groups WHERE group_id = $1`,
+    [groupId],
+  );
+  const legacyId = shadow.rows[0]?.legacy_firestore_id ?? null;
+  if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
+  const store = deps.groupStore;
+  let group: Record<string, unknown> | null;
+  try {
+    if (!store) throw new Error('group store is not configured');
+    group = await store.getGroup(legacyId);
+  } catch (error) {
+    if (error instanceof ChallengeReadError) throw error;
+    readFail(503, 'group_store_unavailable', `Group authority unreachable: ${(error as Error).message}`);
+  }
+  if (!group || !isGroupDocActive(group)) {
+    readFail(404, 'unknown_group', 'Group not found');
+  }
+  const now = deps.now ?? new Date();
+  // Entitlement is derived from the entitled set itself: whatever the
+  // unfiltered list proves visible, scoped to the Group. This cannot
+  // diverge from list semantics — the filter only narrows, never widens.
+  const visible = await listVisibleChallenges(db, memberId, deps);
+  const inGroup = visible.filter((challenge) => challenge.groupId === groupId);
+  if (inGroup.length > 0) return { memberId, groupId, challenges: inGroup };
+  // The caller sees nothing of this Group through entitlement. Outsiders
+  // get the EOG §9 discovery projection for a discoverable (non-private)
+  // Group — the Group's Challenges with no participation projection — and
+  // nothing for a private Group (no leak; the Group detail is 404 there).
+  if (group!.isPrivate === true) return { memberId, groupId, challenges: [] };
+  const hosted = await db.query<{ challenge_id: string }>(
+    `SELECT challenge_id FROM challenges WHERE group_id = $1`,
+    [groupId],
+  );
+  const ids = hosted.rows.map((row) => String(row.challenge_id));
+  const episodesByChallenge = new Map<string, ParticipationRow[]>();
+  for (const challengeId of ids) episodesByChallenge.set(challengeId, []);
+  return {
+    memberId,
+    groupId,
+    challenges: await assembleChallengeSummaries(db, ids, episodesByChallenge, now),
+  };
 }
 
 export async function getChallengeDetail(
@@ -1090,6 +1193,8 @@ export async function getChallengeContributors(
 
 export interface ChallengeReadRouteDeps {
   groupMembershipAuthority?: GroupMembershipAuthority;
+  /** S4a — live Group document reader for the governed `groupId` filter. */
+  groupStore?: Pick<GroupMutationStore, 'getGroup'>;
 }
 
 function missingAuthority(): GroupMembershipAuthority {
@@ -1106,12 +1211,37 @@ export function registerChallengeReadRoutes(
   deps: ChallengeReadRouteDeps = {},
 ): void {
   const authority = deps.groupMembershipAuthority ?? missingAuthority();
-  const readDeps: ChallengeReadDeps = { groupMembershipAuthority: authority };
+  const readDeps: ChallengeReadDeps = { groupMembershipAuthority: authority, groupStore: deps.groupStore };
 
   app.get(
     '/v1/challenges',
+    {
+      schema: {
+        querystring: {
+          type: 'object',
+          properties: { groupId: { type: 'string', format: 'uuid' } },
+        },
+        response: {
+          200: {
+            type: 'object',
+            required: ['memberId', 'challenges'],
+            properties: {
+              memberId: { type: 'string', format: 'uuid' },
+              groupId: { type: 'string', format: 'uuid' },
+              challenges: { type: 'array' },
+            },
+          },
+        },
+      },
+    },
     async (request) => {
       const member = authenticatedMember(request);
+      const query = (request.query ?? {}) as { groupId?: string };
+      // S4a governed Group scope: the same entitled read, filtered
+      // server-side. Absent: the existing unfiltered behaviour, unchanged.
+      if (query.groupId !== undefined) {
+        return listVisibleChallengesInGroup(db, member.memberId, query.groupId, readDeps);
+      }
       return {
         memberId: member.memberId,
         challenges: await listVisibleChallenges(db, member.memberId, readDeps),

@@ -27,6 +27,12 @@ function statusTone(endState: V2ChallengeEndState): string {
   return endState === 'live' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600';
 }
 
+/**
+ * S4a — shared with Group Home hosted-Challenge rows so both surfaces
+ * present the SAME participation/end-state badges from the SAME code.
+ */
+export { statusTone };
+
 function participationLabel(challenge: V2ChallengeSummary): { text: string; className: string } | null {
   // Bound directly to the authoritative read model — never inferred.
   if (challenge.myParticipation?.status === 'active') {
@@ -38,6 +44,9 @@ function participationLabel(challenge: V2ChallengeSummary): { text: string; clas
   }
   return { text: 'Not joined', className: 'bg-slate-100 text-slate-600' };
 }
+
+/** S4a — shared with Group Home (see statusTone above). */
+export { participationLabel };
 
 export function V2ChallengeListScreen() {
   const navigate = useNavigate();

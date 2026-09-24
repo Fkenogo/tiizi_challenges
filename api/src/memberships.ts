@@ -7,6 +7,11 @@ export interface ApiMembershipGroup {
   name: string;
   description: string;
   isPrivate: boolean;
+  /** S4a CORR-001 richer identity (shadow mirror of live truth, read-model only). */
+  coverId: string | null;
+  tagline: string;
+  location: string;
+  focusTags: string[];
 }
 
 export interface ApiMembership {
@@ -30,13 +35,23 @@ interface MembershipRow {
   group_name: string;
   group_description: string;
   group_is_private: boolean;
+  group_cover_id: string | null;
+  group_tagline: string | null;
+  group_location: string | null;
+  group_focus_tags: unknown;
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((t): t is string => typeof t === 'string') : [];
 }
 
 export async function listMembershipsForMember(db: Db, memberId: string): Promise<ApiMembership[]> {
   const result = await db.query<MembershipRow>(
     `SELECT m.group_id, m.role, m.status, m.joined_at,
             g.name AS group_name, g.description AS group_description,
-            g.is_private AS group_is_private
+            g.is_private AS group_is_private,
+            g.cover_id AS group_cover_id, g.tagline AS group_tagline,
+            g.location AS group_location, g.focus_tags AS group_focus_tags
      FROM group_memberships m
      JOIN groups g ON g.group_id = m.group_id
      WHERE m.member_id = $1
@@ -54,6 +69,10 @@ export async function listMembershipsForMember(db: Db, memberId: string): Promis
       name: row.group_name,
       description: row.group_description ?? '',
       isPrivate: Boolean(row.group_is_private),
+      coverId: typeof row.group_cover_id === 'string' ? row.group_cover_id : null,
+      tagline: typeof row.group_tagline === 'string' ? row.group_tagline : '',
+      location: typeof row.group_location === 'string' ? row.group_location : '',
+      focusTags: toStringArray(row.group_focus_tags),
     },
   }));
 }
@@ -87,6 +106,10 @@ export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
                         name: { type: 'string' },
                         description: { type: 'string' },
                         isPrivate: { type: 'boolean' },
+                        coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                        tagline: { type: 'string' },
+                        location: { type: 'string' },
+                        focusTags: { type: 'array', items: { type: 'string' } },
                       },
                     },
                   },

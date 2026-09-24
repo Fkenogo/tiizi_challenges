@@ -9,8 +9,10 @@
  * - member-facing stewardship language is singular "Accountable Steward";
  * - the read contract is the SAME `GET /v1/memberships/me` the Challenge
  *   journey consumes — no second Group integration mechanism;
- * - establishment submits only name + optional description through
- *   `POST /v1/groups`; no client-generated owner/steward or actor identity;
+ * - establishment submits identity (name + optional description) plus the
+ *   governed Community Setup (isPrivate / requireAdminApproval /
+ *   allowMemberChallenges) through `POST /v1/groups`; no client-generated
+ *   owner/steward or actor identity, no media/location/Charter fields;
  * - no direct Firestore write and no direct PostgreSQL access from V2;
  * - no hard-coded preview Group;
  * - src/v2/groups/** imports no frozen V1 Group experience;
@@ -25,6 +27,7 @@ import {
   isCreateGroupDraftSubmittable,
   toCreateGroupInput,
   validateCreateGroupDraft,
+  type CreateGroupDraft,
 } from '../src/v2/groups/groupDraft.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -51,38 +54,66 @@ const groupSources = groupFiles.map((path) => ({ path, source: read(path) }));
 const anyGroupSource = groupSources.map((entry) => entry.source).join('\n');
 
 // ─── 1. Pure draft contract ──────────────────────────────────────────────
+// S4a evolution note: the draft carries the three governed Community Setup
+// flags (isPrivate / requireAdminApproval / allowMemberChallenges) with
+// authority-matching defaults, and the transport input submits them. The
+// assertions below pin the evolved contract: validation stays
+// UX-completeness only, and the body still carries no owner/steward/actor
+// identity (§3 below is unchanged).
 console.log('draft contract');
+function draftWith(overrides: Partial<CreateGroupDraft>): CreateGroupDraft {
+  return { ...EMPTY_GROUP_DRAFT, ...overrides };
+}
 check('empty draft is not submittable', isCreateGroupDraftSubmittable(EMPTY_GROUP_DRAFT) === false);
 check('whitespace-only name is not submittable',
-  isCreateGroupDraftSubmittable({ name: '   ', description: '' }) === false);
+  isCreateGroupDraftSubmittable(draftWith({ name: '   ' })) === false);
 check('a name alone is submittable',
-  isCreateGroupDraftSubmittable({ name: 'Runners', description: '' }) === true);
+  isCreateGroupDraftSubmittable(draftWith({ name: 'Runners' })) === true);
 check('name is required as the only hard field',
-  validateCreateGroupDraft({ name: '', description: 'has description' })
+  validateCreateGroupDraft(draftWith({ name: '', description: 'has description' }))
     .some((issue) => issue.code === 'name_required' && issue.field === 'name'));
 check('over-long name flagged',
-  validateCreateGroupDraft({ name: 'x'.repeat(201), description: '' })
+  validateCreateGroupDraft(draftWith({ name: 'x'.repeat(201) }))
     .some((issue) => issue.code === 'name_too_long'));
 check('over-long description flagged',
-  validateCreateGroupDraft({ name: 'ok', description: 'x'.repeat(2001) })
+  validateCreateGroupDraft(draftWith({ name: 'ok', description: 'x'.repeat(2001) }))
     .some((issue) => issue.code === 'description_too_long'));
+check('community-setup flags need no validation (governed server-side)',
+  validateCreateGroupDraft(draftWith({ name: 'ok', isPrivate: true, requireAdminApproval: true, allowMemberChallenges: false })).length === 0);
 check('empty description is omitted from the transport input',
-  JSON.stringify(toCreateGroupInput({ name: '  Runners  ', description: '   ' })) === '{"name":"Runners"}');
+  JSON.stringify(toCreateGroupInput(draftWith({ name: '  Runners  ', description: '   ' })))
+    === '{"name":"Runners","isPrivate":false,"requireAdminApproval":false,"allowMemberChallenges":true}');
 check('name and description are trimmed on the way out',
-  JSON.stringify(toCreateGroupInput({ name: ' Runners ', description: ' dawn ' }))
-    === '{"name":"Runners","description":"dawn"}');
+  JSON.stringify(toCreateGroupInput(draftWith({ name: ' Runners ', description: ' dawn ' })))
+    === '{"name":"Runners","description":"dawn","isPrivate":false,"requireAdminApproval":false,"allowMemberChallenges":true}');
+check('community-setup flags ride the transport input unchanged',
+  JSON.stringify(toCreateGroupInput(draftWith({ name: 'Runners', isPrivate: true, requireAdminApproval: true, allowMemberChallenges: false })))
+    === '{"name":"Runners","isPrivate":true,"requireAdminApproval":true,"allowMemberChallenges":false}');
 check('owner/admin map to singular Accountable Steward',
   groupRoleLabel('owner') === 'Accountable Steward' && groupRoleLabel('admin') === 'Accountable Steward');
 check('other roles map to Member', groupRoleLabel('member') === 'Member');
 
 // ─── 2. Read contract is the SAME as the Challenge journey ───────────────
+// S4a evolution note: Group Home adds exactly two charter-authorized reads —
+// the canonical detail (`GET /v1/groups/:groupId` via fetchGroupDetail) and
+// the governed hosted-Challenge scope (`GET /v1/challenges?groupId=` via
+// listGroupChallengesV2). Both are consumed through the shared API clients;
+// no inline Group URL may appear in the hooks (no second integration).
 console.log('read contract');
 const hooks = read('src/v2/groups/useV2Groups.ts');
 const membershipsApi = read('src/api/membershipsApi.ts');
 check('groups hook uses the shared memberships client', hooks.includes('fetchMyMemberships'));
 check('the shared client reads GET /v1/memberships/me', membershipsApi.includes('/v1/memberships/me'));
-check('no groups hook invents a second Group read path',
-  !/\/v1\/groups(\?|'|"|\s*`)/.test(hooks));
+check('detail read goes through the shared Group client', hooks.includes('fetchGroupDetail'));
+check('hosted Challenges go through the shared Challenge client', hooks.includes('listGroupChallengesV2'));
+check('join from Home goes through the shared Group client', hooks.includes('joinGroup'));
+check('no groups hook invents an inline Group read path',
+  !/\/v1\/groups(\?|'|"|\s*`)/.test(
+    hooks.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((line) => {
+      const idx = line.indexOf('//');
+      return idx < 0 ? line : line.slice(0, idx);
+    }).join('\n'),
+  ));
 
 // ─── 3. Establishment path ───────────────────────────────────────────────
 console.log('establishment path');
@@ -106,14 +137,21 @@ function objectAfter(source: string, marker: string): string {
 
 const createBody = objectAfter(groupsApi, 'body: {');
 check('client posts to POST /v1/groups', /['"]\/v1\/groups['"]/.test(groupsApi) && groupsApi.includes("method: 'POST'"));
-check('create body carries only name/description',
+check('create body carries only identity + governed setup + richer identity (S4a/CORR-001)',
   createBody.includes('name,') && createBody.includes('description')
-  && !/\b(ownerId|role|status|userId|memberId|created_by)\b/.test(createBody),
+  && createBody.includes('isPrivate') && createBody.includes('requireAdminApproval')
+  && createBody.includes('allowMemberChallenges')
+  && createBody.includes('coverId') && createBody.includes('tagline')
+  && createBody.includes('location') && createBody.includes('focusTags')
+  && createBody.includes('rules')
+  && !/\b(ownerId|role|status|userId|memberId|created_by|coverImageUrl|locationScope|charter|council)\b/.test(createBody),
   createBody);
 check('no client-generated owner/steward authority',
   !/\bownerId\b/.test(groupsApi) && !/\brole\b/.test(createBody) && !/\bstatus\b/.test(createBody));
-check('no client-controlled actor identity',
-  !/\buserId\b|\bmemberId\b|created_by/.test(groupsApi));
+check('no client-supplied actor identity in request inputs or bodies (S4a: the steward memberId may appear only as server-resolved RESPONSE attribution)',
+  !/\b(userId|memberId|created_by)\s*:/.test(createBody)
+  && !/interface CreateGroupInput \{[^}]*\b(userId|memberId|ownerId|created_by)\b/.test(groupsApi)
+  && /joinGroup\(groupId: string\)/.test(groupsApi));
 check('no client writes persistence directly',
   !/firestore|firebase\/|firebase-admin|lib\/firebase/.test(groupsApi));
 
@@ -183,8 +221,8 @@ const groupsScreen = read('src/v2/groups/V2GroupsScreen.tsx');
 const createScreen = read('src/v2/groups/V2CreateGroupScreen.tsx');
 check('Groups screen never renders legacy ids', !groupsScreen.includes('legacyId'));
 check('Create screen never renders legacy ids', !createScreen.includes('legacyId'));
-check('Groups screen renders the stewardship label, not raw role codes',
-  groupsScreen.includes('groupRoleLabel('));
+check('Groups screen renders the strict stewardship badge, not raw role codes',
+  groupsScreen.includes('stewardBadgeFor('));
 check('no raw internal state codes rendered',
   !/>\s*'?(active|pending|joined)'?\s*</.test(groupsScreen));
 

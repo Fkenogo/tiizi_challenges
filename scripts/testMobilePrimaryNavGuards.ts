@@ -109,6 +109,9 @@ check('member routes wrapped by authenticated scope', routes.includes('V2Authent
 check('member routes wrapped by member shell', routes.includes('<V2MemberShell />'));
 
 // ─── G. No new product routes introduced ──────────────────────────────────
+// S4a evolution note: the charter-authorized Group Home route
+// (`groups/:groupId`, TIIZI-S4-GROUPS-EXPERIENCE-CHARTER-001) is the one
+// permitted addition. The guard still forbids anything beyond the known ten.
 console.log('G. route surface unchanged');
 const memberBlock = routes.split('<V2MemberShell />}>')[1]?.split('<Route path="operator"')[0] ?? '';
 const memberPaths = [...memberBlock.matchAll(/<Route path="([^"]+)" element=\{<(V2[A-Za-z]+)/g)].map((m) => `${m[1]}:${m[2]}`);
@@ -119,12 +122,15 @@ const expectedMember = [
   'challenges/:challengeId:V2CreatedChallengeScreen',
   'groups:V2GroupsScreen',
   'groups/new:V2CreateGroupScreen',
+  'groups/:groupId:V2GroupHomeRoute',
   'guide:V2GuidePage',
   'profile:V2ProfilePage',
   'notifications:V2NotificationsPage',
 ];
-check('member route set is exactly the known nine (no additions)',
+check('member route set is exactly the known ten (S4a Home only)',
   JSON.stringify(memberPaths) === JSON.stringify(expectedMember), JSON.stringify(memberPaths));
+check('Group Home route wraps the screen in the contextual group scope',
+  routes.includes('V2GroupScope groupId={groupId ?? null}'));
 
 // ─── H. Root cause closed: emulator banner cannot occlude the nav ─────────
 console.log('H. root cause (emulator banner) closed');
