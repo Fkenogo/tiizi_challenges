@@ -42,6 +42,7 @@
     "test:knowledge-authority-mode": "tsx scripts/testKnowledgeAuthorityMode.ts",
     "test:v2-frontend": "tsx scripts/testV2FrontendGuards.ts",
     "test:v2-experience-boundary": "node scripts/testV2ExperienceBoundary.mjs",
+    "test:v2-runtime-boundary": "node scripts/testV2RuntimeBoundary.mjs",
     "test:s2a-challenge-creation-api-seam": "node scripts/testS2aChallengeCreationApiSeamGuards.mjs",
     "test:s2g-group-establishment": "tsx scripts/testS2GroupEstablishmentGuards.ts",
     "preview:s2g:identity": "tsx scripts/previewS2gIdentity.ts",
