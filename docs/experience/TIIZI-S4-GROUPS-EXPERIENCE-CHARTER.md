@@ -253,7 +253,7 @@ Upload pipelines (Storage/signed URLs) and arbitrary URL entry are NOT authorise
 
 ## 15. Founder review + mobile Groups correction (CORR-003)
 
-**Task:** TIIZI-S4A-FOUNDER-ACCEPTANCE-CORR-003. **Disposition:** Founder review of the corrected S4a preview PASSED; the final bounded presentation correction is applied; S4a is AWAITING FINAL ACCEPTANCE / MERGE. This is not a merge authorization and does not mark S4a complete.
+**Task:** TIIZI-S4A-FOUNDER-ACCEPTANCE-CORR-003 and TIIZI-S4A-FINAL-ACCEPTANCE-AND-MERGE-001. **Disposition:** Founder review PASSED and S4a — Group Establishment + Group Home is ACCEPTED / COMPLETE / MERGED. PR #46 merged normally on 2026-09-24 as `11258107d9e42ecbe044d09841c1aa980081f9df` from accepted head `701f3aa0ff7407c7bf43a8aee09810409f454bce`.
 
 Founder assessment retained: Group creation now feels like establishing a community; Group Home coherently presents identity, hosted Challenges and About; Hosted Challenge → Group continuity works. S4a may proceed to final acceptance while the already-authorized S4b Members + Stewardship, S4c Discovery + Join + Invitations, and S4d Settings + Governed Configuration are assembled later. Search/filter/discovery stays in S4c. Charter lifecycle/upload/versioning, Council mechanics, roster, invitations, Feed, structured interest/activity taxonomy and other deferred capabilities remain outside this correction.
 
@@ -263,4 +263,4 @@ Founder assessment retained: Group creation now feels like establishing a commun
 
 **Runtime boundary retained:** CORR-002 remains in force: V2 does not run legacy RouteWarmup prefetches or legacy user-document bootstrap; V2 product reads remain Tiizi API-bound.
 
-**Validation:** focused responsive Groups guard added; exact viewport/browser verification and the regression suite are recorded with TIIZI-S4A-FOUNDER-ACCEPTANCE-CORR-003. S1–S3 remain COMPLETE / FOUNDER ACCEPTED / MERGED. S4a remains pending final Founder acceptance and merge; S4b/c/d remain not started.
+**Acceptance scope:** progressive Group establishment; richer Group identity and cover contract; Group cards, including the single-column phone layout; Group Home; hosted Challenge presentation; Group→Challenge and Challenge→Group continuity; first-Challenge path; and the CORR-002 V2 runtime-boundary correction. **Validation:** focused responsive Groups guard, exact viewport/browser verification, and regression results are recorded with TIIZI-S4A-FOUNDER-ACCEPTANCE-CORR-003. S1–S3 remain COMPLETE / FOUNDER ACCEPTED / MERGED. S4b — Members + Stewardship is next authorised and NOT STARTED; S4c and S4d remain queued after S4b. All listed deferrals remain deferred. The Activity Library / Activity Guide remains outstanding under S6; the small governed Challenge-composer catalogue is not the completed Library. No S4b/c/d or S6 implementation occurred in this acceptance/merge task; no deployment occurred.
