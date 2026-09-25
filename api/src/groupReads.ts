@@ -48,11 +48,11 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Read-side store surface: the two live reads Group Home needs. The
- * governed `GroupMutationStore` satisfies this structurally, so reads and
- * mutations share the single authority seam — no second store exists.
+ * Read-side store surface for Group Home and its S4b roster. The governed
+ * `GroupMutationStore` satisfies this structurally, so reads and mutations
+ * share the single authority seam — no second store exists.
  */
-export type GroupReadStore = Pick<GroupMutationStore, 'getGroup' | 'getMembership'>;
+export type GroupReadStore = Pick<GroupMutationStore, 'getGroup' | 'getMembership' | 'listMemberships'>;
 
 export interface GroupReadRouteDeps {
   store?: GroupReadStore;
@@ -89,7 +89,54 @@ function missingStore(): GroupReadStore {
       'Group read authority is not configured',
     );
   };
-  return { getGroup: unavailable, getMembership: unavailable };
+  return { getGroup: unavailable, getMembership: unavailable, listMemberships: unavailable };
+}
+
+export interface ApiGroupMember { memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null }
+export interface ApiGroupRoster { groupId: string; members: ApiGroupMember[] }
+
+/** S4b roster: authorize and enumerate only from live membership authority. */
+export async function getGroupRoster(db: Db, store: GroupReadStore, memberId: string, groupId: string): Promise<ApiGroupRoster> {
+  if (!UUID_RE.test(groupId)) readFail(400, 'invalid_group', 'Group not found');
+  const shadow = await db.query<{ legacy_firestore_id: string | null }>(`SELECT legacy_firestore_id FROM groups WHERE group_id = $1`, [groupId]);
+  const legacyId = shadow.rows[0]?.legacy_firestore_id ?? null;
+  if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
+  const group = await storeCall('group read', () => store.getGroup(legacyId));
+  if (!group || !isGroupDocActive(group)) readFail(404, 'unknown_group', 'Group not found');
+  const viewerUid = await resolveViewerUid(db, memberId);
+  const viewerMembership = viewerUid ? await storeCall('membership read', () => store.getMembership(legacyId, viewerUid)) : null;
+  const status = String(viewerMembership?.status ?? '').toLowerCase();
+  const ownerUid = typeof group.ownerId === 'string' ? group.ownerId : null;
+  if (status !== 'active' && status !== 'joined') {
+    // Same generic not-found outcome for private Groups and unknown Groups.
+    readFail(404, 'unknown_group', 'Group not found');
+  }
+  if (!store.listMemberships) readFail(503, 'group_store_unavailable', 'Roster authority is unavailable');
+  const liveRows = await storeCall('roster read', () => store.listMemberships!(legacyId));
+  const activeRows = liveRows.filter((row) => ['active', 'joined'].includes(String(row.status ?? '').toLowerCase()));
+  const uids = [...new Set(activeRows.map((row) => row.userId).filter((uid): uid is string => typeof uid === 'string'))];
+  const mapped = uids.length ? await db.query<{ member_id: string; auth_subject: string }>(
+    `SELECT member_id, auth_subject FROM members WHERE auth_provider = 'firebase' AND auth_subject = ANY($1::text[])`, [uids],
+  ) : { rows: [] as Array<{ member_id: string; auth_subject: string }> };
+  const memberByUid = new Map(mapped.rows.map((row) => [row.auth_subject, String(row.member_id)]));
+  if (ownerUid && !memberByUid.has(ownerUid)) {
+    // Steward attribution is canonical only via live ownerId → member mapping.
+    const steward = await resolveStewardMemberId(db, ownerUid);
+    if (!steward) readFail(503, 'roster_unavailable', 'Group membership information is incomplete');
+    memberByUid.set(ownerUid, steward);
+  }
+  const stewardMemberId = ownerUid ? memberByUid.get(ownerUid) ?? await resolveStewardMemberId(db, ownerUid) : null;
+  if (!stewardMemberId) readFail(503, 'roster_unavailable', 'Group membership information is incomplete');
+  const members: ApiGroupMember[] = [];
+  for (const row of activeRows) {
+    const uid = typeof row.userId === 'string' ? row.userId : null;
+    const mappedId = uid ? memberByUid.get(uid) : null;
+    if (!mappedId) readFail(503, 'roster_unavailable', 'Group membership information is incomplete');
+    members.push({ memberId: mappedId, relationship: mappedId === stewardMemberId ? 'steward' : 'member', joinedAt: typeof row.createdAt === 'string' ? row.createdAt : typeof row.approvedAt === 'string' ? row.approvedAt : null });
+  }
+  if (!members.some((row) => row.relationship === 'steward')) readFail(503, 'roster_unavailable', 'Group membership information is incomplete');
+  members.sort((a, b) => Number(b.relationship === 'steward') - Number(a.relationship === 'steward'));
+  return { groupId, members };
 }
 
 export type ViewerRelationship = 'steward' | 'member' | 'pending' | 'none';
@@ -330,6 +377,16 @@ export function registerGroupReadRoutes(
       return getGroupDetail(db, store, member.memberId, params.groupId);
     },
   );
+
+  app.get('/v1/groups/:groupId/members', {
+    validatorCompiler: groupMutationEmptyValidatorCompiler,
+    schema: { params: groupIdParamsSchema, response: { 200: { type: 'object', required: ['groupId', 'members'], properties: {
+      groupId: { type: 'string', format: 'uuid' }, members: { type: 'array', items: { type: 'object', required: ['memberId', 'relationship', 'joinedAt'], properties: { memberId: { type: 'string', format: 'uuid' }, relationship: { type: 'string', enum: ['steward', 'member'] }, joinedAt: { anyOf: [{ type: 'string' }, { type: 'null' }] } } } },
+    } } } },
+  }, async (request) => {
+    const member = authenticatedMember(request);
+    return getGroupRoster(db, store, member.memberId, (request.params as { groupId: string }).groupId);
+  });
 }
 
 /** Compatibility: the read routes share the mutation boundary's store seam. */

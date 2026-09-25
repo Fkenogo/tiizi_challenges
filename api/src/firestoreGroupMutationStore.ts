@@ -53,6 +53,10 @@ export function createAdminGroupMutationStore(): GroupMutationStore {
         .get();
       return snap.exists ? (snap.data() as Record<string, unknown>) : null;
     },
+    async listMemberships(legacyId: string): Promise<Array<Record<string, unknown>>> {
+      const snap = await db().collection('groupMembers').where('groupId', '==', legacyId).get();
+      return snap.docs.map((doc) => doc.data() as Record<string, unknown>);
+    },
     async setMembership(
       legacyId: string,
       firebaseUid: string,
