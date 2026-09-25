@@ -109,6 +109,8 @@ export interface GroupMutationStore {
   updateGroupCounter(legacyId: string, delta: number): Promise<void>;
   /** Read a membership document; null when missing. */
   getMembership(legacyId: string, firebaseUid: string): Promise<Record<string, unknown> | null>;
+  /** Enumerate live membership documents for a Group; authority remains Firestore. */
+  listMemberships?(legacyId: string): Promise<Array<Record<string, unknown>>>;
   /** Full-overwrite a membership document (creates). */
   setMembership(legacyId: string, firebaseUid: string, data: Record<string, unknown>): Promise<void>;
   /** Partial-update a membership document (must exist). */
@@ -519,7 +521,7 @@ export interface GovernedLeaveResult {
 
 /**
  * Governed membership leave/withdraw, mirroring current product
- * authorization: the owner cannot leave (ownership transfer first); an
+ * authorization: the Accountable Steward cannot leave while responsible; an
  * active/joined membership moves to left with the counter decremented;
  * missing or non-active memberships are idempotent no-ops.
  */
@@ -538,7 +540,7 @@ export async function leaveGovernedGroup(
   const group = await storeCall('group read', () => store.getGroup(legacyId!));
   if (!group) fail(404, 'unknown_group', 'Group not found under current Group authority');
   if (group!.ownerId === actor.firebaseUid) {
-    fail(403, 'owner_cannot_leave', 'Group owner cannot leave. Transfer ownership first.');
+    fail(403, 'owner_cannot_leave', 'The Accountable Steward cannot leave while responsible for this Group.');
   }
   const existing = await storeCall('membership read', () => store.getMembership(legacyId!, actor.firebaseUid));
   const existingStatus = typeof existing?.status === 'string' ? String(existing.status).toLowerCase() : null;

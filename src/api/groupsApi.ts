@@ -115,6 +115,14 @@ export function fetchGroupDetail(groupId: string): Promise<V2GroupDetail> {
   return apiFetch<V2GroupDetail>(`/v1/groups/${groupId}`);
 }
 
+export interface V2GroupRoster { groupId: string; members: Array<{ memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null }> }
+export function fetchGroupRoster(groupId: string): Promise<V2GroupRoster> {
+  return apiFetch<V2GroupRoster>(`/v1/groups/${groupId}/members`);
+}
+export function leaveGroupV2(groupId: string): Promise<{ id: string; status: 'left' | 'none' }> {
+  return apiFetch<{ id: string; status: 'left' | 'none' }>(`/v1/groups/${groupId}/leave`, { method: 'POST', body: {} });
+}
+
 /** Governed membership join (`POST /v1/groups/:groupId/join`). Transport only. */
 export function joinGroup(groupId: string): Promise<{ id: string; status: string; role: string }> {
   return apiFetch<{ id: string; status: string; role: string }>(`/v1/groups/${groupId}/join`, {

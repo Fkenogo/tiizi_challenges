@@ -5,7 +5,7 @@
  * Auth emulator on loopback and NOTHING else:
  *
  * - target must be the loopback Auth emulator (host 127.0.0.1/localhost,
- *   port 9099) — anything else throws;
+ *   port 9099 or isolated S4b preview port 19099) — anything else throws;
  * - refuses to run under NODE_ENV=production;
  * - never touches production Auth (no admin credentials, no service
  *   accounts; the emulator owner scope exists only on loopback);
@@ -38,6 +38,7 @@ export const V2_PREVIEW_EMAIL = 'founder1@tiizi.local';
 /** Fixed loopback Auth emulator endpoint (mirrors CORR-002 app wiring). */
 export const AUTH_EMULATOR_HOST = '127.0.0.1';
 export const AUTH_EMULATOR_PORT = 9099;
+export const ISOLATED_S4B_AUTH_EMULATOR_PORT = 19099;
 
 /** Emulator owner scope: valid on loopback only, never a real credential. */
 const OWNER_AUTH_HEADER = 'Bearer owner';
@@ -65,8 +66,8 @@ export function resolveEmulatorTarget(opts: {
   if (!LOOPBACK_HOSTS.has(host.toLowerCase())) {
     throw new Error(`Refusing non-loopback Auth target: ${host}. Only the local Auth emulator may be reset.`);
   }
-  if (!Number.isInteger(port) || port !== AUTH_EMULATOR_PORT) {
-    throw new Error(`Refusing Auth target port ${opts.port ?? '(default)'}: only ${AUTH_EMULATOR_PORT} is allowed.`);
+  if (!Number.isInteger(port) || ![AUTH_EMULATOR_PORT, ISOLATED_S4B_AUTH_EMULATOR_PORT].includes(port)) {
+    throw new Error(`Refusing Auth target port ${opts.port ?? '(default)'}: only local preview Auth ports are allowed.`);
   }
   return { host, port, url: `http://${host}:${port}` };
 }

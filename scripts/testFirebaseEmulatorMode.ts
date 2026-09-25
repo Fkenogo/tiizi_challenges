@@ -17,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   AUTH_EMULATOR_URL,
+  resolveAuthEmulatorUrl,
   resolveAuthEmulatorMode,
 } from '../src/lib/firebaseEmulators.js';
 
@@ -37,6 +38,8 @@ console.log('A. explicit development opt-in connects');
 check('DEV + flag=true enables mode', resolveAuthEmulatorMode({ DEV: true, VITE_USE_FIREBASE_EMULATORS: 'true' }) === true);
 check('flag is case/whitespace tolerant', resolveAuthEmulatorMode({ DEV: true, VITE_USE_FIREBASE_EMULATORS: ' True ' }) === true);
 check('emulator endpoint is the local Auth emulator', AUTH_EMULATOR_URL === 'http://127.0.0.1:9099');
+check('isolated preview may use a loopback-only alternate port', resolveAuthEmulatorUrl({ VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://127.0.0.1:19099' }) === 'http://127.0.0.1:19099');
+check('custom Auth emulator rejects non-loopback URLs', (() => { try { resolveAuthEmulatorUrl({ VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://192.0.2.1:19099' }); return false; } catch { return true; } })());
 
 console.log('B. localhost alone never enables mode');
 check('DEV without flag stays off', resolveAuthEmulatorMode({ DEV: true }) === false);
@@ -67,7 +70,7 @@ const authModule = read('src/lib/firebaseAuth.ts');
 const appModule = read('src/lib/firebaseApp.ts');
 check('Auth module wires the helper once', (authModule.match(/connectAuthEmulatorOnce\(auth\)/g) ?? []).length === 1);
 check('app init has no emulator references', !/emulator/i.test(appModule));
-check('helper never touches credential config', !/VITE_FIREBASE_/.test(helper));
+check('helper never reads Firebase credential config', !/apiKey|authDomain|clientEmail|privateKey/.test(helper));
 check('helper changes no providers/projects', !/projectId|provider|signInWith|createUser/i.test(helper));
 check('HMR-safe: connected marker survives module reload', helper.includes('globalThis'));
 check(
@@ -76,7 +79,7 @@ check(
 );
 check(
   'SDK emulator warning banner is disabled (it occludes the mobile bottom nav)',
-  /connectAuthEmulator\(\s*auth,\s*AUTH_EMULATOR_URL,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(helper),
+  /connectAuthEmulator\(\s*auth,\s*emulatorUrl,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(helper),
 );
 
 if (failures > 0) {

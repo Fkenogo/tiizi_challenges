@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+const api = await read('api/src/groupReads.ts');
+const ui = await read('src/v2/groups/V2GroupHomeScreen.tsx');
+const hooks = await read('src/v2/groups/useV2Groups.ts');
+const client = await read('src/api/groupsApi.ts');
+const mutation = await read('api/src/groupMutations.ts');
+const routes = await read('api/src/groupMutationRoutes.ts');
+
+assert.match(api, /\/v1\/groups\/:groupId\/members/);
+assert.match(api, /store\.listMemberships!\(legacyId\)/);
+assert.match(api, /status !== 'active' && status !== 'joined'/);
+assert.match(api, /relationship: mappedId === stewardMemberId \? 'steward' : 'member'/);
+assert.match(api, /ownerId/);
+assert.doesNotMatch(api.slice(api.indexOf('export async function getGroupRoster')), /challenge_particip|challengeMember|displayName|email|phone|firebaseUid/);
+assert.match(ui, /aria-label="Members"/);
+assert.match(ui, /Accountable Steward/);
+assert.match(ui, /Tiizi member/);
+assert.match(ui, /Leave Group/);
+assert.match(ui, /window\.confirm/);
+assert.match(ui, /cannot leave while responsible/);
+assert.match(ui, /grid grid-cols-1 gap-2/);
+assert.doesNotMatch(ui, /aria-label="Members"[^]*?grid-cols-2/);
+assert.match(hooks, /invalidateV2Memberships/);
+assert.match(hooks, /v2-group-roster/);
+assert.match(client, /\/v1\/groups\/\$\{groupId\}\/members/);
+assert.match(client, /\/v1\/groups\/\$\{groupId\}\/leave/);
+assert.match(mutation, /cannot leave while responsible for this Group/);
+const mutationPaths = [...routes.matchAll(/app\.(?:post|patch|delete|put)\(\s*'([^']+)'/g)].map((match) => match[1]).sort();
+assert.deepEqual(mutationPaths, ['/v1/groups', '/v1/groups/:groupId/join', '/v1/groups/:groupId/leave']);
+console.log('S4b Members guards: all passing.');

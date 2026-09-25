@@ -135,7 +135,7 @@ check('Group Home route wraps the screen in the contextual group scope',
 // ─── H. Root cause closed: emulator banner cannot occlude the nav ─────────
 console.log('H. root cause (emulator banner) closed');
 check('connectAuthEmulator disables the SDK warning banner',
-  /connectAuthEmulator\(\s*auth,\s*AUTH_EMULATOR_URL,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(emulators));
+  /connectAuthEmulator\(\s*auth,\s*emulatorUrl,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(emulators));
 
 if (failures > 0) {
   console.error(`\nMobile primary navigation guard: ${failures} failure(s).`);

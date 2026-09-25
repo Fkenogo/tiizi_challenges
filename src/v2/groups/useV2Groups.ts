@@ -7,12 +7,15 @@ import {
 import {
   createGroup,
   fetchGroupDetail,
+  fetchGroupRoster,
+  leaveGroupV2,
   fetchMyMemberships,
   joinGroup,
   type CreateGroupInput,
   type CreatedGroup,
   type MyMembershipsResponse,
   type V2GroupDetail,
+  type V2GroupRoster,
 } from '../../api/groupsApi';
 import { listGroupChallengesV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import {
@@ -69,6 +72,28 @@ export function useV2GroupChallenges(groupId: string | null) {
   });
 }
 
+export function useV2GroupRoster(groupId: string | null) {
+  const { user } = useAuth();
+  return useQuery<V2GroupRoster>({
+    queryKey: ['v2-group-roster', groupId, user?.uid],
+    queryFn: () => fetchGroupRoster(groupId as string),
+    enabled: !!user && !!groupId,
+  });
+}
+
+export function useLeaveV2Group(groupId: string | null) {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: () => leaveGroupV2(groupId as string),
+    onSuccess: async () => {
+      await invalidateV2Memberships(queryClient);
+      await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
+      await queryClient.invalidateQueries({ queryKey: ['v2-group-roster', groupId] });
+    },
+  });
+}
+
 /** Governed Group establishment; refetches the reads on success. */
 export function useCreateGroup() {
   const queryClient = useQueryClient();
@@ -87,7 +112,9 @@ export function useJoinGroup(groupId: string | null) {
   return useMutation<{ id: string; status: string; role: string }, unknown, void>({
     mutationFn: () => joinGroup(groupId as string),
     onSuccess: async () => {
+      await invalidateV2Memberships(queryClient);
       await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
+      await queryClient.invalidateQueries({ queryKey: ['v2-group-roster', groupId] });
     },
   });
 }

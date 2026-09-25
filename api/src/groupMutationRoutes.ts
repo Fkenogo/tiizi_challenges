@@ -157,6 +157,7 @@ function missingStore(): GroupMutationStore {
     getGroup: unavailable,
     updateGroupCounter: unavailable,
     getMembership: unavailable,
+    listMemberships: unavailable,
     setMembership: unavailable,
     updateMembership: unavailable,
   };

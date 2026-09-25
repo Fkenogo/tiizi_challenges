@@ -13,7 +13,7 @@ import { useV2GroupId } from '../group/V2GroupScope';
 import { coverFor, coverGradientFor } from './groupCovers';
 import { stewardBadgeFor } from './groupDraft';
 import { groupHomeErrorStatus, groupHomeViewFor, viewerMayCreateChallenge } from './groupHomeView';
-import { useJoinGroup, useV2GroupChallenges, useV2GroupDetail, useV2Groups } from './useV2Groups';
+import { useJoinGroup, useLeaveV2Group, useV2GroupChallenges, useV2GroupDetail, useV2GroupRoster, useV2Groups } from './useV2Groups';
 import { V2HostedChallengeCard } from './V2HostedChallengeCard';
 
 /**
@@ -179,6 +179,8 @@ function GroupHomeBody({
   const norms = detail.rules ?? [];
   const memberships = useV2Groups();
   const viewerMemberId = memberships.data?.memberId ?? null;
+  const roster = useV2GroupRoster(detail.id);
+  const leave = useLeaveV2Group(detail.id);
   const viewerIsGroupMember =
     detail.viewerRelationship === 'member' || detail.viewerRelationship === 'steward';
 
@@ -291,6 +293,40 @@ function GroupHomeBody({
                 onOpen={onOpenChallenge}
               />
             ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-label="Members" className="space-y-2">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-base font-black text-slate-900">Members</h2>
+            <p className="text-xs text-slate-500">People who belong to this Group.</p>
+          </div>
+          {detail.viewerRelationship === 'member' && (
+            <button type="button" className="rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-50" disabled={leave.isPending}
+              onClick={() => { if (window.confirm(`Leave ${detail.name}? You will no longer have access to its member roster.`)) leave.mutate(); }}>
+              {leave.isPending ? 'Leaving…' : 'Leave Group'}
+            </button>
+          )}
+        </div>
+        {detail.viewerRelationship === 'steward' && (
+          <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">The Accountable Steward cannot leave while responsible for this Group.</p>
+        )}
+        {leave.isError && <p role="alert" className="text-xs text-red-700">We could not update your membership. Please try again.</p>}
+        {roster.isLoading && <V2LoadingState label="Loading members…" />}
+        {roster.isError && detail.viewerRelationship !== 'steward' && detail.viewerRelationship !== 'member' && <p className="text-sm text-slate-500">Members are visible to active Group members.</p>}
+        {roster.isError && (detail.viewerRelationship === 'member' || detail.viewerRelationship === 'steward') && <V2ErrorState title="We could not load members" message="The Group is available, but its member list could not be loaded." onRetry={() => void roster.refetch()} />}
+        {roster.isSuccess && (
+          <ul className="grid grid-cols-1 gap-2">
+            {roster.data.members.map((member) => {
+              const isViewer = member.memberId === viewerMemberId;
+              const isSteward = member.relationship === 'steward';
+              return <li key={member.memberId} className={`flex min-w-0 items-center justify-between gap-3 rounded-xl border px-4 py-3 ${isSteward ? 'border-orange-200 bg-orange-50/60' : 'border-slate-200 bg-white'}`}>
+                <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{isViewer ? 'You' : 'Tiizi member'}</p><p className="text-xs text-slate-500">{isSteward ? 'Accountable Steward' : 'Member'}{isViewer && !isSteward ? ' · you' : ''}</p></div>
+                {isSteward && <span className="shrink-0 rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-orange-900">Accountable Steward</span>}
+              </li>;
+            })}
           </ul>
         )}
       </section>
