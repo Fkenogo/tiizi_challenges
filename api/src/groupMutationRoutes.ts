@@ -21,14 +21,12 @@ import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 import {
-  createGovernedGroup,
-  joinGovernedGroup,
-  leaveGovernedGroup,
-  GroupMutationError,
   type CreateGroupTerms,
   type GroupMutationActor,
   type GroupMutationStore,
 } from './groupMutations.js';
+import { GroupMutationError } from './groupErrors.js';
+import { createGovernedGroup, joinGovernedGroup, leaveGovernedGroup } from './postgresGroupAuthority.js';
 
 export interface GroupMutationRouteDeps {
   store?: GroupMutationStore;
@@ -220,7 +218,7 @@ export function registerGroupMutationRoutes(
   db: Db,
   deps: GroupMutationRouteDeps = {},
 ): void {
-  const store = deps.store ?? missingStore();
+  void deps;
 
   app.post(
     '/v1/groups',
@@ -249,7 +247,6 @@ export function registerGroupMutationRoutes(
       const actor = await resolveActor(db, member.memberId);
       const result = await createGovernedGroup(
         db,
-        store,
         actor,
         (request.body ?? {}) as CreateGroupTerms,
       );
@@ -282,7 +279,7 @@ export function registerGroupMutationRoutes(
       const member = authenticatedMember(request);
       const actor = await resolveActor(db, member.memberId);
       const params = request.params as { groupId: string };
-      return joinGovernedGroup(db, store, actor, params.groupId);
+      return joinGovernedGroup(db, actor, params.groupId);
     },
   );
 
@@ -310,7 +307,7 @@ export function registerGroupMutationRoutes(
       const member = authenticatedMember(request);
       const actor = await resolveActor(db, member.memberId);
       const params = request.params as { groupId: string };
-      return leaveGovernedGroup(db, store, actor, params.groupId);
+      return leaveGovernedGroup(db, actor, params.groupId);
     },
   );
 }

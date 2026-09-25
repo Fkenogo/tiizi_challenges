@@ -37,12 +37,13 @@
 import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
-import { isGroupDocActive } from './firestoreGroupAuthority.js';
+import { isGroupDocActive } from './groupLiveness.js';
 import {
   groupMutationEmptyValidatorCompiler,
   type GroupMutationRouteDeps,
 } from './groupMutationRoutes.js';
-import { GroupMutationError, type GroupMutationStore } from './groupMutations.js';
+import type { GroupMutationStore } from './groupMutations.js';
+import { GroupMutationError } from './groupErrors.js';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -98,8 +99,8 @@ export interface ApiGroupRoster { groupId: string; members: ApiGroupMember[] }
 /** S4b roster: authorize and enumerate only from live membership authority. */
 export async function getGroupRoster(db: Db, store: GroupReadStore, memberId: string, groupId: string): Promise<ApiGroupRoster> {
   if (!UUID_RE.test(groupId)) readFail(400, 'invalid_group', 'Group not found');
-  const shadow = await db.query<{ legacy_firestore_id: string | null }>(`SELECT legacy_firestore_id FROM groups WHERE group_id = $1`, [groupId]);
-  const legacyId = shadow.rows[0]?.legacy_firestore_id ?? null;
+  const shadow = await db.query<{ lookup_id: string | null }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS lookup_id FROM groups WHERE group_id = $1`, [groupId]);
+  const legacyId = shadow.rows[0]?.lookup_id ?? null;
   if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
   const group = await storeCall('group read', () => store.getGroup(legacyId));
   if (!group || !isGroupDocActive(group)) readFail(404, 'unknown_group', 'Group not found');
@@ -217,7 +218,7 @@ export async function getGroupDetail(
   // Lookup key only: the shadow maps identity, never authority or settings.
   const shadow = await db.query<{
     legacy_firestore_id: string | null;
-  }>(`SELECT legacy_firestore_id FROM groups WHERE group_id = $1`, [groupId]);
+  }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id FROM groups WHERE group_id = $1`, [groupId]);
   const legacyId = shadow.rows[0]?.legacy_firestore_id ?? null;
   if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
   // Live authority decides existence and liveness; outages fail closed.

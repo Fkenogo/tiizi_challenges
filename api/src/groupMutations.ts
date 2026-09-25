@@ -45,17 +45,8 @@
 
 import type { Db } from './db.js';
 import { isGroupDocActive } from './firestoreGroupAuthority.js';
-
-export class GroupMutationError extends Error {
-  readonly statusCode: number;
-  readonly code: string;
-
-  constructor(statusCode: number, code: string, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-  }
-}
+import { GroupMutationError } from './groupErrors.js';
+export { GroupMutationError } from './groupErrors.js';
 
 function fail(statusCode: number, code: string, message: string): never {
   throw new GroupMutationError(statusCode, code, message);

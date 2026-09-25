@@ -13,6 +13,7 @@
     "migrate": "tsx src/migrateCli.ts",
     "migrate:prod": "node dist/src/migrateCli.js",
     "shadow:import": "tsx src/shadowImportCli.ts",
+    "group:reconcile": "node --import tsx src/groupAuthorityReconciliationCli.ts",
     "challenge:create-v2": "tsx src/challengeCreateCli.ts",
     "challenge:lifecycle": "tsx src/challengeLifecycleCli.ts",
     "parity:memberships": "tsx src/parityCli.ts",

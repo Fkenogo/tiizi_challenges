@@ -59,7 +59,7 @@ import {
   type ParticipationTruthState,
 } from './derivedTruth.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
-import { isGroupDocActive } from './firestoreGroupAuthority.js';
+import { isGroupDocActive } from './groupLiveness.js';
 import type { GroupMutationStore } from './groupMutations.js';
 import {
   getChallengeFinal,
@@ -782,7 +782,7 @@ export async function listVisibleChallengesInGroup(
   if (!UUID_RE.test(memberId)) readFail(400, 'invalid_member', 'member must be a member UUID');
   if (!UUID_RE.test(groupId)) readFail(400, 'invalid_group', 'groupId must be a Tiizi group UUID');
   const shadow = await db.query<{ legacy_firestore_id: string | null }>(
-    `SELECT legacy_firestore_id FROM groups WHERE group_id = $1`,
+    `SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id FROM groups WHERE group_id = $1`,
     [groupId],
   );
   const legacyId = shadow.rows[0]?.legacy_firestore_id ?? null;
