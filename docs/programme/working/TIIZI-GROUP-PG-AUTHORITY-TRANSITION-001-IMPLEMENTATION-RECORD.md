@@ -1,6 +1,8 @@
 # TIIZI-GROUP-PG-AUTHORITY-TRANSITION-001 — Implementation Record
 
-**Status:** Candidate implementation prepared; reconciliation and authority cutover NOT EXECUTED. **Not ready to merge or deploy.**
+**Status:** **COMPLETE / FOUNDER ACCEPTED / MERGED** — source PR #50, merge commit `7cffb4b8f7c9b50c613a91067b7ca8c05554e52b`.
+
+**Current disposition:** The V2 Group authority transition completed by establishing PostgreSQL as authoritative V2 Group, Group Membership, and Group-scoped Challenge Group/Membership authority. There is no V1 operational-data cutover to perform: V1 is frozen/reference-only, V1 operational data is outside the V2 continuity baseline, and V1-to-V2 migration and Firestore-to-PostgreSQL reconciliation are NOT REQUIRED. V2 environments use fresh V2 data. Persistent V2 deployment is a later deployment activity, not an unfinished Firestore data migration.
 
 ## Entry baseline and programme
 
@@ -11,25 +13,25 @@
 
 ## Authority contract
 
-The intended post-transition authority is PostgreSQL for Group identity, governed settings, lifecycle, privacy/admission policy, Challenge-creation policy, Steward attribution, membership state/lifecycle/roster, eligible member count, and Challenge membership authorization. Firebase Auth remains the authentication/token-verification provider and the Firebase UID is resolved to the Tiizi member UUID through `members`. Firestore is not a fallback or a V2 Group dual-write target. Legacy Firestore IDs remain only as reconciliation/compatibility identifiers.
+The current V2 authority is PostgreSQL for Group identity, governed settings, lifecycle, privacy/admission policy, Challenge-creation policy, Steward attribution, membership state/lifecycle/roster, eligible member count, and Challenge Group/Membership authorization. Firebase Auth remains the authentication/token-verification provider, and provider UID is resolved to the Tiizi member UUID through `members`. Firestore is not a V2 Group/Membership authority, fallback, or dual-write target. Legacy Firestore IDs are not part of the V2 continuity baseline and do not create a reconciliation obligation.
 
 ## Candidate schema and runtime changes
 
 - Added migration `019_group_postgres_authority.sql`: Group policy, Steward UUID, normalized unique invite code, membership lifecycle attribution/timestamps, indexes, update timestamp triggers, one active owner uniqueness and deferred Steward/member relation checks.
 - Added PostgreSQL Group and membership authority resolvers and PostgreSQL Group read projection. V2 Group create/join/leave routes now write in PostgreSQL transactions; Group detail, roster, count, liveness and Challenge Group visibility read PostgreSQL. Challenge participation/creation authorities and the challenge-create CLI now resolve Group membership from PostgreSQL.
-- Added explicit reconciliation report/apply functions and `group:reconcile` CLI. Apply mode is gated by a safe dry-run result and runs transactionally; the CLI's default mode is dry-run.
+- The initial candidate included Group reconciliation/import tooling while data preservation requirements were unresolved. Founder disposition later established a fresh V2 data baseline; Pass 005 removed the unneeded Group/V1 import and reconciliation tooling. No V1 import path remains authorized or required.
 - No invitation resolver, discovery/search/pagination, approval/rejection operation, S4d/S6 work, Feed, Council, or Steward transfer was added.
 
-## Reconciliation and cutover evidence
+## Historical initial reconciliation assessment — superseded by Pass 004B
 
-The required real-data dry-run was **not executed**. The worktree has no `DATABASE_URL`, Firebase credentials, or project selection. `npm run group:reconcile -- --dry-run` therefore cannot access either authoritative dataset. A synthetic PGlite reconciliation test confirms conflict detection and read-only behavior, but does not prove production data is safe to reconcile.
+At the time of the initial assessment, a real-data dry-run was not executed because no matched datasets were configured. Founder disposition in Pass 004B subsequently established that no such dry-run is required: V1 data is outside V2 continuity, V2 is a fresh rebuild, and no production Firebase inspection or reconciliation is authorized or needed.
 
 No apply, import, data repair, UUID remapping, cutover, production migration, or deployment occurred. Existing PostgreSQL UUIDs and Challenge FKs have not been changed. Production Groups and membership counts are unknown from this worktree.
 
 ## Firestore retirement boundary
 
 - V2 API runtime wiring no longer imports the Firestore Group mutation/read or Challenge-creation authority adapters. New API Group writes do not dual-write Firestore.
-- Legacy V1 browser Group services and legacy Firebase Functions remain in the repository for their existing paths. Their Firestore writes do not update PostgreSQL and are not V2 authority. They must be reviewed at cutover against the actual legacy Group population.
+- Frozen V1 browser Group services and legacy Firebase Functions may remain as historical/reference code. They are not V2 authority; no V1 operational data population is to be reviewed or migrated for this V2 transition.
 - Firebase Auth and unrelated Firestore domains remain unchanged.
 - The former Firestore adapters and shadow importer source remain present but are no longer wired into V2 API runtime. A later cleanup should retire them only after code-reference and V1 impact review.
 
@@ -44,11 +46,11 @@ No apply, import, data repair, UUID remapping, cutover, production migration, or
 - Founder preview was not run: no configured database, Firebase Auth project, or reconciled Group dataset is available.
 - Deployment: none.
 
-## Rollback boundary and next gate
+## Historical rollback/cutover notes — superseded
 
-Before a production apply/cutover, deploy rollback is not relevant; the candidate branch is unmerged. After a future PostgreSQL-authoritative write cutover, rollback cannot simply point the API at stale Firestore: writes must be replayed/reconciled or a compatible reverse synchronization boundary must be rehearsed. The production cutover remains blocked until a real dry-run reports no unresolved mapping/owner/Challenge conflicts, the apply is reviewed, S4a/S4b regression tests are updated and green against PostgreSQL, and a local Founder preview is completed.
+Earlier pass notes discuss Firestore reconciliation and a future data cutover because those were open questions at the time. Founder disposition in Pass 004B resolved them: V1 is frozen/reference-only, no V1 operational data is required in V2, and no Firestore-to-PostgreSQL reconciliation or Group-data cutover remains outstanding. The authority transition is the V2 persistence and runtime authority change recorded in Pass 005. Any future rollback of a deployed V2 application is a deployment/release operation and does not create a V1 data-migration obligation.
 
-Master Programme was not changed because the transition has not occurred. S4c has not started. S4d/S6 remain untouched.
+At the time of the initial implementation record, the Master Programme had not been changed because the transition had not occurred. This statement is historical and is superseded by the Pass 005 closure entry below and Master Programme v2.09. S4c has not started. S4d/S6 remain untouched.
 
 ## Pass 003 — runtime boundary and regression realignment
 
@@ -97,3 +99,11 @@ Founder disposition supersedes the earlier reconciliation/cutover assumptions re
 - No Firebase project, emulator, production or remote PostgreSQL database was queried. No production/Firebase data was modified. No V1 data was imported. No reconciliation, cutover, PR, merge, or deployment occurred. Synthetic rows exist only in the disposable local cluster.
 - Current V2 Group and Membership authority is PostgreSQL via the Tiizi API. Firestore is not used as fallback or dual-write authority. Firebase Auth remains an identity/token-verification service. `groupMutations.ts` and Firestore adapters remain legacy/non-authoritative where retained.
 - Result: clean V2 persistent PostgreSQL baseline validation passed. The work is saved in a local candidate commit for Founder review; it has not been pushed, merged, or deployed. S4c remains NOT STARTED; S4d/S6 remain unchanged.
+
+## Closure — COMPLETE / FOUNDER ACCEPTED / MERGED
+
+- Founder accepted source `c36e0aea164242f0b85dd305554a6d3e7b877c2b` was published as PR #50 against `main` at `9324e384c02be014fb91b9419e3e4b5e1033b8ac` and merged using the normal merge-commit path as `7cffb4b8f7c9b50c613a91067b7ca8c05554e52b`. The accepted source SHA is an ancestor of the merged `origin/main`.
+- **V2 Group authority:** PostgreSQL. **V2 Group Membership authority:** PostgreSQL. **Group-scoped Challenge Group/Membership authority:** PostgreSQL. The Tiizi API is the application boundary. **Firebase Auth:** retained for authentication/token verification and provider UID to Tiizi identity mapping only. **Firestore Group/Membership authority for V2:** none; no fallback or dual-write.
+- **V1:** frozen/reference-only. **V1 operational data migration:** NOT REQUIRED. **Firestore-to-PostgreSQL reconciliation:** NOT REQUIRED. **V2 data baseline:** fresh V2 data. No production Firebase was queried and no production or V1 data was migrated.
+- Pass 005 acceptance evidence: isolated PostgreSQL 17.11 migrations 019–020 and synthetic V2 Group/Membership/Challenge validation; full API suite 705 passed / 8 skipped; all four repository GitHub CI jobs passed. The external Cloudflare Workers Builds check failed and is non-gating under established repository disposition. No deploy occurred.
+- **Transition status: COMPLETE / FOUNDER ACCEPTED / MERGED.** S4a and S4b remain COMPLETE / FOUNDER ACCEPTED / MERGED. S4c — Discovery + Join + Invitations remains NOT STARTED and is next. S4d remains NOT STARTED / queued after S4c. S6 Activity Library / Activity Guide remains OUTSTANDING / NOT STARTED.
