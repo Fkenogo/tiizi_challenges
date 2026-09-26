@@ -8,13 +8,12 @@
  *
  * Identity discipline (fail closed): the global /v1/ auth hook resolves the
  * Bearer token to an internal Member UUID server-side; these routes resolve
- * the Firebase UID from the members table (same mapping the read authority
- * uses) and NEVER accept actor/member identity from the client — request
- * bodies carry governing terms only (additionalProperties:false rejects
- * smuggled ownerId/userId/member fields with 400). Without a configured
- * store, every route fails closed (503) rather than authorizing.
+ * the Firebase subject through `members` and NEVER accept actor/member
+ * identity from the client. Request bodies carry governing terms only
+ * (`additionalProperties:false` rejects smuggled identity fields). Writes
+ * go directly to the PostgreSQL authority transaction functions below.
  *
- * No Firebase imports here (routes + injected store only).
+ * No Firestore or Firebase imports here.
  */
 
 import type { FastifyInstance } from 'fastify';

@@ -5,23 +5,12 @@
  * Group detail source; there is no second detail path and no client-derived
  * Group state.
  *
- * Authority order (never inverted):
- * 1. PostgreSQL maps the Tiizi Group UUID to the transitional Firestore
- *    lookup key (`groups.legacy_firestore_id`). The shadow NEVER authorizes
- *    and NEVER supplies governed settings — it is a lookup key only.
- * 2. The live Firestore Group document (through the injected store, the
- *    same seam the governed mutations write through) supplies existence,
- *    liveness (`isGroupDocActive`), governed settings, the member counter,
- *    and the owner attribution. Unknown/inactive groups fail closed as 404
- *    (existence is not leaked); store outages fail closed as 503.
- * 3. The viewer's Firebase UID resolves server-side from the members table
- *    (the same mapping the mutation boundary uses); client identity is
- *    never accepted. The viewer relationship (steward/member/pending/none)
- *    is computed server-side, never declared by the client.
- * 4. The singular Accountable Steward resolves server-side from the live
- *    `ownerId` attribution through the members mapping. An unresolvable or
- *    absent attribution yields a null steward — never a client-supplied or
- *    guessed steward, and never plural stewards.
+ * PostgreSQL is authoritative for identity, existence, liveness, governed
+ * settings, membership, member count and Steward attribution. The optional
+ * legacy Firestore ID is only a compatibility lookup key; it is not queried
+ * as authority. The authenticated Firebase subject maps to the Tiizi member
+ * UUID through `members`; the viewer relationship and singular Steward are
+ * derived from PostgreSQL rows, never accepted from the client.
  *
  * Visibility (EOG-E1-01 §§8/30; FR-V2-016/017/019/020; CIC 4.27): members
  * (active/joined, steward included) receive the full projection; anyone
@@ -30,8 +19,8 @@
  * non-active-memberships (404, indistinguishable from unknown). Discovery
  * never creates membership (FR-V2-021).
  *
- * Provider-neutral: pure domain + `Db` + injected store reads. No Firebase
- * here (routes + injected store only).
+ * Provider-neutral: pure domain + `Db` + the PostgreSQL projection adapter.
+ * Firebase is used only at the authentication boundary.
  */
 
 import type { FastifyInstance } from 'fastify';
@@ -49,9 +38,9 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Read-side store surface for Group Home and its S4b roster. The governed
- * `GroupMutationStore` satisfies this structurally, so reads and mutations
- * share the single authority seam — no second store exists.
+ * Read-side projection shape for Group Home and its S4b roster. Production
+ * binds it to `createPostgresGroupReadStore`; the structural type remains for
+ * the retained legacy adapter and test seams.
  */
 export type GroupReadStore = Pick<GroupMutationStore, 'getGroup' | 'getMembership' | 'listMemberships'>;
 
@@ -60,8 +49,8 @@ export interface GroupReadRouteDeps {
 }
 
 /**
- * Store outage mapping (same contract as the mutation boundary): any store
- * failure fails closed as 503 "authority unavailable" — never as an
+ * Database outage mapping: any authority failure fails closed as 503
+ * "authority unavailable" — never as an
  * authorization, and never with provider internals. Domain errors already
  * carry their own GroupMutationError and pass through untouched.
  */
@@ -375,7 +364,12 @@ export function registerGroupReadRoutes(
     async (request) => {
       const member = authenticatedMember(request);
       const params = request.params as { groupId: string };
-      return getGroupDetail(db, store, member.memberId, params.groupId);
+      try {
+        return await getGroupDetail(db, store, member.memberId, params.groupId);
+      } catch (error) {
+        if (error instanceof GroupMutationError) throw error;
+        throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group authority unavailable');
+      }
     },
   );
 
@@ -386,7 +380,12 @@ export function registerGroupReadRoutes(
     } } } },
   }, async (request) => {
     const member = authenticatedMember(request);
-    return getGroupRoster(db, store, member.memberId, (request.params as { groupId: string }).groupId);
+    try {
+      return await getGroupRoster(db, store, member.memberId, (request.params as { groupId: string }).groupId);
+    } catch (error) {
+      if (error instanceof GroupMutationError) throw error;
+      throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group authority unavailable');
+    }
   });
 }
 

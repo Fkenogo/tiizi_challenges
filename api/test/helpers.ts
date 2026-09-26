@@ -4,6 +4,7 @@ import { beforeAll, beforeEach } from 'vitest';
 import { buildApp } from '../src/app.js';
 import type { TokenVerifier } from '../src/auth.js';
 import type { Db } from '../src/db.js';
+import type { GroupMutationStore } from '../src/groupMutations.js';
 import { runMigrations } from '../src/migrate.js';
 import type { KnowledgeEligibility } from '../src/knowledgeEligibility.js';
 
@@ -91,6 +92,46 @@ export function testDb(): Db {
   return db;
 }
 
+/**
+ * Read-only failure fixture for Group authority tests. Authentication/member
+ * lookup remains available; every Group or membership query fails so the
+ * application must fail closed at the PostgreSQL boundary.
+ */
+export function groupAuthorityUnavailableDb(target: Db = testDb()): Db {
+  const wrap = (inner: Db): Db => ({
+    async query<T>(text: string, params?: unknown[]) {
+      if (/\b(groups|group_memberships)\b/i.test(text)) {
+        throw new Error('test: PostgreSQL Group authority unavailable');
+      }
+      return inner.query<T>(text, params);
+    },
+    async transaction<T>(fn: (tx: Db) => Promise<T>) {
+      return inner.transaction((tx) => fn(wrap(tx)));
+    },
+    close: () => inner.close(),
+  });
+  return wrap(target);
+}
+
+/** A poison legacy store: any attempt to use Firestore Group authority fails. */
+export function forbiddenFirestoreGroupStore(): GroupMutationStore & { calls: string[] } {
+  const calls: string[] = [];
+  const reject = (operation: string) => async (..._args: unknown[]): Promise<never> => {
+    calls.push(operation);
+    throw new Error('Firestore Group authority must not be called by V2');
+  };
+  return {
+    calls,
+    createGroupWithOwner: reject('createGroupWithOwner'),
+    getGroup: reject('getGroup'),
+    updateGroupCounter: reject('updateGroupCounter'),
+    getMembership: reject('getMembership'),
+    listMemberships: reject('listMemberships'),
+    setMembership: reject('setMembership'),
+    updateMembership: reject('updateMembership'),
+  };
+}
+
 export function authHeaders(token: string): Record<string, string> {
   return { authorization: `Bearer ${token}` };
 }
@@ -146,6 +187,7 @@ beforeEach(async () => {
 export function buildTestApp(
   uidByToken: Record<string, string>,
   extra?: {
+    db?: Db;
     challengeActivity?: import('../src/app.js').AppDeps['challengeActivity'];
     participation?: import('../src/app.js').AppDeps['participation'];
     groupMutation?: import('../src/app.js').AppDeps['groupMutation'];

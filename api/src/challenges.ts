@@ -20,14 +20,10 @@
  * No Derived Truth here: no counters, totals, positions, or streak states.
  * No routes. No Firebase. Pure domain + `Db`.
  *
- * TRANSITIONAL GROUP INVARIANT: the FK makes the PG Group UUID the
- * referential anchor, but Group operational authority still lives in
- * Firestore and the PG groups row is a shadow that can go stale (deleted
- * groups leave rows behind; status refreshes only on import runs). A stale
- * shadow row alone must therefore never authorize establishment: creation
- * requires an injected current-authority group check
- * (ChallengeCreationResolvers.resolveGroupAuthority). The later
- * Group-authority migration removes that seam; the FK stays.
+ * Group and membership authorization now resolve from PostgreSQL through
+ * the injected Group authority functions. The Group UUID FK remains the
+ * referential anchor; callers supply current liveness and membership checks
+ * from that same PostgreSQL authority rather than from a client or Firestore.
  */
 
 import type { Db } from './db.js';

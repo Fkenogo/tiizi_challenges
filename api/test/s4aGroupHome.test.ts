@@ -1,12 +1,11 @@
 /**
  * TIIZI-S4A-GROUP-CREATION-AND-HOME-001 — Group Home read-model acceptance tests.
  *
- * Proves the two charter-authorized read contracts over the REAL routes, with
- * an in-memory store standing in for Firestore and a stub live Membership
- * authority:
+ * Proves the S4a Group read/write contracts over the real API routes and
+ * PostgreSQL authority:
  *
  * A. Group creation persists the governed configuration (isPrivate,
- *    requireAdminApproval, allowMemberChallenges) to live authority.
+ *    requireAdminApproval, allowMemberChallenges) to PostgreSQL.
  * B. The creator becomes the correct singular Accountable Steward / owner.
  * C. GET /v1/groups/:groupId returns canonical Group truth and leaks no
  *    Firebase UID, legacy id, owner attribution internals, or invite code.
@@ -15,7 +14,7 @@
  * E. The member count is server-derived from live authority.
  * F. Unauthorized / non-visible Group reads fail closed (401 unauthenticated,
  *    404 unknown-or-invisible with no existence oracle, 503 store outage,
- *    400 malformed id).
+ *    503 PostgreSQL outage, 400 malformed id).
  * G. GET /v1/challenges?groupId= returns only genuine Challenges of that
  *    Group (entitled subset for members; EOG §9 discovery projection for
  *    public Groups; empty for private Groups to outsiders).
@@ -30,12 +29,12 @@ import {
   type ChallengeCreationResolvers,
   type NewChallengeInput,
 } from '../src/challenges.js';
-import type { GroupMembershipAuthority } from '../src/groupMembershipAuthority.js';
-import type { GroupMutationStore } from '../src/groupMutations.js';
 import type { Db } from '../src/db.js';
+import { createPostgresGroupMembershipAuthority } from '../src/postgresGroupAuthority.js';
 import {
   authHeaders,
   buildTestApp,
+  groupAuthorityUnavailableDb,
   seedGroup,
   seedMember,
   seedMembership,
@@ -49,91 +48,8 @@ beforeEach(async () => {
   );
 });
 
-interface StoreOp {
-  op: string;
-  collection: string;
-  docId: string;
-}
-
-/** In-memory live Group store: deterministic Firestore stand-in (S2-G pattern). */
-function fakeStore(): GroupMutationStore & {
-  groups: Map<string, Record<string, unknown>>;
-  memberships: Map<string, Record<string, unknown>>;
-  failWith: Error | null;
-} {
-  const state = {
-    groups: new Map<string, Record<string, unknown>>(),
-    memberships: new Map<string, Record<string, unknown>>(),
-    failWith: null as Error | null,
-    seq: 0,
-  };
-  const maybeFail = () => {
-    if (state.failWith) throw state.failWith;
-  };
-  return {
-    groups: state.groups,
-    memberships: state.memberships,
-    get failWith() {
-      return state.failWith;
-    },
-    set failWith(value: Error | null) {
-      state.failWith = value;
-    },
-    async createGroupWithOwner(group, ownerUid, ownerMembership) {
-      maybeFail();
-      state.seq += 1;
-      const id = `s4a-group-${state.seq}`;
-      state.groups.set(id, { ...group });
-      state.memberships.set(`${id}_${ownerUid}`, { ...ownerMembership, groupId: id });
-      return id;
-    },
-    async getGroup(legacyId) {
-      maybeFail();
-      return state.groups.get(legacyId) ?? null;
-    },
-    async updateGroupCounter(legacyId, delta) {
-      maybeFail();
-      const group = state.groups.get(legacyId);
-      if (!group) throw new Error('fake-store: missing group');
-      group.memberCount = Number(group.memberCount ?? 0) + delta;
-    },
-    async getMembership(legacyId, firebaseUid) {
-      maybeFail();
-      return state.memberships.get(`${legacyId}_${firebaseUid}`) ?? null;
-    },
-    async setMembership(legacyId, firebaseUid, data) {
-      maybeFail();
-      state.memberships.set(`${legacyId}_${firebaseUid}`, { ...data });
-    },
-    async updateMembership(legacyId, firebaseUid, patch) {
-      maybeFail();
-      const existing = state.memberships.get(`${legacyId}_${firebaseUid}`);
-      if (!existing) throw new Error('fake-store: missing membership');
-      state.memberships.set(`${legacyId}_${firebaseUid}`, { ...existing, ...patch });
-    },
-  };
-}
-
-function stubAuthority(eligibleGroups: Set<string>): GroupMembershipAuthority {
-  return {
-    resolveGroupMembershipAuthority: async (groupId: string) => {
-      if (eligibleGroups.has(groupId)) return { status: 'active', eligible: true };
-      return { status: 'no_membership', eligible: false };
-    },
-  };
-}
-
-type Store = ReturnType<typeof fakeStore>;
-
-function appFor(
-  tokens: Record<string, string>,
-  store: GroupMutationStore,
-  authority: GroupMembershipAuthority,
-) {
-  return buildTestApp(tokens, {
-    groupMutation: { store },
-    challengeActivity: { groupMembershipAuthority: authority },
-  });
+function appFor(tokens: Record<string, string>, db: Db = testDb()) {
+  return buildTestApp(tokens, { db, challengeActivity: { groupMembershipAuthority: createPostgresGroupMembershipAuthority(db) } });
 }
 
 interface CreatedGroup {
@@ -233,10 +149,9 @@ async function setupGroupChallenge(groupId: string, memberId: string, tag: strin
 describe('s4a comprehensive creation persists governed configuration (A)', () => {
   it('creation with all governed fields persists them to live authority and the detail read', async () => {
     const db = testDb();
-    const store = fakeStore();
     const memberId = await seedMember(db, `s4a-creator-${next('u')}`);
     const subject = await subjectFor(db, memberId);
-    const app = appFor({ 'token-s4a': subject }, store, stubAuthority(new Set()));
+    const app = appFor({ 'token-s4a': subject });
 
     const created = await createViaApi(app, 'token-s4a', {
       name: 'Karura Dawn Patrol',
@@ -247,11 +162,10 @@ describe('s4a comprehensive creation persists governed configuration (A)', () =>
     });
     expect(created.isPrivate).toBe(true);
 
-    // Live authority holds the governed configuration (not just the response).
-    const doc = store.groups.get(created.legacyId);
-    expect(doc?.isPrivate).toBe(true);
-    expect(doc?.requireAdminApproval).toBe(true);
-    expect(doc?.allowMemberChallenges).toBe(false);
+    const persisted = await db.query<{ is_private: boolean; require_admin_approval: boolean; allow_member_challenges: boolean }>(
+      `SELECT is_private, require_admin_approval, allow_member_challenges FROM groups WHERE group_id=$1`, [created.id],
+    );
+    expect(persisted.rows[0]).toEqual({ is_private: true, require_admin_approval: true, allow_member_challenges: false });
 
     const { status, body } = await detailFor(app, 'token-s4a', created.id);
     expect(status).toBe(200);
@@ -271,10 +185,9 @@ describe('s4a comprehensive creation persists governed configuration (A)', () =>
 describe('s4a creator becomes the singular Accountable Steward (B)', () => {
   it('steward attribution is server-resolved to the creator; no second steward exists', async () => {
     const db = testDb();
-    const store = fakeStore();
     const memberId = await seedMember(db, `s4a-steward-${next('u')}`);
     const subject = await subjectFor(db, memberId);
-    const app = appFor({ 'token-s4a': subject }, store, stubAuthority(new Set()));
+    const app = appFor({ 'token-s4a': subject });
 
     const created = await createViaApi(app, 'token-s4a', { name: 'Steward Group' });
     const { body } = await detailFor(app, 'token-s4a', created.id);
@@ -287,8 +200,7 @@ describe('s4a creator becomes the singular Accountable Steward (B)', () => {
     const joinerSubject = await subjectFor(db, joiner);
     const app2 = appFor(
       { 'token-s4a': subject, 'token-joiner': joinerSubject },
-      store,
-      stubAuthority(new Set([created.id])),
+      testDb(),
     );
     const join = await app2.inject({
       method: 'POST',
@@ -307,10 +219,9 @@ describe('s4a creator becomes the singular Accountable Steward (B)', () => {
 describe('s4a detail returns canonical truth without internals (C)', () => {
   it('detail carries identity, settings, count, steward and timestamps — never provider internals', async () => {
     const db = testDb();
-    const store = fakeStore();
     const memberId = await seedMember(db, `s4a-canon-${next('u')}`);
     const subject = await subjectFor(db, memberId);
-    const app = appFor({ 'token-s4a': subject }, store, stubAuthority(new Set()));
+    const app = appFor({ 'token-s4a': subject });
     const created = await createViaApi(app, 'token-s4a', {
       name: 'Canonical Group',
       description: 'Purpose stated.',
@@ -329,10 +240,9 @@ describe('s4a detail returns canonical truth without internals (C)', () => {
 describe('s4a viewer relationship is server-derived (D) + count is live (E)', () => {
   it('member, pending and none relationships come from live authority; count tracks admissions', async () => {
     const db = testDb();
-    const store = fakeStore();
     const owner = await seedMember(db, `s4a-rel-owner-${next('u')}`);
     const ownerSubject = await subjectFor(db, owner);
-    const app = appFor({ 'token-owner': ownerSubject }, store, stubAuthority(new Set()));
+    const app = appFor({ 'token-owner': ownerSubject });
     const open = await createViaApi(app, 'token-owner', { name: 'Open Group' });
     const gated = await createViaApi(app, 'token-owner', {
       name: 'Gated Group',
@@ -343,8 +253,7 @@ describe('s4a viewer relationship is server-derived (D) + count is live (E)', ()
     const viewerSubject = await subjectFor(db, viewer);
     const app2 = appFor(
       { 'token-owner': ownerSubject, 'token-viewer': viewerSubject },
-      store,
-      stubAuthority(new Set([open.id, gated.id])),
+      testDb(),
     );
     // Join the open group → active member; request the gated group → pending.
     expect((await app2.inject({ method: 'POST', url: `/v1/groups/${open.id}/join`, headers: authHeaders('token-viewer'), payload: {} })).statusCode).toBe(200);
@@ -368,15 +277,14 @@ describe('s4a viewer relationship is server-derived (D) + count is live (E)', ()
 describe('s4a reads fail closed (F)', () => {
   async function setup() {
     const db = testDb();
-    const store = fakeStore();
     const owner = await seedMember(db, `s4a-fail-owner-${next('u')}`);
     const ownerSubject = await subjectFor(db, owner);
     const outsider = await seedMember(db, `s4a-fail-out-${next('u')}`);
     const outsiderSubject = await subjectFor(db, outsider);
-    const app = appFor({ 'token-owner': ownerSubject, 'token-out': outsiderSubject }, store, stubAuthority(new Set()));
+    const app = appFor({ 'token-owner': ownerSubject, 'token-out': outsiderSubject });
     const open = await createViaApi(app, 'token-owner', { name: 'Fail Open' });
     const priv = await createViaApi(app, 'token-owner', { name: 'Fail Private', isPrivate: true });
-    return { app, store, open, priv };
+    return { app, db, ownerSubject, outsiderSubject, open, priv };
   }
 
   it('unauthenticated reads are 401', async () => {
@@ -386,7 +294,7 @@ describe('s4a reads fail closed (F)', () => {
   });
 
   it('unknown, private-to-outsider, inactive and malformed ids fail closed with no oracle', async () => {
-    const { app, store, open, priv } = await setup();
+    const { app, db, open, priv } = await setup();
     const unknownId = '11111111-1111-4111-8111-111111111111';
     const unknown = await detailFor(app, 'token-out', unknownId);
     expect(unknown.status).toBe(404);
@@ -397,9 +305,7 @@ describe('s4a reads fail closed (F)', () => {
     expect(JSON.stringify(privOut.body)).toBe(JSON.stringify(unknown.body));
 
     // Inactive Groups are invisible too.
-    const doc = store.groups.get(open.legacyId);
-    expect(doc).toBeDefined();
-    doc!.status = 'suspended';
+    await db.query(`UPDATE groups SET status='suspended' WHERE group_id=$1`, [open.id]);
     const inactive = await detailFor(app, 'token-out', open.id);
     expect(inactive.status).toBe(404);
 
@@ -419,9 +325,9 @@ describe('s4a reads fail closed (F)', () => {
     expect(body.name).toBe('Fail Open');
   });
 
-  it('store outage is 503, never an authorization', async () => {
-    const { app, store, open } = await setup();
-    store.failWith = new Error('firestore down');
+  it('PostgreSQL outage is 503, never an authorization or Firestore fallback', async () => {
+    const { open, ownerSubject } = await setup();
+    const app = appFor({ 'token-owner': ownerSubject }, groupAuthorityUnavailableDb());
     const { status, body } = await detailFor(app, 'token-owner', open.id);
     expect(status).toBe(503);
     expect(JSON.stringify(body)).toContain('group_store_unavailable');
@@ -431,12 +337,11 @@ describe('s4a reads fail closed (F)', () => {
 describe('s4a group-scoped Challenge list (G) + unfiltered list unchanged (H)', () => {
   async function setup() {
     const db = testDb();
-    const store = fakeStore();
     const owner = await seedMember(db, `s4a-ch-owner-${next('u')}`);
     const ownerSubject = await subjectFor(db, owner);
     const outsider = await seedMember(db, `s4a-ch-out-${next('u')}`);
     const outsiderSubject = await subjectFor(db, outsider);
-    const app = appFor({ 'token-owner': ownerSubject, 'token-out': outsiderSubject }, store, stubAuthority(new Set()));
+    const app = appFor({ 'token-owner': ownerSubject, 'token-out': outsiderSubject });
     const home = await createViaApi(app, 'token-owner', { name: 'Home Group' });
     const away = await createViaApi(app, 'token-owner', { name: 'Away Private', isPrivate: true });
     const other = await createViaApi(app, 'token-owner', { name: 'Other Public' });
@@ -446,10 +351,9 @@ describe('s4a group-scoped Challenge list (G) + unfiltered list unchanged (H)', 
     // Owner is live-eligible in all three groups for the entitled path.
     const entitled = appFor(
       { 'token-owner': ownerSubject, 'token-out': outsiderSubject },
-      store,
-      stubAuthority(new Set([home.id, away.id, other.id])),
+      testDb(),
     );
-    return { app: entitled, store, home, away, other, homeChallenge, awayChallenge, otherChallenge };
+    return { app: entitled, ownerSubject, outsiderSubject, home, away, other, homeChallenge, awayChallenge, otherChallenge };
   }
 
   async function scoped(app: ReturnType<typeof buildTestApp>, token: string, groupId: string) {
@@ -486,11 +390,11 @@ describe('s4a group-scoped Challenge list (G) + unfiltered list unchanged (H)', 
   });
 
   it('unknown, malformed and store-down filters fail closed', async () => {
-    const { app, store, home } = await setup();
+    const { app, ownerSubject, home } = await setup();
     expect((await scoped(app, 'token-owner', '22222222-2222-4222-8222-222222222222')).statusCode).toBe(404);
     expect((await scoped(app, 'token-owner', 'nope')).statusCode).toBe(400);
-    store.failWith = new Error('firestore down');
-    expect((await scoped(app, 'token-owner', home.id)).statusCode).toBe(503);
+    const outage = appFor({ 'token-owner': ownerSubject }, groupAuthorityUnavailableDb());
+    expect((await scoped(outage, 'token-owner', home.id)).statusCode).toBe(503);
   });
 
   it('unfiltered list keeps its contract and scope', async () => {
@@ -509,20 +413,18 @@ describe('s4a group-scoped Challenge list (G) + unfiltered list unchanged (H)', 
 describe('s4a existing Group behaviour unregressed (I)', () => {
   it('join/leave/create semantics from S2-G still hold', async () => {
     const db = testDb();
-    const store = fakeStore();
     const owner = await seedMember(db, `s4a-reg-owner-${next('u')}`);
     const ownerSubject = await subjectFor(db, owner);
     const member = await seedMember(db, `s4a-reg-member-${next('u')}`);
     const memberSubject = await subjectFor(db, member);
     const app = appFor(
       { 'token-owner': ownerSubject, 'token-member': memberSubject },
-      store,
-      stubAuthority(new Set()),
+      testDb(),
     );
     const open = await createViaApi(app, 'token-owner', { name: 'Reg Open' });
     const gated = await createViaApi(app, 'token-owner', { name: 'Reg Gated', requireAdminApproval: true });
 
-    // A legacy PG-only group row (no live identity) stays unknown.
+    // PostgreSQL Group identity is sufficient; no Firestore identity is needed.
     const legacyId = await seedGroup(db, { name: 'Legacy PG row' });
     await seedMembership(db, legacyId, member, { status: 'active' });
     const legacyJoin = await app.inject({
@@ -531,7 +433,8 @@ describe('s4a existing Group behaviour unregressed (I)', () => {
       headers: authHeaders('token-member'),
       payload: {},
     });
-    expect(legacyJoin.statusCode).toBe(404);
+    expect(legacyJoin.statusCode).toBe(200);
+    expect((legacyJoin.json() as { status: string }).status).toBe('joined');
 
     // Public join → joined; approval join → pending; owner leave → 403; member leave → left.
     const join = await app.inject({ method: 'POST', url: `/v1/groups/${open.id}/join`, headers: authHeaders('token-member'), payload: {} });

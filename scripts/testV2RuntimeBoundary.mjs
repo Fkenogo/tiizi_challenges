@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { routeProductGeneration } from '../src/runtime/routeProductGeneration.js';
+import { findGroupFirestoreModules } from './v2FirestoreDependencyGraph.mjs';
 
 let failures = 0;
 function check(name, condition) {
@@ -56,8 +57,21 @@ function sourceFiles(directory) {
   });
 }
 const v2Files = sourceFiles('src/v2');
-check('V2 source tree contains no direct Firestore imports or emulator binding',
-  v2Files.every((path) => !/firebase\/firestore|connectFirestoreEmulator|\bgetFirestore\b/.test(readFileSync(path, 'utf8'))));
+check('V2 source tree contains no direct Firestore Group collection access or emulator binding',
+  v2Files.every((path) => {
+    const source = readFileSync(path, 'utf8');
+    return !(/firebase\/firestore/.test(source) && /['"](?:groups|groupMembers)['"]/.test(source))
+      && !/connectFirestoreEmulator/.test(source);
+  }));
+
+const allSourceFiles = sourceFiles('src');
+const sourceModules = new Map(allSourceFiles.map((path) => [path.replaceAll('\\', '/'), readFileSync(path, 'utf8')]));
+const transitiveGroupFirestore = findGroupFirestoreModules(sourceModules, 'src/v2/routes.tsx');
+check(
+  'registered V2 runtime has no transitive Firestore Group collection access (Firebase Auth and unrelated Firestore domains remain allowed)',
+  transitiveGroupFirestore.length === 0,
+  transitiveGroupFirestore.length > 0 ? `    reachable Firestore Group modules:\n${transitiveGroupFirestore.map((path) => `    - ${path}`).join('\n')}` : undefined,
+);
 
 const groupHooks = readFileSync('src/v2/groups/useV2Groups.ts', 'utf8');
 const challengeHooks = readFileSync('src/v2/challenges/useChallengeCreation.ts', 'utf8');
