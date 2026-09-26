@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import {
   invalidateV2Memberships,
@@ -10,18 +10,25 @@ import {
   fetchGroupRoster,
   leaveGroupV2,
   fetchMyMemberships,
+  fetchDiscoverableGroups,
+  fetchPendingGroupApplications,
+  resolveGroupInvite,
+  reviewGroupApplication,
   joinGroup,
   type CreateGroupInput,
   type CreatedGroup,
   type MyMembershipsResponse,
   type V2GroupDetail,
   type V2GroupRoster,
+  type V2AdmissionDecision,
 } from '../../api/groupsApi';
 import { listGroupChallengesV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import {
   invalidateV2GroupReads,
   v2GroupChallengesKey,
   v2GroupDetailKey,
+  v2GroupDiscoveryKey,
+  v2GroupPendingKey,
 } from './groupQueryKeys';
 
 /**
@@ -63,12 +70,32 @@ export function useV2GroupDetail(groupId: string | null) {
 }
 
 /** The Group's hosted Challenges, scoped server-side. Disabled until signed in with an id. */
-export function useV2GroupChallenges(groupId: string | null) {
+export function useV2GroupChallenges(groupId: string | null, enabled = true) {
   const { user } = useAuth();
   return useQuery<{ memberId: string; groupId: string; challenges: V2ChallengeSummary[] }>({
     queryKey: v2GroupChallengesKey(groupId ?? undefined, user?.uid),
     queryFn: () => listGroupChallengesV2(groupId as string),
-    enabled: !!user && !!groupId,
+    enabled: !!user && !!groupId && enabled,
+  });
+}
+
+export function useV2GroupDiscovery(q: string) {
+  const { user } = useAuth();
+  return useInfiniteQuery({
+    queryKey: v2GroupDiscoveryKey(q, user?.uid),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchDiscoverableGroups({ q, cursor: pageParam, limit: 12 }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled: !!user,
+  });
+}
+
+export function usePendingGroupApplications(groupId: string | null, enabled = true) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: v2GroupPendingKey(groupId ?? undefined, user?.uid),
+    queryFn: () => fetchPendingGroupApplications(groupId as string),
+    enabled: !!user && !!groupId && enabled,
   });
 }
 
@@ -78,6 +105,24 @@ export function useV2GroupRoster(groupId: string | null) {
     queryKey: ['v2-group-roster', groupId, user?.uid],
     queryFn: () => fetchGroupRoster(groupId as string),
     enabled: !!user && !!groupId,
+  });
+}
+
+export function useResolveGroupInvite() {
+  return useMutation({ mutationFn: (code: string) => resolveGroupInvite(code) });
+}
+
+export function useReviewGroupApplication(groupId: string | null) {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: ({ memberId, decision }: { memberId: string; decision: V2AdmissionDecision }) =>
+      reviewGroupApplication(groupId as string, memberId, decision),
+    onSuccess: async () => {
+      await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
+      await queryClient.invalidateQueries({ queryKey: v2GroupPendingKey(groupId ?? undefined, user?.uid) });
+      await queryClient.invalidateQueries({ queryKey: ['v2-group-discovery'] });
+    },
   });
 }
 

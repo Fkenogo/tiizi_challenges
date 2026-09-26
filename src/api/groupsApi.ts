@@ -108,6 +108,45 @@ export interface V2GroupDetail {
   location: string;
   focusTags: string[];
   rules: string[] | null;
+  /** Included only when this viewer is an active Group member. */
+  inviteCode?: string;
+}
+
+export type V2AdmissionMode = 'open' | 'approval';
+export interface V2DiscoverableGroup {
+  id: string;
+  name: string;
+  description: string;
+  tagline: string;
+  coverId: string | null;
+  location: string;
+  focusTags: string[];
+  memberCount: number;
+  admissionMode: V2AdmissionMode;
+  viewerRelationship: V2ViewerRelationship;
+}
+export interface V2GroupDiscoveryPage { groups: V2DiscoverableGroup[]; nextCursor: string | null }
+export function fetchDiscoverableGroups(options: { q?: string; cursor?: string; limit?: number } = {}): Promise<V2GroupDiscoveryPage> {
+  const params = new URLSearchParams();
+  if (options.q?.trim()) params.set('q', options.q.trim());
+  if (options.cursor) params.set('cursor', options.cursor);
+  if (options.limit !== undefined) params.set('limit', String(options.limit));
+  const query = params.size > 0 ? `?${params.toString()}` : '';
+  return apiFetch<V2GroupDiscoveryPage>(`/v1/groups/discover${query}`);
+}
+
+export interface V2InviteResolution extends V2DiscoverableGroup { isPrivate: boolean }
+export function resolveGroupInvite(code: string): Promise<V2InviteResolution> {
+  return apiFetch<V2InviteResolution>('/v1/groups/resolve-invite', { method: 'POST', body: { code } });
+}
+
+export interface V2PendingApplications { groupId: string; applicants: Array<{ memberId: string; requestedAt: string }> }
+export function fetchPendingGroupApplications(groupId: string): Promise<V2PendingApplications> {
+  return apiFetch<V2PendingApplications>(`/v1/groups/${groupId}/members/pending`);
+}
+export type V2AdmissionDecision = 'approve' | 'reject';
+export function reviewGroupApplication(groupId: string, memberId: string, decision: V2AdmissionDecision): Promise<{ groupId: string; memberId: string; status: 'active' | 'rejected'; idempotent: boolean }> {
+  return apiFetch(`/v1/groups/${groupId}/applications/${memberId}/${decision}`, { method: 'POST', body: {} });
 }
 
 /** Canonical Group detail read — Group Home's only truth source. */

@@ -8,7 +8,25 @@ import { GroupMutationError } from './groupErrors.js';
 const eligible = new Set(['active', 'joined']);
 const active = (status: string) => status === 'active';
 function fail(code: string, message: string, status = 422): never { throw new GroupMutationError(status, code, message); }
-function inviteCode(name: string) { const base = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '-').replace(/-+/g, '-').slice(0, 12) || 'GROUP'; return `${base}-${randomBytes(3).toString('hex').toUpperCase()}`; }
+const INVITE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+/** Human-enterable TIZI-XXXX-XXXX-XXXX code: 12 uniform Crockford Base32
+ * symbols provide 60 bits of cryptographic entropy. */
+export function generateGroupInviteCode(): string {
+  let bits = randomBytes(8).readBigUInt64BE() >> 4n;
+  const symbols = Array.from({ length: 12 }, () => {
+    const symbol = INVITE_ALPHABET[Number(bits & 31n)];
+    bits >>= 5n;
+    return symbol;
+  }).reverse();
+  return `TIZI-${symbols.slice(0, 4).join('')}-${symbols.slice(4, 8).join('')}-${symbols.slice(8).join('')}`;
+}
+
+export function normalizeGroupInviteCode(input: string): string | null {
+  const compact = input.trim().toUpperCase().replace(/[\s-]/g, '');
+  if (!/^TIZI[0-9A-HJKMNP-TV-Z]{12}$/.test(compact)) return null;
+  return `TIZI-${compact.slice(4, 8)}-${compact.slice(8, 12)}-${compact.slice(12, 16)}`;
+}
 
 export function createPostgresGroupMembershipAuthority(db: Db): GroupMembershipAuthority {
   return { async resolveGroupMembershipAuthority(groupId, memberId): Promise<GroupMembershipAuthorityStatus | null> {
@@ -49,13 +67,21 @@ export async function createGovernedGroup(db: Db, actor: GroupMutationActor, ter
   for(const [field,max] of [['tagline',140],['location',120]] as const) if(terms[field]!==undefined && (typeof terms[field]!=='string'||terms[field].length>max)) fail('invalid_group',`${field} must be a string up to ${max} chars`,400);
   for(const [field,maxCount,maxLen] of [['focusTags',8,30],['rules',5,200]] as const){const v=terms[field];if(v!==undefined&&(!Array.isArray(v)||v.length>maxCount||v.some(x=>typeof x!=='string'||x.length>maxLen)))fail('invalid_group',`${field} contains invalid values`,400);}
   const now = new Date().toISOString();
-  const code = inviteCode(name);
   try {
     return await db.transaction(async tx => {
-      const result = await tx.query<{ group_id: string }>(
-        `INSERT INTO groups (name, description, is_private, status, require_admin_approval, allow_member_challenges, steward_member_id, invite_code, cover_id, tagline, location, focus_tags, rules, created_at, updated_at)
-         VALUES ($1,$2,$3,'active',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13) RETURNING group_id`,
-        [name, typeof terms.description==='string'?terms.description:'', terms.isPrivate===true, terms.requireAdminApproval===true, terms.allowMemberChallenges!==false, actor.memberId, code, typeof terms.coverId==='string'?terms.coverId:null, typeof terms.tagline==='string'?terms.tagline.trim():'', typeof terms.location==='string'?terms.location.trim():'', Array.isArray(terms.focusTags)?terms.focusTags:[], Array.isArray(terms.rules)?terms.rules:[], now]);
+      let result: { rows: Array<{ group_id: string }> } = { rows: [] };
+      // A collision is cryptographically unlikely, but the unique normalized
+      // index remains the final arbiter. Retry only that insertion collision.
+      for (let attempt = 0; attempt < 4 && result.rows.length === 0; attempt += 1) {
+        const code = generateGroupInviteCode();
+        result = await tx.query<{ group_id: string }>(
+          `INSERT INTO groups (name, description, is_private, status, require_admin_approval, allow_member_challenges, steward_member_id, invite_code, cover_id, tagline, location, focus_tags, rules, created_at, updated_at)
+           VALUES ($1,$2,$3,'active',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)
+           ON CONFLICT ((upper(btrim(invite_code)))) WHERE invite_code IS NOT NULL DO NOTHING
+           RETURNING group_id`,
+          [name, typeof terms.description==='string'?terms.description:'', terms.isPrivate===true, terms.requireAdminApproval===true, terms.allowMemberChallenges!==false, actor.memberId, code, typeof terms.coverId==='string'?terms.coverId:null, typeof terms.tagline==='string'?terms.tagline.trim():'', typeof terms.location==='string'?terms.location.trim():'', Array.isArray(terms.focusTags)?terms.focusTags:[], Array.isArray(terms.rules)?terms.rules:[], now]);
+      }
+      if (result.rows.length === 0) throw new Error('Unable to allocate a unique Group invite code');
       const id = result.rows[0].group_id;
       await tx.query(`INSERT INTO group_memberships(group_id,member_id,role,status,joined_at,created_at,updated_at,requested_at,approved_at,approved_by_member_id) VALUES($1,$2,'owner','active',$3,$3,$3,$3,$3,$2)`, [id, actor.memberId, now]);
       return { id: String(id), legacyId: String(id), name, isPrivate: terms.isPrivate===true, role:'owner', status:'active' };
@@ -88,4 +114,55 @@ export async function leaveGovernedGroup(db: Db, actor: GroupMutationActor, grou
     await tx.query(`UPDATE group_memberships SET status='left',left_at=now() WHERE group_id=$1 AND member_id=$2`,[groupId,actor.memberId]);
     return {id:groupId,legacyId:groupId,status:'left' as const};
   }); } catch(error) { if(error instanceof GroupMutationError) throw error; throw new GroupMutationError(503,'group_store_unavailable','PostgreSQL Group authority unavailable during leave'); }
+}
+
+export async function reviewPendingMembership(
+  db: Db,
+  actorMemberId: string,
+  groupId: string,
+  targetMemberId: string,
+  decision: 'approve' | 'reject',
+) {
+  try {
+    return await db.transaction(async (tx) => {
+      const groupResult = await tx.query<{ status: string; steward_member_id: string | null }>(
+        `SELECT status, steward_member_id FROM groups WHERE group_id=$1 FOR UPDATE`, [groupId],
+      );
+      const group = groupResult.rows[0];
+      if (!group || group.status !== 'active') fail('unknown_group', 'Group not found', 404);
+      if (group.steward_member_id !== actorMemberId) fail('steward_required', 'Only the Accountable Steward may review admission requests', 403);
+
+      const currentResult = await tx.query<{ status: string; approved_by_member_id: string | null; rejected_by_member_id: string | null }>(
+        `SELECT status, approved_by_member_id, rejected_by_member_id
+         FROM group_memberships WHERE group_id=$1 AND member_id=$2 FOR UPDATE`,
+        [groupId, targetMemberId],
+      );
+      const current = currentResult.rows[0];
+      if (!current) fail('application_not_found', 'Pending application not found', 404);
+      const target = decision === 'approve' ? 'active' : 'rejected';
+      if (current.status === target && (decision === 'approve' ? current.approved_by_member_id : current.rejected_by_member_id) === actorMemberId) {
+        return { groupId, memberId: targetMemberId, status: target, idempotent: true };
+      }
+      if (current.status !== 'pending') fail('application_not_pending', 'Pending application not found', 404);
+      if (decision === 'approve') {
+        await tx.query(
+          `UPDATE group_memberships SET status='active', role='member', joined_at=now(),
+           approved_at=now(), approved_by_member_id=$3, rejected_at=NULL, rejected_by_member_id=NULL, left_at=NULL
+           WHERE group_id=$1 AND member_id=$2 AND status='pending'`,
+          [groupId, targetMemberId, actorMemberId],
+        );
+      } else {
+        await tx.query(
+          `UPDATE group_memberships SET status='rejected', approved_at=NULL, approved_by_member_id=NULL,
+           rejected_at=now(), rejected_by_member_id=$3
+           WHERE group_id=$1 AND member_id=$2 AND status='pending'`,
+          [groupId, targetMemberId, actorMemberId],
+        );
+      }
+      return { groupId, memberId: targetMemberId, status: target, idempotent: false };
+    });
+  } catch (error) {
+    if (error instanceof GroupMutationError) throw error;
+    throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group authority unavailable during admission review');
+  }
 }

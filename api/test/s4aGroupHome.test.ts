@@ -231,7 +231,8 @@ describe('s4a detail returns canonical truth without internals (C)', () => {
     expect(typeof body.createdAt).toBe('string');
     const raw = JSON.stringify(body);
     expect(raw).not.toContain(subject);
-    for (const leaked of ['legacyId', 'ownerId', 'firebaseUid', 'inviteCode', 'moderationStatus']) {
+    expect(body.inviteCode).toMatch(/^TIZI-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/);
+    for (const leaked of ['legacyId', 'ownerId', 'firebaseUid', 'moderationStatus']) {
       expect(body).not.toHaveProperty(leaked);
     }
   });

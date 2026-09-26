@@ -25,7 +25,8 @@ import {
   type GroupMutationStore,
 } from './groupMutations.js';
 import { GroupMutationError } from './groupErrors.js';
-import { createGovernedGroup, joinGovernedGroup, leaveGovernedGroup } from './postgresGroupAuthority.js';
+import { resolveGroupInvite } from './groupDiscovery.js';
+import { createGovernedGroup, joinGovernedGroup, leaveGovernedGroup, reviewPendingMembership } from './postgresGroupAuthority.js';
 
 export interface GroupMutationRouteDeps {
   store?: GroupMutationStore;
@@ -129,6 +130,22 @@ function checkGroupParams(data: unknown): string | null {
     : 'groupId must be a Tiizi group UUID';
 }
 
+function checkApplicationParams(data: unknown): string | null {
+  if (typeof data !== 'object' || data === null) return 'route params are required';
+  const params = data as Record<string, unknown>;
+  return UUID_RE.test(String(params.groupId ?? '')) && UUID_RE.test(String(params.memberId ?? ''))
+    ? null
+    : 'groupId and memberId must be Tiizi UUIDs';
+}
+
+function checkInviteBody(data: unknown): string | null {
+  if (typeof data !== 'object' || data === null) return 'request body must be an object';
+  const body = data as Record<string, unknown>;
+  if (Object.keys(body).some((key) => key !== 'code')) return 'request body may contain only code';
+  if (typeof body.code !== 'string' || body.code.length < 1 || body.code.length > 64) return 'code is required';
+  return null;
+}
+
 export function groupMutationCreateValidatorCompiler({ httpPart }: { httpPart?: string }) {
   // The create route carries no params; only the body is custom-validated.
   if (httpPart === 'body') return toValidator(checkCreateBody);
@@ -138,6 +155,17 @@ export function groupMutationCreateValidatorCompiler({ httpPart }: { httpPart?: 
 export function groupMutationEmptyValidatorCompiler({ httpPart }: { httpPart?: string }) {
   if (httpPart === 'body') return toValidator(checkEmptyBody);
   if (httpPart === 'params') return toValidator(checkGroupParams);
+  return () => true;
+}
+
+export function groupInviteBodyValidatorCompiler({ httpPart }: { httpPart?: string }) {
+  if (httpPart === 'body') return toValidator(checkInviteBody);
+  return () => true;
+}
+
+export function groupApplicationValidatorCompiler({ httpPart }: { httpPart?: string }) {
+  if (httpPart === 'body') return toValidator(checkEmptyBody);
+  if (httpPart === 'params') return toValidator(checkApplicationParams);
   return () => true;
 }
 
@@ -218,6 +246,35 @@ export function registerGroupMutationRoutes(
   deps: GroupMutationRouteDeps = {},
 ): void {
   void deps;
+
+  app.post('/v1/groups/resolve-invite', {
+    validatorCompiler: groupInviteBodyValidatorCompiler,
+    schema: {
+      body: { type: 'object', additionalProperties: false, required: ['code'], properties: { code: { type: 'string', minLength: 1, maxLength: 64 } } },
+    },
+  }, async (request) => {
+    const member = authenticatedMember(request);
+    try {
+      return await resolveGroupInvite(db, member.memberId, (request.body as { code: string }).code);
+    } catch (error) {
+      if (error instanceof GroupMutationError) throw error;
+      throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL invite lookup unavailable');
+    }
+  });
+
+  for (const decision of ['approve', 'reject'] as const) {
+    app.post(`/v1/groups/:groupId/applications/:memberId/${decision}`, {
+      validatorCompiler: groupApplicationValidatorCompiler,
+      schema: {
+        params: { type: 'object', required: ['groupId', 'memberId'], properties: { groupId: { type: 'string', format: 'uuid' }, memberId: { type: 'string', format: 'uuid' } } },
+        body: emptyBodySchema,
+      },
+    }, async (request) => {
+      const actor = authenticatedMember(request);
+      const params = request.params as { groupId: string; memberId: string };
+      return reviewPendingMembership(db, actor.memberId, params.groupId, params.memberId, decision);
+    });
+  }
 
   app.post(
     '/v1/groups',
