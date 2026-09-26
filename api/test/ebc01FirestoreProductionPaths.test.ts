@@ -1,11 +1,12 @@
 /**
- * EBC-01 production Firestore path tests (mocked firebase-admin).
+ * Retained legacy Firestore adapter tests (mocked firebase-admin).
  *
  * The Firestore emulator cannot run in this environment, so these tests
- * execute the PRODUCTION Admin SDK modules — group mutation store,
+ * execute the retained Admin SDK modules — group mutation store,
  * read-only authority reader, and charter-aware creation authority —
- * against a mocked firebase-admin Firestore. They prove the production
- * wiring the seam-contract tests assume:
+ * against a mocked firebase-admin Firestore. They preserve V1/reference
+ * adapter behavior; these modules are not active V2 Group or Membership
+ * authority:
  * - group creation commits the group + owner membership as ONE batched
  *   write with the V1 document identity (`{groupId}_{uid}`) and the group
  *   id stamped onto the membership;

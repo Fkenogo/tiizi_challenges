@@ -11,10 +11,7 @@ import {
   type ChallengeActivityRouteDeps,
 } from './challengeActivityRoutes.js';
 import { registerChallengeReadRoutes } from './challengeReads.js';
-import {
-  groupReadDepsFromMutations,
-  registerGroupReadRoutes,
-} from './groupReads.js';
+import { registerGroupReadRoutes } from './groupReads.js';
 import {
   registerParticipationRoutes,
   type ParticipationRouteDeps,
@@ -28,6 +25,7 @@ import {
   type GroupMutationRouteDeps,
 } from './groupMutationRoutes.js';
 import { registerChallengeCreationSeamRoutes } from './challengeCreationSeamRoutes.js';
+import { createPostgresGroupReadStore } from './postgresGroupReadStore.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -113,19 +111,20 @@ export function buildApp(deps: AppDeps) {
   // C3A V2 Challenge reads (list/detail/leaderboard). Same live authority
   // as C2B; absent authority fails closed per-route instead of authorizing.
   // S4a: the governed `groupId` list filter shares the EBC-01 Group store.
+  const groupReadStore = createPostgresGroupReadStore(deps.db);
   registerChallengeReadRoutes(app, deps.db, {
     ...(deps.challengeActivity ?? {}),
-    groupStore: deps.groupMutation?.store,
+    groupStore: groupReadStore,
   });
   // S4a governed Group detail read (Group Home). Same live store seam as
   // the governed mutations; absent store fails closed per-route.
-  registerGroupReadRoutes(app, deps.db, groupReadDepsFromMutations(deps.groupMutation ?? {}));
+  registerGroupReadRoutes(app, deps.db, { store: groupReadStore });
   // C3B V2 participation mutations (join/withdraw). Same live authority as
   // C2B; absent authority fails closed per-route instead of authorizing.
   registerParticipationRoutes(app, deps.db, deps.participation ?? deps.challengeActivity ?? {});
-  // EBC-01 governed Group mutations (create/join/leave). Server-side
-  // Firestore authority boundary; absent store fails closed per-route.
-  registerGroupMutationRoutes(app, deps.db, deps.groupMutation ?? {});
+  // V2 Group mutations use the PostgreSQL authority directly; database
+  // failures fail closed and never fall back to a legacy Firestore adapter.
+  registerGroupMutationRoutes(app, deps.db);
   // EBC-01 governed V2 Challenge establishment. Authenticated actor,
   // charter-aware live creation authority, KCS-ready + tuple validation;
   // absent deps fail closed instead of establishing.

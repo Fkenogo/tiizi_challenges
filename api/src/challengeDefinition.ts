@@ -35,8 +35,8 @@
  *   1,2,3,3,5); dense ranking has no selector; one finisher never ends;
  * - Collective: goal crossing with actuals past 100%; reaching goal may
  *   complete early (engine behavior, no config flag);
- * - Group Membership authority stays live (Firestore); definitions never
- *   encode membership truth;
+ * - Group Membership authority stays outside the definition and is checked
+ *   live by the PostgreSQL-backed V2 establishment path;
  * - Verification (ACT-03), Correction (ACT-04), Recognition (MOT-01) and
  *   Rewards are deferred: no such fields exist here;
  * - Run Again = new Challenge (no reopening primitive exists).

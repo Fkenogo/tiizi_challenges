@@ -2,12 +2,12 @@
  * Phase C3A controlled clean-V2 Challenge establishment CLI.
  *
  * Operational/admin tool (NOT a public API, NOT a permanent privileged HTTP
- * endpoint): establishes the first clean V2 Challenges before frontend
- * Challenge creation is migrated. Thin orchestration over EXISTING domain
+ * endpoint): establishes V2 Challenges through the same governed domain
+ * seams as the API. Thin orchestration over EXISTING domain
  * seams — createChallenge (challenge + immutable v1 config, one
  * transaction), activateChallenge, joinChallenge — plus existing trusted
- * resolvers (database Knowledge pins per activity kind, live Firestore
- * Group/Membership authority via ADC). No establishment logic is duplicated
+ * resolvers (database Knowledge pins and PostgreSQL Group/Membership
+ * authority). No establishment logic is duplicated
  * here; no V1 import/conversion/migration of any kind.
  *
  * Usage:
@@ -44,23 +44,16 @@
 
 import { readFile } from 'node:fs/promises';
 import 'dotenv/config';
-import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { createDbKnowledgeResolver } from './knowledgePins.js';
 import { isCanonicalMetric } from './measurementVocabulary.js';
 import { createDbKnowledgeEligibilityResolver } from './knowledgeEligibility.js';
-import { createFirestoreChallengeCreationAuthority } from './firestoreChallengeCreationAuthority.js';
+import { createPostgresChallengeCreationAuthority, createPostgresGroupMembershipAuthority } from './postgresGroupAuthority.js';
 import type { ChallengeCreationAuthority } from './challengeCreationAuthority.js';
 import type { KnowledgeEligibility } from './knowledgeEligibility.js';
 import { findMemberByAuth } from './members.js';
 import { type NewChallengeInput } from './challenges.js';
 import { establishChallengeV2 } from './challengeEstablishment.js';
 import { createPool, databaseUrl, type Db } from './db.js';
-import {
-  createAdminFirestoreReader,
-  createFirestoreGroupMembershipAuthority,
-  isGroupDocActive,
-  type FirestoreReader,
-} from './firestoreGroupAuthority.js';
 import type { ChallengeCreationResolvers } from './challenges.js';
 import type { ActivityConfigInput } from './challengeConfigs.js';
 
@@ -276,7 +269,7 @@ export interface ChallengeCreateV2Options {
 }
 
 /**
- * Core establishment (testable without Firestore): resolves the creator to an
+ * Core establishment resolves the creator to an
  * internal member, builds the kind-aware Knowledge resolver (mixed
  * fitness/wellness configs use the correct canonical namespace), then
  * delegates to the atomic establishChallengeV2 seam — Challenge, immutable
@@ -365,18 +358,15 @@ export async function dryRunChallengeCreateV2(
 
 interface ProductionResolvers {
   resolvers: ChallengeCreationResolvers;
-  reader: FirestoreReader;
   options: ChallengeCreateV2Options;
 }
 
-/** Production wiring: ADC Firestore reader + database Knowledge pins. */
+/** Production wiring: PostgreSQL Group authority + database Knowledge pins. */
 export async function productionResolvers(db: Db): Promise<ProductionResolvers> {
-  const reader = createAdminFirestoreReader();
-  const membershipAuthority = createFirestoreGroupMembershipAuthority(db, reader);
+  const membershipAuthority = createPostgresGroupMembershipAuthority(db);
   return {
-    reader,
     options: {
-      creationAuthority: createFirestoreChallengeCreationAuthority(db, reader),
+      creationAuthority: createPostgresChallengeCreationAuthority(db),
       eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
     },
     resolvers: {
@@ -390,15 +380,12 @@ export async function productionResolvers(db: Db): Promise<ProductionResolvers> 
         return createDbKnowledgeResolver(db, kind)(key);
       },
       resolveGroupAuthority: async (groupId: string) => {
-        const mapping = await db.query<{ legacy_firestore_id: string | null }>(
-          `SELECT legacy_firestore_id FROM groups WHERE group_id = $1`,
+        const mapping = await db.query<{ status: string }>(
+          `SELECT status FROM groups WHERE group_id = $1`,
           [groupId],
         );
-        const legacyId = mapping.rows[0]?.legacy_firestore_id ?? null;
-        if (!legacyId) return null;
-        const snap = await reader.getDocument('groups', legacyId);
-        if (!snap.exists || !isGroupDocActive(snap.data())) return null;
-        return { status: 'active' };
+        const status = mapping.rows[0]?.status;
+        return status === 'active' ? { status } : null;
       },
       resolveGroupMembershipAuthority: membershipAuthority.resolveGroupMembershipAuthority,
     } as ChallengeCreationResolvers & {
@@ -419,9 +406,6 @@ async function main(): Promise<void> {
   const apply = args.includes('--apply');
   const raw = await readFile(inputPath, 'utf8');
   const input = parseChallengeCreateV2Input(JSON.parse(raw));
-  if (getApps().length === 0) {
-    initializeApp({ credential: applicationDefault() });
-  }
   const db = createPool(databaseUrl());
   try {
     const { resolvers, options } = await productionResolvers(db);

@@ -30,9 +30,9 @@ export interface CreateGroupInput {
 }
 
 /**
- * Governed establishment result. `id` is the authoritative Tiizi Group UUID;
- * `legacyId` is a transitional Firestore lookup key that must never be
- * displayed or persisted as a domain identity.
+ * Governed establishment result. `id` is the authoritative Tiizi Group UUID.
+ * `legacyId` is retained as an API compatibility field and currently echoes
+ * that UUID; clients use `id` as the Group identity.
  */
 export interface CreatedGroup {
   id: string;

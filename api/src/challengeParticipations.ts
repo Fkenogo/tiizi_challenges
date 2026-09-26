@@ -153,9 +153,8 @@ async function requireParticipationMutable(
  * exists and is participation-mutable under governed server lifecycle truth
  * (not ended, not finalized, governing day not past the pinned end date —
  * CORR-001); member holds CURRENT Group Membership in the challenge's group
- * under live membership authority (the PG group_memberships shadow is
- * reference data only and never authorizes joining — a stale active-looking
- * shadow row grants nothing); no currently ACTIVE episode for the pair
+ * under the injected current V2 PostgreSQL membership authority; no currently
+ * ACTIVE episode for the pair
  * (closed episodes never block a later episode).
  */
 export async function joinChallenge(

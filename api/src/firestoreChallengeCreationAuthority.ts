@@ -1,9 +1,12 @@
 /**
- * EBC-01 Firestore Challenge-creation authority adapter.
+ * Legacy Firestore Challenge-creation authority adapter.
  *
- * Application-boundary adapter for
- * `resolveChallengeCreationAuthority(groupId, memberId)` while Firestore
- * remains Group authority. The ONLY EBC-01 modules allowed to touch
+ * Retained for V1/reference compatibility and adapter tests. The V2 runtime
+ * injects createPostgresChallengeCreationAuthority instead.
+ *
+ * Historical application-boundary adapter for
+ * `resolveChallengeCreationAuthority(groupId, memberId)`. The legacy modules
+ * allowed to touch
  * Firebase/Firestore are this adapter, `firestoreGroupAuthority.ts`
  * (read authority) and `firestoreGroupMutationStore.ts` (governed writes);
  * provider-neutral domain modules stay Firebase-free (boundary-tested).
@@ -28,7 +31,7 @@
  * 5. Firestore outages propagate as thrown errors so callers fail closed
  *    ("authority unreachable") instead of treating them as denials.
  *
- * Read-only get() calls. No writes, no dual writes.
+ * Read-only legacy get() calls. No V2 writes, fallback, or dual writes.
  */
 
 import type { Db } from './db.js';

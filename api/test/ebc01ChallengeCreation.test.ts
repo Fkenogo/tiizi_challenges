@@ -1,12 +1,12 @@
 /**
  * EBC-01 Challenge creation authority tests (HTTP boundary).
  *
- * Proves the governed V2 establishment route with a scripted live
- * creation authority (standing in for Firestore) and the REAL database
+ * Proves the governed V2 establishment route with PostgreSQL Group
+ * authority and the REAL database
  * Knowledge eligibility gate:
  * - eligible Group actors can establish valid V2 Challenges;
  * - ineligible actors (non-members, removed members, restricted members)
- *   cannot — the PG shadow never authorizes;
+ *   cannot — PostgreSQL is the Group and Membership authority;
  * - failed authority checks persist no Challenge/config state;
  * - retry with the same idempotency key replays instead of duplicating;
  * - a reused key with a different payload is rejected;
@@ -18,6 +18,7 @@ import { buildApp } from '../src/app.js';
 import { stubVerifier, testDb, seedMember, seedGroup, seedMembership, authHeaders } from './helpers.js';
 import type { ChallengeCreationAuthority } from '../src/challengeCreationAuthority.js';
 import { createFirestoreChallengeCreationAuthority } from '../src/firestoreChallengeCreationAuthority.js';
+import { createPostgresChallengeCreationAuthority } from '../src/postgresGroupAuthority.js';
 import { createDbKnowledgeEligibilityResolver } from '../src/knowledgeEligibility.js';
 import { createDbKnowledgeResolver } from '../src/knowledgePins.js';
 import type { GroupMutationStore } from '../src/groupMutations.js';
@@ -354,28 +355,15 @@ describe('governed challenge establishment', () => {
     expect(await challengeRowCount()).toBe(1);
   });
 
-  it('establishment writes PG only: no V1/Firestore challenge write exists', async () => {
-    const reads: Array<{ collection: string; docId: string }> = [];
+  it('establishment uses PostgreSQL Group authority and does not access Firestore', async () => {
     const w = await world();
+    await seedMembership(testDb(), w.groupId, w.creatorMemberId, { status: 'active', role: 'member' });
     const app = buildApp({
       db: testDb(),
       verifier: stubVerifier(tokensFor(w)),
       groupMutation: { store: unusedStore() },
       challengeCreation: {
-        creationAuthority: {
-          async resolveChallengeCreationAuthority(groupId: string, memberId: string) {
-            reads.push({ collection: 'groups', docId: groupId });
-            reads.push({ collection: 'groupMembers', docId: `${groupId}_${memberId}` });
-            return {
-              permitted: true,
-              reason: null,
-              groupStatus: 'active',
-              allowMemberChallenges: true,
-              memberRole: 'member',
-              memberStatus: 'active',
-            };
-          },
-        },
+        creationAuthority: createPostgresChallengeCreationAuthority(testDb()),
         eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(testDb(), kind)(key),
         // Intentional quarantined-seam coverage (see appFor below).
         pinsFor: async (kind, key) => createDbKnowledgeResolver(testDb(), kind)(key),
@@ -389,13 +377,8 @@ describe('governed challenge establishment', () => {
       payload: validBody(w),
     });
     expect(response.statusCode).toBe(201);
-    // The only Firestore collections ever touched are the Group authority
-    // reads; no challenge collection is read or written (the seam has no
-    // write capability by construction — the group store is unused here).
-    expect(reads.length).toBeGreaterThan(0);
-    for (const read of reads) {
-      expect(['groups', 'groupMembers']).toContain(read.collection);
-    }
+    expect(response.json().groupId).toBe(w.groupId);
+    expect((await testDb().query('SELECT 1 FROM challenges WHERE challenge_id=$1 AND group_id=$2', [response.json().challengeId,w.groupId])).rows).toHaveLength(1);
     expect(await challengeRowCount()).toBe(1);
   });
 
@@ -415,7 +398,7 @@ describe('governed challenge establishment', () => {
   });
 });
 
-describe('firestore creation authority adapter', () => {
+describe('retained legacy Firestore creation-authority adapter (not V2 runtime)', () => {
   it('eligible member permitted; charter restriction binds members but not stewards', async () => {
     const tag = `ah${(seq += 1)}`;
     const db = testDb();

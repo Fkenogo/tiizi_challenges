@@ -2,17 +2,16 @@
  * EBC-01 Group / Membership authority boundary tests.
  *
  * Proves the governed server-side Group mutation boundary (create / join /
- * leave) with an in-memory GroupMutationStore standing in for Firestore:
+ * leave) against the PostgreSQL test database:
  * - authenticated valid members can perform authorized governed operations;
- * - the PG shadow can never authorize (unmapped shadow rows fail closed);
- * - missing/inactive groups fail closed; unavailable stores fail closed;
+ * - PostgreSQL rows authorize eligible members; missing/inactive Groups fail closed;
  * - client-supplied actor/member identity is rejected and never used;
  * - creation is atomic (group + owner membership never split);
- * - the PG shadow mirrors live state after each governed mutation.
+ * - PostgreSQL transaction state is durable and no Firestore Group store is called.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
-import { stubVerifier, testDb, seedMember, authHeaders } from './helpers.js';
+import { stubVerifier, testDb, seedMember, authHeaders, groupAuthorityUnavailableDb, forbiddenFirestoreGroupStore } from './helpers.js';
 import type { GroupMutationStore } from '../src/groupMutations.js';
 
 beforeEach(async () => {
@@ -21,92 +20,18 @@ beforeEach(async () => {
   );
 });
 
-interface StoreOp {
-  op: string;
-  collection?: string;
-  docId?: string;
-}
-
-/** In-memory GroupMutationStore: deterministic Firestore stand-in + op log. */
-function fakeStore(): GroupMutationStore & {
-  groups: Map<string, Record<string, unknown>>;
-  memberships: Map<string, Record<string, unknown>>;
-  log: StoreOp[];
-  failWith: Error | null;
-} {
-  const state = {
-    groups: new Map<string, Record<string, unknown>>(),
-    memberships: new Map<string, Record<string, unknown>>(),
-    log: [] as StoreOp[],
-    failWith: null as Error | null,
-    seq: 0,
-  };
-  const maybeFail = () => {
-    if (state.failWith) throw state.failWith;
-  };
-  return {
-    groups: state.groups,
-    memberships: state.memberships,
-    log: state.log,
-    get failWith() {
-      return state.failWith;
-    },
-    set failWith(value: Error | null) {
-      state.failWith = value;
-    },
-    async createGroupWithOwner(group, ownerUid, ownerMembership) {
-      maybeFail();
-      state.seq += 1;
-      const id = `group-${state.seq}`;
-      state.groups.set(id, { ...group });
-      state.memberships.set(`${id}_${ownerUid}`, { ...ownerMembership, groupId: id });
-      state.log.push({ op: 'createGroupWithOwner', collection: 'groups', docId: id });
-      return id;
-    },
-    async getGroup(legacyId) {
-      maybeFail();
-      state.log.push({ op: 'getGroup', collection: 'groups', docId: legacyId });
-      return state.groups.get(legacyId) ?? null;
-    },
-    async updateGroupCounter(legacyId, delta) {
-      maybeFail();
-      state.log.push({ op: 'updateGroupCounter', collection: 'groups', docId: legacyId });
-      const group = state.groups.get(legacyId);
-      if (!group) throw new Error('fake-store: missing group for counter update');
-      group.memberCount = Number(group.memberCount ?? 0) + delta;
-    },
-    async getMembership(legacyId, firebaseUid) {
-      maybeFail();
-      state.log.push({ op: 'getMembership', collection: 'groupMembers', docId: `${legacyId}_${firebaseUid}` });
-      return state.memberships.get(`${legacyId}_${firebaseUid}`) ?? null;
-    },
-    async setMembership(legacyId, firebaseUid, data) {
-      maybeFail();
-      state.log.push({ op: 'setMembership', collection: 'groupMembers', docId: `${legacyId}_${firebaseUid}` });
-      state.memberships.set(`${legacyId}_${firebaseUid}`, { ...data });
-    },
-    async updateMembership(legacyId, firebaseUid, patch) {
-      maybeFail();
-      state.log.push({ op: 'updateMembership', collection: 'groupMembers', docId: `${legacyId}_${firebaseUid}` });
-      const existing = state.memberships.get(`${legacyId}_${firebaseUid}`);
-      if (!existing) throw new Error('fake-store: missing membership for update');
-      state.memberships.set(`${legacyId}_${firebaseUid}`, { ...existing, ...patch });
-    },
-  };
-}
-
 async function seedUser(uid: string): Promise<string> {
   return seedMember(testDb(), uid);
 }
 
-function appFor(tokens: Record<string, string>, store: GroupMutationStore) {
-  return buildApp({ db: testDb(), verifier: stubVerifier(tokens), groupMutation: { store } });
+function appFor(tokens: Record<string, string>, store: GroupMutationStore, db = testDb()) {
+  return buildApp({ db, verifier: stubVerifier(tokens), groupMutation: { store } });
 }
 
 describe('governed group creation', () => {
-  it('authenticated member creates a group: atomic owner relation + shadow sync', async () => {
+  it('authenticated member creates PostgreSQL Group and Steward membership atomically', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
     const app = appFor({ 'owner-token': 'owner-uid' }, store);
 
@@ -125,30 +50,23 @@ describe('governed group creation', () => {
     expect(body.role).toBe('owner');
     expect(body.status).toBe('active');
 
-    // Authoritative side: group doc carries server-resolved owner + active lifecycle.
-    const groupDoc = store.groups.get(body.legacyId);
-    expect(groupDoc?.ownerId).toBe('owner-uid');
-    expect(groupDoc?.status).toBe('active');
-    expect(groupDoc?.allowMemberChallenges).toBe(true);
-    const ownerDoc = store.memberships.get(`${body.legacyId}_owner-uid`);
-    expect(ownerDoc).toMatchObject({ role: 'owner', status: 'active', userId: 'owner-uid' });
-
-    // Relational side: PG shadow mirrors live state (never consulted for authority).
-    const shadow = await db.query<{ group_id: string; name: string; status: string }>(
-      `SELECT group_id, name, status FROM groups WHERE group_id = $1`,
+    const member = await db.query<{ member_id: string }>(`SELECT member_id FROM members WHERE auth_subject='owner-uid'`);
+    const group = await db.query<{ group_id: string; name: string; status: string; allow_member_challenges: boolean; steward_member_id: string }>(
+      `SELECT group_id, name, status, allow_member_challenges, steward_member_id FROM groups WHERE group_id = $1`,
       [body.id],
     );
-    expect(shadow.rows[0]).toMatchObject({ name: 'River Runners', status: 'active' });
     const membership = await db.query<{ role: string; status: string }>(
       `SELECT role, status FROM group_memberships
        WHERE group_id = $1 AND member_id = (SELECT member_id FROM members WHERE auth_subject = 'owner-uid')`,
       [body.id],
     );
+    expect(group.rows[0]).toMatchObject({ group_id: body.id, name: 'River Runners', status: 'active', allow_member_challenges: true, steward_member_id: member.rows[0].member_id });
     expect(membership.rows[0]).toEqual({ role: 'owner', status: 'active' });
+    expect(store.calls).toEqual([]);
   });
 
   it('client-supplied actor identity is rejected and never used', async () => {
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('real-uid');
     const app = appFor({ 'real-token': 'real-uid' }, store);
 
@@ -159,15 +77,15 @@ describe('governed group creation', () => {
       payload: { name: 'Hijack', ownerId: 'attacker-uid', userId: 'attacker-uid' },
     });
     expect(response.statusCode).toBe(400);
-    expect(store.groups.size).toBe(0);
+    expect((await testDb().query(`SELECT 1 FROM groups WHERE name='Hijack'`)).rows).toHaveLength(0);
+    expect(store.calls).toEqual([]);
   });
 
-  it('store outage fails closed with no shadow row', async () => {
+  it('PostgreSQL outage fails closed and never falls back to Firestore', async () => {
     const db = testDb();
-    const store = fakeStore();
-    store.failWith = new Error('firestore unavailable');
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
-    const app = appFor({ 'owner-token': 'owner-uid' }, store);
+    const app = appFor({ 'owner-token': 'owner-uid' }, store, groupAuthorityUnavailableDb(db));
 
     const response = await app.inject({
       method: 'POST',
@@ -176,11 +94,12 @@ describe('governed group creation', () => {
       payload: { name: 'Unlucky' },
     });
     expect(response.statusCode).toBe(503);
-    const shadow = await db.query(`SELECT COUNT(*) AS count FROM groups`);
-    expect(Number(shadow.rows[0].count)).toBe(0);
+    expect(store.calls).toEqual([]);
+    const persisted = await db.query(`SELECT COUNT(*) AS count FROM groups`);
+    expect(Number(persisted.rows[0].count)).toBe(0);
   });
 
-  it('missing store configuration fails closed', async () => {
+  it('V2 creation does not require a configured Firestore Group store', async () => {
     await seedUser('owner-uid');
     const app = buildApp({ db: testDb(), verifier: stubVerifier({ 't': 'owner-uid' }) });
     const response = await app.inject({
@@ -189,13 +108,13 @@ describe('governed group creation', () => {
       headers: authHeaders('t'),
       payload: { name: 'NoStore' },
     });
-    expect(response.statusCode).toBe(503);
+    expect(response.statusCode).toBe(201);
+    expect((await testDb().query(`SELECT 1 FROM groups WHERE name='NoStore'`)).rows).toHaveLength(1);
   });
 });
 
 describe('governed membership join / leave', () => {
   async function createdGroup(
-    store: ReturnType<typeof fakeStore>,
     app: ReturnType<typeof appFor>,
     token: string,
     payload: Record<string, unknown> = { name: 'Joinable' },
@@ -210,13 +129,13 @@ describe('governed membership join / leave', () => {
     return response.json() as { id: string; legacyId: string };
   }
 
-  it('public group join activates membership, bumps counter, syncs shadow', async () => {
+  it('public group join activates PostgreSQL membership and derived count', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
     await seedUser('joiner-uid');
     const app = appFor({ 'owner-token': 'owner-uid', 'join-token': 'joiner-uid' }, store);
-    const group = await createdGroup(store, app, 'owner-token');
+    const group = await createdGroup(app, 'owner-token');
 
     const response = await app.inject({
       method: 'POST',
@@ -226,25 +145,23 @@ describe('governed membership join / leave', () => {
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ id: group.id, status: 'joined', role: 'member' });
-    expect(store.memberships.get(`${group.legacyId}_joiner-uid`)).toMatchObject({
-      status: 'active',
-      role: 'member',
-    });
-    expect(store.groups.get(group.legacyId)?.memberCount).toBe(2);
-    const shadow = await db.query<{ status: string }>(
-      `SELECT status FROM group_memberships
+    const row = await db.query<{ status: string; role: string }>(
+      `SELECT status, role FROM group_memberships
        WHERE group_id = $1 AND member_id = (SELECT member_id FROM members WHERE auth_subject = 'joiner-uid')`,
       [group.id],
     );
-    expect(shadow.rows[0]?.status).toBe('active');
+    expect(row.rows[0]).toEqual({ status: 'active', role: 'member' });
+    const count = await db.query<{ n: number }>(`SELECT count(*)::int AS n FROM group_memberships WHERE group_id=$1 AND status IN ('active','joined')`, [group.id]);
+    expect(count.rows[0].n).toBe(2);
+    expect(store.calls).toEqual([]);
   });
 
   it('private group join stays pending with no counter bump', async () => {
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
     await seedUser('joiner-uid');
     const app = appFor({ 'owner-token': 'owner-uid', 'join-token': 'joiner-uid' }, store);
-    const group = await createdGroup(store, app, 'owner-token', { name: 'Private', isPrivate: true });
+    const group = await createdGroup(app, 'owner-token', { name: 'Private', isPrivate: true });
 
     const response = await app.inject({
       method: 'POST',
@@ -254,17 +171,21 @@ describe('governed membership join / leave', () => {
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ status: 'pending' });
-    expect(store.memberships.get(`${group.legacyId}_joiner-uid`)).toMatchObject({ status: 'pending' });
-    expect(store.groups.get(group.legacyId)?.memberCount).toBe(1);
+    const db = testDb();
+    const row = await db.query<{ status: string }>(`SELECT status FROM group_memberships WHERE group_id=$1 AND member_id=(SELECT member_id FROM members WHERE auth_subject='joiner-uid')`, [group.id]);
+    expect(row.rows[0]?.status).toBe('pending');
+    const count = await db.query<{ n: number }>(`SELECT count(*)::int AS n FROM group_memberships WHERE group_id=$1 AND status IN ('active','joined')`, [group.id]);
+    expect(count.rows[0].n).toBe(1);
+    expect(store.calls).toEqual([]);
   });
 
   it('leave withdraws an active membership and decrements the counter', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
     await seedUser('joiner-uid');
     const app = appFor({ 'owner-token': 'owner-uid', 'join-token': 'joiner-uid' }, store);
-    const group = await createdGroup(store, app, 'owner-token');
+    const group = await createdGroup(app, 'owner-token');
     await app.inject({
       method: 'POST',
       url: `/v1/groups/${group.id}/join`,
@@ -280,22 +201,23 @@ describe('governed membership join / leave', () => {
     });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ status: 'left' });
-    expect(store.memberships.get(`${group.legacyId}_joiner-uid`)).toMatchObject({ status: 'left' });
-    expect(store.groups.get(group.legacyId)?.memberCount).toBe(1);
-    const shadow = await db.query<{ status: string }>(
-      `SELECT status FROM group_memberships
+    const row = await db.query<{ status: string; left_at: string | null }>(
+      `SELECT status, left_at FROM group_memberships
        WHERE group_id = $1 AND member_id = (SELECT member_id FROM members WHERE auth_subject = 'joiner-uid')`,
       [group.id],
     );
-    expect(shadow.rows[0]?.status).toBe('left');
+    expect(row.rows[0]?.status).toBe('left');
+    expect(row.rows[0]?.left_at).not.toBeNull();
+    const count = await db.query<{ n: number }>(`SELECT count(*)::int AS n FROM group_memberships WHERE group_id=$1 AND status IN ('active','joined')`, [group.id]);
+    expect(count.rows[0].n).toBe(1);
   });
 
   it('owner cannot leave; missing membership leave is an idempotent no-op', async () => {
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
     await seedUser('stranger-uid');
     const app = appFor({ 'owner-token': 'owner-uid', 'stranger-token': 'stranger-uid' }, store);
-    const group = await createdGroup(store, app, 'owner-token');
+    const group = await createdGroup(app, 'owner-token');
 
     const ownerLeave = await app.inject({
       method: 'POST',
@@ -315,9 +237,9 @@ describe('governed membership join / leave', () => {
     expect(strangerLeave.json()).toMatchObject({ status: 'none' });
   });
 
-  it('PG shadow without a Firestore mapping cannot authorize join', async () => {
+  it('PostgreSQL Group UUID is sufficient for governed join without a Firestore mapping', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('joiner-uid');
     // Shadow-only row: no legacy Firestore identity behind it.
     const shadow = await db.query<{ group_id: string }>(
@@ -334,17 +256,20 @@ describe('governed membership join / leave', () => {
       headers: authHeaders('join-token'),
       payload: {},
     });
-    expect(response.statusCode).toBe(404);
-    expect(store.log.filter((entry) => entry.collection === 'groupMembers')).toHaveLength(0);
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ id: groupId, status: 'joined', role: 'member' });
+    const membership = await db.query(`SELECT 1 FROM group_memberships WHERE group_id=$1 AND member_id=(SELECT member_id FROM members WHERE auth_subject='joiner-uid')`, [groupId]);
+    expect(membership.rows).toHaveLength(1);
+    expect(store.calls).toEqual([]);
   });
 
   it('inactive group fails closed on join with no membership write', async () => {
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
     await seedUser('joiner-uid');
     const app = appFor({ 'owner-token': 'owner-uid', 'join-token': 'joiner-uid' }, store);
-    const group = await createdGroup(store, app, 'owner-token');
-    store.groups.get(group.legacyId)!.status = 'archived';
+    const group = await createdGroup(app, 'owner-token');
+    await testDb().query(`UPDATE groups SET status='suspended' WHERE group_id=$1`, [group.id]);
 
     const response = await app.inject({
       method: 'POST',
@@ -353,11 +278,12 @@ describe('governed membership join / leave', () => {
       payload: {},
     });
     expect(response.statusCode).toBe(422);
-    expect(store.memberships.get(`${group.legacyId}_joiner-uid`)).toBeUndefined();
+    const membership = await testDb().query(`SELECT 1 FROM group_memberships WHERE group_id=$1 AND member_id=(SELECT member_id FROM members WHERE auth_subject='joiner-uid')`, [group.id]);
+    expect(membership.rows).toHaveLength(0);
   });
 
   it('missing group fails closed on join and leave', async () => {
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('joiner-uid');
     const app = appFor({ 'join-token': 'joiner-uid' }, store);
     const missing = '11111111-1111-4111-8111-111111111111';
@@ -374,11 +300,11 @@ describe('governed membership join / leave', () => {
   });
 
   it('join body cannot smuggle member identity', async () => {
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedUser('owner-uid');
     await seedUser('joiner-uid');
     const app = appFor({ 'owner-token': 'owner-uid', 'join-token': 'joiner-uid' }, store);
-    const group = await createdGroup(store, app, 'owner-token');
+    const group = await createdGroup(app, 'owner-token');
 
     const response = await app.inject({
       method: 'POST',
@@ -387,6 +313,7 @@ describe('governed membership join / leave', () => {
       payload: { userId: 'owner-uid', memberId: 'whatever' },
     });
     expect(response.statusCode).toBe(400);
-    expect(store.memberships.get(`${group.legacyId}_joiner-uid`)).toBeUndefined();
+    expect((await testDb().query(`SELECT 1 FROM group_memberships WHERE group_id=$1 AND member_id=(SELECT member_id FROM members WHERE auth_subject='joiner-uid')`, [group.id])).rows).toHaveLength(0);
+    expect(store.calls).toEqual([]);
   });
 });

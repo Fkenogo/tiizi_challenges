@@ -1,5 +1,8 @@
 /**
- * Phase C2B transitional Group-Membership runtime authority adapter.
+ * Legacy Firestore Group-Membership authority adapter.
+ *
+ * Retained for V1/reference compatibility and adapter tests. The V2 runtime
+ * does not import or call this module; V2 authority is PostgreSQL-backed.
  *
  * This is the application-boundary adapter for
  * `resolveGroupMembershipAuthority(groupId, memberId)` while Firestore
@@ -22,9 +25,8 @@
  * 4. Firestore outages propagate as thrown errors so callers fail closed
  *    ("authority unreachable") instead of treating them as non-membership.
  *
- * No Firestore activity write, no dual write, no Challenge-derived-truth
- * write. Read-only get() calls. Removed when Group authority migrates to
- * PostgreSQL (the domain contract does not change).
+ * Read-only legacy Firestore calls only. Not a V2 fallback or dual-write
+ * path.
  */
 
 import { getFirestore } from 'firebase-admin/firestore';

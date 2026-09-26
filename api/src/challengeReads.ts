@@ -20,10 +20,9 @@
  * No personal activity-history/diary API (Stage F: Tiizi is not a personal
  * activity logger; C1 deliberate omission stands).
  *
- * Authorization reuses the provider-neutral live Group-Membership authority
- * seam (the PG group_memberships shadow never authorizes on its own while
- * Firestore remains operational authority). No Firebase imports here —
- * Firebase lives at the application adapter boundary only.
+ * Authorization reuses the provider-neutral Group-Membership authority
+ * seam, wired to PostgreSQL in the active API runtime. No Firebase imports
+ * here — Firebase Auth stays at the application authentication boundary.
  *
  * Competitive finishing positions are derived at read time via the existing
  * C2B resolver (computeFinishingPositions): completion order governs, ties
@@ -59,7 +58,7 @@ import {
   type ParticipationTruthState,
 } from './derivedTruth.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
-import { isGroupDocActive } from './firestoreGroupAuthority.js';
+import { isGroupDocActive } from './groupLiveness.js';
 import type { GroupMutationStore } from './groupMutations.js';
 import {
   getChallengeFinal,
@@ -424,8 +423,8 @@ function governingCompetitiveEpisode(
 }
 
 /**
- * Live-authority eligibility for a (group, member) pair. The PG shadow is
- * never consulted here: null/ineligible under live authority means "not
+ * PostgreSQL-authority eligibility for a (group, member) pair. A null or
+ * ineligible result means "not
  * entitled". Authority outages throw ChallengeReadError(503) so reads fail
  * closed instead of treating them as non-membership.
  */
@@ -636,7 +635,7 @@ export interface ChallengeReadDeps {
    */
   now?: Date;
   /**
-   * S4a — live Group document reader for the governed `groupId` list
+   * S4a — PostgreSQL Group projection for the governed `groupId` list
    * filter (existence/liveness gate). Absent: filtered reads fail closed;
    * the unfiltered list is unaffected.
    */
@@ -661,13 +660,13 @@ export async function listVisibleChallenges(
   );
   const visible = new Set<string>(mine.rows.map((r) => String(r.challenge_id)));
 
-  const shadowGroups = await db.query<{ group_id: string }>(
+  const memberGroups = await db.query<{ group_id: string }>(
     `SELECT DISTINCT group_id FROM group_memberships
      WHERE member_id = $1 AND status IN ('joined', 'active')`,
     [memberId],
   );
   const eligibleGroups: string[] = [];
-  for (const row of shadowGroups.rows) {
+  for (const row of memberGroups.rows) {
     const groupId = String(row.group_id);
     if (await liveEligibility(deps.groupMembershipAuthority, groupId, memberId)) {
       eligibleGroups.push(groupId);
@@ -781,12 +780,11 @@ export async function listVisibleChallengesInGroup(
 ): Promise<ApiGroupChallengeList> {
   if (!UUID_RE.test(memberId)) readFail(400, 'invalid_member', 'member must be a member UUID');
   if (!UUID_RE.test(groupId)) readFail(400, 'invalid_group', 'groupId must be a Tiizi group UUID');
-  const shadow = await db.query<{ legacy_firestore_id: string | null }>(
-    `SELECT legacy_firestore_id FROM groups WHERE group_id = $1`,
+  const groupIdentity = await db.query<{ legacy_firestore_id: string | null }>(
+    `SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id FROM groups WHERE group_id = $1`,
     [groupId],
   );
-  const legacyId = shadow.rows[0]?.legacy_firestore_id ?? null;
-  if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
+  const legacyId = groupIdentity.rows[0]?.legacy_firestore_id ?? groupId;
   const store = deps.groupStore;
   let group: Record<string, unknown> | null;
   try {
@@ -1193,7 +1191,7 @@ export async function getChallengeContributors(
 
 export interface ChallengeReadRouteDeps {
   groupMembershipAuthority?: GroupMembershipAuthority;
-  /** S4a — live Group document reader for the governed `groupId` filter. */
+  /** S4a — PostgreSQL Group projection for the governed `groupId` filter. */
   groupStore?: Pick<GroupMutationStore, 'getGroup'>;
 }
 
@@ -1240,7 +1238,12 @@ export function registerChallengeReadRoutes(
       // S4a governed Group scope: the same entitled read, filtered
       // server-side. Absent: the existing unfiltered behaviour, unchanged.
       if (query.groupId !== undefined) {
-        return listVisibleChallengesInGroup(db, member.memberId, query.groupId, readDeps);
+        try {
+          return await listVisibleChallengesInGroup(db, member.memberId, query.groupId, readDeps);
+        } catch (error) {
+          if (error instanceof ChallengeReadError) throw error;
+          readFail(503, 'group_store_unavailable', 'PostgreSQL Group authority unavailable');
+        }
       }
       return {
         memberId: member.memberId,

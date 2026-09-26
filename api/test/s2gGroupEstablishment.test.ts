@@ -2,29 +2,24 @@
  * TIIZI S2-G — minimum V2 Group establishment acceptance tests.
  *
  * Proves the member-facing Group establishment chain end to end over the
- * REAL routes, with an in-memory GroupMutationStore standing in for
- * Firestore:
+ * real API routes and PostgreSQL test database:
  *
  * - an authenticated member establishes a Group through `POST /v1/groups`;
  * - the creator becomes owner/active (Accountable Steward) through the
  *   governed authority — never client-supplied;
- * - the Firestore Group + owner membership are written through the single
- *   atomic store call, and the PostgreSQL shadow is synchronized after;
+ * - Group + Accountable Steward membership commit atomically in PostgreSQL;
  * - `GET /v1/memberships/me` (the SAME contract the Challenge creation
  *   journey consumes) immediately exposes the newly created Group;
- * - the response never leaks the Firebase UID or the transitional Firestore id;
+ * - the response never leaks the Firebase UID;
  * - client-supplied actor identity is rejected and never used;
- * - store failure fails closed with no shadow row and no Group;
- * - the PostgreSQL shadow written by S2-G NEVER authorizes Challenge
- *   creation (the live Group authority remains the only authority).
+ * - PostgreSQL failure fails closed with no Group and no Firestore fallback;
+ * - Group Challenge authorization uses PostgreSQL membership truth.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
-import { stubVerifier, testDb, seedMember, seedGroup, seedMembership, authHeaders } from './helpers.js';
-import type { GroupMutationStore } from '../src/groupMutations.js';
-import { createFirestoreGroupMembershipAuthority } from '../src/firestoreGroupAuthority.js';
-import { createFirestoreChallengeCreationAuthority } from '../src/firestoreChallengeCreationAuthority.js';
-import type { FirestoreReader } from '../src/firestoreGroupAuthority.js';
+import { stubVerifier, testDb, seedMember, seedGroup, seedMembership, authHeaders, groupAuthorityUnavailableDb } from './helpers.js';
+import { createPostgresGroupMembershipAuthority, createPostgresChallengeCreationAuthority } from '../src/postgresGroupAuthority.js';
+import { forbiddenFirestoreGroupStore } from './helpers.js';
 
 beforeEach(async () => {
   await testDb().query(
@@ -32,82 +27,8 @@ beforeEach(async () => {
   );
 });
 
-interface StoreOp {
-  op: string;
-  collection: string;
-  docId: string;
-}
-
-/**
- * In-memory GroupMutationStore: deterministic Firestore stand-in. Creation
- * records ONE operation (the atomic group + owner membership batch) so the
- * test can prove the owner relation is never split.
- */
-function fakeStore(): GroupMutationStore & {
-  groups: Map<string, Record<string, unknown>>;
-  memberships: Map<string, Record<string, unknown>>;
-  log: StoreOp[];
-  failWith: Error | null;
-} {
-  const state = {
-    groups: new Map<string, Record<string, unknown>>(),
-    memberships: new Map<string, Record<string, unknown>>(),
-    log: [] as StoreOp[],
-    failWith: null as Error | null,
-    seq: 0,
-  };
-  const maybeFail = () => {
-    if (state.failWith) throw state.failWith;
-  };
-  return {
-    groups: state.groups,
-    memberships: state.memberships,
-    log: state.log,
-    get failWith() {
-      return state.failWith;
-    },
-    set failWith(value: Error | null) {
-      state.failWith = value;
-    },
-    async createGroupWithOwner(group, ownerUid, ownerMembership) {
-      maybeFail();
-      state.seq += 1;
-      const id = `group-${state.seq}`;
-      // One atomic write: both documents land together or not at all.
-      state.groups.set(id, { ...group });
-      state.memberships.set(`${id}_${ownerUid}`, { ...ownerMembership, groupId: id });
-      state.log.push({ op: 'createGroupWithOwner', collection: 'groups', docId: id });
-      return id;
-    },
-    async getGroup(legacyId) {
-      maybeFail();
-      return state.groups.get(legacyId) ?? null;
-    },
-    async updateGroupCounter(legacyId, delta) {
-      maybeFail();
-      const group = state.groups.get(legacyId);
-      if (!group) throw new Error('fake-store: missing group');
-      group.memberCount = Number(group.memberCount ?? 0) + delta;
-    },
-    async getMembership(legacyId, firebaseUid) {
-      maybeFail();
-      return state.memberships.get(`${legacyId}_${firebaseUid}`) ?? null;
-    },
-    async setMembership(legacyId, firebaseUid, data) {
-      maybeFail();
-      state.memberships.set(`${legacyId}_${firebaseUid}`, { ...data });
-    },
-    async updateMembership(legacyId, firebaseUid, patch) {
-      maybeFail();
-      const existing = state.memberships.get(`${legacyId}_${firebaseUid}`);
-      if (!existing) throw new Error('fake-store: missing membership');
-      state.memberships.set(`${legacyId}_${firebaseUid}`, { ...existing, ...patch });
-    },
-  };
-}
-
-function appFor(tokens: Record<string, string>, store: GroupMutationStore) {
-  return buildApp({ db: testDb(), verifier: stubVerifier(tokens), groupMutation: { store } });
+function appFor(tokens: Record<string, string>, store: ReturnType<typeof forbiddenFirestoreGroupStore>, db = testDb()) {
+  return buildApp({ db, verifier: stubVerifier(tokens), groupMutation: { store } });
 }
 
 interface EstablishmentBody {
@@ -135,7 +56,7 @@ async function establish(
 describe('S2-G governed Group establishment', () => {
   it('creator becomes owner through the governed authority and the Group is immediately readable', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     const memberId = await seedMember(db, 'founder-uid');
     const app = appFor({ 'founder-token': 'founder-uid' }, store);
 
@@ -171,9 +92,9 @@ describe('S2-G governed Group establishment', () => {
     });
   });
 
-  it('establishes Firestore Truth and the PostgreSQL shadow in one governed operation', async () => {
+  it('establishes PostgreSQL Group and Steward membership in one transaction', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedMember(db, 'founder-uid');
     const app = appFor({ 'founder-token': 'founder-uid' }, store);
 
@@ -181,50 +102,37 @@ describe('S2-G governed Group establishment', () => {
     expect(created.statusCode).toBe(201);
     const body = created.json() as EstablishmentBody;
 
-    // Firestore truth: atomic group + owner membership (one batched call).
-    expect(store.log.filter((entry) => entry.op === 'createGroupWithOwner')).toHaveLength(1);
-    expect(store.groups.get(body.legacyId)).toMatchObject({
-      name: 'Atomic Group',
-      ownerId: 'founder-uid',
-      status: 'active',
-      allowMemberChallenges: true,
-      memberCount: 1,
-    });
-    expect(store.memberships.get(`${body.legacyId}_founder-uid`)).toMatchObject({
-      role: 'owner',
-      status: 'active',
-      userId: 'founder-uid',
-    });
-
-    // PostgreSQL shadow mirrors live state (never an authority).
-    const shadowGroup = await db.query<{ name: string; description: string; status: string }>(
-      `SELECT name, description, status FROM groups WHERE group_id = $1`,
+    const group = await db.query<{ name: string; description: string; status: string; steward_member_id: string }>(
+      `SELECT name, description, status, steward_member_id FROM groups WHERE group_id = $1`,
       [body.id],
     );
-    expect(shadowGroup.rows[0]).toMatchObject({ name: 'Atomic Group', description: '', status: 'active' });
-    const shadowMembership = await db.query<{ role: string; status: string }>(
-      `SELECT role, status FROM group_memberships
+    expect(group.rows[0]).toMatchObject({ name: 'Atomic Group', description: '', status: 'active' });
+    const membership = await db.query<{ role: string; status: string; member_id: string }>(
+      `SELECT role, status, member_id FROM group_memberships
        WHERE group_id = $1 AND member_id = (SELECT member_id FROM members WHERE auth_subject = 'founder-uid')`,
       [body.id],
     );
-    expect(shadowMembership.rows[0]).toEqual({ role: 'owner', status: 'active' });
+    expect(membership.rows[0]).toMatchObject({ role: 'owner', status: 'active', member_id: group.rows[0].steward_member_id });
+    expect(store.calls).toEqual([]);
   });
 
   it('description is optional and defaults to empty', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedMember(db, 'founder-uid');
     const app = appFor({ 'founder-token': 'founder-uid' }, store);
 
     const created = await establish(app, 'founder-token', { name: 'No Description' });
     expect(created.statusCode).toBe(201);
     const body = created.json() as EstablishmentBody;
-    expect(store.groups.get(body.legacyId)?.description).toBe('');
+    const group = await db.query<{ description: string }>(`SELECT description FROM groups WHERE group_id=$1`, [body.id]);
+    expect(group.rows[0]?.description).toBe('');
+    expect(store.calls).toEqual([]);
   });
 
-  it('never leaks the Firebase UID or the transitional Firestore id', async () => {
+  it('never leaks the Firebase UID and returns the canonical Group UUID', async () => {
     const db = testDb();
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedMember(db, 'secret-uid-xyz');
     const app = appFor({ 'founder-token': 'secret-uid-xyz' }, store);
 
@@ -239,12 +147,12 @@ describe('S2-G governed Group establishment', () => {
       headers: authHeaders('founder-token'),
     });
     expect(mine.body).not.toContain('secret-uid-xyz');
-    // The transitional Firestore id is a lookup key, not a domain identity.
-    expect(mine.body).not.toContain(body.legacyId);
+    const membership = (mine.json() as { memberships: Array<{ groupId: string }> }).memberships[0];
+    expect(membership.groupId).toBe(body.id);
   });
 
   it('rejects client-supplied actor identity and establishes nothing', async () => {
-    const store = fakeStore();
+    const store = forbiddenFirestoreGroupStore();
     await seedMember(testDb(), 'real-uid');
     const app = appFor({ 'real-token': 'real-uid' }, store);
 
@@ -255,25 +163,25 @@ describe('S2-G governed Group establishment', () => {
       role: 'owner',
     });
     expect(response.statusCode).toBe(400);
-    expect(store.groups.size).toBe(0);
-    const shadow = await testDb().query(`SELECT COUNT(*) AS count FROM groups`);
-    expect(Number(shadow.rows[0].count)).toBe(0);
+    expect(store.calls).toEqual([]);
+    const persisted = await testDb().query(`SELECT COUNT(*) AS count FROM groups`);
+    expect(Number(persisted.rows[0].count)).toBe(0);
   });
 
-  it('fails closed on store failure with no shadow row', async () => {
+  it('fails closed on PostgreSQL failure without falling back to Firestore', async () => {
     const db = testDb();
-    const store = fakeStore();
-    store.failWith = new Error('firestore unavailable');
+    const store = forbiddenFirestoreGroupStore();
     await seedMember(db, 'founder-uid');
-    const app = appFor({ 'founder-token': 'founder-uid' }, store);
+    const app = appFor({ 'founder-token': 'founder-uid' }, store, groupAuthorityUnavailableDb(db));
 
     const response = await establish(app, 'founder-token', { name: 'Unlucky Group' });
     expect(response.statusCode).toBe(503);
-    const shadow = await db.query(`SELECT COUNT(*) AS count FROM groups`);
-    expect(Number(shadow.rows[0].count)).toBe(0);
+    expect(store.calls).toEqual([]);
+    const persisted = await db.query(`SELECT COUNT(*) AS count FROM groups`);
+    expect(Number(persisted.rows[0].count)).toBe(0);
   });
 
-  it('fails closed when no governed store is configured', async () => {
+  it('creates through PostgreSQL when no legacy Firestore store is configured', async () => {
     await seedMember(testDb(), 'founder-uid');
     const app = buildApp({ db: testDb(), verifier: stubVerifier({ t: 'founder-uid' }) });
     const response = await app.inject({
@@ -282,36 +190,17 @@ describe('S2-G governed Group establishment', () => {
       headers: authHeaders('t'),
       payload: { name: 'No Store' },
     });
-    expect(response.statusCode).toBe(503);
+    expect(response.statusCode).toBe(201);
+    expect((await testDb().query(`SELECT 1 FROM groups WHERE name='No Store'`)).rows).toHaveLength(1);
   });
 });
 
-/** Deterministic in-memory Firestore reader keyed by `collection/docId`. */
-function fakeReader(docs: Map<string, Record<string, unknown>>): FirestoreReader {
-  return {
-    async getDocument(collection, docId) {
-      const data = docs.get(`${collection}/${docId}`);
-      return { exists: data !== undefined, data: () => data };
-    },
-  };
-}
-
 describe('S2-G does not weaken the Challenge Group-membership invariant', () => {
-  it('the PostgreSQL shadow written by Group creation never authorizes Challenge creation', async () => {
+  it('a Group without an eligible PostgreSQL membership cannot authorize Challenge creation', async () => {
     const db = testDb();
     const memberId = await seedMember(db, 'founder-uid');
-    const groupId = await seedGroup(db, { legacyId: 'fs-group-shadow', name: 'Shadow Group' });
-    // The shadow row S2-G creates (owner/active): it must NOT authorize.
-    await seedMembership(db, groupId, memberId, { role: 'owner', status: 'active' });
-
-    // Live Group authority: the Group exists and is active, but the member
-    // has no live Firestore membership.
-    const authority = createFirestoreChallengeCreationAuthority(
-      db,
-      fakeReader(new Map([
-        ['groups/fs-group-shadow', { status: 'active', allowMemberChallenges: true }],
-      ])),
-    );
+    const groupId = await seedGroup(db, { name: 'PG Group' });
+    const authority = createPostgresChallengeCreationAuthority(db);
     const decision = await authority.resolveChallengeCreationAuthority(groupId, memberId);
     expect(decision).toMatchObject({ permitted: false, reason: 'no_membership' });
   });
@@ -319,15 +208,10 @@ describe('S2-G does not weaken the Challenge Group-membership invariant', () => 
   it('a live eligible membership is still permitted (invariant intact, not weakened)', async () => {
     const db = testDb();
     const memberId = await seedMember(db, 'founder-uid');
-    const groupId = await seedGroup(db, { legacyId: 'fs-group-live', name: 'Live Group' });
-
-    const authority = createFirestoreChallengeCreationAuthority(
-      db,
-      fakeReader(new Map([
-        ['groups/fs-group-live', { status: 'active', allowMemberChallenges: true }],
-        ['groupMembers/fs-group-live_founder-uid', { status: 'active', role: 'owner' }],
-      ])),
-    );
+    const groupId = await seedGroup(db, { name: 'PG Group' });
+    await db.query(`UPDATE groups SET allow_member_challenges=true WHERE group_id=$1`, [groupId]);
+    await seedMembership(db, groupId, memberId, { role: 'owner', status: 'active' });
+    const authority = createPostgresChallengeCreationAuthority(db);
     const decision = await authority.resolveChallengeCreationAuthority(groupId, memberId);
     expect(decision).toMatchObject({ permitted: true, memberRole: 'owner' });
   });
@@ -335,25 +219,15 @@ describe('S2-G does not weaken the Challenge Group-membership invariant', () => 
   it('the read contract S2-G uses is the same membership read authority the Challenge journey gates on', async () => {
     const db = testDb();
     const memberId = await seedMember(db, 'founder-uid');
-    const groupId = await seedGroup(db, { legacyId: 'fs-group-shared', name: 'Shared Group' });
-
-    // Group membership read authority (used by the Challenge activity path).
-    const membershipAuthority = createFirestoreGroupMembershipAuthority(
-      db,
-      fakeReader(new Map([
-        ['groups/fs-group-shared', { status: 'active' }],
-        ['groupMembers/fs-group-shared_founder-uid', { status: 'active', role: 'member' }],
-      ])),
-    );
+    const groupId = await seedGroup(db, { name: 'PG Shared Group' });
+    await seedMembership(db, groupId, memberId, { role: 'member', status: 'active' });
+    const membershipAuthority = createPostgresGroupMembershipAuthority(db);
     expect(await membershipAuthority.resolveGroupMembershipAuthority(groupId, memberId)).toMatchObject({
       eligible: true,
     });
 
-    // No live membership -> no eligibility, even though a shadow could exist.
-    const noMembership = createFirestoreGroupMembershipAuthority(
-      db,
-      fakeReader(new Map([['groups/fs-group-shared', { status: 'active' }]])),
-    );
+    await db.query(`UPDATE group_memberships SET status='left',left_at=now() WHERE group_id=$1 AND member_id=$2`, [groupId, memberId]);
+    const noMembership = createPostgresGroupMembershipAuthority(db);
     expect(await noMembership.resolveGroupMembershipAuthority(groupId, memberId)).toMatchObject({
       eligible: false,
     });

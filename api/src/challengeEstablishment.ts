@@ -7,7 +7,7 @@
  * rows) + idempotency-key claim + activation when requested + creator
  * participation when requested.
  *
- * Transaction discipline (same as C2B):
+ * Transaction discipline:
  * - network/provider authority resolves OUTSIDE the transaction: Group
  *   liveness, creator Challenge-creation authority under LIVE authority,
  *   Knowledge pins and establishment eligibility are all proven before
@@ -22,11 +22,11 @@
  *   their own — the single db.transaction below owns atomicity).
  *
  * EBC-01 establishment proofs (all outside the transaction, fail closed):
- * - creator Challenge-creation authority via the injected
- *   ChallengeCreationAuthority when wired (live group + live membership +
- *   existing Charter allowMemberChallenges rule). Without it, the legacy
- *   proofs apply (live group + any live membership) — the pre-EBC-01
- *   contract, preserved for non-product seams;
+ * - V2 creator Challenge-creation authority via the injected PostgreSQL
+ *   ChallengeCreationAuthority (live Group + membership + stored Charter
+ *   allowMemberChallenges rule). The lower-level fallback exists only for
+ *   explicit legacy/test callers; the V2 HTTP route fails closed if this
+ *   governed authority is not wired;
  * - per-activity current-version readiness AND the exact (Activity, Metric,
  *   Unit) governed tuple via the REQUIRED resolvers gate (CORR-001: the
  *   same authoritative validator insertConfigVersion enforces in-version).
@@ -38,13 +38,10 @@
  * returns the original establishment instead of minting a duplicate, and a
  * reused key with a DIFFERENT request is rejected (no silent aliasing).
  *
- * Authority race (explicit non-goal): creator authority is proven live
- * BEFORE the transaction; the seam does not re-hit Firestore inside it.
- * A membership revoked between the live check and commit is NOT
- * synchronized — atomicity across PostgreSQL + Firestore is not invented
- * here (no distributed transaction). The requirement met is atomicity of
- * PostgreSQL establishment. The stale PG group_memberships shadow is never
- * consulted for authorization at any point.
+ * Authority race (explicit non-goal): creator authority is proven from
+ * PostgreSQL BEFORE the transaction. DB-controlled Challenge state is
+ * revalidated inside the transaction; this seam does not open a second
+ * authority transaction for Group state.
  *
  * Provider-neutral: pure domain + `Db`. No Firebase imports.
  */
@@ -249,9 +246,10 @@ export async function establishChallengeV2(
     if (!groupAuthority || groupAuthority.status !== 'active') {
       fail('group is not available for challenge establishment under current Group authority');
     }
-    // Live creator-membership proof, outside the transaction (fail closed).
+    // Legacy/test-only creator-membership proof, outside the transaction.
+    // The governed V2 HTTP route supplies the PostgreSQL creation authority.
     // This same-request proof also covers the optional creator join below;
-    // the transaction carries it forward without re-hitting Firestore.
+    // the transaction carries it forward without a second authority read.
     await requireCurrentGroupMember(
       resolvers,
       input.group_id,
@@ -402,8 +400,8 @@ export interface DefinitionEstablishmentInput {
  * PF-03-CORR-001 authoritative V2 establishment: the ONLY governed path
  * that persists new Challenges. The definition arrives already validated
  * by validateChallengeDefinition (no second semantic validator exists);
- * this seam proves live Group/creation authority (unchanged logic,
- * Firestore stays live authority), then commits challenge row + immutable
+ * this seam proves Group/creation authority through the configured
+ * PostgreSQL-backed V2 authority, then commits challenge row + immutable
  * PF-03 definition v1 (+ idempotency claim, activation, creator join) as
  * ONE PostgreSQL transaction. No legacy config snapshot is persisted for
  * a PF-03 establishment; no Firestore Challenge write; no V1 dual-write.
