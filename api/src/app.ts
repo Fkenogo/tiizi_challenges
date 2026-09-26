@@ -122,8 +122,8 @@ export function buildApp(deps: AppDeps) {
   // C3B V2 participation mutations (join/withdraw). Same live authority as
   // C2B; absent authority fails closed per-route instead of authorizing.
   registerParticipationRoutes(app, deps.db, deps.participation ?? deps.challengeActivity ?? {});
-  // EBC-01 governed Group mutations (create/join/leave). Server-side
-  // Firestore authority boundary; absent store fails closed per-route.
+  // V2 Group mutations use the PostgreSQL authority directly; database
+  // failures fail closed and never fall back to a legacy Firestore adapter.
   registerGroupMutationRoutes(app, deps.db);
   // EBC-01 governed V2 Challenge establishment. Authenticated actor,
   // charter-aware live creation authority, KCS-ready + tuple validation;

@@ -11,9 +11,8 @@
  * introduced here: the flag, the roles, and the default (permitted) are the
  * existing product semantics (see groupLifecycle.buildGroupDefaults).
  *
- * Deliberately narrow: this contract transports the authority decision
- * (permitted + attribution) for Challenge establishment only. The PG
- * group_memberships shadow is never consulted by implementations.
+ * Deliberately narrow: this contract transports the PostgreSQL authority
+ * decision (permitted + attribution) for V2 Challenge establishment only.
  *
  * No Firebase import here (contract only). No routes. No tables.
  */
@@ -44,12 +43,10 @@ export interface ChallengeCreationAuthorityStatus {
 export interface ChallengeCreationAuthority {
   /**
    * Resolve CURRENT Challenge-creation authority for a member in a group
-   * under live Group authority. Returns null when the Group cannot host new
+   * under the configured Group authority. Returns null when the Group cannot host new
    * Challenges at all (unmapped or missing); returns permitted:false with a
    * reason otherwise. Throws on authority failure so callers fail closed
    * ("authority unreachable") instead of treating it as a denial.
-   * TRANSITIONAL: replaced when Group authority migrates; the domain call
-   * sites do not change.
    */
   resolveChallengeCreationAuthority: (
     groupId: string,
@@ -64,7 +61,7 @@ function fail(message: string): never {
 /**
  * Gate helper: require current Challenge-creation authority for an action.
  * Rejects when the authority is unreachable, unmapped/missing, or reports
- * permitted === false. The PG shadow row is never consulted here by design.
+ * permitted === false.
  */
 export async function requireChallengeCreationAuthority(
   authority: ChallengeCreationAuthority,

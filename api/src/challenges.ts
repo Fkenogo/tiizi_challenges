@@ -46,10 +46,9 @@ import {
 
 export interface ChallengeCreationResolvers extends ChallengeConfigResolvers, GroupMembershipAuthority {
   /**
-   * TRANSITIONAL current-authority Group check. Confirm the group is live
-   * (exists and active) under whatever authority currently governs Groups.
-   * Return null when the group must not host new Challenges. Removed when
-   * Group authority migrates to PostgreSQL.
+   * Confirm that a Group exists and is active under the configured authority.
+   * V2 runtime resolves this from PostgreSQL; null means the Group must not
+   * host new Challenges.
    */
   resolveGroupAuthority: (groupId: string) => Promise<{ status: string } | null>;
 }

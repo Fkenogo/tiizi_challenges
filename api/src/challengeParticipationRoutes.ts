@@ -7,9 +7,9 @@
  *   episode (history preserved, never deleted).
  *
  * Both reuse the existing C2A domain seams (joinChallenge /
- * withdrawParticipation) with the injected LIVE Group-Membership authority —
- * the stale PG group_memberships shadow never authorizes. No Firestore
- * challengeMembers write exists anywhere on these paths (PG-only).
+ * withdrawParticipation) with the injected PostgreSQL Group-Membership
+ * authority used by V2. No Firestore challengeMembers write exists anywhere
+ * on these paths (PostgreSQL only).
  * No rejoin restrictions beyond the C2A structure (one active episode per
  * pair; closed episodes never block a later one).
  *

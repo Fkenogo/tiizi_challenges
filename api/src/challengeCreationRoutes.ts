@@ -13,8 +13,8 @@
  *   carries NO actor/member identity (additionalProperties:false rejects
  *   smuggled created_by_member_id / knowledge ids / Firestore ids with 400);
  * - creation authority (live group + live membership + existing Charter
- *   allowMemberChallenges rule) is proven through the injected
- *   ChallengeCreationAuthority — the PG membership shadow cannot authorize;
+ *   allowMemberChallenges rule) is proven through the PostgreSQL-backed
+ *   ChallengeCreationAuthority wired by the V2 runtime;
  * - semantic validation has ONE authority: validateChallengeDefinition
  *   (api/src/challengeDefinition.ts). Transport validation here checks
  *   JSON shape/types only; every meaning decision (identity, version

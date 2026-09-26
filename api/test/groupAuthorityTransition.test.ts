@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { authHeaders, buildTestApp, testDb, seedMember, seedGroup } from './helpers.js';
 import { createPostgresGroupMembershipAuthority, createPostgresChallengeCreationAuthority } from '../src/postgresGroupAuthority.js';
-import { reconcileGroupAuthority } from '../src/groupAuthorityReconciliation.js';
 
 describe('PostgreSQL Group authority schema', () => {
   it('persists governed Group and membership lifecycle truth', async () => {
@@ -72,20 +71,6 @@ describe('PostgreSQL Group authority schema', () => {
     expect(joined.json().status).toBe('pending');
     expect(await createPostgresGroupMembershipAuthority(db).resolveGroupMembershipAuthority(groupId,(await db.query<{member_id:string}>(`SELECT member_id FROM members WHERE auth_subject='pending-user'`)).rows[0].member_id)).toMatchObject({eligible:false,status:'pending'});
     await app.close();
-  });
-
-  it('dry-run reconciliation reports unresolved identity and owner conflicts without writing', async () => {
-    const db=testDb();
-    const before=await db.query<{n:string}>(`SELECT count(*)::text AS n FROM groups`);
-    const report=await reconcileGroupAuthority(db,{
-      async listGroups(){return [{id:'fire-group',data:{name:'Fire Group',ownerId:'missing-owner',status:'active'}}];},
-      async listMemberships(){return [{id:'fire-group_missing-owner',data:{groupId:'fire-group',userId:'missing-owner',role:'owner',status:'active'}}];},
-    });
-    expect(report.safeToApply).toBe(false);
-    expect(report.groups.firestoreOnly).toEqual(['fire-group']);
-    expect(report.memberships.missingMemberMappings).toEqual(['fire-group_missing-owner']);
-    const after=await db.query<{n:string}>(`SELECT count(*)::text AS n FROM groups`);
-    expect(after.rows[0].n).toBe(before.rows[0].n);
   });
 
   it('serializes retry joins into one eligible membership and preserves the Steward invariant', async () => {

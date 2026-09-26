@@ -2,12 +2,12 @@
  * Phase C3A controlled clean-V2 Challenge establishment CLI.
  *
  * Operational/admin tool (NOT a public API, NOT a permanent privileged HTTP
- * endpoint): establishes the first clean V2 Challenges before frontend
- * Challenge creation is migrated. Thin orchestration over EXISTING domain
+ * endpoint): establishes V2 Challenges through the same governed domain
+ * seams as the API. Thin orchestration over EXISTING domain
  * seams — createChallenge (challenge + immutable v1 config, one
  * transaction), activateChallenge, joinChallenge — plus existing trusted
- * resolvers (database Knowledge pins per activity kind, live Firestore
- * Group/Membership authority via ADC). No establishment logic is duplicated
+ * resolvers (database Knowledge pins and PostgreSQL Group/Membership
+ * authority). No establishment logic is duplicated
  * here; no V1 import/conversion/migration of any kind.
  *
  * Usage:
@@ -269,7 +269,7 @@ export interface ChallengeCreateV2Options {
 }
 
 /**
- * Core establishment (testable without Firestore): resolves the creator to an
+ * Core establishment resolves the creator to an
  * internal member, builds the kind-aware Knowledge resolver (mixed
  * fitness/wellness configs use the correct canonical namespace), then
  * delegates to the atomic establishChallengeV2 seam — Challenge, immutable

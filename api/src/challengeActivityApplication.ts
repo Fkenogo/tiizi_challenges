@@ -28,11 +28,11 @@
  *   the same application; concurrent duplicates stay single-effect.
  *
  * Group Membership at logging time: enforced under LIVE authority (fail
- * closed). Stage F checks eligibility at join; the transitional C2A seam
- * requires current membership for joining/establishment, and V1 behavioral
+ * closed). Stage F checks eligibility at join; the C2A seam
+ * requires current membership for joining/establishment, and historical V1 behavioral
  * evidence gates logging on live group/member state (deactivated groups
  * refuse logs). The conservative C2B reading applies the same live gate at
- * logging: the PG shadow never authorizes.
+ * logging: V2 production membership authorization resolves from PostgreSQL.
  *
  * Streak temporal correctness (EBC-03; Stage F FR-V2-118/FR-V2-119):
  * - every accepted activity's Challenge day is derived server-side from
@@ -362,10 +362,10 @@ function owningEpisode(episodes: ParticipationRow[], occurredAt: Date): Particip
 }
 
 /**
- * Explicit V2 log-time gate (transitional architecture): the participation
- * episode proves Challenge participation at occurred_at; the CURRENT
- * Group-Membership authority proves the Member remains eligible to submit a
- * NEW log now. Stale PG shadow state never authorizes, and already-accepted
+ * Explicit V2 log-time gate: the participation
+ * episode proves Challenge participation at occurred_at; the current
+ * PostgreSQL Group-Membership authority proves the Member remains eligible
+ * to submit a new log now. Already-accepted
  * historical Evidence/applications stay historical if Group membership later
  * changes. No automatic participation termination on Group exit.
  */

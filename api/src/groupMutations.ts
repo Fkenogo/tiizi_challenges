@@ -1,7 +1,11 @@
 /**
- * EBC-01 governed Group / Membership mutation boundary (domain).
+ * Legacy Firestore-backed Group / Membership mutation module.
  *
- * The approved authority model keeps Firestore authoritative for Group
+ * This implementation is retained for V1/reference compatibility and is
+ * not wired into V2 runtime authority. V2 uses postgresGroupAuthority.ts.
+ * The interfaces and pure validators below remain shared contracts.
+ *
+ * The historical authority model kept Firestore authoritative for Group
  * existence, lifecycle, and live Membership eligibility. The only ordinary
  * mutation path was direct client Firestore writes (non-atomic
  * create+owner-membership, permissive self-update rules) — a material
@@ -25,7 +29,7 @@
  * - the authenticated actor (internal Member UUID + Firebase UID) is
  *   resolved server-side by the route and passed in; client-supplied
  *   identity is never accepted (no actor fields exist on this seam);
- * - Firestore remains the authoritative Group/membership source: every
+ * - Historically, Firestore was the authoritative Group/membership source: every
  *   mutation writes Firestore FIRST through the injected GroupMutationStore;
  * - the PG shadow (groups / group_memberships) is synchronized only as the
  *   relational anchor these operations need (FK targets, discovery
@@ -53,7 +57,7 @@ function fail(statusCode: number, code: string, message: string): never {
 }
 
 /**
- * Store outage mapping: any GroupMutationStore failure (Firestore
+ * Legacy store outage mapping: any GroupMutationStore failure (Firestore
  * unreachable, permission denied, transient error) fails closed as 503
  * "authority unavailable" — never as an authorization, and never with
  * provider internals. Domain validation errors already carry their own

@@ -31,18 +31,9 @@ npm run migrate
 npm run dev                     # http://localhost:4000
 ```
 
-Shadow import from Firestore (read-only on the Firestore side, dry-run first):
-
-```sh
-npm run shadow:import -- --dry-run
-npm run shadow:import -- --apply
-```
-
-Membership parity check (Firestore vs PostgreSQL, per user, read-only):
-
-```sh
-npm run parity:memberships
-```
+The former Firestore Group/Membership shadow import and parity commands have
+been removed. V2 starts from fresh PostgreSQL data; no V1 data import or
+Firestore reconciliation is required.
 
 ## Tests
 
@@ -103,8 +94,10 @@ at 0, max instances intentionally bounded by the pool math above.
 
 ## Phase A scope guardrails
 
-- PostgreSQL is a **shadow/read model** for group memberships only.
-- Firestore remains the operational authority. No dual writes.
+- Historical Phase A used PostgreSQL as a Group Membership shadow while
+  Firestore remained authoritative. This description is superseded for V2 by
+  the PostgreSQL Group/Membership authority recorded in the Pass 005
+  transition candidate and must not be used as current runtime guidance.
 - No Challenges, no Activity Events, no engine changes.
 
 ## Phase B knowledge authority (canonical Knowledge migration)
@@ -170,11 +163,10 @@ npm run parity:knowledge
   `challenge_participations` (affirmative join gated on live membership
   authority, episode-based: one active episode per challenge/member,
   distinguishable withdrawal/removal, history preserved). Challenge
-  establishment requires an injected current-authority Group check AND
-  current creator Group Membership: the PG groups/memberships rows are
-  shadows that can go stale, so shadow state alone never authorizes
-  establishment or joining (transitional `groupMembershipAuthority.ts`
-  seam, also reusable by C2B; removed at Group-authority migration).
+  establishment requires a current Group check AND current creator Group
+  Membership. At the time Phase C2A was implemented, these checks used
+  Firestore; the Pass 005 V2 authority transition now uses PostgreSQL for
+  Group and Membership truth, including Challenge authorization.
   No application records, scoring execution, Derived Truth, leaderboards,
   or V1 migration. No public routes: domain seams only (`challenges.ts`,
   `challengeConfigs.ts`, `challengeParticipations.ts`,
@@ -254,27 +246,23 @@ has diverged from the authority.
   and the Firestore Knowledge write-deny rules deploy only after that
   runtime is established, per the cutover contract above.
 
-## Transitional identity bridge (Phase A2)
+## Legacy V1 identity bridge (Phase A2)
 
-During the strangler migration the frontend still holds Firestore group
-document ids (route params, cached queries) while the API owns Tiizi UUID
-identity. Provider ids must not leak into the domain model, so translation
-lives in one explicit seam:
+This retained V1 parity surface translates legacy Firestore group document
+ids to Tiizi UUIDs. It is not part of V2 Group Product Truth or authority:
 
 - Domain objects keep the Tiizi UUID as `id` (`/v1/memberships/me` carries
   no Firestore ids at all).
 - `GET /v1/compat/group-ids?legacyId=…&id=…` resolves UUID ↔ legacy
   Firestore id in both directions. Authenticated, read-only (resolving never
   mints UUIDs), capped at 200 ids per request.
-- The frontend adapter is `src/api/groupIdentityBridge.ts` (cached,
-  batching); the only proof consumer is the read-only shadow-parity strip on
-  the Groups "My Groups" tab (`ApiShadowParityStrip`, flag-gated).
-- `groups.legacy_firestore_id` is transitional metadata. The `/v1/compat/`
-  namespace is deprecated from birth: remove it once no caller holds
-  Firestore group ids (target: Phase B+).
+- The adapter is `src/api/groupIdentityBridge.ts`; its only consumer is the
+  read-only membership parity strip in the legacy Groups screen.
+- `groups.legacy_firestore_id` is retained compatibility metadata. It is not
+  required to preserve V1 data in V2 and is not used as Group authority.
 
-UUID stability is enforced by test (`shadowImport.test.ts` — repeated imports
-return identical member and group UUIDs) and must hold before any cutover.
+The compatibility lookup remains only for the legacy V1 membership parity
+surface. It does not participate in V2 authority or data establishment.
 
 ## Auth identity model and signup boundary
 

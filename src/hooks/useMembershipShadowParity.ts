@@ -31,9 +31,8 @@ export interface MembershipShadowParity {
  * current user. Translation between legacy Firestore ids and Tiizi UUIDs goes
  * through the identity bridge — screens never learn both systems.
  *
- * Compares membership SETS only. Role/status parity is covered server-side by
- * `npm run parity:memberships` in the api package (it reads the Firestore
- * groupMembers collection, which carries roles — the UI list does not).
+ * Compares membership sets only. This legacy V1 parity surface is not a
+ * Group or Membership authority and is not part of the V2 runtime.
  *
  * Disabled (and query-free) unless VITE_TIIZI_API_ENABLED=true. Firestore
  * remains authoritative; this hook changes no behaviour, it only reports.

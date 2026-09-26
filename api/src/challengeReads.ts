@@ -660,13 +660,13 @@ export async function listVisibleChallenges(
   );
   const visible = new Set<string>(mine.rows.map((r) => String(r.challenge_id)));
 
-  const shadowGroups = await db.query<{ group_id: string }>(
+  const memberGroups = await db.query<{ group_id: string }>(
     `SELECT DISTINCT group_id FROM group_memberships
      WHERE member_id = $1 AND status IN ('joined', 'active')`,
     [memberId],
   );
   const eligibleGroups: string[] = [];
-  for (const row of shadowGroups.rows) {
+  for (const row of memberGroups.rows) {
     const groupId = String(row.group_id);
     if (await liveEligibility(deps.groupMembershipAuthority, groupId, memberId)) {
       eligibleGroups.push(groupId);

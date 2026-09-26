@@ -1391,7 +1391,7 @@ describe('boundaries', () => {
   });
 });
 
-describe('firestore authority adapter', () => {
+describe('retained legacy Firestore Group authority adapter (not V2 runtime)', () => {
   async function adapterSetup() {
     const db = testDb();
     const tag = next('authority');
