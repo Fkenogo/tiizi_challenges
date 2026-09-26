@@ -1,7 +1,7 @@
 # TIIZI-S4C-DISCOVERY-JOIN-INVITATIONS-001
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW  
-**Entry baseline:** `origin/main` @ `cabacd9f2b91406f4f23afaae6406b9b104750f9`  
+**Status:** IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW
+**Entry baseline:** `origin/main` @ `cabacd9f2b91406f4f23afaae6406b9b104750f9`
 **Authority:** PostgreSQL through the Tiizi API; Firebase Auth supplies authentication and identity mapping only.
 
 ## Scope delivered
