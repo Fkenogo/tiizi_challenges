@@ -31,9 +31,19 @@ export function V2GroupSettingsScreen() {
   if (detail.isLoading) return <V2Page><p className="text-sm text-slate-600">Loading Group settings…</p></V2Page>;
   if (!detail.data || detail.data.viewerRelationship !== 'steward') return <V2Page><h1 className="text-lg font-black">Settings unavailable</h1><p className="mt-2 text-sm text-slate-600">These settings are available to the Accountable Steward.</p></V2Page>;
   const group = detail.data;
+  const normalizedFocusTags = focusTags.split(',').map(tag => tag.trim()).filter(Boolean);
+  const hasChanges = name !== group.name
+    || description !== group.description
+    || tagline !== group.tagline
+    || location !== group.location
+    || JSON.stringify(normalizedFocusTags) !== JSON.stringify(group.focusTags)
+    || coverId !== group.coverId
+    || isPrivate !== group.isPrivate
+    || requireAdminApproval !== (group.requireAdminApproval ?? false)
+    || allowMemberChallenges !== (group.allowMemberChallenges ?? true);
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    update.mutate({ name, description, tagline, location, focusTags: focusTags.split(',').map(tag => tag.trim()).filter(Boolean), coverId, isPrivate, requireAdminApproval, allowMemberChallenges }, { onSuccess: () => navigate(`/v2/groups/${group.id}`) });
+    update.mutate({ name, description, tagline, location, focusTags: normalizedFocusTags, coverId, isPrivate, requireAdminApproval, allowMemberChallenges }, { onSuccess: () => navigate(`/v2/groups/${group.id}`) });
   };
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900';
   const label = 'block text-sm font-bold text-slate-800';
@@ -57,7 +67,7 @@ export function V2GroupSettingsScreen() {
         <section className="space-y-3"><h2 className="text-base font-black">Privacy & joining</h2>{choice('Private Group', isPrivate, setIsPrivate, 'People outside the Group cannot discover it normally. A valid invite code may still resolve it. Existing members are unaffected.')}{choice('Require approval to join', requireAdminApproval, setRequireAdminApproval, 'New join attempts require Steward approval. Existing pending requests remain pending until explicitly decided.')}</section>
         <section className="space-y-3"><h2 className="text-base font-black">Member Challenges</h2>{choice('Allow ordinary members to create Challenges', allowMemberChallenges, setAllowMemberChallenges, 'When off, ordinary members cannot establish new Group Challenges. Existing Challenges remain unchanged; you can still create them.')}</section>
         {update.isError && <p role="alert" className="text-sm text-red-700">We could not save these changes. Please review the fields and try again.</p>}
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${group.id}`)}>Cancel</V2Button><V2Button type="submit" disabled={update.isPending}>{update.isPending ? 'Saving…' : 'Save changes'}</V2Button></div>
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${group.id}`)}>Cancel</V2Button><V2Button type="submit" disabled={update.isPending || !hasChanges}>{update.isPending ? 'Saving…' : 'Save changes'}</V2Button></div>
       </form>
     </div>
   </V2Page>;
