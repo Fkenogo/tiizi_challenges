@@ -14,6 +14,7 @@ import {
 import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
 import { V2GroupHomeScreen } from './groups/V2GroupHomeScreen';
+import { V2GroupSettingsScreen } from './groups/V2GroupSettingsScreen';
 import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
 import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
@@ -76,6 +77,7 @@ export function V2Routes() {
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />
             <Route path="groups/:groupId" element={<V2GroupHomeRoute />} />
+            <Route path="groups/:groupId/settings" element={<V2GroupHomeRouteSettings />} />
             <Route path="guide" element={<V2GuidePage />} />
             <Route path="profile" element={<V2ProfilePage />} />
             <Route path="notifications" element={<V2NotificationsPage />} />
@@ -101,4 +103,9 @@ export function V2Routes() {
       </Routes>
     </V2LocaleProvider>
   );
+}
+
+function V2GroupHomeRouteSettings() {
+  const { groupId } = useParams();
+  return <V2GroupScope groupId={groupId ?? null}><V2GroupSettingsScreen /></V2GroupScope>;
 }

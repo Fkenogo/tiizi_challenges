@@ -28,6 +28,55 @@ export function normalizeGroupInviteCode(input: string): string | null {
   return `TIZI-${compact.slice(4, 8)}-${compact.slice(8, 12)}-${compact.slice(12, 16)}`;
 }
 
+/** Update only the bounded S4d settings allowlist under PostgreSQL authority. */
+export async function updateGovernedGroupSettings(db: Db, memberId: string, groupId: string, patch: Record<string, unknown>) {
+  const columns: Record<string, string> = {
+    name: 'name', description: 'description', tagline: 'tagline', location: 'location',
+    focusTags: 'focus_tags', coverId: 'cover_id', isPrivate: 'is_private',
+    requireAdminApproval: 'require_admin_approval', allowMemberChallenges: 'allow_member_challenges',
+  };
+  const covers = new Set(['cover-1','cover-2','cover-3','cover-4','cover-5','cover-6','cover-7','cover-8']);
+  try {
+    return await db.transaction(async tx => {
+      const locked = await tx.query<{ status: string; steward_member_id: string; invite_code: string | null }>(
+        `SELECT status, steward_member_id, invite_code FROM groups WHERE group_id=$1 FOR UPDATE`, [groupId]);
+      const group = locked.rows[0];
+      if (!group || group.status !== 'active') fail('group_not_found','Group not found',404);
+      if (group.steward_member_id !== memberId) fail('forbidden','Only the Accountable Steward may update Group settings',403);
+      if ('name' in patch && (typeof patch.name !== 'string' || !patch.name.trim() || patch.name.trim().length > 200)) fail('invalid_group','name must contain 1..200 characters',400);
+      if ('description' in patch && (typeof patch.description !== 'string' || patch.description.length > 2000)) fail('invalid_group','description must be a string up to 2000 characters',400);
+      if ('tagline' in patch && (typeof patch.tagline !== 'string' || patch.tagline.trim().length > 140)) fail('invalid_group','tagline must be a string up to 140 characters',400);
+      if ('location' in patch && (typeof patch.location !== 'string' || patch.location.trim().length > 120)) fail('invalid_group','location must be a string up to 120 characters',400);
+      if ('focusTags' in patch && (!Array.isArray(patch.focusTags) || patch.focusTags.length > 8 || patch.focusTags.some(value => typeof value !== 'string' || value.length > 30))) fail('invalid_group','focusTags must contain at most 8 strings of at most 30 characters',400);
+      if ('coverId' in patch && patch.coverId !== null && (typeof patch.coverId !== 'string' || !covers.has(patch.coverId))) fail('invalid_group','coverId must be a curated catalogue key',400);
+      for (const field of ['isPrivate','requireAdminApproval','allowMemberChallenges'] as const) if (field in patch && typeof patch[field] !== 'boolean') fail('invalid_group',`${field} must be boolean`,400);
+      const normalized: Record<string, unknown> = { ...patch };
+      if ('name' in patch) normalized.name = (patch.name as string).trim();
+      if ('tagline' in patch) normalized.tagline = (patch.tagline as string).trim();
+      if ('location' in patch) normalized.location = (patch.location as string).trim();
+      const assignments: string[] = [];
+      const values: unknown[] = [];
+      for (const [field, column] of Object.entries(columns)) if (field in normalized) {
+        values.push(normalized[field]); assignments.push(`${column}=$${values.length}`);
+      }
+      values.push(new Date().toISOString()); assignments.push(`updated_at=$${values.length}`);
+      values.push(groupId);
+      await tx.query(`UPDATE groups SET ${assignments.join(',')} WHERE group_id=$${values.length}`, values);
+      const result = await tx.query<Record<string, unknown>>(
+        `SELECT group_id AS id, name, COALESCE(description,'') AS description, is_private AS "isPrivate",
+          require_admin_approval AS "requireAdminApproval", allow_member_challenges AS "allowMemberChallenges",
+          cover_id AS "coverId", COALESCE(tagline,'') AS tagline, COALESCE(location,'') AS location,
+          COALESCE(focus_tags,ARRAY[]::text[]) AS "focusTags", status, steward_member_id AS "stewardMemberId",
+          invite_code AS "inviteCode", created_at AS "createdAt", updated_at AS "updatedAt"
+         FROM groups WHERE group_id=$1`, [groupId]);
+      return result.rows[0];
+    });
+  } catch (error) {
+    if (error instanceof GroupMutationError) throw error;
+    throw new GroupMutationError(503,'group_store_unavailable','PostgreSQL Group settings authority unavailable');
+  }
+}
+
 export function createPostgresGroupMembershipAuthority(db: Db): GroupMembershipAuthority {
   return { async resolveGroupMembershipAuthority(groupId, memberId): Promise<GroupMembershipAuthorityStatus | null> {
     const result = await db.query<{ group_status: string; membership_status: string | null }>(
@@ -43,8 +92,9 @@ export function createPostgresGroupMembershipAuthority(db: Db): GroupMembershipA
 
 export function createPostgresChallengeCreationAuthority(db: Db): ChallengeCreationAuthority {
   return { async resolveChallengeCreationAuthority(groupId, memberId): Promise<ChallengeCreationAuthorityStatus | null> {
-    const result = await db.query<{ status: string; allow_member_challenges: boolean; role: string | null; membership_status: string | null }>(
-      `SELECT g.status, g.allow_member_challenges, gm.role, gm.status AS membership_status
+    const result = await db.query<{ status: string; allow_member_challenges: boolean; role: string | null; membership_status: string | null; is_steward: boolean }>(
+      `SELECT g.status, g.allow_member_challenges, gm.role, gm.status AS membership_status,
+              (g.steward_member_id=$2) AS is_steward
        FROM groups g LEFT JOIN group_memberships gm ON gm.group_id=g.group_id AND gm.member_id=$2
        WHERE g.group_id=$1`, [groupId, memberId]);
     const row = result.rows[0]; if (!row) return null;
@@ -53,7 +103,7 @@ export function createPostgresChallengeCreationAuthority(db: Db): ChallengeCreat
     let reason: ChallengeCreationAuthorityStatus['reason'] = null;
     if (row.status !== 'active') reason = 'group_inactive';
     else if (!memberStatus || !eligible.has(memberStatus.toLowerCase())) reason = memberStatus ? 'membership_inactive' : 'no_membership';
-    else if (!row.allow_member_challenges && role !== 'owner' && role !== 'admin') reason = 'charter_restricted';
+    else if (!row.allow_member_challenges && !row.is_steward) reason = 'charter_restricted';
     return { permitted: reason === null, reason, groupStatus: row.status, allowMemberChallenges: row.allow_member_challenges, memberRole: role, memberStatus };
   } };
 }

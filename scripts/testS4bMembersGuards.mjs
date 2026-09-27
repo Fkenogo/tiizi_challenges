@@ -29,6 +29,6 @@ assert.match(client, /\/v1\/groups\/\$\{groupId\}\/members/);
 assert.match(client, /\/v1\/groups\/\$\{groupId\}\/leave/);
 assert.match(mutation, /cannot leave while responsible for this Group/);
 const mutationPaths = [...routes.matchAll(/app\.(?:post|patch|delete|put)\(\s*'([^']+)'/g)].map((match) => match[1]).sort();
-assert.deepEqual(mutationPaths, ['/v1/groups', '/v1/groups/:groupId/join', '/v1/groups/:groupId/leave', '/v1/groups/resolve-invite']);
+assert.deepEqual(mutationPaths, ['/v1/groups', '/v1/groups/:groupId', '/v1/groups/:groupId/join', '/v1/groups/:groupId/leave', '/v1/groups/resolve-invite']);
 assert.match(routes, /body: \{ type: 'object', additionalProperties: false, required: \['code'\]/);
 console.log('S4b Members guards: all passing.');

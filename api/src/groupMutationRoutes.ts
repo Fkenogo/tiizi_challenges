@@ -26,7 +26,7 @@ import {
 } from './groupMutations.js';
 import { GroupMutationError } from './groupErrors.js';
 import { resolveGroupInvite } from './groupDiscovery.js';
-import { createGovernedGroup, joinGovernedGroup, leaveGovernedGroup, reviewPendingMembership } from './postgresGroupAuthority.js';
+import { createGovernedGroup, joinGovernedGroup, leaveGovernedGroup, reviewPendingMembership, updateGovernedGroupSettings } from './postgresGroupAuthority.js';
 
 export interface GroupMutationRouteDeps {
   store?: GroupMutationStore;
@@ -55,6 +55,8 @@ const ALLOWED_CREATE_FIELDS = new Set([
   'focusTags',
   'rules',
 ]);
+
+const ALLOWED_SETTINGS_FIELDS = new Set(['name','description','tagline','location','focusTags','coverId','isPrivate','requireAdminApproval','allowMemberChallenges']);
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -152,6 +154,21 @@ export function groupMutationCreateValidatorCompiler({ httpPart }: { httpPart?: 
   return () => true;
 }
 
+function checkSettingsBody(data: unknown): string | null {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return 'request body must be an object';
+  const body = data as Record<string, unknown>;
+  const keys = Object.keys(body);
+  if (!keys.length) return 'settings patch must not be empty';
+  for (const key of keys) if (!ALLOWED_SETTINGS_FIELDS.has(key)) return `field '${key}' is not editable`;
+  return null;
+}
+
+export function groupMutationSettingsValidatorCompiler({ httpPart }: { httpPart?: string }) {
+  if (httpPart === 'body') return toValidator(checkSettingsBody);
+  if (httpPart === 'params') return toValidator(checkGroupParams);
+  return () => true;
+}
+
 export function groupMutationEmptyValidatorCompiler({ httpPart }: { httpPart?: string }) {
   if (httpPart === 'body') return toValidator(checkEmptyBody);
   if (httpPart === 'params') return toValidator(checkGroupParams);
@@ -246,6 +263,15 @@ export function registerGroupMutationRoutes(
   deps: GroupMutationRouteDeps = {},
 ): void {
   void deps;
+
+  app.patch('/v1/groups/:groupId', {
+    validatorCompiler: groupMutationSettingsValidatorCompiler,
+    schema: { params: groupIdParamsSchema, body: { type: 'object', additionalProperties: false } },
+  }, async (request) => {
+    const member = authenticatedMember(request);
+    const { groupId } = request.params as { groupId: string };
+    return updateGovernedGroupSettings(db, member.memberId, groupId, request.body as Record<string, unknown>);
+  });
 
   app.post('/v1/groups/resolve-invite', {
     validatorCompiler: groupInviteBodyValidatorCompiler,

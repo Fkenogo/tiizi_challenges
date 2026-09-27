@@ -150,6 +150,7 @@ export function V2GroupHomeScreen() {
           detail={view.detail}
           createdGroupName={createdGroupName}
           hostedState={hosted}
+          onManageGroup={() => navigate(`/v2/groups/${view.detail.id}/settings`)}
           onOpenChallenge={(challengeId) => navigate(`/v2/challenges/${challengeId}`)}
           onCreateChallenge={() =>
             navigate('/v2/challenges/new', { state: { groupId: view.detail.id } })
@@ -164,12 +165,14 @@ function GroupHomeBody({
   detail,
   createdGroupName,
   hostedState,
+  onManageGroup,
   onOpenChallenge,
   onCreateChallenge,
 }: {
   detail: V2GroupDetail;
   createdGroupName: string | undefined;
   hostedState: ReturnType<typeof useV2GroupChallenges>;
+  onManageGroup: () => void;
   onOpenChallenge: (challengeId: string) => void;
   onCreateChallenge: () => void;
 }) {
@@ -233,6 +236,9 @@ function GroupHomeBody({
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {detail.viewerRelationship === 'steward' && (
+              <V2Button variant="secondary" onClick={onManageGroup}>Manage Group</V2Button>
+            )}
             {detail.viewerRelationship === 'none' && !detail.isPrivate && <JoinCta groupId={detail.id} />}
             {canCreate && (
               <V2Button onClick={onCreateChallenge}>Launch Challenge</V2Button>
