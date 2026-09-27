@@ -1,6 +1,6 @@
 # TIIZI-S4D-GROUP-SETTINGS-IMPLEMENTATION-001
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW  
+**Status:** IMPLEMENTED CANDIDATE / AWAITING FOUNDER ACCEPTANCE<br>
 **Candidate branch:** `impl/tiizi-s4d-group-settings-001`  
 **Entry baseline:** `origin/main` `dda5bc007bef25e0e52ce8670822439ac55186d2`  
 **Entry Master Programme:** v2.11  
@@ -43,15 +43,21 @@ Executed from the isolated worktree using local synthetic PGlite data:
 - Root `npm run build`: passed (TypeScript + Vite production build). Existing Browserslist age and large-chunk warnings remain.
 - API `npm run typecheck`: passed.
 - API `npm test`: passed, 53 files / 715 tests; 1 file / 8 tests skipped because the Firestore emulator was not configured. This includes retained S2/S4a/S4b/S4c suites and the new S4d settings coverage.
-- Functions `npm run lint`: passed.
+- Functions `npm run lint` and `npm run build`: passed.
 - V2 runtime boundary and experience boundary scripts: passed.
-- V2 frontend guards, S2-G establishment guards, S4a Group Home guards, and S4b Members guards: passed. The S4b guard was updated to include the new governed PATCH route.
+- V2 frontend, auth-return, membership-cache, Firebase emulator-mode, S2-G establishment, S4a Group Home, and S4b Members guards: passed. The S4b guard was updated to include the new governed PATCH route.
+- The mobile-navigation guard now asserts the exact authorized member-route set, including `/v2/groups/:groupId/settings`; it continues to reject missing, substituted, duplicate, or unauthorized routes.
+- Focused S4c/S4d API tests passed (10 tests); the full API suite passed (715 tests, 8 Firestore-emulator-dependent tests skipped).
 - S4d coverage verifies all nine fields, unauthorized member/admin/outsider denial, empty/unknown/protected-field rejection, field constraints, Group/invite/Steward/status continuity, memberships unchanged by mutation, private outsider generic 404 and invite resolution, safe discoverable projection, focus-tag/text search and location exclusion, pending preservation while approval is disabled, direct joining for a new applicant, Challenge authority transitions, and PostgreSQL failure fail-closed behavior.
 - No schema migration was created. The existing V2 boundary guard reports no direct browser Firestore Group/Membership traffic or fallback.
 
-## Founder preview and remaining evidence
+## Founder preview and diagnostic limitation
 
-The automated API coverage uses synthetic local records and demonstrates persistence through PostgreSQL-backed reads after mutation. The interactive Founder preview across browser widths and browser console/network review remains **not performed** in this candidate. At validation time the isolated worktree had no `.env` / local preview credentials, Firebase Auth emulator was not running, and Docker PostgreSQL was unavailable; no production service or Firebase project was queried. The candidate must remain awaiting technical review and Founder preview evidence until that review is completed.
+The local Founder preview used synthetic PostgreSQL fixtures and the Firebase Auth Emulator; no production service, production data, or V1 authority was used. It exercised the Steward settings entry, identity edits and persistence, policy copy, Save/Cancel, and responsive widths. Focused automated API tests cover privacy, invite resolution, admission preservation, Challenge authority, and legacy-admin denial.
+
+The preview browser recorded two `Object` console entries at `/v2/sign-in`. Available diagnostics exposed no stack or associated failed Tiizi API request, and did not establish a Tiizi-origin error. The settings operation succeeded. Grammarly/extension injection was present in the browser, so the two entries remain unattributed and are recorded as a **DOCUMENTED NON-BLOCKING PREVIEW-ENVIRONMENT LIMITATION**. No product change was made for these entries.
+
+This candidate remains awaiting Founder acceptance. No PR, merge, deployment, S4d completion/Founder acceptance, or S6 work is included.
 
 ## Changed files
 

@@ -15,7 +15,8 @@
  *    (Challenges experience + creation activity step) and its route survives;
  * E. mobile navigation does not depend on any public/Cloudflare URL;
  * F. authenticated landing behaviour is unchanged (index -> today, guarded);
- * G. no product routes were added by this correction;
+ * G. the authenticated V2 member route set is exact, including authorized S4d
+ *    Group Settings, with no missing, duplicate, or unauthorized destinations;
  * H. root cause is closed: the Firebase emulator banner (fixed bottom,
  *    z-index 10000) can no longer be injected to occlude the mobile nav.
  */
@@ -108,11 +109,11 @@ check('member index redirects to today', /<Route index element=\{<Navigate to="t
 check('member routes wrapped by authenticated scope', routes.includes('V2Authenticated'));
 check('member routes wrapped by member shell', routes.includes('<V2MemberShell />'));
 
-// ─── G. No new product routes introduced ──────────────────────────────────
-// S4a evolution note: the charter-authorized Group Home route
-// (`groups/:groupId`, TIIZI-S4-GROUPS-EXPERIENCE-CHARTER-001) is the one
-// permitted addition. The guard still forbids anything beyond the known ten.
-console.log('G. route surface unchanged');
+// ─── G. Exact authorized V2 member route set ──────────────────────────────
+// The S4d settings route is an authorized addition beneath Group Home.
+// Keep the whole route identity/type set explicit so removal, substitution,
+// duplication, and unrelated route expansion all fail this guard.
+console.log('G. exact authorized member route set');
 const memberBlock = routes.split('<V2MemberShell />}>')[1]?.split('<Route path="operator"')[0] ?? '';
 const memberPaths = [...memberBlock.matchAll(/<Route path="([^"]+)" element=\{<(V2[A-Za-z]+)/g)].map((m) => `${m[1]}:${m[2]}`);
 const expectedMember = [
@@ -123,11 +124,12 @@ const expectedMember = [
   'groups:V2GroupsScreen',
   'groups/new:V2CreateGroupScreen',
   'groups/:groupId:V2GroupHomeRoute',
+  'groups/:groupId/settings:V2GroupHomeRouteSettings',
   'guide:V2GuidePage',
   'profile:V2ProfilePage',
   'notifications:V2NotificationsPage',
 ];
-check('member route set is exactly the known ten (S4a Home only)',
+check('member routes are exactly the approved set including S4d settings',
   JSON.stringify(memberPaths) === JSON.stringify(expectedMember), JSON.stringify(memberPaths));
 check('Group Home route wraps the screen in the contextual group scope',
   routes.includes('V2GroupScope groupId={groupId ?? null}'));
