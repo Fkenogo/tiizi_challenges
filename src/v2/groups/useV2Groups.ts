@@ -21,6 +21,8 @@ import {
   type V2GroupDetail,
   type V2GroupRoster,
   type V2AdmissionDecision,
+  updateGroupSettings,
+  type V2GroupSettingsPatch,
 } from '../../api/groupsApi';
 import { listGroupChallengesV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import {
@@ -147,6 +149,15 @@ export function useCreateGroup() {
     onSuccess: async () => {
       await invalidateV2Memberships(queryClient);
     },
+  });
+}
+
+export function useUpdateV2GroupSettings(groupId: string) {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: (patch: V2GroupSettingsPatch) => updateGroupSettings(groupId, patch),
+    onSuccess: async () => invalidateV2GroupReads(queryClient, user?.uid, groupId),
   });
 }
 

@@ -140,6 +140,11 @@ export function resolveGroupInvite(code: string): Promise<V2InviteResolution> {
   return apiFetch<V2InviteResolution>('/v1/groups/resolve-invite', { method: 'POST', body: { code } });
 }
 
+export type V2GroupSettingsPatch = Partial<Pick<V2GroupDetail, 'name' | 'description' | 'tagline' | 'location' | 'focusTags' | 'coverId' | 'isPrivate' | 'requireAdminApproval' | 'allowMemberChallenges'>>;
+export function updateGroupSettings(groupId: string, patch: V2GroupSettingsPatch): Promise<unknown> {
+  return apiFetch(`/v1/groups/${groupId}`, { method: 'PATCH', body: patch });
+}
+
 export interface V2PendingApplications { groupId: string; applicants: Array<{ memberId: string; requestedAt: string }> }
 export function fetchPendingGroupApplications(groupId: string): Promise<V2PendingApplications> {
   return apiFetch<V2PendingApplications>(`/v1/groups/${groupId}/members/pending`);
