@@ -23,6 +23,8 @@ export const V2_GROUP_DETAIL_SCOPE = 'v2-group-detail';
 
 /** Canonical cache family scope for one Group's hosted Challenges. */
 export const V2_GROUP_CHALLENGES_SCOPE = 'v2-group-challenges';
+export const V2_GROUP_DISCOVERY_SCOPE = 'v2-group-discovery';
+export const V2_GROUP_PENDING_SCOPE = 'v2-group-pending-applications';
 
 /** Canonical key for one Group detail read. */
 export function v2GroupDetailKey(
@@ -38,6 +40,14 @@ export function v2GroupChallengesKey(
   uid: string | undefined,
 ): [string, string | undefined, string | undefined] {
   return [V2_GROUP_CHALLENGES_SCOPE, groupId, uid];
+}
+
+export function v2GroupDiscoveryKey(q: string, uid: string | undefined): [string, string, string | undefined] {
+  return [V2_GROUP_DISCOVERY_SCOPE, q, uid];
+}
+
+export function v2GroupPendingKey(groupId: string | undefined, uid: string | undefined): [string, string | undefined, string | undefined] {
+  return [V2_GROUP_PENDING_SCOPE, groupId, uid];
 }
 
 /**
@@ -66,6 +76,8 @@ export async function invalidateV2GroupReads(
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: detailKey }),
     queryClient.invalidateQueries({ queryKey: challengesKey }),
+    queryClient.invalidateQueries({ queryKey: [V2_GROUP_DISCOVERY_SCOPE] }),
+    queryClient.invalidateQueries({ queryKey: [V2_GROUP_PENDING_SCOPE] }),
     invalidateV2Memberships(queryClient, uid),
   ]);
 }

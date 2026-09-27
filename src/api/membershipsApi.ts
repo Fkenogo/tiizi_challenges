@@ -23,9 +23,15 @@ export interface ApiMembership {
 export interface MyMembershipsResponse {
   memberId: string;
   memberships: ApiMembership[];
+  /** Present when at least one server-side pending application exists. */
+  pendingMemberships?: Array<{
+    groupId: string;
+    requestedAt: string;
+    group: ApiMembershipGroup;
+  }>;
 }
 
-/** Current user's group memberships from the Tiizi API (PostgreSQL shadow). */
+/** Current user's authoritative Group memberships from the Tiizi API/PostgreSQL. */
 export function fetchMyMemberships(): Promise<MyMembershipsResponse> {
   return apiFetch<MyMembershipsResponse>('/v1/memberships/me');
 }

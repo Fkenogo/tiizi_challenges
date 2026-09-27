@@ -33,6 +33,7 @@ import {
 } from './groupMutationRoutes.js';
 import type { GroupMutationStore } from './groupMutations.js';
 import { GroupMutationError } from './groupErrors.js';
+import { listDiscoverableGroups } from './groupDiscovery.js';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -84,12 +85,13 @@ function missingStore(): GroupReadStore {
 
 export interface ApiGroupMember { memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null }
 export interface ApiGroupRoster { groupId: string; members: ApiGroupMember[] }
+export interface ApiPendingApplication { memberId: string; requestedAt: string }
 
 /** S4b roster: authorize and enumerate only from live membership authority. */
 export async function getGroupRoster(db: Db, store: GroupReadStore, memberId: string, groupId: string): Promise<ApiGroupRoster> {
   if (!UUID_RE.test(groupId)) readFail(400, 'invalid_group', 'Group not found');
-  const shadow = await db.query<{ lookup_id: string | null }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS lookup_id FROM groups WHERE group_id = $1`, [groupId]);
-  const legacyId = shadow.rows[0]?.lookup_id ?? null;
+  const identityRow = await db.query<{ lookup_id: string | null }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS lookup_id FROM groups WHERE group_id = $1`, [groupId]);
+  const legacyId = identityRow.rows[0]?.lookup_id ?? null;
   if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
   const group = await storeCall('group read', () => store.getGroup(legacyId));
   if (!group || !isGroupDocActive(group)) readFail(404, 'unknown_group', 'Group not found');
@@ -170,6 +172,8 @@ export interface ApiGroupDetail {
   location: string;
   focusTags: string[];
   rules: string[] | null;
+  /** Stored V2 invite code; present only to an active Group member. */
+  inviteCode?: string;
 }
 
 /** Server-side viewer identity (never client-supplied; null when unlinkable). */
@@ -205,10 +209,11 @@ export async function getGroupDetail(
     readFail(400, 'invalid_group', 'groupId must be a Tiizi group UUID');
   }
   // Lookup key only: the shadow maps identity, never authority or settings.
-  const shadow = await db.query<{
+  const identityRow = await db.query<{
     legacy_firestore_id: string | null;
-  }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id FROM groups WHERE group_id = $1`, [groupId]);
-  const legacyId = shadow.rows[0]?.legacy_firestore_id ?? null;
+    invite_code: string | null;
+  }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id, invite_code FROM groups WHERE group_id = $1`, [groupId]);
+  const legacyId = identityRow.rows[0]?.legacy_firestore_id ?? null;
   if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
   // Live authority decides existence and liveness; outages fail closed.
   const group = await storeCall('group read', () => store.getGroup(legacyId));
@@ -252,14 +257,14 @@ export async function getGroupDetail(
   if (relationship === 'none' || relationship === 'pending') {
     // Private Groups are invisible outside active membership: 404,
     // indistinguishable from unknown — no existence or state leak.
-    if (isPrivate) readFail(404, 'unknown_group', 'Group not found');
+    if (isPrivate && relationship !== 'pending') readFail(404, 'unknown_group', 'Group not found');
     // Authenticated-discoverable subset only (EOG §8; FR-V2-019/020): no
     // governed settings, no steward attribution, no internals.
     return {
       id: groupId,
       name,
       description,
-      isPrivate: false,
+      isPrivate,
       requireAdminApproval: null,
       allowMemberChallenges: null,
       memberCount,
@@ -295,6 +300,29 @@ export async function getGroupDetail(
     location,
     focusTags,
     rules,
+    inviteCode: identityRow.rows[0]?.invite_code ?? undefined,
+  };
+}
+
+export async function listPendingApplications(db: Db, actorMemberId: string, groupId: string): Promise<{ groupId: string; applicants: ApiPendingApplication[] }> {
+  if (!UUID_RE.test(groupId)) readFail(400, 'invalid_group', 'Group not found');
+  const groupResult = await db.query<{ status: string; steward_member_id: string | null }>(
+    `SELECT status, steward_member_id FROM groups WHERE group_id=$1`, [groupId],
+  );
+  const group = groupResult.rows[0];
+  if (!group || group.status !== 'active') readFail(404, 'unknown_group', 'Group not found');
+  if (group.steward_member_id !== actorMemberId) readFail(403, 'steward_required', 'Only the Accountable Steward may review admission requests');
+  const result = await db.query<{ member_id: string; requested_at: string | Date | null; created_at: string | Date }>(
+    `SELECT member_id, requested_at, created_at FROM group_memberships
+     WHERE group_id=$1 AND status='pending'
+     ORDER BY COALESCE(requested_at,created_at) ASC, member_id ASC`, [groupId],
+  );
+  return {
+    groupId,
+    applicants: result.rows.map((row) => ({
+      memberId: String(row.member_id),
+      requestedAt: new Date(row.requested_at ?? row.created_at).toISOString(),
+    })),
   };
 }
 
@@ -342,6 +370,7 @@ const groupDetailResponseSchema = {
     location: { type: 'string' },
     focusTags: { type: 'array', items: { type: 'string' } },
     rules: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
+    inviteCode: { type: 'string' },
   },
 } as const;
 
@@ -351,6 +380,30 @@ export function registerGroupReadRoutes(
   deps: GroupReadRouteDeps = {},
 ): void {
   const store = deps.store ?? missingStore();
+
+  app.get('/v1/groups/discover', async (request) => {
+    const member = authenticatedMember(request);
+    const query = request.query as { q?: string; limit?: string; cursor?: string };
+    try {
+      return await listDiscoverableGroups(db, member.memberId, query);
+    } catch (error) {
+      if (error instanceof GroupMutationError) throw error;
+      throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group discovery authority unavailable');
+    }
+  });
+
+  app.get('/v1/groups/:groupId/members/pending', {
+    validatorCompiler: groupMutationEmptyValidatorCompiler,
+    schema: { params: groupIdParamsSchema },
+  }, async (request) => {
+    const member = authenticatedMember(request);
+    try {
+      return await listPendingApplications(db, member.memberId, (request.params as { groupId: string }).groupId);
+    } catch (error) {
+      if (error instanceof GroupMutationError) throw error;
+      throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL pending application authority unavailable');
+    }
+  });
 
   app.get(
     '/v1/groups/:groupId',
