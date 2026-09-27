@@ -50,6 +50,10 @@ describe('S4d governed Group settings', () => {
     const discoverable = await app.inject({method:'GET',url:'/v1/groups/discover?q=Together',headers:authHeaders('outsider')});
     expect(discoverable.json().groups).toEqual([expect.objectContaining({id,name:'After',tagline:'Together',focusTags:['walking','wellbeing']})]);
     expect(discoverable.json().groups[0]).not.toHaveProperty('inviteCode');
+    for (const term of ['After','purpose','walking']) {
+      const search = await app.inject({method:'GET',url:`/v1/groups/discover?q=${term}`,headers:authHeaders('outsider')});
+      expect(search.json().groups.map((group: {id:string}) => group.id)).toContain(id);
+    }
     expect((await app.inject({method:'GET',url:'/v1/groups/discover?q=Kigali',headers:authHeaders('outsider')})).json().groups).toEqual([]);
     expect((await app.inject({method:'GET',url:`/v1/groups/${id}`,headers:authHeaders('outsider')})).json()).not.toHaveProperty('inviteCode');
     expect((await app.inject({method:'PATCH',url:`/v1/groups/${id}`,headers:authHeaders('newMember'),payload:{name:'No'}})).statusCode).toBe(403);
