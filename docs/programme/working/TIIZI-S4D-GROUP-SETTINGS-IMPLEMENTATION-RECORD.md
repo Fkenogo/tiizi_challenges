@@ -1,11 +1,11 @@
 # TIIZI-S4D-GROUP-SETTINGS-IMPLEMENTATION-001
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING FOUNDER ACCEPTANCE<br>
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED<br>
 **Candidate branch:** `impl/tiizi-s4d-group-settings-001`  
 **Entry baseline:** `origin/main` `dda5bc007bef25e0e52ce8670822439ac55186d2`  
 **Entry Master Programme:** v2.11  
 **Schema/migrations:** None  
-**Founder acceptance:** Not recorded  
+**Founder acceptance:** Approved exact source `accb03aee610ede88af62a70e2f5652a27d100c4` under TIIZI-S4D-FOUNDER-ACCEPTANCE-AND-CLOSURE-001<br>
 **S6:** Not started; remains outstanding.
 
 ## Scope and dispositions
@@ -57,7 +57,13 @@ The local Founder preview used synthetic PostgreSQL fixtures and the Firebase Au
 
 The preview browser recorded two `Object` console entries at `/v2/sign-in`. Available diagnostics exposed no stack or associated failed Tiizi API request, and did not establish a Tiizi-origin error. The settings operation succeeded. Grammarly/extension injection was present in the browser, so the two entries remain unattributed and are recorded as a **DOCUMENTED NON-BLOCKING PREVIEW-ENVIRONMENT LIMITATION**. No product change was made for these entries.
 
-This candidate remains awaiting Founder acceptance. No PR, merge, deployment, S4d completion/Founder acceptance, or S6 work is included.
+## Founder acceptance and merge closure
+
+The Founder approved exact candidate `accb03aee610ede88af62a70e2f5652a27d100c4`. It was published unchanged on `impl/tiizi-s4d-group-settings-001` in PR #54 against `main` and merged by normal merge commit `2bca4f11a7b5c3c07daf91e692124bd74da381b4`; the accepted source is an ancestor of resulting `origin/main` `2bca4f11a7b5c3c07daf91e692124bd74da381b4`. Repository CI passed: API typecheck/test/build, API image/liveness, Functions build/typecheck, and Web typecheck/build. The external Cloudflare Workers Builds check failed and remains non-gating under the established repository disposition.
+
+The Founder accepted the two unattributed `/v2/sign-in` console entries as a **DOCUMENTED NON-BLOCKING PREVIEW-ENVIRONMENT LIMITATION**. No Tiizi-origin error was established. No browser investigation or product change was performed during closure.
+
+S4d is **COMPLETE / FOUNDER ACCEPTED / MERGED**. S6 remains **OUTSTANDING / NOT STARTED**. No deployment occurred. No production Firebase was queried. Deferred rules editing, Charter visibility, and Council visibility remain deferred; no audit infrastructure or migration was introduced; Firestore/V1 authority and V1 migration or reconciliation were not introduced.
 
 ## Changed files
 
