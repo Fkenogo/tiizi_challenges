@@ -29,11 +29,6 @@
   },
   "needsTiiziReview": [
     {
-      "activityCode": "WEL-NUT-009",
-      "field": "content.safetyNotes / Challenge-use constraints",
-      "reason": "Existing Fasting Product Truth keeps the Activity Draft and not Challenge Eligible pending review."
-    },
-    {
       "activityCode": "FIT-STR-019",
       "field": "measurementContract.loadReportingBases",
       "reason": "PF-02 basis not safely resolvable from available evidence; Weight configuration must fail closed while non-Weight configurations remain possible."
@@ -64,6 +59,101 @@
       "reason": "The governed baseline requires authoritative serving guidance before publication."
     }
   ],
+  "contentReadiness": {
+    "requiredAndApplicableContentComplete": true,
+    "measurementSemanticsComplete": false,
+    "fastingContentDisposition": "Founder-approved candidate content; actual duration in hours; no prescribed protocol; general caution retained"
+  },
+  "publicationReadiness": {
+    "status": "NOT_EVALUATED_BY_SERVER",
+    "reason": "This is a content candidate. Publication readiness is computed by existing Knowledge/KCS server logic after controlled ingestion; no publication is implied here."
+  },
+  "lifecycleAndEligibilityRestrictions": [
+    {
+      "activityCode": "WEL-NUT-009",
+      "requiredLifecycle": "draft",
+      "challengeEligible": false,
+      "contentIngestionBlocker": false,
+      "publicationReadinessInferred": false,
+      "authority": "Founder disposition + WEL-NUT-009 Activity definition"
+    }
+  ],
+  "reviewResolution": {
+    "fasting": {
+      "activityCode": "WEL-NUT-009",
+      "decision": "RESOLVED_FOR_CONTENT_CANDIDATE",
+      "actualResult": "duration in hours; no day conversion",
+      "contentRules": [
+        "no prescribed duration",
+        "no frequency",
+        "no intake rules",
+        "no schedules",
+        "no clinical thresholds"
+      ],
+      "safety": "Founder-approved proportionate general caution is retained",
+      "lifecycle": "Draft",
+      "challengeEligible": false,
+      "contentIngestionBlocker": false,
+      "publicationStatus": "not evaluated by server; no publication performed",
+      "authority": "docs/governance/knowledge/Activity Content & Catalogue Definition/WEL-NUT-009-FASTING.md and current Founder disposition"
+    },
+    "weightBases": [
+      {
+        "activityCode": "FIT-STR-019",
+        "activityName": "Glute Bridge",
+        "weightApplicable": "Weight is baseline-compatible where applicable",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "118-Activity baseline establishes Weight compatibility; PF-02-CORR-001 establishes the permitted basis vocabulary and explicitly prohibits inferring a basis from Activity name. No canonical Activity-specific definition establishes implement arrangement or exact Weight meaning.",
+        "confidence": "HIGH that available repository evidence is insufficient; no basis inference made",
+        "decision": "UNRESOLVED_FAIL_CLOSED"
+      },
+      {
+        "activityCode": "FIT-STR-023",
+        "activityName": "Lateral Lunge",
+        "weightApplicable": "Weight is baseline-compatible where applicable",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "118-Activity baseline establishes Weight compatibility; PF-02-CORR-001 establishes the permitted basis vocabulary and explicitly prohibits inferring a basis from Activity name. No canonical Activity-specific definition establishes implement arrangement or exact Weight meaning.",
+        "confidence": "HIGH that available repository evidence is insufficient; no basis inference made",
+        "decision": "UNRESOLVED_FAIL_CLOSED"
+      },
+      {
+        "activityCode": "FIT-STR-025",
+        "activityName": "Lunge Hold",
+        "weightApplicable": "Weight is baseline-compatible where applicable",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "118-Activity baseline establishes Weight compatibility; PF-02-CORR-001 establishes the permitted basis vocabulary and explicitly prohibits inferring a basis from Activity name. No canonical Activity-specific definition establishes implement arrangement or exact Weight meaning.",
+        "confidence": "HIGH that available repository evidence is insufficient; no basis inference made",
+        "decision": "UNRESOLVED_FAIL_CLOSED"
+      },
+      {
+        "activityCode": "FIT-STR-036",
+        "activityName": "Russian Twist",
+        "weightApplicable": "Weight is baseline-compatible where applicable",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "118-Activity baseline establishes Weight compatibility; PF-02-CORR-001 establishes the permitted basis vocabulary and explicitly prohibits inferring a basis from Activity name. No canonical Activity-specific definition establishes implement arrangement or exact Weight meaning.",
+        "confidence": "HIGH that available repository evidence is insufficient; no basis inference made",
+        "decision": "UNRESOLVED_FAIL_CLOSED"
+      }
+    ],
+    "servingSemantics": [
+      {
+        "activityCode": "WEL-NUT-002",
+        "activityName": "Fruit Intake",
+        "currentDraftSemantics": "One serving is approximately one medium whole fruit or one cup of berries.",
+        "repositoryEvidence": "The governed baseline and CLU-01 require authoritative serving guidance before publication, but provide no serving definition.",
+        "recommendedDefinition": "Do not promote the consultant example to canonical Product Truth. Founder/Tiizi must approve a measurable serving equivalence and define included/excluded forms before these serving measurements are ingestible.",
+        "decision": "UNRESOLVED_FAIL_CLOSED"
+      },
+      {
+        "activityCode": "WEL-NUT-003",
+        "activityName": "Vegetable Intake",
+        "currentDraftSemantics": "One serving is approximately one cup of raw leafy vegetables or one-half cup cooked vegetables.",
+        "repositoryEvidence": "The governed baseline and CLU-01 require authoritative serving guidance before publication, but provide no serving definition.",
+        "recommendedDefinition": "Do not promote the consultant example to canonical Product Truth. Founder/Tiizi must approve a measurable serving equivalence and define included/excluded forms before these serving measurements are ingestible.",
+        "decision": "UNRESOLVED_FAIL_CLOSED"
+      }
+    ]
+  },
   "readyForIngestion": false,
   "result": "PASS_WITH_REVIEW",
   "candidateIsDraftOnly": true,

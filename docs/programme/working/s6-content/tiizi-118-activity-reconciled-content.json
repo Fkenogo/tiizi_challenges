@@ -6125,7 +6125,7 @@
         "components": []
       },
       "editorialNotes": [
-        "NEEDS_TIIZI_REVIEW: retain as a Draft candidate; review proportionate safety/caution wording and Challenge-use constraints before publication or eligibility. Do not add protocol durations, frequencies, intake rules, or clinical restrictions here."
+        "TIIZI_CONTROLLED_USE_RESTRICTION: lifecycle remains Draft and the Activity is not Challenge Eligible. This is a lifecycle/eligibility restriction, separate from authored content completeness. The approved content records actual fasting duration in hours and does not prescribe duration, frequency, intake rules, schedules, or clinical thresholds."
       ],
       "sourceNotes": []
     },

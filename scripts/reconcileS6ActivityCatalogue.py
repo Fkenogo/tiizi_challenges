@@ -554,7 +554,7 @@ def build_candidate(paths: list[Path]) -> tuple[dict[str, Any], dict[str, Any], 
         record["editorialNotes"] = []
         record["sourceNotes"] = []
         if code == REVIEW_CODE:
-            record["editorialNotes"].append("NEEDS_TIIZI_REVIEW: retain as a Draft candidate; review proportionate safety/caution wording and Challenge-use constraints before publication or eligibility. Do not add protocol durations, frequencies, intake rules, or clinical restrictions here.")
+            record["editorialNotes"].append("TIIZI_CONTROLLED_USE_RESTRICTION: lifecycle remains Draft and the Activity is not Challenge Eligible. This is a lifecycle/eligibility restriction, separate from authored content completeness. The approved content records actual fasting duration in hours and does not prescribe duration, frequency, intake rules, schedules, or clinical thresholds.")
         if code in WEIGHT_REVIEW_CODES:
             record["editorialNotes"].append("NEEDS_TIIZI_REVIEW: Weight is baseline-compatible, but consultant evidence does not resolve an authorized PF-02 load reporting basis. Keep Weight configurations unavailable until Tiizi declares the basis; other governed metrics remain available.")
         if code in SERVING_REVIEW_CODES:
@@ -691,7 +691,6 @@ def validate(candidate: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]
     fitness = sum(1 for r in records if r.get("domain") == "Fitness")
     wellness = sum(1 for r in records if r.get("domain") == "Wellness")
     needs_review = [
-        {"activityCode": REVIEW_CODE, "field": "content.safetyNotes / Challenge-use constraints", "reason": "Existing Fasting Product Truth keeps the Activity Draft and not Challenge Eligible pending review."},
         *[{"activityCode": code, "field": "measurementContract.loadReportingBases", "reason": "PF-02 basis not safely resolvable from available evidence; Weight configuration must fail closed while non-Weight configurations remain possible."} for code in sorted(WEIGHT_REVIEW_CODES)],
         *[{"activityCode": code, "field": "measurementContract Quantity/servings unit semantics", "reason": "The governed baseline requires authoritative serving guidance before publication."} for code in sorted(SERVING_REVIEW_CODES)],
     ]
@@ -720,6 +719,54 @@ def validate(candidate: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]
         "challengeDerivedCompletionLeak": completion_inference,
         "fastingRules": {"errors": fasting_errors, "requiredContract": {"metric": "duration", "unit": "hours"}},
         "needsTiiziReview": needs_review,
+        "contentReadiness": {
+            "requiredAndApplicableContentComplete": not (missing_content or conditional_missing or malformed or schema_errors),
+            "measurementSemanticsComplete": not (invalid_metrics or invalid_units or invalid_pairs or bool(WEIGHT_REVIEW_CODES) or bool(SERVING_REVIEW_CODES)),
+            "fastingContentDisposition": "Founder-approved candidate content; actual duration in hours; no prescribed protocol; general caution retained",
+        },
+        "publicationReadiness": {
+            "status": "NOT_EVALUATED_BY_SERVER",
+            "reason": "This is a content candidate. Publication readiness is computed by existing Knowledge/KCS server logic after controlled ingestion; no publication is implied here.",
+        },
+        "lifecycleAndEligibilityRestrictions": [{
+            "activityCode": REVIEW_CODE,
+            "requiredLifecycle": "draft",
+            "challengeEligible": False,
+            "contentIngestionBlocker": False,
+            "publicationReadinessInferred": False,
+            "authority": "Founder disposition + WEL-NUT-009 Activity definition",
+        }],
+        "reviewResolution": {
+            "fasting": {
+                "activityCode": REVIEW_CODE,
+                "decision": "RESOLVED_FOR_CONTENT_CANDIDATE",
+                "actualResult": "duration in hours; no day conversion",
+                "contentRules": ["no prescribed duration", "no frequency", "no intake rules", "no schedules", "no clinical thresholds"],
+                "safety": "Founder-approved proportionate general caution is retained",
+                "lifecycle": "Draft",
+                "challengeEligible": False,
+                "contentIngestionBlocker": False,
+                "publicationStatus": "not evaluated by server; no publication performed",
+                "authority": "docs/governance/knowledge/Activity Content & Catalogue Definition/WEL-NUT-009-FASTING.md and current Founder disposition",
+            },
+            "weightBases": [{
+                "activityCode": code,
+                "activityName": expected[code]["name"],
+                "weightApplicable": "Weight is baseline-compatible where applicable",
+                "proposedLoadBases": [],
+                "repositoryEvidence": "118-Activity baseline establishes Weight compatibility; PF-02-CORR-001 establishes the permitted basis vocabulary and explicitly prohibits inferring a basis from Activity name. No canonical Activity-specific definition establishes implement arrangement or exact Weight meaning.",
+                "confidence": "HIGH that available repository evidence is insufficient; no basis inference made",
+                "decision": "UNRESOLVED_FAIL_CLOSED",
+            } for code in sorted(WEIGHT_REVIEW_CODES)],
+            "servingSemantics": [{
+                "activityCode": code,
+                "activityName": expected[code]["name"],
+                "currentDraftSemantics": next((r.get("content", {}).get("unitSemantics") for r in records if r.get("activityCode") == code), None),
+                "repositoryEvidence": "The governed baseline and CLU-01 require authoritative serving guidance before publication, but provide no serving definition.",
+                "recommendedDefinition": "Do not promote the consultant example to canonical Product Truth. Founder/Tiizi must approve a measurable serving equivalence and define included/excluded forms before these serving measurements are ingestible.",
+                "decision": "UNRESOLVED_FAIL_CLOSED",
+            } for code in sorted(SERVING_REVIEW_CODES)],
+        },
         "readyForIngestion": ready and not needs_review,
         "result": ("PASS_WITH_REVIEW" if needs_review else "PASS") if ready else "FAIL",
         "candidateIsDraftOnly": True,

@@ -61,15 +61,28 @@ The utility writes the draft candidate, field-level provenance, and machine-read
 - No malformed records, schema errors, invalid metrics, invalid units, invalid metric/unit relationships, missing required content, or missing conditional content.
 - Fasting contract check passes (`duration` + `hours`; no conversion to days).
 - No consultant supplied runtime/system fields and no Challenge-derived Streak completion leak.
-- Result: `PASS_WITH_REVIEW`; `readyForIngestion: false`; draft-only; 0 database writes and 0 publication effects.
+- Result after the bounded review-resolution pass: `PASS_WITH_REVIEW`; `readyForIngestion: false`; draft-only; 0 database writes and 0 publication effects.
 
-Seven genuine Tiizi review items remain:
+Six genuine Tiizi review items remain. The earlier Fasting review item has been resolved for content-candidate purposes under the Founder disposition; its lifecycle/eligibility restriction remains separately in force.
 
-1. `WEL-NUT-009` — confirm proportionate safety wording and the existing restriction on Challenge use before publication or eligibility.
-2. `FIT-STR-019`, `FIT-STR-023`, `FIT-STR-025`, `FIT-STR-036` — PF-02 load reporting basis is not resolved by the available governed evidence. Keep Weight configurations fail-closed; do not infer a basis.
-3. `WEL-NUT-002`, `WEL-NUT-003` — authoritative serving semantics are required before publication. Current serving examples remain review-only draft guidance.
+1. `FIT-STR-019`, `FIT-STR-023`, `FIT-STR-025`, `FIT-STR-036` — PF-02 provides the authorized basis vocabulary but the repository does not define the exact load configuration for these Activities. Keep Weight configurations fail-closed; do not infer a basis.
+2. `WEL-NUT-002`, `WEL-NUT-003` — the baseline and CLU-01 require authoritative serving semantics but do not define them. Current serving examples remain review-only draft guidance.
 
-These are recorded as review boundaries, not missing candidate records. The complete mechanical report, including the precise issue objects and input hashes, is `tiizi-118-activity-reconciliation-validation.json`.
+These are recorded as review boundaries, not missing candidate records. Validation now reports structural/authored-content completeness separately from unresolved measurement semantics, server-computed publication readiness, and Challenge eligibility. Fasting's lifecycle state is recorded as Draft and Not Challenge Eligible without treating that restriction as a content-ingestion failure. The complete machine report, including each decision, exact unresolved issue, and input hash, is `tiizi-118-activity-reconciliation-validation.json`.
+
+## Bounded review-item resolution
+
+| Activity | Decision | Evidence and disposition |
+|---|---|---|
+| `WEL-NUT-009` Fasting | Resolved for content candidate; Draft and Not Challenge Eligible retained | Founder approves actual elapsed hours, no days conversion, no prescribed duration/frequency/intake/schedule/clinical thresholds, and proportionate general caution. The existing Fasting definition explicitly says Draft/not Challenge Eligible and identifies safety as a publication dependency. Lifecycle/eligibility do not fail structural content ingestion. Server publication readiness was not evaluated. |
+| `FIT-STR-019` Glute Bridge | Unresolved; Weight basis empty | The baseline allows Weight where applicable. Neither it nor the load convention establishes whether a supported configuration means total loaded implement, per implement, single implement, per side, or machine displayed load. PF-02 forbids inference from the name. Consultant descriptions do not establish Product Truth. |
+| `FIT-STR-023` Lateral Lunge | Unresolved; Weight basis empty | The baseline allows Weight where applicable. No canonical definition establishes whether loads are single-held, paired/per-implement, or otherwise configured. Repetitions per side do not establish Weight basis. PF-02 forbids inference from name; consultant equipment descriptions are not authority. |
+| `FIT-STR-025` Lunge Hold | Unresolved; Weight basis empty | The baseline permits Duration and Weight where applicable, but does not specify the loaded position/implement convention. Duration or side-specific holding does not determine load basis. No basis can be selected without Tiizi declaration. |
+| `FIT-STR-036` Russian Twist | Unresolved; Weight basis empty | The baseline allows Weight where applicable. No canonical Activity definition declares exact supported implement/configuration; name and consultant examples cannot determine if the Weight means one implement, per side, or another basis. PF-02 requires an explicit basis. |
+| `WEL-NUT-002` Fruit Intake | Unresolved; consultant semantics remain draft | Repository authority establishes Quantity → servings and explicitly requires authoritative serving guidance before publication; it does not define one serving. Current draft says approximately one medium whole fruit or one cup of berries. Do not treat that consultant example as canonical. Tiizi must approve/revise the operational equivalence and covered forms. |
+| `WEL-NUT-003` Vegetable Intake | Unresolved; consultant semantics remain draft | Repository authority establishes Quantity → servings and requires authoritative serving guidance; it does not define one serving. Current draft says approximately one cup raw leafy vegetables or one-half cup cooked vegetables. Do not treat that consultant example as canonical. Tiizi must approve/revise the equivalence and define covered vegetable forms/preparation. |
+
+For both serving Activities, the safe recommendation is to keep `servings` unavailable for ingestion until Tiizi adopts an explicit, measurable serving equivalence and the forms it covers. The present drafts are review proposals only; no serving count target or nutrition recommendation is introduced. The six unresolved items are the only current Founder/Tiizi decisions blocking ingestion readiness.
 
 ## Population path recommendation
 
