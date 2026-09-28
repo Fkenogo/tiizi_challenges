@@ -43,6 +43,8 @@ export interface S6ImportEntry {
   conflicts: string[];
   warnings: string[];
   kcsContentClasses?: string[];
+  /** Exact Knowledge input resolved by planning and consumed by apply. */
+  resolvedState?: CreateKnowledgeInput;
 }
 export interface S6ImportReport {
   mode: 'dry-run' | 'apply';
@@ -202,6 +204,10 @@ export async function planS6CatalogueImport(
     else if (entry.action === 'noop') report.unchanged++;
     else report.conflicts++;
   }
+  const missingResolvedStates = report.entries.filter(
+    (entry) => (entry.action === 'create' || entry.action === 'update') && entry.resolvedState === undefined,
+  );
+  for (const entry of missingResolvedStates) report.errors.push(`${entry.activityCode}: actionable reconciliation has no resolved mutation state`);
   report.conflicts += report.errors.length;
   report.readyForIngestion = report.errors.length === 0 && report.conflicts === 0 && report.entries.length === EXPECTED;
   return report;
@@ -216,31 +222,35 @@ export async function importS6Catalogue(
   const initial = await planS6CatalogueImport(db, candidate, inventory);
   initial.mode = mode;
   if (mode === 'dry-run' || !initial.readyForIngestion) return initial;
-  const validated = validateS6Candidate(candidate, inventory).candidate!;
   let applied = 0;
   for (const entry of initial.entries) {
     if (entry.action === 'noop') continue;
     if (entry.action === 'conflict') return { ...initial, applied, readyForIngestion: false };
-    const record = validated.records.find((item) => item.activityCode === entry.activityCode)!;
+    if (!entry.resolvedState) {
+      initial.errors.push(`${entry.activityCode}: reconciliation plan has no resolved mutation payload`);
+      initial.readyForIngestion = false;
+      initial.applied = applied;
+      return initial;
+    }
     try {
       await db.transaction(async (tx) => {
         if (entry.action === 'create') {
-          await createKnowledgeItem(tx, toCreateInput(record));
+          await createKnowledgeItem(tx, entry.resolvedState!);
           return;
         }
         const locked = await tx.query<{ knowledge_id: string; current_version: number; lifecycle: string }>(
           'SELECT knowledge_id, current_version, lifecycle FROM knowledge_items WHERE activity_code = $1 FOR UPDATE',
-          [record.activityCode],
+          [entry.activityCode],
         );
         if (!locked.rows[0] || locked.rows[0].knowledge_id !== entry.knowledgeId
           || Number(locked.rows[0].current_version) !== entry.knowledgeVersion
           || locked.rows[0].lifecycle !== entry.lifecycle) {
-          throw new Error(`Activity ${record.activityCode} changed after dry-run planning`);
+          throw new Error(`Activity ${entry.activityCode} changed after dry-run planning`);
         }
         const before = await listCodedKnowledgeForAdmin(tx);
-        const current = before.find((item) => item.activityCode === record.activityCode);
-        if (!current || current.id !== entry.knowledgeId) throw new Error(`Activity ${record.activityCode} changed after dry-run planning`);
-        await applyExistingDelta(tx, current, record, entry.deltas);
+        const current = before.find((item) => item.activityCode === entry.activityCode);
+        if (!current || current.id !== entry.knowledgeId) throw new Error(`Activity ${entry.activityCode} changed after dry-run planning`);
+        await applyExistingDelta(tx, current, entry);
       });
       applied++;
     } catch (error) {
@@ -255,7 +265,15 @@ export async function importS6Catalogue(
 }
 
 function planCreate(record: S6ContentRecord): S6ImportEntry {
-  return { activityCode: record.activityCode, action: 'create', deltas: ['initial-content-and-product-contract'], conflicts: [], warnings: [], kcsContentClasses: declaredClasses(record) };
+  return {
+    activityCode: record.activityCode,
+    action: 'create',
+    deltas: ['initial-content-and-product-contract'],
+    conflicts: [],
+    warnings: [],
+    kcsContentClasses: declaredClasses(record),
+    resolvedState: toCreateInput(record),
+  };
 }
 
 function planExisting(item: ApiKnowledgeItem, record: S6ContentRecord, existingComponents: unknown[]): S6ImportEntry {
@@ -290,6 +308,12 @@ function planExisting(item: ApiKnowledgeItem, record: S6ContentRecord, existingC
     return entry;
   }
   const preserved = { ...content, activityCode: record.activityCode, difficulty: item.difficulty, metricUnit: item.metricUnit };
+  const resolvedState = {
+    ...toCreateInput(record),
+    ...preserved,
+    kind: item.kind,
+    lifecycle: undefined,
+  } as CreateKnowledgeInput;
   const beforeContent = contentProjection(item);
   const afterContent = contentProjection(preserved);
   const changedContentFields = [...new Set([...Object.keys(beforeContent), ...Object.keys(afterContent)])]
@@ -312,6 +336,7 @@ function planExisting(item: ApiKnowledgeItem, record: S6ContentRecord, existingC
   if (!sameArray(item.loadReportingBases, record.measurementContract.loadReportingBases)) entry.deltas.push('load-reporting-bases');
   if (!equal(normalizeKnowledgeComponents(existingComponents), normalizeKnowledgeComponents(record.measurementContract.components))) entry.deltas.push('components');
   entry.action = entry.conflicts.length ? 'conflict' : entry.deltas.length ? 'update' : 'noop';
+  entry.resolvedState = resolvedState;
   return entry;
 }
 
@@ -343,18 +368,25 @@ function toCreateInput(record: S6ContentRecord): CreateKnowledgeInput {
   };
 }
 
-async function applyExistingDelta(db: Db, item: ApiKnowledgeItem, record: S6ContentRecord, deltas: string[]): Promise<void> {
+async function applyExistingDelta(db: Db, item: ApiKnowledgeItem, entry: S6ImportEntry): Promise<void> {
+  const resolved = entry.resolvedState;
+  if (!resolved) throw new Error(`${entry.activityCode}: missing resolved plan state`);
+  const contract = {
+    primaryMetrics: stringArray(resolved.primaryMetrics),
+    secondaryMetrics: stringArray(resolved.secondaryMetrics),
+    compatibleUnits: stringArray(resolved.compatibleUnits),
+    loadReportingBases: stringArray(resolved.loadReportingBases),
+    components: Array.isArray(resolved.components) ? resolved.components : [],
+  };
+  const deltas = entry.deltas;
   if (deltas.some((delta) => delta.startsWith('content:'))) {
-    const payload = { ...item, ...desiredContent(record), activityCode: record.activityCode,
-      // The candidate deliberately has no authority over these legacy scalars.
-      difficulty: item.difficulty, metricUnit: item.metricUnit } as KnowledgeContentInput;
-    await reviseKnowledgeItem(db, item.id, payload);
+    await reviseKnowledgeItem(db, item.id, resolved);
   }
-  if (deltas.includes('measurement-contract')) await setMeasurementCompatibility(db, item.id, record.measurementContract);
-  if (deltas.includes('load-reporting-bases')) await setLoadReportingBases(db, item.id, record.measurementContract.loadReportingBases);
+  if (deltas.includes('measurement-contract')) await setMeasurementCompatibility(db, item.id, contract);
+  if (deltas.includes('load-reporting-bases')) await setLoadReportingBases(db, item.id, contract.loadReportingBases);
   const currentComponents = await listActivityComponents(db, item.id);
-  if (!equal(normalizeKnowledgeComponents(currentComponents), normalizeKnowledgeComponents(record.measurementContract.components))) {
-    await setActivityComponents(db, item.id, record.measurementContract.components);
+  if (!equal(normalizeKnowledgeComponents(currentComponents), normalizeKnowledgeComponents(contract.components))) {
+    await setActivityComponents(db, item.id, contract.components);
   }
 }
 
