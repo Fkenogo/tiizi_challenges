@@ -1,0 +1,107 @@
+{
+  "validationVersion": "1.0.0",
+  "baselineCommit": "4b252e2e0026c4e7798201a30c65cac0b3beadf9",
+  "preparationCommit": "63fad90bfd5f73359aaa5e338018ca2b11a61fbe",
+  "expectedActivities": 118,
+  "receivedActivities": 118,
+  "fitness": 84,
+  "wellness": 34,
+  "uniqueActivityCodes": 118,
+  "missingActivities": [],
+  "unexpectedActivities": [],
+  "duplicateActivityCodes": [],
+  "identityClassificationDrift": [],
+  "malformedRecords": [],
+  "schemaErrors": [],
+  "invalidMetrics": [],
+  "invalidUnits": [],
+  "invalidMetricUnitPairs": [],
+  "requiredContentMissing": [],
+  "conditionalContentMissing": [],
+  "consultantSuppliedSystemFields": [],
+  "challengeDerivedCompletionLeak": [],
+  "fastingRules": {
+    "errors": [],
+    "requiredContract": {
+      "metric": "duration",
+      "unit": "hours"
+    }
+  },
+  "needsTiiziReview": [
+    {
+      "activityCode": "WEL-NUT-009",
+      "field": "content.safetyNotes / Challenge-use constraints",
+      "reason": "Existing Fasting Product Truth keeps the Activity Draft and not Challenge Eligible pending review."
+    },
+    {
+      "activityCode": "FIT-STR-019",
+      "field": "measurementContract.loadReportingBases",
+      "reason": "PF-02 basis not safely resolvable from available evidence; Weight configuration must fail closed while non-Weight configurations remain possible."
+    },
+    {
+      "activityCode": "FIT-STR-023",
+      "field": "measurementContract.loadReportingBases",
+      "reason": "PF-02 basis not safely resolvable from available evidence; Weight configuration must fail closed while non-Weight configurations remain possible."
+    },
+    {
+      "activityCode": "FIT-STR-025",
+      "field": "measurementContract.loadReportingBases",
+      "reason": "PF-02 basis not safely resolvable from available evidence; Weight configuration must fail closed while non-Weight configurations remain possible."
+    },
+    {
+      "activityCode": "FIT-STR-036",
+      "field": "measurementContract.loadReportingBases",
+      "reason": "PF-02 basis not safely resolvable from available evidence; Weight configuration must fail closed while non-Weight configurations remain possible."
+    },
+    {
+      "activityCode": "WEL-NUT-002",
+      "field": "measurementContract Quantity/servings unit semantics",
+      "reason": "The governed baseline requires authoritative serving guidance before publication."
+    },
+    {
+      "activityCode": "WEL-NUT-003",
+      "field": "measurementContract Quantity/servings unit semantics",
+      "reason": "The governed baseline requires authoritative serving guidance before publication."
+    }
+  ],
+  "readyForIngestion": false,
+  "result": "PASS_WITH_REVIEW",
+  "candidateIsDraftOnly": true,
+  "databaseWrites": 0,
+  "publicationEffects": 0,
+  "consultantInputs": [
+    {
+      "consultant": "consultant-1",
+      "filename": "consultant-01.json",
+      "sha256": "3434a4830bf9b418631b14e317912d2ab0ca57457ff12b598994899e8e9e10f3"
+    },
+    {
+      "consultant": "consultant-2",
+      "filename": "consultant-02.json",
+      "sha256": "25948766fae6ebc7efffc21e8e7788c3d6f5ca4d57791784cd3155672f4fdc4e"
+    },
+    {
+      "consultant": "consultant-3",
+      "filename": "consultant-03.json",
+      "sha256": "fa723030bd35a65390b79319a88c1c9a485384733b8da473cf53fe163b45f3ea"
+    }
+  ],
+  "weightBasisConsensusGaps": [
+    {
+      "activityCode": "FIT-STR-019",
+      "issue": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    },
+    {
+      "activityCode": "FIT-STR-023",
+      "issue": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    },
+    {
+      "activityCode": "FIT-STR-025",
+      "issue": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    },
+    {
+      "activityCode": "FIT-STR-036",
+      "issue": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    }
+  ]
+}
