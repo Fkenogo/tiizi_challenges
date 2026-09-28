@@ -316,6 +316,11 @@ export interface CreateKnowledgeInput extends KnowledgeContentInput {
    * setActivityComponents and snapshotted into version 1.
    */
   components?: unknown;
+  /** PF-02 governed contract may be established atomically at create time. */
+  primaryMetrics?: unknown;
+  secondaryMetrics?: unknown;
+  compatibleUnits?: unknown;
+  loadReportingBases?: unknown;
 }
 
 export interface KnowledgeIdentityMapping {
@@ -392,10 +397,14 @@ function asTrimmed(value: unknown, maxLength: number): string {
 }
 
 function asStringArray(value: unknown): string[] {
+  return asStringArrayWithLimit(value, 200);
+}
+
+function asStringArrayWithLimit(value: unknown, limit: number): string[] {
   if (!Array.isArray(value)) return [];
   const out: string[] = [];
   for (const entry of value) {
-    if (typeof entry === 'string' && entry.trim()) out.push(entry.trim().slice(0, 200));
+    if (typeof entry === 'string' && entry.trim()) out.push(entry.trim().slice(0, limit));
   }
   return out;
 }
@@ -463,6 +472,8 @@ export interface KcsContentSnapshot {
   description: string;
   category: string;
   metricUnit: string;
+  /** Coded V2 records use the governed multi-unit contract; legacy records may use metricUnit. */
+  compatibleUnits?: string[];
   measurementGuidance: string;
   unitSemantics: string;
   setup: string;
@@ -529,7 +540,12 @@ export function assessPublicationReadiness(
   require(nonEmpty(content.name), 'name', 'U', 'display title is required');
   require(nonEmpty(content.description), 'description', 'U', 'authoritative description is required');
   require(nonEmpty(content.category), 'category', 'U', 'governed category reference is required');
-  require(nonEmpty(content.metricUnit), 'metricUnit', 'U', 'compatible unit is required');
+  require(
+    nonEmpty(content.metricUnit) || (content.compatibleUnits ?? []).some(nonEmpty),
+    content.metricUnit ? 'metricUnit' : 'compatibleUnits',
+    'U',
+    'compatible unit is required',
+  );
   require(
     nonEmpty(content.measurementGuidance),
     'measurementGuidance',
@@ -716,7 +732,9 @@ export function validateKnowledgeContent(
   const subcategory = asTrimmed(input.subcategory, 100);
   const difficulty = asTrimmed(input.difficulty, 50);
   const metricUnit = asTrimmed(input.metricUnit, 50);
-  if (!metricUnit) throw new KnowledgeError(400, 'invalid_knowledge', 'metricUnit is required');
+  if (!metricUnit && !v2Governed) {
+    throw new KnowledgeError(400, 'invalid_knowledge', 'metricUnit is required');
+  }
 
   if (v2Governed) {
     if (kind === 'fitness') {
@@ -727,7 +745,7 @@ export function validateKnowledgeContent(
           `Invalid fitness category: ${category} (V2 governed categories: ${V2_FITNESS_CATEGORIES.join(' | ')})`,
         );
       }
-      if (!FITNESS_DIFFICULTIES.has(difficulty)) {
+      if (difficulty && !FITNESS_DIFFICULTIES.has(difficulty)) {
         throw new KnowledgeError(400, 'invalid_knowledge', `Invalid fitness difficulty: ${difficulty}`);
       }
     } else {
@@ -738,7 +756,7 @@ export function validateKnowledgeContent(
           `Invalid wellness category: ${category} (V2 governed categories: ${V2_WELLNESS_CATEGORIES.join(' | ')})`,
         );
       }
-      if (!WELLNESS_DIFFICULTIES.has(difficulty)) {
+      if (difficulty && !WELLNESS_DIFFICULTIES.has(difficulty)) {
         throw new KnowledgeError(400, 'invalid_knowledge', `Invalid wellness difficulty: ${difficulty}`);
       }
     }
@@ -827,7 +845,7 @@ export function validateKnowledgeContent(
     completionMeaning: asTrimmed(input.completionMeaning, 2000),
     avoidanceCondition: asTrimmed(input.avoidanceCondition, 2000),
     semanticDefinition: asTrimmed(input.semanticDefinition, 2000),
-    safetyNotes: asStringArray(input.safetyNotes),
+    safetyNotes: asStringArrayWithLimit(input.safetyNotes, 2000),
   };
 }
 
@@ -926,6 +944,7 @@ export function mapKnowledgeRow(row: KnowledgeRow): ApiKnowledgeItem {
     description: row.description ?? '',
     category: row.category ?? '',
     metricUnit: row.metric_unit ?? '',
+    compatibleUnits: parseStringList(row.compatible_units),
     measurementGuidance: row.measurement_guidance ?? '',
     unitSemantics: row.unit_semantics ?? '',
     setup: row.setup ?? '',
@@ -1084,12 +1103,16 @@ const KCS_ITEM_COLUMNS = `content_classes, default_locale, grandfathered,
   semantic_definition, safety_notes`;
 
 /** Snapshot of a validated content object for readiness assessment. */
-export function snapshotForReadiness(content: ValidatedKnowledgeContent): KcsContentSnapshot {
+export function snapshotForReadiness(
+  content: ValidatedKnowledgeContent,
+  compatibleUnits: string[] = [],
+): KcsContentSnapshot {
   return {
     name: content.name,
     description: content.description,
     category: content.category,
     metricUnit: content.metricUnit,
+    compatibleUnits,
     measurementGuidance: content.measurementGuidance,
     unitSemantics: content.unitSemantics,
     setup: content.setup,
@@ -1116,6 +1139,7 @@ export function snapshotItemForReadiness(item: ApiKnowledgeItem): KcsContentSnap
     description: item.description,
     category: item.category,
     metricUnit: item.metricUnit,
+    compatibleUnits: item.compatibleUnits,
     measurementGuidance: item.measurementGuidance,
     unitSemantics: item.unitSemantics,
     setup: item.setup,
@@ -1274,29 +1298,8 @@ export async function setMeasurementCompatibility(
   },
 ): Promise<ApiKnowledgeItem> {
   if (!isUuid(id)) throw new KnowledgeError(404, 'knowledge_not_found', 'Unknown knowledge item');
-  const primary = normalizeMetricList(contract.primaryMetrics, 'primaryMetrics');
-  const secondary = normalizeMetricList(contract.secondaryMetrics, 'secondaryMetrics');
-  const overlap = primary.filter((metric) => secondary.includes(metric));
-  if (overlap.length > 0) {
-    throw new KnowledgeError(
-      400,
-      'invalid_knowledge',
-      `Metrics cannot be both primary and secondary: ${overlap.join(', ')}`,
-    );
-  }
-  const units = normalizeUnitList(contract.compatibleUnits);
-  const declared = new Set([...primary, ...secondary]);
-  for (const unit of units) {
-    const unitMetric = metricForUnit(unit);
-    if (!unitMetric || !declared.has(unitMetric)) {
-      throw new KnowledgeError(
-        400,
-        'invalid_knowledge',
-        `Unit '${unit}' expresses Metric '${unitMetric ?? 'ungoverned'}'`
-          + ` which is not among the declared Metrics (${[...declared].sort().join(', ') || 'none'})`,
-      );
-    }
-  }
+  const { primaryMetrics: primary, secondaryMetrics: secondary, compatibleUnits: units } =
+    normalizeMeasurementContract(contract);
   const updated = await db.transaction(async (tx) =>
     advanceProductContractVersion(tx, id, {
       primaryMetrics: primary,
@@ -1369,6 +1372,29 @@ function normalizeUnitList(value: unknown): string[] {
   return out.sort();
 }
 
+/** Shared PF-02 contract normalization for API administration and catalogue ingestion. */
+export function normalizeMeasurementContract(value: {
+  primaryMetrics?: unknown;
+  secondaryMetrics?: unknown;
+  compatibleUnits?: unknown;
+}): MeasurementContractValues {
+  const primaryMetrics = normalizeMetricList(value.primaryMetrics, 'primaryMetrics');
+  const secondaryMetrics = normalizeMetricList(value.secondaryMetrics, 'secondaryMetrics');
+  const overlap = primaryMetrics.filter((metric) => secondaryMetrics.includes(metric));
+  if (overlap.length > 0) {
+    throw new KnowledgeError(400, 'invalid_knowledge', `Metrics cannot be both primary and secondary: ${overlap.join(', ')}`);
+  }
+  const compatibleUnits = normalizeUnitList(value.compatibleUnits);
+  const declared = new Set([...primaryMetrics, ...secondaryMetrics]);
+  for (const unit of compatibleUnits) {
+    const unitMetric = metricForUnit(unit);
+    if (!unitMetric || !declared.has(unitMetric)) {
+      throw new KnowledgeError(400, 'invalid_knowledge', `Unit '${unit}' expresses Metric '${unitMetric ?? 'ungoverned'}' which is not among the declared Metrics (${[...declared].sort().join(', ') || 'none'})`);
+    }
+  }
+  return { primaryMetrics, secondaryMetrics, compatibleUnits };
+}
+
 export function requirePublicationReady(
   kind: KnowledgeKind,
   declared: KcsClass[],
@@ -1423,6 +1449,11 @@ export async function createKnowledgeItem(
   }
   const activityCode = parseActivityCode(input.activityCode);
   const content = validateKnowledgeContent(kind, input, activityCode !== null);
+  const contract = normalizeMeasurementContract(input);
+  const loadReportingBases = normalizeLoadReportingBases(input.loadReportingBases);
+  if (loadReportingBases.length > 0 && ![...contract.primaryMetrics, ...contract.secondaryMetrics].includes('weight')) {
+    throw new KnowledgeError(400, 'load_basis_without_weight', 'Load Reporting Bases require Weight among the declared Metrics');
+  }
   const lifecycle = input.lifecycle === undefined || input.lifecycle === null
     ? 'draft'
     : String(input.lifecycle);
@@ -1434,7 +1465,7 @@ export async function createKnowledgeItem(
     );
   }
   if (lifecycle === 'published') {
-    requirePublicationReady(kind, content.contentClasses, snapshotForReadiness(content), false);
+    requirePublicationReady(kind, content.contentClasses, snapshotForReadiness(content, contract.compatibleUnits), false);
   }
   // PF-02: validate Component specs before any write so a bad Component
   // set rejects without creating the Activity.
@@ -1446,12 +1477,14 @@ export async function createKnowledgeItem(
         `INSERT INTO knowledge_items
            (kind, activity_code, lifecycle, current_version, name, category, subcategory, difficulty,
             icon, description, metric_unit, target_value, target_type, frequency,
-            points, image_url, tags, details, ${KCS_ITEM_COLUMNS})
+            points, image_url, tags, details, ${KCS_ITEM_COLUMNS},
+            primary_metrics, secondary_metrics, compatible_units, load_reporting_bases)
          VALUES ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
                  $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-                 $31, $32, $33, $34, $35, $36)
+                 $31, $32, $33, $34, $35, $36, $37, $38, $39, $40)
          RETURNING ${ITEM_COLUMNS}`,
-        [kind, activityCode, lifecycle, ...contentParams(content), ...kcsContentParams(content)],
+        [kind, activityCode, lifecycle, ...contentParams(content), ...kcsContentParams(content),
+          contract.primaryMetrics, contract.secondaryMetrics, contract.compatibleUnits, loadReportingBases],
       );
       row = inserted.rows[0];
     } catch (error) {
@@ -1463,7 +1496,7 @@ export async function createKnowledgeItem(
        VALUES ($1, 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
                $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29,
                $30, $31, $32, $33, $34, $35, $36)`,
-      [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content, EMPTY_CONTRACT, [])],
+      [row.knowledge_id, ...contentParams(content), ...kcsVersionParams(content, contract, loadReportingBases)],
     );
     // PF-02: pin the creation-time Component set into version 1 (no-op for
     // non-component Activities).
@@ -1680,7 +1713,14 @@ export async function reviseKnowledgeItem(
         'Activity Code is immutable: revisions cannot change, clear, or adopt a code',
       );
     }
-    const content = validateKnowledgeContent(row.kind as KnowledgeKind, input, storedCode !== null);
+    const revisionInput: KnowledgeContentInput = {
+      ...input,
+      // Optional legacy scalar metadata is preserved when a coded V2 caller
+      // omits it; an explicit empty string remains an intentional clear.
+      difficulty: input.difficulty === undefined ? row.difficulty : input.difficulty,
+      metricUnit: input.metricUnit === undefined ? row.metric_unit : input.metricUnit,
+    };
+    const content = validateKnowledgeContent(row.kind as KnowledgeKind, revisionInput, storedCode !== null);
     // PKG-2A-CORR: a revision that remains published must satisfy the current
     // KCS gate on the NEW content — including grandfathered items, whose
     // exemption covers only their pre-KCS publication, never future versions.
@@ -1689,7 +1729,7 @@ export async function reviseKnowledgeItem(
       requirePublicationReady(
         row.kind as KnowledgeKind,
         content.contentClasses,
-        snapshotForReadiness(content),
+        snapshotForReadiness(content, parseStringList(row.compatible_units)),
         false,
       );
     }
@@ -2072,6 +2112,16 @@ export async function listKnowledgeForAdmin(
      ORDER BY name ASC
      LIMIT ${MAX_LIST_ROWS}`,
     params,
+  );
+  return result.rows.map(mapKnowledgeRow);
+}
+
+/** Complete unpaginated coded-Activity projection for bounded catalogue reconciliation. */
+export async function listCodedKnowledgeForAdmin(db: Db): Promise<ApiKnowledgeItem[]> {
+  const result = await db.query<KnowledgeRow>(
+    `SELECT ${ITEM_COLUMNS} FROM knowledge_items
+     WHERE activity_code IS NOT NULL
+     ORDER BY activity_code ASC`,
   );
   return result.rows.map(mapKnowledgeRow);
 }

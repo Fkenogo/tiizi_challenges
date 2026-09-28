@@ -120,6 +120,41 @@ function wellnessContent(overrides: Record<string, unknown> = {}): Record<string
 }
 
 describe('PF-01 identity (proofs 1-5)', () => {
+  it('accepts coded V2 Activities without legacy difficulty or scalar metricUnit', () => {
+    const input = fitnessContent({ difficulty: undefined, metricUnit: undefined });
+    expect(() => validateKnowledgeContent('fitness', input, true)).not.toThrow();
+  });
+
+  it('uses the PF-02 compatible unit contract for coded V2 KCS readiness', async () => {
+    const db = testDb();
+    const created = await createKnowledgeItem(db, {
+      ...fitnessContent({ difficulty: undefined, metricUnit: undefined }),
+      activityCode: 'FIT-STR-001',
+      primaryMetrics: ['repetitions'],
+      compatibleUnits: ['reps'],
+    });
+    expect(created.metricUnit).toBe('');
+    expect(created.difficulty).toBe('');
+    expect(created.publicationReady).toBe(true);
+    const published = await setKnowledgeLifecycle(db, created.id, 'published');
+    expect(published.publicationReady).toBe(true);
+    expect(published.challengeEligible).toBe(true);
+  });
+
+  it('preserves optional scalar metadata when a coded revision omits it', async () => {
+    const db = testDb();
+    const created = await createKnowledgeItem(db, {
+      ...fitnessContent(), activityCode: 'FIT-STR-001',
+      primaryMetrics: ['repetitions'], compatibleUnits: ['reps'],
+    });
+    const revised = await reviseKnowledgeItem(db, created.id, {
+      ...fitnessContent({ difficulty: undefined, metricUnit: undefined }),
+      activityCode: 'FIT-STR-001',
+    });
+    expect(revised.difficulty).toBe('Intermediate');
+    expect(revised.metricUnit).toBe('reps');
+  });
+
   it('1. enforces UUID and Activity Code uniqueness', async () => {
     const db = testDb();
     const first = await createKnowledgeItem(
