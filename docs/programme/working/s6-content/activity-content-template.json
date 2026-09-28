@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tiizi:s6:activity-content-batch:1.0.0",
+  "title": "Tiizi S6 Activity Content Batch",
+  "description": "Consultant-authored candidate content. Identity and classifications are joined from activity-master-inventory.json; runtime and governance state is Tiizi-owned. Return identity echoes (activityCode primary, candidateId and classification fields for mismatch detection); do not supply UUID, lifecycle, readiness, eligibility, selectability, or version/system fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "records"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/record"
+      },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "metric": {
+      "enum": [
+        "completion",
+        "repetitions",
+        "duration",
+        "distance",
+        "weight",
+        "quantity"
+      ]
+    },
+    "unit": {
+      "enum": [
+        "completion",
+        "reps",
+        "repetitions",
+        "seconds",
+        "minutes",
+        "hours",
+        "metres",
+        "kilometres",
+        "grams",
+        "kilograms",
+        "steps",
+        "millilitres",
+        "litres",
+        "servings",
+        "pages",
+        "acts",
+        "flights"
+      ]
+    },
+    "protocolStep": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "componentId",
+        "displayName",
+        "relationship"
+      ],
+      "properties": {
+        "componentId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "relationship": {
+          "const": "ALL_REQUIRED"
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "measurementGuidance"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000
+        },
+        "measurementGuidance": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "unitSemantics": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "setup": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "execution": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "techniqueReference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "formCues": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "commonMistakes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "equipment": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "If not applicable, omit; do not invent equipment. A reviewed explicit statement such as 'None required' is acceptable."
+        },
+        "environment": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "adaptation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "protocolSteps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/protocolStep"
+          }
+        },
+        "sessionFraming": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "completionMeaning": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "avoidanceCondition": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "semanticDefinition": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "safetyNotes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activityCode",
+        "candidateId",
+        "name",
+        "domain",
+        "category",
+        "classification",
+        "family",
+        "content",
+        "measurementContract"
+      ],
+      "properties": {
+        "activityCode": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}-[A-Z]{3}-[0-9]{3}$",
+          "description": "Tiizi-assigned immutable code copied exactly from activity-consultant-input.json; never edit or generate."
+        },
+        "candidateId": {
+          "type": "string",
+          "pattern": "^(FIT|WEL)-[A-Z]{3}-[0-9]{3}$",
+          "description": "Baseline cross-reference; echo unchanged."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Tiizi-supplied canonical name; echo unchanged."
+        },
+        "domain": {
+          "enum": [
+            "Fitness",
+            "Wellness"
+          ],
+          "description": "Tiizi-supplied domain; echo unchanged."
+        },
+        "category": {
+          "enum": [
+            "Strength",
+            "Cardio & Conditioning",
+            "Mobility & Flexibility",
+            "Balance & Stability",
+            "Power, Speed & Agility",
+            "Sports & Recreation",
+            "Sleep & Rest",
+            "Mind & Emotional Wellbeing",
+            "Nutrition & Hydration",
+            "Daily Living",
+            "Personal Growth",
+            "Social Wellbeing"
+          ],
+          "description": "Tiizi-supplied governed category; echo unchanged."
+        },
+        "classification": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Tiizi-supplied governed classification; echo unchanged."
+        },
+        "family": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Tiizi-supplied family where the baseline explicitly has one; echo unchanged."
+        },
+        "content": {
+          "$ref": "#/$defs/content"
+        },
+        "measurementContract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "primaryMetrics",
+            "secondaryMetrics",
+            "compatibleUnits"
+          ],
+          "properties": {
+            "primaryMetrics": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/metric"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "secondaryMetrics": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/metric"
+              },
+              "uniqueItems": true
+            },
+            "compatibleUnits": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/unit"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "loadReportingBases": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "TOTAL_LOADED_IMPLEMENT",
+                  "PER_IMPLEMENT",
+                  "SINGLE_IMPLEMENT",
+                  "PER_SIDE",
+                  "MACHINE_DISPLAYED_LOAD"
+                ]
+              }
+            },
+            "components": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/component"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "editorialNotes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "sourceNotes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "description": "Return one record per supplied Activity. Identity fields are immutable echoes of activity-consultant-input.json; authored fields are restricted to content and review notes. Identity matching is validated against the manifest, not inferred from names."
+    }
+  },
+  "example": {
+    "schemaVersion": "1.0.0",
+    "records": [
+      {
+        "candidateId": "FIT-STR-001",
+        "content": {
+          "description": "A foundational bodyweight pushing movement performed from a plank position, lowering the chest toward the floor and pressing back up.",
+          "measurementGuidance": "Count one repetition for each full controlled lowering and press back to the starting plank. Report total repetitions per session.",
+          "unitSemantics": "One rep equals one complete down-and-up cycle counted when the chest lowers with control and the arms fully extend without resting on the floor.",
+          "setup": "Start in a high plank with hands under shoulders, body in a straight line from head to heels, core braced.",
+          "execution": "Lower the chest toward the floor by bending the elbows close to the body, then press through the palms to full arm extension while keeping the body straight.",
+          "formCues": [
+            "Keep your body in a straight line",
+            "Brace your core throughout",
+            "Lower with control; do not drop"
+          ],
+          "commonMistakes": [
+            "Hips sagging or piking",
+            "Flaring the elbows wide",
+            "Partial range of motion"
+          ],
+          "equipment": "None required",
+          "environment": "Flat stable floor surface with enough space to lie prone",
+          "adaptation": "Beginners may perform incline push-ups against a raised surface or from the knees while keeping the trunk straight.",
+          "safetyNotes": [
+            "Stop if you feel sharp pain in shoulders, wrists or lower back",
+            "Keep wrists stacked under shoulders to avoid strain"
+          ]
+        },
+        "measurementContract": {
+          "primaryMetrics": [
+            "repetitions"
+          ],
+          "secondaryMetrics": [],
+          "compatibleUnits": [
+            "reps"
+          ],
+          "loadReportingBases": [],
+          "components": []
+        },
+        "editorialNotes": [],
+        "sourceNotes": [
+          "Tiizi PF-01 Push-Up exemplar, api/src/pf01Exemplars.ts"
+        ],
+        "name": "Push-Up",
+        "domain": "Fitness",
+        "category": "Strength",
+        "classification": null,
+        "family": "Push",
+        "activityCode": "FIT-STR-001"
+      }
+    ]
+  }
+}
