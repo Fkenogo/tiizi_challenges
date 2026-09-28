@@ -15,6 +15,7 @@
     "challenge:create-v2": "tsx src/challengeCreateCli.ts",
     "challenge:lifecycle": "tsx src/challengeLifecycleCli.ts",
     "knowledge:import": "tsx src/knowledgeImportCli.ts",
+    "knowledge:import-s6": "tsx src/knowledgeCatalogueImportCli.ts",
     "parity:knowledge": "tsx src/knowledgeParityCli.ts"
   },
   "dependencies": {

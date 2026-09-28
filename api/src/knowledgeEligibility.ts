@@ -130,6 +130,7 @@ function snapshotFromRow(row: EligibilityRow): KcsContentSnapshot {
     description: asText(row.description),
     category: asText(row.category),
     metricUnit: asText(row.metric_unit),
+    compatibleUnits: asStringList(row.compatible_units),
     measurementGuidance: asText(row.measurement_guidance),
     unitSemantics: asText(row.unit_semantics),
     setup: asText(row.setup),
