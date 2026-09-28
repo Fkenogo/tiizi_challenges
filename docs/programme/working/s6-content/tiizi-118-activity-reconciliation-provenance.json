@@ -6032,13 +6032,13 @@
     "WEL-NUT-002": {
       "fields": {
         "description": [
-          "bounded Activity truth normalization"
+          "Founder serving-semantics disposition"
         ],
         "measurementGuidance": [
-          "bounded measurement normalization"
+          "Founder serving-semantics disposition"
         ],
         "unitSemantics": [
-          "consultant consensus; authoritative serving definition requires review"
+          "Founder serving-semantics disposition"
         ],
         "setup": [
           "consultant-2"
@@ -6064,7 +6064,7 @@
           "consultant-2"
         ],
         "protocolSteps": [
-          "bounded Activity truth normalization"
+          "Founder serving-semantics disposition"
         ],
         "sessionFraming": [
           "consultant-1"
@@ -6093,13 +6093,13 @@
     "WEL-NUT-003": {
       "fields": {
         "description": [
-          "bounded Activity truth normalization"
+          "Founder serving-semantics disposition"
         ],
         "measurementGuidance": [
-          "bounded measurement normalization"
+          "Founder serving-semantics disposition"
         ],
         "unitSemantics": [
-          "consultant consensus; authoritative serving definition requires review"
+          "Founder serving-semantics disposition"
         ],
         "setup": [
           "consultant-2"
@@ -6122,7 +6122,7 @@
           "consultant-3"
         ],
         "protocolSteps": [
-          "bounded Activity truth normalization"
+          "Founder serving-semantics disposition"
         ],
         "sessionFraming": [
           "consultant-1"

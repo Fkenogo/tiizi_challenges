@@ -878,19 +878,17 @@ and Mindfulness Practice remain related but non-synonymous Activities.
   WEL-NUT-001   Water Intake  Hydration        Quantity     millilitres,   ---
                                                             litres         
 
-  WEL-NUT-002   Fruit Intake  Nutrition        Quantity     servings       Authoritative
-                                                                           serving guidance
-                                                                           required before
-                                                                           serving-based
-                                                                           Runtime
-                                                                           publication
+  WEL-NUT-002   Fruit Intake  Nutrition        Quantity     servings       Participant
+                                                                           serving
+                                                                           guidance;
+                                                                           universal size
+                                                                           not required
 
-  WEL-NUT-003   Vegetable     Nutrition        Quantity     servings       Authoritative
-                Intake                                                     serving guidance
-                                                                           required before
-                                                                           serving-based
-                                                                           Runtime
-                                                                           publication
+  WEL-NUT-003   Vegetable     Nutrition        Quantity     servings       Participant
+                Intake                                                     serving
+                                                                           guidance;
+                                                                           universal size
+                                                                           not required
 
   WEL-NUT-004   Home-Cooked   Nutrition        Completion   completion     ---
                 Meal          Practice                                     
@@ -1167,13 +1165,17 @@ requiring resolution before relevant Runtime publication:
 
 ### 28.1 Fruit Intake
 
-Where `servings` is exposed as a Quantity Unit, Tiizi requires
-sufficiently authoritative participant guidance defining the serving
-interpretation.
+Where `servings` is exposed as a Quantity Unit, Tiizi requires sufficient
+participant guidance to explain that the participant reports their own
+serving count. Unless Activity-specific Product Truth explicitly requires
+a universal equivalence, the participant determines what constitutes a
+serving in their self-reporting context. Tiizi records the declared value
+without verifying or certifying physical quantity. Optional examples are
+orientation only and must not be presented as universal Tiizi definitions.
 
 ### 28.2 Vegetable Intake
 
-The same serving-definition requirement applies.
+The same participant-guidance and self-reporting rule applies.
 
 ### 28.3 Avoid Added Sugar
 

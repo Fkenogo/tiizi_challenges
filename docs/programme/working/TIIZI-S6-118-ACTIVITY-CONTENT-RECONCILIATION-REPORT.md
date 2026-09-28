@@ -1,6 +1,14 @@
 # TIIZI S6 — 118 Activity Content Reconciliation Report
 
-## Outcome
+## Final candidate closure — Founder serving disposition
+
+This closure follows the Founder clarification that serving guidance supports participant self-reporting and does not require a universal serving size absent Activity-specific Product Truth. Stage F KCS §3.6 and the cited working baseline language now reflect that rule. The two serving Activities use `quantity` / `servings`; participants consistently apply their own interpretation and report their own count. Tiizi records the declared value without verifying physical quantity. No nutrition target, medical claim, new metric, or new unit is introduced.
+
+The three consultant batches were reprocessed through the deterministic validator. **118/118** Activities reconcile: **84 Fitness**, **34 Wellness**, **118 unique Activity Codes**. There are zero missing or unexpected Activities, duplicates, identity drift, schema errors, invalid metric/unit pairs, missing required content, missing conditional content, system-field leakage, or Streak-derived completion leakage. Fasting remains `duration` / `hours` with actual elapsed hours and no day conversion. No load basis was invented for the four optional Weight cases; their Weight configurations remain fail-closed, while non-Weight use is not blocked.
+
+**Final result: `PASS`; `readyForIngestion: true` for this content candidate.** This is content-ingestion readiness only. It does not publish Activities, set lifecycle state, establish server-computed publication readiness, grant Challenge eligibility, or make Activities composer-selectable. No database write or publication occurred. The Streak target-comparison defect remains separate and is the next bounded engineering task; no engine was changed.
+
+## Initial reconciliation outcome (historical; superseded below)
 
 The three accepted consultant JSON batches have been reconciled field by field against the canonical Tiizi identity manifest, the governed 118-Activity measurement baseline, Knowledge Content Standards, PF-01/PF-02 contracts, and existing Push-Up and Breathing Practice exemplars. The result is a complete **draft content candidate** for all 118 Activities. It is not populated, published, or marked ready for ingestion.
 

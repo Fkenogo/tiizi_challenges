@@ -43,8 +43,8 @@ SYSTEM_FIELDS = {
     "versionId", "createdAt", "updatedAt", "publishedAt", "provenance", "authority",
 }
 REVIEW_CODE = "WEL-NUT-009"
-WEIGHT_REVIEW_CODES = {"FIT-STR-019", "FIT-STR-023", "FIT-STR-025", "FIT-STR-036"}
-SERVING_REVIEW_CODES = {"WEL-NUT-002", "WEL-NUT-003"}
+WEIGHT_CONFIGURATION_RESTRICTED_CODES = {"FIT-STR-019", "FIT-STR-023", "FIT-STR-025", "FIT-STR-036"}
+SERVING_GUIDANCE_CODES = {"WEL-NUT-002", "WEL-NUT-003"}
 
 
 def sha256(path: Path) -> str:
@@ -437,13 +437,14 @@ def build_candidate(paths: list[Path]) -> tuple[dict[str, Any], dict[str, Any], 
             content["protocolSteps"] = ["Rise from bed for the sleep period being recorded.", "Begin the morning activity being recorded.", "Record the wake-time occurrence."]
             field_sources["protocolSteps"] = ["bounded Activity truth normalization"]
         if code in {"WEL-NUT-002", "WEL-NUT-003"}:
-            item = "fruit" if code.endswith("002") else "vegetables"
-            content["description"] = f"A nutrition practice in which the participant consumes {item} and reports the amount using the governed serving unit."
-            content["measurementGuidance"] = f"Report the number of {item} servings consumed for the occurrence being recorded."
-            content["unitSemantics"] = ("One serving is approximately one medium whole fruit or one cup of berries." if item == "fruit" else "One serving is approximately one cup of raw leafy vegetables or one-half cup cooked vegetables.")
-            content["completionMeaning"] = f"Completion records an occasion when the participant consumed {item}; quantity reports servings under the applicable serving guidance."
-            content["protocolSteps"] = [f"Choose the {item} to be consumed.", f"Consume the {item} as part of the eating occasion being recorded.", f"Report the number of {item} servings using the approved serving definition."]
-            field_sources.update({"description": ["bounded Activity truth normalization"], "measurementGuidance": ["bounded measurement normalization"], "unitSemantics": ["consultant consensus; authoritative serving definition requires review"], "completionMeaning": ["bounded Activity/Challenge truth normalization"], "protocolSteps": ["bounded Activity truth normalization"]})
+            item = "fruit" if code.endswith("002") else "vegetable"
+            plural = "fruit" if item == "fruit" else "vegetables"
+            content["description"] = f"A nutrition practice in which the participant consumes {plural} and self-reports the number of servings they count for the occasion."
+            content["measurementGuidance"] = f"Report the number of {item} servings consumed for the occasion being recorded. Use the same personal interpretation when comparing your own reports."
+            content["unitSemantics"] = f"A serving is the portion the participant counts as one serving in their own self-reporting context. Tiizi records the participant-declared number and does not verify or certify the physical quantity. Any examples are orientation only, not universal Tiizi equivalences."
+            content["completionMeaning"] = f"Completion records an occasion when the participant reports consuming {plural}; Quantity records the participant-declared number of servings."
+            content["protocolSteps"] = [f"Consume the {plural} for the occasion being recorded.", "Count servings according to your own consistent self-reporting interpretation.", f"Report the number of {item} servings; Tiizi records the declared value without verifying physical quantity."]
+            field_sources.update({"description": ["Founder serving-semantics disposition"], "measurementGuidance": ["Founder serving-semantics disposition"], "unitSemantics": ["Founder serving-semantics disposition"], "completionMeaning": ["bounded Activity/Challenge truth normalization"], "protocolSteps": ["Founder serving-semantics disposition"]})
         if code in {"WEL-NUT-007", "WEL-NUT-008"}:
             added_sugar = code.endswith("007")
             label = "added-sugar" if added_sugar else "sugary-drink"
@@ -554,11 +555,9 @@ def build_candidate(paths: list[Path]) -> tuple[dict[str, Any], dict[str, Any], 
         record["editorialNotes"] = []
         record["sourceNotes"] = []
         if code == REVIEW_CODE:
-            record["editorialNotes"].append("TIIZI_CONTROLLED_USE_RESTRICTION: lifecycle remains Draft and the Activity is not Challenge Eligible. This is a lifecycle/eligibility restriction, separate from authored content completeness. The approved content records actual fasting duration in hours and does not prescribe duration, frequency, intake rules, schedules, or clinical thresholds.")
-        if code in WEIGHT_REVIEW_CODES:
-            record["editorialNotes"].append("NEEDS_TIIZI_REVIEW: Weight is baseline-compatible, but consultant evidence does not resolve an authorized PF-02 load reporting basis. Keep Weight configurations unavailable until Tiizi declares the basis; other governed metrics remain available.")
-        if code in SERVING_REVIEW_CODES:
-            record["editorialNotes"].append("NEEDS_TIIZI_REVIEW: the governed baseline requires authoritative serving guidance before publication. The supplied portion examples remain draft content and must be checked against an approved serving definition.")
+            record["editorialNotes"].append("Lifecycle and Challenge eligibility are separate server/governance-derived decisions. The current Founder direction establishes no Fasting-only Draft restriction. This content candidate assigns neither lifecycle nor eligibility state.")
+        if code in WEIGHT_CONFIGURATION_RESTRICTED_CODES:
+            record["editorialNotes"].append("Weight configuration remains unavailable until a governed PF-02 load-reporting basis is declared. This does not block content ingestion or non-Weight use of this Activity.")
         records.append(record)
         provenance[code] = {"fields": field_sources, "measurementContract": contract_evidence}
 
@@ -661,10 +660,10 @@ def validate(candidate: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]
             if not isinstance(component, dict) or set(component) != {"componentId", "displayName", "relationship"} or component.get("relationship") != "ALL_REQUIRED":
                 schema_errors.append({"activityCode": code, "field": f"measurementContract.components[{index}]", "reason": "invalid PF-02 component shape/relationship"})
         if "weight" in primary + secondary:
-            if not bases and code not in WEIGHT_REVIEW_CODES:
+            if not bases and code not in WEIGHT_CONFIGURATION_RESTRICTED_CODES:
                 conditional_missing.append({"activityCode": code, "field": "measurementContract.loadReportingBases", "requirement": "PF-02 Weight configuration requires an explicit basis"})
             if not any(isinstance(x, str) and re.search(r"(load|weight|implement|hand|bar|dumbbell|kettlebell|machine)", x, re.I) for x in [content.get("measurementGuidance", ""), content.get("unitSemantics", "")]):
-                if code not in WEIGHT_REVIEW_CODES:
+                if code not in WEIGHT_CONFIGURATION_RESTRICTED_CODES:
                     conditional_missing.append({"activityCode": code, "field": "content.measurementGuidance/unitSemantics", "requirement": "Weight reporting meaning must be explicit"})
         if "completion" in primary + secondary and not content.get("completionMeaning"):
             conditional_missing.append({"activityCode": code, "field": "content.completionMeaning", "requirement": "required when Completion is supported"})
@@ -683,6 +682,16 @@ def validate(candidate: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]
                 fasting_errors.append("Fasting must be Duration + hours only")
             if re.search(r"\b(?:\d+\s*hours?\s*(?:=|equals?|->|converted? to)\s*\d+\s*days?|(?:24|72)\s*hours?\s*(?:=|equals?|->)\s*(?:1|3)\s*days?)", json.dumps(row, ensure_ascii=False), re.I):
                 fasting_errors.append("Fasting value must not be translated to days")
+        if code in SERVING_GUIDANCE_CODES:
+            semantics = str(content.get("unitSemantics", "")).casefold()
+            guidance = str(content.get("measurementGuidance", "")).casefold()
+            if "participant" not in semantics or "does not verify" not in semantics or "not universal" not in semantics:
+                schema_errors.append({"activityCode": code, "field": "content.unitSemantics", "reason": "serving guidance must state participant-defined self-reporting and no universal Tiizi equivalence"})
+            if "serving" not in guidance or "report" not in guidance:
+                missing_content.append({"activityCode": code, "field": "content.measurementGuidance", "requirement": "explain reporting the participant-declared serving count"})
+            fixed_equivalences = re.search(r"\b(?:one medium (?:whole )?fruit|one cup of berries|one cup of raw leafy vegetables|one-half cup cooked vegetables)\b", json.dumps(content, ensure_ascii=False), re.I)
+            if fixed_equivalences and ("orientation only" not in semantics or "not universal" not in semantics):
+                schema_errors.append({"activityCode": code, "field": "content", "reason": "portion examples must be explicitly non-universal orientation"})
         if re.search(r"\b(completion)\b", json.dumps(content, ensure_ascii=False), re.I) and "completion" in primary + secondary and code not in {"WEL-MND-003"}:
             # Streak mechanics must never leak into canonical content. This flag is review-only if actual field text says Streak.
             if re.search(r"streak|target met|target achieved|challenge target", json.dumps(content, ensure_ascii=False), re.I):
@@ -690,10 +699,7 @@ def validate(candidate: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]
 
     fitness = sum(1 for r in records if r.get("domain") == "Fitness")
     wellness = sum(1 for r in records if r.get("domain") == "Wellness")
-    needs_review = [
-        *[{"activityCode": code, "field": "measurementContract.loadReportingBases", "reason": "PF-02 basis not safely resolvable from available evidence; Weight configuration must fail closed while non-Weight configurations remain possible."} for code in sorted(WEIGHT_REVIEW_CODES)],
-        *[{"activityCode": code, "field": "measurementContract Quantity/servings unit semantics", "reason": "The governed baseline requires authoritative serving guidance before publication."} for code in sorted(SERVING_REVIEW_CODES)],
-    ]
+    needs_review: list[dict[str, Any]] = []
     ready = not any((missing, unexpected, duplicates, identity_drift, malformed, schema_errors, invalid_metrics, invalid_units, invalid_pairs, missing_content, conditional_missing, prohibited_fields, completion_inference, fasting_errors))
     return {
         "validationVersion": "1.0.0",
@@ -721,55 +727,55 @@ def validate(candidate: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]
         "needsTiiziReview": needs_review,
         "contentReadiness": {
             "requiredAndApplicableContentComplete": not (missing_content or conditional_missing or malformed or schema_errors),
-            "measurementSemanticsComplete": not (invalid_metrics or invalid_units or invalid_pairs or bool(WEIGHT_REVIEW_CODES) or bool(SERVING_REVIEW_CODES)),
+            "measurementSemanticsComplete": not (invalid_metrics or invalid_units or invalid_pairs or schema_errors),
             "fastingContentDisposition": "Founder-approved candidate content; actual duration in hours; no prescribed protocol; general caution retained",
+            "servingContentDisposition": "Participant-declared serving counts; guidance is self-report context, not universal physical equivalence",
+            "optionalWeightDisposition": "Empty optional Weight bases constrain only Weight configurations and do not block candidate ingestion",
         },
         "publicationReadiness": {
             "status": "NOT_EVALUATED_BY_SERVER",
             "reason": "This is a content candidate. Publication readiness is computed by existing Knowledge/KCS server logic after controlled ingestion; no publication is implied here.",
         },
-        "lifecycleAndEligibilityRestrictions": [{
-            "activityCode": REVIEW_CODE,
-            "requiredLifecycle": "draft",
-            "challengeEligible": False,
-            "contentIngestionBlocker": False,
-            "publicationReadinessInferred": False,
-            "authority": "Founder disposition + WEL-NUT-009 Activity definition",
-        }],
+        "lifecycleAndEligibilityRestrictions": [],
         "reviewResolution": {
             "fasting": {
                 "activityCode": REVIEW_CODE,
-                "decision": "RESOLVED_FOR_CONTENT_CANDIDATE",
-                "actualResult": "duration in hours; no day conversion",
+                "decision": "RESOLVED_WITH_GUIDANCE",
+                "actualResult": "participant-reported actual elapsed duration in hours; no day conversion; no independent verification",
                 "contentRules": ["no prescribed duration", "no frequency", "no intake rules", "no schedules", "no clinical thresholds"],
                 "safety": "Founder-approved proportionate general caution is retained",
-                "lifecycle": "Draft",
-                "challengeEligible": False,
+                "lifecycle": "not assigned by content candidate; normal system/governance state",
+                "challengeEligible": "not assigned by content candidate; normal derived eligibility only",
                 "contentIngestionBlocker": False,
                 "publicationStatus": "not evaluated by server; no publication performed",
-                "authority": "docs/governance/knowledge/Activity Content & Catalogue Definition/WEL-NUT-009-FASTING.md and current Founder disposition",
+                "authority": "current Founder direction and PF-01 lifecycle/eligibility separation",
             },
             "weightBases": [{
                 "activityCode": code,
                 "activityName": expected[code]["name"],
-                "weightApplicable": "Weight is baseline-compatible where applicable",
+                "weightApplicable": "Optional compatibility; no basis required for ingestion or other metrics",
                 "proposedLoadBases": [],
-                "repositoryEvidence": "118-Activity baseline establishes Weight compatibility; PF-02-CORR-001 establishes the permitted basis vocabulary and explicitly prohibits inferring a basis from Activity name. No canonical Activity-specific definition establishes implement arrangement or exact Weight meaning.",
-                "confidence": "HIGH that available repository evidence is insufficient; no basis inference made",
-                "decision": "UNRESOLVED_FAIL_CLOSED",
-            } for code in sorted(WEIGHT_REVIEW_CODES)],
+                "repositoryEvidence": "PF-02 requires an explicit basis for a Weight configuration; the baseline permits Weight where applicable but does not require Weight use.",
+                "configurationRestriction": "Weight configurations fail closed until a governed PF-02 basis is declared; non-Weight configurations remain available.",
+                "decision": "RESOLVED_WITH_GUIDANCE",
+            } for code in sorted(WEIGHT_CONFIGURATION_RESTRICTED_CODES)],
             "servingSemantics": [{
                 "activityCode": code,
                 "activityName": expected[code]["name"],
                 "currentDraftSemantics": next((r.get("content", {}).get("unitSemantics") for r in records if r.get("activityCode") == code), None),
-                "repositoryEvidence": "The governed baseline and CLU-01 require authoritative serving guidance before publication, but provide no serving definition.",
-                "recommendedDefinition": "Do not promote the consultant example to canonical Product Truth. Founder/Tiizi must approve a measurable serving equivalence and define included/excluded forms before these serving measurements are ingestible.",
-                "decision": "UNRESOLVED_FAIL_CLOSED",
-            } for code in sorted(SERVING_REVIEW_CODES)],
+                "decision": "RESOLVED_WITH_GUIDANCE",
+                "semantics": "participant determines a consistent personal serving interpretation, reports count; examples are non-universal orientation only; Tiizi records but does not verify physical quantity",
+            } for code in sorted(SERVING_GUIDANCE_CODES)],
         },
-        "readyForIngestion": ready and not needs_review,
+        "readyForIngestion": ready,
         "result": ("PASS_WITH_REVIEW" if needs_review else "PASS") if ready else "FAIL",
         "candidateIsDraftOnly": True,
+        "streakConformance": {
+            "status": "SEPARATE_IMPLEMENTATION_CONFORMANCE_GAP",
+            "summary": "The measurable Streak path must compare the participant-reported value with its configured target before marking a requirement Done; below target is incomplete, at/above target is complete, with no additional Streak credit above target.",
+            "implementationChanged": False,
+            "followUp": "Bounded Challenge-engine conformance task; preserve the actual reported value and leave Collective/Competitive semantics unchanged.",
+        },
         "databaseWrites": 0,
         "publicationEffects": 0,
     }
@@ -785,7 +791,10 @@ def main() -> int:
     candidate, provenance, extra = build_candidate(paths)
     validation = validate(candidate, extra)
     validation["consultantInputs"] = hashes
-    validation["weightBasisConsensusGaps"] = extra["contractDisagreements"]
+    validation["weightConfigurationRestrictions"] = [
+        {"activityCode": item["activityCode"], "reason": item["issue"]}
+        for item in extra["contractDisagreements"]
+    ]
     if not args.validate_only:
         OUTPUT.mkdir(parents=True, exist_ok=True)
         (OUTPUT / "tiizi-118-activity-reconciled-content.json").write_text(json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -3,9 +3,51 @@
 **Evidence baseline:** `109db28caf3254a6c2f6edccc5112d116d12f1`
 
 **Branch:** `impl/tiizi-s6-activity-catalogue-reconciliation-001`
-**Scope:** Fasting disposition, four Weight bases, two serving meanings, engine semantics, and readiness-state separation. This is a decision brief only; no candidate or runtime state is changed.
+**Scope:** S6 Activity content Product Truth, serving semantics, Fasting, optional Weight bases, Challenge-engine semantics, and readiness-state separation.
+
+## Final candidate closure — reviewed at `3ace96ce8a48b274c27435dac8b823e1658c58d5`
+
+The Founder disposition clarifies existing self-accountability Product Truth. The existing KCS and its cited serving baseline have been narrowly amended: “governed serving guidance” means enough neutral guidance for participant self-reporting; it does not require a universal serving size unless that Activity has an explicit canonical definition. Fruit and Vegetable content now follows this rule. No Activity identity, metric, unit, Challenge engine, or publication state changed.
+
+### Self-accountability finding
+
+The general principle is **already governed**. Stage F Product Definition §§F.3–F.6 and invariant 12, Functional Requirements FR-V2-065–068, CIC §§4.10–4.14, and the Activity Measurement and Reporting Standard §§3.1 and 7 establish that the participant self-reports; Activity Knowledge defines the measurement meaning; the Challenge pins its target/configuration; and Challenge calculation derives the outcome. Tiizi does not certify or independently verify that an Activity occurred. The new Founder direction clarifies this existing boundary; it does not remove engine evaluation.
+
+Stage F Product Definition §§L.3–L.6 governs Streak completion as binary requirement satisfaction, with no extra credit for exceeding the configured requirement. §§J.1–J.4/J.10 govern Collective accumulation of actual contributions, including the full crossing contribution. §§K.2–K.9 govern Competitive target progress and completion-order position. Those type-specific rules remain distinct.
+
+### Final dispositions of the seven review items
+
+| Item | Current disposition | Reason / boundary |
+|---|---|---|
+| `WEL-NUT-002` Fruit Intake | **RESOLVED WITH GUIDANCE** | Participant determines and consistently applies their own serving interpretation, reports the count, and Tiizi records it without verifying physical quantity. No fixed fruit-size equivalence or intake recommendation is established. |
+| `WEL-NUT-003` Vegetable Intake | **RESOLVED WITH GUIDANCE** | Same participant-declared count semantics. No raw/cooked cup equivalence or intake recommendation is established. |
+| `FIT-STR-019` Glute Bridge | **RESOLVED WITH GUIDANCE** | Weight is optional. No load basis is required for ingestion or for repetitions configurations. Leave `loadReportingBases` empty; Weight configurations remain rejected/fail-closed unless a governed PF-02 basis is later declared. |
+| `FIT-STR-023` Lateral Lunge | **RESOLVED WITH GUIDANCE** | Same: no basis is selected or inferred; non-Weight configurations remain available. |
+| `FIT-STR-025` Lunge Hold | **RESOLVED WITH GUIDANCE** | Same: Duration does not imply a Weight setup or reporting basis. |
+| `FIT-STR-036` Russian Twist | **RESOLVED WITH GUIDANCE** | Same: no basis is selected or inferred; non-Weight configurations remain available. |
+| `WEL-NUT-009` Fasting | **RESOLVED WITH GUIDANCE** for content; no Fasting-only Draft restriction is justified by the current Founder direction | Preserve Duration/Hours and actual elapsed hours; no day conversion, prescribed regimen, or independent verification. Retain proportionate caution. Content can be assessed under ordinary KCS. Publication remains a server/governance lifecycle decision and was not performed. Challenge eligibility remains the normal derived result of published + KCS-ready + valid metric/unit contract; no Fasting-specific policy is established here. |
+
+The candidate removes the former Fasting Draft-only note and replaces the Fruit/Vegetable equivalence proposals with neutral self-report guidance. Publication readiness, lifecycle, Challenge eligibility, and composer selectability remain separate system/governance outcomes. They are not assigned by the content candidate.
+
+### Streak conformance gap confirmed
+
+Product Truth is sufficient; this is an implementation defect, not an unresolved engine rule. `api/src/derivedTruth.ts` (`toChallengeContext`, around lines 145–170) supplies each pinned Activity `target_value` as `targetValue`; its accepted-record fold (around lines 245–260) supplies the participant's actual `record.value` and `record.unit` as `LogEvent`. `api/src/engine/streakEngine.ts` (around lines 59–77) then adds `logEvent.activityId` to `dailyCompletedActivities` without comparing value or unit against the configured requirement. That set determines Streak Done. The same accepted record path stores the actual measurement separately, so the defect is specifically threshold evaluation, not self-report storage.
+
+**Affected scope:** all measurable Streak Activity requirements routed through this engine, including Repetitions, Duration, Distance, Weight, and Quantity. Completion-based requirements still need their governed self-attested completion semantics. Collective and Competitive engines are not implicated by this finding.
+
+**Existing test coverage:** `api/test/challengeActivityApplication.test.ts` “streak: daily Done needs ALL requirements; partial, repeat and gap behave” logs exactly 2,000 ml and 8 hours against those targets. `api/test/challengeEngines.test.ts` streak cases use default event values and assert consecutive-day state. Neither demonstrates below-target behavior. Component-level threshold tests (`api/test/pf02ActivityComponents.test.ts`) prove a separate PF-02 component evaluator compares `report.value >= targetValue`; that helper has no call site in the ordinary Streak fold and does not prove Streak conformance. No existing test directly demonstrates that 40 against 50 is incorrectly counted Done.
+
+**Smallest correction for a later bounded implementation task:** on the Streak accepted-record path, add a requirement to that Activity's daily completion set only when its normalized reported value/unit meets the pinned target (minimum threshold). Preserve the accepted actual report. Keep excess quantity binary for Streak and leave Collective/Competitive calculations unchanged. Add a regression test for 40/50 (and a passing 50/50 case), plus multi-Activity partial completion and replay/recomputation coverage. Do not implement that correction in this evidence pass.
+
+### Readiness boundary and remaining implementation work
+
+The deterministic candidate validator now returns `PASS`, with `readyForIngestion: true`. Content completeness and measurement vocabulary pass. This means only that this reviewed authored-content candidate can proceed through the controlled ingestion path; it does not establish server publication readiness or assign publication lifecycle, Challenge eligibility, or composer selectability. Empty optional Weight bases restrict those Weight configurations only. No Activity is thereby published.
+
+The Streak threshold mismatch is a separate runtime conformance defect and the next bounded engineering task. It does not block Activity-content ingestion. The Streak engine remains unchanged.
 
 ## Executive summary
+
+> **Historical analysis:** The sections below record the earlier review at `109db28caf3254a6c2f6edccc5112d116d12f1`. The final candidate-closure section above supersedes earlier unresolved-serving and not-ready conclusions.
 
 The governing Stage F Product Truth separates canonical Activity meaning and measurement guidance from Challenge-specific targets and derived progress. It also settles type-specific behavior: Streak is binary daily requirement completion with no extra credit for exceeding the requirement; Collective accumulates actual qualifying values and preserves the crossing contribution; Competitive accumulates measured progress toward a target and determines position by target-completion order, not excess amount.
 

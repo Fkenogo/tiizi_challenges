@@ -1084,7 +1084,7 @@
         "components": []
       },
       "editorialNotes": [
-        "NEEDS_TIIZI_REVIEW: Weight is baseline-compatible, but consultant evidence does not resolve an authorized PF-02 load reporting basis. Keep Weight configurations unavailable until Tiizi declares the basis; other governed metrics remain available."
+        "Weight configuration remains unavailable until a governed PF-02 load-reporting basis is declared. This does not block content ingestion or non-Weight use of this Activity."
       ],
       "sourceNotes": []
     },
@@ -1320,7 +1320,7 @@
         "components": []
       },
       "editorialNotes": [
-        "NEEDS_TIIZI_REVIEW: Weight is baseline-compatible, but consultant evidence does not resolve an authorized PF-02 load reporting basis. Keep Weight configurations unavailable until Tiizi declares the basis; other governed metrics remain available."
+        "Weight configuration remains unavailable until a governed PF-02 load-reporting basis is declared. This does not block content ingestion or non-Weight use of this Activity."
       ],
       "sourceNotes": []
     },
@@ -1439,7 +1439,7 @@
         "components": []
       },
       "editorialNotes": [
-        "NEEDS_TIIZI_REVIEW: Weight is baseline-compatible, but consultant evidence does not resolve an authorized PF-02 load reporting basis. Keep Weight configurations unavailable until Tiizi declares the basis; other governed metrics remain available."
+        "Weight configuration remains unavailable until a governed PF-02 load-reporting basis is declared. This does not block content ingestion or non-Weight use of this Activity."
       ],
       "sourceNotes": []
     },
@@ -2079,7 +2079,7 @@
         "components": []
       },
       "editorialNotes": [
-        "NEEDS_TIIZI_REVIEW: Weight is baseline-compatible, but consultant evidence does not resolve an authorized PF-02 load reporting basis. Keep Weight configurations unavailable until Tiizi declares the basis; other governed metrics remain available."
+        "Weight configuration remains unavailable until a governed PF-02 load-reporting basis is declared. This does not block content ingestion or non-Weight use of this Activity."
       ],
       "sourceNotes": []
     },
@@ -5696,9 +5696,9 @@
       "classification": "Nutrition",
       "family": null,
       "content": {
-        "description": "A nutrition practice in which the participant consumes fruit and reports the amount using the governed serving unit.",
-        "measurementGuidance": "Report the number of fruit servings consumed for the occurrence being recorded.",
-        "unitSemantics": "One serving is approximately one medium whole fruit or one cup of berries.",
+        "description": "A nutrition practice in which the participant consumes fruit and self-reports the number of servings they count for the occasion.",
+        "measurementGuidance": "Report the number of fruit servings consumed for the occasion being recorded. Use the same personal interpretation when comparing your own reports.",
+        "unitSemantics": "A serving is the portion the participant counts as one serving in their own self-reporting context. Tiizi records the participant-declared number and does not verify or certify the physical quantity. Any examples are orientation only, not universal Tiizi equivalences.",
         "setup": "Keep fresh whole fruits washed and accessible at home or work.",
         "execution": "Consume the actual number of fruit servings as part of meals or snacks.",
         "formCues": [
@@ -5718,9 +5718,9 @@
         "environment": "Any repeatable setting where food is consumed",
         "adaptation": "Blended whole fruit smoothie.",
         "protocolSteps": [
-          "Choose the fruit to be consumed.",
-          "Consume the fruit as part of the eating occasion being recorded.",
-          "Report the number of fruit servings using the approved serving definition."
+          "Consume the fruit for the occasion being recorded.",
+          "Count servings according to your own consistent self-reporting interpretation.",
+          "Report the number of fruit servings; Tiizi records the declared value without verifying physical quantity."
         ],
         "sessionFraming": "Fruit intake is a repeatable nutrition practice.",
         "safetyNotes": [
@@ -5741,9 +5741,7 @@
         "loadReportingBases": [],
         "components": []
       },
-      "editorialNotes": [
-        "NEEDS_TIIZI_REVIEW: the governed baseline requires authoritative serving guidance before publication. The supplied portion examples remain draft content and must be checked against an approved serving definition."
-      ],
+      "editorialNotes": [],
       "sourceNotes": []
     },
     {
@@ -5755,9 +5753,9 @@
       "classification": "Nutrition",
       "family": null,
       "content": {
-        "description": "A nutrition practice in which the participant consumes vegetables and reports the amount using the governed serving unit.",
-        "measurementGuidance": "Report the number of vegetables servings consumed for the occurrence being recorded.",
-        "unitSemantics": "One serving is approximately one cup of raw leafy vegetables or one-half cup cooked vegetables.",
+        "description": "A nutrition practice in which the participant consumes vegetables and self-reports the number of servings they count for the occasion.",
+        "measurementGuidance": "Report the number of vegetable servings consumed for the occasion being recorded. Use the same personal interpretation when comparing your own reports.",
+        "unitSemantics": "A serving is the portion the participant counts as one serving in their own self-reporting context. Tiizi records the participant-declared number and does not verify or certify the physical quantity. Any examples are orientation only, not universal Tiizi equivalences.",
         "setup": "Prepare fresh salad greens, steamed, roasted, or raw vegetables with meals.",
         "execution": "Include vegetables in main meals and snacks, aiming for diverse colors (green, red, orange, purple).",
         "formCues": [
@@ -5776,9 +5774,9 @@
         "equipment": "None required",
         "environment": "Any repeatable setting where food is consumed",
         "protocolSteps": [
-          "Choose the vegetables to be consumed.",
-          "Consume the vegetables as part of the eating occasion being recorded.",
-          "Report the number of vegetables servings using the approved serving definition."
+          "Consume the vegetables for the occasion being recorded.",
+          "Count servings according to your own consistent self-reporting interpretation.",
+          "Report the number of vegetable servings; Tiizi records the declared value without verifying physical quantity."
         ],
         "sessionFraming": "Vegetable intake is a repeatable nutrition practice.",
         "safetyNotes": [
@@ -5799,9 +5797,7 @@
         "loadReportingBases": [],
         "components": []
       },
-      "editorialNotes": [
-        "NEEDS_TIIZI_REVIEW: the governed baseline requires authoritative serving guidance before publication. The supplied portion examples remain draft content and must be checked against an approved serving definition."
-      ],
+      "editorialNotes": [],
       "sourceNotes": []
     },
     {
@@ -6125,7 +6121,7 @@
         "components": []
       },
       "editorialNotes": [
-        "TIIZI_CONTROLLED_USE_RESTRICTION: lifecycle remains Draft and the Activity is not Challenge Eligible. This is a lifecycle/eligibility restriction, separate from authored content completeness. The approved content records actual fasting duration in hours and does not prescribe duration, frequency, intake rules, schedules, or clinical thresholds."
+        "Lifecycle and Challenge eligibility are separate server/governance-derived decisions. The current Founder direction establishes no Fasting-only Draft restriction. This content candidate assigns neither lifecycle nor eligibility state."
       ],
       "sourceNotes": []
     },

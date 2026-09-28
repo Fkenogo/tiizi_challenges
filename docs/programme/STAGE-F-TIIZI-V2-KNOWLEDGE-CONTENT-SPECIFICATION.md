@@ -100,13 +100,23 @@ governance classification.
 
 ### 3.6 M — REQUIRED FOR PUBLICATION before publishing with the dependent semantics
 
-- Governed semantic definition: serving interpretation for
-  serving-measured intake; intended meaning for avoidance
-  undertakings; practice boundary where subdivision is plausible.
-- This carries forward 118-baseline §28 (Fruit/Vegetable servings,
-  Avoid Added Sugar, Avoid Sugary Drinks, late-night window
-  ownership) and Metric baseline serving notes. Publication using
-  `servings` without a governed serving definition is prohibited.
+- Sufficient governed participant guidance: the meaning of the
+  Activity's report, avoidance undertaking, or practice boundary where
+  reasonable ambiguity would otherwise exist.
+- A universal physical serving-size equivalence is **not required**
+  unless Product Truth for that specific Activity explicitly requires
+  one. For Fruit Intake and Vegetable Intake, the participant determines
+  what constitutes a serving in their self-reporting context and reports
+  the number of servings. Tiizi records the declared value and does not
+  verify or certify the physical quantity.
+- Optional examples may orient participants, but must be identified as
+  examples and must not be represented as universal Tiizi measurement
+  equivalences. Activity content must not prescribe an intake target or
+  make unsupported nutritional claims.
+- Challenge-specific instructions may apply where the governed
+  Challenge model permits them; they do not redefine canonical Activity
+  meaning. Existing 118-baseline requirements for avoidance meanings and
+  Challenge-owned time windows remain in force.
 
 ### 3.7 S — REQUIRED FOR PUBLICATION
 
