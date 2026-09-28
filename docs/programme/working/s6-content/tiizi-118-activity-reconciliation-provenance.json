@@ -1,0 +1,7193 @@
+{
+  "provenanceVersion": "1.0.0",
+  "consultantInputs": [
+    {
+      "consultant": "consultant-1",
+      "filename": "consultant-01.json",
+      "sha256": "3434a4830bf9b418631b14e317912d2ab0ca57457ff12b598994899e8e9e10f3"
+    },
+    {
+      "consultant": "consultant-2",
+      "filename": "consultant-02.json",
+      "sha256": "25948766fae6ebc7efffc21e8e7788c3d6f5ca4d57791784cd3155672f4fdc4e"
+    },
+    {
+      "consultant": "consultant-3",
+      "filename": "consultant-03.json",
+      "sha256": "fa723030bd35a65390b79319a88c1c9a485384733b8da473cf53fe163b45f3ea"
+    }
+  ],
+  "records": {
+    "FIT-STR-001": {
+      "fields": {
+        "description": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "measurementGuidance": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "unitSemantics": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "setup": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "execution": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "formCues": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "commonMistakes": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "equipment": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "environment": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "adaptation": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "safetyNotes": [
+          "Tiizi PF-01 exemplar"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-002": {
+      "fields": {
+        "description": [
+          "consultant-1"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-1"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-1",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-005": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-006": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-007": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-1"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-1"
+        ],
+        "adaptation": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-008": {
+      "fields": {
+        "description": [
+          "consultant-1"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-1"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-009": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-010": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "MACHINE_DISPLAYED_LOAD": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-011": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "MACHINE_DISPLAYED_LOAD": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-012": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 3
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-013": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-1"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-014": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-015": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-016": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-1",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-017": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-018": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-019": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 1
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "TOTAL_LOADED_IMPLEMENT": 1
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-020": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "SINGLE_IMPLEMENT": 2,
+          "TOTAL_LOADED_IMPLEMENT": 1
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-021": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-022": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-1"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-1"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-023": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-1"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "SINGLE_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 1
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-024": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-025": {
+      "fields": {
+        "description": [
+          "consultant-1"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "weight": 0
+        },
+        "primaryVotes": {
+          "duration": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "duration": 0,
+          "weight": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-026": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-027": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0,
+          "weight": 3
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 2,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-028": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0,
+          "weight": 3
+        },
+        "loadBasisVotes": {
+          "PER_SIDE": 2,
+          "SINGLE_IMPLEMENT": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-029": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-2"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0,
+          "weight": 3
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 2,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-030": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0,
+          "weight": 3
+        },
+        "loadBasisVotes": {
+          "PER_IMPLEMENT": 1,
+          "PER_SIDE": 1,
+          "SINGLE_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-031": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-032": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-033": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-034": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-035": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-036": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 2
+        },
+        "loadBasisVotes": {
+          "SINGLE_IMPLEMENT": 1,
+          "TOTAL_LOADED_IMPLEMENT": 1
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-037": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-1"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-038": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-STR-039": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 3
+        },
+        "loadBasisVotes": {
+          "MACHINE_DISPLAYED_LOAD": 3
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-001": {
+      "fields": {
+        "description": [
+          "consultant-2"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-002": {
+      "fields": {
+        "description": [
+          "consultant-2"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3,
+          "quantity": 2
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3,
+          "quantity": 0
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0,
+          "quantity": 2
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-005": {
+      "fields": {
+        "description": [
+          "consultant-2"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-006": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-007": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "quantity": 2
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "quantity": 2
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "quantity": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-008": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "duration": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "duration": 2
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-009": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "repetitions": 2,
+          "duration": 2
+        },
+        "secondaryVotes": {
+          "repetitions": 1,
+          "duration": 1
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-010": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "duration": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "duration": 2
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-011": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "duration": 0
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "duration": 3
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-CAR-012": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "duration": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "duration": 2
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-1"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-1"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-002": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-003": {
+      "fields": {
+        "description": [
+          "consultant-2"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "duration": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "duration": 2
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-005": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "duration": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "duration": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "duration": 1
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-006": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-007": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-008": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-MOB-009": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-BAL-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "bounded Activity truth normalization"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-BAL-002": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-BAL-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-BAL-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "bounded Activity truth normalization"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-BAL-005": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-002": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "distance": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "distance": 2
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-005": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-006": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-1"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3
+        },
+        "primaryVotes": {
+          "repetitions": 3
+        },
+        "secondaryVotes": {
+          "repetitions": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-007": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3",
+          "PF-02 load reporting convention"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "repetitions": 3,
+          "weight": 2
+        },
+        "primaryVotes": {
+          "repetitions": 3,
+          "weight": 1
+        },
+        "secondaryVotes": {
+          "repetitions": 0,
+          "weight": 1
+        },
+        "loadBasisVotes": {
+          "SINGLE_IMPLEMENT": 2
+        },
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-008": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-009": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 2
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 1
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-PSA-010": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-1"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "bounded Activity truth normalization"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3,
+          "distance": 3
+        },
+        "primaryVotes": {
+          "duration": 2,
+          "distance": 3
+        },
+        "secondaryVotes": {
+          "duration": 1,
+          "distance": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-002": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-003": {
+      "fields": {
+        "description": [
+          "consultant-2"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-005": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-006": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-1",
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-007": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-008": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "FIT-SPR-009": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-2",
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity-level completion assembly"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SLP-001": {
+      "fields": {
+        "description": [
+          "consultant-2"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-1"
+        ],
+        "formCues": [
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SLP-002": {
+      "fields": {
+        "description": [
+          "consultant-1"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "formCues": [
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "bounded Activity truth normalization"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3
+        },
+        "primaryVotes": {
+          "completion": 3
+        },
+        "secondaryVotes": {
+          "completion": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SLP-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "formCues": [
+          "bounded Activity truth normalization"
+        ],
+        "commonMistakes": [
+          "bounded Activity truth normalization"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "bounded Activity truth normalization"
+        ],
+        "sessionFraming": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "safetyNotes": [
+          "bounded Activity truth normalization"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3
+        },
+        "primaryVotes": {
+          "completion": 3
+        },
+        "secondaryVotes": {
+          "completion": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SLP-004": {
+      "fields": {
+        "description": [
+          "consultant-2"
+        ],
+        "measurementGuidance": [
+          "bounded Activity truth normalization"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "bounded Activity truth normalization"
+        ],
+        "execution": [
+          "bounded Activity truth normalization"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "bounded Activity truth normalization"
+        ],
+        "completionMeaning": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "bounded Activity truth normalization"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "bounded Activity truth normalization"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "semanticDefinition": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "bounded Activity truth normalization"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-002": {
+      "fields": {
+        "description": [
+          "consultant-1"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "sessionFraming": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-003": {
+      "fields": {
+        "description": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "measurementGuidance": [
+          "PF-01 exemplar reconciled to Activity/Challenge boundary"
+        ],
+        "unitSemantics": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "PF-01 exemplar reconciled to Activity/Challenge boundary"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "sessionFraming": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "completionMeaning": [
+          "Tiizi PF-01 exemplar"
+        ],
+        "safetyNotes": [
+          "Tiizi PF-01 exemplar"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-005": {
+      "fields": {
+        "description": [
+          "consultant-1"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "sessionFraming": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-1",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-006": {
+      "fields": {
+        "description": [
+          "consultant-1"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-2"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 2,
+          "duration": 2
+        },
+        "primaryVotes": {
+          "completion": 2,
+          "duration": 1
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 1
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-007": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "sessionFraming": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-008": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "unitSemantics": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "setup": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "sessionFraming": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-009": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-2"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-MND-010": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 0,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "bounded measurement normalization"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "bounded Activity truth normalization"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "quantity": 3
+        },
+        "primaryVotes": {
+          "quantity": 3
+        },
+        "secondaryVotes": {
+          "quantity": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-002": {
+      "fields": {
+        "description": [
+          "Founder serving-semantics disposition"
+        ],
+        "measurementGuidance": [
+          "Founder serving-semantics disposition"
+        ],
+        "unitSemantics": [
+          "Founder serving-semantics disposition"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "Founder serving-semantics disposition"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "quantity": 3
+        },
+        "primaryVotes": {
+          "quantity": 3
+        },
+        "secondaryVotes": {
+          "quantity": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-003": {
+      "fields": {
+        "description": [
+          "Founder serving-semantics disposition"
+        ],
+        "measurementGuidance": [
+          "Founder serving-semantics disposition"
+        ],
+        "unitSemantics": [
+          "Founder serving-semantics disposition"
+        ],
+        "setup": [
+          "consultant-2"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "Founder serving-semantics disposition"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "quantity": 3
+        },
+        "primaryVotes": {
+          "quantity": 3
+        },
+        "secondaryVotes": {
+          "quantity": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 2
+        },
+        "primaryVotes": {
+          "completion": 2
+        },
+        "secondaryVotes": {
+          "completion": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-005": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant content, unsupported numeric horizon removed"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "content normalization"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3
+        },
+        "primaryVotes": {
+          "completion": 3
+        },
+        "secondaryVotes": {
+          "completion": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-006": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant content, arbitrary duration removed"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "adaptation": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "bounded safety normalization"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3,
+          "duration": 2
+        },
+        "primaryVotes": {
+          "completion": 3,
+          "duration": 1
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 1
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-007": {
+      "fields": {
+        "description": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "measurementGuidance": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "unitSemantics": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "setup": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "execution": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "completionMeaning": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "avoidanceCondition": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3
+        },
+        "primaryVotes": {
+          "completion": 3
+        },
+        "secondaryVotes": {
+          "completion": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-008": {
+      "fields": {
+        "description": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "measurementGuidance": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "unitSemantics": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "setup": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "execution": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "completionMeaning": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "avoidanceCondition": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-1",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3
+        },
+        "primaryVotes": {
+          "completion": 3
+        },
+        "secondaryVotes": {
+          "completion": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-NUT-009": {
+      "fields": {
+        "description": [
+          "Founder Fasting direction + governed baseline"
+        ],
+        "measurementGuidance": [
+          "Founder Fasting direction + governed baseline"
+        ],
+        "unitSemantics": [
+          "Founder Fasting direction + governed baseline"
+        ],
+        "setup": [
+          "Founder Fasting direction + governed baseline"
+        ],
+        "execution": [
+          "Founder Fasting direction + governed baseline"
+        ],
+        "protocolSteps": [
+          "Founder Fasting direction + governed baseline"
+        ],
+        "sessionFraming": [
+          "Founder Fasting direction + governed baseline"
+        ],
+        "safetyNotes": [
+          "Founder Fasting direction + governed baseline"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "duration": 3
+        },
+        "primaryVotes": {
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-DLY-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-DLY-002": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-DLY-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-3"
+        ],
+        "completionMeaning": [
+          "consultant-3"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 2,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-DLY-004": {
+      "fields": {
+        "description": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "measurementGuidance": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "unitSemantics": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant content, clock-cutoff rule removed"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "completionMeaning": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "safetyNotes": [
+          "bounded safety normalization"
+        ],
+        "setup": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "execution": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "avoidanceCondition": [
+          "bounded Activity/Challenge truth normalization"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 3
+        },
+        "primaryVotes": {
+          "completion": 3
+        },
+        "secondaryVotes": {
+          "completion": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-GRO-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "unitSemantics": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "bounded Activity/Challenge truth normalization"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3,
+          "quantity": 3
+        },
+        "primaryVotes": {
+          "completion": 0,
+          "duration": 3,
+          "quantity": 1
+        },
+        "secondaryVotes": {
+          "completion": 1,
+          "duration": 0,
+          "quantity": 2
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-GRO-002": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-GRO-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SOC-001": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-1"
+        ],
+        "formCues": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-3"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-2",
+          "consultant-3"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SOC-002": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "consultant-3"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "consultant-1"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SOC-003": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "consultant-3"
+        ],
+        "unitSemantics": [
+          "bounded Activity truth normalization"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-3"
+        ],
+        "formCues": [
+          "consultant content, filtered for planning behavior"
+        ],
+        "commonMistakes": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "equipment": [
+          "consultant-2"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "adaptation": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "bounded Activity truth normalization"
+        ],
+        "safetyNotes": [
+          "content normalization"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 2,
+          "quantity": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "quantity": 3
+        },
+        "secondaryVotes": {
+          "completion": 1,
+          "quantity": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    },
+    "WEL-SOC-004": {
+      "fields": {
+        "description": [
+          "consultant-3"
+        ],
+        "measurementGuidance": [
+          "bounded Activity truth normalization"
+        ],
+        "unitSemantics": [
+          "bounded Activity truth normalization"
+        ],
+        "setup": [
+          "consultant-3"
+        ],
+        "execution": [
+          "consultant-2"
+        ],
+        "formCues": [
+          "consultant-3",
+          "consultant-2"
+        ],
+        "commonMistakes": [
+          "consultant-2",
+          "consultant-3"
+        ],
+        "equipment": [
+          "consultant-3"
+        ],
+        "environment": [
+          "consultant-2"
+        ],
+        "protocolSteps": [
+          "consultant-1"
+        ],
+        "sessionFraming": [
+          "consultant-1"
+        ],
+        "completionMeaning": [
+          "bounded Activity truth normalization"
+        ],
+        "safetyNotes": [
+          "consultant-3",
+          "consultant-2",
+          "consultant-1"
+        ]
+      },
+      "measurementContract": {
+        "contractAuthority": "118-Activity governed baseline; consultant contracts recorded as proposals only",
+        "consultantMetricPlacements": {
+          "completion": 1,
+          "duration": 3
+        },
+        "primaryVotes": {
+          "completion": 1,
+          "duration": 3
+        },
+        "secondaryVotes": {
+          "completion": 0,
+          "duration": 0
+        },
+        "loadBasisVotes": {},
+        "sourceComponentConsensus": 0
+      }
+    }
+  }
+}

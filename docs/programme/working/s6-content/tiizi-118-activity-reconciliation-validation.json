@@ -1,0 +1,163 @@
+{
+  "validationVersion": "1.0.0",
+  "baselineCommit": "4b252e2e0026c4e7798201a30c65cac0b3beadf9",
+  "preparationCommit": "63fad90bfd5f73359aaa5e338018ca2b11a61fbe",
+  "expectedActivities": 118,
+  "receivedActivities": 118,
+  "fitness": 84,
+  "wellness": 34,
+  "uniqueActivityCodes": 118,
+  "missingActivities": [],
+  "unexpectedActivities": [],
+  "duplicateActivityCodes": [],
+  "identityClassificationDrift": [],
+  "malformedRecords": [],
+  "schemaErrors": [],
+  "invalidMetrics": [],
+  "invalidUnits": [],
+  "invalidMetricUnitPairs": [],
+  "requiredContentMissing": [],
+  "conditionalContentMissing": [],
+  "consultantSuppliedSystemFields": [],
+  "challengeDerivedCompletionLeak": [],
+  "fastingRules": {
+    "errors": [],
+    "requiredContract": {
+      "metric": "duration",
+      "unit": "hours"
+    }
+  },
+  "needsTiiziReview": [],
+  "contentReadiness": {
+    "requiredAndApplicableContentComplete": true,
+    "measurementSemanticsComplete": true,
+    "fastingContentDisposition": "Founder-approved candidate content; actual duration in hours; no prescribed protocol; general caution retained",
+    "servingContentDisposition": "Participant-declared serving counts; guidance is self-report context, not universal physical equivalence",
+    "optionalWeightDisposition": "Empty optional Weight bases constrain only Weight configurations and do not block candidate ingestion"
+  },
+  "publicationReadiness": {
+    "status": "NOT_EVALUATED_BY_SERVER",
+    "reason": "This is a content candidate. Publication readiness is computed by existing Knowledge/KCS server logic after controlled ingestion; no publication is implied here."
+  },
+  "lifecycleAndEligibilityRestrictions": [],
+  "reviewResolution": {
+    "fasting": {
+      "activityCode": "WEL-NUT-009",
+      "decision": "RESOLVED_WITH_GUIDANCE",
+      "actualResult": "participant-reported actual elapsed duration in hours; no day conversion; no independent verification",
+      "contentRules": [
+        "no prescribed duration",
+        "no frequency",
+        "no intake rules",
+        "no schedules",
+        "no clinical thresholds"
+      ],
+      "safety": "Founder-approved proportionate general caution is retained",
+      "lifecycle": "not assigned by content candidate; normal system/governance state",
+      "challengeEligible": "not assigned by content candidate; normal derived eligibility only",
+      "contentIngestionBlocker": false,
+      "publicationStatus": "not evaluated by server; no publication performed",
+      "authority": "current Founder direction and PF-01 lifecycle/eligibility separation"
+    },
+    "weightBases": [
+      {
+        "activityCode": "FIT-STR-019",
+        "activityName": "Glute Bridge",
+        "weightApplicable": "Optional compatibility; no basis required for ingestion or other metrics",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "PF-02 requires an explicit basis for a Weight configuration; the baseline permits Weight where applicable but does not require Weight use.",
+        "configurationRestriction": "Weight configurations fail closed until a governed PF-02 basis is declared; non-Weight configurations remain available.",
+        "decision": "RESOLVED_WITH_GUIDANCE"
+      },
+      {
+        "activityCode": "FIT-STR-023",
+        "activityName": "Lateral Lunge",
+        "weightApplicable": "Optional compatibility; no basis required for ingestion or other metrics",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "PF-02 requires an explicit basis for a Weight configuration; the baseline permits Weight where applicable but does not require Weight use.",
+        "configurationRestriction": "Weight configurations fail closed until a governed PF-02 basis is declared; non-Weight configurations remain available.",
+        "decision": "RESOLVED_WITH_GUIDANCE"
+      },
+      {
+        "activityCode": "FIT-STR-025",
+        "activityName": "Lunge Hold",
+        "weightApplicable": "Optional compatibility; no basis required for ingestion or other metrics",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "PF-02 requires an explicit basis for a Weight configuration; the baseline permits Weight where applicable but does not require Weight use.",
+        "configurationRestriction": "Weight configurations fail closed until a governed PF-02 basis is declared; non-Weight configurations remain available.",
+        "decision": "RESOLVED_WITH_GUIDANCE"
+      },
+      {
+        "activityCode": "FIT-STR-036",
+        "activityName": "Russian Twist",
+        "weightApplicable": "Optional compatibility; no basis required for ingestion or other metrics",
+        "proposedLoadBases": [],
+        "repositoryEvidence": "PF-02 requires an explicit basis for a Weight configuration; the baseline permits Weight where applicable but does not require Weight use.",
+        "configurationRestriction": "Weight configurations fail closed until a governed PF-02 basis is declared; non-Weight configurations remain available.",
+        "decision": "RESOLVED_WITH_GUIDANCE"
+      }
+    ],
+    "servingSemantics": [
+      {
+        "activityCode": "WEL-NUT-002",
+        "activityName": "Fruit Intake",
+        "currentDraftSemantics": "A serving is the portion the participant counts as one serving in their own self-reporting context. Tiizi records the participant-declared number and does not verify or certify the physical quantity. Any examples are orientation only, not universal Tiizi equivalences.",
+        "decision": "RESOLVED_WITH_GUIDANCE",
+        "semantics": "participant determines a consistent personal serving interpretation, reports count; examples are non-universal orientation only; Tiizi records but does not verify physical quantity"
+      },
+      {
+        "activityCode": "WEL-NUT-003",
+        "activityName": "Vegetable Intake",
+        "currentDraftSemantics": "A serving is the portion the participant counts as one serving in their own self-reporting context. Tiizi records the participant-declared number and does not verify or certify the physical quantity. Any examples are orientation only, not universal Tiizi equivalences.",
+        "decision": "RESOLVED_WITH_GUIDANCE",
+        "semantics": "participant determines a consistent personal serving interpretation, reports count; examples are non-universal orientation only; Tiizi records but does not verify physical quantity"
+      }
+    ]
+  },
+  "readyForIngestion": true,
+  "result": "PASS",
+  "candidateIsDraftOnly": true,
+  "streakConformance": {
+    "status": "SEPARATE_IMPLEMENTATION_CONFORMANCE_GAP",
+    "summary": "The measurable Streak path must compare the participant-reported value with its configured target before marking a requirement Done; below target is incomplete, at/above target is complete, with no additional Streak credit above target.",
+    "implementationChanged": false,
+    "followUp": "Bounded Challenge-engine conformance task; preserve the actual reported value and leave Collective/Competitive semantics unchanged."
+  },
+  "databaseWrites": 0,
+  "publicationEffects": 0,
+  "consultantInputs": [
+    {
+      "consultant": "consultant-1",
+      "filename": "consultant-01.json",
+      "sha256": "3434a4830bf9b418631b14e317912d2ab0ca57457ff12b598994899e8e9e10f3"
+    },
+    {
+      "consultant": "consultant-2",
+      "filename": "consultant-02.json",
+      "sha256": "25948766fae6ebc7efffc21e8e7788c3d6f5ca4d57791784cd3155672f4fdc4e"
+    },
+    {
+      "consultant": "consultant-3",
+      "filename": "consultant-03.json",
+      "sha256": "fa723030bd35a65390b79319a88c1c9a485384733b8da473cf53fe163b45f3ea"
+    }
+  ],
+  "weightConfigurationRestrictions": [
+    {
+      "activityCode": "FIT-STR-019",
+      "reason": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    },
+    {
+      "activityCode": "FIT-STR-023",
+      "reason": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    },
+    {
+      "activityCode": "FIT-STR-025",
+      "reason": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    },
+    {
+      "activityCode": "FIT-STR-036",
+      "reason": "Weight is baseline-compatible but consultant evidence does not establish a load basis; weight Challenge configuration remains unavailable pending Tiizi declaration."
+    }
+  ]
+}

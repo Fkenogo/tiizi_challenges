@@ -305,11 +305,16 @@ otherwise exist.
 
 Examples include: - how Walking Lunge repetitions are counted; - how
 Mountain Climber repetitions are counted; - when Plank Duration begins
-and ends; - how Farmer Carry Distance is determined; and - what
-constitutes a qualifying serving for Vegetable Intake.
+and ends; and - how Farmer Carry Distance is determined. For
+Fruit/Vegetable servings, participant guidance explains self-reporting;
+the participant determines their serving interpretation unless
+Activity-specific Product Truth establishes a universal equivalence.
+Optional examples are not canonical equivalences.
 
-Individual Challenges should not invent conflicting measurement
-conventions for the same canonical Activity.
+Challenge-specific instructions may add context for that Challenge's
+participants where the governed Challenge model permits. They do not
+redefine canonical Activity meaning or create a conflicting Activity
+measurement contract.
 
 Where a Measurement Instruction requires external health, nutritional,
 safety or scientific authority, Tiizi must not invent the definition
@@ -522,7 +527,7 @@ Compatible Units:
 Vegetable Intake
 Permitted Primary: Quantity
 Compatible Unit: servings
-Measurement Instruction: governed definition of qualifying serving required before authoritative publication
+Measurement Instruction: participant reports servings using a consistent personal interpretation; examples are non-universal guidance unless Activity-specific Product Truth requires a canonical equivalence
 ```
 
 ``` text
