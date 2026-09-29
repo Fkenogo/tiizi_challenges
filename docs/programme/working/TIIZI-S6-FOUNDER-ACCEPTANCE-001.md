@@ -33,3 +33,9 @@ Activity images are **not required for S6 closure**. The existing optional `Know
 - “Challenge Creation — Founder Experience Review” remains an outstanding separate follow-on and is not part of S6 closure.
 
 This record captures the Founder disposition for the exact accepted source. The programme status is to be recorded as **S6 COMPLETE / FOUNDER ACCEPTED / MERGED** only after the normal repository merge is verified.
+
+## Merge and closure (2026-09-29)
+
+PR #60 was merged through the normal merge-commit path as `86e236eebade9047dc7a3450c0d023868ac556ef`. The Founder-accepted source `8f46378bf0c8bd38c28897131b2b248ce4e671d9` is the PR head and is included in the merge. The pre-merge canonical main was `e9489ea16699743ca084cf01e6fc316167361457`.
+
+S6 is now **COMPLETE / FOUNDER ACCEPTED / MERGED**. This records implementation acceptance and the accepted DEVELOPMENT catalogue population/publication only. It does not claim production catalogue population/publication or production deployment. Activity images remain deferred and are not required for S6 closure. “Challenge Creation — Founder Experience Review” remains an outstanding separate follow-on.
