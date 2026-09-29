@@ -33,19 +33,6 @@ export function V2TodayPage() {
  * live in routes.tsx.
  */
 
-export function V2GuidePage() {
-  return (
-    <V2Placeholder
-      eyebrow="Activity Guide"
-      title="Activity Guide"
-      explanation="Not sure what to do today? Browse simple, safe activity ideas for every level."
-      emptyTitle="The guide is getting ready"
-      emptyMessage="A friendly catalogue of activities with clear how-to steps is on its way. Check back soon."
-      nextSlice="Activity Guide knowledge binding (S6)"
-    />
-  );
-}
-
 export function V2ProfilePage() {
   return (
     <V2Placeholder

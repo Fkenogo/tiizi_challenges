@@ -22,9 +22,12 @@ export type ApiKnowledgeLifecycle = 'draft' | 'published' | 'retired';
 
 export interface ApiKnowledgeItem {
   id: string;
+  activityCode?: string | null;
   kind: ApiKnowledgeKind;
   lifecycle: ApiKnowledgeLifecycle;
   knowledgeVersion: number;
+  publicationReady?: boolean;
+  challengeEligible?: boolean;
   name: string;
   category: string;
   subcategory: string;
@@ -41,6 +44,25 @@ export interface ApiKnowledgeItem {
   details: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  measurementGuidance?: string;
+  unitSemantics?: string;
+  setup?: string;
+  execution?: string;
+  techniqueReference?: string;
+  formCues?: string[];
+  commonMistakes?: string[];
+  equipment?: string;
+  environment?: string;
+  adaptation?: string;
+  protocolSteps?: unknown[];
+  sessionFraming?: string;
+  completionMeaning?: string;
+  avoidanceCondition?: string;
+  semanticDefinition?: string;
+  safetyNotes?: string[];
+  primaryMetrics?: string[];
+  secondaryMetrics?: string[];
+  compatibleUnits?: string[];
 }
 
 export interface ApiKnowledgeContentInput {
@@ -78,6 +100,15 @@ export async function fetchPublishedKnowledge(
   search?: string,
 ): Promise<ApiKnowledgeItem[]> {
   const response = await apiFetch<KnowledgeListResponse>(listQuery({ kind, search }));
+  return response.items;
+}
+
+/** Published canonical V2 Activities for the member Activity Library. */
+export async function fetchPublishedActivities(search?: string, category?: string): Promise<ApiKnowledgeItem[]> {
+  const query = new URLSearchParams({ canonicalOnly: 'true' });
+  if (search?.trim()) query.set('search', search.trim());
+  if (category) query.set('category', category);
+  const response = await apiFetch<KnowledgeListResponse>(`/v1/knowledge?${query.toString()}`);
   return response.items;
 }
 

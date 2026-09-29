@@ -1,0 +1,230 @@
+import { useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Search } from 'lucide-react';
+import { fetchKnowledgeById, fetchPublishedActivities, type ApiKnowledgeItem } from '../../api/knowledgeApi';
+import { fetchComposerSelectableKnowledge } from '../../api/challengeCreationApi';
+import { useAuth } from '../../hooks/useAuth';
+import {
+  V2Button,
+  V2Card,
+  V2Chip,
+  V2EmptyState,
+  V2ErrorState,
+  V2LoadingState,
+  V2Page,
+  V2SectionHeader,
+} from '../components/V2Primitives';
+
+const ACTIVITY_CODE = /^[A-Z]{3}-[A-Z]{3}-\d{3}$/;
+
+function apiConfigured() {
+  return typeof import.meta.env.VITE_TIIZI_API_BASE_URL === 'string'
+    && import.meta.env.VITE_TIIZI_API_BASE_URL.trim().length > 0;
+}
+
+export function V2ActivityLibraryScreen() {
+  const { user } = useAuth();
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const all = useQuery({
+    queryKey: ['v2-activity-library', user?.uid],
+    queryFn: () => fetchPublishedActivities(),
+    enabled: !!user?.uid && apiConfigured(),
+    staleTime: 60_000,
+  });
+  const results = useQuery({
+    queryKey: ['v2-activity-library-search', user?.uid, search, category],
+    queryFn: () => fetchPublishedActivities(search, category || undefined),
+    enabled: !!user?.uid && apiConfigured(),
+    staleTime: 30_000,
+  });
+  const categories = useMemo(
+    () => [...new Set((all.data ?? []).map((item) => item.category).filter(Boolean))].sort(),
+    [all.data],
+  );
+
+  return (
+    <V2Page wide>
+      <V2SectionHeader
+        eyebrow="Activity Guide"
+        title="Explore activities"
+        description="Browse activities with clear guidance on what they involve and how to record them."
+      />
+      <label className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <Search size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
+        <span className="sr-only">Search activities</span>
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search activities"
+          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+        />
+      </label>
+
+      {all.isLoading || results.isLoading ? <V2LoadingState label="Loading activities…" /> : null}
+      {all.isError || results.isError ? (
+        <V2ErrorState
+          title="Activities could not load"
+          message="Please check your connection and try again."
+          onRetry={() => { void all.refetch(); void results.refetch(); }}
+        />
+      ) : null}
+
+      {!all.isLoading && !all.isError && categories.length > 0 ? (
+        <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Activity categories">
+          <button
+            type="button"
+            onClick={() => setCategory('')}
+            aria-pressed={!category}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${!category ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
+          >All categories</button>
+          {categories.map((value) => (
+            <button
+              type="button"
+              key={value}
+              onClick={() => setCategory(value === category ? '' : value)}
+              aria-pressed={category === value}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${category === value ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
+            >{value}</button>
+          ))}
+        </div>
+      ) : null}
+
+      {results.isSuccess && results.data.length === 0 ? (
+        <V2EmptyState
+          title={search || category ? 'No matching activities' : 'The guide is getting ready'}
+          message={search || category ? 'Try another search or category.' : 'Published activities will appear here when they are ready to share.'}
+          action={search || category ? <V2Button variant="secondary" onClick={() => { setSearch(''); setCategory(''); }}>Clear filters</V2Button> : undefined}
+        />
+      ) : null}
+
+      {results.data && results.data.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {results.data.map((item) => <ActivityCard key={item.id} item={item} />)}
+        </div>
+      ) : null}
+    </V2Page>
+  );
+}
+
+function ActivityCard({ item }: { item: ApiKnowledgeItem }) {
+  return (
+    <Link to={`/v2/guide/${encodeURIComponent(item.id)}`} className="block rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary">
+      <V2Card className="h-full transition-shadow hover:shadow-md">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{item.category}{item.subcategory ? ` · ${item.subcategory}` : ''}</p>
+            <h2 className="mt-1 text-base font-black text-slate-900">{item.name}</h2>
+          </div>
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-500">{item.kind === 'wellness' ? 'Wellness' : 'Fitness'}</span>
+        </div>
+        {item.description ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{item.description}</p> : null}
+        <span className="mt-4 inline-block text-sm font-bold text-primary">View activity guide →</span>
+      </V2Card>
+    </Link>
+  );
+}
+
+function displayText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const text = record.text ?? record.instruction ?? record.step ?? record.name;
+    if (typeof text === 'string') return text;
+  }
+  return '';
+}
+
+function GuideSection({ title, show, children }: { title: string; show: boolean; children: React.ReactNode }) {
+  if (!show) return null;
+  return <section className="border-t border-slate-100 py-4"><h2 className="text-sm font-extrabold text-slate-900">{title}</h2><div className="mt-2 text-sm leading-6 text-slate-700">{children}</div></section>;
+}
+
+export function V2ActivityGuideDetailScreen() {
+  const { user } = useAuth();
+  const { activityId = '' } = useParams();
+  const navigate = useNavigate();
+  const activity = useQuery({
+    queryKey: ['v2-activity-guide-detail', user?.uid, activityId],
+    queryFn: () => fetchKnowledgeById(activityId),
+    enabled: !!user?.uid && apiConfigured() && !!activityId,
+  });
+  const composer = useQuery({
+    queryKey: ['v2-activity-guide-composer-selectable', user?.uid],
+    queryFn: () => fetchComposerSelectableKnowledge(),
+    enabled: !!user?.uid && apiConfigured() && activity.isSuccess
+      && activity.data.lifecycle === 'published'
+      && !!activity.data.activityCode && ACTIVITY_CODE.test(activity.data.activityCode),
+    staleTime: 30_000,
+  });
+  const item = activity.data;
+  // Direct identity reads intentionally preserve historical resolution. Only
+  // the published canonical member-facing projection is rendered here.
+  const memberVisible = !!item && item.lifecycle === 'published'
+    && !!item.activityCode && ACTIVITY_CODE.test(item.activityCode);
+  const composerSelectable = !!item && !!composer.data?.some((candidate) => candidate.id === item.id);
+
+  if (activity.isLoading) return <V2Page><V2LoadingState label="Loading activity guide…" /></V2Page>;
+  if (activity.isError) {
+    return <V2Page><V2ErrorState title="Activity could not load" message="Please check your connection and try again." onRetry={() => { void activity.refetch(); }} /></V2Page>;
+  }
+  if (!item || !memberVisible) {
+    return <V2Page><V2EmptyState title="Activity not available" message="This activity could not be found in the guide." action={<V2Button variant="secondary" onClick={() => navigate('/v2/guide')}>Back to activities</V2Button>} /></V2Page>;
+  }
+
+  const protocols = (item.protocolSteps ?? []).map(displayText).filter(Boolean);
+  const measures = [item.metricUnit, ...(item.primaryMetrics ?? []), ...(item.secondaryMetrics ?? [])].filter(Boolean);
+  return (
+    <V2Page>
+      <Link to="/v2/guide" className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900"><ArrowLeft size={16} /> All activities</Link>
+      <V2SectionHeader eyebrow={`${item.category}${item.subcategory ? ` · ${item.subcategory}` : ''}`} title={item.name} description={item.description || undefined} />
+      <V2Card className="mb-4">
+        <GuideSection title="How to do it" show={!!(item.setup || item.execution || protocols.length)}>
+          {item.setup ? <p><strong>Set up:</strong> {item.setup}</p> : null}
+          {item.execution ? <p className="mt-2">{item.execution}</p> : null}
+          {protocols.length ? <ol className="mt-2 list-decimal space-y-1 pl-5">{protocols.map((step, index) => <li key={`${index}-${step}`}>{step}</li>)}</ol> : null}
+        </GuideSection>
+        <GuideSection title="Measurement" show={!!(item.measurementGuidance || item.unitSemantics || measures.length || item.compatibleUnits?.length)}>
+          {item.measurementGuidance ? <p>{item.measurementGuidance}</p> : null}
+          {item.unitSemantics ? <p className="mt-2">{item.unitSemantics}</p> : null}
+          {measures.length ? <p className="mt-2"><strong>Metrics:</strong> {measures.join(', ')}</p> : null}
+          {item.compatibleUnits?.length ? <p className="mt-1"><strong>Units:</strong> {item.compatibleUnits.join(', ')}</p> : null}
+        </GuideSection>
+        <GuideSection title="Technique" show={!!(item.techniqueReference || item.formCues?.length || item.commonMistakes?.length)}>
+          {item.techniqueReference ? <p>{item.techniqueReference}</p> : null}
+          {item.formCues?.length ? <List items={item.formCues} label="Form cues" /> : null}
+          {item.commonMistakes?.length ? <List items={item.commonMistakes} label="Common mistakes" /> : null}
+        </GuideSection>
+        <GuideSection title="Equipment and environment" show={!!(item.equipment || item.environment)}>
+          {item.equipment ? <p><strong>Equipment:</strong> {item.equipment}</p> : null}
+          {item.environment ? <p className="mt-2"><strong>Environment:</strong> {item.environment}</p> : null}
+        </GuideSection>
+        <GuideSection title="Safety and caution" show={!!(item.safetyNotes?.length || item.avoidanceCondition)}>
+          {item.safetyNotes?.length ? <List items={item.safetyNotes} /> : null}
+          {item.avoidanceCondition ? <p>{item.avoidanceCondition}</p> : null}
+        </GuideSection>
+        <GuideSection title="Adaptation" show={!!item.adaptation}>{item.adaptation}</GuideSection>
+        <GuideSection title="Completion meaning" show={!!item.completionMeaning}>{item.completionMeaning}</GuideSection>
+        <GuideSection title="Session framing" show={!!item.sessionFraming}>{item.sessionFraming}</GuideSection>
+      </V2Card>
+      {composer.isError ? <V2ErrorState title="Challenge availability could not be checked" message="Try again before using this activity in a Challenge." onRetry={() => { void composer.refetch(); }} /> : null}
+      {composerSelectable ? (
+        <V2Button onClick={() => navigate('/v2/challenges/new', { state: { activityId: item.id, activityCode: item.activityCode } })}>Use in Challenge</V2Button>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="w-full cursor-not-allowed rounded-xl bg-slate-200 px-4 py-3 text-sm font-bold text-slate-500"
+          title={composer.isLoading ? 'Checking Challenge availability' : 'This activity is not currently available in Challenge creation'}
+        >
+          {composer.isLoading ? 'Checking Challenge availability…' : 'Not available for Challenges'}
+        </button>
+      )}
+    </V2Page>
+  );
+}
+
+function List({ items, label }: { items: string[]; label?: string }) {
+  return <div className={label ? 'mt-2' : ''}>{label ? <p className="font-semibold">{label}</p> : null}<ul className="mt-1 list-disc space-y-1 pl-5">{items.filter(Boolean).map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul></div>;
+}

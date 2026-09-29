@@ -32,13 +32,13 @@ This document is not a constitutional instrument and does not establish constitu
 
 The Programme Dashboard must be updated whenever programme status, next action or dependency changes.
 
-**S4 Group authority transition (2026-09-26):** TIIZI-GROUP-PG-AUTHORITY-TRANSITION-001 is **COMPLETE / FOUNDER ACCEPTED / MERGED** (PR #50; merge commit `7cffb4b8f7c9b50c613a91067b7ca8c05554e52b`). V2 Group, Group Membership, and Group-scoped Challenge Group/Membership authority use PostgreSQL through the Tiizi API. Firebase Auth remains for authentication/identity only; Firestore is not V2 Group/Membership authority. V1 is frozen/reference-only; no V1 operational-data migration or Firestore-to-PostgreSQL reconciliation is required. S1–S3 are **CLOSED / COMPLETE**. S4a, S4b, and S4c are **COMPLETE / FOUNDER ACCEPTED / MERGED**. S4c merged as PR #52, normal merge commit `51b269825e0252717ab7f867c45ce8ec4900db96`, from accepted source `dac6abb8bf5e6ffd423936799f6b89918ccdbbc0`. **S4d — Group Settings: IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW** on `impl/tiizi-s4d-group-settings-001`; Founder disposition authorizes implementation from entry baseline `dda5bc007bef25e0e52ce8670822439ac55186d2` (Master Programme v2.11). The candidate adds a nine-field PostgreSQL PATCH under transaction-locked Accountable Steward authority and a bounded settings surface. No schema/migration, deployment, merge, or Founder acceptance. See [S4d Implementation Record](working/TIIZI-S4D-GROUP-SETTINGS-IMPLEMENTATION-RECORD.md). S6 Activity Library / Activity Guide remains **OUTSTANDING / NOT STARTED**. Do not start S6. No deployment occurred.
+**S4 authority and closure (2026-09-26):** TIIZI-GROUP-PG-AUTHORITY-TRANSITION-001 is **COMPLETE / FOUNDER ACCEPTED / MERGED** (PR #50; merge commit `7cffb4b8f7c9b50c613a91067b7ca8c05554e52b`). V2 Group, Group Membership, and Group-scoped Challenge authority use PostgreSQL through the Tiizi API; Firebase Auth remains authentication/identity only, V1 is frozen/reference-only, and no V1 operational-data migration or reconciliation is required. S1–S3 and S4a–S4d are **COMPLETE / FOUNDER ACCEPTED / MERGED**. S6 content/importer acceptance and persistent DEVELOPMENT population are complete; Activity Library / Activity Guide assembly is the current S6 work. Production remains untouched.
 
 ## 3. Programme Metrics
 
 | Metric            | Current  |
 | ----------------- | -------- |
-| Programme Version | 2.12     |
+| Programme Version | 2.15     |
 | Total Stages      | 7        |
 | Completed Stages  | 5        |
 | Active Stage      | Stage G  |
@@ -50,171 +50,13 @@ Programme Metrics must be updated with the Programme Dashboard whenever programm
 
 ## 4. Current Focus
 
-| Focus                      | Current                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Current Stage              | Stage G — Governance-to-Code Alignment (**Active** — S6 catalogue content/importer accepted and persistent development population complete; Activity Library / Guide assembly remains outstanding) |                                                                                                                                                                                                                                                                                                                                                                             |
-| S6 Catalogue Status         | **CONTENT RECONCILED / IMPORTER ACCEPTED / PERSISTENT DEVELOPMENT POPULATION COMPLETE.** The persistent local development PostgreSQL catalogue has 118 coded Activities (116 Draft, two existing Published exemplars). No production database was used; no new Activity was published or assigned Challenge eligibility. S6 is not complete; Activity Library / Guide experience assembly remains outstanding. See [S6 Development Population Record](working/TIIZI-S6-DEVELOPMENT-CATALOGUE-POPULATION-001.md). |
-| Current Phase              | CGP-02 — Constitutional Amendment & Governance Review Standard                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Current Phase Status       | **Complete** (FLD-01, 2026-09-01)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Completed Bounded Sequence | CGP-02C.2 — Governance Lifecycle, Amendment Classification, and Review Triggers and Proportionality drafting and technical Founder Review sequence                                                                                                                                                                                                                                                                                                                  |
-| Completion Evidence        | [CGP-02C.2 Completion Report](../governance/principles/10-CGP-02C-2-COMPLETION-REPORT.md)                                                                                                                                                                                                                                                                                                                                                                           |
-| Completed Planning Stage   | CGP-02C.3 — Approval Governance planning                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Planning Decision Evidence | [CGP-02C.3 Founder Planning Decision Record](../governance/principles/11-CGP-02C-3-FOUNDER-PLANNING-DECISION-RECORD.md)                                                                                                                                                                                                                                                                                                                                             |
-| Completed Work Package     | CGP-02C.13 — Whole-Instrument Consolidation                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Work-Package Status        | Complete as a bounded work package (2026-08-22); all execution phases complete; Founder disposition closed (45/45 Accepted, 0 unresolved); D17–D20 complete; all 9 completion gates satisfied; closure evidence issued; whole instrument not Founder-approved, not adopted, and without constitutional effect                                                                                                                                                       |
-| Completion Date            | 2026-08-22                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Completion Evidence        | [CGP-02C.13 Completion Report](CGP-02C-13-COMPLETION-REPORT.md), [Package Closure Verification](CGP-02C-13-PACKAGE-CLOSURE-VERIFICATION.md), [Completion Validation Report](CGP-02C-13-COMPLETION-VALIDATION-REPORT.md)                                                                                                                                                                                                                                             |
-| Authorized Work Package    | CGP-02D — Whole-Standard Founder Review and Approval Preparation (**COMPLETE** 2026-09-01)                                                                                                                                                                                                                                                                                                                                                                          |
-| Authorization Status       | **COMPLETE** (commenced 2026-08-29; closed 2026-09-01). FWA-01 through FWA-05 recorded as Option A — Approved/Authorized. D-01 prepared; D-02 complete (10/10 Accepted); D-03 Founder Accepted; D-04 Complete — PASS; D-05 Complete — PASS; D-06 Complete — PASS; D-07 Prepared / Decision-Ready; Founder Approval Decision Gate reached 2026-08-31 — CGP-02 Founder Approved (FAD-01, Option A); **D-08 Complete — bounded completion evidence issued 2026-09-01** |
-| Authorization Evidence     | [Founder Authorization Record](CGP-02D-FOUNDER-AUTHORIZATION-RECORD.md), [Founder Authorization Package](CGP-02D-FOUNDER-AUTHORIZATION-PACKAGE.md) and [Authorization Validation Report](CGP-02D-AUTHORIZATION-VALIDATION-REPORT.md) §§6                                                                                                                                                                                                                            |
-| Authorization Date         | 2026-08-28                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Approval Decision Evidence | [FAD-01](CGP-02D-FOUNDER-APPROVAL-DECISION-RECORD.md): Option A — Approve (2026-08-31). [FLD-01](CGP-02-POST-APPROVAL-LIFECYCLE-FOUNDER-DECISION-FLD-01.md): Post-Approval Lifecycle Determination (2026-09-01). CGP-02 Complete. Constitutional effect established 2026-09-01. DQ-06 resolved (no separate adoption required). DQ-07 resolved (no separate application required). 7 D17 matters remain deferred.                                                   |
-| Approval Date              | 2026-08-31                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Lifecycle Determination    | [FLD-01](CGP-02-POST-APPROVAL-LIFECYCLE-FOUNDER-DECISION-FLD-01.md) — 2026-09-01. No separate adoption or application required. Constitutional effect established. CGP-02 Complete.                                                                                                                                                                                                                                                                                 |
-| Current Objective          | Engine Alignment Assessment Founder accepted (Disposition B: ENGINE BASELINE PARTIAL — BOUNDED ENGINE GAPS MUST CLOSE FIRST, at canonical main `c015dbe`). One bounded Engine Baseline Closure authorized (EBC-01→EBC-05) before standalone PKG-1 and broad participant experience. Approved doctrine, hybrid allocation, and ACT-03/ACT-04/MOT-01/Rewards deferrals preserved. |                                                                                                                                                                                                                                                                                                                                             |
-| S4 Implementation Status   | **S4a, S4b, and S4c — COMPLETE / FOUNDER ACCEPTED / MERGED.** S4c (Discovery + Join + Invitations; TIIZI-S4C-FOUNDER-ACCEPTANCE-MERGE-AND-CLOSURE-001): PR #52; accepted source `dac6abb8bf5e6ffd423936799f6b89918ccdbbc0`; normal merge commit `51b269825e0252717ab7f867c45ce8ec4900db96`; source verified as an ancestor of `origin/main`. Repository CI passed (API typecheck/test/build, API image/liveness, Functions build/typecheck, web typecheck/build). External Cloudflare Workers Builds failed, consistent with its established non-gating disposition on PRs #48 and #49. S4d is **COMPLETE / FOUNDER ACCEPTED / MERGED** (PR #54; merge `2bca4f11a7b5c3c07daf91e692124bd74da381b4`). S6 content and importer are accepted and merged (PRs #56 and #57), and persistent development catalogue population is complete (Master Programme v2.15). The catalogue has 118 coded Activities; 116 remain Draft and the two existing Published exemplars are unchanged. Production remains untouched. S6 Activity Library / Activity Guide experience assembly remains outstanding and S6 is not complete. No deployment. |
-| Next Action                | PF-01 Canonical V2 Activity Product Contract COMPLETE / MERGED; PF-01-CORR-001 CLOSED (normal V2 Challenge-establishment runtime wired to immutable UUID / Activity Code identity; approved source `979f7a4` ancestor of main via merge `3937d21`). Migrations 013 and 014 merged / code-authorized / NOT deployed. EBC-05 REMAINS UNMERGED: branch `impl/ebc-05-engine-founder-preview-001` (head `d008baa`) is reference-only and must NOT be merged wholesale as the V2 product direction. PF-01 is complete. Activity Content & Catalogue Definition COMPLETE / Founder-defined; CLU-01 COMPLETE / reconciled (v1.57). PF-02 COMPLETE / MERGED; PF-02-CORR-001 CLOSED (merge `c128b13` of approved head `bfadef7`; migrations 015–016 merged / code-authorized / NOT deployed). PF-03 COMPLETE / MERGED; PF-03-CORR-001 CLOSED (merge `76d66f5` of approved head `cd77985`; migration 017 merged / code-authorized / NOT deployed). PF-04 COMPLETE / MERGED (merge `1fc0c10` of approved head `7c50fa8`; no migration — domain-only package). TIIZI-EA-01 — Experience Reference Adoption & Product-Truth Reconciliation COMPLETE / FOUNDER APPROVED FOR MERGE (EA-01-CORR-001, 2026-09-16): Founder disposition ADOPT of the Tiizi Experience Reference (`Fkenogo/tiizi-prototye` @ `cfa696fb`); Product Truth determines behaviour, the adopted Experience Reference determines human-facing assembly; V1 product experience FROZEN / reference-only and CANNOT host V2; V2 receives a completely new shell from the adopted Experience Reference; V1 physical retirement/deletion timing is an implementation sequencing matter only and creates no compatibility obligation. PF-05 — V2 Challenge Creation Wizard is IMPLEMENTED on unmerged branch `impl/pf-05-v2-challenge-creation-wizard-001` (head `59adcf2`); its domain/technical integration is RETAINED and its EXPERIENCE ASSEMBLY is NOT APPROVED; PF-05 is NOT MERGED. Next: S1 — V2 Experience Foundation COMPLETE / FOUNDER ACCEPTED / MERGED (merge `d5183c8` of approved head `dbb1ba7`; traceability `docs/experience/TIIZI-S1-V2-EXPERIENCE-FOUNDATION.md`) — the new V2 composition root — after which the vertical assembly slice S2 — GROUP CONTEXT & CHALLENGE CREATION is COMPLETE / FOUNDER ACCEPTED / MERGED (TIIZI-S2-CLOSE-001; Master Programme 1.77; S2a — Challenge Creation API Seam COMPLETE / TECHNICALLY ACCEPTED / MERGED — PR #28, merge `303d049` of approved head `1cd339c`; S2-G — GROUP ESTABLISHMENT PREREQUISITE COMPLETE / FOUNDER ACCEPTED / MERGED (TIIZI-S2G-ACCEPT-MERGE-001; approved head `8767d82`; `/v2/groups` + `/v2/groups/new` over the existing governed `POST /v1/groups` authority; reuses `GET /v1/memberships/me`; merged to main in Master Programme 1.73 via PR #29, merge `e6686c8`) and S2b — COMPLETE / FOUNDER ACCEPTED / MERGED (TIIZI-S2B-FOUNDER-ACCEPT-001; accepted head `7e044da`; merged to main via PR #30, merge `5d4ac3b`; post-acceptance corrections merged: PR #31 date-read correction, merge `2638ceb`; PR #32 CI web baseline correction, merge `dcc8690`; main CI green)) is covered by the S2-ORDER-CORR-001 sequencing correction (minimum real Group establishment precedes S2b Founder acceptance); next action TIIZI-S3-CHARTER-001 — Challenge Experience Charter (S3 CHARTER APPROVED / IMPLEMENTATION AUTHORISED v1.79; S3a COMPLETE / FOUNDER ACCEPTED / MERGED (TIIZI-S3A-FOUNDER-ACCEPT-MERGE-001; merged via PR #35, normal merge commit `3b7dcee` of accepted head `a732f72`; S3 IMPLEMENTATION IN PROGRESS; v1.81; RECON-001 COMPLETE — disposition A, S3b MAY PROCEED UNCHANGED; TIIZI-S3B-ACTIVITY-APPLICATION-001 (S3b — Activity Logging / Application) COMPLETE / FOUNDER ACCEPTED / MERGED (v1.88))); then Challenge Experience implementation (S3b → S3c → S3d per FD-S3-001, each to a Founder-preview boundary; S3a COMPLETE / FOUNDER ACCEPTED / MERGED; S3b COMPLETE / FOUNDER ACCEPTED as TIIZI-S3B-ACTIVITY-APPLICATION-001; S3c IMPLEMENTED CANDIDATE / CORRECTED / TECHNICALLY REVALIDATED / FOUNDER PREVIEW FUNCTIONALLY PASSED / EXPERIENCE ALIGNMENT CORRECTED / COMPLETE / FOUNDER ACCEPTED / MERGED as TIIZI-S3C-FOUNDER-ACCEPT-MERGE-001; S3d COMPLETE / FOUNDER ACCEPTED / MERGED as TIIZI-S3D-MERGE-AND-CLOSURE-001 — PR #42 merge `3983364` + bounded mobile-navigation correction PR #43 merge `6f6375b`), Groups (S4, the full Groups Experience), Today (S5), Activity Guide/Knowledge (S6), Templates (S7, gated on PF-06), Profile/Recognition/Notifications/Support (S8), Operator surfaces (S9) and the Commercial placeholder (S10) follow. PF-06 Challenge Template System & Admin Management remains NOT BEGUN and is gated on Experience Reference integration. Engine Baseline Closure slices EBC-01, EBC-02, EBC-03, EBC-04 and PKG-2A remain COMPLETE / MERGED and are NOT reopened. Broad participant/social experience, catalogue browsing UI, Admin CMS, templates and wizard remain outside PF-01. The Activity Guide route remains a placeholder; the Challenge composer’s governed, eligibility-filtered catalogue read is not a completed Activity Library. Full Activity Guide / Library assembly remains assigned to S6. **S4 ACTIVE: charter accepted + merged (PR #45). S4a — Group Establishment + Group Home COMPLETE / FOUNDER ACCEPTED / MERGED (PR #46; accepted head `701f3aa`; normal merge `11258107d9e42ecbe044d09841c1aa980081f9df`, 2026-09-24). S4b — Members + Stewardship COMPLETE / FOUNDER ACCEPTED / MERGED (PR #48; exact accepted head `485837b`; normal merge commit `712b90c83e0400fae1d3546b53b2370381ac598f`, 2026-09-25; accepted head verified ancestor of main; repo gating CI green: api, api-image, functions, web; external Workers Builds check non-gating; Founder accepted a residual verification limitation — the final repeatable six-width browser/network sweep did NOT complete because preview/browser tooling became unavailable; follow-up TIIZI-PREVIEW-RELIABILITY-001 recorded, not implemented). S4c Discovery + Join + Invitations is an IMPLEMENTED CANDIDATE / AWAITING TECHNICAL REVIEW (TIIZI-S4C-DISCOVERY-JOIN-INVITATIONS-001; unmerged and undeployed); it is not complete or Founder accepted. S4d Group Settings remains queued after S4c. S6 Activity Guide / Knowledge assembly remains outstanding in its existing programme position.** |                                                                                                                                                                                                                                                                                                                                                    |
-| Drafting Authorization     | CGP-02D **COMPLETE / CLOSED**. CGP-03 **COMPLETE** (CGP-03-FAD-01). CGP-04 **COMPLETE** (CGP-04-FAD-01, 2026-09-01). Stage E0 **COMPLETE**. No successor work package authorized.                                                                                                                                                                                                                                                                                   |
-| Next Phase After CGP-02    | CGP-03 — **COMPLETE** (CGP-03-FAD-01, 2026-09-01). Next: CGP-04 — **COMPLETE** (CGP-04-FAD-01, 2026-09-01). Stage E0 **COMPLETE**.                                                                                                                                                                                                                                                                                                                                  |
-| CGP-04 Dependency Status   | **COMPLETE** (CGP-04-FAD-01, 2026-09-01). CGP-02 and CGP-03 dependencies satisfied. Founder Approved, constitutionally effective, complete.                                                                                                                                                                                                                                                                                                                         |
-
-### Completion Evidence Required
-
-- [x] Discovery complete
-- [x] Full constitutional draft complete — all bounded substantive Blueprint subjects through CGP-02C.12 are complete; CGP-02C.13 whole-instrument consolidation complete as a bounded work package (2026-08-22); D17–D20 complete; all 9 completion gates satisfied; closure evidence issued
-- [x] Founder Review of the complete CGP-02 standard — D-02 complete 2026-08-29 (WRQ-01–WRQ-10, 10/10 Accepted); does not itself approve, adopt or give constitutional effect
-- [x] Validation — D-06 Whole-Standard Validation Report Complete — PASS (2026-08-30)
-- [x] Traceability — D-04 Whole-Standard Proposition Traceability Report Complete — PASS (2026-08-29; 302/302, 0 exceptions)
-- [x] Approval — FAD-01 Founder Approval Decision Record, Option A — Approve (2026-08-31); CGP-02 whole standard Founder Approved. Adoption not established; application not established; constitutional effect none
-- [x] CGP-02D Completion Evidence — D-08 Completion & Stage E0 Transition Report Complete (2026-09-01); CGP-02D COMPLETE; all 11 completion criteria satisfied
-- [x] Post-Approval Lifecycle Determination — FLD-01 (2026-09-01): DQ-06 resolved (no separate adoption required); DQ-07 resolved (no separate application required); constitutional effect established; CGP-02 COMPLETE
-- [~] Adoption Record — NOT REQUIRED — DQ-06 resolved by FLD-01 (no separate adoption act required for CGP-02)
-- [x] Programme synchronized through CGP-02C.2 completion
-- [x] Dashboard synchronized through CGP-02C.2 completion
-- [x] CGP-02C.3 planning complete and Founder Planning Decision Record issued
-- [x] Programme synchronized for authorized Approval Governance drafting
-- [x] CGP-02C.3 Founder Planning Decisions completed
-- [x] CGP-02C.3 Founder Review completed
-- [x] CGP-02C.3 Founder Decisions completed
-- [x] CGP-02C.3 Founder Approval Candidate completed
-- [x] CGP-02C.3 Completion Package completed
-- [x] Programme synchronized through CGP-02C.3 completion
-- [x] Dashboard synchronized through CGP-02C.3 completion
-- [x] CGP-02C.4 planning and dependency verification completed
-- [x] CGP-02C.4 Founder Authorization Record issued
-- [x] CGP-02C.4 authorization validation completed
-- [x] Programme synchronized for authorized CGP-02C.4 drafting
-- [x] Dashboard synchronized for authorized CGP-02C.4 drafting
-- [x] CGP-02C.4 Founder Review completed
-- [x] CGP-02C.4 Founder decisions recorded
-- [x] CGP-02C.4 Founder Approval Candidate completed
-- [x] CGP-02C.4 Founder approval recorded
-- [x] CGP-02C.4 Founder Approved Constitutional Instrument produced
-- [x] CGP-02C.4 approval validation completed
-- [x] Programme synchronized through CGP-02C.4 approval closure
-- [x] Dashboard synchronized through CGP-02C.4 approval closure
-- [x] CGP-02C.5 planning and dependency verification completed
-- [x] CGP-02C.5 Founder Authorization Record issued
-- [x] CGP-02C.5 authorization validation completed
-- [x] Programme synchronized for authorized CGP-02C.5 drafting
-- [x] Dashboard synchronized for authorized CGP-02C.5 drafting
-- [x] CGP-02C.5 Founder Review Draft completed
-- [x] CGP-02C.5 Founder Constitutional Review Package completed
-- [x] CGP-02C.5 Founder decisions recorded
-- [x] CGP-02C.5 Founder Approval Candidate completed
-- [x] CGP-02C.5 Completion Report and Milestone Validation Report completed
-- [x] Programme synchronized through CGP-02C.5 bounded completion
-- [x] Dashboard synchronized through CGP-02C.5 bounded completion
-- [x] CGP-02C.6 planning and dependency verification completed
-- [x] CGP-02C.6 Founder Work Package Authorization Record issued
-- [x] CGP-02C.6 authorization validation completed
-- [x] Programme synchronized for authorized CGP-02C.6 drafting
-- [x] Dashboard synchronized for authorized CGP-02C.6 drafting
-- [x] CGP-02C.6 Founder Review Draft and four companion deliverables completed
-- [x] CGP-02C.6 technical Founder Review completed
-- [x] CGP-02C.6 Founder Constitutional Review Package completed
-- [x] CGP-02C.6 Founder decisions recorded
-- [x] CGP-02C.6 Founder Approval Candidate completed
-- [x] CGP-02C.6 Completion Report and Milestone Validation Report completed
-- [x] Programme synchronized through CGP-02C.6 bounded completion
-- [x] Dashboard synchronized through CGP-02C.6 bounded completion
-- [x] CGP-02C.7 planning and dependency verification completed
-- [x] CGP-02C.7 Founder Work Package Authorization Record issued
-- [x] CGP-02C.7 authorization validation completed
-- [x] Programme synchronized for authorized CGP-02C.7 drafting
-- [x] Dashboard synchronized for authorized CGP-02C.7 drafting
-- [x] CGP-02C.7 Founder Review Draft and four companion deliverables completed
-- [x] CGP-02C.7 technical Founder Review completed
-- [x] CGP-02C.7 Founder Constitutional Review Package completed
-- [x] CGP-02C.7 Founder decisions recorded
-- [x] CGP-02C.7 Founder Approval Candidate completed
-- [x] CGP-02C.7 Completion Report and Milestone Validation Report completed
-- [x] Programme synchronized through CGP-02C.7 bounded completion
-- [x] Dashboard synchronized through CGP-02C.7 bounded completion
-- [x] PTRA-02 accepted as official Stage E0 programme evidence
-- [x] CGP-02C.8 planning and dependency verification completed
-- [x] CGP-02C.8 Founder Work Package Authorization Record issued
-- [x] CGP-02C.8 authorization validation completed
-- [x] Programme synchronized for authorized CGP-02C.8 drafting
-- [x] Dashboard synchronized for authorized CGP-02C.8 drafting
-- [x] CGP-02C.8 Founder Review Draft and four companion deliverables completed
-- [x] CGP-02C.8 technical Founder Review completed
-- [x] CGP-02C.8 Founder Constitutional Review Package completed
-- [x] CGP-02C.8 Founder decisions recorded
-- [x] CGP-02C.8 Founder Approval Candidate completed
-- [x] CGP-02C.8 Completion Report and Milestone Validation Report completed
-- [x] Programme synchronized through CGP-02C.8 bounded completion
-- [x] Dashboard synchronized through CGP-02C.8 bounded completion
-- [x] PTRA-03 accepted as Stage E0 programme evidence
-- [x] CGP-02C.9 planning and dependency verification completed
-- [x] CGP-02C.9 Founder Work Package Authorization completed
-- [x] CGP-02C.9 Founder Review Draft and four companion deliverables completed
-- [x] CGP-02C.9 technical Founder Review completed
-- [x] CGP-02C.9 Founder Constitutional Review Package completed
-- [x] CGP-02C.9 Founder decisions recorded
-- [x] CGP-02C.9 Founder Approval Candidate completed
-- [x] CGP-02C.9 Completion Report and Milestone Validation Report completed
-- [x] Programme synchronized through CGP-02C.9 bounded completion
-- [x] Dashboard synchronized through CGP-02C.9 bounded completion
-- [x] CGP-02C.10 planning and dependency verification completed
-- [x] CGP-02C.10 Founder Work Package Authorization completed
-- [x] CGP-02C.10 Founder Review Draft and four companion deliverables completed
-- [x] CGP-02C.10 technical Founder Review completed
-- [x] CGP-02C.10 Founder Constitutional Review Package completed
-- [x] CGP-02C.10 Founder decisions recorded
-- [x] CGP-02C.10 Founder Approval Candidate completed
-- [x] CGP-02C.10 Completion Report and Milestone Validation Report completed
-- [x] Programme synchronized through CGP-02C.10 bounded completion
-- [x] Dashboard synchronized through CGP-02C.10 bounded completion
-- [x] CGP-02C.11 planning and dependency verification completed
-- [x] CGP-02C.11 Founder Work Package Authorization completed
-- [x] CGP-02C.11 Founder Review Draft and four companion deliverables completed
-- [x] CGP-02C.11 technical Founder Review completed
-- [x] CGP-02C.11 Founder Constitutional Review Package completed
-- [x] CGP-02C.11 Founder decisions recorded
-- [x] CGP-02C.11 Founder Approval Candidate completed
-- [x] CGP-02C.11 Completion Report and Milestone Validation Report completed
-- [x] Programme synchronized through CGP-02C.11 bounded completion
-- [x] Dashboard synchronized through CGP-02C.11 bounded completion
-- [x] CGP-02C.12 planning and dependency verification completed
-- [x] CGP-02C.12 Founder Work Package Authorization recorded
-- [x] CGP-02C.12 authorization validation completed
-- [x] Programme synchronized for authorized CGP-02C.12 bounded drafting
-- [x] Dashboard synchronized for authorized CGP-02C.12 bounded drafting
-- [x] CGP-02C.12 Founder Review Draft and four companion deliverables completed
-- [x] CGP-02C.12 technical Founder Review completed
-- [x] CGP-02C.12 Founder decisions recorded
-- [x] CGP-02C.12 Founder Approval Candidate and approval-stage verification completed
-- [x] CGP-02C.12 Completion Report, Package Closure Verification and Completion Validation Report completed
-- [x] Blueprint Deliverable 16 completed
-- [x] Programme synchronized through CGP-02C.12 bounded completion
-- [x] Dashboard synchronized through CGP-02C.12 bounded completion
-- [x] CGP-02C.13 planning and planning validation completed
-- [x] CGP-02C.13 protected-source baseline and dependency verification completed
-- [x] CGP-02C.13 Founder Work Package Authorization recorded
-- [x] CGP-02C.13 authorization checklist and final validation completed
-- [x] Programme synchronized for authorized CGP-02C.13 integration
-- [x] Dashboard synchronized for authorized CGP-02C.13 integration
+| Focus | Current |
+| ----- | ------- |
+| Current Stage | Stage G — Governance-to-Code Alignment (**Active**). S6 Activity Library / Activity Guide assembly is in progress against the accepted Knowledge authority. |
+| S6 catalogue state | Persistent local DEVELOPMENT PostgreSQL contains 118 canonical coded Activities: 116 Draft and the two pre-existing Published exemplars. No new Activity was published or assigned Challenge eligibility. See [S6 Development Population Record](working/TIIZI-S6-DEVELOPMENT-CATALOGUE-POPULATION-001.md). |
+| S6 implementation state | First mobile-first Library / Guide slice is an implementation candidate at `/v2/guide`; member browse remains Published-only and canonical V2-only. Founder preview and acceptance are pending. |
+| Immediate action | Founder review of the candidate and truthful two-Published development Library. No publication, eligibility override, production write, deployment, or merge is included in this slice. |
+| Stage H | Not Started; its gate remains Stage G completion. |
 
 ## 5. Programme Timeline
 
@@ -222,7 +64,7 @@ Programme Metrics must be updated with the Programme Dashboard whenever programm
 Stage D
    │
    ▼
-Stage E0  ← CURRENT
+Stage E0
    │
    ▼
 Stage EK
@@ -234,7 +76,7 @@ Stage E1
 Stage F
    │
    ▼
-Stage G
+Stage G  ← CURRENT
    │
    ▼
 Stage H

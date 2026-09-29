@@ -74,7 +74,7 @@ import type { ApiMembership } from '../../api/membershipsApi';
 const QUERY_KEY_OPTIONS = (id: string) => ['v2-create-options', id] as const;
 
 /** The minimum catalogue identity the picker needs to add an Activity. */
-type ApiKnowledgeItemLike = Pick<ApiKnowledgeItem, 'id' | 'name' | 'kind'>;
+type ApiKnowledgeItemLike = Pick<ApiKnowledgeItem, 'id' | 'activityCode' | 'name' | 'kind'>;
 
 function roleLabel(role: string): string {
   const normalised = role.toLowerCase();
@@ -318,6 +318,11 @@ export function V2ChallengeCreationWizard() {
       {currentStep === 'WHAT_ARE_WE_DOING' && (
         <StepActivities
           state={state}
+          preselectedIdentity={(() => {
+            const handoff = location.state as { activityId?: unknown; activityCode?: unknown } | null;
+            return typeof handoff?.activityId === 'string' ? handoff.activityId
+              : typeof handoff?.activityCode === 'string' ? handoff.activityCode : '';
+          })()}
           addingId={addingId}
           addError={addError}
           onToggle={handleAddActivity}
@@ -499,11 +504,13 @@ function StepHosting({
 
 function StepActivities({
   state,
+  preselectedIdentity,
   addingId,
   addError,
   onToggle,
 }: {
   state: WizardState;
+  preselectedIdentity: string;
   addingId: string | null;
   addError: string;
   onToggle: (item: ApiKnowledgeItemLike) => void;
@@ -511,6 +518,7 @@ function StepActivities({
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
   const [kindFilter, setKindFilter] = useState<'all' | 'fitness' | 'wellness'>('all');
+  const preselectionHandled = useRef('');
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search.trim()), 250);
@@ -520,6 +528,15 @@ function StepActivities({
   const catalogue = useComposerCatalogue(kindFilter === 'all' ? undefined : kindFilter, debounced);
   const multi = allowsMultipleActivities(state.challengeType);
   const selectedIds = new Set(state.activities.map((activity) => activity.activity));
+
+  useEffect(() => {
+    if (!preselectedIdentity || preselectionHandled.current === preselectedIdentity || !catalogue.data) return;
+    const item = catalogue.data.find((candidate) =>
+      candidate.id === preselectedIdentity || candidate.activityCode === preselectedIdentity);
+    if (!item) return;
+    preselectionHandled.current = preselectedIdentity;
+    if (!selectedIds.has(item.id)) onToggle(item);
+  }, [catalogue.data, onToggle, preselectedIdentity, state.activities]);
 
   return (
     <div className="space-y-4">
