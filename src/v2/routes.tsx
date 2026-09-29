@@ -6,7 +6,6 @@ import { V2SignInPage } from './auth/V2SignInPage';
 import { V2SignUpPage } from './auth/V2SignUpPage';
 import { V2MemberShell } from './member/MemberShell';
 import {
-  V2GuidePage,
   V2NotificationsPage,
   V2ProfilePage,
   V2TodayPage,
@@ -19,6 +18,7 @@ import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
 import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
 import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
+import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
 import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
 
 /**
@@ -78,7 +78,8 @@ export function V2Routes() {
             <Route path="groups/new" element={<V2CreateGroupScreen />} />
             <Route path="groups/:groupId" element={<V2GroupHomeRoute />} />
             <Route path="groups/:groupId/settings" element={<V2GroupHomeRouteSettings />} />
-            <Route path="guide" element={<V2GuidePage />} />
+            <Route path="guide" element={<V2ActivityLibraryScreen />} />
+            <Route path="guide/:activityId" element={<V2ActivityGuideDetailScreen />} />
             <Route path="profile" element={<V2ProfilePage />} />
             <Route path="notifications" element={<V2NotificationsPage />} />
           </Route>

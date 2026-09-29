@@ -110,9 +110,9 @@ check('member routes wrapped by authenticated scope', routes.includes('V2Authent
 check('member routes wrapped by member shell', routes.includes('<V2MemberShell />'));
 
 // ─── G. Exact authorized V2 member route set ──────────────────────────────
-// The S4d settings route is an authorized addition beneath Group Home.
-// Keep the whole route identity/type set explicit so removal, substitution,
-// duplication, and unrelated route expansion all fail this guard.
+// The S4d settings route and S6 Activity Library/Guide are authorized
+// additions. Keep the route identity/type set explicit so removal,
+// substitution, duplication, and unrelated expansion all fail this guard.
 console.log('G. exact authorized member route set');
 const memberBlock = routes.split('<V2MemberShell />}>')[1]?.split('<Route path="operator"')[0] ?? '';
 const memberPaths = [...memberBlock.matchAll(/<Route path="([^"]+)" element=\{<(V2[A-Za-z]+)/g)].map((m) => `${m[1]}:${m[2]}`);
@@ -125,11 +125,12 @@ const expectedMember = [
   'groups/new:V2CreateGroupScreen',
   'groups/:groupId:V2GroupHomeRoute',
   'groups/:groupId/settings:V2GroupHomeRouteSettings',
-  'guide:V2GuidePage',
+  'guide:V2ActivityLibraryScreen',
+  'guide/:activityId:V2ActivityGuideDetailScreen',
   'profile:V2ProfilePage',
   'notifications:V2NotificationsPage',
 ];
-check('member routes are exactly the approved set including S4d settings',
+check('member routes are exactly the approved set including S4d settings and S6 Guide',
   JSON.stringify(memberPaths) === JSON.stringify(expectedMember), JSON.stringify(memberPaths));
 check('Group Home route wraps the screen in the contextual group scope',
   routes.includes('V2GroupScope groupId={groupId ?? null}'));

@@ -2034,6 +2034,10 @@ export interface KnowledgeListQuery {
   kind?: KnowledgeKind;
   search?: string;
   lifecycle?: KnowledgeLifecycle;
+  /** Member Activity Library: canonical, immutable V2 Activity identities only. */
+  canonicalOnly?: boolean;
+  /** Exact governed category value for the Activity Library. */
+  category?: string;
   /**
    * S2a Composer-selectable candidates: NEW-V2 Challenge catalogue only.
    * Published + immutable V2 Activity Code + current KCS/publication
@@ -2061,6 +2065,15 @@ export async function listPublishedKnowledge(
     params.push(query.kind);
     conditions.push(`kind = $${params.length}`);
   }
+  if (query.canonicalOnly === true) {
+    // PF-01 identity format quarantines legacy/codeless catalogue rows from
+    // the member-facing V2 Activity Library while preserving generic reads.
+    conditions.push(`activity_code ~ '^[A-Z]{3}-[A-Z]{3}-[0-9]{3}$'`);
+  }
+  if (query.category?.trim()) {
+    params.push(query.category.trim().slice(0, 100));
+    conditions.push(`category = $${params.length}`);
+  }
   if (query.composerSelectable === true) {
     // V1 quarantine at the SQL layer: codeless legacy Knowledge never
     // qualifies as a NEW-V2 candidate, whatever its lifecycle.
@@ -2069,12 +2082,14 @@ export async function listPublishedKnowledge(
   const search = (query.search ?? '').trim().slice(0, 100);
   if (search) {
     params.push(`%${search}%`);
-    conditions.push(`(name ILIKE $${params.length} OR description ILIKE $${params.length})`);
+    conditions.push(`(name ILIKE $${params.length} OR description ILIKE $${params.length}
+      OR category ILIKE $${params.length} OR subcategory ILIKE $${params.length}
+      OR tags::text ILIKE $${params.length})`);
   }
   const result = await db.query<KnowledgeRow>(
     `SELECT ${ITEM_COLUMNS} FROM knowledge_items
      WHERE ${conditions.join(' AND ')}
-     ORDER BY name ASC
+     ORDER BY name ASC, activity_code ASC NULLS LAST, knowledge_id ASC
      LIMIT ${MAX_LIST_ROWS}`,
     params,
   );
@@ -2424,8 +2439,10 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     const params = (request.query ?? {}) as Record<string, unknown>;
     const kind = params.kind === 'fitness' || params.kind === 'wellness' ? params.kind : undefined;
     const search = typeof params.search === 'string' ? params.search : undefined;
+    const canonicalOnly = params.canonicalOnly === 'true';
+    const category = typeof params.category === 'string' ? params.category : undefined;
     const composerSelectable = params.composerSelectable === 'true';
-    const items = await listPublishedKnowledge(db, { kind, search, composerSelectable });
+    const items = await listPublishedKnowledge(db, { kind, search, canonicalOnly, category, composerSelectable });
     return { items: await localizeKnowledgeItems(db, items, params.locale ?? undefined) };
   });
 

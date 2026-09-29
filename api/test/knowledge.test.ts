@@ -539,13 +539,60 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
     const search = await app.inject({ method: 'GET', url: '/v1/knowledge?search=alpha', headers });
     expect(search.json().items.map((item: { name: string }) => item.name)).toEqual(['Alpha Press']);
 
+    const codedPublished = (
+      await createAsAdmin(app, {
+        ...fitnessPayload({ name: 'Zeta Press', activityCode: 'FIT-TST-901', category: 'Strength' }),
+        contentClasses: ['U', 'Q', 'T'],
+        measurementGuidance: 'Count full controlled repetitions.',
+        unitSemantics: 'One rep is one complete movement cycle.',
+        setup: 'Start in a stable position.',
+        execution: 'Complete one controlled repetition.',
+        formCues: ['Keep the movement controlled.'],
+        adaptation: 'Use a supported variation if needed.',
+        safetyNotes: ['Use a stable surface.'],
+      })
+    ).json();
+    expect(codedPublished.activityCode).toBe('FIT-TST-901');
+    await app.inject({
+      method: 'PUT',
+      url: `/v1/admin/knowledge/${codedPublished.id}/compatibility`,
+      headers: jsonHeaders('adm'),
+      payload: { primaryMetrics: ['repetitions'], compatibleUnits: ['reps'] },
+    });
+    const codedPublish = await app.inject({ method: 'POST', url: `/v1/admin/knowledge/${codedPublished.id}/publish`, headers: authHeaders('adm') });
+    expect(codedPublish.statusCode).toBe(200);
+    const codedDraft = (
+      await createAsAdmin(app, {
+        ...fitnessPayload({ name: 'Draft Press', activityCode: 'FIT-TST-902', category: 'Strength' }),
+        lifecycle: 'draft',
+      })
+    ).json();
+    const canonical = await app.inject({ method: 'GET', url: '/v1/knowledge?canonicalOnly=true', headers });
+    expect(canonical.json().items.map((item: { activityCode: string }) => item.activityCode)).toEqual(['FIT-TST-901']);
+    const category = await app.inject({ method: 'GET', url: '/v1/knowledge?canonicalOnly=true&category=Strength', headers });
+    expect(category.json().items.map((item: { id: string }) => item.id)).toEqual([codedPublished.id]);
+    const familySearch = await app.inject({ method: 'GET', url: '/v1/knowledge?canonicalOnly=true&search=Strength', headers });
+    expect(familySearch.json().items.map((item: { id: string }) => item.id)).toEqual([codedPublished.id]);
+    const guideDetail = await app.inject({ method: 'GET', url: `/v1/knowledge/${codedPublished.id}`, headers });
+    expect(guideDetail.json()).toMatchObject({
+      activityCode: 'FIT-TST-901', lifecycle: 'published', name: 'Zeta Press', category: 'Strength',
+      subcategory: 'Strength', measurementGuidance: 'Count full controlled repetitions.',
+      setup: 'Start in a stable position.', execution: 'Complete one controlled repetition.',
+    });
+    const composerList = await app.inject({ method: 'GET', url: '/v1/knowledge?composerSelectable=true', headers });
+    expect(composerList.json().items.map((item: { id: string }) => item.id)).toContain(codedPublished.id);
+    const draftById = await app.inject({ method: 'GET', url: `/v1/knowledge/${codedDraft.id}`, headers });
+    const draftByCode = await app.inject({ method: 'GET', url: '/v1/knowledge/code/FIT-TST-902', headers });
+    expect(draftById.json().lifecycle).toBe('draft');
+    expect(draftByCode.json().lifecycle).toBe('draft');
+
     // Admin list sees every lifecycle state.
     const adminAll = await app.inject({
       method: 'GET',
       url: '/v1/admin/knowledge',
       headers: authHeaders('adm'),
     });
-    expect(adminAll.json().items).toHaveLength(3);
+    expect(adminAll.json().items).toHaveLength(5);
     const retiredOnly = await app.inject({
       method: 'GET',
       url: '/v1/admin/knowledge?lifecycle=retired',
