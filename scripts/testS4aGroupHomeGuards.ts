@@ -48,6 +48,7 @@ import {
 } from '../src/v2/groups/groupCovers.js';
 import { stewardBadgeFor } from '../src/v2/groups/groupDraft.js';
 import type { V2GroupDetail } from '../src/api/groupsApi.js';
+import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from '../src/v2/groups/groupFocusAreas.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string): string => readFileSync(join(root, rel), 'utf8');
@@ -99,7 +100,7 @@ check('per-step gating blocks Continue on invalid fields', createScreen.includes
 check('identity step: name + tagline + description', createCode.includes('Step 1 — Identity') && createCode.includes('Tagline (optional)'));
 check('look step: cover picker + location + focus', createCode.includes('Step 2 — Look') && createCode.includes('Group cover (optional)') && createCode.includes('Focus areas (optional)'));
 check('setup step keeps the governed choices', createCode.includes('Step 3 — How the group works'));
-check('culture step: one core norm + honest governance note', createCode.includes('Step 4 — Culture') && createCode.includes('Core norm (optional)') && createCode.includes('Charter'));
+check('community norm step keeps optional custom text clear and defers unapproved presets', createCode.includes('Step 4 — Community norms') && createCode.includes('Community norm (optional)') && createCode.includes('Standard community norm choices need Product Truth review') && createCode.includes('You can skip this for now') && !createCode.includes('Your Group operates under Tiizi Platform governance'));
 check('review step summarizes before submitting', createCode.includes('Step 5 — Review') && createCode.includes('Establish Group'));
 for (const forbidden of [
   'coverImageUrl', 'Select Image', 'Upload', 'URL', 'geoloc', 'latitude', 'longitude',
@@ -109,15 +110,15 @@ for (const forbidden of [
 ]) {
   check(`wizard has no "${forbidden}" control`, !createCode.includes(forbidden), forbidden);
 }
-check('wizard discloses Charter/Council deferral honestly instead of building editors',
-  createCode.includes('Charter') && createCode.includes('later slice'));
+check('wizard does not present a Charter/Council configuration surface',
+  !createCode.includes('Charter editor') && !createCode.includes('Council configuration'));
 /** Member-facing copy only (JSX text): code identifiers are not copy. */
 function jsxText(source: string): string {
   return stripComments(source)
     .replace(/<[^>]*>/g, '|')
     .replace(/\{[^}]*\}/g, '|');
 }
-const createCopy = jsxText(createScreen);
+const createCopy = createScreen.match(/"([^"\\]|\\.)*"/g)?.join(' ') ?? '';
 check('wizard never names raw backend fields in copy',
   !/isPrivate|requireAdminApproval|allowMemberChallenges|focusTags|coverId|memberCount|stewardId|ownerId|firebase|firestore/i.test(createCopy));
 check('draft defaults mirror the governed authority (open + permitted, no cover)',
@@ -148,6 +149,13 @@ check('step gating: identity blocks on name, later steps do not',
 check('step gating: look blocks on location/focus only',
   stepBlockedFor(1, [{ code: 'location_too_long', field: 'location' }]) === true
   && stepBlockedFor(1, [{ code: 'name_required', field: 'name' }]) === false);
+check('focus options reuse governed Activity category labels without synonyms',
+  GROUP_FOCUS_AREAS.length === 12 && GROUP_FOCUS_AREA_LABELS.includes('Mobility & Flexibility')
+  && GROUP_FOCUS_AREA_LABELS.includes('Mind & Emotional Wellbeing')
+  && GROUP_FOCUS_AREA_LABELS.includes('Nutrition & Hydration')
+  && focusAreaMatchesSearch('Mind & Emotional Wellbeing', 'emotional'));
+check('uncontrolled free-text is limited in creation UI to one bounded Other value',
+  createCode.includes('Other focus area (optional)') && createCode.includes('hasCustomTag'));
 
 // ─── B. Review submits once to the canonical ID ───────────────────────────
 console.log('creation → home navigation');
@@ -173,8 +181,11 @@ check('empty-group CTA stays attached to Group context',
 check('configuration lives in the secondary About surface',
   homeCode.includes('About this Group') && homeCode.includes('Group setup'));
 check('no dominant Community Setup section', !homeCode.includes('Community setup'));
-check('About shows purpose, norms, stewardship, governance note',
-  homeCode.includes('Community purpose') && homeCode.includes('Community norms') && homeCode.includes('Tiizi Platform governance'));
+check('About is collapsed on entry and revealed from an accessible hero action',
+  homeCode.includes('About this Group') && homeCode.includes('aria-expanded={aboutOpen}')
+  && homeCode.includes('{aboutOpen && <section id="group-about-details"'));
+check('About shows purpose, norms, stewardship and governed setup without platform-governance configuration copy',
+  homeCode.includes('Community purpose') && homeCode.includes('Community norms') && !homeCode.includes('This Group operates under Tiizi Platform governance'));
 check('Home classifies through the pure view model', homeScreen.includes('groupHomeViewFor('));
 check('Home has loading/error/not-found/empty states',
   homeScreen.includes('Loading this Group') && homeScreen.includes('We could not load this Group')
@@ -225,20 +236,27 @@ check('outsiders are never offered creation',
 // ─── D. Cards from server truth, strict steward badge ─────────────────────
 console.log('group cards');
 const listScreen = read('src/v2/groups/V2GroupsScreen.tsx');
-check('cards render cover, location pill, tagline, focus, counts, entry',
-  listScreen.includes('coverGradientFor(') && listScreen.includes('Enter →')
-  && listScreen.includes('active Challenge') && listScreen.includes('member'));
-check('Groups list stays one full-width card per row until large desktop (1024px)',
-  /<ul className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">/.test(listScreen)
-  && !/sm:grid-cols-2/.test(listScreen));
+check('compact rows render cover, name, focus, counts and open affordance',
+  listScreen.includes('coverGradientFor(') && listScreen.includes('>Open</span>')
+  && listScreen.includes('activeCount !== undefined') && listScreen.includes('memberCount'));
+check('My Groups and Discover each render one compact row per row at all widths',
+  listScreen.includes('aria-label="Your Groups" className="space-y-2"')
+  && !/md:grid-cols-2|lg:grid-cols-2/.test(listScreen));
+check('My Groups collection progressively expands from six', listScreen.includes('INITIAL_GROUP_COUNT = 6') && listScreen.includes('View more Groups'));
+check('top-level Join with code tab is removed while contextual invite entry remains',
+  !listScreen.includes("['code', 'Join with code']") && read('src/v2/groups/V2GroupDiscoveryPanel.tsx').includes('Have an invite code?')
+  && read('src/v2/groups/V2GroupDiscoveryPanel.tsx').includes('V2GroupInvitePanel'));
 check('Groups list does not introduce horizontal card scrolling',
   !/overflow-x-(auto|scroll)|snap-x|carousel/i.test(stripComments(listScreen)));
 check('cards bind live counts from governed reads (no fabricated zero)',
   listScreen.includes('useV2GroupDetail') && listScreen.includes('useV2GroupChallenges')
-  && listScreen.includes('fabricated zero'));
+  && listScreen.includes('typeof detail.data?.memberCount === \'number\'')
+  && listScreen.includes('activeCount !== undefined'));
 check('steward badge is owner-only (legacy admins read Member)',
   stewardBadgeFor('owner') === 'Accountable Steward' && stewardBadgeFor('admin') === 'Member'
   && stewardBadgeFor('member') === 'Member');
+check('Member list defaults to four, with an explicit View all action', homeCode.includes('roster.data.members.slice(0, 4)') && homeCode.includes('View all members'));
+check('Hosted Challenges are compact single rows and progressively expanded', homeCode.includes('className="space-y-2"') && homeCode.includes('challenges.slice(0, 4)') && homeCode.includes('View more Challenges') && cardCode.includes('compact = false'));
 check('cards use the strict badge', listScreen.includes('stewardBadgeFor('));
 check('no raw identifiers on cards', !/legacyId|ownerId|firebaseUid|inviteCode/.test(stripComments(listScreen)));
 

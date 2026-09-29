@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { ApiError } from '../../api/apiClient';
 import type { V2GroupDetail } from '../../api/groupsApi';
 import {
@@ -176,10 +177,14 @@ function GroupHomeBody({
   onOpenChallenge: (challengeId: string) => void;
   onCreateChallenge: () => void;
 }) {
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [showAllMembers, setShowAllMembers] = useState(false);
+  const [showAllChallenges, setShowAllChallenges] = useState(false);
   const badge = relationshipBadge(detail);
   const settings = settingsRows(detail);
   const canCreate = viewerMayCreateChallenge(detail);
   const challenges = hostedState.data?.challenges ?? [];
+  const visibleChallenges = showAllChallenges ? challenges : challenges.slice(0, 4);
   const coverId = coverFor(detail.coverId, detail.id);
   const tagline = detail.tagline.trim() || detail.description;
   const focusTags = detail.focusTags.slice(0, 4);
@@ -235,7 +240,10 @@ function GroupHomeBody({
               {detail.viewerRelationship === 'steward' ? ' — that’s you.' : ' keeps this Group running.'}
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
+            <button type="button" aria-expanded={aboutOpen} aria-controls="group-about-details" onClick={() => setAboutOpen((value) => !value)} className="min-h-10 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100">
+              {aboutOpen ? 'Hide details' : 'About this Group'}
+            </button>
             {detail.viewerRelationship === 'steward' && (
               <V2Button variant="secondary" onClick={onManageGroup}>Manage Group</V2Button>
             )}
@@ -299,8 +307,8 @@ function GroupHomeBody({
         )}
 
         {hostedState.isSuccess && challenges.length > 0 && (
-          <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {challenges.map((challenge) => (
+          <ul className="space-y-2">
+            {visibleChallenges.map((challenge) => (
               <V2HostedChallengeCard
                 key={challenge.challengeId}
                 challenge={challenge}
@@ -308,10 +316,12 @@ function GroupHomeBody({
                 viewerMemberId={viewerMemberId}
                 viewerIsGroupMember={viewerIsGroupMember}
                 onOpen={onOpenChallenge}
+                compact
               />
             ))}
           </ul>
         )}
+        {hostedState.isSuccess && challenges.length > 4 && <div className="mt-3 flex justify-center"><V2Button variant="secondary" onClick={() => setShowAllChallenges((value) => !value)}>{showAllChallenges ? 'Show fewer Challenges' : `View more Challenges (${challenges.length - 4} more)`}</V2Button></div>}
       </section>}
 
       <section aria-label="Members" className="space-y-2">
@@ -336,7 +346,7 @@ function GroupHomeBody({
         {roster.isError && (detail.viewerRelationship === 'member' || detail.viewerRelationship === 'steward') && <V2ErrorState title="We could not load members" message="The Group is available, but its member list could not be loaded." onRetry={() => void roster.refetch()} />}
         {roster.isSuccess && (
           <ul className="grid grid-cols-1 gap-2">
-            {roster.data.members.map((member) => {
+            {(showAllMembers ? roster.data.members : roster.data.members.slice(0, 4)).map((member) => {
               const isViewer = member.memberId === viewerMemberId;
               const isSteward = member.relationship === 'steward';
               return <li key={member.memberId} className={`flex min-w-0 items-center justify-between gap-3 rounded-xl border px-4 py-3 ${isSteward ? 'border-orange-200 bg-orange-50/60' : 'border-slate-200 bg-white'}`}>
@@ -346,14 +356,13 @@ function GroupHomeBody({
             })}
           </ul>
         )}
+        {roster.isSuccess && roster.data.members.length > 4 && <div className="flex justify-center"><V2Button variant="secondary" onClick={() => setShowAllMembers((value) => !value)}>{showAllMembers ? 'Show fewer members' : `View all members (${roster.data.members.length})`}</V2Button></div>}
       </section>
 
       {/* About: purpose, norms, stewardship, configuration (secondary). */}
-      <section aria-label="About this Group">
+      {aboutOpen && <section id="group-about-details" aria-label="About this Group">
         <V2Card>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            About this Group
-          </p>
+          <h2 className="text-base font-black text-slate-900">About this Group</h2>
           {detail.description && (
             <div className="mt-2">
               <h3 className="text-sm font-black text-slate-900">Community purpose</h3>
@@ -389,8 +398,7 @@ function GroupHomeBody({
             <h3 className="text-sm font-black text-slate-900">Stewardship</h3>
             <p className="mt-0.5 text-xs leading-5 text-slate-500">
               One Accountable Steward keeps this Group running
-              {detail.viewerRelationship === 'steward' ? ' — that’s you.' : '.'} This Group
-              operates under Tiizi Platform governance.
+              {detail.viewerRelationship === 'steward' ? ' — that’s you.' : '.'}
             </p>
           </div>
           {settings.length > 0 && (
@@ -412,7 +420,7 @@ function GroupHomeBody({
             </div>
           )}
         </V2Card>
-      </section>
+      </section>}
     </div>
   );
 }
