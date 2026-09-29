@@ -199,9 +199,14 @@ export function formatDayRange(startDate: string, endDate: string): string {
 export interface WizardActivity {
   /** Canonical Knowledge UUID — identity only, never displayed raw. */
   activity: string;
+  /** Immutable Activity Code is carried alongside the UUID across navigation. */
+  activityCode?: string | null;
   /** Display name (resolved from the catalogue; never used as identity). */
   name: string;
   kind: 'fitness' | 'wellness';
+  category?: string;
+  subcategory?: string;
+  imageUrl?: string | null;
   observedVersion: number;
   options: ActivityOptionsResponse;
   metric: string;
@@ -224,6 +229,47 @@ export interface WizardState {
   durationDays: number;
   timezone: string;
   creatorJoins: boolean;
+}
+
+export interface ChallengeWizardRouteState {
+  challengeDraft?: WizardState;
+  challengeStepIndex?: number;
+  activityId?: string;
+  activityCode?: string;
+  addToDraft?: boolean;
+  fromChallengeDraft?: boolean;
+  [key: string]: unknown;
+}
+
+/** Router history state keeps the in-progress draft available when the wizard unmounts for Guide detail. */
+export function createChallengeWizardRouteState(
+  state: WizardState,
+  stepIndex: number,
+  extras: Omit<ChallengeWizardRouteState, 'challengeDraft' | 'challengeStepIndex'> = {},
+): ChallengeWizardRouteState {
+  return { ...extras, challengeDraft: state, challengeStepIndex: stepIndex };
+}
+
+/** Restore only a recognizable local draft snapshot; malformed route state starts a fresh wizard. */
+export function restoreChallengeWizardRouteState(value: unknown): {
+  draft: WizardState | null;
+  stepIndex: number;
+  routeState: ChallengeWizardRouteState;
+} {
+  const routeState = value && typeof value === 'object' ? value as ChallengeWizardRouteState : {};
+  const candidate = routeState.challengeDraft as WizardState | undefined;
+  const draft = candidate
+    && Array.isArray(candidate.activities)
+    && (candidate.challengeType === null || candidate.challengeType === 'collective'
+      || candidate.challengeType === 'competitive' || candidate.challengeType === 'streak')
+    && typeof candidate.startDate === 'string'
+    && typeof candidate.durationDays === 'number'
+    ? candidate
+    : null;
+  const stepIndex = Number.isInteger(routeState.challengeStepIndex)
+    ? Math.max(0, Math.min(VISIBLE_STEPS.length - 1, routeState.challengeStepIndex as number))
+    : 0;
+  return { draft, stepIndex, routeState };
 }
 
 function pad(value: number): string {

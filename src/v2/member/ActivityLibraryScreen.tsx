@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Search } from 'lucide-react';
 import { fetchKnowledgeById, fetchPublishedActivities, type ApiKnowledgeItem } from '../../api/knowledgeApi';
 import { fetchComposerSelectableKnowledge } from '../../api/challengeCreationApi';
+import { createChallengeWizardRouteState, restoreChallengeWizardRouteState } from '../challenges/challengeCreationDraft';
 import { useAuth } from '../../hooks/useAuth';
+import { ActivityThumbnail } from '../components/ActivityThumbnail';
 import {
   V2Button,
   V2Card,
@@ -100,7 +102,7 @@ export function V2ActivityLibraryScreen() {
       ) : null}
 
       {results.data && results.data.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100" aria-label="Activity results">
           {results.data.map((item) => <ActivityCard key={item.id} item={item} />)}
         </div>
       ) : null}
@@ -109,19 +111,24 @@ export function V2ActivityLibraryScreen() {
 }
 
 function ActivityCard({ item }: { item: ApiKnowledgeItem }) {
+  const domain = item.kind === 'wellness' ? 'Wellness' : 'Fitness';
   return (
-    <Link to={`/v2/guide/${encodeURIComponent(item.id)}`} className="block rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary">
-      <V2Card className="h-full transition-shadow hover:shadow-md">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{item.category}{item.subcategory ? ` · ${item.subcategory}` : ''}</p>
-            <h2 className="mt-1 text-base font-black text-slate-900">{item.name}</h2>
-          </div>
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-500">{item.kind === 'wellness' ? 'Wellness' : 'Fitness'}</span>
-        </div>
-        {item.description ? <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{item.description}</p> : null}
-        <span className="mt-4 inline-block text-sm font-bold text-primary">View activity guide →</span>
-      </V2Card>
+    <Link
+      to={`/v2/guide/${encodeURIComponent(item.id)}`}
+      aria-label={`Open ${item.name}, ${domain}, ${item.category}${item.subcategory ? `, ${item.subcategory}` : ''}`}
+      className="group flex min-h-[68px] items-center gap-3 px-3 py-2.5 outline-none transition-colors hover:bg-orange-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:gap-4 sm:px-4"
+    >
+      <ActivityThumbnail imageUrl={item.imageUrl} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-extrabold leading-5 text-slate-900 group-hover:text-primary sm:text-[15px]">{item.name}</span>
+        <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-[11px] font-medium leading-4 text-slate-500 sm:text-xs">
+          <span>{domain}</span>
+          <span aria-hidden="true">·</span>
+          <span>{item.category}</span>
+          {item.subcategory ? <><span aria-hidden="true">·</span><span>{item.subcategory}</span></> : null}
+        </span>
+      </span>
+      <span className="shrink-0 text-lg leading-none text-slate-300 transition-colors group-hover:text-primary" aria-hidden="true">›</span>
     </Link>
   );
 }
@@ -145,6 +152,9 @@ export function V2ActivityGuideDetailScreen() {
   const { user } = useAuth();
   const { activityId = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const challengeContext = restoreChallengeWizardRouteState(location.state);
+  const inChallengeDraft = challengeContext.routeState.fromChallengeDraft === true && !!challengeContext.draft;
   const activity = useQuery({
     queryKey: ['v2-activity-guide-detail', user?.uid, activityId],
     queryFn: () => fetchKnowledgeById(activityId),
@@ -164,6 +174,26 @@ export function V2ActivityGuideDetailScreen() {
   const memberVisible = !!item && item.lifecycle === 'published'
     && !!item.activityCode && ACTIVITY_CODE.test(item.activityCode);
   const composerSelectable = !!item && !!composer.data?.some((candidate) => candidate.id === item.id);
+  const alreadySelected = !!item && !!challengeContext.draft?.activities.some((activity) => activity.activity === item.id);
+
+  function returnToChallenge(addActivity?: ApiKnowledgeItem) {
+    if (!challengeContext.draft) return;
+    navigate('/v2/challenges/new', {
+      replace: true,
+      state: createChallengeWizardRouteState(
+        challengeContext.draft,
+        challengeContext.stepIndex,
+        {
+          fromChallengeDraft: true,
+          ...(addActivity ? {
+            activityId: addActivity.id,
+            activityCode: addActivity.activityCode ?? undefined,
+            addToDraft: true,
+          } : {}),
+        },
+      ),
+    });
+  }
 
   if (activity.isLoading) return <V2Page><V2LoadingState label="Loading activity guide…" /></V2Page>;
   if (activity.isError) {
@@ -177,7 +207,13 @@ export function V2ActivityGuideDetailScreen() {
   const measures = [item.metricUnit, ...(item.primaryMetrics ?? []), ...(item.secondaryMetrics ?? [])].filter(Boolean);
   return (
     <V2Page>
-      <Link to="/v2/guide" className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900"><ArrowLeft size={16} /> All activities</Link>
+      {inChallengeDraft ? (
+        <button type="button" onClick={() => returnToChallenge()} className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <ArrowLeft size={16} /> Back to this Challenge
+        </button>
+      ) : (
+        <Link to="/v2/guide" className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900"><ArrowLeft size={16} /> All activities</Link>
+      )}
       <V2SectionHeader eyebrow={`${item.category}${item.subcategory ? ` · ${item.subcategory}` : ''}`} title={item.name} description={item.description || undefined} />
       <V2Card className="mb-4">
         <GuideSection title="How to do it" show={!!(item.setup || item.execution || protocols.length)}>
@@ -208,10 +244,19 @@ export function V2ActivityGuideDetailScreen() {
         <GuideSection title="Completion meaning" show={!!item.completionMeaning}>{item.completionMeaning}</GuideSection>
         <GuideSection title="Session framing" show={!!item.sessionFraming}>{item.sessionFraming}</GuideSection>
       </V2Card>
-      {composer.isError ? <V2ErrorState title="Challenge availability could not be checked" message="Try again before using this activity in a Challenge." onRetry={() => { void composer.refetch(); }} /> : null}
-      {composerSelectable ? (
-        <V2Button onClick={() => navigate('/v2/challenges/new', { state: { activityId: item.id, activityCode: item.activityCode } })}>Use in Challenge</V2Button>
+      {inChallengeDraft ? alreadySelected ? (
+        <div className="space-y-2">
+          <V2Button disabled>Already selected</V2Button>
+          <V2Button variant="secondary" onClick={() => returnToChallenge()}>Back to this Challenge</V2Button>
+        </div>
       ) : (
+        <V2Button onClick={() => returnToChallenge(item)}>Add to this Challenge</V2Button>
+      ) : null}
+      {!inChallengeDraft && composer.isError ? <V2ErrorState title="Challenge availability could not be checked" message="Try again before using this activity in a Challenge." onRetry={() => { void composer.refetch(); }} /> : null}
+      {!inChallengeDraft && composerSelectable ? (
+        <V2Button onClick={() => navigate('/v2/challenges/new', { state: { activityId: item.id, activityCode: item.activityCode } })}>Use in Challenge</V2Button>
+      ) : null}
+      {!inChallengeDraft && !composerSelectable ? (
         <button
           type="button"
           disabled
@@ -220,7 +265,7 @@ export function V2ActivityGuideDetailScreen() {
         >
           {composer.isLoading ? 'Checking Challenge availability…' : 'Not available for Challenges'}
         </button>
-      )}
+      ) : null}
     </V2Page>
   );
 }

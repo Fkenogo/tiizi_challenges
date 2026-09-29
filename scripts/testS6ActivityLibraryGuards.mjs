@@ -7,6 +7,8 @@ const nav = read('src/v2/member/MemberShell.tsx');
 const wizard = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
 const knowledgeApi = read('src/api/knowledgeApi.ts');
 const api = read('api/src/knowledge.ts');
+const resultComponent = ui.split('function ActivityCard(')[1]?.split('function displayText(')[0] ?? '';
+const thumbnail = read('src/v2/components/ActivityThumbnail.tsx');
 const checks = [
   ['member browse uses the authenticated Knowledge API', ui.includes('fetchPublishedActivities') && knowledgeApi.includes('apiFetch<KnowledgeListResponse>') && knowledgeApi.includes('/v1/knowledge?')],
   ['Library list uses the canonical-only filter', knowledgeApi.includes("canonicalOnly: 'true'") && api.includes('query.canonicalOnly === true')],
@@ -20,6 +22,10 @@ const checks = [
   ['Activity Guide remains in secondary mobile navigation', nav.includes("{ to: '/v2/guide', key: 'guide'") && nav.includes('grid-cols-3')],
   ['Library UI has no direct Firestore or V1 catalogue dependency', !/firestore|features\/(Exercises|Wellness)/i.test(ui)],
   ['loading, error, and empty states are present', ui.includes('V2LoadingState') && ui.includes('V2ErrorState') && ui.includes('V2EmptyState')],
+  ['catalogue uses a compact single-column result list', ui.includes('aria-label="Activity results"') && !/grid-cols-(?:2|3)/.test(ui)],
+  ['catalogue results omit authored guide prose', !resultComponent.includes('item.description') && !resultComponent.includes('View activity guide')],
+  ['compact result shows governed identity context and optional image only', resultComponent.includes('item.kind') && resultComponent.includes('item.category') && resultComponent.includes('item.subcategory') && resultComponent.includes('ActivityThumbnail') && resultComponent.includes('item.id')],
+  ['result image uses the optional Knowledge image reference and a neutral fallback', thumbnail.includes('imageUrl?: string | null') && thumbnail.includes('loading="lazy"') && thumbnail.includes('if (!imageUrl || failed)') && !/firebase.storage|imageUploadService/i.test(thumbnail)],
 ];
 let failed = false;
 for (const [name, passed] of checks) {

@@ -9,6 +9,7 @@ import {
 } from '../../api/challengeCreationApi';
 import { ApiError } from '../../api/apiClient';
 import type { ApiKnowledgeItem } from '../../api/knowledgeApi';
+import { ActivityThumbnail } from '../components/ActivityThumbnail';
 import {
   V2Button,
   V2Card,
@@ -34,6 +35,7 @@ import {
   allowsMultipleActivities,
   assessVisibleStep,
   challengeTypeLabel,
+  createChallengeWizardRouteState,
   createEstablishmentKey,
   createInitialWizardState,
   creationErrorMessage,
@@ -44,6 +46,7 @@ import {
   mapPreviewIssues,
   metricLabel,
   requiredComponentIds,
+  restoreChallengeWizardRouteState,
   shouldActivateOnCreate,
   summarize,
   timezoneLabel,
@@ -74,7 +77,7 @@ import type { ApiMembership } from '../../api/membershipsApi';
 const QUERY_KEY_OPTIONS = (id: string) => ['v2-create-options', id] as const;
 
 /** The minimum catalogue identity the picker needs to add an Activity. */
-type ApiKnowledgeItemLike = Pick<ApiKnowledgeItem, 'id' | 'activityCode' | 'name' | 'kind'>;
+type ApiKnowledgeItemLike = Pick<ApiKnowledgeItem, 'id' | 'activityCode' | 'name' | 'kind' | 'category' | 'subcategory' | 'imageUrl'>;
 
 function roleLabel(role: string): string {
   const normalised = role.toLowerCase();
@@ -107,8 +110,12 @@ function buildWizardActivity(
   const unit = units[0] ?? options.compatibleUnits[0] ?? '';
   return {
     activity: item.id,
+    activityCode: item.activityCode,
     name: item.name,
     kind: item.kind,
+    category: item.category,
+    subcategory: item.subcategory,
+    imageUrl: item.imageUrl,
     observedVersion: options.currentVersion,
     options,
     metric,
@@ -127,8 +134,10 @@ export function V2ChallengeCreationWizard() {
   const memberships = useV2Memberships();
   const establish = useEstablishChallenge();
 
-  const [state, setState] = useState<WizardState>(() => createInitialWizardState());
-  const [stepIndex, setStepIndex] = useState(0);
+  const [state, setState] = useState<WizardState>(() =>
+    restoreChallengeWizardRouteState(location.state).draft ?? createInitialWizardState(),
+  );
+  const [stepIndex, setStepIndex] = useState(() => restoreChallengeWizardRouteState(location.state).stepIndex);
   const [previewState, setPreviewState] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
   const [previewIssues, setPreviewIssues] = useState<MappedPreviewIssue[] | null>(null);
   const [submitError, setSubmitError] = useState('');
@@ -139,6 +148,19 @@ export function V2ChallengeCreationWizard() {
   const preselected = useRef(false);
 
   const currentStep = VISIBLE_STEPS[stepIndex];
+
+  // Keep the current draft on the wizard's history entry. The detail screen
+  // can then be opened as a normal route, and browser Back restores this exact
+  // Step 3 draft without treating inspection as an Activity selection.
+  useEffect(() => {
+    const restored = restoreChallengeWizardRouteState(location.state);
+    if (restored.stepIndex === stepIndex && restored.draft
+      && JSON.stringify(restored.draft) === JSON.stringify(state)) return;
+    navigate(location.pathname, {
+      replace: true,
+      state: createChallengeWizardRouteState(state, stepIndex, restored.routeState),
+    });
+  }, [location.pathname, location.state, navigate, state, stepIndex]);
 
   // Preselect a Group: an explicit Group Home handoff wins when it names a
   // real membership, otherwise a single membership is still a real choice.
@@ -211,14 +233,10 @@ export function V2ChallengeCreationWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, draftJson]);
 
-  async function handleAddActivity(item: ApiKnowledgeItemLike) {
+  async function handleAddActivity(item: ApiKnowledgeItemLike): Promise<WizardState | null> {
     setAddError('');
     const existingIndex = state.activities.findIndex((activity) => activity.activity === item.id);
-    if (existingIndex >= 0 && !allowsMultipleActivities(state.challengeType)) {
-      update({ activities: state.activities.filter((activity) => activity.activity !== item.id) });
-      return;
-    }
-    if (existingIndex >= 0) return;
+    if (existingIndex >= 0) return state;
     setAddingId(item.id);
     try {
       const options = await queryClient.fetchQuery({
@@ -227,14 +245,15 @@ export function V2ChallengeCreationWizard() {
         staleTime: 5 * 60 * 1000,
       });
       const next = buildWizardActivity(item, options, state.challengeType);
-      setState((prev) => {
-        const activities = allowsMultipleActivities(prev.challengeType)
-          ? [...prev.activities.filter((activity) => activity.activity !== item.id), next]
-          : [...prev.activities.filter((activity) => activity.activity !== item.id), next].slice(-1);
-        return { ...prev, activities };
-      });
+      const activities = allowsMultipleActivities(state.challengeType)
+        ? [...state.activities.filter((activity) => activity.activity !== item.id), next]
+        : [...state.activities.filter((activity) => activity.activity !== item.id), next].slice(-1);
+      const updatedDraft = { ...state, activities };
+      setState(updatedDraft);
+      return updatedDraft;
     } catch {
       setAddError('We could not load that Activity. Please choose another.');
+      return null;
     } finally {
       setAddingId(null);
     }
@@ -318,14 +337,21 @@ export function V2ChallengeCreationWizard() {
       {currentStep === 'WHAT_ARE_WE_DOING' && (
         <StepActivities
           state={state}
-          preselectedIdentity={(() => {
-            const handoff = location.state as { activityId?: unknown; activityCode?: unknown } | null;
-            return typeof handoff?.activityId === 'string' ? handoff.activityId
-              : typeof handoff?.activityCode === 'string' ? handoff.activityCode : '';
-          })()}
+          preselectedIdentity={restoreChallengeWizardRouteState(location.state).routeState.activityId
+            ?? restoreChallengeWizardRouteState(location.state).routeState.activityCode
+            ?? ''}
+          addToDraft={restoreChallengeWizardRouteState(location.state).routeState.addToDraft === true}
           addingId={addingId}
           addError={addError}
-          onToggle={handleAddActivity}
+          onAdd={handleAddActivity}
+          onRemove={(activityId) => update({ activities: state.activities.filter((activity) => activity.activity !== activityId) })}
+          onHandoffConsumed={(updatedDraft) => {
+            const { activityId: _activityId, activityCode: _activityCode, addToDraft: _addToDraft, ...extras } = restoreChallengeWizardRouteState(location.state).routeState;
+            navigate(location.pathname, {
+              replace: true,
+              state: createChallengeWizardRouteState(updatedDraft ?? state, stepIndex, extras),
+            });
+          }}
         />
       )}
 
@@ -505,15 +531,21 @@ function StepHosting({
 function StepActivities({
   state,
   preselectedIdentity,
+  addToDraft,
   addingId,
   addError,
-  onToggle,
+  onAdd,
+  onRemove,
+  onHandoffConsumed,
 }: {
   state: WizardState;
   preselectedIdentity: string;
+  addToDraft: boolean;
   addingId: string | null;
   addError: string;
-  onToggle: (item: ApiKnowledgeItemLike) => void;
+  onAdd: (item: ApiKnowledgeItemLike) => Promise<WizardState | null>;
+  onRemove: (activityId: string) => void;
+  onHandoffConsumed: (updatedDraft?: WizardState | null) => void;
 }) {
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -535,8 +567,16 @@ function StepActivities({
       candidate.id === preselectedIdentity || candidate.activityCode === preselectedIdentity);
     if (!item) return;
     preselectionHandled.current = preselectedIdentity;
-    if (!selectedIds.has(item.id)) onToggle(item);
-  }, [catalogue.data, onToggle, preselectedIdentity, state.activities]);
+    if (selectedIds.has(item.id)) {
+      onHandoffConsumed();
+      return;
+    }
+    // Handoffs are generated only by an explicit Activity detail CTA.
+    // Opening a result from this list never supplies a handoff identity.
+    if (addToDraft || preselectedIdentity) {
+      void onAdd(item).then((updatedDraft) => onHandoffConsumed(updatedDraft));
+    }
+  }, [addToDraft, catalogue.data, onAdd, onHandoffConsumed, preselectedIdentity, state.activities]);
 
   return (
     <div className="space-y-4">
@@ -551,6 +591,28 @@ function StepActivities({
           : 'Together and Race work best with a single activity.'}
       </p>
 
+      {state.activities.length > 0 ? (
+        <section aria-label="Selected activities" className="overflow-hidden rounded-2xl border border-orange-200 bg-white">
+          <div className="border-b border-orange-100 bg-orange-50 px-3 py-2">
+            <h2 className="text-sm font-extrabold text-slate-900">Selected activities</h2>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {state.activities.map((activity) => (
+              <li key={activity.activity} className="flex min-h-[60px] items-center gap-3 px-3 py-2.5">
+                <ActivityThumbnail imageUrl={activity.imageUrl} size="selected" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold text-slate-900">{activity.name}</span>
+                  <span className="block truncate text-xs text-slate-500">{activity.kind === 'wellness' ? 'Wellness' : 'Fitness'}{activity.category ? ` · ${activity.category}` : ''}{activity.subcategory ? ` · ${activity.subcategory}` : ''}</span>
+                </span>
+                <button type="button" onClick={() => onRemove(activity.activity)} className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-[200px] flex-1">
           <V2TextInput value={search} onChange={setSearch} placeholder="Search activities…" />
@@ -562,6 +624,7 @@ function StepActivities({
         ))}
       </div>
 
+      {addingId ? <p role="status" className="text-sm font-semibold text-primary">Adding this Activity to your Challenge…</p> : null}
       {addError && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{addError}</p>}
 
       {catalogue.isLoading && <V2LoadingState label="Loading activities…" />}
@@ -579,45 +642,27 @@ function StepActivities({
         />
       )}
       {catalogue.isSuccess && catalogue.data.length > 0 && (
-        <div className="grid max-h-[380px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+        <ul className="max-h-[min(48vh,420px)] divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200 bg-white">
           {catalogue.data.map((item) => {
-            const selected = selectedIds.has(item.id);
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onToggle({ id: item.id, name: item.name, kind: item.kind })}
-                aria-pressed={selected}
-                disabled={addingId === item.id}
-                className={`rounded-2xl border p-3 text-left transition-colors ${
-                  selected ? 'border-primary bg-orange-50' : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+              <li key={item.id}>
+              <Link
+                to={`/v2/guide/${encodeURIComponent(item.id)}`}
+                state={createChallengeWizardRouteState(state, VISIBLE_STEPS.indexOf('WHAT_ARE_WE_DOING'), { fromChallengeDraft: true })}
+                aria-label={`Open ${item.name}, ${item.kind === 'wellness' ? 'Wellness' : 'Fitness'}, ${item.category}${item.subcategory ? `, ${item.subcategory}` : ''}`}
+                className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 outline-none transition-colors hover:bg-orange-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{item.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {item.category}
-                      {item.subcategory ? ` · ${item.subcategory}` : ''}
-                    </p>
-                  </div>
-                  <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${
-                      selected ? 'bg-primary text-white' : 'border border-slate-300 text-transparent'
-                    }`}
-                    aria-hidden
-                  >
-                    ✓
-                  </span>
-                </div>
-                {item.description && (
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{item.description}</p>
-                )}
-                {addingId === item.id && <p className="mt-1 text-xs font-bold text-primary">Loading options…</p>}
-              </button>
+                <ActivityThumbnail imageUrl={item.imageUrl} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold text-slate-900 group-hover:text-primary">{item.name}</span>
+                  <span className="mt-0.5 block truncate text-xs text-slate-500">{item.kind === 'wellness' ? 'Wellness' : 'Fitness'} · {item.category}{item.subcategory ? ` · ${item.subcategory}` : ''}</span>
+                </span>
+                <span className="shrink-0 text-lg text-slate-300 group-hover:text-primary" aria-hidden="true">›</span>
+              </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
