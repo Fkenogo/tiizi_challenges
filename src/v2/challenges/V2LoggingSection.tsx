@@ -93,6 +93,8 @@ export function V2LogActivityForm({
 
   const showAccepted = shouldShowAcceptedResult(accepted);
   const allowNewEntry = isNewEntryAllowed(detail);
+  const showSupportAfterAccepted = detail.status === 'active'
+    && (detail.supportTiiziEnabled === true || detail.socialCause?.approvalStatus === 'approved');
 
   // An authoritative outcome already received stays rendered even when the
   // refetched read no longer permits new logging (e.g. the accepted entry
@@ -207,6 +209,20 @@ export function V2LogActivityForm({
           <p className="mt-1 text-sm leading-6 text-slate-600">
             No duplicate was created.
           </p>
+        )}
+        {showSupportAfterAccepted && !accepted.duplicate && (
+          <section aria-label="Optional support opportunity" className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <h2 className="text-sm font-bold">Optional support</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-700">
+              Your Activity has already been accepted. {detail.supportTiiziEnabled && detail.socialCause?.approvalStatus === 'approved'
+                ? 'This Challenge supports Tiizi and an approved Cause.'
+                : detail.supportTiiziEnabled
+                  ? 'This Challenge supports Tiizi.'
+                  : `This Challenge supports the Cause “${detail.socialCause?.title ?? ''}”.`}
+              {' '}Support is always voluntary and never affects joining, Activity logging, progress, ranking, Streaks, results or recognition.
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">Payment options are not available in this preview yet.</p>
+          </section>
         )}
         {!allowNewEntry && (
           <p className="mt-1 text-sm leading-6 text-slate-600">

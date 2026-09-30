@@ -118,6 +118,9 @@ export function V2CreatedChallengeScreen() {
   // read-only states (it returns null while joined).
   const joined = participationMutableForEndState(endState)
     && participationViewFor(challenge).kind === 'joined';
+  const cause = challenge.socialCause;
+  const showActiveSupport = challenge.status === 'active'
+    && (challenge.supportTiiziEnabled === true || cause?.approvalStatus === 'approved');
 
   async function useAsNewChallenge() {
     setReuseError('');
@@ -200,7 +203,45 @@ export function V2CreatedChallengeScreen() {
         {challenge.socialCause?.approvalStatus === 'pending_approval' && (
           <section role="status" aria-label="Cause approval pending" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
             <h2 className="font-bold">Challenge created — Cause approval pending</h2>
+            <p className="mt-2 font-semibold">{challenge.socialCause.title}</p>
+            <p className="mt-1">{challenge.socialCause.description}</p>
+            <p className="mt-1">Purpose: {challenge.socialCause.purpose}</p>
+            <p className="mt-1">Beneficiary: {challenge.socialCause.beneficiary}</p>
             <p className="mt-1">A Platform Operator must approve this Cause before the Challenge can go live. This Challenge will remain inactive if its scheduled start arrives before approval.</p>
+            <p className="mt-1">Cause support is not available while approval is pending.</p>
+          </section>
+        )}
+
+        {cause?.approvalStatus === 'revision_required' && (
+          <section role="status" aria-label="Cause revision required" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            Cause support is not available while its configuration requires revision.
+          </section>
+        )}
+
+        {cause?.approvalStatus === 'approved' && challenge.status !== 'active' && (
+          <section role="status" aria-label="Cause approved, Challenge not active" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+            Cause support is approved and will be available when this Challenge becomes active.
+          </section>
+        )}
+
+        {showActiveSupport && (
+          <section aria-label="Optional support" className="rounded-xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-black">Optional support</h2>
+            {challenge.supportTiiziEnabled && (
+              <div className="mt-2">
+                <h3 className="text-sm font-bold">Tiizi is supported by this Challenge</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-700">Support Tiizi is voluntary. The platform controls its destination; Challenge creators cannot change it.</p>
+              </div>
+            )}
+            {cause?.approvalStatus === 'approved' && (
+              <div className="mt-3 border-t border-slate-200 pt-3">
+                <h3 className="text-sm font-bold">Support this Cause: {cause.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-700">{cause.description}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">Purpose: {cause.purpose}</p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">Beneficiary: {cause.beneficiary}</p>
+              </div>
+            )}
+            <p className="mt-3 text-xs leading-5 text-slate-600">Support is always voluntary and never affects joining, participation, Activity logging, progress, ranking, Streaks, results or recognition. Payment options are not available in this preview yet.</p>
           </section>
         )}
 

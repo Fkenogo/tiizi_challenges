@@ -310,6 +310,13 @@ check('accepted result survives ended reads (rendered before the hidden gate)',
 check('acceptance renders the server result honestly',
   section.includes('accepted.value') && section.includes('accepted.unit')
     && section.includes('accepted.pointsAwarded') && section.includes('accepted.occurredDay'));
+check('optional support invitation is rendered only after the accepted Activity result',
+  section.includes('showAccepted && accepted') && section.includes('showSupportAfterAccepted && !accepted.duplicate')
+    && section.includes('Optional support')
+    && section.includes('Your Activity has already been accepted')
+    && section.includes('Support is always voluntary'));
+check('post-log support surface does not initiate payment or create financial records',
+  !/paymentUrl|paymentDestination|initiatePayment|createContribution|transactionId|paymentProvider/i.test(section));
 check('duplicate replay renders honestly without a second effect',
   section.includes('accepted.duplicate') && section.includes('No duplicate was created.'));
 check('S3b submission carries no client occurred_day (server derives governing day)',
@@ -341,8 +348,8 @@ check('no streak day-state experience',
   !/currentStreak|bestStreak|dayStates|daysCompleted|completionRate|cumulativeTotal/i.test(section));
 check('no S3d results assembly (no finals/run-again/placement experience)',
   !/finalResult|Run Again|runAgain|placement|position|finalizeChallenge/i.test(section));
-check('no financial/support/media concepts in the logging surface',
-  !/donation|pledge|escrow|M-Pesa|Amount Raised|community-reported|\bcover\b|\bCover\b|\bimage\b|\bImage\b|\bsupport\b|\bSupport\b|\bcause\b|\bCause\b/i.test(section)
+check('logging inputs and payload stay independent of financial contribution concepts',
+  !/donation|pledge|escrow|M-Pesa|Amount Raised|community-reported|\bcover\b|\bCover\b|\bimage\b|\bImage\b/i.test(section)
     && !/donation|support|cause|pledge|escrow/i.test(view)
     && !/donation|support|cause|pledge|escrow/i.test(payloadSrc));
 check('hook invalidates only via the shared contract',

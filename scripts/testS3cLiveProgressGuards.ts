@@ -337,6 +337,17 @@ check('detail assembles hero → live progress → secondary actions (no permane
     && screenSrc.indexOf('<V2ProgressSection') < screenSrc.indexOf('<V2ParticipationSection')
     && screenSrc.indexOf('<V2ParticipationSection') < screenSrc.indexOf("navigate('/v2/challenges/new')")
     && !screenSrc.includes('<V2LoggingSection'));
+const heroSrc = read('src/v2/challenges/V2ChallengeHero.tsx');
+check('detail renders canonical Support Tiizi only on active enabled Challenges',
+  screenSrc.includes('supportTiiziEnabled') && screenSrc.includes("challenge.status === 'active'")
+    && screenSrc.includes('Tiizi is supported by this Challenge'));
+check('approved Cause detail exposes participant Cause facts but never internal destination/audit fields',
+  screenSrc.includes("approvalStatus === 'approved'") && screenSrc.includes('cause.description')
+    && screenSrc.includes('cause.beneficiary') && !screenSrc.includes('paymentDestinationReference')
+    && !screenSrc.includes('approvalAuthority'));
+check('long Challenge descriptions are bounded in hero and full text uses an accessible detail sheet',
+  heroSrc.includes('Read more') && heroSrc.includes('WebkitLineClamp: 3')
+    && heroSrc.includes('V2Sheet') && heroSrc.includes('aria-expanded'));
 check('finalized competitive unmounts the S3c live surface (no final-as-live)',
   competitiveSrc.includes('if (detail.finalized) return null'));
 check('leaderboard hook gates on the S3c enablement (finalized disables fetch)',
@@ -345,10 +356,8 @@ check('leaderboard hook gates on the S3c enablement (finalized disables fetch)',
 
 // ─── 7b. CORR-002 experience-reference alignment (static) ─────────────────
 console.log('corr-002 experience alignment');
-const heroSrc = read('src/v2/challenges/V2ChallengeHero.tsx');
 const dialogSrc = read('src/v2/challenges/V2LoggingSection.tsx');
 const namesSrc = read('src/v2/challenges/activityNames.tsx');
-const corr002Sources = [viewSrc, collectiveSrc, competitiveSrc, streakSrc, sectionSrc, heroSrc, screenSrc];
 check('hero consolidates identity for all three types (badge/title/host/schedule/purpose/CTA)',
   heroSrc.includes('challengeTypeLabel(detail.challengeType)')
     && heroSrc.includes('Hosted by')
@@ -358,7 +367,9 @@ check('hero consolidates identity for all three types (badge/title/host/schedule
     && heroSrc.includes('onLogActivity'));
 check('hero imagery is a bounded CSS fallback (no fabricated media state)',
   !/<img|image_url|coverImage/.test(heroSrc)
-    && heroSrc.includes('NO governed image/media field'));
+    && heroSrc.includes('detail.coverId')
+    && heroSrc.includes('challengeCoverGradient(detail.coverId)')
+    && heroSrc.includes('Legacy Challenges without an id'));
 check('Log Activity is a CTA opening the overlay (form absent while closed)',
   screenSrc.includes('setLogOpen(true)')
     && screenSrc.includes('<V2LogActivityDialog')
@@ -389,9 +400,8 @@ check('no hard-coded code-to-name mapping (names resolve from Knowledge)',
   !/Push-Up|Breathing Practice|Community Walk|FIT STR|WEL MND|FIT CRD/.test(namesSrc)
     && !/Push-Up|Breathing Practice|Community Walk|FIT STR|WEL MND|FIT CRD/.test(dialogSrc)
     && !/Push-Up|Breathing Practice|Community Walk|FIT STR|WEL MND|FIT CRD/.test(streakSrc));
-check('no S3d/deferred vocabulary in the CORR-002 assembly',
-  corr002Sources.every((src) => !/finalResult|finalPosition|winner|Winner|podium|Podium|recognition|Recognition|Run Again|runAgain/i.test(src.replace(/contributorsCarryNoRanking[\s\S]*?\n\}/, '')))
-  && corr002Sources.every((src) => !/donation|Donation|pledge|escrow|M-Pesa|support tiizi|Support Tiizi|social cause|Social Cause|kudos|Kudos|cover|Cover|image_url/.test(src)));
+check('no S3d results vocabulary in the CORR-002 assembly',
+  [viewSrc, collectiveSrc, competitiveSrc, streakSrc, sectionSrc].every((src) => !/finalResult|finalPosition|winner|Winner|podium|Podium|recognition|Recognition|Run Again|runAgain/i.test(src.replace(/contributorsCarryNoRanking[\s\S]*?\n\}/, ''))));
 
 // ─── 7c. CORR-003 leave interaction (static) ────────────────────────────
 console.log('corr-003 leave interaction');

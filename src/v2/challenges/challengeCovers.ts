@@ -1,4 +1,4 @@
-/** Governed Challenge cover catalogue. IDs are persisted; artwork is rendered locally. */
+/** Governed Challenge background catalogue. IDs are persisted; artwork is rendered locally. */
 export const CHALLENGE_COVER_IDS = ['challenge-1', 'challenge-2', 'challenge-3', 'challenge-4', 'challenge-5', 'challenge-6', 'challenge-7', 'challenge-8'] as const;
 export type ChallengeCoverId = (typeof CHALLENGE_COVER_IDS)[number];
 const GRADIENTS: Record<ChallengeCoverId, string> = {
@@ -18,5 +18,5 @@ export function challengeCoverGradient(value: unknown): string {
   return isChallengeCoverId(value) ? GRADIENTS[value] : 'from-slate-800 via-slate-700 to-slate-600';
 }
 export function challengeCoverLabel(value: ChallengeCoverId): string {
-  return `Cover ${Number(value.slice(-1))}`;
+  return `Background ${Number(value.slice(-1))}`;
 }

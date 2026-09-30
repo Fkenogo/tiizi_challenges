@@ -192,3 +192,24 @@ Challenge cover is separately reopened. The existing Group cover catalogue
 provides bounded evidence for a canonical curated-reference implementation.
 Founder has authorized a Challenge-owned curated catalogue and persisted
 reference. Challenge cover proceeds independently of the financial engine.
+
+## 10. Founder Experience Review 001 — Correction 003 surface amendment
+
+The prior S8 placement remains authoritative for transaction execution and
+financial authority allocation, but its blanket deferral of Challenge-linked
+participant presentation is superseded by the Founder direction recorded in
+[Challenge Founder Experience Review 001 — Correction 003](TIIZI-CHALLENGE-FOUNDER-EXPERIENCE-REVIEW-001-CORRECTION-003.md).
+
+The bounded now-authorized Challenge surfaces are: (a) active Challenge detail
+visibility for persisted Support Tiizi configuration and approved Cause facts;
+and (b) an optional informational support prompt only after a non-duplicate
+successful Activity acceptance. Pending/unapproved Causes receive no active
+support surface or execution. Activity acceptance is first and independent;
+the prompt cannot initiate or record payment. SUP-01/SUP-02 remain Pending in
+EOG-05; this disposition does not allocate contribution entities or authorize
+payment-provider selection, amount collection, destination handoff, payment,
+verification, retries, reporting, history, reconciliation, custody, or escrow.
+Those exact execution gaps are sequenced to S8 while Challenge assembly
+context remains active. See Correction 003 §Contribution authority
+reconciliation for the A–L scope map and the bounded Operator/S8 follow-up
+sequence.

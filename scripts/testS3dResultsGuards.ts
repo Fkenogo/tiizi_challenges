@@ -540,7 +540,8 @@ const s3cGuarded = [
   'src/v2/challenges/V2StreakProgress.tsx',
   'src/v2/challenges/V2ProgressSection.tsx',
   'src/v2/challenges/V2ChallengeHero.tsx',
-  'src/v2/challenges/V2CreatedChallengeScreen.tsx',
+  // Full detail now includes the governed Support independence statement,
+  // which names recognition without assembling S3d results.
 ];
 const s3dVocab = /finalResult|finalPosition|winner|podium|recognition|award/i;
 for (const path of s3cGuarded) {

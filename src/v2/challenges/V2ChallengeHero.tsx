@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
+import { V2Sheet } from '../components/V2Primitives';
 import { challengeTypeLabel, formatDayRange, timezoneLabel } from './challengeCreationDraft';
 import { challengeCoverGradient } from './challengeCovers';
 
@@ -11,13 +13,9 @@ import { challengeCoverGradient } from './challengeCovers';
  * type badge, title, host Group, schedule/timezone, purpose statement and
  * the primary Log Activity CTA.
  *
- * Imagery fallback (bounded, documented): the canonical V2 challenge
- * contract (`V2ChallengeDetail`) exposes NO governed image/media field, and
- * programme authority (S3a acceptance) requires an authorised canonical
- * media/reference contract before any challenge artwork UI — no ad-hoc fields, no
- * UI-only persistence. The hero therefore uses a type-tinted CSS treatment
- * (no image element, no fabricated URL, no false domain state). When a governed
- * media contract lands, its field feeds this hero's visual slot.
+ * Challenge background presentation is a governed catalogue id rendered as a
+ * local CSS gradient. Legacy Challenges without an id use a type-tinted
+ * fallback; no external image URL or upload provider is involved.
  */
 
 const HERO_TONE: Record<string, string> = {
@@ -54,7 +52,36 @@ export function V2ChallengeHero({
   showLeave: boolean;
   onLeave: () => void;
 }) {
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [descriptionTruncated, setDescriptionTruncated] = useState(false);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
   const tone = HERO_TONE[detail.challengeType] ?? 'from-slate-800 via-slate-700 to-slate-600';
+
+  useEffect(() => {
+    const paragraph = descriptionRef.current;
+    if (!paragraph || !detail.description) {
+      setDescriptionTruncated(false);
+      return;
+    }
+    const measure = () => {
+      const clampedHeight = paragraph.clientHeight;
+      const lineClamp = paragraph.style.getPropertyValue('-webkit-line-clamp');
+      paragraph.style.setProperty('-webkit-line-clamp', 'unset');
+      const naturalHeight = paragraph.scrollHeight;
+      if (lineClamp) paragraph.style.setProperty('-webkit-line-clamp', lineClamp);
+      else paragraph.style.removeProperty('-webkit-line-clamp');
+      setDescriptionTruncated(naturalHeight > clampedHeight + 1);
+    };
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(paragraph);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [detail.description]);
+
   return (
     <section aria-label="Challenge overview" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className={`relative bg-gradient-to-br px-5 pb-5 pt-4 text-white sm:px-6 ${detail.coverId ? challengeCoverGradient(detail.coverId) : tone}`}>
@@ -85,7 +112,29 @@ export function V2ChallengeHero({
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="min-w-0">
           {detail.description ? (
-            <p className="text-sm italic leading-6 text-slate-700">“{detail.description}”</p>
+            <>
+              <p
+                ref={descriptionRef}
+                className="overflow-hidden text-sm italic leading-6 text-slate-700"
+                style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}
+              >
+                “{detail.description}”
+              </p>
+              {descriptionTruncated && (
+                <button
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-expanded={descriptionOpen}
+                  onClick={() => setDescriptionOpen(true)}
+                  className="mt-1 text-sm font-bold text-primary underline underline-offset-2"
+                >
+                  Read more
+                </button>
+              )}
+              <V2Sheet open={descriptionOpen} onClose={() => setDescriptionOpen(false)} title="Challenge description">
+                <p className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-slate-700">{detail.description}</p>
+              </V2Sheet>
+            </>
           ) : (
             <p className="text-sm leading-6 text-slate-500">
               Take part with your group — log what counts and watch progress move.
