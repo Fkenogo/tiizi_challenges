@@ -10,6 +10,8 @@ export interface ApiMembershipGroup {
   tagline?: string;
   location?: string;
   focusTags?: string[];
+  /** Canonical Goal labels and the Group's optional bounded custom Goal. */
+  goals?: string[];
 }
 
 export interface ApiMembership {

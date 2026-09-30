@@ -271,6 +271,7 @@ const V2_INPUT_CLASS =
   'w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary';
 
 export function V2TextInput({
+  id,
   value,
   onChange,
   placeholder,
@@ -278,6 +279,7 @@ export function V2TextInput({
   maxLength,
   min,
 }: {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -287,6 +289,7 @@ export function V2TextInput({
 }) {
   return (
     <input
+      id={id}
       type={type}
       value={value}
       maxLength={maxLength}

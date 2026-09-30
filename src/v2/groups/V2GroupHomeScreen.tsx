@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../api/apiClient';
 import type { V2GroupDetail } from '../../api/groupsApi';
 import {
@@ -9,6 +9,7 @@ import {
   V2ErrorState,
   V2LoadingState,
   V2Page,
+  V2Sheet,
 } from '../components/V2Primitives';
 import { useV2GroupId } from '../group/V2GroupScope';
 import { coverFor, coverGradientFor } from './groupCovers';
@@ -178,6 +179,7 @@ function GroupHomeBody({
   onCreateChallenge: () => void;
 }) {
   const [aboutOpen, setAboutOpen] = useState(false);
+  const aboutTriggerRef = useRef<HTMLButtonElement>(null);
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [showAllChallenges, setShowAllChallenges] = useState(false);
   const badge = relationshipBadge(detail);
@@ -189,6 +191,71 @@ function GroupHomeBody({
   const tagline = detail.tagline.trim() || detail.description;
   const focusTags = detail.focusTags;
   const norms = [...new Set([...(detail.communityNorms ?? []), ...(detail.rules ?? [])])];
+
+  const aboutHistoryState = () => {
+    const state = window.history.state;
+    return Boolean(state && typeof state === 'object' && (state as Record<string, unknown>).tiiziAboutGroup === detail.id);
+  };
+  const closeAbout = () => {
+    if (aboutHistoryState()) {
+      window.history.back();
+      return;
+    }
+    setAboutOpen(false);
+    window.requestAnimationFrame(() => aboutTriggerRef.current?.focus());
+  };
+  const openAbout = () => {
+    const current = window.history.state;
+    const state = current && typeof current === 'object' ? current as Record<string, unknown> : {};
+    window.history.pushState({ ...state, tiiziAboutGroup: detail.id }, '');
+    setAboutOpen(true);
+  };
+
+  useEffect(() => {
+    if (!aboutOpen) return;
+    const dialogSelector = '[role="dialog"][aria-label="About this Group"]';
+    window.requestAnimationFrame(() => {
+      const dialog = document.querySelector<HTMLElement>(dialogSelector);
+      const buttons = dialog?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+      // The shared sheet's first button is its backdrop dismiss control;
+      // move initial focus to the visible Close button in the sheet header.
+      (buttons?.[1] ?? buttons?.[0])?.focus();
+    });
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeAbout();
+        return;
+      }
+      if (event.key === 'Tab') {
+        const dialog = document.querySelector<HTMLElement>(dialogSelector);
+        const buttons = dialog?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+        const first = buttons?.[0];
+        const last = buttons?.[buttons.length - 1];
+        if (first && last && event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (first && last && !event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    const onPopState = () => {
+      if (aboutHistoryState()) {
+        setAboutOpen(true);
+      } else {
+        setAboutOpen(false);
+        window.requestAnimationFrame(() => aboutTriggerRef.current?.focus());
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, [aboutOpen, detail.id]);
   const memberships = useV2Groups();
   const viewerMemberId = memberships.data?.memberId ?? null;
   const roster = useV2GroupRoster(detail.id);
@@ -241,8 +308,8 @@ function GroupHomeBody({
             </span>
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-            <button type="button" aria-expanded={aboutOpen} aria-controls="group-about-details" onClick={() => setAboutOpen((value) => !value)} className="min-h-10 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100">
-              {aboutOpen ? 'Hide details' : 'About this Group'}
+            <button ref={aboutTriggerRef} type="button" aria-haspopup="dialog" aria-expanded={aboutOpen} onClick={openAbout} className="min-h-10 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100">
+              About this Group
             </button>
             {detail.viewerRelationship === 'steward' && (
               <V2Button variant="secondary" onClick={onManageGroup}>Manage Group</V2Button>
@@ -359,19 +426,18 @@ function GroupHomeBody({
         {roster.isSuccess && roster.data.members.length > 4 && <div className="flex justify-center"><V2Button variant="secondary" onClick={() => setShowAllMembers((value) => !value)}>{showAllMembers ? 'Show fewer members' : `View all members (${roster.data.members.length})`}</V2Button></div>}
       </section>
 
-      {/* About: purpose, norms, stewardship, configuration (secondary). */}
-      {aboutOpen && <section id="group-about-details" aria-label="About this Group">
-        <V2Card>
-          <h2 className="text-base font-black text-slate-900">About this Group</h2>
+      <V2Sheet open={aboutOpen} onClose={closeAbout} title="About this Group">
+        <div className="max-h-[72dvh] space-y-3 overflow-y-auto pr-1">
+          {detail.tagline && <p className="text-sm font-semibold text-slate-700">{detail.tagline}</p>}
           {detail.description && (
-            <div className="mt-2">
+            <div>
               <h3 className="text-sm font-black text-slate-900">Community purpose</h3>
               <p className="mt-0.5 text-sm leading-6 text-slate-600">{detail.description}</p>
             </div>
           )}
           {focusTags.length > 0 && (
-            <div className="mt-3">
-              <h3 className="text-sm font-black text-slate-900">Focus</h3>
+            <div>
+              <h3 className="text-sm font-black text-slate-900">Focus Areas</h3>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {focusTags.map((tag) => (
                   <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
@@ -381,9 +447,9 @@ function GroupHomeBody({
               </div>
             </div>
           )}
-          {detail.goals.length > 0 && <div className="mt-3"><h3 className="text-sm font-black text-slate-900">Group goals</h3><div className="mt-1.5 flex flex-wrap gap-1.5">{detail.goals.map(goal => <span key={goal} className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">{goal}</span>)}</div></div>}
+          {detail.goals.length > 0 && <div><h3 className="text-sm font-black text-slate-900">Group Goals</h3><div className="mt-1.5 flex flex-wrap gap-1.5">{detail.goals.map(goal => <span key={goal} className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">{goal}</span>)}</div></div>}
           {norms.length > 0 && (
-            <div className="mt-3 border-t border-slate-100 pt-3">
+            <div className="border-t border-slate-100 pt-3">
               <h3 className="text-sm font-black text-slate-900">Community norms</h3>
               <ul className="mt-1.5 space-y-1.5">
                 {norms.map((rule, index) => (
@@ -395,7 +461,7 @@ function GroupHomeBody({
               </ul>
             </div>
           )}
-          <div className="mt-3 border-t border-slate-100 pt-3">
+          <div className="border-t border-slate-100 pt-3">
             <h3 className="text-sm font-black text-slate-900">Stewardship</h3>
             <p className="mt-0.5 text-xs leading-5 text-slate-500">
               One Accountable Steward keeps this Group running
@@ -403,7 +469,7 @@ function GroupHomeBody({
             </p>
           </div>
           {settings.length > 0 && (
-            <div className="mt-3 border-t border-slate-100 pt-3">
+            <div className="border-t border-slate-100 pt-3">
               <h3 className="text-sm font-black text-slate-900">Group setup</h3>
               <dl className="mt-2 space-y-2.5">
                 {settings.map((row) => (
@@ -420,8 +486,8 @@ function GroupHomeBody({
               </dl>
             </div>
           )}
-        </V2Card>
-      </section>}
+        </div>
+      </V2Sheet>
     </div>
   );
 }

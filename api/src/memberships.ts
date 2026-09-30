@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
+import { GROUP_GOALS, labelsForIds } from './groupVocabulary.js';
 
 export interface ApiMembershipGroup {
   id: string;
@@ -12,6 +13,7 @@ export interface ApiMembershipGroup {
   tagline: string;
   location: string;
   focusTags: string[];
+  goals: string[];
 }
 
 export interface ApiMembership {
@@ -46,6 +48,8 @@ interface MembershipRow {
   group_tagline: string | null;
   group_location: string | null;
   group_focus_tags: unknown;
+  group_goal_ids: unknown;
+  group_custom_goal: string | null;
 }
 
 function toStringArray(value: unknown): string[] {
@@ -58,7 +62,8 @@ export async function listMembershipsForMember(db: Db, memberId: string): Promis
             g.name AS group_name, g.description AS group_description,
             g.is_private AS group_is_private,
             g.cover_id AS group_cover_id, g.tagline AS group_tagline,
-            g.location AS group_location, g.focus_tags AS group_focus_tags
+            g.location AS group_location, g.focus_tags AS group_focus_tags,
+            g.goal_ids AS group_goal_ids, g.custom_goal AS group_custom_goal
      FROM group_memberships m
      JOIN groups g ON g.group_id = m.group_id
      WHERE m.member_id = $1
@@ -80,6 +85,7 @@ export async function listMembershipsForMember(db: Db, memberId: string): Promis
       tagline: typeof row.group_tagline === 'string' ? row.group_tagline : '',
       location: typeof row.group_location === 'string' ? row.group_location : '',
       focusTags: toStringArray(row.group_focus_tags),
+      goals: [...labelsForIds(row.group_goal_ids, GROUP_GOALS), ...(typeof row.group_custom_goal === 'string' && row.group_custom_goal ? [row.group_custom_goal] : [])],
     },
   }));
 }
@@ -90,11 +96,13 @@ export async function listPendingMembershipsForMember(db: Db, memberId: string):
     group_name: string; group_description: string; group_is_private: boolean;
     group_cover_id: string | null; group_tagline: string | null;
     group_location: string | null; group_focus_tags: unknown;
+    group_goal_ids: unknown; group_custom_goal: string | null;
   }>(
     `SELECT gm.group_id, gm.requested_at, gm.created_at,
        g.name AS group_name, g.description AS group_description, g.is_private AS group_is_private,
        g.cover_id AS group_cover_id, g.tagline AS group_tagline,
-       g.location AS group_location, g.focus_tags AS group_focus_tags
+       g.location AS group_location, g.focus_tags AS group_focus_tags,
+       g.goal_ids AS group_goal_ids, g.custom_goal AS group_custom_goal
      FROM group_memberships gm JOIN groups g ON g.group_id=gm.group_id
      WHERE gm.member_id=$1 AND gm.status='pending' AND g.status='active'
      ORDER BY COALESCE(gm.requested_at,gm.created_at) DESC, g.group_id ASC`, [memberId],
@@ -109,6 +117,7 @@ export async function listPendingMembershipsForMember(db: Db, memberId: string):
       tagline: typeof row.group_tagline === 'string' ? row.group_tagline : '',
       location: typeof row.group_location === 'string' ? row.group_location : '',
       focusTags: toStringArray(row.group_focus_tags),
+      goals: [...labelsForIds(row.group_goal_ids, GROUP_GOALS), ...(typeof row.group_custom_goal === 'string' && row.group_custom_goal ? [row.group_custom_goal] : [])],
     },
   }));
 }
@@ -127,7 +136,7 @@ export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
       pendingMemberships: { type: 'array', items: { type: 'object', required: ['groupId', 'requestedAt', 'group'], properties: {
         groupId: { type: 'string', format: 'uuid' }, requestedAt: { type: 'string' }, group: { type: 'object', required: ['id', 'name', 'description', 'isPrivate'], properties: {
           id: { type: 'string', format: 'uuid' }, name: { type: 'string' }, description: { type: 'string' }, isPrivate: { type: 'boolean' },
-          coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] }, tagline: { type: 'string' }, location: { type: 'string' }, focusTags: { type: 'array', items: { type: 'string' } },
+          coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] }, tagline: { type: 'string' }, location: { type: 'string' }, focusTags: { type: 'array', items: { type: 'string' } }, goals: { type: 'array', items: { type: 'string' } },
         } },
       } } },
               memberships: {
@@ -152,6 +161,7 @@ export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
                         tagline: { type: 'string' },
                         location: { type: 'string' },
                         focusTags: { type: 'array', items: { type: 'string' } },
+                        goals: { type: 'array', items: { type: 'string' } },
                       },
                     },
                   },

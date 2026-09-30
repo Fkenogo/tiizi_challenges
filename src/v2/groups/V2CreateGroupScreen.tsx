@@ -43,7 +43,7 @@ import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } fr
  *    focus chips (optional). Presentation only; location never drives
  *    access, filtering, or discovery; chips never confer authority.
  * 3. How the Group works — governed Group setup in human language.
- * 4. How we work — approved Community Norm presets plus one optional custom
+ * 4. Our culture — approved Community Norm presets plus one optional custom
  *    expectation. These are descriptive and are not enforcement authority.
  * 5. Review & Create — clean summary, one submission.
  *
@@ -55,7 +55,7 @@ const STEPS = [
   { id: 'identity', label: 'Identity' },
   { id: 'look', label: 'Look & focus' },
   { id: 'setup', label: 'How the Group works' },
-  { id: 'culture', label: 'How we work' },
+  { id: 'culture', label: 'Our culture' },
   { id: 'review', label: 'Review' },
 ] as const;
 
@@ -374,7 +374,7 @@ export function V2CreateGroupScreen() {
       {step === 3 && (
         <V2Card className="space-y-4">
           <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            Step 4 — How we work
+            Step 4 — Our culture
           </p>
           <fieldset>
             <legend className="text-sm font-black text-slate-900">Community norms (optional)</legend>
@@ -436,7 +436,7 @@ export function V2CreateGroupScreen() {
             </div>
             {(draft.communityNormIds.length > 0 || draft.customCommunityNorm.trim()) && (
               <div className="flex justify-between gap-3">
-                <dt className="font-bold text-slate-500">How we work</dt>
+                <dt className="font-bold text-slate-500">Community norms</dt>
                 <dd className="text-right text-slate-800">{[...(options?.communityNorms ?? []).filter(norm => draft.communityNormIds.includes(norm.id)).map(norm => norm.label), ...(draft.customCommunityNorm.trim() ? [draft.customCommunityNorm.trim()] : [])].join(' · ')}</dd>
               </div>
             )}

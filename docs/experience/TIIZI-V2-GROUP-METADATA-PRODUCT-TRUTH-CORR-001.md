@@ -113,7 +113,7 @@ No Challenge, Activity, lifecycle, or S6 authority changes are made.
 Founder approved the exact Goal and Norm labels and contracts above in Pass 3.
 Focus Areas remain the EKG-01 §5 labels. Group creation uses five steps:
 Identity; Look & Focus (including Focus Areas and Goals); How the Group works;
-How we work (Community Norms); Review. The three metadata concepts remain
+Our culture (Community Norms); Review. The three metadata concepts remain
 distinct: Focus Area is what a Group is interested in, Goal is an outcome it
 wants to achieve, and Activity is what participants do.
 

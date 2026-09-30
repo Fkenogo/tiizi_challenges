@@ -423,16 +423,25 @@ async function run() {
   // Phase 18I-6C: Gap-closure guards
   // ============================================================
 
-  // --- Test 16: (static) Firestore challenges create rule has isActiveGroup ---
-  console.log('\n--- Test 16: static guard — challenges create rule blocks inactive group ---');
-  // The challenges block must contain isActiveGroup next to the isGroupMember check.
+  // --- Test 16: Challenge creation remains protected at its current authorities ---
+  console.log('\n--- Test 16: static guard — Challenge creation is governed by API Group authority ---');
   const challengesCreateBlock = rulesSrc.slice(
     rulesSrc.indexOf('match /challenges/'),
     rulesSrc.indexOf('match /challengeMembers/'),
   );
   assert(
-    challengesCreateBlock.includes('isActiveGroup(request.resource.data.groupId)'),
-    'challenges allow create includes isActiveGroup gate',
+    challengesCreateBlock.includes('allow create: if isAuthenticated() && canModerateChallenges()'),
+    'direct Firestore Challenge creation remains restricted to moderation authority',
+  );
+  const postgresGroupAuthoritySrc = fs.readFileSync('api/src/postgresGroupAuthority.ts', 'utf-8');
+  assert(
+    postgresGroupAuthoritySrc.includes("if (row.status !== 'active') reason = 'group_inactive'"),
+    'PostgreSQL Challenge creation authority denies inactive Groups',
+  );
+  const challengeEstablishmentSrc = fs.readFileSync('api/src/challengeEstablishment.ts', 'utf-8');
+  assert(
+    challengeEstablishmentSrc.includes('requireChallengeCreationAuthority('),
+    'governed Challenge establishment requires current Group creation authority',
   );
 
   // --- Test 17: getMyGroups excludes inactive groups ---

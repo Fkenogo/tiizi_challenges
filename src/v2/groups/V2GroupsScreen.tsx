@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState, V2Page, V2SectionHeader } from '../components/V2Primitives';
+import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState, V2Page, V2SectionHeader, V2TextInput } from '../components/V2Primitives';
 import type { ApiMembership } from '../../api/membershipsApi';
 import { coverFor, coverGradientFor } from './groupCovers';
 import { stewardBadgeFor } from './groupDraft';
 import { groupsViewFor, V2_GROUPS_NEW_PATH } from './groupsView';
 import { useV2GroupChallenges, useV2GroupDetail, useV2Groups } from './useV2Groups';
 import { V2GroupDiscoveryPanel } from './V2GroupDiscoveryPanel';
+import { V2GroupGlobalSearch } from './V2GroupGlobalSearch';
 
 const INITIAL_GROUP_COUNT = 6;
 
 export function V2GroupsScreen() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<'mine' | 'discover'>('mine');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAllGroups, setShowAllGroups] = useState(false);
   const groups = useV2Groups();
   const memberships = groups.data?.memberships ?? [];
@@ -35,6 +37,25 @@ export function V2GroupsScreen() {
         action={<V2Button onClick={() => navigate(V2_GROUPS_NEW_PATH)}>Create Group</V2Button>}
       />
 
+      <div className="mb-4">
+        <label className="mb-1 block text-sm font-bold text-slate-800" htmlFor="groups-global-search">Search all Groups</label>
+        <div className="flex items-center gap-2">
+          <V2TextInput id="groups-global-search" value={searchQuery} onChange={setSearchQuery} placeholder="Name, purpose, Focus Area, or Goal" maxLength={100} />
+          {searchQuery.length > 0 && <button type="button" onClick={() => setSearchQuery('')} className="min-h-11 shrink-0 rounded-lg px-2 text-xs font-bold text-primary" aria-label="Clear Group search">Clear</button>}
+        </div>
+      </div>
+
+      {searchQuery.trim().length > 0 ? (
+        <>
+          <nav aria-label="Groups browse modes" className="mb-3 flex justify-end">
+            <button type="button" onClick={() => setSearchQuery('')} className="min-h-10 rounded-lg px-2 text-xs font-bold text-primary">Return to {tab === 'mine' ? 'My Groups' : 'Discover'}</button>
+          </nav>
+          {groups.isLoading && <V2LoadingState label="Searching your Groups…" />}
+          {groups.isError && <p role="status" className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">Your Groups are unavailable. Search results will include discoverable Groups only.</p>}
+          <V2GroupGlobalSearch query={searchQuery} memberships={memberships} onOpen={(id) => navigate(`/v2/groups/${id}`)} />
+        </>
+      ) : (
+        <>
       <nav aria-label="Groups" className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-200/70 p-1">
         {([['mine', 'My Groups'], ['discover', 'Discover']] as const).map(([key, label]) => (
           <button key={key} type="button" aria-current={tab === key ? 'page' : undefined} onClick={() => { setTab(key); setShowAllGroups(false); }} className={`min-h-11 rounded-lg px-3 py-2 text-sm font-bold ${tab === key ? 'bg-white text-primary shadow-sm' : 'text-slate-600'}`}>{label}</button>
@@ -72,6 +93,8 @@ export function V2GroupsScreen() {
           <h2 className="text-base font-black text-slate-900">Pending requests</h2>
           <ul className="space-y-2">{groups.data!.pendingMemberships!.map((application) => <li key={application.groupId} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3"><div className="min-w-0"><p className="truncate font-bold text-slate-900">{application.group.name}</p><p className="mt-1 text-xs text-amber-800">Waiting for Steward approval</p></div><V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${application.groupId}`)}>Pending</V2Button></li>)}</ul>
         </section>
+      )}
+        </>
       )}
     </V2Page>
   );

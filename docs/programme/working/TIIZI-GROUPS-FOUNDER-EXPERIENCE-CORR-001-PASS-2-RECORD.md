@@ -30,7 +30,7 @@ ranking, matching, enforcement, scoring, Challenge eligibility, or Activity
 authority.
 
 The approved five-step creation wizard is: Identity; Look & Focus (Focus Areas
-and Group Goals); How the Group works; How we work (Community Norms); Review.
+and Group Goals); How the Group works; Our culture (Community Norms); Review.
 
 ## Persistence and API
 
@@ -135,3 +135,89 @@ Founder Experience Review remains a separate follow-on and was not started.
 No Challenge Creation UX changes were made. No production access, writes,
 deployment, catalogue mutation, lifecycle transition, or eligibility change
 occurred in Pass 3.
+
+## Final Founder Experience correction pass — awaiting Founder review
+
+Starting candidate: `9b1794f5ab135a17414397a7027b072cc7c104c8`.
+
+The final pass preserves the approved Group Product Truth and changes only
+the requested presentation/search behavior:
+
+- One primary Group search now appears above My Groups / Discover. It searches
+  the authenticated member's permitted Groups plus active discoverable Groups
+  through the governed API, across name, purpose/description, tagline, Focus
+  Areas, and Goals. Results show the server-governed relationship. Private
+  Groups are not returned by discovery; a private Group remains visible to a
+  user who already has an authorized membership relationship.
+- My Groups and Discover remain browse modes when search is empty. Clearing
+  the query returns to the current browse mode. Discover retains its secondary
+  “Have an invite code?” entry and existing invite resolver.
+- About this Group now opens the existing V2 sheet overlay. It contains Group
+  purpose, Focus Areas, Goals, Community Norms, stewardship, and governed
+  Group setup information only. Hosted Challenges, membership roster, join
+  requests, invite controls, and feed content remain outside the overlay.
+  Escape and browser history close the sheet while preserving Group Home.
+- Step 4 now reads “Our culture”; its section heading remains “Community
+  norms”. Review labels use “Community norms”. This is presentation copy only.
+- Focus Area, Goal, Community Norm, persistence, API, and migration 021 Product
+  Truth remain unchanged. Focus Area means interest; Goal means intended
+  outcome; Activity means what participants do. Recommendation, ranking, and
+  matching remain deferred. Future Group Feed space remains; no feed was
+  implemented.
+- Challenge Creation Founder Experience Review remains the next separate
+  follow-on and is **NOT STARTED**.
+
+### Final-pass evidence
+
+The authenticated local Development browser was exercised first at a 375 CSS
+pixel viewport. The walkthrough verified global search by a Group name,
+Focus Area, and Goal; the visible matching rows identified the authorized
+Accountable Steward relationship. Search results preserve the selected
+browse-mode return action. The Development dataset did not contain a
+discoverable Group for which the Founder account had no membership, so an
+actual “Discoverable · Not joined” browser result was not available in this
+session; the API relationship projection and component mapping cover that
+state, and existing S4c tests continue to verify private/inactive exclusion.
+The Founder-owned private boundary Group is searchable only through its
+existing authorized membership; it is excluded from normal discovery.
+
+On the preview Group Home, the About sheet was opened and inspected at mobile
+width. It contained only the About sections, the underlying Group Home
+remained present, and Escape closed the overlay. The preview Group exposed
+four of five hosted Challenges and a “View more Challenges” action, and four
+of six Members with a “View all members” action. The creation wizard displayed
+“Step 4 — Our culture” and retained the “Community norms” heading. Review was
+opened without creating another Group. Desktop browser review and screenshots
+were also captured; the same one-column result hierarchy remains in place.
+
+Validation:
+
+- Frontend typecheck/build, API typecheck/build, membership Goal projection
+  tests, Group lifecycle guard (66 checks), final-pass guards, and
+  `git diff --check`: passed.
+- The full API suite was rerun serially after adding per-suite PGlite cleanup
+  via the existing `db.close()` capability: 54 files passed, one existing
+  Firestore-emulator file skipped (8 gated tests), 727 passed / 8 skipped,
+  zero failures, 683.98 seconds. The 60-second PGlite setup timeout did not
+  recur; no timeout increase was made.
+- S2-G, S4a, S4b, Group UX polish, S6 Library, S6 Challenge discovery,
+  S2a/S2b and integration, V2 frontend/runtime/experience, invite backend,
+  global search final-pass, Group lifecycle, typechecks/builds and whitespace
+  validation passed. The S4a source guard was refreshed only where its
+  expectations still named the superseded label/inline About shape; it now
+  asserts the accepted five-step wizard and V2 overlay. Group lifecycle guard
+  passes 66/66 after its separately documented stale source assertion update.
+- In this restricted shell, invoking the `tsx` CLI attempted to create an
+  IPC socket outside the allowed sandbox and returned EPERM. Running those
+  same repository guard scripts with `node --import tsx` avoided that runner
+  transport limitation and produced passing results; this was not a product
+  or test assertion failure.
+- Migration 021 is exercised by the passing Group metadata API tests and live
+  Development Group reads/search, which return canonical and custom Goals.
+  Direct Docker CLI inspection was unavailable because this shell cannot
+  access the Docker socket; no container command or database mutation was
+  performed for that check.
+
+This record does not mark Groups Founder Accepted. The candidate remains
+awaiting Founder review. No merge, deployment, Production access, or
+Challenge Creation UX correction was performed.

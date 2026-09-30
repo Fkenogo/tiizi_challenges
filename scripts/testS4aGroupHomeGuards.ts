@@ -7,7 +7,7 @@
  *
  *   A. Progressive wizard: five steps, one logical step at a time,
  *      per-step gating, authorized fields only (identity + cover/location/
- *      focus + governed setup + one core norm; no upload, URL entry,
+ *      focus + governed setup + community norms; no upload, URL entry,
  *      Charter editor, Council, moderation, admin-role, or invite controls).
  *   B. Review submits once to the canonical returned Group ID; Home is
  *      reached with fresh server truth; refresh persists.
@@ -95,13 +95,13 @@ const routes = read('src/v2/routes.tsx');
 
 // ─── A. Progressive wizard, authorized fields only ────────────────────────
 console.log('wizard assembly');
-check('wizard has five progressive steps', createScreen.includes("label: 'Review'") && createScreen.includes("label: 'How we work'"));
+check('wizard has five progressive steps', createScreen.includes("label: 'Review'") && createScreen.includes("label: 'Our culture'"));
 check('steps render one at a time with progress', createScreen.includes('V2StepProgress') && createScreen.includes('step === 0') && createScreen.includes('step === 4'));
 check('per-step gating blocks Continue on invalid fields', createScreen.includes('stepBlocked('));
 check('identity step: name + tagline + description', createCode.includes('Step 1 — Identity') && createCode.includes('Tagline (optional)'));
 check('look step: cover picker + location + focus', createCode.includes('Step 2 — Look') && createCode.includes('Group cover (optional)') && createCode.includes('Focus areas (optional)'));
 check('setup step keeps the governed choices', createCode.includes('Step 3 — How the group works'));
-check('Goal outcomes and selectable Community Norms remain distinct from Activities', createCode.includes('Group goals (optional)') && createCode.includes('What would this Group like to work towards?') && createCode.includes('communityNormIds') && createCode.includes('How we work') && createCode.includes('Add your own (optional)') && !createCode.includes('Your Group operates under Tiizi Platform governance'));
+check('Goal outcomes and selectable Community Norms remain distinct from Activities', createCode.includes('Group goals (optional)') && createCode.includes('What would this Group like to work towards?') && createCode.includes('communityNormIds') && createCode.includes('Our culture') && createCode.includes('Add your own (optional)') && !createCode.includes('Your Group operates under Tiizi Platform governance'));
 check('review step summarizes before submitting', createCode.includes('Step 5 — Review') && createCode.includes('Establish Group'));
 for (const forbidden of [
   'coverImageUrl', 'Select Image', 'Upload', 'URL', 'geoloc', 'latitude', 'longitude',
@@ -186,9 +186,10 @@ check('empty-group CTA stays attached to Group context',
 check('configuration lives in the secondary About surface',
   homeCode.includes('About this Group') && homeCode.includes('Group setup'));
 check('no dominant Community Setup section', !homeCode.includes('Community setup'));
-check('About is collapsed on entry and revealed from an accessible hero action',
+check('About is closed on entry and revealed in an accessible V2 sheet',
   homeCode.includes('About this Group') && homeCode.includes('aria-expanded={aboutOpen}')
-  && homeCode.includes('{aboutOpen && <section id="group-about-details"'));
+  && homeCode.includes('<V2Sheet open={aboutOpen}') && homeCode.includes('event.key === \'Escape\'')
+  && !homeCode.includes('{aboutOpen && <section id="group-about-details"'));
 check('About shows purpose, norms, stewardship and governed setup without platform-governance configuration copy',
   homeCode.includes('Community purpose') && homeCode.includes('Community norms') && !homeCode.includes('This Group operates under Tiizi Platform governance'));
 check('Home classifies through the pure view model', homeScreen.includes('groupHomeViewFor('));

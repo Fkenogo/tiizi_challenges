@@ -41,6 +41,7 @@ describe('GET /v1/memberships/me', () => {
             tagline: '',
             location: '',
             focusTags: [],
+            goals: [],
           },
         },
       ],
@@ -62,6 +63,27 @@ describe('GET /v1/memberships/me', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).not.toContain('super-secret-uid-123');
+  });
+
+  it('projects canonical and custom Group Goals for authenticated members', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'uid-goal-search');
+    const groupId = await seedGroup(db, { name: 'Goal search group' });
+    await db.query(
+      `UPDATE groups SET goal_ids=$1, custom_goal=$2 WHERE group_id=$3`,
+      [['build_strength', 'improve_sleep'], 'Keep moving together', groupId],
+    );
+    await seedMembership(db, groupId, memberId);
+
+    const app = buildTestApp({ token: 'uid-goal-search' });
+    const res = await app.inject({ method: 'GET', url: '/v1/memberships/me', headers: authHeaders('token') });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().memberships[0].group.goals).toEqual([
+      'Build strength',
+      'Improve sleep',
+      'Keep moving together',
+    ]);
   });
 
   it('isolates callers: only the authenticated member memberships are returned', async () => {

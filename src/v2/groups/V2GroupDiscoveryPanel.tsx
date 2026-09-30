@@ -1,21 +1,16 @@
-import { useDeferredValue, useState } from 'react';
+import { useState } from 'react';
 import { ApiError } from '../../api/apiClient';
-import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState, V2TextInput } from '../components/V2Primitives';
+import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
 import { useJoinGroup, useV2GroupDiscovery } from './useV2Groups';
 import type { V2DiscoverableGroup } from '../../api/groupsApi';
 import { coverFor, coverGradientFor } from './groupCovers';
 import { V2GroupInvitePanel } from './V2GroupInvitePanel';
 
 export function V2GroupDiscoveryPanel({ onOpen }: { onOpen: (id: string) => void }) {
-  const [query, setQuery] = useState('');
   const [showInviteCode, setShowInviteCode] = useState(false);
-  const discovery = useV2GroupDiscovery(useDeferredValue(query));
+  const discovery = useV2GroupDiscovery('');
   const groups = discovery.data?.pages.flatMap((page) => page.groups) ?? [];
   return <section aria-label="Discover Groups" className="space-y-3">
-    <div>
-      <label className="mb-1 block text-sm font-bold text-slate-800">Search Groups<V2TextInput value={query} onChange={setQuery} placeholder="Name, purpose, or focus" maxLength={100} /></label>
-      <p className="mt-1 text-xs text-slate-500">Searches Group names, descriptions, taglines, focus areas, and goals.</p>
-    </div>
     <div>
       <button type="button" aria-expanded={showInviteCode} onClick={() => setShowInviteCode((value) => !value)} className="min-h-10 rounded-lg px-2 text-sm font-bold text-primary hover:bg-orange-50">
         {showInviteCode ? 'Hide invite-code entry' : 'Have an invite code?'}

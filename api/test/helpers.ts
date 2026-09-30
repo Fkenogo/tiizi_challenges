@@ -1,6 +1,6 @@
 import { PGlite } from '@electric-sql/pglite';
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
-import { beforeAll, beforeEach } from 'vitest';
+import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { buildApp } from '../src/app.js';
 import type { TokenVerifier } from '../src/auth.js';
 import type { Db } from '../src/db.js';
@@ -177,6 +177,10 @@ beforeAll(async () => {
   const pg = new PGlite({ extensions: { pgcrypto } });
   db = wrapPGlite(pg);
   await runMigrations(db);
+});
+
+afterAll(async () => {
+  if (db) await db.close();
 });
 
 beforeEach(async () => {
