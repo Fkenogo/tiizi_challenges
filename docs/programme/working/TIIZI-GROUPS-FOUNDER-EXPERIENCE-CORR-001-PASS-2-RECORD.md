@@ -1,7 +1,7 @@
 # Groups Founder Experience Correction 001 — Pass 2/3 Record
 
-Status: **Founder Product Truth dispositions approved; Groups experience
-preview remains outstanding**.
+Status: **COMPLETE / FOUNDER ACCEPTED / MERGED** (TIIZI — GROUPS FOUNDER
+EXPERIENCE CORRECTION 001 — FOUNDER ACCEPTANCE, MERGE & CLOSURE).
 
 Starting point: Pass 1 candidate `3b1bcc412d8b1aef33cbf9cb6174fe28a651e5e3` on
 `impl/tiizi-groups-founder-experience-correction-001`.
@@ -218,6 +218,43 @@ Validation:
   access the Docker socket; no container command or database mutation was
   performed for that check.
 
-This record does not mark Groups Founder Accepted. The candidate remains
-awaiting Founder review. No merge, deployment, Production access, or
-Challenge Creation UX correction was performed.
+## Founder acceptance and merge closure
+
+Founder accepted the final Groups experience, then authorized normal
+repository acceptance and merge:
+
+- **Founder-accepted source:** `b3de9f02f90d0bc8ebe158737d4b7ce240c12540`
+- **Implementation PR:** #62
+- **Implementation PR head:** `b3de9f02f90d0bc8ebe158737d4b7ce240c12540`
+- **Implementation merge commit:** `b660af746a2a58e69f1f4da935ff0416ccd4fa89`
+- **Pre-merge canonical main:** `faf5df8b579efaaa3b00023c688d182f7943b2ef`
+- **Remote drift:** none; canonical main remained at the implementation base.
+- **Repository CI:** green (API typecheck/test/build, API image/liveness,
+  Functions build/typecheck, Web typecheck/build).
+
+The accepted scope is one Group per row; My Groups / Discover browse modes;
+global search across permitted memberships and active discoverable Groups;
+governed visibility; contextual invite-code resolution; approved Focus Areas
+and Group Goals; the “Our culture” step with Community Norms; the focused
+About this Group sheet; compact progressive Hosted Challenges and Members;
+and reserved space for a future Group Feed.
+
+The approved distinction remains: **Focus Area** is what the Group is
+interested in; **Group Goal** is the outcome it wants to achieve; **Activity**
+is what participants do. Focus Areas and Goals confer no recommendation,
+ranking, or matching authority. Private Groups stay outside normal discovery.
+Migration 021 remains authoritative for Goal and Community Norm metadata.
+No discoverable-plus-code-required policy was added; any future policy needs
+separate S4c Product Truth authority. Group Feed remains future work.
+
+The preview limitation remains accepted as non-blocking: all discoverable
+Groups in the Founder preview dataset were already visible to the Founder
+through membership, so the “Discoverable · Not joined” badge was not
+browser-demonstrated. API relationship mapping, privacy behavior, and tests
+passed.
+
+The Groups Founder Experience correction is **COMPLETE / FOUNDER ACCEPTED /
+MERGED**. This records implementation acceptance and Development experience
+closure only. No deployment or Production access occurred. **Challenge Page /
+Challenge Creation Founder Experience Review remains separate and NOT
+STARTED.**
