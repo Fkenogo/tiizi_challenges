@@ -42,11 +42,9 @@ import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } fr
  * 2. Look & focus — curated cover (optional), location context (optional),
  *    focus chips (optional). Presentation only; location never drives
  *    access, filtering, or discovery; chips never confer authority.
- * 3. How the group works — the governed Community Setup in human language.
- * 4. Community norms — one optional custom expectation, displayed as the
- *    Group's existing rules data; no versioning or enforcement engine.
- *    Standard preset vocabulary remains unresolved. No Charter editor or
- *    Council mechanics.
+ * 3. How the Group works — governed Group setup in human language.
+ * 4. How we work — approved Community Norm presets plus one optional custom
+ *    expectation. These are descriptive and are not enforcement authority.
  * 5. Review & Create — clean summary, one submission.
  *
  * On success the member lands directly inside the persisted Group Home
@@ -56,7 +54,7 @@ import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } fr
 const STEPS = [
   { id: 'identity', label: 'Identity' },
   { id: 'look', label: 'Look & focus' },
-  { id: 'setup', label: 'How it works' },
+  { id: 'setup', label: 'How the Group works' },
   { id: 'culture', label: 'How we work' },
   { id: 'review', label: 'Review' },
 ] as const;

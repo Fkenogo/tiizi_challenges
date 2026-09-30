@@ -1,9 +1,8 @@
 # Tiizi V2 Group Metadata Product Truth — CORR-001
 
-Status: **Founder review candidate**, prepared under the bounded Founder
-direction in Groups Founder Experience Correction 001 — Pass 2. The exact Goal
-and Community Norm labels below are proposed for this review; implementation
-does not make them enforcement policy or broader platform taxonomy.
+Status: **Founder-approved V2 Product Truth**, by disposition in Groups
+Founder Experience Correction 001 — Pass 3. The bounded Goal and Community
+Norm vocabularies and contracts below are approved for V2 Group metadata.
 
 ## Distinct concepts
 
@@ -41,7 +40,7 @@ limit does not apply to this bounded catalogue. One optional custom Focus Area
 of at most 30 characters may be stored as descriptive metadata. It does not
 extend the standard taxonomy and does not authorize taxonomy-driven matching.
 
-## Group Goals — proposed vocabulary
+## Group Goals — approved vocabulary
 
 Groups may select multiple standard outcome labels from this compact catalogue:
 
@@ -65,7 +64,7 @@ discovery, under the existing active/non-private visibility boundary. They do
 not rank, recommend, or match Groups and have no effect on Challenge or
 Activity authority.
 
-## Community Norms — proposed vocabulary
+## Community Norms — approved vocabulary
 
 Groups may select multiple standard expectations from this concise catalogue:
 
@@ -111,5 +110,19 @@ No Challenge, Activity, lifecycle, or S6 authority changes are made.
 - Prior V1 Goal lists are historical evidence only and are not promoted as a
   V2 authority.
 
-The exact Goal and Norm labels therefore remain a Founder-review candidate
-until accepted. They are bounded, member-facing product vocabulary only.
+Founder approved the exact Goal and Norm labels and contracts above in Pass 3.
+Focus Areas remain the EKG-01 §5 labels. Group creation uses five steps:
+Identity; Look & Focus (including Focus Areas and Goals); How the Group works;
+How we work (Community Norms); Review. The three metadata concepts remain
+distinct: Focus Area is what a Group is interested in, Goal is an outcome it
+wants to achieve, and Activity is what participants do.
+
+## Invite-code boundary
+
+Pass 3 confirms the S4c finding: no new discoverable-plus-code-required
+admission state is introduced. Private Group visibility remains private, and
+the existing invite-code resolver remains available through a secondary
+“Have an invite code?” entry in Discover. Successful resolution previews the
+canonical Group and then continues through existing open-join or approval
+membership authority. A future discoverable-plus-code-required policy needs a
+separate S4c Product Truth decision.
