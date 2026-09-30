@@ -135,6 +135,10 @@ export interface CreateGroupTerms {
   location?: unknown;
   focusTags?: unknown;
   rules?: unknown;
+  goalIds?: unknown;
+  customGoal?: unknown;
+  communityNormIds?: unknown;
+  customCommunityNorm?: unknown;
 }
 
 export interface GovernedGroupResult {

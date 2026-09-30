@@ -29,7 +29,7 @@ import {
   type GroupDraftIssue,
 } from './groupDraft';
 import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor, type GroupCoverId } from './groupCovers';
-import { useCreateGroup } from './useV2Groups';
+import { useCreateGroup, useV2GroupOptions } from './useV2Groups';
 import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
 
 /**
@@ -57,7 +57,7 @@ const STEPS = [
   { id: 'identity', label: 'Identity' },
   { id: 'look', label: 'Look & focus' },
   { id: 'setup', label: 'How it works' },
-  { id: 'culture', label: 'Culture' },
+  { id: 'culture', label: 'How we work' },
   { id: 'review', label: 'Review' },
 ] as const;
 
@@ -92,7 +92,7 @@ function issueFor(issues: GroupDraftIssue[], field: GroupDraftIssue['field']): s
     case 'location_too_long':
       return `Keep the location under ${GROUP_LOCATION_MAX_LENGTH} characters.`;
     case 'too_many_focus_tags':
-      return `Keep at most ${GROUP_FOCUS_TAGS_MAX_COUNT} focus areas.`;
+      return `Select canonical Focus Areas, with up to one other area.`;
     case 'focus_tag_too_long':
       return `Keep each focus area under ${GROUP_FOCUS_TAG_MAX_LENGTH} characters.`;
     case 'norm_too_long':
@@ -108,6 +108,8 @@ function stepBlocked(step: number, issues: GroupDraftIssue[]): boolean {
 export function V2CreateGroupScreen() {
   const navigate = useNavigate();
   const createGroup = useCreateGroup();
+  const optionsQuery = useV2GroupOptions();
+  const options = optionsQuery.data;
   const [draft, setDraft] = useState<CreateGroupDraft>(EMPTY_GROUP_DRAFT);
   const [step, setStep] = useState(0);
   const [tagInput, setTagInput] = useState('');
@@ -119,7 +121,7 @@ export function V2CreateGroupScreen() {
   const addTag = () => {
     const tag = tagInput.trim();
     const hasCustomTag = draft.focusTags.some((entry) => !GROUP_FOCUS_AREA_LABELS.includes(entry));
-    if (!tag || hasCustomTag || draft.focusTags.length >= GROUP_FOCUS_TAGS_MAX_COUNT
+    if (!tag || hasCustomTag
       || draft.focusTags.some((entry) => entry.toLowerCase() === tag.toLowerCase())) {
       setTagInput('');
       return;
@@ -256,7 +258,7 @@ export function V2CreateGroupScreen() {
           <div>
             <fieldset>
               <legend className="text-sm font-black text-slate-900">Focus areas (optional)</legend>
-              <p className="mt-1 text-xs leading-5 text-slate-500">What this Group is interested in. Choose up to {GROUP_FOCUS_TAGS_MAX_COUNT} Fitness or Wellness areas.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">What this Group is interested in. Select any that fit.</p>
               <label className="mt-3 block text-xs font-bold text-slate-700">Search focus areas<V2TextInput value={focusSearch} onChange={setFocusSearch} placeholder="Search categories" maxLength={60} /></label>
               <div className="mt-3 space-y-3">
                 {(['Fitness', 'Wellness'] as const).map((domain) => {
@@ -264,15 +266,14 @@ export function V2CreateGroupScreen() {
                   if (!options.length) return null;
                   return <div key={domain}><p className="mb-1 text-xs font-bold text-slate-500">{domain}</p><div className="flex flex-wrap gap-2">{options.map(({ category }) => {
                     const selected = draft.focusTags.includes(category);
-                    const full = draft.focusTags.length >= GROUP_FOCUS_TAGS_MAX_COUNT;
-                    return <button key={category} type="button" aria-pressed={selected} disabled={!selected && full} onClick={() => setDraft((current) => ({ ...current, focusTags: selected ? current.focusTags.filter((tag) => tag !== category) : [...current.focusTags, category] }))} className={`min-h-10 rounded-full border px-3 py-2 text-xs font-bold ${selected ? 'border-primary bg-orange-50 text-primary' : 'border-slate-200 bg-white text-slate-700 disabled:opacity-50'}`}>{category}</button>;
+                    return <button key={category} type="button" aria-pressed={selected} onClick={() => setDraft((current) => ({ ...current, focusTags: selected ? current.focusTags.filter((tag) => tag !== category) : [...current.focusTags, category] }))} className={`min-h-10 rounded-full border px-3 py-2 text-xs font-bold ${selected ? 'border-primary bg-orange-50 text-primary' : 'border-slate-200 bg-white text-slate-700'}`}>{category}</button>;
                   })}</div></div>;
                 })}
               </div>
               <div className="mt-3 rounded-xl border border-dashed border-slate-300 p-3">
                 <p className="text-xs font-bold text-slate-700">Other focus area (optional)</p>
                 <p className="mt-1 text-[11px] text-slate-500">Add one area that is not listed.</p>
-                <div className="mt-2 flex gap-2"><V2TextInput value={tagInput} onChange={setTagInput} placeholder="Add one other area" maxLength={GROUP_FOCUS_TAG_MAX_LENGTH} /><V2Button variant="secondary" disabled={!tagInput.trim() || draft.focusTags.length >= GROUP_FOCUS_TAGS_MAX_COUNT || draft.focusTags.some((tag) => !GROUP_FOCUS_AREA_LABELS.includes(tag))} onClick={addTag}>Add</V2Button></div>
+                <div className="mt-2 flex gap-2"><V2TextInput value={tagInput} onChange={setTagInput} placeholder="Add one other area" maxLength={GROUP_FOCUS_TAG_MAX_LENGTH} /><V2Button variant="secondary" disabled={!tagInput.trim() || draft.focusTags.some((tag) => !GROUP_FOCUS_AREA_LABELS.includes(tag))} onClick={addTag}>Add</V2Button></div>
               </div>
             </fieldset>
             {draft.focusTags.length > 0 && (
@@ -304,6 +305,12 @@ export function V2CreateGroupScreen() {
               <p role="alert" className="mt-1 text-xs font-bold text-red-600">{issueFor(issues, 'focusTags')}</p>
             )}
           </div>
+          <fieldset>
+            <legend className="text-sm font-black text-slate-900">Group goals (optional)</legend>
+            <p className="mt-1 text-xs text-slate-500">What would this Group like to work towards?</p>
+            {optionsQuery.isLoading ? <p className="mt-2 text-xs text-slate-500">Loading goals…</p> : optionsQuery.isError ? <p role="alert" className="mt-2 text-xs text-red-700">Goals are unavailable right now. {optionsQuery.error instanceof Error ? optionsQuery.error.message : ''}</p> : <div className="mt-2 flex flex-wrap gap-2">{(options?.goals ?? []).map(({ id, label }) => { const selected = draft.goalIds.includes(id); return <button key={id} type="button" aria-pressed={selected} onClick={() => setDraft(current => ({ ...current, goalIds: selected ? current.goalIds.filter(value => value !== id) : [...current.goalIds, id] }))} className={`min-h-10 rounded-full border px-3 py-2 text-xs font-bold ${selected ? 'border-primary bg-orange-50 text-primary' : 'border-slate-200 bg-white text-slate-700'}`}>{label}</button>; })}</div>}
+            <div className="mt-3"><V2Field label="One other goal (optional)" hint="A short outcome; it will not create a new standard Goal." ><V2TextInput value={draft.customGoal} onChange={customGoal => setDraft(current => ({ ...current, customGoal }))} maxLength={80} placeholder="Add one other outcome" /></V2Field></div>
+          </fieldset>
         </V2Card>
       )}
 
@@ -369,20 +376,21 @@ export function V2CreateGroupScreen() {
       {step === 3 && (
         <V2Card className="space-y-4">
           <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            Step 4 — Community norms
+            Step 4 — How we work
           </p>
-          <V2Field label="Community norm (optional)" hint="Add one expectation for members. It will appear in About this Group.">
+          <fieldset>
+            <legend className="text-sm font-black text-slate-900">Community norms (optional)</legend>
+            <p className="mt-1 text-xs text-slate-500">Choose the expectations that fit your Group.</p>
+            {optionsQuery.isLoading ? <p className="mt-2 text-xs text-slate-500">Loading community norms…</p> : optionsQuery.isError ? <p role="alert" className="mt-2 text-xs text-red-700">Community norms are unavailable right now.</p> : <div className="mt-2 space-y-2">{(options?.communityNorms ?? []).map(({ id, label }) => { const selected = draft.communityNormIds.includes(id); return <label key={id} className="flex min-h-11 items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={selected} onChange={() => setDraft(current => ({ ...current, communityNormIds: selected ? current.communityNormIds.filter(value => value !== id) : [...current.communityNormIds, id] }))} /><span>{label}</span></label>; })}</div>}
+          </fieldset>
+          <V2Field label="Add your own (optional)" hint="One additional expectation, shown to Group members.">
             <V2TextInput
-              value={draft.norm}
-              onChange={(norm) => setDraft((current) => ({ ...current, norm }))}
-              placeholder="Add one expectation for members"
+              value={draft.customCommunityNorm}
+              onChange={(customCommunityNorm) => setDraft((current) => ({ ...current, customCommunityNorm }))}
+              placeholder="Write one community expectation"
               maxLength={GROUP_NORM_MAX_LENGTH}
             />
           </V2Field>
-          {issueFor(issues, 'norm') && (
-            <p role="alert" className="text-xs font-bold text-red-600">{issueFor(issues, 'norm')}</p>
-          )}
-          <p className="text-xs leading-5 text-slate-500">Standard community norm choices need Product Truth review. You can skip this for now.</p>
         </V2Card>
       )}
 
@@ -414,6 +422,8 @@ export function V2CreateGroupScreen() {
                 <dd className="text-right text-slate-800">{draft.focusTags.join(' · ')}</dd>
               </div>
             )}
+            {draft.goalIds.length > 0 && <div className="flex justify-between gap-3"><dt className="font-bold text-slate-500">Goals</dt><dd className="text-right text-slate-800">{(options?.goals ?? []).filter(goal => draft.goalIds.includes(goal.id)).map(goal => goal.label).join(' · ')}</dd></div>}
+            {draft.customGoal.trim() && <div className="flex justify-between gap-3"><dt className="font-bold text-slate-500">Other goal</dt><dd className="text-right text-slate-800">{draft.customGoal.trim()}</dd></div>}
             <div className="flex justify-between gap-3">
               <dt className="font-bold text-slate-500">Discoverability</dt>
               <dd className="text-right text-slate-800">{draft.isPrivate ? 'Private' : 'Discoverable'}</dd>
@@ -426,10 +436,10 @@ export function V2CreateGroupScreen() {
               <dt className="font-bold text-slate-500">Challenges</dt>
               <dd className="text-right text-slate-800">{draft.allowMemberChallenges ? 'Members can create' : 'Steward creates'}</dd>
             </div>
-            {draft.norm.trim() && (
+            {(draft.communityNormIds.length > 0 || draft.customCommunityNorm.trim()) && (
               <div className="flex justify-between gap-3">
-                <dt className="font-bold text-slate-500">Core norm</dt>
-                <dd className="text-right text-slate-800">{draft.norm.trim()}</dd>
+                <dt className="font-bold text-slate-500">How we work</dt>
+                <dd className="text-right text-slate-800">{[...(options?.communityNorms ?? []).filter(norm => draft.communityNormIds.includes(norm.id)).map(norm => norm.label), ...(draft.customCommunityNorm.trim() ? [draft.customCommunityNorm.trim()] : [])].join(' · ')}</dd>
               </div>
             )}
           </dl>

@@ -4,6 +4,7 @@ import { V2Button, V2Page } from '../components/V2Primitives';
 import { useV2GroupDetail, useUpdateV2GroupSettings } from './useV2Groups';
 import { useV2GroupId } from '../group/V2GroupScope';
 import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor } from './groupCovers';
+import { GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
 
 export function V2GroupSettingsScreen() {
   const groupId = useV2GroupId();
@@ -32,6 +33,11 @@ export function V2GroupSettingsScreen() {
   if (!detail.data || detail.data.viewerRelationship !== 'steward') return <V2Page><h1 className="text-lg font-black">Settings unavailable</h1><p className="mt-2 text-sm text-slate-600">These settings are available to the Accountable Steward.</p></V2Page>;
   const group = detail.data;
   const normalizedFocusTags = focusTags.split(',').map(tag => tag.trim()).filter(Boolean);
+  const unchangedLegacyFocus = JSON.stringify(normalizedFocusTags) === JSON.stringify(group.focusTags);
+  const customFocusCount = normalizedFocusTags.filter(tag => !GROUP_FOCUS_AREA_LABELS.includes(tag)).length;
+  const focusTagsValid = unchangedLegacyFocus || (normalizedFocusTags.length <= 13 && customFocusCount <= 1
+    && normalizedFocusTags.every(tag => tag.length <= 30)
+    && new Set(normalizedFocusTags).size === normalizedFocusTags.length);
   const hasChanges = name !== group.name
     || description !== group.description
     || tagline !== group.tagline
@@ -43,6 +49,7 @@ export function V2GroupSettingsScreen() {
     || allowMemberChallenges !== (group.allowMemberChallenges ?? true);
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (!focusTagsValid) return;
     update.mutate({ name, description, tagline, location, focusTags: normalizedFocusTags, coverId, isPrivate, requireAdminApproval, allowMemberChallenges }, { onSuccess: () => navigate(`/v2/groups/${group.id}`) });
   };
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900';
@@ -61,13 +68,14 @@ export function V2GroupSettingsScreen() {
           <label className={label}>Description<textarea className={field} rows={4} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
           <label className={label}>Tagline<input className={field} maxLength={140} value={tagline} onChange={e => setTagline(e.target.value)} /></label>
           <label className={label}>Location<input className={field} maxLength={120} value={location} onChange={e => setLocation(e.target.value)} /><span className="mt-1 block text-xs font-normal text-slate-500">A short description. It does not affect search or access.</span></label>
-          <label className={label}>Focus tags<input className={field} maxLength={300} value={focusTags} onChange={e => setFocusTags(e.target.value)} placeholder="Walking, wellbeing" /><span className="mt-1 block text-xs font-normal text-slate-500">Separate up to 8 tags with commas. These may appear in text search.</span></label>
+          <label className={label}>Focus Areas<input className={field} maxLength={389} value={focusTags} onChange={e => setFocusTags(e.target.value)} placeholder="Strength, Sleep & Rest" /><span className="mt-1 block text-xs font-normal text-slate-500">Use the canonical Fitness and Wellness category labels. One additional descriptive area is allowed.</span></label>
+          {!focusTagsValid && <p role="alert" className="text-xs font-bold text-red-700">Choose distinct canonical Focus Areas and at most one additional area up to 30 characters.</p>}
           <fieldset><legend className={label}>Group cover</legend><div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div><p className="mt-1 text-xs text-slate-500">Choose from the existing covers. No image upload.</p></fieldset>
         </section>
         <section className="space-y-3"><h2 className="text-base font-black">Privacy & joining</h2>{choice('Private Group', isPrivate, setIsPrivate, 'People outside the Group cannot discover it normally. A valid invite code may still resolve it. Existing members are unaffected.')}{choice('Require approval to join', requireAdminApproval, setRequireAdminApproval, 'New join attempts require Steward approval. Existing pending requests remain pending until explicitly decided.')}</section>
         <section className="space-y-3"><h2 className="text-base font-black">Member Challenges</h2>{choice('Allow ordinary members to create Challenges', allowMemberChallenges, setAllowMemberChallenges, 'When off, ordinary members cannot establish new Group Challenges. Existing Challenges remain unchanged; you can still create them.')}</section>
         {update.isError && <p role="alert" className="text-sm text-red-700">We could not save these changes. Please review the fields and try again.</p>}
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${group.id}`)}>Cancel</V2Button><V2Button type="submit" disabled={update.isPending || !hasChanges}>{update.isPending ? 'Saving…' : 'Save changes'}</V2Button></div>
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${group.id}`)}>Cancel</V2Button><V2Button type="submit" disabled={update.isPending || !hasChanges || !focusTagsValid}>{update.isPending ? 'Saving…' : 'Save changes'}</V2Button></div>
       </form>
     </div>
   </V2Page>;

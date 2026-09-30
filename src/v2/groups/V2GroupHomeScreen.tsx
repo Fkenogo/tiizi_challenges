@@ -187,8 +187,8 @@ function GroupHomeBody({
   const visibleChallenges = showAllChallenges ? challenges : challenges.slice(0, 4);
   const coverId = coverFor(detail.coverId, detail.id);
   const tagline = detail.tagline.trim() || detail.description;
-  const focusTags = detail.focusTags.slice(0, 4);
-  const norms = detail.rules ?? [];
+  const focusTags = detail.focusTags;
+  const norms = [...new Set([...(detail.communityNorms ?? []), ...(detail.rules ?? [])])];
   const memberships = useV2Groups();
   const viewerMemberId = memberships.data?.memberId ?? null;
   const roster = useV2GroupRoster(detail.id);
@@ -381,6 +381,7 @@ function GroupHomeBody({
               </div>
             </div>
           )}
+          {detail.goals.length > 0 && <div className="mt-3"><h3 className="text-sm font-black text-slate-900">Group goals</h3><div className="mt-1.5 flex flex-wrap gap-1.5">{detail.goals.map(goal => <span key={goal} className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">{goal}</span>)}</div></div>}
           {norms.length > 0 && (
             <div className="mt-3 border-t border-slate-100 pt-3">
               <h3 className="text-sm font-black text-slate-900">Community norms</h3>

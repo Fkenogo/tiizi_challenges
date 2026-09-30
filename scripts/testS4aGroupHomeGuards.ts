@@ -85,6 +85,7 @@ const groupFiles = walk('src/v2/groups').filter((path) => /\.(ts|tsx)$/.test(pat
 const groupSources = groupFiles.map((path) => ({ path, source: read(path) }));
 const anyGroupCode = groupSources.map((entry) => stripComments(entry.source)).join('\n');
 const createScreen = read('src/v2/groups/V2CreateGroupScreen.tsx');
+const settingsScreen = read('src/v2/groups/V2GroupSettingsScreen.tsx');
 const createCode = stripComments(createScreen);
 const homeScreen = read('src/v2/groups/V2GroupHomeScreen.tsx');
 const homeCode = stripComments(homeScreen);
@@ -94,13 +95,13 @@ const routes = read('src/v2/routes.tsx');
 
 // ─── A. Progressive wizard, authorized fields only ────────────────────────
 console.log('wizard assembly');
-check('wizard has five progressive steps', createScreen.includes("label: 'Review'") && createScreen.includes("label: 'Culture'"));
+check('wizard has five progressive steps', createScreen.includes("label: 'Review'") && createScreen.includes("label: 'How we work'"));
 check('steps render one at a time with progress', createScreen.includes('V2StepProgress') && createScreen.includes('step === 0') && createScreen.includes('step === 4'));
 check('per-step gating blocks Continue on invalid fields', createScreen.includes('stepBlocked('));
 check('identity step: name + tagline + description', createCode.includes('Step 1 — Identity') && createCode.includes('Tagline (optional)'));
 check('look step: cover picker + location + focus', createCode.includes('Step 2 — Look') && createCode.includes('Group cover (optional)') && createCode.includes('Focus areas (optional)'));
 check('setup step keeps the governed choices', createCode.includes('Step 3 — How the group works'));
-check('community norm step keeps optional custom text clear and defers unapproved presets', createCode.includes('Step 4 — Community norms') && createCode.includes('Community norm (optional)') && createCode.includes('Standard community norm choices need Product Truth review') && createCode.includes('You can skip this for now') && !createCode.includes('Your Group operates under Tiizi Platform governance'));
+check('Goal outcomes and selectable Community Norms remain distinct from Activities', createCode.includes('Group goals (optional)') && createCode.includes('What would this Group like to work towards?') && createCode.includes('communityNormIds') && createCode.includes('How we work') && createCode.includes('Add your own (optional)') && !createCode.includes('Your Group operates under Tiizi Platform governance'));
 check('review step summarizes before submitting', createCode.includes('Step 5 — Review') && createCode.includes('Establish Group'));
 for (const forbidden of [
   'coverImageUrl', 'Select Image', 'Upload', 'URL', 'geoloc', 'latitude', 'longitude',
@@ -156,6 +157,10 @@ check('focus options reuse governed Activity category labels without synonyms',
   && focusAreaMatchesSearch('Mind & Emotional Wellbeing', 'emotional'));
 check('uncontrolled free-text is limited in creation UI to one bounded Other value',
   createCode.includes('Other focus area (optional)') && createCode.includes('hasCustomTag'));
+check('settings preserves legacy focus metadata and validates changed values against the bounded Focus Area contract',
+  settingsScreen.includes('unchangedLegacyFocus') && settingsScreen.includes('customFocusCount <= 1')
+  && settingsScreen.includes('canonical Fitness and Wellness category labels')
+  && !settingsScreen.includes('up to 8 tags'));
 
 // ─── B. Review submits once to the canonical ID ───────────────────────────
 console.log('creation → home navigation');
@@ -213,6 +218,8 @@ function detail(overrides: Partial<V2GroupDetail> = {}): V2GroupDetail {
     tagline: '',
     location: '',
     focusTags: [],
+    goalIds: [], goals: [], customGoal: null,
+    communityNormIds: [], communityNorms: [], customCommunityNorm: null,
     rules: [],
     ...overrides,
   };

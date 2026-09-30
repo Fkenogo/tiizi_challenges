@@ -4,6 +4,7 @@ import type { GroupMembershipAuthority, GroupMembershipAuthorityStatus } from '.
 import type { ChallengeCreationAuthority, ChallengeCreationAuthorityStatus } from './challengeCreationAuthority.js';
 import type { CreateGroupTerms, GroupMutationActor } from './groupMutations.js';
 import { GroupMutationError } from './groupErrors.js';
+import { GROUP_COMMUNITY_NORMS, GROUP_FOCUS_AREAS, GROUP_GOALS } from './groupVocabulary.js';
 
 const eligible = new Set(['active', 'joined']);
 const active = (status: string) => status === 'active';
@@ -38,8 +39,8 @@ export async function updateGovernedGroupSettings(db: Db, memberId: string, grou
   const covers = new Set(['cover-1','cover-2','cover-3','cover-4','cover-5','cover-6','cover-7','cover-8']);
   try {
     return await db.transaction(async tx => {
-      const locked = await tx.query<{ status: string; steward_member_id: string; invite_code: string | null }>(
-        `SELECT status, steward_member_id, invite_code FROM groups WHERE group_id=$1 FOR UPDATE`, [groupId]);
+      const locked = await tx.query<{ status: string; steward_member_id: string; invite_code: string | null; focus_tags: unknown }>(
+        `SELECT status, steward_member_id, invite_code, focus_tags FROM groups WHERE group_id=$1 FOR UPDATE`, [groupId]);
       const group = locked.rows[0];
       if (!group || group.status !== 'active') fail('group_not_found','Group not found',404);
       if (group.steward_member_id !== memberId) fail('forbidden','Only the Accountable Steward may update Group settings',403);
@@ -47,7 +48,15 @@ export async function updateGovernedGroupSettings(db: Db, memberId: string, grou
       if ('description' in patch && (typeof patch.description !== 'string' || patch.description.length > 2000)) fail('invalid_group','description must be a string up to 2000 characters',400);
       if ('tagline' in patch && (typeof patch.tagline !== 'string' || patch.tagline.trim().length > 140)) fail('invalid_group','tagline must be a string up to 140 characters',400);
       if ('location' in patch && (typeof patch.location !== 'string' || patch.location.trim().length > 120)) fail('invalid_group','location must be a string up to 120 characters',400);
-      if ('focusTags' in patch && (!Array.isArray(patch.focusTags) || patch.focusTags.length > 8 || patch.focusTags.some(value => typeof value !== 'string' || value.length > 30))) fail('invalid_group','focusTags must contain at most 8 strings of at most 30 characters',400);
+      if ('focusTags' in patch) {
+        const canonical = new Set<string>(GROUP_FOCUS_AREAS.map(item => item.label));
+        const tags = patch.focusTags;
+        const unchangedLegacy = JSON.stringify(tags) === JSON.stringify(group.focus_tags);
+        if (!Array.isArray(tags) || tags.length > GROUP_FOCUS_AREAS.length + 1 || tags.some(value => typeof value !== 'string' || value.length > 30)
+          || (!unchangedLegacy && tags.filter(value => !canonical.has(value as string)).length > 1) || new Set(tags).size !== tags.length) {
+          fail('invalid_group','focusTags permits distinct canonical Focus Areas and one custom value up to 30 characters',400);
+        }
+      }
       if ('coverId' in patch && patch.coverId !== null && (typeof patch.coverId !== 'string' || !covers.has(patch.coverId))) fail('invalid_group','coverId must be a curated catalogue key',400);
       for (const field of ['isPrivate','requireAdminApproval','allowMemberChallenges'] as const) if (field in patch && typeof patch[field] !== 'boolean') fail('invalid_group',`${field} must be boolean`,400);
       const normalized: Record<string, unknown> = { ...patch };
@@ -115,7 +124,17 @@ export async function createGovernedGroup(db: Db, actor: GroupMutationActor, ter
   const covers=['cover-1','cover-2','cover-3','cover-4','cover-5','cover-6','cover-7','cover-8'];
   if (terms.coverId !== undefined && (typeof terms.coverId !== 'string' || !covers.includes(terms.coverId))) fail('invalid_group','coverId must be a curated catalogue key',400);
   for(const [field,max] of [['tagline',140],['location',120]] as const) if(terms[field]!==undefined && (typeof terms[field]!=='string'||terms[field].length>max)) fail('invalid_group',`${field} must be a string up to ${max} chars`,400);
-  for(const [field,maxCount,maxLen] of [['focusTags',8,30],['rules',5,200]] as const){const v=terms[field];if(v!==undefined&&(!Array.isArray(v)||v.length>maxCount||v.some(x=>typeof x!=='string'||x.length>maxLen)))fail('invalid_group',`${field} contains invalid values`,400);}
+  for(const [field,maxCount,maxLen] of [['focusTags',13,30],['rules',5,200],['goalIds',9,40],['communityNormIds',6,40]] as const){const v=terms[field];if(v!==undefined&&(!Array.isArray(v)||v.length>maxCount||v.some(x=>typeof x!=='string'||x.length>maxLen)))fail('invalid_group',`${field} contains invalid values`,400);}
+  const focusTags = Array.isArray(terms.focusTags) ? terms.focusTags as string[] : [];
+  const focusLabels = new Set<string>(GROUP_FOCUS_AREAS.map(item => item.label));
+  if (focusTags.filter(tag => !focusLabels.has(tag)).length > 1 || focusTags.some(tag => !focusLabels.has(tag) && tag.length > 30)) fail('invalid_group','focusTags permits canonical Focus Areas and one custom value up to 30 characters',400);
+  const goalIds = Array.isArray(terms.goalIds) ? terms.goalIds as string[] : [];
+  const allowedGoals = new Set<string>(GROUP_GOALS.map(item => item.id));
+  if (goalIds.some(id => !allowedGoals.has(id)) || new Set(goalIds).size !== goalIds.length) fail('invalid_group','goalIds contains an unknown or repeated catalogue ID',400);
+  const normIds = Array.isArray(terms.communityNormIds) ? terms.communityNormIds as string[] : [];
+  const allowedNorms = new Set<string>(GROUP_COMMUNITY_NORMS.map(item => item.id));
+  if (normIds.some(id => !allowedNorms.has(id)) || new Set(normIds).size !== normIds.length) fail('invalid_group','communityNormIds contains an unknown or repeated catalogue ID',400);
+  for (const [field, max] of [['customGoal',80],['customCommunityNorm',200]] as const) if (terms[field] !== undefined && (typeof terms[field] !== 'string' || (terms[field] as string).trim().length > max)) fail('invalid_group',`${field} must be at most ${max} characters`,400);
   const now = new Date().toISOString();
   try {
     return await db.transaction(async tx => {
@@ -125,11 +144,11 @@ export async function createGovernedGroup(db: Db, actor: GroupMutationActor, ter
       for (let attempt = 0; attempt < 4 && result.rows.length === 0; attempt += 1) {
         const code = generateGroupInviteCode();
         result = await tx.query<{ group_id: string }>(
-          `INSERT INTO groups (name, description, is_private, status, require_admin_approval, allow_member_challenges, steward_member_id, invite_code, cover_id, tagline, location, focus_tags, rules, created_at, updated_at)
-           VALUES ($1,$2,$3,'active',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)
+          `INSERT INTO groups (name, description, is_private, status, require_admin_approval, allow_member_challenges, steward_member_id, invite_code, cover_id, tagline, location, focus_tags, rules, goal_ids, custom_goal, community_norm_ids, custom_community_norm, created_at, updated_at)
+           VALUES ($1,$2,$3,'active',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17)
            ON CONFLICT ((upper(btrim(invite_code)))) WHERE invite_code IS NOT NULL DO NOTHING
            RETURNING group_id`,
-          [name, typeof terms.description==='string'?terms.description:'', terms.isPrivate===true, terms.requireAdminApproval===true, terms.allowMemberChallenges!==false, actor.memberId, code, typeof terms.coverId==='string'?terms.coverId:null, typeof terms.tagline==='string'?terms.tagline.trim():'', typeof terms.location==='string'?terms.location.trim():'', Array.isArray(terms.focusTags)?terms.focusTags:[], Array.isArray(terms.rules)?terms.rules:[], now]);
+          [name, typeof terms.description==='string'?terms.description:'', terms.isPrivate===true, terms.requireAdminApproval===true, terms.allowMemberChallenges!==false, actor.memberId, code, typeof terms.coverId==='string'?terms.coverId:null, typeof terms.tagline==='string'?terms.tagline.trim():'', typeof terms.location==='string'?terms.location.trim():'', Array.isArray(terms.focusTags)?terms.focusTags:[], Array.isArray(terms.rules)?terms.rules:[], goalIds, typeof terms.customGoal==='string'&&terms.customGoal.trim()?terms.customGoal.trim():null, normIds, typeof terms.customCommunityNorm==='string'&&terms.customCommunityNorm.trim()?terms.customCommunityNorm.trim():null, now]);
       }
       if (result.rows.length === 0) throw new Error('Unable to allocate a unique Group invite code');
       const id = result.rows[0].group_id;

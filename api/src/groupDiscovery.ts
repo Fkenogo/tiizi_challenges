@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import type { Db } from './db.js';
 import { GroupMutationError } from './groupErrors.js';
 import { normalizeGroupInviteCode } from './postgresGroupAuthority.js';
+import { GROUP_GOALS, labelsForIds } from './groupVocabulary.js';
 
 export const DISCOVERY_DEFAULT_LIMIT = 12;
 export const DISCOVERY_MAX_LIMIT = 30;
@@ -14,6 +15,7 @@ export interface DiscoverableGroup {
   coverId: string | null;
   location: string;
   focusTags: string[];
+  goals: string[];
   memberCount: number;
   admissionMode: 'open' | 'approval';
   viewerRelationship: 'steward' | 'member' | 'pending' | 'none';
@@ -28,6 +30,8 @@ interface DiscoverRow {
   cover_id: string | null;
   location: string | null;
   focus_tags: unknown;
+  goal_ids?: unknown;
+  custom_goal?: string | null;
   member_count: number | string;
   require_admin_approval: boolean;
   viewer_status: string | null;
@@ -79,6 +83,7 @@ function toGroup(row: DiscoverRow): DiscoverableGroup {
     coverId: row.cover_id,
     location: row.location ?? '',
     focusTags: Array.isArray(row.focus_tags) ? row.focus_tags.filter((item): item is string => typeof item === 'string') : [],
+    goals: [...labelsForIds(row.goal_ids, GROUP_GOALS), ...(row.custom_goal ? [row.custom_goal] : [])],
     memberCount: Number(row.member_count),
     admissionMode: row.require_admin_approval ? 'approval' : 'open',
     viewerRelationship: relationship(row),
@@ -98,7 +103,7 @@ export async function listDiscoverableGroups(
   const match = q.length > 0 ? `%${escapeLike(q)}%` : null;
   const result = await db.query<DiscoverRow>(
     `SELECT g.group_id, g.name, g.description, g.tagline, g.cover_id, g.location,
-       g.focus_tags, g.require_admin_approval, g.created_at,
+       g.focus_tags, g.goal_ids, g.custom_goal, g.require_admin_approval, g.created_at,
        gm.status AS viewer_status, (g.steward_member_id=$1) AS viewer_is_steward,
        (SELECT count(*)::int FROM group_memberships active_members
         WHERE active_members.group_id=g.group_id AND active_members.status IN ('active','joined')) AS member_count
@@ -108,11 +113,13 @@ export async function listDiscoverableGroups(
        AND ($2::text IS NULL OR g.name ILIKE $2 ESCAPE E'\\\\'
          OR COALESCE(g.description,'') ILIKE $2 ESCAPE E'\\\\'
          OR COALESCE(g.tagline,'') ILIKE $2 ESCAPE E'\\\\'
-         OR EXISTS (SELECT 1 FROM unnest(COALESCE(g.focus_tags, ARRAY[]::text[])) tag WHERE tag ILIKE $2 ESCAPE E'\\\\'))
+         OR EXISTS (SELECT 1 FROM unnest(COALESCE(g.focus_tags, ARRAY[]::text[])) tag WHERE tag ILIKE $2 ESCAPE E'\\\\')
+         OR COALESCE(g.custom_goal,'') ILIKE $2 ESCAPE E'\\\\'
+         OR EXISTS (SELECT 1 FROM unnest(COALESCE(g.goal_ids, ARRAY[]::text[])) goal_id WHERE goal_id=ANY($6::text[])))
        AND ($3::timestamptz IS NULL OR (g.created_at,g.group_id)<($3::timestamptz,$4::uuid))
      ORDER BY g.created_at DESC, g.group_id DESC
      LIMIT $5`,
-    [viewerMemberId, match, cursor?.createdAt ?? null, cursor?.groupId ?? null, rawLimit + 1],
+    [viewerMemberId, match, cursor?.createdAt ?? null, cursor?.groupId ?? null, rawLimit + 1, GROUP_GOALS.filter((goal) => goal.label.toLocaleLowerCase().includes(q.toLocaleLowerCase())).map((goal) => goal.id)],
   );
   const hasMore = result.rows.length > rawLimit;
   const pageRows = result.rows.slice(0, rawLimit);
@@ -127,7 +134,7 @@ export async function resolveGroupInvite(db: Db, viewerMemberId: string, rawCode
   if (!code) throw new GroupMutationError(404, 'invite_not_found', 'Invite code not found');
   const result = await db.query<DiscoverRow & { is_private: boolean }>(
     `SELECT g.group_id, g.name, g.description, g.tagline, g.cover_id, g.location,
-       g.focus_tags, g.require_admin_approval, g.is_private, g.created_at,
+       g.focus_tags, g.goal_ids, g.custom_goal, g.require_admin_approval, g.is_private, g.created_at,
        gm.status AS viewer_status, (g.steward_member_id=$2) AS viewer_is_steward,
        (SELECT count(*)::int FROM group_memberships active_members
         WHERE active_members.group_id=g.group_id AND active_members.status IN ('active','joined')) AS member_count

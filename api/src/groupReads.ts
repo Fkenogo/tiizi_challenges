@@ -34,6 +34,7 @@ import {
 import type { GroupMutationStore } from './groupMutations.js';
 import { GroupMutationError } from './groupErrors.js';
 import { listDiscoverableGroups } from './groupDiscovery.js';
+import { GROUP_COMMUNITY_NORMS, GROUP_FOCUS_AREAS, GROUP_GOALS, labelsForIds } from './groupVocabulary.js';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -171,6 +172,12 @@ export interface ApiGroupDetail {
   tagline: string;
   location: string;
   focusTags: string[];
+  goalIds: string[];
+  goals: string[];
+  customGoal: string | null;
+  communityNormIds: string[] | null;
+  communityNorms: string[] | null;
+  customCommunityNorm: string | null;
   rules: string[] | null;
   /** Stored V2 invite code; present only to an active Group member. */
   inviteCode?: string;
@@ -254,6 +261,11 @@ export async function getGroupDetail(
   const rules = Array.isArray(live.rules)
     ? (live.rules as unknown[]).filter((t): t is string => typeof t === 'string')
     : [];
+  const goalIds = Array.isArray(live.goalIds) ? (live.goalIds as unknown[]).filter((value): value is string => typeof value === 'string') : [];
+  const customGoal = typeof live.customGoal === 'string' ? live.customGoal : null;
+  const communityNormIds = Array.isArray(live.communityNormIds) ? (live.communityNormIds as unknown[]).filter((value): value is string => typeof value === 'string') : [];
+  const communityNorms = labelsForIds(communityNormIds, GROUP_COMMUNITY_NORMS);
+  const customCommunityNorm = typeof live.customCommunityNorm === 'string' ? live.customCommunityNorm : null;
   if (relationship === 'none' || relationship === 'pending') {
     // Private Groups are invisible outside active membership: 404,
     // indistinguishable from unknown — no existence or state leak.
@@ -277,6 +289,12 @@ export async function getGroupDetail(
       tagline,
       location,
       focusTags,
+      goalIds,
+      goals: [...labelsForIds(goalIds, GROUP_GOALS), ...(customGoal ? [customGoal] : [])],
+      customGoal,
+      communityNormIds: null,
+      communityNorms: null,
+      customCommunityNorm: null,
       rules: null,
     };
   }
@@ -299,6 +317,12 @@ export async function getGroupDetail(
     tagline,
     location,
     focusTags,
+    goalIds,
+    goals: [...labelsForIds(goalIds, GROUP_GOALS), ...(customGoal ? [customGoal] : [])],
+    customGoal,
+    communityNormIds,
+    communityNorms: [...communityNorms, ...(customCommunityNorm ? [customCommunityNorm] : [])],
+    customCommunityNorm,
     rules,
     inviteCode: identityRow.rows[0]?.invite_code ?? undefined,
   };
@@ -369,6 +393,12 @@ const groupDetailResponseSchema = {
     tagline: { type: 'string' },
     location: { type: 'string' },
     focusTags: { type: 'array', items: { type: 'string' } },
+    goalIds: { type: 'array', items: { type: 'string' } },
+    goals: { type: 'array', items: { type: 'string' } },
+    customGoal: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    communityNormIds: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
+    communityNorms: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
+    customCommunityNorm: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     rules: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
     inviteCode: { type: 'string' },
   },
@@ -390,6 +420,11 @@ export function registerGroupReadRoutes(
       if (error instanceof GroupMutationError) throw error;
       throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group discovery authority unavailable');
     }
+  });
+
+  app.get('/v1/groups/options', async (request) => {
+    authenticatedMember(request);
+    return { focusAreas: GROUP_FOCUS_AREAS, goals: GROUP_GOALS, communityNorms: GROUP_COMMUNITY_NORMS };
   });
 
   app.get('/v1/groups/:groupId/members/pending', {

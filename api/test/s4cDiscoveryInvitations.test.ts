@@ -17,7 +17,7 @@ describe('S4c PostgreSQL discovery and admission', () => {
     const db = testDb();
     for (const uid of ['discover-owner', 'discover-member']) await seedMember(db, uid);
     const app = buildTestApp({ owner: 'discover-owner', member: 'discover-member' });
-    const first = await createGroup(app, 'owner', { name: 'Dawn Runners', description: 'Quiet miles', focusTags: ['running'] });
+    const first = await createGroup(app, 'owner', { name: 'Dawn Runners', description: 'Quiet miles', focusTags: ['running'], goalIds: ['build_consistency'] });
     const second = await createGroup(app, 'owner', { name: 'Evening Walkers', tagline: 'Walk together', location: 'Karura' });
     const privateGroup = await createGroup(app, 'owner', { name: 'Hidden Circle', isPrivate: true });
     const ended = await createGroup(app, 'owner', { name: 'Old Runners' });
@@ -33,6 +33,9 @@ describe('S4c PostgreSQL discovery and admission', () => {
     expect(next.json().groups[0].id).toBe(first.id);
     const searched = await app.inject({ method: 'GET', url: '/v1/groups/discover?q=RUNN&limit=10', headers: authHeaders('member') });
     expect(searched.json().groups.map((group: { id: string }) => group.id)).toEqual([first.id]);
+    const goalSearch = await app.inject({ method: 'GET', url: '/v1/groups/discover?q=consistency&limit=10', headers: authHeaders('member') });
+    expect(goalSearch.json().groups.map((group: { id: string }) => group.id)).toEqual([first.id]);
+    expect(goalSearch.json().groups[0].goals).toContain('Build consistency with healthy habits');
     expect(JSON.stringify(searched.json())).not.toMatch(/Hidden Circle|Old Runners|Karura|inviteCode|steward|rules|legacyId|firebase/i);
     expect([privateGroup.id, ended.id]).not.toContain(searched.json().groups[0].id);
     await app.close();

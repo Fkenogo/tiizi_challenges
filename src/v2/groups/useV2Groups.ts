@@ -19,6 +19,8 @@ import {
   type CreatedGroup,
   type MyMembershipsResponse,
   type V2GroupDetail,
+  fetchGroupOptions,
+  type V2GroupOptions,
   type V2GroupRoster,
   type V2AdmissionDecision,
   updateGroupSettings,
@@ -89,6 +91,16 @@ export function useV2GroupDiscovery(q: string) {
     queryFn: ({ pageParam }) => fetchDiscoverableGroups({ q, cursor: pageParam, limit: 12 }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!user,
+  });
+}
+
+export function useV2GroupOptions() {
+  const { user } = useAuth();
+  return useQuery<V2GroupOptions>({
+    queryKey: ['v2-group-options', user?.uid],
+    queryFn: fetchGroupOptions,
+    enabled: !!user,
+    staleTime: Infinity,
   });
 }
 

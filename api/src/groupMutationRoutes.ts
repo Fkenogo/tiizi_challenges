@@ -27,6 +27,7 @@ import {
 import { GroupMutationError } from './groupErrors.js';
 import { resolveGroupInvite } from './groupDiscovery.js';
 import { createGovernedGroup, joinGovernedGroup, leaveGovernedGroup, reviewPendingMembership, updateGovernedGroupSettings } from './postgresGroupAuthority.js';
+import { GROUP_COMMUNITY_NORMS, GROUP_FOCUS_AREAS, GROUP_GOALS } from './groupVocabulary.js';
 
 export interface GroupMutationRouteDeps {
   store?: GroupMutationStore;
@@ -54,6 +55,7 @@ const ALLOWED_CREATE_FIELDS = new Set([
   'location',
   'focusTags',
   'rules',
+  'goalIds', 'customGoal', 'communityNormIds', 'customCommunityNorm',
 ]);
 
 const ALLOWED_SETTINGS_FIELDS = new Set(['name','description','tagline','location','focusTags','coverId','isPrivate','requireAdminApproval','allowMemberChallenges']);
@@ -109,9 +111,27 @@ function checkCreateBody(data: unknown): string | null {
       return `${field} must be a string when present`;
     }
   }
-  for (const field of ['focusTags', 'rules'] as const) {
+  for (const field of ['focusTags', 'rules', 'goalIds', 'communityNormIds'] as const) {
     if (body[field] !== undefined && !Array.isArray(body[field])) {
       return `${field} must be an array of strings when present`;
+    }
+  }
+  for (const field of ['customGoal', 'customCommunityNorm'] as const) {
+    if (body[field] !== undefined && typeof body[field] !== 'string') return `${field} must be a string when present`;
+  }
+  if (body.focusTags !== undefined && Array.isArray(body.focusTags)) {
+    const standard = new Set<string>(GROUP_FOCUS_AREAS.map((entry) => entry.label));
+    const tags = body.focusTags as unknown[];
+    if (tags.some((tag) => typeof tag !== 'string' || tag.length > 30)) return 'focusTags must be labels of at most 30 characters';
+    if (tags.filter((tag) => standard.has(tag as string)).length !== new Set(tags.filter((tag) => standard.has(tag as string))).size) return 'focusTags must not contain duplicates';
+    if (tags.filter((tag) => !standard.has(tag as string)).length > 1) return 'only one custom focus area is allowed';
+  }
+  for (const [field, catalogue] of [['goalIds', GROUP_GOALS], ['communityNormIds', GROUP_COMMUNITY_NORMS]] as const) {
+    if (body[field] !== undefined && Array.isArray(body[field])) {
+      const allowed = new Set<string>(catalogue.map((entry) => entry.id));
+      const ids = body[field] as unknown[];
+      if (ids.some((id) => typeof id !== 'string' || !allowed.has(id))) return `${field} contains an unknown catalogue ID`;
+      if (new Set(ids).size !== ids.length) return `${field} must not contain duplicates`;
     }
   }
   return null;
@@ -246,8 +266,12 @@ const createGroupBodySchema = {
     coverId: { type: 'string', minLength: 1, maxLength: 32 },
     tagline: { type: 'string', maxLength: 140 },
     location: { type: 'string', maxLength: 120 },
-    focusTags: { type: 'array', maxItems: 8, items: { type: 'string', maxLength: 30 } },
+    focusTags: { type: 'array', maxItems: 13, items: { type: 'string', maxLength: 30 } },
     rules: { type: 'array', maxItems: 5, items: { type: 'string', maxLength: 200 } },
+    goalIds: { type: 'array', maxItems: 9, items: { type: 'string', maxLength: 40 } },
+    customGoal: { type: 'string', maxLength: 80 },
+    communityNormIds: { type: 'array', maxItems: 6, items: { type: 'string', maxLength: 40 } },
+    customCommunityNorm: { type: 'string', maxLength: 200 },
   },
 } as const;
 

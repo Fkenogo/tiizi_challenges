@@ -14,7 +14,7 @@ export function V2GroupDiscoveryPanel({ onOpen }: { onOpen: (id: string) => void
   return <section aria-label="Discover Groups" className="space-y-3">
     <div>
       <label className="mb-1 block text-sm font-bold text-slate-800">Search Groups<V2TextInput value={query} onChange={setQuery} placeholder="Name, purpose, or focus" maxLength={100} /></label>
-      <p className="mt-1 text-xs text-slate-500">Searches Group names, descriptions, taglines, and focus areas.</p>
+      <p className="mt-1 text-xs text-slate-500">Searches Group names, descriptions, taglines, focus areas, and goals.</p>
     </div>
     <div>
       <button type="button" aria-expanded={showInviteCode} onClick={() => setShowInviteCode((value) => !value)} className="min-h-10 rounded-lg px-2 text-sm font-bold text-primary hover:bg-orange-50">
@@ -43,6 +43,7 @@ function DiscoverRow({ group, onOpen }: { group: V2DiscoverableGroup; onOpen: (i
         <span className="block truncate text-base font-black text-slate-900">{group.name}</span>
         <span className="mt-0.5 block truncate text-xs text-slate-600">{group.tagline || group.description || 'Tiizi Group'}</span>
         {group.focusTags.length > 0 && <span className="mt-1.5 flex flex-wrap gap-1">{group.focusTags.slice(0, 3).map((tag) => <span key={tag} className="max-w-full truncate rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>)}</span>}
+        {group.goals.length > 0 && <span className="mt-1 block truncate text-[11px] text-slate-500">Goals: {group.goals.slice(0, 2).join(' · ')}</span>}
         <span className="mt-1 block text-xs text-slate-500">{group.memberCount} {group.memberCount === 1 ? 'member' : 'members'} · {group.admissionMode === 'approval' ? 'Request to join' : 'Open to join'}</span>
       </span>
     </button>
