@@ -197,6 +197,13 @@ export function V2CreatedChallengeScreen() {
           onLeave={() => setLeaveOpen(true)}
         />
 
+        {challenge.socialCause?.approvalStatus === 'pending_approval' && (
+          <section role="status" aria-label="Cause approval pending" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            <h2 className="font-bold">Challenge created — Cause approval pending</h2>
+            <p className="mt-1">A Platform Operator must approve this Cause before the Challenge can go live. This Challenge will remain inactive if its scheduled start arrives before approval.</p>
+          </section>
+        )}
+
         <p className="text-xs font-medium text-slate-500">
           {statusLabelForEndState(challenge.status, endState)} · {formatDayRange(challenge.startDate, challenge.endDate)} · {timezoneLabel(challenge.timezone)} · {participationSentence}
         </p>

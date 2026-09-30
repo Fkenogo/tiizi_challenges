@@ -285,6 +285,10 @@ check('unknown codes fall back safely', /try again/i.test(creationErrorMessage('
 console.log('created context + list binding');
 const createdSource = read('src/v2/challenges/V2CreatedChallengeScreen.tsx');
 check('created screen reads persisted detail', createdSource.includes('useChallengeDetailV2'));
+check('created screen clearly communicates pending Cause approval and inactive scheduled-start consequence',
+  /approvalStatus === ['"]pending_approval['"]/.test(createdSource)
+  && /Cause approval pending/.test(createdSource)
+  && /remain inactive if its scheduled start arrives before approval/.test(createdSource));
 check('created screen shows participation state', /myParticipation/.test(createdSource));
 check('created screen renders persisted detail progress (measurement config no longer duplicated)',
   /V2ProgressSection/.test(createdSource) && !/MeasurementSummary/.test(createdSource));
