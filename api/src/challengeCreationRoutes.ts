@@ -152,6 +152,9 @@ const ALLOWED_TOP_FIELDS = new Set([
   'group_id',
   'challenge_type',
   'title',
+  'cover_id',
+  'support_tiizi_enabled',
+  'social_cause',
   'description',
   'instructions',
   'start_date',
@@ -277,6 +280,17 @@ function checkCreationBody(data: unknown): string | null {
     && (typeof body.instructions !== 'string' || body.instructions.length > 2000)) {
     return 'instructions must be a string up to 2000 chars when present';
   }
+  if (body.cover_id !== undefined && !['challenge-1','challenge-2','challenge-3','challenge-4','challenge-5','challenge-6','challenge-7','challenge-8'].includes(String(body.cover_id))) return 'cover_id must reference the governed Challenge cover catalogue';
+  if (body.support_tiizi_enabled !== undefined && typeof body.support_tiizi_enabled !== 'boolean') return 'support_tiizi_enabled must be boolean';
+  if (body.social_cause !== undefined) {
+    if (!body.social_cause || typeof body.social_cause !== 'object' || Array.isArray(body.social_cause)) return 'social_cause must be an object';
+    const cause = body.social_cause as Record<string, unknown>;
+    const allowed = new Set(['title','description','purpose','beneficiary','payment_destination_reference']);
+    if (Object.keys(cause).some((key) => !allowed.has(key))) return 'social_cause contains unsupported fields';
+    for (const [key, max] of [['title',120],['description',2000],['purpose',500],['beneficiary',200],['payment_destination_reference',300]] as const) {
+      if (typeof cause[key] !== 'string' || !(cause[key] as string).trim() || (cause[key] as string).length > max) return `social_cause.${key} is required (max ${max})`;
+    }
+  }
   if (typeof body.start_date !== 'string' || !DAY_RE.test(body.start_date)) {
     return 'start_date must be YYYY-MM-DD';
   }
@@ -359,6 +373,11 @@ const createBodySchema = {
     group_id: { type: 'string', format: 'uuid' },
     challenge_type: { type: 'string', enum: ['collective', 'competitive', 'streak'] },
     title: { type: 'string', minLength: 1, maxLength: 200 },
+    cover_id: { type: 'string', enum: ['challenge-1','challenge-2','challenge-3','challenge-4','challenge-5','challenge-6','challenge-7','challenge-8'] },
+    support_tiizi_enabled: { type: 'boolean' },
+    social_cause: { type: 'object', additionalProperties: false, required: ['title','description','purpose','beneficiary','payment_destination_reference'], properties: {
+      title: { type: 'string', minLength: 1, maxLength: 120 }, description: { type: 'string', minLength: 1, maxLength: 2000 }, purpose: { type: 'string', minLength: 1, maxLength: 500 }, beneficiary: { type: 'string', minLength: 1, maxLength: 200 }, payment_destination_reference: { type: 'string', minLength: 1, maxLength: 300 },
+    } },
     description: { type: 'string', maxLength: 2000 },
     instructions: { type: 'string', maxLength: 2000 },
     start_date: { type: 'string', pattern: DAY_PATTERN },
@@ -395,6 +414,9 @@ interface RouteBody {
   group_id: string;
   challenge_type: 'collective' | 'competitive' | 'streak';
   title: string;
+  cover_id?: string;
+  support_tiizi_enabled?: boolean;
+  social_cause?: { title: string; description: string; purpose: string; beneficiary: string; payment_destination_reference: string };
   description?: string;
   instructions?: string;
   start_date: string;
@@ -495,8 +517,14 @@ export function registerChallengeCreationRoutes(
             definition: normalized,
             groupId: body.group_id,
             creatorMemberId: member.memberId,
-            activate: body.activate ?? false,
+            activate: body.social_cause ? false : (body.activate ?? false),
             joinCreator: body.join_creator ?? false,
+            coverId: body.cover_id ?? null,
+            supportTiiziEnabled: body.support_tiizi_enabled === true,
+            socialCause: body.social_cause ? {
+              title: body.social_cause.title, description: body.social_cause.description, purpose: body.social_cause.purpose,
+              beneficiary: body.social_cause.beneficiary, paymentDestinationReference: body.social_cause.payment_destination_reference,
+            } : null,
             ...(body.idempotency_key !== undefined ? { idempotencyKey: body.idempotency_key } : {}),
           },
           {

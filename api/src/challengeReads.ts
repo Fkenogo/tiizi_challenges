@@ -149,6 +149,8 @@ export interface ApiChallengeSummary {
   /** Pinned Knowledge presentation metadata for search and domain filtering. */
   activities: ApiChallengeActivityDiscovery[];
   title: string;
+  coverId: string | null;
+  supportTiiziEnabled: boolean;
   description: string;
   challengeType: 'collective' | 'competitive' | 'streak';
   status: 'establishment' | 'active' | 'ended';
@@ -197,6 +199,7 @@ export interface ApiFinalResult {
 
 export interface ApiChallengeDetail extends ApiChallengeSummary {
   instructions: string;
+  socialCause: { title: string; description: string; purpose: string; beneficiary: string; approvalStatus: 'pending_approval' | 'approved' | 'revision_required'; decisionReason: string | null } | null;
   activatedAt: string | null;
   endedAt: string | null;
   /** EBC-04 finalization marker mirror (NULL = not finalized). */
@@ -614,6 +617,8 @@ async function toSummary(
     groupName: discovery.groupName,
     activities: discovery.activities,
     title: challenge.title,
+    coverId: challenge.cover_id ?? null,
+    supportTiiziEnabled: challenge.support_tiizi_enabled === true,
     description: challenge.description,
     challengeType: challenge.challenge_type,
     status: challenge.status,
@@ -952,12 +957,19 @@ export async function getChallengeDetail(
       ? [{ name: row.name, domain: row.kind, category: row.category ?? '', subcategory: row.subcategory ?? '' }]
       : [],
   );
+  const causeResult = await db.query<{ title: string; description: string; purpose: string; beneficiary: string; approval_status: 'pending_approval' | 'approved' | 'revision_required'; decision_reason: string | null }>(
+    `SELECT title,description,purpose,beneficiary,approval_status,decision_reason FROM challenge_social_causes WHERE challenge_id=$1 AND approval_status <> 'removed'`,
+    [challengeId],
+  );
+  const cause = causeResult.rows[0];
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
     groupName,
     activities,
     title: challenge.title,
+    coverId: challenge.cover_id ?? null,
+    supportTiiziEnabled: challenge.support_tiizi_enabled === true,
     description: challenge.description,
     challengeType: challenge.challenge_type,
     status: challenge.status,
@@ -977,6 +989,7 @@ export async function getChallengeDetail(
       ? toOwnParticipation(episode, participationDerived, episodeFinal)
       : null,
     instructions: challenge.instructions,
+    socialCause: cause ? { title: cause.title, description: cause.description, purpose: cause.purpose, beneficiary: cause.beneficiary, approvalStatus: cause.approval_status, decisionReason: cause.decision_reason } : null,
     activatedAt: challenge.activated_at,
     endedAt: challenge.ended_at,
     finalizedAt: challenge.finalized_at,

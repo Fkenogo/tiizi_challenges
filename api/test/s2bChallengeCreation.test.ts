@@ -42,7 +42,7 @@ import { authHeaders, seedMember, seedMembership, stubVerifier, testDb } from '.
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys CASCADE',
+    'TRUNCATE challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys CASCADE',
   );
 });
 

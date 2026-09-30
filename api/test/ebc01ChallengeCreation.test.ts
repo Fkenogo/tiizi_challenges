@@ -25,7 +25,7 @@ import type { GroupMutationStore } from '../src/groupMutations.js';
 
 beforeEach(async () => {
   await testDb().query(
-    'TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
+    'TRUNCATE challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -146,6 +146,53 @@ async function world(): Promise<World> {
 }
 
 describe('governed challenge establishment', () => {
+  it('persists governed cover and support configuration and blocks activation until Cause approval', async () => {
+    const w = await world();
+    const app = buildApp({
+      db: testDb(), verifier: stubVerifier(tokensFor(w)),
+      socialCauseApproval: { isPlatformOperator: async () => true },
+      challengeCreation: {
+        creationAuthority: fakeAuthority(() => ({ permitted: true, role: 'steward' })),
+        eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(testDb(), kind)(key),
+      },
+    });
+    const response = await app.inject({ method: 'POST', url: '/v1/challenges', headers: authHeaders(w.creatorToken), payload: validBody(w, {
+      cover_id: 'challenge-3', support_tiizi_enabled: true,
+      social_cause: { title: 'Park care', description: 'Restore the park', purpose: 'Clean paths', beneficiary: 'Local Park Trust', payment_destination_reference: 'beneficiary-wallet-123' },
+    }) });
+    expect(response.statusCode).toBe(201);
+    const created = response.json() as { challengeId: string; status: string; activated: boolean };
+    expect(created).toMatchObject({ status: 'establishment', activated: false });
+    const row = await testDb().query<{ cover_id: string; support_tiizi_enabled: boolean }>('SELECT cover_id,support_tiizi_enabled FROM challenges WHERE challenge_id=$1', [created.challengeId]);
+    expect(row.rows[0]).toEqual({ cover_id: 'challenge-3', support_tiizi_enabled: true });
+    const cause = await testDb().query<{ approval_status: string }>('SELECT approval_status FROM challenge_social_causes WHERE challenge_id=$1', [created.challengeId]);
+    expect(cause.rows[0].approval_status).toBe('pending_approval');
+    await expect(testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId])).rejects.toThrow(/approved Social Cause/);
+    const approved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(w.creatorToken), payload: { decision: 'approved', reason: 'Beneficiary and destination verified' } });
+    expect(approved.statusCode).toBe(200);
+    const revised = await app.inject({ method: 'PUT', url: `/v1/challenges/${created.challengeId}/social-cause`, headers: authHeaders(w.creatorToken), payload: {
+      title: 'Park care', description: 'Restore the park', purpose: 'Clean paths', beneficiary: 'Local Park Trust', payment_destination_reference: 'beneficiary-wallet-updated',
+    } });
+    expect(revised.statusCode).toBe(200);
+    const reset = await testDb().query<{ approval_status: string; approval_authority: string | null }>('SELECT approval_status,approval_authority FROM challenge_social_causes WHERE challenge_id=$1', [created.challengeId]);
+    expect(reset.rows[0]).toEqual({ approval_status: 'pending_approval', approval_authority: null });
+    await expect(testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId])).rejects.toThrow(/approved Social Cause/);
+    const reapproved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(w.creatorToken), payload: { decision: 'approved', reason: 'Updated destination verified' } });
+    expect(reapproved.statusCode).toBe(200);
+    await testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId]);
+    const live = await testDb().query<{ status: string }>('SELECT status FROM challenges WHERE challenge_id=$1', [created.challengeId]);
+    expect(live.rows[0].status).toBe('active');
+    const audit = await testDb().query<{ count: string }>('SELECT count(*) FROM challenge_social_cause_decisions WHERE challenge_id=$1', [created.challengeId]);
+    expect(Number(audit.rows[0].count)).toBe(2);
+  });
+
+  it('requires Platform Operator authority for Cause decisions and permits approved activation', async () => {
+    const w = await world();
+    const app = buildApp({ db: testDb(), verifier: stubVerifier(tokensFor(w)), socialCauseApproval: { isPlatformOperator: async () => false } });
+    const response = await app.inject({ method: 'POST', url: `/v1/challenges/${w.groupId}/social-cause/decision`, headers: authHeaders(w.creatorToken), payload: { decision: 'approved', reason: 'ok' } });
+    expect(response.statusCode).toBe(403);
+  });
+
   it('eligible Group actor establishes a valid V2 Challenge atomically', async () => {
     const w = await world();
     const app = appFor(w, () => ({ permitted: true, role: 'member' }));

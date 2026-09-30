@@ -64,6 +64,8 @@ import {
   useV2Memberships,
 } from './useChallengeCreation';
 import type { ApiMembership } from '../../api/membershipsApi';
+import { coverFor, coverGradientFor } from '../groups/groupCovers';
+import { CHALLENGE_COVER_IDS, challengeCoverGradient, challengeCoverLabel } from './challengeCovers';
 
 /**
  * S2b — the seven-step V2 Challenge Creation experience.
@@ -502,19 +504,25 @@ function StepHosting({
         <V2Field label="Search Groups">
           <V2TextInput value={search} onChange={setSearch} placeholder="Find a Group you can host in…" />
         </V2Field>
-        <ul className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+        {search.trim() !== '' && <ul aria-label="Matching host Groups" className="mt-3 space-y-2">
           {filtered.map((membership) => (
             <li key={membership.groupId}>
               <button type="button" aria-pressed={state.groupId === membership.groupId}
                 onClick={() => onSelectGroup(membership)}
-                className={`flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-left ${state.groupId === membership.groupId ? 'bg-orange-50' : 'hover:bg-slate-50'}`}>
-                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold text-slate-900">{membership.group.name}</span><span className="block truncate text-xs text-slate-500">{roleLabel(membership.role)}</span></span>
-                {state.groupId === membership.groupId && <span className="text-xs font-bold text-primary">Selected</span>}
+                className={`flex min-h-[84px] w-full items-center gap-3 rounded-xl border p-3 text-left ${state.groupId === membership.groupId ? 'border-orange-400 bg-orange-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                <span className={`h-14 w-14 shrink-0 rounded-lg bg-gradient-to-br ${coverGradientFor(coverFor(membership.group.coverId, membership.groupId))}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold text-slate-900">{membership.group.name}</span><span className="block truncate text-xs text-slate-500">{roleLabel(membership.role)}</span>
+                  {(membership.group.focusTags ?? []).length > 0 && <span className="mt-1 flex flex-wrap gap-1">{(membership.group.focusTags ?? []).slice(0, 3).map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>)}</span>}
+                  {(membership.group.goals ?? []).length > 0 && <span className="mt-1 block truncate text-[11px] text-slate-500">Goals: {(membership.group.goals ?? []).slice(0, 2).join(' · ')}</span>}
+                </span>
+                <span className="shrink-0 text-xs font-bold text-primary">{state.groupId === membership.groupId ? 'Selected' : 'Select'}</span>
               </button>
             </li>
           ))}
-        </ul>
-        {filtered.length === 0 && <p className="mt-3 text-sm text-slate-500">No host Groups match that search.</p>}
+        </ul>}
+        {search.trim() === '' && <p className="mt-3 text-sm text-slate-500">Search by Group name to see Groups you can host in.</p>}
+        {search.trim() !== '' && filtered.length === 0 && <p className="mt-3 text-sm text-slate-500">No host Groups match that search.</p>}
+        {state.groupId && <p className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-bold text-slate-800">Selected Group: {state.groupName}. Search again to change your selection.</p>}
       </div>
     </div>
   );
@@ -525,6 +533,11 @@ function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdat
     <p className="text-sm leading-6 text-slate-600">Give the Challenge a clear name and a short description for your Group.</p>
     <V2Field label="Challenge title"><V2TextInput value={state.title} onChange={(title) => onUpdate({ title })} placeholder="e.g. Sunrise walking streak" /></V2Field>
     <V2Field label="Description" hint="Optional. Explain what this Challenge means to your Group."><V2TextArea value={state.description} onChange={(description) => onUpdate({ description })} placeholder="Add a short description…" /></V2Field>
+    <fieldset><legend className="mb-2 text-sm font-bold text-slate-900">Challenge cover</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{CHALLENGE_COVER_IDS.map((cover) => <button key={cover} type="button" aria-pressed={state.coverId === cover} onClick={() => onUpdate({ coverId: cover })} className={`overflow-hidden rounded-xl border text-left ${state.coverId === cover ? 'border-orange-500 ring-2 ring-orange-300' : 'border-slate-200'}`}><span className={`block h-16 bg-gradient-to-br ${challengeCoverGradient(cover)}`} /><span className="block px-2 py-1.5 text-xs font-bold">{challengeCoverLabel(cover)}</span></button>)}</div></fieldset>
+    <section className="rounded-2xl border border-slate-200 p-4"><h3 className="text-sm font-black">Optional support</h3><label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.socialCauseEnabled} onChange={(event) => onUpdate({ socialCauseEnabled: event.target.checked })} />Support a Cause</label>
+      {state.socialCauseEnabled && <div className="mt-2 grid gap-3 rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">A Platform Operator must approve this Cause before the Challenge can go live. Tiizi does not hold Cause funds.</p><V2Field label="Cause title"><V2TextInput value={state.socialCauseTitle} onChange={(socialCauseTitle) => onUpdate({ socialCauseTitle })} /></V2Field><V2Field label="Description"><V2TextArea value={state.socialCauseDescription} onChange={(socialCauseDescription) => onUpdate({ socialCauseDescription })} /></V2Field><V2Field label="Purpose"><V2TextInput value={state.socialCausePurpose} onChange={(socialCausePurpose) => onUpdate({ socialCausePurpose })} /></V2Field><V2Field label="Beneficiary"><V2TextInput value={state.socialCauseBeneficiary} onChange={(socialCauseBeneficiary) => onUpdate({ socialCauseBeneficiary })} /></V2Field><V2Field label="External payment destination reference" hint="This destination belongs to the beneficiary."><V2TextInput value={state.socialCauseDestination} onChange={(socialCauseDestination) => onUpdate({ socialCauseDestination })} /></V2Field></div>}
+      <label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.supportTiiziEnabled} onChange={(event) => onUpdate({ supportTiiziEnabled: event.target.checked })} />Support Tiizi</label>{state.supportTiiziEnabled && <p className="ml-7 text-xs text-slate-600">Voluntary support for Tiizi. Participation never depends on financial support. The platform controls its payment destination.</p>}
+    </section>
   </div>;
 }
 
@@ -878,6 +891,7 @@ function StepReview({
   return (
     <div className="space-y-4">
       <V2Card className="bg-slate-900 text-white">
+        <div className={`mb-3 h-28 rounded-xl bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge cover preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">{challengeTypeLabel(state.challengeType)}</span>
           <span className="text-[11px] font-bold text-white/70">{state.durationDays} days</span>
@@ -888,6 +902,7 @@ function StepReview({
           Host Group: {state.groupName ?? '—'}
         </p>
       </V2Card>
+      <V2Card><p className="text-sm font-black">Optional support</p><p className="mt-2 text-sm">Support a Cause: {state.socialCauseEnabled ? `Enabled — ${state.socialCauseTitle} · beneficiary: ${state.socialCauseBeneficiary}` : 'Off'}</p>{state.socialCauseEnabled && <p className="mt-1 text-xs text-amber-800">A Platform Operator must approve the Cause before this Challenge can go live.</p>}<p className="mt-1 text-sm">Support Tiizi: {state.supportTiiziEnabled ? 'Enabled' : 'Off'}</p><p className="mt-1 text-xs text-slate-600">Participation is never conditional on financial support.</p><button type="button" className="mt-2 text-xs font-bold text-primary" onClick={() => onEditStep('CHALLENGE_DETAILS')}>Edit support options</button></V2Card>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReviewCard label="Host Group" value={state.groupName ?? '—'} onEdit={() => onEditStep('WHO_IS_HOSTING')} />

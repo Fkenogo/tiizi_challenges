@@ -161,6 +161,7 @@ export function V2CreatedChallengeScreen() {
         groupName: mayHost ? challenge.groupName ?? hostMembership.group.name : null,
         title: challenge.title,
         description: challenge.description,
+        coverId: challenge.coverId ?? null,
         activities,
         // Deliberately retain a fresh default schedule and opt-in state.
         creatorJoins: false,

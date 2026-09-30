@@ -173,3 +173,22 @@ None. Preflight SHA matched expected (`0ca85a3…`); programme state as expected
 - Group cover media: deferred (S3a record §7; Master Programme deferred observations). Requires future canonical media/reference authority.
 - Challenge cover media: deferred (same). Requires future canonical media/reference authority.
 - Neither was inspected beyond this confirmation, and neither blocks this reconciliation or S3b.
+
+## 9. Correction Pass 002 — Founder direction reopens configuration authority
+
+This historical reconciliation is superseded where it treated an earlier
+stage deferral as a permanent blocker. The Founder Experience Review has
+reached the Challenge Creation surface. Read the current bounded proposal in
+[Challenge Founder Experience Review 001 — Correction Pass 002](TIIZI-CHALLENGE-FOUNDER-EXPERIENCE-REVIEW-001-CORRECTION-002.md).
+
+The distinction is now explicit: Founder has resolved and authorized
+Challenge-side Support a Cause / Support Tiizi configuration truth
+(ownership, lifecycle, persistence, publication consequences, destination
+references, and Cause approval gating) for implementation in Correction Pass
+002. Participant payment initiation, verification, reporting, financial
+event audit, retry, and history remain S8 engine work.
+
+Challenge cover is separately reopened. The existing Group cover catalogue
+provides bounded evidence for a canonical curated-reference implementation.
+Founder has authorized a Challenge-owned curated catalogue and persisted
+reference. Challenge cover proceeds independently of the financial engine.

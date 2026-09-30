@@ -230,6 +230,14 @@ export interface WizardState {
   groupName: string | null;
   title: string;
   description: string;
+  coverId: string | null;
+  supportTiiziEnabled: boolean;
+  socialCauseEnabled: boolean;
+  socialCauseTitle: string;
+  socialCauseDescription: string;
+  socialCausePurpose: string;
+  socialCauseBeneficiary: string;
+  socialCauseDestination: string;
   activities: WizardActivity[];
   startDate: string;
   endDate: string;
@@ -339,6 +347,14 @@ export function createInitialWizardState(now: Date = new Date()): WizardState {
     groupName: null,
     title: '',
     description: '',
+    coverId: null,
+    supportTiiziEnabled: false,
+    socialCauseEnabled: false,
+    socialCauseTitle: '',
+    socialCauseDescription: '',
+    socialCausePurpose: '',
+    socialCauseBeneficiary: '',
+    socialCauseDestination: '',
     activities: [],
     startDate: todayIso(now),
     endDate: deriveEndDate(todayIso(now), 14),
@@ -382,6 +398,14 @@ export function assessVisibleStep(state: WizardState, step: VisibleStep): StepAs
       break;
     case 'CHALLENGE_DETAILS':
       if (!state.title.trim()) missing.push('title');
+      if (!state.coverId) missing.push('cover');
+      if (state.socialCauseEnabled) {
+        if (!state.socialCauseTitle.trim()) missing.push('cause.title');
+        if (!state.socialCauseDescription.trim()) missing.push('cause.description');
+        if (!state.socialCausePurpose.trim()) missing.push('cause.purpose');
+        if (!state.socialCauseBeneficiary.trim()) missing.push('cause.beneficiary');
+        if (!state.socialCauseDestination.trim()) missing.push('cause.destination');
+      }
       break;
     case 'WHAT_ARE_WE_DOING':
       if (state.activities.length === 0) missing.push('activities');
@@ -545,6 +569,13 @@ export function toEstablishmentBody(
     group_id: state.groupId,
     challenge_type: state.challengeType,
     title: state.title.trim(),
+    cover_id: state.coverId as string,
+    support_tiizi_enabled: state.supportTiiziEnabled,
+    ...(state.socialCauseEnabled ? { social_cause: {
+      title: state.socialCauseTitle.trim(), description: state.socialCauseDescription.trim(),
+      purpose: state.socialCausePurpose.trim(), beneficiary: state.socialCauseBeneficiary.trim(),
+      payment_destination_reference: state.socialCauseDestination.trim(),
+    } } : {}),
     ...(state.description.trim() ? { description: state.description.trim() } : {}),
     start_date: state.startDate,
     end_date: state.endDate,

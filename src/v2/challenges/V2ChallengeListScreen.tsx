@@ -8,6 +8,7 @@ import {
 } from './challengeCreationDraft';
 import { endStateFor, statusLabelForEndState, type V2ChallengeEndState } from './challengeEndState';
 import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
+import { challengeCoverGradient } from './challengeCovers';
 import { filterChallengeDiscovery, type ChallengeDomainFilter, type ChallengeLifecycleFilter, type ChallengeTypeFilter } from './challengeDiscovery';
 
 const INITIAL_RESULTS = 8;
@@ -133,7 +134,7 @@ export function V2ChallengeListScreen() {
                 onClick={() => navigate(`/v2/challenges/${challenge.challengeId}`)}
                 className="flex min-h-[86px] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-4"
               >
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-black uppercase text-slate-500" aria-hidden="true">{challengeTypeLabel(challenge.challengeType).slice(0, 1)}</span>
+                <span className={`h-14 w-14 shrink-0 rounded-xl bg-gradient-to-br ${challengeCoverGradient(challenge.coverId)} ${challenge.coverId ? '' : 'flex items-center justify-center text-xs font-black uppercase text-white/80'}`} aria-hidden="true">{challenge.coverId ? '' : challengeTypeLabel(challenge.challengeType).slice(0, 1)}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-1.5">
                     <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-primary">{challengeTypeLabel(challenge.challengeType)}</span>

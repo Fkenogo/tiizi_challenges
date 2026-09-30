@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { challengeTypeLabel, formatDayRange, timezoneLabel } from './challengeCreationDraft';
+import { challengeCoverGradient } from './challengeCovers';
 
 /**
  * CORR-002 §4 — Experience-Reference challenge hero (all three types).
@@ -56,7 +57,7 @@ export function V2ChallengeHero({
   const tone = HERO_TONE[detail.challengeType] ?? 'from-slate-800 via-slate-700 to-slate-600';
   return (
     <section aria-label="Challenge overview" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className={`relative bg-gradient-to-br px-5 pb-5 pt-4 text-white sm:px-6 ${tone}`}>
+      <div className={`relative bg-gradient-to-br px-5 pb-5 pt-4 text-white sm:px-6 ${detail.coverId ? challengeCoverGradient(detail.coverId) : tone}`}>
         <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-white/10" />
         <div aria-hidden className="pointer-events-none absolute -right-2 top-10 h-24 w-24 rounded-full bg-white/10" />
         <div className="relative flex flex-wrap items-center gap-2">

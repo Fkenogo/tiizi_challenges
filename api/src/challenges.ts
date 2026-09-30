@@ -64,6 +64,8 @@ export interface ChallengeRow {
   challenge_type: ChallengeType;
   status: ChallengeStatus;
   title: string;
+  cover_id: string | null;
+  support_tiizi_enabled: boolean;
   description: string;
   instructions: string;
   start_date: string;
@@ -88,6 +90,8 @@ export interface NewChallengeInput {
   created_by_member_id: string;
   challenge_type: ChallengeType;
   title: string;
+  cover_id?: string | null;
+  support_tiizi_enabled?: boolean;
   description?: string;
   instructions?: string;
   start_date: string;
@@ -189,6 +193,8 @@ export function normalizeChallengeRow(row: {
   challenge_type: ChallengeType;
   status: ChallengeStatus;
   title: unknown;
+  cover_id?: unknown;
+  support_tiizi_enabled?: unknown;
   description: unknown;
   instructions: unknown;
   start_date: string | Date;
@@ -212,6 +218,8 @@ export function normalizeChallengeRow(row: {
     challenge_type: row.challenge_type,
     status: row.status,
     title: String(row.title),
+    cover_id: typeof row.cover_id === 'string' ? row.cover_id : null,
+    support_tiizi_enabled: row.support_tiizi_enabled === true,
     description: row.description == null ? '' : String(row.description),
     instructions: row.instructions == null ? '' : String(row.instructions),
     start_date: toDayString(row.start_date),
@@ -289,15 +297,15 @@ export async function insertChallengeWithConfig(
   try {
     const inserted = await tx.query(
       `INSERT INTO challenges
-         (group_id, created_by_member_id, challenge_type, title, description,
+         (group_id, created_by_member_id, challenge_type, title, cover_id, support_tiizi_enabled, description,
           instructions, start_date, end_date,
           goal_value, goal_unit, required_consecutive_days, reset_on_miss,
           timezone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING *`,
       [
         input.group_id, input.created_by_member_id, input.challenge_type,
-        input.title, input.description ?? '', input.instructions ?? '',
+        input.title, input.cover_id ?? null, input.support_tiizi_enabled ?? false, input.description ?? '', input.instructions ?? '',
         basis.start_date, basis.end_date,
         basis.goal_value, basis.goal_unit,
         basis.required_consecutive_days, basis.reset_on_miss,

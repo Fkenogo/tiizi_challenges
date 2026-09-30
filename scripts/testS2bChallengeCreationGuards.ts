@@ -101,6 +101,7 @@ function baseState(overrides: Partial<WizardState> = {}): WizardState {
     groupId: GROUP_ID,
     groupName: 'Nairobi Morning Movers',
     title: 'June Race',
+    coverId: 'challenge-1',
     activities: [activity()],
     startDate: '2026-06-01',
     durationDays: 14,
@@ -153,6 +154,10 @@ check('host picker binds the member real memberships', wizardSource.includes('us
 check('no hardcoded Group list in the wizard', !/Nairobi Morning Movers|INITIAL_GROUPS|mockGroups/.test(wizardSource));
 const membershipsApi = read('src/api/membershipsApi.ts');
 check('memberships come from GET /v1/memberships/me', membershipsApi.includes('/v1/memberships/me'));
+check('host results stay hidden until the user searches', wizardSource.includes("search.trim() !== '' && <ul aria-label=\"Matching host Groups\""));
+check('host results keep the governed challenge-creation eligibility filter', wizardSource.includes("membership.group.allowMemberChallenges !== false") && wizardSource.includes("['owner', 'admin', 'steward']"));
+check('host selector uses the shared Group cover catalogue renderer', wizardSource.includes('coverFor(membership.group.coverId, membership.groupId)') && wizardSource.includes('coverGradientFor'));
+check('host selection retains canonical membership groupId and selected state', wizardSource.includes('onSelectGroup(membership)') && wizardSource.includes('aria-pressed={state.groupId === membership.groupId}') && wizardSource.includes('Selected Group:'));
 
 // ─── Composer-selectable catalogue only ─────────────────────────────────────
 console.log('catalogue boundary');
@@ -222,6 +227,11 @@ check('client never invents compatibility (no metricForUnit client-side)', !wiza
 console.log('creator participation');
 const initial = createInitialWizardState(new Date(2026, 5, 1));
 check('creator participation defaults to NOT joining', initial.creatorJoins === false);
+check('Support a Cause and Support Tiizi default OFF', initial.socialCauseEnabled === false && initial.supportTiiziEnabled === false);
+check('Challenge creation persists selected cover reference', toEstablishmentBody(baseState(), { activate: false, joinCreator: false }).cover_id === 'challenge-1');
+check('Support Tiizi persists only governed enablement', toEstablishmentBody(baseState({ supportTiiziEnabled: true }), { activate: false, joinCreator: false }).support_tiizi_enabled === true);
+check('Cause config is included only after explicit opt-in', !('social_cause' in toEstablishmentBody(baseState(), { activate: false, joinCreator: false }))
+  && 'social_cause' in toEstablishmentBody(baseState({ socialCauseEnabled: true, socialCauseTitle: 'Park', socialCauseDescription: 'Care', socialCausePurpose: 'Clean', socialCauseBeneficiary: 'Trust', socialCauseDestination: 'wallet' }), { activate: false, joinCreator: false }));
 const joinBody = toEstablishmentBody(baseState({ creatorJoins: true }), { activate: true, joinCreator: true });
 const noJoinBody = toEstablishmentBody(baseState({ creatorJoins: false }), { activate: true, joinCreator: false });
 check('join_creator reflects the explicit choice', joinBody.join_creator === true && noJoinBody.join_creator === false);

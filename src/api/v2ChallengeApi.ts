@@ -81,6 +81,8 @@ export interface V2ChallengeSummary {
   groupName: string | null;
   activities: Array<{ name: string; domain: 'fitness' | 'wellness'; category: string; subcategory: string }>;
   title: string;
+  coverId?: string | null;
+  supportTiiziEnabled?: boolean;
   description: string;
   challengeType: V2ChallengeType;
   status: V2ChallengeStatus;
@@ -127,6 +129,7 @@ export interface V2ConfigActivity {
 
 export interface V2ChallengeDetail extends V2ChallengeSummary {
   instructions: string;
+  socialCause?: { title: string; description: string; purpose: string; beneficiary: string; approvalStatus: 'pending_approval' | 'approved' | 'revision_required'; decisionReason: string | null } | null;
   activatedAt: string | null;
   endedAt: string | null;
   /**
