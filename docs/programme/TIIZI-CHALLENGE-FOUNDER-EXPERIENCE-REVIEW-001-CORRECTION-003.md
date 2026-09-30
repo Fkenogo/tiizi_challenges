@@ -30,6 +30,9 @@ deploy, or close Review 001.
   approved Cause. This is not a payment CTA. It states that the Activity is
   already accepted, support is voluntary, and payment options are not available
   in this preview. Duplicate replays do not repeat the prompt.
+- The temporary preview sentence “Payment options are not available in this
+  preview yet.” must be removed or reconciled with the real participant
+  execution at S8 assembly; it must not ship as permanent copy.
 - Contribution remains separate from joining, Activity logging, progress,
   completion, ranking, Streaks, results, and recognition. No Support surface
   changes Activity payloads, acceptance, or derived Challenge truth.
@@ -69,10 +72,11 @@ addressed while Challenge assembly context remains active.
 
 1. Complete Challenge Founder Experience corrections and Founder review.
 2. Assemble a Platform Operator Social Cause approval experience and configured
-   fail-closed authority provider for the existing decision API. It must list
-   pending Causes, expose the review facts needed for a decision, capture an
-   approval/revision-required reason, and exercise the audited API. Do not
-   bypass the database activation guard or silently approve preview records.
+   fail-closed authority provider for the existing decision API. This bounded
+   assembly is recorded in `TIIZI-CHALLENGE-SOCIAL-CAUSE-OPERATOR-APPROVAL-ASSEMBLY-001.md`;
+   the local Development Founder preview exercised the audited approval path.
+   Do not bypass the database activation guard or silently approve preview
+   records.
 3. Bind the Support surfaces to an authorized S8 contribution execution model:
    settle authority allocation for SUP-01/SUP-02; decide amount and consent
    policy; provide payment initiation/handoff, confirmation and verification,

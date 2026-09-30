@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 
@@ -7,8 +7,71 @@ export interface SocialCauseApprovalDeps {
   isPlatformOperator?: (memberId: string) => Promise<boolean>;
 }
 
+interface CauseReviewRow extends Record<string, unknown> {
+  challengeId: string;
+  challengeTitle: string;
+  groupName: string;
+  startDate: string | Date;
+  endDate: string | Date;
+  title: string;
+  description: string;
+  purpose: string;
+  beneficiary: string;
+  paymentDestinationReference: string;
+  destinationOwner: string;
+  approvalStatus: string;
+  approvalAuthority: string | null;
+  createdAt: string | Date;
+  decisionAt: string | Date | null;
+  decisionReason: string | null;
+}
+
+const REVIEW_SELECT = `SELECT h.challenge_id AS "challengeId",h.title AS "challengeTitle",g.name AS "groupName",
+  h.start_date AS "startDate",h.end_date AS "endDate",c.title,c.description,c.purpose,c.beneficiary,
+  c.payment_destination_reference AS "paymentDestinationReference",c.destination_owner AS "destinationOwner",
+  c.approval_status AS "approvalStatus",c.approval_authority AS "approvalAuthority",
+  c.created_at AS "createdAt",c.decision_at AS "decisionAt",
+  c.decision_reason AS "decisionReason"
+  FROM challenge_social_causes c JOIN challenges h USING(challenge_id) JOIN groups g USING(group_id)`;
+
 /** Operator decision boundary. No payment execution or contribution ledger lives here. */
 export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, deps: SocialCauseApprovalDeps = {}): void {
+  async function requireOperator(memberId: string, reply: FastifyReply): Promise<boolean> {
+    if (!deps.isPlatformOperator) {
+      reply.code(503).send({ error: { code: 'operator_authority_unavailable', message: 'Platform Operator authority is not configured' } });
+      return false;
+    }
+    if (!await deps.isPlatformOperator(memberId)) {
+      reply.code(403).send({ error: { code: 'operator_required', message: 'Platform Operator authority is required' } });
+      return false;
+    }
+    return true;
+  }
+
+  app.get('/v1/operator/social-causes/pending', async (request, reply) => {
+    const actor = authenticatedMember(request);
+    if (!await requireOperator(actor.memberId, reply)) return;
+    const result = await db.query<CauseReviewRow>(
+      `${REVIEW_SELECT} WHERE c.approval_status='pending_approval' ORDER BY c.created_at ASC,h.challenge_id ASC`,
+    );
+    return reply.code(200).send({ causes: result.rows });
+  });
+
+  app.get('/v1/operator/social-causes/:challengeId', async (request, reply) => {
+    const actor = authenticatedMember(request);
+    if (!await requireOperator(actor.memberId, reply)) return;
+    const { challengeId } = request.params as { challengeId: string };
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(challengeId)) return reply.code(400).send({ error: { code: 'invalid_challenge', message: 'Challenge id must be a UUID' } });
+    const result = await db.query<CauseReviewRow>(`${REVIEW_SELECT} WHERE c.challenge_id=$1`, [challengeId]);
+    if (!result.rows.length) return reply.code(404).send({ error: { code: 'cause_not_found', message: 'Social Cause not found' } });
+    const decisions = await db.query<{ decision: string; authorityMemberId: string; reason: string; decidedAt: string | Date }>(
+      `SELECT decision,authority_member_id AS "authorityMemberId",reason,decided_at AS "decidedAt"
+       FROM challenge_social_cause_decisions WHERE challenge_id=$1 ORDER BY decided_at ASC,decision_id ASC`,
+      [challengeId],
+    );
+    return reply.code(200).send({ ...result.rows[0], decisions: decisions.rows });
+  });
+
   app.delete('/v1/challenges/:challengeId/social-cause', async (request, reply) => {
     const actor = authenticatedMember(request);
     const { challengeId } = request.params as { challengeId: string };
@@ -51,8 +114,7 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
 
   app.post('/v1/challenges/:challengeId/social-cause/decision', async (request, reply) => {
     const actor = authenticatedMember(request);
-    if (!deps.isPlatformOperator) return reply.code(503).send({ error: { code: 'operator_authority_unavailable', message: 'Platform Operator authority is not configured' } });
-    if (!await deps.isPlatformOperator(actor.memberId)) return reply.code(403).send({ error: { code: 'operator_required', message: 'Platform Operator authority is required' } });
+    if (!await requireOperator(actor.memberId, reply)) return;
     const { challengeId } = request.params as { challengeId: string };
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(challengeId)) return reply.code(400).send({ error: { code: 'invalid_challenge', message: 'Challenge id must be a UUID' } });
     const body = request.body as Record<string, unknown>;
@@ -63,6 +125,11 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
       || typeof reason !== 'string' || !reason.trim() || reason.length > 1000) {
       return reply.code(400).send({ error: { code: 'invalid_decision', message: 'decision and reason are required' } });
     }
+    const creator = await db.query<{ created_by_member_id: string }>(
+      `SELECT h.created_by_member_id FROM challenges h JOIN challenge_social_causes c USING(challenge_id)
+       WHERE h.challenge_id=$1 AND c.approval_status='pending_approval'`, [challengeId]);
+    if (!creator.rows.length) return reply.code(404).send({ error: { code: 'cause_not_found', message: 'Challenge has no Social Cause awaiting decision' } });
+    if (creator.rows[0].created_by_member_id === actor.memberId) return reply.code(403).send({ error: { code: 'cause_creator_cannot_decide', message: 'Challenge creators cannot decide their own Cause' } });
     const result = await db.transaction(async (tx) => {
       const cause = await tx.query<{ challenge_id: string }>(`SELECT challenge_id FROM challenge_social_causes WHERE challenge_id=$1 AND approval_status='pending_approval' FOR UPDATE`, [challengeId]);
       if (!cause.rows.length) return false;

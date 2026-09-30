@@ -5,9 +5,8 @@ import { V2BrandMark } from '../brand';
  * TIIZI S1 — Operator shell boundary (adopted reference).
  *
  * Desktop-first, responsive. Navigation covers all 13 console
- * sections as bounded placeholders. No authority/RBAC: the shell
- * never gates on admin permissions (that would bind S1 to operator
- * authority, which belongs to a later slice).
+ * sections as bounded surfaces. Social Cause review delegates all authority
+ * checks to the authenticated API; other sections remain placeholders.
  */
 
 export const V2_OPERATOR_NAV = [
@@ -79,7 +78,7 @@ export function V2OperatorShell() {
             ← Exit to Member experience
           </button>
           <p className="mt-2 text-[10px] leading-relaxed text-slate-500">
-            Preview only: sections state intent, grant no permissions, and change no data.
+            Social Cause decisions require Platform Operator authority and are audited. Other sections remain placeholders.
           </p>
         </div>
       </aside>

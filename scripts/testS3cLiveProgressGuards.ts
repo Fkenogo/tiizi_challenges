@@ -304,6 +304,8 @@ console.log('streak server day');
 console.log('static boundaries');
 const viewSrc = read('src/v2/challenges/progressView.ts');
 const collectiveSrc = read('src/v2/challenges/V2CollectiveProgress.tsx');
+const finalizedCollectiveSrc = read('src/v2/challenges/V2FinalizedCollectiveResult.tsx');
+const hostedChallengeSrc = read('src/v2/groups/V2HostedChallengeCard.tsx');
 const competitiveSrc = read('src/v2/challenges/V2CompetitiveProgress.tsx');
 const streakSrc = read('src/v2/challenges/V2StreakProgress.tsx');
 const sectionSrc = read('src/v2/challenges/V2ProgressSection.tsx');
@@ -387,8 +389,16 @@ check('participant language replaces backend labels',
   !/Live race state|LIVE RACE STATE/.test(competitiveSrc)
     && competitiveSrc.includes('Race progress')
     && collectiveSrc.includes('Group progress')
+    && collectiveSrc.includes('Your activity contribution')
+    && !collectiveSrc.includes('Your contribution:')
     && !/Live shared progress/.test(collectiveSrc)
     && !/} time/.test(streakSrc));
+check('Challenge Activity totals are explicitly distinguished from financial support',
+  [collectiveSrc, finalizedCollectiveSrc, hostedChallengeSrc].every((src) =>
+    src.includes('Your activity contribution') && !src.includes('Your contribution:')));
+check('legacy Activity logging progress also names the contribution as activity progress',
+  ['src/features/Workouts/LogWorkoutScreen.tsx', 'src/features/Workouts/LogWellnessActivityScreen.tsx']
+    .map(read).every((src) => src.includes('Your activity contribution') && !src.includes('Your contribution:')));
 check('governed activity names resolve everywhere codes leaked',
   dialogSrc.includes('useActivityDisplayNames')
     && dialogSrc.includes('resolvedChoiceOptionLabel')

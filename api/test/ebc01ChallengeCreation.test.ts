@@ -148,9 +148,12 @@ async function world(): Promise<World> {
 describe('governed challenge establishment', () => {
   it('persists governed cover and support configuration and blocks activation until Cause approval', async () => {
     const w = await world();
+    const operatorUid = `operator-${w.creatorUid}`;
+    const operatorMemberId = await seedMember(testDb(), operatorUid);
+    const operatorToken = `operator-token-${w.creatorToken}`;
     const app = buildApp({
-      db: testDb(), verifier: stubVerifier(tokensFor(w)),
-      socialCauseApproval: { isPlatformOperator: async () => true },
+      db: testDb(), verifier: stubVerifier({ ...tokensFor(w), [operatorToken]: operatorUid }),
+      socialCauseApproval: { isPlatformOperator: async (memberId) => memberId === operatorMemberId },
       challengeCreation: {
         creationAuthority: fakeAuthority(() => ({ permitted: true, role: 'steward' })),
         eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(testDb(), kind)(key),
@@ -168,7 +171,7 @@ describe('governed challenge establishment', () => {
     const cause = await testDb().query<{ approval_status: string }>('SELECT approval_status FROM challenge_social_causes WHERE challenge_id=$1', [created.challengeId]);
     expect(cause.rows[0].approval_status).toBe('pending_approval');
     await expect(testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId])).rejects.toThrow(/approved Social Cause/);
-    const approved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(w.creatorToken), payload: { decision: 'approved', reason: 'Beneficiary and destination verified' } });
+    const approved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(operatorToken), payload: { decision: 'approved', reason: 'Beneficiary and destination verified' } });
     expect(approved.statusCode).toBe(200);
     const revised = await app.inject({ method: 'PUT', url: `/v1/challenges/${created.challengeId}/social-cause`, headers: authHeaders(w.creatorToken), payload: {
       title: 'Park care', description: 'Restore the park', purpose: 'Clean paths', beneficiary: 'Local Park Trust', payment_destination_reference: 'beneficiary-wallet-updated',
@@ -177,7 +180,7 @@ describe('governed challenge establishment', () => {
     const reset = await testDb().query<{ approval_status: string; approval_authority: string | null }>('SELECT approval_status,approval_authority FROM challenge_social_causes WHERE challenge_id=$1', [created.challengeId]);
     expect(reset.rows[0]).toEqual({ approval_status: 'pending_approval', approval_authority: null });
     await expect(testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId])).rejects.toThrow(/approved Social Cause/);
-    const reapproved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(w.creatorToken), payload: { decision: 'approved', reason: 'Updated destination verified' } });
+    const reapproved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(operatorToken), payload: { decision: 'approved', reason: 'Updated destination verified' } });
     expect(reapproved.statusCode).toBe(200);
     await testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId]);
     const live = await testDb().query<{ status: string }>('SELECT status FROM challenges WHERE challenge_id=$1', [created.challengeId]);
