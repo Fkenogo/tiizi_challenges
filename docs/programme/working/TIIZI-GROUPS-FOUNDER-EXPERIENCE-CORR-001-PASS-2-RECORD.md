@@ -228,6 +228,8 @@ repository acceptance and merge:
 - **Implementation PR head:** `b3de9f02f90d0bc8ebe158737d4b7ce240c12540`
 - **Implementation merge commit:** `b660af746a2a58e69f1f4da935ff0416ccd4fa89`
 - **Pre-merge canonical main:** `faf5df8b579efaaa3b00023c688d182f7943b2ef`
+- **Documentation-only closure PR:** #63, based on implementation merge
+  `b660af746a2a58e69f1f4da935ff0416ccd4fa89`.
 - **Remote drift:** none; canonical main remained at the implementation base.
 - **Repository CI:** green (API typecheck/test/build, API image/liveness,
   Functions build/typecheck, Web typecheck/build).
