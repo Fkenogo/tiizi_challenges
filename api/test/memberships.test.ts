@@ -36,6 +36,7 @@ describe('GET /v1/memberships/me', () => {
             name: 'Runners',
             description: '',
             isPrivate: false,
+            allowMemberChallenges: true,
             // CORR-001 richer identity (shadow defaults for legacy rows).
             coverId: null,
             tagline: '',
@@ -46,6 +47,20 @@ describe('GET /v1/memberships/me', () => {
         },
       ],
     });
+  });
+
+  it('projects the governed Challenge-creation charter setting for host selection', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'uid-host-policy');
+    const groupId = await seedGroup(db, { name: 'Steward-only host' });
+    await db.query('UPDATE groups SET allow_member_challenges=false WHERE group_id=$1', [groupId]);
+    await seedMembership(db, groupId, memberId, { role: 'member', status: 'active' });
+
+    const app = buildTestApp({ token: 'uid-host-policy' });
+    const res = await app.inject({ method: 'GET', url: '/v1/memberships/me', headers: authHeaders('token') });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().memberships[0].group.allowMemberChallenges).toBe(false);
   });
 
   it('never exposes the Firebase UID in the response', async () => {

@@ -33,6 +33,7 @@ import {
   createInitialWizardState,
   creationErrorMessage,
   deriveEndDate,
+  inclusiveDurationDays,
   firstIncompleteStep,
   formatDay,
   isWizardComplete,
@@ -108,18 +109,20 @@ function baseState(overrides: Partial<WizardState> = {}): WizardState {
   };
 }
 
-// ─── Visible six steps → governed draft ─────────────────────────────────────
-console.log('visible six-step structure');
-check('six visible steps in the adopted order', VISIBLE_STEPS.length === 6
+// ─── Visible seven steps → governed draft ───────────────────────────────────
+console.log('visible seven-step structure');
+check('seven visible steps in the adopted order', VISIBLE_STEPS.length === 7
   && VISIBLE_STEPS[0] === 'HOW_IT_WORKS'
-  && VISIBLE_STEPS[2] === 'WHAT_ARE_WE_DOING'
-  && VISIBLE_STEPS[5] === 'REVIEW_AND_CREATE');
+  && VISIBLE_STEPS[1] === 'WHO_IS_HOSTING'
+  && VISIBLE_STEPS[2] === 'CHALLENGE_DETAILS'
+  && VISIBLE_STEPS[3] === 'WHAT_ARE_WE_DOING'
+  && VISIBLE_STEPS[6] === 'REVIEW_AND_CREATE');
 check('type terminology is human-facing', challengeTypeLabel('collective') === 'Together'
   && challengeTypeLabel('competitive') === 'Race'
   && challengeTypeLabel('streak') === 'Streak');
 check('internal values are never the label', challengeTypeLabel('collective') !== 'collective');
 
-console.log('six steps map to the governed PF-04 draft');
+console.log('seven steps map to the governed PF-04 draft');
 const draft = toComposerDraft(baseState());
 check('draft kind/mode are the governed contract', draft.draftKind === 'pf04-v1' && draft.mode === 'CHALLENGE');
 check('type + basics + window present', draft.challengeType === 'competitive'
@@ -135,7 +138,8 @@ console.log('Group context');
 const noGroup = baseState({ groupId: null, groupName: null });
 check('host step is incomplete without a Group', assessVisibleStep(noGroup, 'WHO_IS_HOSTING').complete === false
   && assessVisibleStep(noGroup, 'WHO_IS_HOSTING').missing.includes('group'));
-check('with a Group + title the host step completes', assessVisibleStep(baseState(), 'WHO_IS_HOSTING').complete === true);
+check('host step needs only a permitted Group', assessVisibleStep(baseState({ title: '' }), 'WHO_IS_HOSTING').complete === true);
+check('Challenge title belongs to details step', assessVisibleStep(baseState({ title: '' }), 'CHALLENGE_DETAILS').complete === false);
 let threw = false;
 try {
   toEstablishmentBody(noGroup, { activate: true, joinCreator: false });
@@ -292,10 +296,12 @@ check('friendly day label', formatDay('2026-06-14') === '14 Jun 2026');
 check('streak requires the governed timezone', assessVisibleStep(
   baseState({ challengeType: 'streak', timezone: '' }), 'WHEN_DOES_IT_RUN',
 ).complete === false);
-check('timezone labels are friendly, not raw IANA', (() => {
-  const summary = summarize(baseState({ timezone: 'Africa/Nairobi' }));
-  return summary.includes('Nairobi time') && !summary.includes('Africa/Nairobi');
+check('what-counts summary omits schedule and timezone before the schedule step', (() => {
+  const summary = summarize(baseState({ timezone: 'Africa/Nairobi', durationDays: 14 }));
+  return !/14 days|Africa\/Nairobi|Nairobi time|UTC[+-]/.test(summary);
 })());
+check('custom date range calculates inclusive calendar duration', inclusiveDurationDays('2026-06-01', '2026-06-14') === 14
+  && inclusiveDurationDays('2026-06-01', '2026-05-31') === null);
 check('only Streak allows multiple activities', allowsMultipleActivities('streak')
   && !allowsMultipleActivities('collective') && !allowsMultipleActivities('competitive'));
 

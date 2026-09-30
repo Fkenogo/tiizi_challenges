@@ -78,6 +78,8 @@ export interface V2FinalResult {
 export interface V2ChallengeSummary {
   challengeId: string;
   groupId: string;
+  groupName: string | null;
+  activities: Array<{ name: string; domain: 'fitness' | 'wellness'; category: string; subcategory: string }>;
   title: string;
   description: string;
   challengeType: V2ChallengeType;
@@ -109,6 +111,8 @@ export interface V2ConfigActivity {
   canonicalKey: string;
   activityVariant: string | null;
   activityKind: 'fitness' | 'wellness';
+  knowledgeId?: string;
+  activityCode?: string | null;
   /** Governing Metric of the configuration (null only on pre-PF-03 rows). */
   metric?: string | null;
   targetValue: number;

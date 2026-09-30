@@ -1,5 +1,5 @@
 /**
- * S2b — V2 Challenge Creation: the visible six-step experience mapped onto
+ * S2b — V2 Challenge Creation: the visible seven-step experience mapped onto
  * the governed PF-04 Composer draft.
  *
  * This module is pure and React-free so the mapping is directly testable.
@@ -24,10 +24,11 @@ import type {
   EstablishChallengeBody,
 } from '../../api/challengeCreationApi';
 
-/** The adopted six-step human-facing structure. */
+/** The adopted seven-step human-facing structure. */
 export const VISIBLE_STEPS = [
   'HOW_IT_WORKS',
   'WHO_IS_HOSTING',
+  'CHALLENGE_DETAILS',
   'WHAT_ARE_WE_DOING',
   'WHAT_COUNTS',
   'WHEN_DOES_IT_RUN',
@@ -37,8 +38,9 @@ export const VISIBLE_STEPS = [
 export type VisibleStep = (typeof VISIBLE_STEPS)[number];
 
 export const VISIBLE_STEP_META: Record<VisibleStep, { eyebrow: string; title: string }> = {
-  HOW_IT_WORKS: { eyebrow: 'How it works', title: 'Choose how this Challenge works' },
+  HOW_IT_WORKS: { eyebrow: 'Challenge type', title: 'Choose a Challenge type' },
   WHO_IS_HOSTING: { eyebrow: 'Who is hosting', title: 'Who is hosting this Challenge?' },
+  CHALLENGE_DETAILS: { eyebrow: 'Challenge details', title: 'Name and describe this Challenge' },
   WHAT_ARE_WE_DOING: { eyebrow: 'What are we doing', title: 'What activities count toward this Challenge?' },
   WHAT_COUNTS: { eyebrow: 'What counts', title: 'Set goals and how they are measured' },
   WHEN_DOES_IT_RUN: { eyebrow: 'When does it run', title: 'When does this Challenge take place?' },
@@ -148,10 +150,10 @@ export function loadBasisLabel(basis: string | null | undefined): string {
 
 /** Friendly timezone labels — raw IANA identifiers stay in the data only. */
 export const TIMEZONE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: 'Africa/Nairobi', label: 'Nairobi time (UTC+3)' },
-  { value: 'Europe/London', label: 'London time (UTC+0/+1)' },
-  { value: 'America/New_York', label: 'New York time (UTC-5/-4)' },
-  { value: 'Asia/Tokyo', label: 'Tokyo time (UTC+9)' },
+  { value: 'Africa/Nairobi', label: 'Nairobi local time' },
+  { value: 'Europe/London', label: 'London local time' },
+  { value: 'America/New_York', label: 'New York local time' },
+  { value: 'Asia/Tokyo', label: 'Tokyo local time' },
   { value: 'UTC', label: 'UTC' },
 ];
 
@@ -159,8 +161,12 @@ export function timezoneLabel(timezone: string | null | undefined): string {
   if (!timezone) return 'Challenge time';
   const known = TIMEZONE_OPTIONS.find((option) => option.value === timezone);
   if (known) return known.label;
-  // Unknown-but-valid IANA identifier: keep it honest without inventing a label.
-  return timezone;
+  try {
+    return new Intl.DateTimeFormat(undefined, { timeZone: timezone, timeZoneName: 'long' })
+      .formatToParts(new Date(0)).find((part) => part.type === 'timeZoneName')?.value ?? 'Challenge local time';
+  } catch {
+    return 'Challenge local time';
+  }
 }
 
 export const DURATION_OPTIONS = [7, 14, 21, 30] as const;
@@ -226,6 +232,8 @@ export interface WizardState {
   description: string;
   activities: WizardActivity[];
   startDate: string;
+  endDate: string;
+  scheduleMode: 'preset' | 'custom';
   durationDays: number;
   timezone: string;
   creatorJoins: boolean;
@@ -264,7 +272,7 @@ export function restoreChallengeWizardRouteState(value: unknown): {
       || candidate.challengeType === 'competitive' || candidate.challengeType === 'streak')
     && typeof candidate.startDate === 'string'
     && typeof candidate.durationDays === 'number'
-    ? candidate
+    ? { ...candidate, endDate: typeof candidate.endDate === 'string' ? candidate.endDate : deriveEndDate(candidate.startDate, candidate.durationDays), scheduleMode: candidate.scheduleMode === 'custom' ? 'custom' as const : 'preset' as const }
     : null;
   const stepIndex = Number.isInteger(routeState.challengeStepIndex)
     ? Math.max(0, Math.min(VISIBLE_STEPS.length - 1, routeState.challengeStepIndex as number))
@@ -290,10 +298,33 @@ export function deriveEndDate(startDate: string, durationDays: number): string {
     return startDate;
   }
   const [year, month, day] = startDate.split('-').map(Number);
-  const start = new Date(year, month - 1, day);
-  const end = new Date(start.getTime());
-  end.setDate(end.getDate() + durationDays - 1);
-  return toDayIso(end);
+  const start = new Date(Date.UTC(year, month - 1, day));
+  if (start.toISOString().slice(0, 10) !== startDate) return startDate;
+  start.setUTCDate(start.getUTCDate() + durationDays - 1);
+  return start.toISOString().slice(0, 10);
+}
+
+/** Calendar-day inclusive duration; date-only values never pass through local time. */
+export function inclusiveDurationDays(startDate: string, endDate: string): number | null {
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(startDate) || !datePattern.test(endDate) || endDate < startDate) return null;
+  const start = Date.parse(`${startDate}T00:00:00Z`);
+  const end = Date.parse(`${endDate}T00:00:00Z`);
+  if (!Number.isFinite(start) || !Number.isFinite(end)
+    || new Date(start).toISOString().slice(0, 10) !== startDate
+    || new Date(end).toISOString().slice(0, 10) !== endDate) return null;
+  return Math.floor((end - start) / 86_400_000) + 1;
+}
+
+function creatorTimezone(): string {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone) {
+      new Intl.DateTimeFormat('en', { timeZone: timezone }).format(new Date(0));
+      return timezone;
+    }
+  } catch { /* use the existing V2 default below */ }
+  return 'Africa/Nairobi';
 }
 
 /** True when the window starts today or earlier → safe to activate now. */
@@ -310,8 +341,10 @@ export function createInitialWizardState(now: Date = new Date()): WizardState {
     description: '',
     activities: [],
     startDate: todayIso(now),
+    endDate: deriveEndDate(todayIso(now), 14),
+    scheduleMode: 'preset',
     durationDays: 14,
-    timezone: 'Africa/Nairobi',
+    timezone: creatorTimezone(),
     creatorJoins: false,
   };
 }
@@ -346,6 +379,8 @@ export function assessVisibleStep(state: WizardState, step: VisibleStep): StepAs
       break;
     case 'WHO_IS_HOSTING':
       if (!state.groupId) missing.push('group');
+      break;
+    case 'CHALLENGE_DETAILS':
       if (!state.title.trim()) missing.push('title');
       break;
     case 'WHAT_ARE_WE_DOING':
@@ -379,8 +414,9 @@ export function assessVisibleStep(state: WizardState, step: VisibleStep): StepAs
       break;
     }
     case 'WHEN_DOES_IT_RUN': {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(state.startDate)) missing.push('startDate');
-      if (!Number.isInteger(state.durationDays) || state.durationDays < 1) missing.push('durationDays');
+      const duration = inclusiveDurationDays(state.startDate, state.endDate);
+      if (duration === null) missing.push('dateRange');
+      else if (state.durationDays !== duration) missing.push('durationDays');
       if (!state.timezone.trim()) missing.push('timezone');
       break;
     }
@@ -446,7 +482,7 @@ export function toComposerDraft(state: WizardState): ChallengeComposerDraft {
     ...(state.description.trim() ? { description: state.description.trim() } : {}),
     activities,
     startDate: state.startDate,
-    endDate: deriveEndDate(state.startDate, state.durationDays),
+    endDate: state.endDate,
     timezone: state.timezone,
   };
 
@@ -511,7 +547,7 @@ export function toEstablishmentBody(
     title: state.title.trim(),
     ...(state.description.trim() ? { description: state.description.trim() } : {}),
     start_date: state.startDate,
-    end_date: deriveEndDate(state.startDate, state.durationDays),
+    end_date: state.endDate,
     timezone: state.timezone,
     activities,
     activate: options.activate,
@@ -547,31 +583,29 @@ export function summarize(state: WizardState): string {
     return 'Choose a Challenge type and activities to see your Challenge summary here.';
   }
   const group = state.groupName ?? 'your group';
-  const duration = `${state.durationDays} days`;
-  const timezone = timezoneLabel(state.timezone);
   if (state.challengeType === 'collective') {
-    return `Everyone in ${group} contributes together toward a shared goal of ${activityPhrase(
+    return `Everyone in ${group} contributes toward a shared goal of ${activityPhrase(
       state.activities[0],
-    )}, over ${duration} (${timezone}).`;
+    )}.`;
   }
   if (state.challengeType === 'competitive') {
     return `People in ${group} each work toward ${activityPhrase(
       state.activities[0],
-    )} within the ${duration} window (${timezone}). Finishers are ranked in order, and ties share a place.`;
+    )}. Finishers are ranked in order, and ties share a place.`;
   }
   const requirements = state.activities.map(activityPhrase).join(' and ');
-  return `Complete ${requirements} each Challenge day, before the day ends in ${timezone}, for ${duration}.`;
+  return `Complete ${requirements} each Challenge day.`;
 }
 
 /** "What counts" explanation per type (member-facing). */
-export function whatCountsExplanation(type: ComposerChallengeType | null, timezone: string): string[] {
+export function whatCountsExplanation(type: ComposerChallengeType | null): string[] {
   const lines = ['Only the activities you choose count toward this Challenge.'];
   if (type === 'collective') {
     lines.push('The shared goal stays open — the group total can go past it, and it counts everything added together.');
   } else if (type === 'competitive') {
     lines.push('Everyone who reaches the target is ranked in order, and tied members share a place.');
   } else if (type === 'streak') {
-    lines.push(`Every daily requirement must be complete before the day ends in ${timezoneLabel(timezone)}.`);
+    lines.push('Every daily requirement must be complete within its Challenge day.');
   }
   return lines;
 }
@@ -579,6 +613,7 @@ export function whatCountsExplanation(type: ComposerChallengeType | null, timezo
 const STAGE_TO_STEP: Record<string, VisibleStep> = {
   TYPE: 'HOW_IT_WORKS',
   BASICS: 'WHO_IS_HOSTING',
+  DETAILS: 'CHALLENGE_DETAILS',
   ACTIVITIES: 'WHAT_ARE_WE_DOING',
   MEASUREMENT: 'WHAT_COUNTS',
   REQUIREMENT: 'WHAT_COUNTS',

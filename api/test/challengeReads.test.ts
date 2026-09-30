@@ -209,6 +209,9 @@ describe('challenge list', () => {
     const summaries = await listVisibleChallenges(db, fx.memberId, { groupMembershipAuthority: authority });
     expect(summaries).toHaveLength(1);
     expect(summaries[0].challengeId).toBe(fx.challengeId);
+    expect(summaries[0].groupName).toMatch(/^C3A Group c3a-/);
+    expect(summaries[0].activities).toHaveLength(1);
+    expect(summaries[0].activities[0]).toMatchObject({ domain: 'fitness', name: expect.stringMatching(/^push-up-/) });
     expect(summaries[0].myParticipation?.progress.logsAccepted).toBe(1);
     expect(summaries[0].myParticipation?.progress.cumulativeTotal).toBe(40);
   });
@@ -280,6 +283,9 @@ describe('challenge detail', () => {
     expect(detail.config.period.endDate).toBe('2026-07-31');
     expect(detail.config.activities).toHaveLength(1);
     expect(detail.config.activities[0]).toMatchObject({ canonicalKey: 'push-up', targetValue: 150, unit: 'reps' });
+    expect(detail.config.activities[0].knowledgeId).toBe(fx.pins['push-up'].knowledge_id);
+    expect(detail.groupName).toMatch(/^C3A Group c3a-/);
+    expect(detail.activities[0]).toMatchObject({ domain: 'fitness', name: expect.stringMatching(/^push-up-/) });
     // Progress survives the version transition (stable canonical identity).
     expect(detail.myParticipation?.progress.logsAccepted).toBe(1);
     expect(detail.myParticipation?.progress.cumulativeTotal).toBe(25);

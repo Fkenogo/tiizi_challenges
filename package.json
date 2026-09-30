@@ -49,6 +49,7 @@
     "test:s2g-group-establishment": "tsx scripts/testS2GroupEstablishmentGuards.ts",
     "preview:s2g:identity": "tsx scripts/previewS2gIdentity.ts",
     "test:s2b-challenge-creation": "tsx scripts/testS2bChallengeCreationGuards.ts",
+    "test:challenge-discovery-review": "node --import tsx scripts/testChallengeDiscoveryGuards.ts",
     "test:s2b-s2g-integration": "tsx scripts/testS2bS2gIntegrationGuards.ts",
     "test:v2-membership-cache": "tsx scripts/testV2MembershipCacheGuards.ts",
     "test:s3a-participation-cache": "tsx scripts/testS3aParticipationCacheGuards.ts",
