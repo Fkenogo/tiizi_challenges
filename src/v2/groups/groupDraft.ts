@@ -17,7 +17,7 @@ export const GROUP_NAME_MAX_LENGTH = 200;
 export const GROUP_DESCRIPTION_MAX_LENGTH = 2000;
 export const GROUP_TAGLINE_MAX_LENGTH = 140;
 export const GROUP_LOCATION_MAX_LENGTH = 120;
-export const GROUP_FOCUS_TAGS_MAX_COUNT = 8;
+export const GROUP_FOCUS_TAGS_MAX_COUNT = 13;
 export const GROUP_FOCUS_TAG_MAX_LENGTH = 30;
 export const GROUP_NORM_MAX_LENGTH = 200;
 
@@ -42,6 +42,10 @@ export interface CreateGroupDraft {
   tagline: string;
   location: string;
   focusTags: string[];
+  goalIds: string[];
+  customGoal: string;
+  communityNormIds: string[];
+  customCommunityNorm: string;
   norm: string;
 }
 
@@ -55,6 +59,10 @@ export const EMPTY_GROUP_DRAFT: CreateGroupDraft = {
   tagline: '',
   location: '',
   focusTags: [],
+  goalIds: [],
+  customGoal: '',
+  communityNormIds: [],
+  customCommunityNorm: '',
   norm: '',
 };
 
@@ -142,8 +150,7 @@ export function toCreateGroupInput(draft: CreateGroupDraft): CreateGroupInput {
   const focusTags = draft.focusTags
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0)
-    .filter((tag, index, all) => all.indexOf(tag) === index)
-    .slice(0, GROUP_FOCUS_TAGS_MAX_COUNT);
+    .filter((tag, index, all) => all.indexOf(tag) === index);
   return {
     ...(description.length > 0 ? { name, description } : { name }),
     isPrivate: draft.isPrivate,
@@ -154,6 +161,10 @@ export function toCreateGroupInput(draft: CreateGroupDraft): CreateGroupInput {
     ...(location.length > 0 ? { location } : {}),
     ...(focusTags.length > 0 ? { focusTags } : {}),
     ...(norm.length > 0 ? { rules: [norm] } : {}),
+    ...(draft.goalIds.length > 0 ? { goalIds: draft.goalIds } : {}),
+    ...(draft.customGoal.trim() ? { customGoal: draft.customGoal.trim() } : {}),
+    ...(draft.communityNormIds.length > 0 ? { communityNormIds: draft.communityNormIds } : {}),
+    ...(draft.customCommunityNorm.trim() ? { customCommunityNorm: draft.customCommunityNorm.trim() } : {}),
   };
 }
 

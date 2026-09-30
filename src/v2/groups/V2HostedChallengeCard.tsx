@@ -56,12 +56,14 @@ export function V2HostedChallengeCard({
   viewerMemberId,
   viewerIsGroupMember,
   onOpen,
+  compact = false,
 }: {
   challenge: V2ChallengeSummary;
   groupName: string;
   viewerMemberId: string | null;
   viewerIsGroupMember: boolean;
   onOpen: (challengeId: string) => void;
+  compact?: boolean;
 }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -126,6 +128,25 @@ export function V2HostedChallengeCard({
     >
       {mine ? 'Log activity' : challenge.finalized || challenge.status === 'ended' ? 'View results' : 'View'}
     </V2Button>
+  );
+
+  if (compact) return (
+    <li className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:gap-4">
+      <button type="button" onClick={() => onOpen(challenge.challengeId)} className="min-w-0 flex-1 text-left" aria-label={`Open ${challenge.title}`}>
+        <span className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-primary">{challengeTypeLabel(challenge.challengeType)}</span>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${upcoming ? 'bg-sky-100 text-sky-900' : statusTone(endState)}`}>{upcoming ? 'Upcoming' : statusLabelForEndState(challenge.status, endState)}</span>
+        </span>
+        <span className="mt-1 block truncate text-sm font-black text-slate-900">{challenge.title}</span>
+        <span className="mt-0.5 block truncate text-[11px] text-slate-500">Hosted by {groupName} · {formatDayRange(challenge.startDate, challenge.endDate)}</span>
+      </button>
+      <div className="shrink-0">{cta}</div>
+      <V2Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title={`Join ${challenge.title}?`}>
+        <p className="text-sm leading-6 text-slate-600">Joining starts your participation in this Challenge. Membership in {groupName} does not join you automatically — this is your explicit choice.</p>
+        {joinError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{joinError}</p>}
+        <div className="mt-4 flex justify-end gap-2"><V2Button variant="ghost" onClick={() => setJoinOpen(false)}>Not now</V2Button><V2Button onClick={() => void confirmJoin()} disabled={joining}>{joining ? 'Joining…' : 'Join Challenge'}</V2Button></div>
+      </V2Sheet>
+    </li>
   );
 
   return (

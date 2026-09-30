@@ -27,6 +27,10 @@ export interface CreateGroupInput {
   location?: string;
   focusTags?: string[];
   rules?: string[];
+  goalIds?: string[];
+  customGoal?: string;
+  communityNormIds?: string[];
+  customCommunityNorm?: string;
 }
 
 /**
@@ -74,6 +78,10 @@ export function createGroup(input: CreateGroupInput): Promise<CreatedGroup> {
       ...(input.location !== undefined ? { location: input.location } : {}),
       ...(input.focusTags !== undefined ? { focusTags: input.focusTags } : {}),
       ...(input.rules !== undefined ? { rules: input.rules } : {}),
+      ...(input.goalIds !== undefined ? { goalIds: input.goalIds } : {}),
+      ...(input.customGoal !== undefined ? { customGoal: input.customGoal } : {}),
+      ...(input.communityNormIds !== undefined ? { communityNormIds: input.communityNormIds } : {}),
+      ...(input.customCommunityNorm !== undefined ? { customCommunityNorm: input.customCommunityNorm } : {}),
     },
   });
 }
@@ -107,6 +115,12 @@ export interface V2GroupDetail {
   tagline: string;
   location: string;
   focusTags: string[];
+  goalIds: string[];
+  goals: string[];
+  customGoal: string | null;
+  communityNormIds: string[] | null;
+  communityNorms: string[] | null;
+  customCommunityNorm: string | null;
   rules: string[] | null;
   /** Included only when this viewer is an active Group member. */
   inviteCode?: string;
@@ -121,9 +135,20 @@ export interface V2DiscoverableGroup {
   coverId: string | null;
   location: string;
   focusTags: string[];
+  goals: string[];
   memberCount: number;
   admissionMode: V2AdmissionMode;
   viewerRelationship: V2ViewerRelationship;
+}
+
+export interface V2GroupOptions {
+  focusAreas: Array<{ domain: 'Fitness' | 'Wellness'; label: string }>;
+  goals: Array<{ id: string; label: string }>;
+  communityNorms: Array<{ id: string; label: string }>;
+}
+
+export function fetchGroupOptions(): Promise<V2GroupOptions> {
+  return apiFetch<V2GroupOptions>('/v1/groups/options');
 }
 export interface V2GroupDiscoveryPage { groups: V2DiscoverableGroup[]; nextCursor: string | null }
 export function fetchDiscoverableGroups(options: { q?: string; cursor?: string; limit?: number } = {}): Promise<V2GroupDiscoveryPage> {

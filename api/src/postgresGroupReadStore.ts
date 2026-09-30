@@ -21,7 +21,9 @@ export function createPostgresGroupReadStore(db: Db): GroupReadStore {
         allowMemberChallenges: row.allow_member_challenges, status: row.status,
         memberCount: Number(row.member_count), createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
         coverId: row.cover_id, tagline: row.tagline, location: row.location,
-        focusTags: row.focus_tags, rules: row.rules };
+        focusTags: row.focus_tags, rules: row.rules,
+        goalIds: row.goal_ids, customGoal: row.custom_goal,
+        communityNormIds: row.community_norm_ids, customCommunityNorm: row.custom_community_norm };
     },
     async getMembership(id, firebaseUid) {
       const uuid = await resolveId(id); if (!uuid) return null;
