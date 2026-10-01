@@ -27,6 +27,7 @@
  */
 
 import type { Db } from './db.js';
+import { dayInTimezone } from './activityEvents.js';
 import {
   assertCollectiveUnitHomogeneity,
   assertValidTimezone,
@@ -350,10 +351,17 @@ async function readChallenge(db: Db, challengeId: string): Promise<ChallengeRow>
 }
 
 /** establishment -> active. Records activation for C2B window reasoning. */
-export async function activateChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {
+export async function activateChallenge(
+  db: Db,
+  challengeId: string,
+  now: Date = new Date(),
+): Promise<ChallengeRow> {
   const current = await readChallenge(db, challengeId);
   if (current.status === 'active') fail('challenge is already active');
   if (current.status === 'ended') fail('ended challenges cannot be reopened under the same identity');
+  if (dayInTimezone(now, current.timezone || 'UTC') < current.start_date) {
+    fail(`challenge ${challengeId} cannot activate before scheduled start ${current.start_date}`);
+  }
   const result = await db.query(
     `UPDATE challenges SET status = 'active', activated_at = now(), updated_at = now()
      WHERE challenge_id = $1 RETURNING *`,

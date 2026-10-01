@@ -1,6 +1,6 @@
 # Challenge Social Cause Operator Approval Assembly 001
 
-Status: **Candidate for Founder review; Challenge Founder Experience Review 001 remains OPEN**  
+Status: **Functionally accepted, subject to Founder preview inspection; Challenge Founder Experience Review 001 remains OPEN**
 Starting candidate: `545c985989bf7e91bf805c98087d574a69da28b1`  
 Branch: `impl/tiizi-challenge-founder-experience-review-001`
 
@@ -23,12 +23,10 @@ Branch: `impl/tiizi-challenge-founder-experience-review-001`
   Cause is pending or revision-required. Approval does not itself change the
   Challenge state. The existing `activateChallenge` transition succeeds once
   the Cause is approved and remains subject to other Challenge rules.
-- The repository has no scheduled Challenge activation worker or post-creation
-  activation route. The Challenge status changes only when an explicit
-  lifecycle action invokes `activateChallenge`; start-date passage alone does
-  not change it. Therefore approval before or after the scheduled date leaves
-  the Challenge in `establishment` until that explicit transition occurs.
-  Activity acceptance remains gated by the canonical Challenge state/window.
+- At this assembly's starting HEAD, the repository had no scheduled Challenge
+  start processor. Lifecycle Correction 001 adds the general start processor
+  and connects it to the existing lifecycle CLI; see the assessment record
+  `TIIZI-CHALLENGE-POST-APPROVAL-SCHEDULED-ACTIVATION-LIFECYCLE-001.md`.
 
 ## Bounded Operator authority
 
@@ -68,14 +66,16 @@ payment records nor initiates or verifies payments.
 An approved Cause satisfies the existing Cause-specific activation guard. A
 revision-required Cause still blocks activation; creator correction returns it
 to `pending_approval`, while removal follows the existing constrained route.
-Neither Cause approval nor the scheduled start automatically activates the
-Challenge. No new automatic activation meaning is introduced here.
+Cause approval itself never updates Challenge status. The general scheduled
+start processor observes the removed gate on its next lifecycle pass and uses
+the same `activateChallenge` transition as ordinary Challenges. The processor
+respects the Challenge-local start date, Support Tiizi is not an activation
+gate, and the database Cause guard remains authoritative.
 
-The repository has no post-creation Challenge activation API/Operator action.
-If S8 runtime testing requires an approved Cause Challenge to become active,
-that requires the separately authorized Challenge lifecycle actor/path; this
-assembly does not bypass the lifecycle guard or mutate Challenge status during
-approval.
+The shared lifecycle CLI now has a `process-lifecycle` command for scheduled
+starts plus the existing active-window expiry/end/finalization pass. No
+scheduler is deployed: production invocation remains the S9 operational
+boundary recorded by FD-S3-002.
 
 ## Local Development verification
 

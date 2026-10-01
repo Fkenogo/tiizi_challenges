@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { createPostgresSocialCauseReviewerAuthority } from '../src/socialCauseApprovalAuthority.js';
 import { activateChallenge } from '../src/challenges.js';
+import { processScheduledChallengeStarts } from '../src/challengeFinalization.js';
 import type { Db } from '../src/db.js';
 import { authHeaders, seedGroup, seedMember, seedMembership, stubVerifier, testDb } from './helpers.js';
 
@@ -116,13 +117,19 @@ describe('Platform Operator Social Cause review boundary', () => {
     expect(state.rows[0]).toEqual({ approval_status: 'revision_required', status: 'establishment' });
   });
 
-  it('an approved Cause on a future-scheduled Challenge stays in establishment until the existing activation action occurs', async () => {
+  it('Operator approval before start waits for the shared scheduled lifecycle pass', async () => {
     const f = await fixture({ startDate: '2026-12-01' });
     const response = await f.app.inject({ method: 'POST', url: `/v1/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'approved', reason: 'Verified' } });
     expect(response.statusCode).toBe(200);
+    expect((await processScheduledChallengeStarts(db, new Date('2026-11-30T12:00:00Z')))
+      .find((outcome) => outcome.challenge_id === f.challengeId)).toMatchObject({ due: false, activated: false });
     const state = await db.query<{ approval_status: string; status: string }>(
       `SELECT c.approval_status,h.status FROM challenge_social_causes c JOIN challenges h USING(challenge_id) WHERE c.challenge_id=$1`, [f.challengeId]);
     expect(state.rows[0]).toEqual({ approval_status: 'approved', status: 'establishment' });
+    expect((await processScheduledChallengeStarts(db, new Date('2026-12-01T00:00:00Z')))
+      .find((outcome) => outcome.challenge_id === f.challengeId)).toMatchObject({ due: true, activated: true });
+    expect((await db.query<{ status: string }>('SELECT status FROM challenges WHERE challenge_id=$1', [f.challengeId])).rows[0].status)
+      .toBe('active');
   });
 
   it('approval after the scheduled start does not auto-activate; the explicit lifecycle transition succeeds', async () => {
@@ -132,7 +139,9 @@ describe('Platform Operator Social Cause review boundary', () => {
     const afterApproval = await db.query<{ approval_status: string; status: string }>(
       `SELECT c.approval_status,h.status FROM challenge_social_causes c JOIN challenges h USING(challenge_id) WHERE c.challenge_id=$1`, [f.challengeId]);
     expect(afterApproval.rows[0]).toEqual({ approval_status: 'approved', status: 'establishment' });
-    await activateChallenge(db, f.challengeId);
+    const lifecycle = await processScheduledChallengeStarts(db, new Date('2026-08-02T00:00:00Z'));
+    expect(lifecycle.find((outcome) => outcome.challenge_id === f.challengeId))
+      .toMatchObject({ due: true, activated: true, blockedBy: null });
     const afterExplicitActivation = await db.query<{ status: string }>('SELECT status FROM challenges WHERE challenge_id=$1', [f.challengeId]);
     expect(afterExplicitActivation.rows[0].status).toBe('active');
   });
