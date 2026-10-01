@@ -143,7 +143,12 @@ export function V2SignInPage() {
       await login(email.trim(), password);
       navigate(next);
     } catch (err) {
-      setError(normalizeFirebaseAuthError(err));
+      const code = getFirebaseAuthErrorCode(err);
+      setError(operatorPreview && code === 'auth/network-request-failed'
+        ? 'Could not reach the local Auth emulator. Check that the local preview services are running and try again.'
+        : operatorPreview
+          ? `Authentication failed. ${normalizeFirebaseAuthError(err)}`
+          : normalizeFirebaseAuthError(err));
     } finally {
       setWorking(false);
     }
@@ -199,8 +204,8 @@ export function V2SignInPage() {
       >
         {operatorPreview && isAuthenticated && (
           <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs leading-5 text-orange-950">
-            <p className="font-black">Local Development Operator preview</p>
-            <p>Sign out of the current member account, then sign in with the separately authorized Development Operator identity.</p>
+            <p className="font-black">Fred Kenogo · Platform Operator</p>
+            <p>Sign out of the current session, then sign in with Fred’s separately authorized Platform Operator identity for the Local / Development Preview.</p>
             <button type="button" onClick={() => void handleSwitchAccount()} disabled={working} className="mt-2 font-bold underline">
               {working ? 'Signing out…' : 'Sign out and switch account'}
             </button>
@@ -208,7 +213,7 @@ export function V2SignInPage() {
         )}
         {operatorPreview && !isAuthenticated && (
           <p className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs leading-5 text-orange-950">
-            Local Development Operator preview · Sign in with the authorized account <strong>social-cause-operator@tiizi.local</strong>.
+            Local / Development Preview · Sign in as <strong>Fred Kenogo, Platform Operator</strong> using <strong>social-cause-operator@tiizi.local</strong>.
           </p>
         )}
         <V2AuthField

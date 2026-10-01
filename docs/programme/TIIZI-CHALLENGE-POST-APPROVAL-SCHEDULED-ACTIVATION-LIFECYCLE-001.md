@@ -93,10 +93,12 @@ remained in establishment. An active Support Tiizi-only Challenge remains on
 the ordinary lifecycle path. No Cause record was approved or altered outside
 the Operator API.
 
-## Development Operator credential hygiene
+## Local Platform Operator identity and credential hygiene
 
-The committed local bootstrap fixes only the non-production email identity
-`social-cause-operator@tiizi.local`. It sources the password exclusively from
+The local bootstrap fixes only the non-production Auth identity
+`social-cause-operator@tiizi.local`, which represents Fred Kenogo, Platform
+Operator. Local / Development Preview describes the environment, not a
+separate operator role. It sources the password from
 `TIIZI_SOCIAL_CAUSE_OPERATOR_PASSWORD`, never prints it, refuses
 `NODE_ENV=production`, and checks that both Auth and PostgreSQL targets are
 loopback. No password literal, production credential, or reusable password

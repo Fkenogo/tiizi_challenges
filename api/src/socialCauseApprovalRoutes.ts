@@ -10,6 +10,9 @@ export interface SocialCauseApprovalDeps {
 interface CauseReviewRow extends Record<string, unknown> {
   challengeId: string;
   challengeTitle: string;
+  challengeType: string;
+  challengeStatus: string;
+  supportTiiziEnabled: boolean;
   groupName: string;
   startDate: string | Date;
   endDate: string | Date;
@@ -26,7 +29,8 @@ interface CauseReviewRow extends Record<string, unknown> {
   decisionReason: string | null;
 }
 
-const REVIEW_SELECT = `SELECT h.challenge_id AS "challengeId",h.title AS "challengeTitle",g.name AS "groupName",
+const REVIEW_SELECT = `SELECT h.challenge_id AS "challengeId",h.title AS "challengeTitle",h.challenge_type AS "challengeType",
+  h.status AS "challengeStatus",h.support_tiizi_enabled AS "supportTiiziEnabled",g.name AS "groupName",
   h.start_date AS "startDate",h.end_date AS "endDate",c.title,c.description,c.purpose,c.beneficiary,
   c.payment_destination_reference AS "paymentDestinationReference",c.destination_owner AS "destinationOwner",
   c.approval_status AS "approvalStatus",c.approval_authority AS "approvalAuthority",
@@ -69,7 +73,7 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
        FROM challenge_social_cause_decisions WHERE challenge_id=$1 ORDER BY decided_at ASC,decision_id ASC`,
       [challengeId],
     );
-    return reply.code(200).send({ ...result.rows[0], decisions: decisions.rows });
+    return reply.code(200).send({ ...result.rows[0], currentOperatorMemberId: actor.memberId, decisions: decisions.rows });
   });
 
   app.delete('/v1/challenges/:challengeId/social-cause', async (request, reply) => {

@@ -2,7 +2,7 @@
 
 **Document type:** Governed programme-management roadmap
 
-**Version:** 2.19
+**Version:** 2.20
 
 **Status:** Approved programme baseline
 
@@ -38,7 +38,7 @@ The Programme Dashboard must be updated whenever programme status, next action o
 
 | Metric            | Current  |
 | ----------------- | -------- |
-| Programme Version | 2.19     |
+| Programme Version | 2.20     |
 | Total Stages      | 7        |
 | Completed Stages  | 5        |
 | Active Stage      | Stage G  |
@@ -1095,6 +1095,8 @@ The Master Programme remains the single programme source of truth. A work packag
 These rules apply throughout the Version 2 programme and may be changed only through an explicit Founder-approved roadmap amendment.
 
 ## 23. Programme Change Log
+
+| 2.20 | 2026-10-01 | **Tiizi Platform Operator Console Baseline 001 — candidate for Founder review** | Founder direction records current operating model; bounded preview assembly only | Records Fred Kenogo as the sole current Platform Operator and Local / Development Preview as the environment, not a separate operator class. The existing explicit, revocable Cause-review roster remains authoritative; creator self-approval, fail-closed authorization, auditability, and participant/member separation remain. Records the capability matrix and current console assembly in `TIIZI-PLATFORM-OPERATOR-CONSOLE-BASELINE-001.md`. Only the existing roster-protected Social Cause review and a read-only Overview sourced from its queue are assembled; other sections remain bounded where no Operator-scoped read or governance exists. No additional administrator permissions are defined. No S8 contribution/payment execution, S9 production scheduler, production access, deployment, or merge. This is a local preview candidate awaiting Founder review; programme stage sequencing is unchanged. Master Programme 2.19 → 2.20. |
 
 | 2.16 | 2026-09-29 | **S6 DEVELOPMENT catalogue published; Library / Guide IMPLEMENTED CANDIDATE / AWAITING FOUNDER EXPERIENCE REVIEW** | Founder disposition TIIZI-S6-DEVELOPMENT-CATALOGUE-PUBLICATION-001 authorizes publication of the 116 ready Draft Activities in DEVELOPMENT only | Created and validated a PostgreSQL custom-format recovery dump before mutation (path and SHA-256 in `working/TIIZI-S6-DEVELOPMENT-CATALOGUE-PUBLICATION-001.md`). Captured all 118 pre-publication Activity identities, versions, lifecycle and derived states. Sequentially published the 116 authorized Draft Activities only via existing `setKnowledgeLifecycle` after per-item identity/readiness checks; 116 succeeded, 0 failed. Post-state: 118 unique canonical codes, all Published and publicationReady; challengeEligible and composerSelectable are derived true for all 118. UUIDs, Activity Codes, Knowledge versions, metrics, units, load bases, semantic definitions, safety content and all other authored fields match the pre-publication snapshot. Live authenticated Knowledge API projections and representative detail/options/search/category reads passed against DEVELOPMENT PostgreSQL. Full API suite 726 passed / 8 emulator-dependent skipped; API typecheck/build, frontend build, Functions lint/build, S6/V2/runtime/mobile/composer guards passed. Local Founder preview prepared at `/v2/guide` using the DEVELOPMENT API and loopback Auth emulator; no Founder experience acceptance is claimed. **S6 remains IMPLEMENTED CANDIDATE / AWAITING FOUNDER EXPERIENCE REVIEW; do not mark complete or merge the UI candidate.** No production access/write, deployment, or manual eligibility/selectability changes. Master Programme 2.15 → 2.16. See `working/TIIZI-S6-DEVELOPMENT-CATALOGUE-PUBLICATION-001.md`. |
 

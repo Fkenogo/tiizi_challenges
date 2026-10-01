@@ -1,6 +1,6 @@
 # Challenge Social Cause Operator Approval Assembly 001
 
-Status: **Functionally accepted, subject to Founder preview inspection; Challenge Founder Experience Review 001 remains OPEN**
+Status: **Functionally accepted, subject to Founder preview inspection; Challenge Founder Experience Review 001 remains OPEN. Current operating model is recorded in TIIZI-PLATFORM-OPERATOR-CONSOLE-BASELINE-001.**
 Starting candidate: `545c985989bf7e91bf805c98087d574a69da28b1`  
 Branch: `impl/tiizi-challenge-founder-experience-review-001`
 
@@ -37,13 +37,14 @@ revoked rows immediately fail authorization. No self-service grant route,
 client role claim, Founder identity constant, Group role inference, or
 Challenge-creator privilege grants approval.
 
-The local preview provisioning script creates/reuses a distinct
-`social-cause-operator@tiizi.local` identity only against loopback Auth and
-loopback PostgreSQL, and records its grant reference. It refuses production
-mode/non-loopback targets and creates no Group, Challenge, Cause, or
-participant state. Production starts with no reviewer rows and therefore
-fails closed until an independently governed operations process provisions
-an authorized reviewer.
+The local preview provisioning script creates/reuses a dedicated Auth
+identity representing Fred Kenogo, `social-cause-operator@tiizi.local`, only
+against loopback Auth and loopback PostgreSQL, and records its grant
+reference. Local / Development Preview describes the environment, not a
+separate operator class. The script refuses production mode/non-loopback
+targets and creates no Group, Challenge, Cause, or participant state.
+Production starts with no reviewer rows and therefore fails closed until an
+independently governed operations process provisions an authorized reviewer.
 
 ## Review experience and decisions
 
@@ -79,13 +80,13 @@ boundary recorded by FD-S3-002.
 
 ## Local Development verification
 
-Migration 023 is applied to the local Development database. The loopback-only
-Development Operator opened the existing `Founder Preview — Cause Pending 001`
-record, reviewed it in the Operator UI, approved it with a recorded reason,
-and observed the decision in the audit. The participant Challenge detail then
-showed “Cause approved, Challenge not active”; its status remained
-`establishment`. No database-side approval was performed. Another existing
-Development Cause remains in the pending queue for review.
+Migration 023 is applied to the local Development database. Fred Kenogo's
+loopback-only Platform Operator identity opened the existing
+`Founder Preview — Cause Pending 001` record, reviewed it in the Operator UI,
+approved it with a recorded reason, and observed the decision in the audit.
+The participant Challenge detail then showed “Cause approved, Challenge not
+active”; its status remained `establishment`. No database-side approval was
+performed. Another Development Cause remained in the pending queue for review.
 
 ## Contribution terminology and S8 boundary
 

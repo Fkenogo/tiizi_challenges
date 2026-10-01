@@ -32,7 +32,7 @@ async function fixture({ startDate = '2026-09-30' }: { startDate?: string } = {}
   );
   await db.query(
     `INSERT INTO platform_operator_cause_reviewers (member_id,grant_reference)
-     VALUES ($1,'Founder-authorized local Development Cause review preview')`,
+     VALUES ($1,'test Platform Operator Cause review grant')`,
     [operator],
   );
   const tokens = {
@@ -72,7 +72,11 @@ describe('Platform Operator Social Cause review boundary', () => {
     expect(list.json()).toMatchObject({ causes: [{ challengeId: f.challengeId, title: 'Community garden', approvalStatus: 'pending_approval' }] });
     const detail = await f.app.inject({ method: 'GET', url: `/v1/operator/social-causes/${f.challengeId}`, headers: f.operatorAuth });
     expect(detail.statusCode).toBe(200);
-    expect(detail.json()).toMatchObject({ beneficiary: 'Community Garden Trust', paymentDestinationReference: 'beneficiary-wallet-reference' });
+    expect(detail.json()).toMatchObject({
+      beneficiary: 'Community Garden Trust', paymentDestinationReference: 'beneficiary-wallet-reference',
+      challengeType: 'streak', challengeStatus: 'establishment', supportTiiziEnabled: false,
+      currentOperatorMemberId: f.operator,
+    });
     await db.query(
       `UPDATE platform_operator_cause_reviewers SET revoked_at=now(),revoked_reference='test revocation' WHERE member_id=$1`,
       [f.operator],
@@ -94,6 +98,11 @@ describe('Platform Operator Social Cause review boundary', () => {
        LEFT JOIN challenge_social_cause_decisions d USING(challenge_id)
        WHERE c.challenge_id=$1 GROUP BY c.approval_status,c.approval_authority,h.status`, [f.challengeId]);
     expect(state.rows[0]).toEqual({ approval_status: 'approved', approval_authority: f.operator, decision_count: '1', status: 'establishment' });
+    const review = await f.app.inject({ method: 'GET', url: `/v1/operator/social-causes/${f.challengeId}`, headers: f.operatorAuth });
+    expect(review.json()).toMatchObject({
+      currentOperatorMemberId: f.operator,
+      decisions: [{ decision: 'approved', authorityMemberId: f.operator, reason: 'Beneficiary and payment destination reviewed' }],
+    });
     await activateChallenge(db, f.challengeId);
     const activated = await db.query<{ status: string }>('SELECT status FROM challenges WHERE challenge_id=$1', [f.challengeId]);
     expect(activated.rows[0].status).toBe('active');

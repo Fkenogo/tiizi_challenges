@@ -87,7 +87,7 @@ export function SocialCauseReviewPage() {
           />
           {import.meta.env.DEV && queue.error instanceof ApiError && queue.error.status === 403 && (
             <p className="mt-3 text-sm text-slate-600">
-              Founder preview? <Link className="font-bold text-primary underline" to="/v2/sign-in?next=%2Fv2%2Foperator%2Freview&operatorPreview=1">Enter Operator preview / sign in as authorized Development Operator</Link>.
+              To enter the Platform Operator Console, <Link className="font-bold text-primary underline" to="/v2/sign-in?next=%2Fv2%2Foperator%2Freview&operatorPreview=1">sign in as Fred Kenogo, Platform Operator</Link>.
             </p>
           )}
         </>
@@ -125,7 +125,7 @@ export function SocialCauseReviewPage() {
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Challenge</p>
                     <h2 className="mt-1 text-lg font-black">{cause.challengeTitle}</h2>
-                    <p className="mt-1 text-sm text-slate-600">{cause.groupName} · {dateOnly(cause.startDate)} – {dateOnly(cause.endDate)}</p>
+                    <p className="mt-1 text-sm text-slate-600">{cause.groupName} · {cause.challengeType} · {cause.challengeStatus} · {dateOnly(cause.startDate)} – {dateOnly(cause.endDate)}</p>
                   </div>
                   <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">{approvalLabel(cause.approvalStatus)}</span>
                 </div>
@@ -135,6 +135,7 @@ export function SocialCauseReviewPage() {
                   <div className="sm:col-span-2"><dt className="text-xs font-bold text-slate-500">Description</dt><dd className="mt-1 whitespace-pre-wrap text-sm leading-6">{cause.description}</dd></div>
                   <div><dt className="text-xs font-bold text-slate-500">Purpose</dt><dd className="mt-1 text-sm">{cause.purpose}</dd></div>
                   <div><dt className="text-xs font-bold text-slate-500">Destination ownership</dt><dd className="mt-1 text-sm">{cause.destinationOwner}</dd></div>
+                  <div><dt className="text-xs font-bold text-slate-500">Support Tiizi</dt><dd className="mt-1 text-sm">{cause.supportTiiziEnabled ? 'Enabled for this Challenge' : 'Not enabled for this Challenge'}</dd></div>
                   <div className="sm:col-span-2"><dt className="text-xs font-bold text-slate-500">Beneficiary payment destination reference</dt><dd className="mt-1 break-all font-mono text-sm">{cause.paymentDestinationReference}</dd></div>
                 </dl>
                 <p className="mt-4 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">Tiizi does not hold or escrow these funds. Approval records the Cause decision only; participant payment execution is not part of this review.</p>
@@ -160,7 +161,9 @@ export function SocialCauseReviewPage() {
                         <li key={`${item.decidedAt}-${index}`} className="rounded-lg bg-slate-50 p-3 text-xs">
                           <p className="font-bold">{approvalLabel(item.decision)} · {item.decidedAt.slice(0, 10)}</p>
                           <p className="mt-1">Reason: {item.reason}</p>
-                          <p className="mt-1 font-mono text-slate-500">Operator member {item.authorityMemberId}</p>
+                          <p className="mt-1 text-slate-600">{item.authorityMemberId === cause.currentOperatorMemberId
+                            ? `${user?.displayName || 'Fred Kenogo'} · Platform Operator`
+                            : 'Platform Operator'} <span className="font-mono text-slate-500">(member {item.authorityMemberId})</span></p>
                         </li>
                       ))}
                     </ol>

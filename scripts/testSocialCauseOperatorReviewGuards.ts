@@ -20,11 +20,14 @@ const checks: Array<[string, boolean]> = [
   ['review UI is wired into the existing Operator Review route', routes.includes('<Route path="review" element={<SocialCauseReviewPage />} />')],
   ['review UI exposes approved/revision-required actions and decision reason', screen.includes("value: 'approved'") && screen.includes("value: 'revision_required'") && screen.includes('Decision reason')],
   ['review UI displays governed beneficiary destination facts and audit', screen.includes('Beneficiary payment destination reference') && screen.includes('Decision audit')],
-  ['Development Operator provisioning is loopback-only and refuses production', previewSetup.includes("NODE_ENV === 'production'") && previewSetup.includes("target.host !== '127.0.0.1'") && previewSetup.includes("['localhost', '127.0.0.1', '::1']")],
-  ['Development bootstrap rotates the emulator password then verifies sign-in', previewSetup.includes('/accounts:update?key=local-preview') && previewSetup.includes('authorization: OWNER') && previewSetup.includes('The supplied local password does not sign in the existing Operator account.')],
+  ['Fred Platform Operator provisioning is loopback-only and refuses production', previewSetup.includes("NODE_ENV === 'production'") && previewSetup.includes("target.host !== '127.0.0.1'") && previewSetup.includes("['localhost', '127.0.0.1', '::1']")],
+  ['Development bootstrap uses Fred identity and rotates the emulator password then verifies sign-in', previewSetup.includes("displayName: 'Fred Kenogo'") && previewSetup.includes('/accounts:update?key=local-preview') && previewSetup.includes('authorization: OWNER') && previewSetup.includes('The supplied local password does not sign in the existing Operator account.')],
   ['Operator account switching is Development-only and targets only Social Cause review', signIn.includes('import.meta.env.DEV') && signIn.includes("next === '/v2/operator/review'") && signIn.includes("params.get('operatorPreview') === '1'")],
   ['switching accounts signs the member session out before Operator sign-in', signIn.includes('await logout()') && signIn.includes('Sign out and switch account') && signIn.includes('social-cause-operator@tiizi.local')],
   ['Operator desktop shell uses persistent navigation and full workspace width', shell.includes('lg:sticky') && shell.includes('lg:h-screen') && shell.includes('w-full p-4 sm:p-6 lg:p-8') && styles.includes('body.operator-desktop #root')],
+  ['console identifies Fred and Local / Development Preview without changing API authority', shell.includes('Platform Operator Console') && shell.includes('Local / Development Preview') && shell.includes('user?.displayName')],
+  ['Overview uses the existing roster-protected pending Cause queue', read('src/v2/operator/operatorPages.tsx').includes('fetchPendingSocialCauses') && read('src/v2/operator/operatorPages.tsx').includes('Platform Operator access required')],
+  ['Cause detail includes existing Challenge and Support Tiizi context without payment execution', route.includes('support_tiizi_enabled AS "supportTiiziEnabled"') && screen.includes('Support Tiizi') && screen.includes('does not handle payments')],
   ['authority migration is narrowly scoped to Cause review', migration.includes('platform_operator_cause_reviewers') && !/CREATE TABLE[^;]*operator_roles/i.test(migration)],
 ];
 let failures = 0;

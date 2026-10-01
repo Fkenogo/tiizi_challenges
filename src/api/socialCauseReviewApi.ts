@@ -5,6 +5,9 @@ export type SocialCauseDecision = 'approved' | 'revision_required';
 export interface SocialCauseReviewItem {
   challengeId: string;
   challengeTitle: string;
+  challengeType: string;
+  challengeStatus: 'establishment' | 'active' | 'ended';
+  supportTiiziEnabled: boolean;
   groupName: string;
   startDate: string;
   endDate: string;
@@ -19,6 +22,7 @@ export interface SocialCauseReviewItem {
   createdAt: string;
   decisionAt: string | null;
   decisionReason: string | null;
+  currentOperatorMemberId?: string;
   decisions: Array<{
     decision: SocialCauseDecision;
     authorityMemberId: string;

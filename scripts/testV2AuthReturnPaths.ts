@@ -6,7 +6,7 @@
  * requested V2 route and must never emit a V1 return path. These
  * pure-contract tests pin resolveV2NextPath behaviour.
  */
-import { resolveV2NextPath, V2_DEFAULT_NEXT, v2NextQuery } from '../src/v2/auth/v2NextPath.js';
+import { resolveV2NextPath, V2_DEFAULT_NEXT, v2AuthEntryHints, v2NextQuery } from '../src/v2/auth/v2NextPath.js';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail = ''): void {
@@ -26,6 +26,9 @@ check('V2 Today passes through', resolveV2NextPath('/v2/today') === '/v2/today')
 check('V2 deep route passes through', resolveV2NextPath('/v2/challenges') === '/v2/challenges');
 check('V2 route with query passes through', resolveV2NextPath('/v2/groups?tab=invites') === '/v2/groups?tab=invites');
 check('V2 operator route passes through', resolveV2NextPath('/v2/operator/overview') === '/v2/operator/overview');
+check('Development review entry gets the Fred Operator sign-in handoff', v2AuthEntryHints('/v2/operator/review', true).operatorPreview === '1');
+check('Development member routes do not get the Operator handoff', Object.keys(v2AuthEntryHints('/v2/challenges', true)).length === 0);
+check('production review entry does not get a Development-only sign-in hint', Object.keys(v2AuthEntryHints('/v2/operator/review', false)).length === 0);
 
 console.log('V1 return paths rejected');
 for (const hostile of [

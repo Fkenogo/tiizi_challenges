@@ -69,6 +69,8 @@
     "preview:v2-auth:reset": "tsx scripts/previewV2AuthReset.ts",
     "preview:s4b:identity": "tsx scripts/previewS4bIdentity.ts",
     "preview:v2-auth:list": "tsx scripts/previewV2AuthList.ts",
+    "preview:operator:seed": "tsx scripts/seedOperatorConsolePreview.ts",
+    "preview:operator:bootstrap": "tsx scripts/previewSocialCauseOperator.ts",
     "test:preview-v2-auth-workflow": "tsx scripts/testPreviewV2AuthWorkflow.ts",
     "test:knowledge-aggregates": "tsx scripts/testKnowledgeAggregates.ts",
     "test:group-invite-backend": "tsx scripts/testGroupInviteBackend.ts",
