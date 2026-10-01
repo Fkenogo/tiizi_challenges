@@ -34,7 +34,7 @@ const FIXTURES = [
 ] as const;
 
 async function main(): Promise<void> {
-  if (process.env.NODE_ENV === 'production') throw new Error('Refusing to seed the Operator preview in production.');
+  if (process.env.NODE_ENV && process.env.NODE_ENV !== 'development') throw new Error('Refusing to seed the Local Development Operator preview outside NODE_ENV=development.');
   const url = new URL(databaseUrl());
   if (!['localhost', '127.0.0.1', '::1'].includes(url.hostname)) throw new Error('Operator preview seeding requires loopback PostgreSQL.');
   const db = createPool(url.toString(), { max: 1 });

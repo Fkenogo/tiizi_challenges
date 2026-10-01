@@ -27,6 +27,7 @@ import {
 import { registerChallengeCreationSeamRoutes } from './challengeCreationSeamRoutes.js';
 import { createPostgresGroupReadStore } from './postgresGroupReadStore.js';
 import { registerSocialCauseApprovalRoutes, type SocialCauseApprovalDeps } from './socialCauseApprovalRoutes.js';
+import { registerOperatorConsoleRoutes } from './operatorConsoleRoutes.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -132,6 +133,7 @@ export function buildApp(deps: AppDeps) {
   // absent deps fail closed instead of establishing.
   registerChallengeCreationRoutes(app, deps.db, deps.challengeCreation ?? {});
   registerSocialCauseApprovalRoutes(app, deps.db, deps.socialCauseApproval ?? {});
+  registerOperatorConsoleRoutes(app, deps.db);
   // S2a challenge-creation API seam (read-only, transport only): Composer
   // activity options + Composer draft preview through the single PF-03
   // validator. Additive; persists nothing; no new domain authority.

@@ -1,9 +1,11 @@
 # Tiizi Platform Operator Console Baseline 001
 
-Status: Local Development preview baseline for Founder review. This record
-captures the current Operator model and the capabilities assembled on the
-Challenge Founder Experience review branch. It does not authorize merge,
-deployment, production access, payment execution, or the production scheduler.
+Status: Historical Local Development preview baseline. Its capability
+inventory is superseded by [Platform Operator Console Assembly 001](TIIZI-PLATFORM-OPERATOR-CONSOLE-ASSEMBLY-001.md), which reconciles the current
+Operator surfaces against the approved prototype Experience Reference and
+assembles the additional authoritative read models. This record does not
+authorize merge, deployment, production access, payment execution, or the
+production scheduler.
 
 ## Current operating model
 

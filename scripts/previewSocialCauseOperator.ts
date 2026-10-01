@@ -11,6 +11,7 @@ config({ path: 'api/.env', override: false });
 
 const EMAIL = 'social-cause-operator@tiizi.local';
 const GRANT_REFERENCE = 'Fred Kenogo Platform Operator Cause review local Development preview';
+const CONSOLE_READ_GRANT_REFERENCE = 'Fred Kenogo Platform Operator read-only Console local Development preview';
 const OWNER = 'Bearer owner';
 
 function arg(name: string): string | undefined {
@@ -50,7 +51,7 @@ async function localAuthAccount(target: string, projectId: string, password: str
 }
 
 async function main() {
-  if (process.env.NODE_ENV === 'production') throw new Error('Refusing to prepare a Development operator in production.');
+  if (process.env.NODE_ENV && process.env.NODE_ENV !== 'development') throw new Error('Refusing to prepare a Local Development Platform Operator outside NODE_ENV=development.');
   const target = resolveEmulatorTarget({ host: arg('--host'), port: arg('--port'), nodeEnv: process.env.NODE_ENV });
   if (target.host !== '127.0.0.1') throw new Error('The Operator identity must use the loopback Auth emulator.');
   const projectId = resolveProjectId({ cliProject: arg('--project') });
@@ -72,17 +73,28 @@ async function main() {
        WHERE platform_operator_cause_reviewers.revoked_at IS NULL`,
       [memberId, GRANT_REFERENCE],
     );
+    await db.query(
+      `INSERT INTO platform_operator_console_readers (member_id,grant_reference)
+       VALUES ($1,$2) ON CONFLICT (member_id) DO UPDATE SET grant_reference=EXCLUDED.grant_reference
+       WHERE platform_operator_console_readers.revoked_at IS NULL`,
+      [memberId, CONSOLE_READ_GRANT_REFERENCE],
+    );
     const grant = await db.query<{ revoked_at: string | null }>(
       `SELECT revoked_at FROM platform_operator_cause_reviewers WHERE member_id=$1`, [memberId]);
     if (!grant.rows.length || grant.rows[0].revoked_at !== null) {
       throw new Error('Fred Kenogo’s Platform Operator grant is revoked; reauthorization requires a new explicit decision.');
+    }
+    const readGrant = await db.query<{ revoked_at: string | null }>(
+      `SELECT revoked_at FROM platform_operator_console_readers WHERE member_id=$1`, [memberId]);
+    if (!readGrant.rows.length || readGrant.rows[0].revoked_at !== null) {
+      throw new Error('Fred Kenogo’s read-only Platform Operator Console grant is revoked; reauthorization requires a new explicit decision.');
     }
     console.log('Tiizi Platform Operator preview identity ready (Local / Development Preview).');
     console.log('  operator    : Fred Kenogo');
     console.log(`  email       : ${EMAIL}`);
     console.log(`  member      : ${memberId}`);
     console.log(`  auth target : ${target.url} (${projectId})`);
-    console.log('  authority   : explicit roster grant; Social Cause review capability only.');
+    console.log('  authority   : explicit roster grants; read-only Console access plus Social Cause review decisions.');
     console.log('  password    : supplied through TIIZI_SOCIAL_CAUSE_OPERATOR_PASSWORD (not shown)');
   } finally {
     await db.close();
