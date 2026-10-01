@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ApiError } from '../../api/apiClient';
 import {
   fetchOperatorAccess, fetchOperatorActivities, fetchOperatorAudit, fetchOperatorChallenge,
   fetchOperatorChallenges, fetchOperatorGroup, fetchOperatorGroups, fetchOperatorHealth,
@@ -37,9 +38,39 @@ function statusClass(value: unknown): string {
 function ShellPage({ section, description, action, children }: { section: Section; description: string; action?: React.ReactNode; children: React.ReactNode }) {
   return <V2Page wide><V2SectionHeader eyebrow="Tiizi Platform Operator" title={LABELS[section]} description={description} action={action} />{children}</V2Page>;
 }
-function LoadOrError({ query, children }: { query: { isLoading: boolean; isError: boolean; refetch: () => unknown }; children: React.ReactNode }) {
+function LoadOrError({ query, children }: { query: { isLoading: boolean; isError: boolean; error?: unknown; refetch: () => unknown }; children: React.ReactNode }) {
   if (query.isLoading) return <V2LoadingState label="Loading authoritative Development data…" />;
-  if (query.isError) return <V2ErrorState title="Operator data could not be loaded" message="The Operator read could not be completed. Check the local API and Development database, then retry." onRetry={() => void query.refetch()} />;
+  if (query.isError) {
+    const error = query.error;
+    const status = error instanceof ApiError ? error.status : undefined;
+    const code = error instanceof ApiError ? error.code : undefined;
+    const title = status === 401
+      ? 'Sign-in required'
+      : status === 403
+        ? 'Platform Operator access denied'
+        : status === 503
+          ? 'Local API or database unavailable'
+          : status && status >= 500
+            ? 'Operator read failed in the API'
+            : code === 'invalid_response'
+              ? 'Operator API returned an invalid response'
+              : 'Operator data could not be loaded';
+    const message = status === 401
+      ? 'Your session is not authenticated. Sign in again, then retry.'
+      : status === 403
+        ? 'This authenticated account does not have an active Platform Operator Console read grant.'
+        : status === 503
+          ? 'The browser could not reach the local API. Check that it is running, the Development database is ready, and the frontend origin is in the local API CORS allowlist.'
+          : status && status >= 500
+            ? 'The API could not complete this read. Check the local API log for the request and database error.'
+            : code === 'invalid_response'
+              ? 'The API response could not be parsed. Check that the frontend and local API are from the same preview build.'
+              : 'The Operator read could not be completed. Retry or check the local API.';
+    const diagnostic = import.meta.env.DEV && error instanceof ApiError
+      ? `Development diagnostic: HTTP ${error.status} · ${error.code}`
+      : undefined;
+    return <V2ErrorState title={title} message={diagnostic ? `${message} ${diagnostic}` : message} onRetry={() => void query.refetch()} />;
+  }
   return <>{children}</>;
 }
 function SearchBox({ value, onChange, placeholder = 'Search authoritative records…' }: { value: string; onChange: (next: string) => void; placeholder?: string }) {
