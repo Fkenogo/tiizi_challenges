@@ -94,3 +94,86 @@ Kenogo, Platform Operator. No password is recorded in this programme document.
 This record does not redefine constitutional Product Truth. It does not
 authorize merge, deployment, production access, broad admin writes, S8 payment
 execution, S9 production scheduling, or additional administrator policy.
+
+## Founder acceptance verification — 2026-10-01
+
+**Status: Platform Operator Console baseline READY FOR FOUNDER ACCEPTANCE.**
+The assembly is accepted as a progressively assembled operational product:
+real capability is exposed from authoritative Tiizi Product Truth, while
+sections whose governed underlying capability is not yet available remain
+deferred. This record does not authorize speculative Console expansion.
+
+The Founder supplied direct browser evidence for the cross-role scenario:
+
+1. The ordinary member identity `founder1@tiizi.local` established the
+   Challenge **10,000 km for Jane** in **Karura Sunrisers**, using the
+   Together/collective engine, with displayed dates 1–30 October 2026. The
+   associated Cause was **Walk for Jane**. Before review, the member detail
+   displayed “Challenge created — Cause approval pending”.
+2. Fred Kenogo's separate Platform Operator identity reviewed the pending
+   Cause in Review & Attention, saw its Challenge and Group context,
+   beneficiary, purpose, beneficiary-owned destination reference, and Support
+   Tiizi configuration, entered a decision reason, and approved it.
+3. Returning to the ordinary member Challenge detail showed “Cause support
+   is approved and will be available when this Challenge becomes active.”
+   Thus the browser demonstrated member establishment → governed Operator
+   review → persisted decision → member-visible approved state.
+
+The local Development PostgreSQL state corroborates that browser scenario.
+The API's configured database endpoint is `127.0.0.1:15433` (database
+`tiizi`). Challenge `90ca1351-5d1e-489a-b465-01f43cbb3ade` was created by
+member `1e7e4a10-d09d-4fcc-a003-8011bc0b7ee4`, mapped to the Firebase Auth UID
+`jUUp0zAJ7Tn8eCM233tnYzfUn14Q` for `founder1@tiizi.local`. That member is the
+active `owner` and recorded steward of Group `dded00a1-9329-4482-a9b4-bf133be498d5`
+(Karura Sunrisers); the membership was approved by that member. The Challenge
+is `collective`, in `establishment`, dated 2026-10-01 through 2026-10-30,
+configuration version 1, with `support_tiizi_enabled = false`. Cause `Walk for
+Jane` is attached to that Challenge and is `approved`; its purpose is hospital
+bill payments, beneficiary is Jane Muiruri, destination owner is
+`beneficiary`, and the local destination reference is present (value
+intentionally not reproduced in this programme record).
+
+Exactly one decision is recorded for this Cause:
+`0df90e6b-9e46-4ec1-8062-621be592d632`, `approved`, by Fred's member reference
+`6261b833-cabe-4348-9e6e-085dd6e3fc8c` (Firebase UID
+`lRiSsJsnwbdIEEHreS96xKSLLaev`) at `2026-10-01T15:59:19.461Z`, with the
+recorded reason `approved`. No duplicate decision was added during this
+reconciliation.
+
+Authority remains separated: the Founder member maps to the Auth UID above
+and has no active Console-read or Cause-review grants. Fred's distinct
+Platform Operator member mapping has one active grant in each roster. The
+Cause creator self-approval prohibition remains in force, including when a
+creator is on an Operator roster; the focused review tests assert this.
+
+Cause approval does not itself activate a Challenge. The verified Challenge
+remains in `establishment`, with no activation timestamp. This follows the
+existing lifecycle model: an approved Cause makes the Challenge eligible for
+the ordinary scheduled lifecycle transition; lifecycle execution is a
+separate governed step. No scheduler or lifecycle semantics were changed.
+
+**Founder-reported browser evidence is reconciled with authoritative local
+database state; no Cause decision or application behavior was changed by this
+recording task.** The earlier `Walk for cancer` scenario is a distinct
+Development fixture and is not the acceptance scenario recorded here.
+
+### Deferred capability and follow-up
+
+Templates, Settings, localisation editing, payment execution/reporting,
+speculative moderation, broad role management, simulated telemetry and
+scheduler controls remain deferred for the Product Truth/governance reasons
+in the capability matrix above. The accepted baseline does not call for
+filling these sections until their authoritative capabilities exist.
+
+Follow-up (not an acceptance blocker): **Stable Development Founder/member
+preview identity persistence**. The earlier `founder1@tiizi.local` identity
+was absent from the then-current Auth emulator state and belonged to older
+Development emulator/database state, so the local identity had to be created
+and linked again. This task records the concern only; it does not change
+emulator persistence or bootstrap behavior.
+
+The prototype Experience Reference remains `Fkenogo/tiizi-prototye` at
+reviewed `main` SHA `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6`. Product Truth
+continues to take precedence over prototype behavior. Fred Kenogo remains
+the sole current Platform Operator, the Operator and member identities remain
+distinct, and Development seed data remains local/non-production.
