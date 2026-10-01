@@ -1,7 +1,7 @@
 # Challenge Post-Approval & Scheduled Activation Lifecycle Assessment/Correction 001
 
-Status: **Candidate for Founder review; Challenge Founder Experience Review 001 remains OPEN**  
-Starting candidate: `32b61f4815997dd4aa9f84f5ea37fed44064b398`  
+Status: **Candidate for Founder review; Challenge Founder Experience Review 001 remains OPEN**
+Starting candidate: `32b61f4815997dd4aa9f84f5ea37fed44064b398`
 Branch: `impl/tiizi-challenge-founder-experience-review-001`
 
 ## Finding: the gap was general, not Cause-specific
