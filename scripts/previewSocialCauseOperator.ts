@@ -27,6 +27,14 @@ async function localAuthAccount(target: string, projectId: string, password: str
     if (!created.ok || !body.localId) throw new Error('Could not create the local Development Operator account.');
     uid = body.localId;
   } else {
+    // This bootstrap is restricted above to the loopback emulator. Treat the
+    // supplied secret as the desired current password so rotation is
+    // repeatable even when emulator state outlives a previous preview run.
+    const rotated = await fetch(`${target}/identitytoolkit.googleapis.com/v1/accounts:update?key=local-preview`, {
+      method: 'POST', headers: { authorization: OWNER, 'content-type': 'application/json' },
+      body: JSON.stringify({ localId: uid, password, returnSecureToken: false }),
+    });
+    if (!rotated.ok) throw new Error('Could not rotate the local Development Operator password.');
     const signedIn = await fetch(`${target}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-preview`, {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: EMAIL, password, returnSecureToken: true }),
     });
