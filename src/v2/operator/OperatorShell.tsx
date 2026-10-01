@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { V2BrandMark } from '../brand';
 
@@ -27,9 +28,13 @@ export const V2_OPERATOR_NAV = [
 
 export function V2OperatorShell() {
   const navigate = useNavigate();
+  useEffect(() => {
+    document.body.classList.add('operator-desktop');
+    return () => document.body.classList.remove('operator-desktop');
+  }, []);
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="bg-slate-950 text-slate-200 lg:flex lg:min-h-screen lg:flex-col">
+      <aside className="bg-slate-950 text-slate-200 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
         <div className="flex items-center gap-2.5 border-b border-slate-800 p-4">
           <V2BrandMark size={30} />
           <div>
@@ -96,7 +101,7 @@ export function V2OperatorShell() {
             Exit to Member experience →
           </button>
         </div>
-        <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+        <main className="w-full p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

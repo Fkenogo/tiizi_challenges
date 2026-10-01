@@ -19,7 +19,7 @@ export function V2Page({
 }) {
   return (
     <div className="min-h-full bg-slate-50">
-      <div className={`mx-auto w-full px-4 py-5 sm:px-6 ${wide ? 'max-w-6xl' : 'max-w-3xl'}`}>
+      <div className={`mx-auto w-full px-4 py-5 sm:px-6 ${wide ? 'max-w-none' : 'max-w-3xl'}`}>
         {children}
       </div>
     </div>

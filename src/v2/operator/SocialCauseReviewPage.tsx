@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../api/apiClient';
 import {
@@ -76,13 +77,20 @@ export function SocialCauseReviewPage() {
       ) : queue.isLoading ? (
         <V2LoadingState label="Loading pending Causes…" />
       ) : queue.isError ? (
-        <V2ErrorState
-          title={queue.error instanceof ApiError && queue.error.status === 403 ? 'Platform Operator access required' : 'Pending Causes could not load'}
-          message={queue.error instanceof ApiError && queue.error.status === 403
-            ? 'This signed-in account is not authorized to review Social Causes.'
-            : 'Please check the Development API and try again.'}
-          onRetry={() => void queue.refetch()}
-        />
+        <>
+          <V2ErrorState
+            title={queue.error instanceof ApiError && queue.error.status === 403 ? 'Platform Operator access required' : 'Pending Causes could not load'}
+            message={queue.error instanceof ApiError && queue.error.status === 403
+              ? 'This signed-in account is not authorized to review Social Causes.'
+              : 'Please check the Development API and try again.'}
+            onRetry={() => void queue.refetch()}
+          />
+          {import.meta.env.DEV && queue.error instanceof ApiError && queue.error.status === 403 && (
+            <p className="mt-3 text-sm text-slate-600">
+              Founder preview? <Link className="font-bold text-primary underline" to="/v2/sign-in?next=%2Fv2%2Foperator%2Freview&operatorPreview=1">Enter Operator preview / sign in as authorized Development Operator</Link>.
+            </p>
+          )}
+        </>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.5fr)]">
           <section aria-label="Pending Social Causes" className="space-y-2">

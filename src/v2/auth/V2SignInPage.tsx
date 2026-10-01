@@ -116,7 +116,7 @@ function V2ForgotPasswordDialog({
 export function V2SignInPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { login, loginWithGoogle, isAuthenticated, isReady } = useAuth();
+  const { login, loginWithGoogle, logout, isAuthenticated, isReady } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -125,10 +125,13 @@ export function V2SignInPage() {
   const [showRecovery, setShowRecovery] = useState(false);
 
   const next = resolveV2NextPath(params.get('next'));
+  const operatorPreview = import.meta.env.DEV
+    && params.get('operatorPreview') === '1'
+    && next === '/v2/operator/review';
 
   useEffect(() => {
-    if (isReady && isAuthenticated) navigate(next, { replace: true });
-  }, [isReady, isAuthenticated, navigate, next]);
+    if (isReady && isAuthenticated && !operatorPreview) navigate(next, { replace: true });
+  }, [isReady, isAuthenticated, navigate, next, operatorPreview]);
 
   const canSubmit = EMAIL_PATTERN.test(email.trim()) && password.length >= 6 && !working;
 
@@ -159,6 +162,18 @@ export function V2SignInPage() {
     }
   };
 
+  const handleSwitchAccount = async () => {
+    setError('');
+    setWorking(true);
+    try {
+      await logout();
+    } catch (err) {
+      setError(normalizeFirebaseAuthError(err));
+    } finally {
+      setWorking(false);
+    }
+  };
+
   return (
     <V2AuthLayout
       title="Welcome back"
@@ -182,6 +197,20 @@ export function V2SignInPage() {
           void handleSignIn();
         }}
       >
+        {operatorPreview && isAuthenticated && (
+          <div className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs leading-5 text-orange-950">
+            <p className="font-black">Local Development Operator preview</p>
+            <p>Sign out of the current member account, then sign in with the separately authorized Development Operator identity.</p>
+            <button type="button" onClick={() => void handleSwitchAccount()} disabled={working} className="mt-2 font-bold underline">
+              {working ? 'Signing out…' : 'Sign out and switch account'}
+            </button>
+          </div>
+        )}
+        {operatorPreview && !isAuthenticated && (
+          <p className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs leading-5 text-orange-950">
+            Local Development Operator preview · Sign in with the authorized account <strong>social-cause-operator@tiizi.local</strong>.
+          </p>
+        )}
         <V2AuthField
           label="Email address"
           type="email"
@@ -217,17 +246,17 @@ export function V2SignInPage() {
         </V2AuthButton>
       </form>
 
-      <div className="my-5 flex items-center gap-3">
+      {!operatorPreview && <div className="my-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-slate-200" />
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
           Or continue with
         </p>
         <div className="h-px flex-1 bg-slate-200" />
-      </div>
+      </div>}
 
-      <V2ProviderButton onClick={() => void handleGoogle()} disabled={working}>
+      {!operatorPreview && <V2ProviderButton onClick={() => void handleGoogle()} disabled={working}>
         Continue with Google
-      </V2ProviderButton>
+      </V2ProviderButton>}
 
       {showRecovery && (
         <V2ForgotPasswordDialog initialEmail={email} onClose={() => setShowRecovery(false)} />
