@@ -326,25 +326,29 @@ async function main(): Promise<void> {
         'SELECT status, role FROM group_memberships WHERE group_id = $1 AND member_id = $2',
         [group, member],
       );
-      if (!membership.rows[0]) {
-        try {
-          await c.query(
-            `INSERT INTO group_memberships (group_id, member_id, role, status)
-             VALUES ($1, $2, 'owner', 'active')`,
+      const isOwner = membership.rows[0]?.role === 'owner' && membership.rows[0]?.status === 'active';
+      if (!isOwner) {
+        // Either first run or a previous preview identity was orphaned by an
+        // Auth emulator reset while holding the Group's single owner seat.
+        // Hand the seat to this live identity atomically: the steward
+        // invariant triggers are DEFERRABLE (checked at COMMIT), so demote +
+        // own + name-steward must land in ONE transaction.
+        await db.transaction(async (tx) => {
+          await tx.query(
+            `UPDATE group_memberships SET role = 'member'
+              WHERE group_id = $1 AND member_id <> $2 AND role = 'owner'`,
             [group, member],
           );
-        } catch (e) {
-          console.error(`seed: membership insert failed group=${group} member=${member}: ${(e as Error).message}`);
-          throw e;
-        }
-      } else if (membership.rows[0].status !== 'active' || membership.rows[0].role !== 'owner') {
-        await c.query(
-          `UPDATE group_memberships SET status = 'active', role = 'owner'
-            WHERE group_id = $1 AND member_id = $2`,
-          [group, member],
-        );
+          await tx.query(
+            `INSERT INTO group_memberships (group_id, member_id, role, status)
+             VALUES ($1, $2, 'owner', 'active')
+             ON CONFLICT (group_id, member_id)
+             DO UPDATE SET role = 'owner', status = 'active'`,
+            [group, member],
+          );
+          await tx.query('UPDATE groups SET steward_member_id = $2 WHERE group_id = $1', [group, member]);
+        });
       }
-      await c.query('UPDATE groups SET steward_member_id = $2 WHERE group_id = $1', [group, member]);
       return { member, group };
     })(db);
 
@@ -372,7 +376,7 @@ async function main(): Promise<void> {
     // completed/pending requirement state S5b must demonstrate.
     await fixtureActivity(db, activityResolvers, member, streakId, {
       activity_kind: 'fitness', canonical_key: ACTIVITY_PUSH_UP, value: 20, unit: 'reps',
-      occurred_at: instant(30), client_key: `${SEED_TAG}-streak-today`,
+      occurred_at: instant(30), client_key: `${SEED_TAG}-${member.slice(0, 8)}-streak-today`,
     });
 
     // --- B. active Together Challenge: shared goal + own contribution ------
@@ -392,7 +396,7 @@ async function main(): Promise<void> {
     await fixtureParticipation(db, togetherId, member, instant(60 * 24 * 6));
     await fixtureActivity(db, activityResolvers, member, togetherId, {
       activity_kind: 'fitness', canonical_key: ACTIVITY_PUSH_UP, value: 240, unit: 'reps',
-      occurred_at: instant(45), client_key: `${SEED_TAG}-together-today`,
+      occurred_at: instant(45), client_key: `${SEED_TAG}-${member.slice(0, 8)}-together-today`,
     });
 
     // --- C. active Race Challenge: own progress toward the target ----------
@@ -410,7 +414,7 @@ async function main(): Promise<void> {
     await fixtureParticipation(db, raceId, member, instant(60 * 24 * 4));
     await fixtureActivity(db, activityResolvers, member, raceId, {
       activity_kind: 'fitness', canonical_key: ACTIVITY_PUSH_UP, value: 45, unit: 'reps',
-      occurred_at: instant(120), client_key: `${SEED_TAG}-race-today`,
+      occurred_at: instant(120), client_key: `${SEED_TAG}-${member.slice(0, 8)}-race-today`,
     });
 
     // --- D + E. opportunity with an upcoming start -------------------------

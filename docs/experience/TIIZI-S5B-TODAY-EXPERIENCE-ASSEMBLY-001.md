@@ -34,7 +34,7 @@ decide a Challenge day.
 | --- | --- | --- |
 | 1 | Today header — contextual greeting, governing day context, active Challenge count | `todayContext.serverNow`, `todayContext.activeChallengeCount`, `todayContext.timezoneContexts[]`, and the governing day from the first timezone context |
 | 2 | Do today — Streak requirements for the governing day | `requiredToday[]`: `title`, `group.name`, `challengeType`, `requirements[]` (`label`, `targetValue`, `unit`, `state`), `streak.currentStreak/bestStreak/daysCompleted`, `detailPath` |
-| 3 | Your Challenges — active joined progress | `joinedChallengeProgress[]`: `challengeType`, `title`, `group.name`, `startDate`, `endDate`, `detailPath`, and the type-specific `progress` |
+| 3 | Your Challenges — active joined progress, deduplicated against Do today | `joinedChallengeProgress[]`: `challengeType`, `title`, `group.name`, `startDate`, `endDate`, `detailPath`, and the type-specific `progress`. Presentation rule: a Challenge already represented in Do today is not immediately repeated here; the remaining items keep exact server order and the limit of 2 applies after deduplication |
 | 4 | In your Groups — Group-contextual opportunities | `groupChallengeOpportunities[]`: `title`, `group.name`, `challengeType`, `startDate`, `endDate`, `activities[].name`, `detailPath`, `joinability` |
 | 5 | Coming up — authoritative lifecycle boundaries | `upcoming[]`: `title`, `kind`, `lifecycleDate`, `detailPath` |
 | 6 | Recent results — finalized references only | `finalizedResults[]`: `title`, `detailPath` |
@@ -124,7 +124,7 @@ than a synthetic history.
 ## 7. Validation
 
 - Frontend typecheck + production build — pass.
-- S5b Today guards (`npm run test:s5b-today`, 43 checks) — pass.
+- S5b Today guards (`npm run test:s5b-today`, 49 checks) — pass.
 - V2 experience boundary, V2 runtime boundary, V2 frontend guards — pass.
 - V1 exclusion boundary guard + regression fixture — pass.
 - API typecheck + build, S5a Today projection suite (5/5), `/api` namespace contract suite (59/59) — pass.
@@ -189,3 +189,20 @@ path works end to end from Today; it is NOT acceptance of all S5b.
    no second logging path, no new fields, no schema/migration change.
 4. **Acceptance target.** Phone/mobile is the primary Founder acceptance target; desktop
    verification is not an S5b acceptance gate (see §7).
+
+## 10. Founder Review Correction 001A — presentation deduplication (bounded, presentation-only)
+
+The Founder observed that a Streak Challenge with governing-day requirements (Morning Momentum)
+appeared twice on the same screen: in Do today and immediately again in Your Challenges. The
+Experience Reference hierarchy does not require this duplication, so Today now composes the two
+sections without immediate repeats.
+
+Rule: for presentation of Your Challenges only, a `joinedChallengeProgress` item whose
+`challengeId` is already represented in `requiredToday` is excluded. Exact relative server order
+of every remaining item is preserved; nothing is sorted; the projection is not mutated;
+`GET /api/today` is untouched. The existing limit of 2 applies AFTER this deduplication
+(e.g. requiredToday A with joined A,B,C,D renders Do today A, Your Challenges B,C initially,
+D behind View more). A joined Streak absent from `requiredToday` remains eligible in Your
+Challenges. If deduplication leaves zero items, Your Challenges is omitted entirely. Do today
+remains unlimited. Implementation: `presentedJoinedChallenges()` in `todayView.ts`; guards J1–J6.
+This is UI composition only — not an API, Product Truth, engine, filtering, or schema change.

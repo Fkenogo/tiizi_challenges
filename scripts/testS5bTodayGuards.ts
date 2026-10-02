@@ -21,7 +21,10 @@
  *      Do today is never limited;
  *   H. the shared activity-logging sheet stays phone-safe (presentation only;
  *      the governed application authority is untouched);
- *   I. the zero state offers governed Challenge and Group discovery.
+ *   I. the zero state offers governed Challenge and Group discovery;
+ *   J. Your Challenges never immediately repeats a Challenge already
+ *      represented in Do today (order preserved, limit applied after
+ *      deduplication, projection never mutated).
  */
 import { readFileSync } from 'node:fs';
 import {
@@ -32,6 +35,7 @@ import {
   greetingFor,
   isTodayEmpty,
   opportunityAction,
+  presentedJoinedChallenges,
   progressPercent,
   raceActivitySummary,
   requirementProgress,
@@ -359,11 +363,12 @@ check(
 );
 check(
   'G5 the screen limits only the growing sections through the shared helper, never Do today',
-  screen.includes('visibleSectionItems(projection.joinedChallengeProgress')
+  screen.includes('visibleSectionItems(presentedChallenges')
     && screen.includes('visibleSectionItems(projection.groupChallengeOpportunities')
     && screen.includes('visibleSectionItems(projection.upcoming')
     && screen.includes('projection.requiredToday.map')
-    && !/visibleSectionItems\(projection\.requiredToday/.test(screen),
+    && !/visibleSectionItems\(projection\.requiredToday/.test(screen)
+    && !/visibleSectionItems\(projection\.joinedChallengeProgress/.test(screen),
 );
 check(
   'G6 View more / Show less is an accessible inline toggle with honest counts',
@@ -408,6 +413,69 @@ check(
   'I1 the zero state keeps Find a Challenge and adds Find a Group on real routes',
   screen.includes("navigate('/v2/challenges')") && screen.includes("navigate('/v2/groups')")
     && screen.includes('Find a Challenge') && screen.includes('Find a Group'),
+);
+
+// ---------------------------------------------------------------------------
+// J. Presentation deduplication: no immediate repeat of Do today in
+//    Your Challenges (Founder Review Correction 001A)
+// ---------------------------------------------------------------------------
+
+function joinedChallenge(challengeId: string): V2TodayJoinedChallenge {
+  return {
+    challengeId, title: challengeId, challengeType: 'collective',
+    group: { groupId: 'g-1', name: 'Sunrise Circle' }, lifecycleState: 'active',
+    governingToday: '2026-09-15', timezone: 'UTC', startDate: '2026-09-01', endDate: '2026-09-30',
+    detailPath: `/v2/challenges/${challengeId}`,
+    progress: { groupTotal: 1, target: 10, unit: 'reps', goalReached: false, memberContribution: 1 },
+  };
+}
+
+const dedupFixture = {
+  requiredToday: [requiredChallenge({ challengeId: 'A' })],
+  joinedChallengeProgress: ['A', 'B', 'C', 'D'].map(joinedChallenge),
+};
+const presentedIds = presentedJoinedChallenges(dedupFixture).map((c) => c.challengeId);
+
+check(
+  'J1 a Challenge in both requiredToday and joinedChallengeProgress is presented only once (Do today)',
+  JSON.stringify(presentedIds) === JSON.stringify(['B', 'C', 'D']),
+);
+check(
+  'J2 remaining Your Challenges preserve their relative server order',
+  presentedIds[0] === 'B' && presentedIds[1] === 'C' && presentedIds[2] === 'D',
+);
+check(
+  'J3 the limit of 2 applies AFTER deduplication (collapsed B,C; expanded B,C,D)',
+  JSON.stringify(visibleSectionItems(presentedJoinedChallenges(dedupFixture), false).map((c) => c.challengeId)) === JSON.stringify(['B', 'C'])
+    && JSON.stringify(visibleSectionItems(presentedJoinedChallenges(dedupFixture), true).map((c) => c.challengeId)) === JSON.stringify(['B', 'C', 'D']),
+);
+check(
+  'J4 a joined Streak absent from requiredToday remains eligible in Your Challenges',
+  presentedJoinedChallenges({
+    requiredToday: [requiredChallenge({ challengeId: 'A' })],
+    joinedChallengeProgress: [{
+      ...joinedChallenge('S'),
+      challengeType: 'streak' as const,
+      progress: { currentStreak: 3, bestStreak: 5, daysCompleted: 7, completionStatus: 'in_progress' as const },
+    }],
+  }).map((c) => c.challengeId).join(',') === 'S',
+);
+check(
+  'J5 Your Challenges disappears when deduplication leaves no items',
+  presentedJoinedChallenges({
+    requiredToday: [requiredChallenge({ challengeId: 'A' })],
+    joinedChallengeProgress: [joinedChallenge('A')],
+  }).length === 0
+    && screen.includes('presentedChallenges.length > 0')
+    && !/projection\.joinedChallengeProgress\.length > 0/.test(screen),
+);
+check(
+  'J6 the projection arrays are not mutated by presentation deduplication',
+  (() => {
+    const before = JSON.stringify(dedupFixture);
+    presentedJoinedChallenges(dedupFixture);
+    return JSON.stringify(dedupFixture) === before;
+  })(),
 );
 
 if (failures > 0) {

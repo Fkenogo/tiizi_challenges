@@ -151,6 +151,26 @@ export function visibleSectionItems<T>(items: readonly T[], expanded: boolean): 
   return items.slice(0, TODAY_SECTION_LIMIT);
 }
 
+/**
+ * The joined Challenges `Your Challenges` presents: those NOT already
+ * represented in `Do today`. Today must stay a concise action-oriented home,
+ * so a Challenge already shown with its governing-day requirements is not
+ * immediately repeated below it.
+ *
+ * Presentation composition only, over the served projection:
+ * - `filter` preserves the exact relative server order — no sorting;
+ * - a new array is returned — the projection is never mutated;
+ * - a joined Streak absent from `requiredToday` remains fully eligible;
+ * - the caller applies `visibleSectionItems` AFTER this, so the limit of 2
+ *   counts only the presented items.
+ */
+export function presentedJoinedChallenges(
+  projection: Pick<V2TodayProjection, 'requiredToday' | 'joinedChallengeProgress'>,
+): V2TodayJoinedChallenge[] {
+  const required = new Set(projection.requiredToday.map((challenge) => challenge.challengeId));
+  return projection.joinedChallengeProgress.filter((challenge) => !required.has(challenge.challengeId));
+}
+
 /** Together progress line: shared total against the shared goal. */
 export function togetherSummary(challenge: Extract<V2TodayJoinedChallenge, { challengeType: 'collective' }>): string {
   const { groupTotal, target, unit } = challenge.progress;

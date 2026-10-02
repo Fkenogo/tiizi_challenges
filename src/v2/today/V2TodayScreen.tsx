@@ -23,6 +23,7 @@ import {
   governingDayFor,
   greetingFor,
   isTodayEmpty,
+  presentedJoinedChallenges,
   progressPercent,
   raceActivitySummary,
   requirementProgress,
@@ -100,6 +101,11 @@ export function V2TodayScreen() {
   const displayName = profile?.displayName ?? null;
   const timezone = projection.todayContext.timezoneContexts[0]?.timezone ?? null;
   const governingDay = governingDayFor(projection);
+  // Presentation deduplication: Challenges already represented in Do today
+  // are not immediately repeated in Your Challenges. Computed here, after
+  // the projection is established — the loading/error flow above is
+  // untouched. Server order preserved; the projection is never mutated.
+  const presentedChallenges = presentedJoinedChallenges(projection);
 
   return (
     <V2Page>
@@ -153,14 +159,16 @@ export function V2TodayScreen() {
             </section>
           )}
 
-          {/* 3. Active Challenge progress (progressively disclosed). */}
-          {projection.joinedChallengeProgress.length > 0 && (
+          {/* 3. Active Challenge progress, progressively disclosed, deduplicated
+              against Do today (a Challenge already represented above is not
+              immediately repeated here). */}
+          {presentedChallenges.length > 0 && (
             <section aria-labelledby="today-progress">
               <h2 id="today-progress" className="mb-3 text-base font-black text-slate-900">
                 Your Challenges
               </h2>
               <div className="space-y-3">
-                {visibleSectionItems(projection.joinedChallengeProgress, showAllChallenges).map((challenge) => (
+                {visibleSectionItems(presentedChallenges, showAllChallenges).map((challenge) => (
                   <ActiveChallengeCard
                     key={challenge.challengeId}
                     challenge={challenge}
@@ -169,7 +177,7 @@ export function V2TodayScreen() {
                 ))}
               </div>
               <SectionToggle
-                total={projection.joinedChallengeProgress.length}
+                total={presentedChallenges.length}
                 expanded={showAllChallenges}
                 onToggle={() => setShowAllChallenges((next) => !next)}
                 label="Challenges"
