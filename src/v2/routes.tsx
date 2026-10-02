@@ -8,8 +8,8 @@ import { V2MemberShell } from './member/MemberShell';
 import {
   V2NotificationsPage,
   V2ProfilePage,
-  V2TodayPage,
 } from './member/memberPages';
+import { V2TodayScreen } from './today/V2TodayScreen';
 import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
 import { V2GroupHomeScreen } from './groups/V2GroupHomeScreen';
@@ -71,7 +71,7 @@ export function V2Routes() {
         <Route element={<V2ProtectedScope />}>
           <Route element={<V2MemberShell />}>
             <Route index element={<Navigate to="today" replace />} />
-            <Route path="today" element={<V2TodayPage />} />
+            <Route path="today" element={<V2TodayScreen />} />
             <Route path="challenges" element={<V2ChallengeListScreen />} />
             <Route path="challenges/new" element={<V2ChallengeCreationWizard />} />
             <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
