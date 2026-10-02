@@ -120,6 +120,20 @@ const ROUTE_CALL = /\bapp\.(get|post|patch|put|delete|head|options)\s*\(/g;
 const PATH_ARG = /^['"`]([^'"`]*)['"`]/;
 
 /**
+ * Resolve the canonical API prefix template in a registered route path.
+ *
+ * Pass 001 introduced `API_PREFIX` as the single source of truth for the API
+ * namespace, and a route may legitimately be registered as
+ * `` `${API_PREFIX}/today` ``. That IS the canonical namespace, so the guard
+ * must recognise it rather than report it as a non-`/api` route. This is a
+ * resolution step only: the canonical value itself is separately asserted to
+ * be `/api` by `checkNoV1ApiRoutes`, and `/v1` is still rejected outright.
+ */
+function resolveRoutePath(rawPath) {
+  return rawPath.replace(/\$\{API_PREFIX\}/g, '/api');
+}
+
+/**
  * Extract every route path registered by `app.<method>(...)` across an API
  * source module map. Reads the actual registration call sites, so a route that
  * exists only in a comment is not counted.
@@ -132,7 +146,13 @@ export function registeredRoutePaths(apiModules) {
       // quoted/template literal, whether it is on the same line or the next.
       const rest = source.slice(match.index + match[0].length);
       const pathMatch = rest.match(PATH_ARG);
-      if (pathMatch) routes.push({ file, method: match[1].toUpperCase(), path: pathMatch[1] });
+      if (pathMatch) {
+        routes.push({
+          file,
+          method: match[1].toUpperCase(),
+          path: resolveRoutePath(pathMatch[1]),
+        });
+      }
     }
   }
   return routes;

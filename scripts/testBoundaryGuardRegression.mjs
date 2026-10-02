@@ -150,6 +150,21 @@ const apiModules = new Map([
 const cleanRouteViolations = checkNoV1ApiRoutes(apiModules, { apiPrefixModule: 'api/src/apiPrefix.ts', authModule: 'api/src/app.ts' });
 check('G1 clean API registration: no violations', cleanRouteViolations.length === 0, cleanRouteViolations.join('; '));
 
+// The canonical prefix may legitimately be used as a template literal. That IS
+// the /api namespace, so the guard must accept it rather than report it as a
+// non-/api route (the canonical value itself is asserted separately).
+const templatePrefixModules = new Map(apiModules);
+templatePrefixModules.set(
+  'api/src/app.ts',
+  `import { API_PREFIX } from './apiPrefix.js';\napp.get(\`\${API_PREFIX}/today\`, () => {});\napp.get(\`\${API_PREFIX}/groups/:groupId\`, () => {});\napp.get('/health', () => {});\napp.addHook('onRequest', () => request.url.startsWith(\`\${API_PREFIX}/\`));`,
+);
+const templatePrefixViolations = checkNoV1ApiRoutes(templatePrefixModules, { apiPrefixModule: 'api/src/apiPrefix.ts', authModule: 'api/src/app.ts' });
+check(
+  'G1b guard ACCEPTS a route registered through the canonical ${API_PREFIX} template',
+  templatePrefixViolations.length === 0,
+  templatePrefixViolations.join('; '),
+);
+
 const v1RouteModules = new Map(apiModules);
 v1RouteModules.set(
   'api/src/app.ts',

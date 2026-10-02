@@ -1,6 +1,6 @@
 # TIIZI-S5 — Today Experience Charter 001
 
-**Task:** TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001 — reference reconciliation and bounded implementation readiness. **Documentation only; implementation NOT STARTED.**
+**Task:** TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001 — reference reconciliation and bounded implementation readiness. **Authoritative charter; S5a implemented candidate is recorded below.**
 
 **Canonical implementation base reviewed:** `origin/main` @ `a2275fe2a80a4ec283e606412fadf91d1da4f468` (post PR #65).
 
@@ -8,7 +8,9 @@
 
 **Experience Reference inspected:** `Fkenogo/tiizi-prototye` @ `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6`, including `docs/TIIZI-EXPERIENCE-REFERENCE.md`, `src/components/today/TodayView.tsx`, and `src/data/assumptionsData.ts`. This repository is an experience reference, not Product Truth or backend authority.
 
-**Status:** S5a is ready for Founder charter merge. S5b and S5c remain subsequent slices. No implementation has started or is authorized by this documentation task.
+**Status:** Charter merged and authoritative on `origin/main` @ `5d556e129defcf174ff1060dced577b5ebfc1df3` (post V1 Exclusion Pass 001). S5a implementation is a reconciled unmerged candidate; S5b and S5c remain subsequent slices (both NOT STARTED).
+
+**Namespace reconciliation:** V1 Exclusion Pass 001 replaced the retired `/v1` API prefix with the product-neutral `/api` namespace. The forward-looking endpoint references in this charter have therefore been restated under `/api/*`. The S5 Product Truth, projection contract, sequence, boundaries and non-goals recorded below are unchanged by that correction. See [`TIIZI-API-NAMESPACE-CORRECTION-001.md`](../architecture/TIIZI-API-NAMESPACE-CORRECTION-001.md) and `AGENTS.md`.
 
 ## 1. Founder dispositions
 
@@ -34,7 +36,7 @@ T1 §O.1 defines Home as an accountability and operational surface answering “
 
 The prototype's Today is an action home, not a generic dashboard, fitness tracker, second Challenges page, second Group Feed, or vanity-metric surface. The primary question remains “What matters to this Member right now?” Prototype layout and mock values do not establish data authority.
 
-S5 exposes and assembles current truth. `GET /v1/today` is a member-scoped projection; it does not become a domain engine. It must not calculate Challenge results, establish lifecycle, implement Streak, calculate Competitive ranking, create Recognition, invitations, Feed events, recommendations, or payment/support state, or mutate Challenge/participation state.
+S5 exposes and assembles current truth. `GET /api/today` is a member-scoped projection; it does not become a domain engine. It must not calculate Challenge results, establish lifecycle, implement Streak, calculate Competitive ranking, create Recognition, invitations, Feed events, recommendations, or payment/support state, or mutate Challenge/participation state.
 
 ## 3. Experience Reference: component reconciliation
 
@@ -72,11 +74,11 @@ Existing Challenge reads return the Challenge IANA `timezone`, server `governing
 
 ### Active Challenge progress
 
-`GET /v1/challenges` returns visible Challenge summaries and own participation. `GET /v1/challenges/:challengeId` returns governed config and own progress; Together collective totals and goals are read by the Challenge authority, and Competitive frozen position is available only after finalization. The existing Challenge Detail experience remains the destination for full information. Today can compose compact own progress from these same sources through the server projection. It must not sum unrelated units, make a live Race rank, infer a winner, or turn participation counts into social proof.
+`GET /api/challenges` returns visible Challenge summaries and own participation. `GET /api/challenges/:challengeId` returns governed config and own progress; Together collective totals and goals are read by the Challenge authority, and Competitive frozen position is available only after finalization. The existing Challenge Detail experience remains the destination for full information. Today can compose compact own progress from these same sources through the server projection. It must not sum unrelated units, make a live Race rank, infer a winner, or turn participation counts into social proof.
 
 ### Group-contextual opportunities — exact determination
 
-**Authorize for initial S5 as a bounded contextual discovery section, subject to using the existing governed reads and join seam.** `GET /v1/memberships/me` supplies the authenticated Member's current Group memberships. `GET /v1/challenges?groupId=…` scopes through the existing entitlement model and, for discoverable Groups, its bounded Challenge discovery projection. It returns Challenge identity, Group, lifecycle dates/status, and the Member's own participation projection. The Challenge join endpoint independently requires a current authoritative Group Membership and a mutable Challenge window, and rejects an already-active participation.
+**Authorize for initial S5 as a bounded contextual discovery section, subject to using the existing governed reads and join seam.** `GET /api/memberships/me` supplies the authenticated Member's current Group memberships. `GET /api/challenges?groupId=…` scopes through the existing entitlement model and, for discoverable Groups, its bounded Challenge discovery projection. It returns Challenge identity, Group, lifecycle dates/status, and the Member's own participation projection. The Challenge join endpoint independently requires a current authoritative Group Membership and a mutable Challenge window, and rejects an already-active participation.
 
 The Today projection may include only discoverable hosted Challenges that are not already actively participated in and whose lifecycle/window is currently joinable under those existing authorities. The section is contextual, not personalized: no interest matching, inferred relevance, scoring, ranking, or automatic enrollment. A card may point to the existing Challenge detail/join path; all eligibility and join checks stay in the existing authority. If S5a cannot prove joinability from the current lifecycle/status fields without guessing, it must omit the Join CTA and identify the exact unprojected joinability signal; it must not label that row “You can join.” Future personalized recommendation engine remains deferred.
 
@@ -84,24 +86,24 @@ The Today projection may include only discoverable hosted Challenges that are no
 
 Challenge `startDate`, `endDate`, `timezone`, lifecycle status, and server `governingToday` support the bounded seven-Challenge-local-day presentation window defined above. Challenge dates/lifecycle remain authoritative. The window creates no scheduler, notification, or new lifecycle state. Existing finalized results remain available through S3d authority; Today may link to that result without re-rendering it. No standalone milestone or Recognition authority is established by this read model.
 
-## 5. S5a — bounded `GET /v1/today` projection
+## 5. S5a — bounded `GET /api/today` projection
 
 **Purpose:** one authenticated, member-scoped server projection supporting the reconciled Today assembly. Identity is resolved from the authenticated request, never accepted from request body/query as a member selector. The endpoint composes current authorities and returns no client-derived truth.
 
-**Contract capability (shape to finalize during S5a implementation):**
+**Contract direction (implemented shape is recorded in the S5a implementation record):**
 
 ```text
-GET /v1/today
+GET /api/today
 {
   serverNow,
   activeChallengeCount,
-  dayContexts: [{ challengeId, timezone, governingToday, governingDayEndsAt? }],
-  requiredToday: [{ challengeRef, requiredActivities: [{ activityRef, label, target, unit, state }] }],
-  activeProgress: [{ challenge summary, own authoritative progress, detailHref }],
-  opportunities: [{ challenge summary, group summary, joinPath }],
-  upcoming: [{ challenge summary, boundary: "starts" | "ends", governingDate }],
-  results: [{ challengeRef, finalizedAt, detailHref }],
-  sections: { invitations: "unavailable", communityMoments: "unavailable", recognition: "unavailable" }
+  todayContext: { serverNow, activeChallengeCount, timezoneContexts },
+  requiredToday: [{ Challenge, governingToday, requirements, streak }],
+  joinedChallengeProgress: [{ Challenge, typeSpecificOwnProgress }],
+  groupChallengeOpportunities: [{ Challenge, Group, joinability: "not_asserted" }],
+  upcoming: [{ Challenge, kind: "starts" | "ends", lifecycleDate }],
+  finalizedResults: [{ Challenge, detailPath }],
+  unsupportedSections: { invitations, communityMoments, notifications }
 }
 ```
 
@@ -149,13 +151,13 @@ Member Today remains mobile-first, single-column, with one primary action per co
 
 ## 8. Programme disposition
 
-Master Programme v2.21 remains internally consistent after reconciliation and is advanced to **v2.22** to record the Founder dispositions and S5a boundary. Stage G remains Active. S1–S4 and S6 remain complete/accepted/merged. S5 remains the next unresolved member-facing slice with this sequence:
+At charter approval, Master Programme v2.21 advanced to **v2.22** to record the Founder dispositions and S5a boundary. Stage G remains Active. S1–S4 and S6 remain complete/accepted/merged. The current implementation state is now recorded in [S5a Today Member Projection 001](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md), and Master Programme v2.23 synchronizes that candidate status. S5 remains an active unresolved member-facing slice with this sequence:
 
-1. **S5a — Today Member Projection / Read Model:** immediate next slice; `GET /v1/today`; documentation charter ready for Founder merge. Not implemented.
+1. **S5a — Today Member Projection / Read Model:** `GET /api/today`; implemented candidate awaiting Founder review; final implementation candidate commit `106579d854b98bba0b69c1590fa4f6f75c279a42` (runtime source was introduced in `b84451e1fe69b4e37334fc9d054792599f79b9bf`).
 2. **S5b — Today Experience Assembly:** follows S5a; member-facing assembly; not started.
 3. **S5c — Founder Preview / Acceptance:** follows S5b; not started.
 
-S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains absent and authority-gated. S9 production scheduler remains absent. S10 remains excluded pending commercial model. No implementation started in this documentation task.
+S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains absent and authority-gated. S9 production scheduler remains absent. S10 remains excluded pending commercial model. No S5b assembly, deployment, production access, or production mutation occurred.
 
 ## 9. Validation and publication record
 
@@ -173,8 +175,12 @@ S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains 
 
 **S5 TODAY EXPERIENCE:** FOUNDER DIRECTION RECONCILED WITH EXPERIENCE REFERENCE
 
-**S5a TODAY MEMBER PROJECTION:** READY FOR FOUNDER CHARTER MERGE
+**S5a TODAY MEMBER PROJECTION:** IMPLEMENTED CANDIDATE — AWAITING FOUNDER REVIEW
 
-**IMPLEMENTATION:** NOT STARTED
+**S5b TODAY EXPERIENCE ASSEMBLY:** NOT STARTED
 
 **MERGE STATUS:** NOT MERGED — AWAITING FOUNDER
+
+## 11. S5a implementation record
+
+Implementation status, exact field provenance, query composition, security boundary, validation, and candidate SHA are recorded in [TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md). This record does not advance S5b, mark Today complete, alter Product Truth, or authorize deployment or production access.
