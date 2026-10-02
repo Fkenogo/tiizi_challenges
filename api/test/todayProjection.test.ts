@@ -48,6 +48,35 @@ async function makeStreak(db: Db, memberId: string) {
   return { challengeId: challenge.challenge_id, groupId };
 }
 
+async function makeProgressChallenge(db: Db, memberId: string, type: 'collective' | 'competitive') {
+  const groupId = await seedGroup(db, { name: `${type} Today Group` });
+  await seedMembership(db, groupId, memberId, { status: 'active' });
+  const knowledge = await db.query<{ knowledge_id: string }>(
+    "INSERT INTO knowledge_items (kind,name,lifecycle) VALUES ('fitness',$1,'published') RETURNING knowledge_id", [`${type}-today`],
+  );
+  const knowledgeId = String(knowledge.rows[0].knowledge_id);
+  const { challenge } = await createChallenge(db, {
+    group_id: groupId, created_by_member_id: memberId, title: `${type} Today`, challenge_type: type,
+    start_date: '2026-06-01', end_date: '2026-06-30',
+    ...(type === 'collective' ? { goal_value: 500, goal_unit: 'reps' } : {}),
+    activities: [{ canonical_key: `${type}-today`, metric: 'repetitions', target_value: 100, unit: 'reps' }],
+  }, {
+    resolveKnowledgePin: async () => ({ knowledge_id: knowledgeId, current_version: 1 }),
+    resolveKnowledgeEligibility: async () => stubEligibility(),
+    resolveGroupAuthority: async () => ({ status: 'active' }),
+    resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
+  });
+  await activateChallenge(db, challenge.challenge_id);
+  await db.query("INSERT INTO challenge_participations (challenge_id,member_id,status,joined_at,joined_config_version) VALUES ($1,$2,'active',$3,1)",
+    [challenge.challenge_id, memberId, '2026-06-01T00:00:00Z']);
+  await applyChallengeActivity(db, memberId, challenge.challenge_id, {
+    activity_kind: 'fitness', canonical_key: `${type}-today`, value: 40, unit: 'reps',
+    occurred_at: new Date('2026-06-10T12:00:00.000Z'), client_key: `${type}-today-log`,
+  }, { resolveKnowledgePin: async () => ({ knowledge_id: knowledgeId, current_version: 1 }),
+  resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }) }, { now: new Date('2026-06-10T12:00:00.000Z') });
+  return challenge.challenge_id;
+}
+
 describe('GET /v1/today S5a projection', () => {
   it('requires authentication', async () => {
     const app = buildTestApp({});
@@ -113,5 +142,25 @@ describe('GET /v1/today S5a projection', () => {
     expect(contextual.groupChallengeOpportunities[0]).toMatchObject({ challengeId, joinability: 'not_asserted' });
     expect(contextual.groupChallengeOpportunities[0]).not.toHaveProperty('canJoin');
     expect(JSON.stringify(contextual)).not.toContain(memberId);
+  });
+
+  it('composes Together and Race own progress without exposing live rankings', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'today-multiple-types');
+    const togetherId = await makeProgressChallenge(db, memberId, 'collective');
+    const raceId = await makeProgressChallenge(db, memberId, 'competitive');
+    const result = await getTodayProjection(db, memberId, {
+      now: () => new Date('2026-06-10T12:00:00.000Z'),
+      groupMembershipAuthority: { resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }) },
+    });
+    expect(result.todayContext.activeChallengeCount).toBe(2);
+    expect(result.joinedChallengeProgress).toHaveLength(2);
+    expect(result.joinedChallengeProgress.find((row) => row.challengeId === togetherId)).toMatchObject({
+      challengeType: 'collective', progress: { groupTotal: 40, target: 500, memberContribution: 40 },
+    });
+    expect(result.joinedChallengeProgress.find((row) => row.challengeId === raceId)).toMatchObject({
+      challengeType: 'competitive', progress: { memberProgress: 40, completionStatus: 'in_progress', finalPosition: null },
+    });
+    expect(result.joinedChallengeProgress.find((row) => row.challengeId === raceId)?.progress).not.toHaveProperty('rank');
   });
 });
