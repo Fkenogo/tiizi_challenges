@@ -124,14 +124,21 @@ than a synthetic history.
 ## 7. Validation
 
 - Frontend typecheck + production build — pass.
-- S5b Today guards (`npm run test:s5b-today`, 26 checks) — pass.
+- S5b Today guards (`npm run test:s5b-today`, 32 checks) — pass.
 - V2 experience boundary, V2 runtime boundary, V2 frontend guards — pass.
 - V1 exclusion boundary guard + regression fixture — pass.
 - API typecheck + build, S5a Today projection suite (5/5), `/api` namespace contract suite (59/59) — pass.
 - `git diff --check` — clean.
 - Founder preview at `http://127.0.0.1:5174/v2/today` against a dedicated Development database:
-  all six supported sections rendered, zero `/app/*` links, correct completed/pending requirement
-  state, intact mobile and desktop layouts.
+  all sections backed by available authoritative Development data rendered (Today header, Do today,
+  Your Challenges, In your Groups, Coming up), with zero `/app/*` links and correct
+  completed/pending requirement state. Recent Results was correctly omitted because the Development
+  projection returned `finalizedResults = 0`: no finalized result was fabricated merely for preview
+  coverage. The Recent Results rendering path exists and is covered at the code/guard level, but it was
+  NOT visually demonstrated by the Development fixture. Static responsive-layout/source audit: PASS.
+  Live authenticated API/Today preview: PASS. Actual Founder visual verification across
+  mobile/tablet/desktop widths (including ruling out horizontal overflow or visual layout defects at
+  those widths): PENDING FOUNDER REVIEW.
 
 ## 8. Deliberately absent
 
