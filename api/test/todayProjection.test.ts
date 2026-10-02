@@ -180,7 +180,8 @@ describe('GET /v1/today S5a projection', () => {
       challengeType: 'collective', progress: { groupTotal: 40, target: 500, memberContribution: 40 },
     });
     expect(result.joinedChallengeProgress.find((row) => row.challengeId === raceId)).toMatchObject({
-      challengeType: 'competitive', progress: { memberProgress: 40, completionStatus: 'in_progress', finalPosition: null },
+      challengeType: 'competitive', progress: { completionStatus: 'in_progress', finalPosition: null,
+        activities: [{ memberProgress: 40, targetValue: 100, unit: 'reps' }] },
     });
     expect(result.joinedChallengeProgress.find((row) => row.challengeId === raceId)?.progress).not.toHaveProperty('rank');
   });

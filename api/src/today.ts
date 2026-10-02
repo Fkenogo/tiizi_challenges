@@ -33,21 +33,23 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
   const joined = summaries.filter((row) => row.myParticipation?.status === 'active');
   const active = joined.filter((row) => row.status === 'active' && !row.finalized
     && row.governingToday >= row.startDate && row.governingToday <= row.endDate);
-  // Only Streak actions need the immutable configured requirement detail.
-  // Together and Race progress is already present on the list projection, so
-  // Today avoids one detail read for every joined Challenge.
+  // Streak action requirements and Race finish targets require immutable
+  // configured terms. Together totals and goals are already complete in the
+  // list projection, so no detail read is needed for Together.
+  const configuredProgress = active.filter((row) => row.challengeType === 'streak' || row.challengeType === 'competitive');
+  const configuredDetails = await Promise.all(configuredProgress.map((row) => getChallengeDetail(db, memberId, row.challengeId, readDeps)));
+  const details = new Map(configuredDetails.map((row) => [row.challengeId, row]));
   const streaks = active.filter((row) => row.challengeType === 'streak');
-  const streakDetails = await Promise.all(streaks.map((row) => getChallengeDetail(db, memberId, row.challengeId, readDeps)));
-  const details = new Map(streakDetails.map((row) => [row.challengeId, row]));
   const requiredToday = streaks.map((row) => {
     const detail = details.get(row.challengeId)!;
     const state = row.myParticipation!.progress;
     const dayState = state.dayStates[row.governingToday];
     const completed = new Set(dayState?.activities ?? []);
-    const requirements = detail.config.activities.map((activity) => {
+    const requirements = detail.config.activities.map((activity, index) => {
       const identity = canonicalActivityIdentity(activity.canonicalKey, activity.activityVariant);
       return {
         activity: identity,
+        ...(row.activities[index]?.name ? { label: row.activities[index].name } : {}),
         targetValue: activity.targetValue,
         unit: activity.unit,
         state: completed.has(identity) ? 'completed' as const : 'pending' as const,
@@ -68,6 +70,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
 
   const joinedChallengeProgress = active.map((row) => {
     const progress = row.myParticipation!.progress;
+    const detail = details.get(row.challengeId);
     const base = {
       challengeId: row.challengeId, title: row.title, challengeType: row.challengeType,
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
@@ -79,8 +82,14 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
       goalReached: row.collectiveGoalReached, memberContribution: progress.cumulativeTotal,
     } };
     if (row.challengeType === 'competitive') return { ...base, progress: {
-      memberProgress: progress.cumulativeTotal, completionStatus: progress.completionStatus,
+      completionStatus: progress.completionStatus,
       completedAt: progress.completedAt, finalPosition: row.finalized ? progress.finalPosition : null,
+      activities: (detail?.config.activities ?? []).map((activity, index) => ({
+        activity: canonicalActivityIdentity(activity.canonicalKey, activity.activityVariant),
+        ...(row.activities[index]?.name ? { label: row.activities[index].name } : {}),
+        memberProgress: progress.cumulativeValues[canonicalActivityIdentity(activity.canonicalKey, activity.activityVariant)] ?? 0,
+        targetValue: activity.targetValue, unit: activity.unit,
+      })),
     } };
     return { ...base, progress: {
       currentStreak: progress.currentStreak, bestStreak: progress.bestStreak,
