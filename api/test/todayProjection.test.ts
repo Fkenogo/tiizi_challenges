@@ -77,6 +77,27 @@ async function makeProgressChallenge(db: Db, memberId: string, type: 'collective
   return challenge.challenge_id;
 }
 
+async function makeUpcomingCandidate(db: Db, memberId: string, startDate: string, suffix: string) {
+  const groupId = await seedGroup(db, { name: `Upcoming ${suffix}` });
+  await seedMembership(db, groupId, memberId, { status: 'active' });
+  const key = `upcoming-${suffix}`;
+  const row = await db.query<{ knowledge_id: string }>(
+    "INSERT INTO knowledge_items (kind,name,lifecycle) VALUES ('fitness',$1,'published') RETURNING knowledge_id", [key],
+  );
+  const knowledgeId = String(row.rows[0].knowledge_id);
+  const { challenge } = await createChallenge(db, {
+    group_id: groupId, created_by_member_id: memberId, title: `Upcoming ${suffix}`,
+    challenge_type: 'competitive', start_date: startDate, end_date: '2026-06-30',
+    activities: [{ canonical_key: key, metric: 'repetitions', target_value: 10, unit: 'reps' }],
+  }, {
+    resolveKnowledgePin: async () => ({ knowledge_id: knowledgeId, current_version: 1 }),
+    resolveKnowledgeEligibility: async () => stubEligibility(),
+    resolveGroupAuthority: async () => ({ status: 'active' }),
+    resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }),
+  });
+  return challenge.challenge_id;
+}
+
 describe('GET /v1/today S5a projection', () => {
   it('requires authentication', async () => {
     const app = buildTestApp({});
@@ -162,5 +183,20 @@ describe('GET /v1/today S5a projection', () => {
       challengeType: 'competitive', progress: { memberProgress: 40, completionStatus: 'in_progress', finalPosition: null },
     });
     expect(result.joinedChallengeProgress.find((row) => row.challengeId === raceId)?.progress).not.toHaveProperty('rank');
+  });
+
+  it('applies the seven Challenge-local calendar-day upcoming horizon inclusively', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'today-upcoming');
+    const boundaryId = await makeUpcomingCandidate(db, memberId, '2026-06-17', 'boundary');
+    const beyondId = await makeUpcomingCandidate(db, memberId, '2026-06-18', 'beyond');
+    const result = await getTodayProjection(db, memberId, {
+      now: () => new Date('2026-06-10T12:00:00.000Z'),
+      groupMembershipAuthority: { resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }) },
+    });
+    expect(result.groupChallengeOpportunities.map((row) => row.challengeId)).toContain(boundaryId);
+    expect(result.groupChallengeOpportunities.map((row) => row.challengeId)).toContain(beyondId);
+    expect(result.upcoming.map((row) => row.challengeId)).toContain(boundaryId);
+    expect(result.upcoming.map((row) => row.challengeId)).not.toContain(beyondId);
   });
 });
