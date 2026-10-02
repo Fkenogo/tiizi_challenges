@@ -1,18 +1,18 @@
 # TIIZI-S5a — Today Member Projection / Read Model 001
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING FOUNDER REVIEW. S5b is NOT STARTED.
+**Status:** IMPLEMENTED CANDIDATE / RECONCILED / AWAITING FOUNDER REVIEW. S5b is NOT STARTED.
 
-**Authoritative base:** `origin/main` @ `6866e325aeb64b12d17748b4638cd500028f86ee`.
+**Authoritative base (reconciled):** post-V1-Exclusion-Pass-001 `origin/main` @ `5d556e129defcf174ff1060dced577b5ebfc1df3`. The original implementation base was `6866e325aeb64b12d17748b4638cd500028f86ee`.
 
 **Implementation candidate commit:** `106579d854b98bba0b69c1590fa4f6f75c279a42` (includes the endpoint, type-specific Race progress, and final regression coverage).
 
 **Implementation and test branch:** `impl/tiizi-s5a-today-member-projection-001`.
 
-**Authority:** [TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001.md](./TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001.md), Master Programme v2.22 at the implementation base, Stage F Product Truth, and current Challenge/Group engine authorities. Experience Reference `Fkenogo/tiizi-prototye` @ `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6` remains presentation reference only.
+**Authority:** [TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001.md](./TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001.md), Master Programme v2.24 at this reconciled revision (v2.22 at the original implementation base), Stage F Product Truth, and current Challenge/Group engine authorities. Experience Reference `Fkenogo/tiizi-prototye` @ `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6` remains presentation reference only.
 
 ## 1. Endpoint contract
 
-`GET /v1/today` is authenticated by the existing `/v1/*` authentication hook. `authenticatedMember(request)` resolves the member from the verified identity. No query or body member selector is accepted. The handler is read-only and returns one server-composed response:
+`GET /api/today` is authenticated by the existing `/api/*` authentication hook. `authenticatedMember(request)` resolves the member from the verified identity. No query or body member selector is accepted. The handler is read-only and returns one server-composed response:
 
 ```text
 {
@@ -38,13 +38,13 @@
 }
 ```
 
-`detailPath` uses the existing member Challenge Detail route `/app/challenge/v2/:id`. Empty supported arrays mean no matching records; explicit unsupported capability status is separate and contains no fake cards.
+`detailPath` uses the current V2 member Challenge Detail route `/v2/challenges/:challengeId`. It deliberately does **not** use the archived Product V1 shell route `/app/challenge/v2/:id`: the V1 exclusion boundary (`AGENTS.md` §1.3, enforced by `scripts/boundaryGuard/guard.mjs`) forbids a V2-issued navigation target from reaching `/app/*`. Empty supported arrays mean no matching records; explicit unsupported capability status is separate and contains no fake cards.
 
 ## 2. Authority and field provenance
 
 | Projection field | Existing authority reused | Boundary |
 | --- | --- | --- |
-| Authenticated member identity | `api/src/auth.ts`: `/v1/*` `requireAuth` and `authenticatedMember` | Identity comes from verified token → member mapping, never client input. |
+| Authenticated member identity | `api/src/auth.ts`: `/api/*` `requireAuth` and `authenticatedMember` | Identity comes from verified token → member mapping, never client input. |
 | Challenge set, title/type/group, lifecycle, dates/timezone, governing day, finalized marker | `api/src/challengeReads.ts`: `listVisibleChallenges` / shared summary assembly; Challenge row plus immutable config integrity check | Visibility is own participation history or Group candidate plus current live Group Membership authority. `governingToday` comes from server `dayInTimezone(now, challenge.timezone)`. |
 | Own participation progress and day states | `api/src/derivedTruth.ts` via `challenge_participation_derived`, projected by Challenge reads | Uses only the requesting member's own participation episodes. Accepted applications update this existing derived authority; Today writes nothing. |
 | Streak requirements | `getChallengeDetail` in `api/src/challengeReads.ts` → `getGoverningVersion` in `api/src/challengeConfigs.ts` → immutable `challenge_config_versions.snapshot` cross-checked with `challenge_activity_configs` | Current configured activities are paired with the Challenge's server `governingToday`. |
@@ -76,7 +76,7 @@ Countdown is **omitted**. Existing engine authority converts an instant to a Cha
 
 The endpoint makes no client API fan-out: one authenticated request composes through the established `listVisibleChallenges` service and obtains requirement detail only for active Streaks. That service performs bounded Group candidate/visibility checks and existing Challenge database reads; the Today layer adds no persistence, migration, cache, or alternate query authority. A future high-volume profile should batch/refactor the shared Challenge list service itself so all consumers benefit, rather than adding a parallel Today-specific authority.
 
-The member ID is server-derived. Participation projections are returned only for that member. Group candidates are drawn from their current PostgreSQL membership candidates and confirmed by the live Group membership authority. There is no Operator role, Founder exception, cross-member participation/activity result, or mutation. The global `/v1/*` hook denies unauthenticated requests.
+The member ID is server-derived. Participation projections are returned only for that member. Group candidates are drawn from their current PostgreSQL membership candidates and confirmed by the live Group membership authority. There is no Operator role, Founder exception, cross-member participation/activity result, or mutation. The global `/api/*` hook denies unauthenticated requests.
 
 ## 6. Deliberately absent
 
@@ -89,3 +89,34 @@ Upstream capabilities still absent include the invitation inbox/read/acceptance 
 Focused Today tests cover unauthenticated denial, zero-state response, no unsupported fake sections, member isolation, Streak requirements pending/completed from accepted derived truth, current day/timezone/streak projection, Group-contextual discovery with active participation excluded and no `canJoin`, simultaneous Together/Race own-progress composition with no live rank, and the inclusive seven-local-day upcoming horizon.
 
 Validation on the final implementation source: API typecheck passed; API build passed; focused Today suite passed (5/5); relevant Challenge read/live progress/participation/activity/Streak/final-results suites passed (105/105); full API suite passed (58 files, 750 tests passed, 8 skipped, 1 file skipped because the Firestore emulator was not enabled); `git diff --check` passed. No deployment, production access, production migration, or S5b work is part of this record.
+
+## 8. Post-V1-Exclusion reconciliation
+
+V1 Exclusion Pass 001 (merged as `5d556e12`) replaced the retired `/v1` API prefix with the
+product-neutral `/api` namespace, added the repository-root `AGENTS.md` V1 exclusion boundary, and
+added the `boundary` CI gate. S5a predated that correction, so it was reconciled onto
+post-Pass-001 `main` without reopening its Product Truth or broadening its scope. No projection
+field, authority, boundary, or non-goal changed.
+
+Reconciliation changes, all bounded:
+
+1. **Canonical endpoint.** The route is registered as `GET /api/today`, composed through the
+   canonical `API_PREFIX` constant (`api/src/apiPrefix.ts`) introduced by Pass 001. No hardcoded
+   competing prefix architecture, and no `/v1` alias, redirect, compatibility route, proxy, or
+   fallback. `GET /v1/today` does not exist and returns 404.
+2. **V1 exclusion boundary applied.** `detailPath` previously emitted the archived Product V1
+   shell route `/app/challenge/v2/:id`. It now emits the current V2 route
+   `/v2/challenges/:challengeId`. This was a genuine architectural defect exposed by the new
+   structural guard, not a missing feature: a V2-issued navigation target must not reach `/app/*`.
+   The guard was not weakened.
+3. **Programme record.** The programme version is v2.24; v2.23 is retained as the V1 Exclusion
+   Pass 001 record and was neither overwritten nor duplicated.
+4. **Namespace/API contract coverage** extended so the contract suite asserts authenticated
+   `GET /api/today`, unauthenticated `GET /api/today` rejection, and `GET /v1/today` 404.
+
+The bounded S5a contract remains exactly as recorded in sections 1–6: authenticated member
+scoping; server-authoritative `governingToday`; authoritative Streak state; Together shared totals
+with own contribution; Race own progress only; no invented live ranking; no recommendation
+scoring; `joinability: "not_asserted"` where authority does not establish it; countdown omitted
+while boundary equivalence remains unproven; no Feed, invitations, notifications, Recognition
+inference, payment execution, Cause task, scheduler authority, or Today UI.

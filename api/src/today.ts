@@ -7,6 +7,7 @@ import { getChallengeDetail, listVisibleChallenges, type ChallengeReadDeps } fro
 import { dayInTimezone } from './activityEvents.js';
 import { canonicalActivityIdentity } from './challengeConfigs.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
+import { API_PREFIX } from './apiPrefix.js';
 
 export interface TodayRouteDeps extends Omit<Partial<ChallengeReadDeps>, 'now'> {
   groupMembershipAuthority?: GroupMembershipAuthority;
@@ -18,7 +19,13 @@ const addLocalCalendarDays = (day: string, count: number): string => {
   date.setUTCDate(date.getUTCDate() + count);
   return date.toISOString().slice(0, 10);
 };
-const detailPath = (id: string) => `/app/challenge/v2/${id}`;
+/**
+ * Canonical member Challenge detail surface. This is the current V2 browser
+ * route, never the archived Product V1 shell: the V1 exclusion boundary
+ * forbids the V2 runtime (and any V2-issued navigation target) from reaching
+ * `/app/*`. See `AGENTS.md` §1.3 and `scripts/boundaryGuard/guard.mjs`.
+ */
+const detailPath = (id: string) => `/v2/challenges/${id}`;
 
 export async function getTodayProjection(db: Db, memberId: string, deps: TodayRouteDeps = {}) {
   const now = deps.now?.() ?? new Date();
@@ -136,7 +143,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
 }
 
 export function registerTodayRoutes(app: FastifyInstance, db: Db, deps: TodayRouteDeps = {}): void {
-  app.get('/v1/today', async (request) => {
+  app.get(`${API_PREFIX}/today`, async (request) => {
     const member = authenticatedMember(request);
     return getTodayProjection(db, member.memberId, deps);
   });

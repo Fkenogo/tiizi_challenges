@@ -328,6 +328,37 @@ describe('active /api namespace contract — authenticated operations', () => {
     expect(response.statusCode).toBe(200);
     expect(Array.isArray(response.json().items)).toBe(true);
   });
+
+  it('Today READ: GET /api/today returns the governed S5a member projection', async () => {
+    const f = await fixture();
+    const response = await f.app.inject({ method: 'GET', url: '/api/today', headers: f.ownerAuth });
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    // The bounded S5a contract: only these sections exist, and unsupported
+    // capability is reported explicitly rather than fabricated.
+    expect(Object.keys(body).sort()).toEqual([
+      'finalizedResults',
+      'groupChallengeOpportunities',
+      'joinedChallengeProgress',
+      'projection',
+      'requiredToday',
+      'todayContext',
+      'unsupportedSections',
+      'upcoming',
+    ].sort());
+    expect(body.todayContext.activeChallengeCount).toBe(0);
+    expect(body.projection).toEqual({
+      authority: 'existing_challenge_reads',
+      countdown: 'omitted_boundary_equivalence_unproven',
+    });
+    expect(body.unsupportedSections).toEqual({
+      invitations: { available: false, disposition: 'deferred' },
+      communityMoments: { available: false, disposition: 'deferred' },
+      notifications: { available: false, disposition: 'deferred' },
+    });
+    // No V2-issued navigation target may reach the archived Product V1 shell.
+    expect(JSON.stringify(body)).not.toContain('/app/');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -423,9 +454,18 @@ describe('retired /v1 namespace is not an active API surface', () => {
 describe('authentication boundary and infrastructure routes', () => {
   it('every /api domain route requires authentication', async () => {
     const app = buildApp({ db, verifier: stubVerifier({ legit: 'contract-ghost' }) });
-    for (const url of ['/api/memberships/me', '/api/groups/discover', '/api/challenges', '/api/knowledge', '/api/operator/console/overview']) {
+    for (const url of ['/api/memberships/me', '/api/groups/discover', '/api/challenges', '/api/knowledge', '/api/operator/console/overview', '/api/today']) {
       expect((await app.inject({ method: 'GET', url })).statusCode).toBe(401);
     }
+  });
+
+  it('an unauthenticated GET /api/today follows the normal authenticated API authority', async () => {
+    const app = buildApp({ db, verifier: stubVerifier({ legit: 'contract-ghost' }) });
+    // 401 (not 404 and not 200): the S5a route is an ordinary authenticated
+    // /api domain route, gated by the canonical API_PREFIX auth hook.
+    const response = await app.inject({ method: 'GET', url: '/api/today' });
+    expect(response.statusCode).toBe(401);
+    expect(response.json().error.code).toBe('missing_token');
   });
 
   it('/health remains unauthenticated and outside the API namespace', async () => {

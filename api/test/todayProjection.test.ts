@@ -98,10 +98,10 @@ async function makeUpcomingCandidate(db: Db, memberId: string, startDate: string
   return challenge.challenge_id;
 }
 
-describe('GET /v1/today S5a projection', () => {
+describe('GET /api/today S5a projection', () => {
   it('requires authentication', async () => {
     const app = buildTestApp({});
-    const response = await app.inject({ method: 'GET', url: '/v1/today' });
+    const response = await app.inject({ method: 'GET', url: '/api/today' });
     expect(response.statusCode).toBe(401);
     await app.close();
   });
@@ -114,7 +114,7 @@ describe('GET /v1/today S5a projection', () => {
       'SELECT auth_subject FROM members WHERE member_id = $1', [ownMember],
     );
     const app = buildTestApp({ 'today-token': String(subject.rows[0].auth_subject) });
-    const response = await app.inject({ method: 'GET', url: '/v1/today', headers: authHeaders('today-token') });
+    const response = await app.inject({ method: 'GET', url: '/api/today', headers: authHeaders('today-token') });
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.todayContext.activeChallengeCount).toBe(0);
