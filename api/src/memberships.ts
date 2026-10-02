@@ -131,7 +131,7 @@ export async function listPendingMembershipsForMember(db: Db, memberId: string):
 
 export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
   app.get(
-    '/v1/memberships/me',
+    '/api/memberships/me',
     {
       schema: {
         response: {

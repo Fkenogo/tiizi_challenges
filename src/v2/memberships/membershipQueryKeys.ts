@@ -3,7 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 /**
  * Canonical V2 membership query-key contract (TIIZI-S2B-S2G-CORR-001).
  *
- * Single source of truth for the current member's `GET /v1/memberships/me`
+ * Single source of truth for the current member's `GET /api/memberships/me`
  * cache family, shared by the S2-G Groups read and the S2b Challenge
  * creation host read. Before this contract the two journeys used different
  * key families (`v2-memberships` vs `v2-create-memberships`), so the S2-G
@@ -29,7 +29,7 @@ export function v2MembershipsKey(uid: string | undefined): [string, string | und
 /**
  * S2-G success boundary: mark the canonical memberships read stale so the
  * server re-proves it on the next read. Called after a successful
- * `POST /v1/groups` — never injects the created Group client-side.
+ * `POST /api/groups` — never injects the created Group client-side.
  *
  * Without a uid the family prefix is invalidated (covers the current
  * member); with a uid exactly that member's entry is invalidated. Either

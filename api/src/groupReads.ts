@@ -1,7 +1,7 @@
 /**
  * TIIZI S4a — governed Group detail read.
  *
- * GET /v1/groups/:groupId — canonical Group truth for Group Home. The ONLY
+ * GET /api/groups/:groupId — canonical Group truth for Group Home. The ONLY
  * Group detail source; there is no second detail path and no client-derived
  * Group state.
  *
@@ -411,7 +411,7 @@ export function registerGroupReadRoutes(
 ): void {
   const store = deps.store ?? missingStore();
 
-  app.get('/v1/groups/discover', async (request) => {
+  app.get('/api/groups/discover', async (request) => {
     const member = authenticatedMember(request);
     const query = request.query as { q?: string; limit?: string; cursor?: string };
     try {
@@ -422,12 +422,12 @@ export function registerGroupReadRoutes(
     }
   });
 
-  app.get('/v1/groups/options', async (request) => {
+  app.get('/api/groups/options', async (request) => {
     authenticatedMember(request);
     return { focusAreas: GROUP_FOCUS_AREAS, goals: GROUP_GOALS, communityNorms: GROUP_COMMUNITY_NORMS };
   });
 
-  app.get('/v1/groups/:groupId/members/pending', {
+  app.get('/api/groups/:groupId/members/pending', {
     validatorCompiler: groupMutationEmptyValidatorCompiler,
     schema: { params: groupIdParamsSchema },
   }, async (request) => {
@@ -441,7 +441,7 @@ export function registerGroupReadRoutes(
   });
 
   app.get(
-    '/v1/groups/:groupId',
+    '/api/groups/:groupId',
     {
       // Same hardened param/body validation as the mutation boundary: the
       // runtime's default validator strips unknown properties instead of
@@ -461,7 +461,7 @@ export function registerGroupReadRoutes(
     },
   );
 
-  app.get('/v1/groups/:groupId/members', {
+  app.get('/api/groups/:groupId/members', {
     validatorCompiler: groupMutationEmptyValidatorCompiler,
     schema: { params: groupIdParamsSchema, response: { 200: { type: 'object', required: ['groupId', 'members'], properties: {
       groupId: { type: 'string', format: 'uuid' }, members: { type: 'array', items: { type: 'object', required: ['memberId', 'relationship', 'joinedAt'], properties: { memberId: { type: 'string', format: 'uuid' }, relationship: { type: 'string', enum: ['steward', 'member'] }, joinedAt: { anyOf: [{ type: 'string' }, { type: 'null' }] } } } },

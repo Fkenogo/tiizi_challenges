@@ -18,9 +18,9 @@
  *   - NO Challenge.
  *
  * The host Group MUST be established by the Founder through the governed
- * S2-G journey at `/v2/groups/new` (POST /v1/groups). The S2b Step 2
+ * S2-G journey at `/v2/groups/new` (POST /api/groups). The S2b Step 2
  * "Who is hosting?" picker reads the member's real Groups through the
- * accepted `GET /v1/memberships/me` contract. The previous S2b preview
+ * accepted `GET /api/memberships/me` contract. The previous S2b preview
  * manufacture of a Group/membership was removed on the S2-G alignment
  * and must not be reintroduced.
  *

@@ -1,12 +1,12 @@
-import { apiFetch } from './apiClient';
+import { API_PREFIX, apiFetch } from './apiClient';
 import { fetchMyMemberships, type MyMembershipsResponse } from './membershipsApi';
 
 /**
  * TIIZI S4a — V2 Group client seam (evolved from the S2-G establishment seam).
  *
  * Transport only. Creation submits the governed terms over the existing
- * governed Group authority (`POST /v1/groups`); reads come from the
- * governed contracts (`GET /v1/memberships/me`, `GET /v1/groups/:groupId`).
+ * governed Group authority (`POST (/api/)groups`); reads come from the
+ * governed contracts (`GET (/api/)memberships/me`, `GET (/api/)groups/:groupId`).
  * The client never writes Firestore or PostgreSQL directly and never decides
  * owner/steward authority, membership, counts, or settings.
  */
@@ -57,7 +57,7 @@ export interface CreatedGroup {
 export function createGroup(input: CreateGroupInput): Promise<CreatedGroup> {
   const name = input.name.trim();
   const description = input.description?.trim() ?? '';
-  return apiFetch<CreatedGroup>('/v1/groups', {
+  return apiFetch<CreatedGroup>(`${API_PREFIX}/groups`, {
     method: 'POST',
     body: {
       name,
@@ -94,7 +94,7 @@ export type { MyMembershipsResponse };
 export type V2ViewerRelationship = 'steward' | 'member' | 'pending' | 'none';
 
 /**
- * Canonical Group detail (`GET /v1/groups/:groupId`). Governed settings are
+ * Canonical Group detail (`GET (/api/)groups/:groupId`). Governed settings are
  * null on the discoverable subset (never leaked to outsiders); the steward
  * is singular and server-resolved, or null when unattributable.
  */
@@ -148,7 +148,7 @@ export interface V2GroupOptions {
 }
 
 export function fetchGroupOptions(): Promise<V2GroupOptions> {
-  return apiFetch<V2GroupOptions>('/v1/groups/options');
+  return apiFetch<V2GroupOptions>(`${API_PREFIX}/groups/options`);
 }
 export interface V2GroupDiscoveryPage { groups: V2DiscoverableGroup[]; nextCursor: string | null }
 export function fetchDiscoverableGroups(options: { q?: string; cursor?: string; limit?: number } = {}): Promise<V2GroupDiscoveryPage> {
@@ -157,44 +157,44 @@ export function fetchDiscoverableGroups(options: { q?: string; cursor?: string; 
   if (options.cursor) params.set('cursor', options.cursor);
   if (options.limit !== undefined) params.set('limit', String(options.limit));
   const query = params.size > 0 ? `?${params.toString()}` : '';
-  return apiFetch<V2GroupDiscoveryPage>(`/v1/groups/discover${query}`);
+  return apiFetch<V2GroupDiscoveryPage>(`${API_PREFIX}/groups/discover${query}`);
 }
 
 export interface V2InviteResolution extends V2DiscoverableGroup { isPrivate: boolean }
 export function resolveGroupInvite(code: string): Promise<V2InviteResolution> {
-  return apiFetch<V2InviteResolution>('/v1/groups/resolve-invite', { method: 'POST', body: { code } });
+  return apiFetch<V2InviteResolution>(`${API_PREFIX}/groups/resolve-invite`, { method: 'POST', body: { code } });
 }
 
 export type V2GroupSettingsPatch = Partial<Pick<V2GroupDetail, 'name' | 'description' | 'tagline' | 'location' | 'focusTags' | 'coverId' | 'isPrivate' | 'requireAdminApproval' | 'allowMemberChallenges'>>;
 export function updateGroupSettings(groupId: string, patch: V2GroupSettingsPatch): Promise<unknown> {
-  return apiFetch(`/v1/groups/${groupId}`, { method: 'PATCH', body: patch });
+  return apiFetch(`${API_PREFIX}/groups/${groupId}`, { method: 'PATCH', body: patch });
 }
 
 export interface V2PendingApplications { groupId: string; applicants: Array<{ memberId: string; requestedAt: string }> }
 export function fetchPendingGroupApplications(groupId: string): Promise<V2PendingApplications> {
-  return apiFetch<V2PendingApplications>(`/v1/groups/${groupId}/members/pending`);
+  return apiFetch<V2PendingApplications>(`${API_PREFIX}/groups/${groupId}/members/pending`);
 }
 export type V2AdmissionDecision = 'approve' | 'reject';
 export function reviewGroupApplication(groupId: string, memberId: string, decision: V2AdmissionDecision): Promise<{ groupId: string; memberId: string; status: 'active' | 'rejected'; idempotent: boolean }> {
-  return apiFetch(`/v1/groups/${groupId}/applications/${memberId}/${decision}`, { method: 'POST', body: {} });
+  return apiFetch(`${API_PREFIX}/groups/${groupId}/applications/${memberId}/${decision}`, { method: 'POST', body: {} });
 }
 
 /** Canonical Group detail read — Group Home's only truth source. */
 export function fetchGroupDetail(groupId: string): Promise<V2GroupDetail> {
-  return apiFetch<V2GroupDetail>(`/v1/groups/${groupId}`);
+  return apiFetch<V2GroupDetail>(`${API_PREFIX}/groups/${groupId}`);
 }
 
 export interface V2GroupRoster { groupId: string; members: Array<{ memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null }> }
 export function fetchGroupRoster(groupId: string): Promise<V2GroupRoster> {
-  return apiFetch<V2GroupRoster>(`/v1/groups/${groupId}/members`);
+  return apiFetch<V2GroupRoster>(`${API_PREFIX}/groups/${groupId}/members`);
 }
 export function leaveGroupV2(groupId: string): Promise<{ id: string; status: 'left' | 'none' }> {
-  return apiFetch<{ id: string; status: 'left' | 'none' }>(`/v1/groups/${groupId}/leave`, { method: 'POST', body: {} });
+  return apiFetch<{ id: string; status: 'left' | 'none' }>(`${API_PREFIX}/groups/${groupId}/leave`, { method: 'POST', body: {} });
 }
 
-/** Governed membership join (`POST /v1/groups/:groupId/join`). Transport only. */
+/** Governed membership join (`POST (/api/)groups/:groupId/join`). Transport only. */
 export function joinGroup(groupId: string): Promise<{ id: string; status: string; role: string }> {
-  return apiFetch<{ id: string; status: string; role: string }>(`/v1/groups/${groupId}/join`, {
+  return apiFetch<{ id: string; status: string; role: string }>(`${API_PREFIX}/groups/${groupId}/join`, {
     method: 'POST',
     body: {},
   });

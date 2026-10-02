@@ -138,7 +138,7 @@ async function raceFixture(names: string[]): Promise<RaceFixture> {
 async function join(fx: RaceFixture, who: string): Promise<string> {
   await pause();
   const res = await fx.app.inject({
-    method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers: authHeaders(fx.racers[who].token),
+    method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers: authHeaders(fx.racers[who].token),
   });
   expect(res.statusCode).toBe(200);
   return (res.json() as { participationId: string }).participationId;
@@ -147,7 +147,7 @@ async function join(fx: RaceFixture, who: string): Promise<string> {
 async function leave(fx: RaceFixture, who: string): Promise<void> {
   await pause();
   const res = await fx.app.inject({
-    method: 'POST', url: `/v1/challenges/${fx.challengeId}/withdraw`, headers: authHeaders(fx.racers[who].token),
+    method: 'POST', url: `/api/challenges/${fx.challengeId}/withdraw`, headers: authHeaders(fx.racers[who].token),
   });
   expect(res.statusCode).toBe(200);
 }
@@ -156,7 +156,7 @@ async function log(fx: RaceFixture, who: string, value: number): Promise<void> {
   await pause();
   const res = await fx.app.inject({
     method: 'POST',
-    url: `/v1/challenges/${fx.challengeId}/activity`,
+    url: `/api/challenges/${fx.challengeId}/activity`,
     headers: authHeaders(fx.racers[who].token),
     payload: {
       activity_kind: 'fitness',

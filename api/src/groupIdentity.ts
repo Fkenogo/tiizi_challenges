@@ -106,7 +106,7 @@ export function registerGroupIdentityRoutes(app: FastifyInstance, db: Db): void 
     // the Tiizi UUID as `id`; this endpoint exists so legacy Firestore paths
     // can translate identities without provider ids leaking into the domain.
     // Remove once no caller holds Firestore group ids (target: Phase B+).
-    '/v1/compat/group-ids',
+    '/api/compat/group-ids',
     {
       schema: {
         querystring: {

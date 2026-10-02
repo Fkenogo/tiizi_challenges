@@ -13,7 +13,7 @@ import { RequireProfileSetup } from './RequireProfileSetup';
  */
 export function RequireOnboardedRoute({ children }: { children: ReactNode }) {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute loginPath="/app/login">
       <RequireProfileSetup mode="completed">{children}</RequireProfileSetup>
     </ProtectedRoute>
   );

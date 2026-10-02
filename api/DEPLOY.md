@@ -80,7 +80,7 @@ Unauthenticated `GET /ready` → 200 only when `SELECT 1` succeeds; 503
 
 ## 8. Verify an authenticated API request
 
-Call an authenticated route (e.g. `GET /v1/memberships/me`) with a real
+Call an authenticated route (e.g. `GET /api/memberships/me`) with a real
 Firebase ID token for a linked member. Expect the internal `member_id`, never
 a Firebase UID in domain payloads. `401 invalid_token` stays reserved for
 genuinely bad tokens; `500`-class init failures must never surface as auth

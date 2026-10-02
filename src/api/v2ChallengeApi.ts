@@ -6,7 +6,7 @@
  * mirror the C3A V2 read API and the C2B activity application route. No
  * DATABASE_URL or server credential ever appears client-side.
  */
-import { apiFetch } from './apiClient';
+import { API_PREFIX, apiFetch } from './apiClient';
 
 export type V2ChallengeType = 'collective' | 'competitive' | 'streak';
 export type V2ChallengeStatus = 'establishment' | 'active' | 'ended';
@@ -97,7 +97,7 @@ export interface V2ChallengeSummary {
    */
   governingToday: string;
   /** EBC-04: true once the terminal result is computed and frozen (already
-   * served by GET /v1/challenges list/detail; typed here for S3a
+   * served by GET (/api/)challenges list/detail; typed here for S3a
    * read-only gating — no server change). */
   finalized: boolean;
   currentConfigVersion: number;
@@ -250,11 +250,11 @@ export interface V2ActivityPayload {
 }
 
 export function listChallengesV2(): Promise<{ memberId: string; challenges: V2ChallengeSummary[] }> {
-  return apiFetch<{ memberId: string; challenges: V2ChallengeSummary[] }>('/v1/challenges');
+  return apiFetch<{ memberId: string; challenges: V2ChallengeSummary[] }>(`${API_PREFIX}/challenges`);
 }
 
 /**
- * S4a — governed Group-scoped Challenge list (`GET /v1/challenges?groupId=`).
+ * S4a — governed Group-scoped Challenge list (`GET (/api/)challenges?groupId=`).
  * Transport only: scoping is computed server-side under the same
  * visibility/entitlement authority as the unfiltered list.
  */
@@ -262,37 +262,37 @@ export function listGroupChallengesV2(
   groupId: string,
 ): Promise<{ memberId: string; groupId: string; challenges: V2ChallengeSummary[] }> {
   return apiFetch<{ memberId: string; groupId: string; challenges: V2ChallengeSummary[] }>(
-    `/v1/challenges?groupId=${encodeURIComponent(groupId)}`,
+    `${API_PREFIX}/challenges?groupId=${encodeURIComponent(groupId)}`,
   );
 }
 
 export function getChallengeV2(challengeId: string): Promise<V2ChallengeDetail> {
-  return apiFetch<V2ChallengeDetail>(`/v1/challenges/${challengeId}`);
+  return apiFetch<V2ChallengeDetail>(`${API_PREFIX}/challenges/${challengeId}`);
 }
 
 export function getCompetitiveLeaderboardV2(
   challengeId: string,
 ): Promise<{ challengeId: string; challengeType: string; entries: V2LeaderboardEntry[] }> {
-  return apiFetch(`/v1/challenges/${challengeId}/leaderboard`);
+  return apiFetch(`${API_PREFIX}/challenges/${challengeId}/leaderboard`);
 }
 
 export function getChallengeContributorsV2(challengeId: string): Promise<V2ChallengeContributors> {
-  return apiFetch<V2ChallengeContributors>(`/v1/challenges/${challengeId}/contributors`);
+  return apiFetch<V2ChallengeContributors>(`${API_PREFIX}/challenges/${challengeId}/contributors`);
 }
 
 export function joinChallengeV2(challengeId: string): Promise<V2ParticipationResponse> {
-  return apiFetch<V2ParticipationResponse>(`/v1/challenges/${challengeId}/join`, { method: 'POST' });
+  return apiFetch<V2ParticipationResponse>(`${API_PREFIX}/challenges/${challengeId}/join`, { method: 'POST' });
 }
 
 export function withdrawChallengeV2(challengeId: string): Promise<V2ParticipationResponse> {
-  return apiFetch<V2ParticipationResponse>(`/v1/challenges/${challengeId}/withdraw`, { method: 'POST' });
+  return apiFetch<V2ParticipationResponse>(`${API_PREFIX}/challenges/${challengeId}/withdraw`, { method: 'POST' });
 }
 
 export function logChallengeActivityV2(
   challengeId: string,
   payload: V2ActivityPayload,
 ): Promise<V2ActivityResult> {
-  return apiFetch<V2ActivityResult>(`/v1/challenges/${challengeId}/activity`, {
+  return apiFetch<V2ActivityResult>(`${API_PREFIX}/challenges/${challengeId}/activity`, {
     method: 'POST',
     body: payload,
   });

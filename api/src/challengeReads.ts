@@ -10,10 +10,10 @@
  * V1 lookup.
  *
  * Endpoints (conceptual):
- * - GET /v1/challenges — challenges the caller is entitled to see;
- * - GET /v1/challenges/:challengeId — detail + governing config + own progress;
- * - GET /v1/challenges/:challengeId/leaderboard — competitive only.
- * - GET /v1/challenges/:challengeId/contributors — collective only (S3c
+ * - GET /api/challenges — challenges the caller is entitled to see;
+ * - GET /api/challenges/:challengeId — detail + governing config + own progress;
+ * - GET /api/challenges/:challengeId/leaderboard — competitive only.
+ * - GET /api/challenges/:challengeId/contributors — collective only (S3c
  *   contribution visibility, NOT a leaderboard: no rank, no position,
  *   no ordering semantics beyond display convenience).
  *
@@ -805,7 +805,7 @@ export interface ApiGroupChallengeList {
 }
 
 /**
- * S4a — governed Group-scoped Challenge list (`GET /v1/challenges?groupId=`).
+ * S4a — governed Group-scoped Challenge list (`GET /api/challenges?groupId=`).
  *
  * The SAME entitlement model as the unfiltered list, scoped to one Group
  * through the SAME assembly (`assembleChallengeSummaries`) — never a
@@ -1303,7 +1303,7 @@ export function registerChallengeReadRoutes(
   const readDeps: ChallengeReadDeps = { groupMembershipAuthority: authority, groupStore: deps.groupStore };
 
   app.get(
-    '/v1/challenges',
+    '/api/challenges',
     {
       schema: {
         querystring: {
@@ -1344,7 +1344,7 @@ export function registerChallengeReadRoutes(
   );
 
   app.get(
-    '/v1/challenges/:challengeId',
+    '/api/challenges/:challengeId',
     {
       schema: {
         params: {
@@ -1362,7 +1362,7 @@ export function registerChallengeReadRoutes(
   );
 
   app.get(
-    '/v1/challenges/:challengeId/leaderboard',
+    '/api/challenges/:challengeId/leaderboard',
     {
       schema: {
         params: {
@@ -1380,7 +1380,7 @@ export function registerChallengeReadRoutes(
   );
 
   app.get(
-    '/v1/challenges/:challengeId/contributors',
+    '/api/challenges/:challengeId/contributors',
     {
       schema: {
         params: {

@@ -505,21 +505,21 @@ describe('read routes (HTTP)', () => {
       { 'token-http': String(subject.rows[0].auth_subject) },
       stubAuthority(new Set([fx.groupId])),
     );
-    const list = await app2.inject({ method: 'GET', url: '/v1/challenges', headers: authHeaders('token-http') });
+    const list = await app2.inject({ method: 'GET', url: '/api/challenges', headers: authHeaders('token-http') });
     expect(list.statusCode).toBe(200);
     const listBody = list.json() as { challenges: Array<{ challengeId: string }> };
     expect(listBody.challenges.map((c) => c.challengeId)).toContain(fx.challengeId);
 
     const detail = await app2.inject({
       method: 'GET',
-      url: `/v1/challenges/${fx.challengeId}`,
+      url: `/api/challenges/${fx.challengeId}`,
       headers: authHeaders('token-http'),
     });
     expect(detail.statusCode).toBe(200);
 
     const board = await app2.inject({
       method: 'GET',
-      url: `/v1/challenges/${fx.challengeId}/leaderboard`,
+      url: `/api/challenges/${fx.challengeId}/leaderboard`,
       headers: authHeaders('token-http'),
     });
     expect(board.statusCode).toBe(200);
@@ -532,11 +532,11 @@ describe('read routes (HTTP)', () => {
       activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 100, unit: 'reps' }],
     });
     const app = appFor({ 'token-x': 'uid-x' }, stubAuthority(new Set()));
-    const anon = await app.inject({ method: 'GET', url: '/v1/challenges' });
+    const anon = await app.inject({ method: 'GET', url: '/api/challenges' });
     expect(anon.statusCode).toBe(401);
     const hidden = await app.inject({
       method: 'GET',
-      url: `/v1/challenges/${fx.challengeId}`,
+      url: `/api/challenges/${fx.challengeId}`,
       headers: authHeaders('token-x'),
     });
     // Unknown member (no linked Tiizi member) fails at auth, never reaching reads.
@@ -563,8 +563,8 @@ describe('read routes (HTTP)', () => {
     );
     const headers = authHeaders('token-pure');
     const bodies = [
-      (await app.inject({ method: 'GET', url: '/v1/challenges', headers })).body,
-      (await app.inject({ method: 'GET', url: `/v1/challenges/${fx.challengeId}`, headers })).body,
+      (await app.inject({ method: 'GET', url: '/api/challenges', headers })).body,
+      (await app.inject({ method: 'GET', url: `/api/challenges/${fx.challengeId}`, headers })).body,
     ];
     for (const body of bodies) {
       expect(body).not.toMatch(/workouts|wellnessLogs|challengeMembers|challengeActivitySummaries|groupActivityFeed/);

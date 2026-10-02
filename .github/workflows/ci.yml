@@ -89,3 +89,51 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run lint
+
+  # Permanent active-runtime boundary gate. Proves the repository engineering
+  # rules in AGENTS.md: archived Product V1 is not reachable from the V2
+  # runtime, the active API exposes no /v1 route, no active V2 API client
+  # targets /v1, and no V2 runtime emits an /app/* browser route. The
+  # regression fixture proves each check actually fails when a prohibited
+  # dependency, route, or client target is introduced.
+  #
+  # This job closes the detection gap where a partial API namespace migration
+  # could previously pass CI (only /health and /ready were exercised).
+  boundary:
+    name: boundary (V1 exclusion + API namespace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Boundary guard (AGENTS.md sections 1-3)
+        run: npm run test:boundary
+      - name: Boundary guard regression fixture (proves the guard fails)
+        run: npm run test:boundary-regression
+      - name: Existing V2 experience boundary guard
+        run: npm run test:v2-experience-boundary
+      - name: Existing V2 runtime boundary guard
+        run: npm run test:v2-runtime-boundary
+
+  # API contract verification through the canonical /api namespace. Proves
+  # representative authenticated READ and WRITE operations work on /api and
+  # that the retired /v1 namespace is not an active API contract.
+  api-contract:
+    name: api contract (/api namespace)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - run: npx vitest run test/apiNamespaceContract.test.ts

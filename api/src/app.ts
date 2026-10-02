@@ -28,6 +28,7 @@ import { registerChallengeCreationSeamRoutes } from './challengeCreationSeamRout
 import { createPostgresGroupReadStore } from './postgresGroupReadStore.js';
 import { registerSocialCauseApprovalRoutes, type SocialCauseApprovalDeps } from './socialCauseApprovalRoutes.js';
 import { registerOperatorConsoleRoutes } from './operatorConsoleRoutes.js';
+import { API_PREFIX } from './apiPrefix.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -89,7 +90,8 @@ export function buildApp(deps: AppDeps) {
 
   // Readiness: minimal PostgreSQL connectivity check. 200 only when the
   // database answers; 503 without leaking connection details when it does not.
-  // Intentionally outside /v1/ and exempt from authentication below.
+  // Intentionally outside the API namespace and exempt from authentication
+  // below.
   app.get('/ready', async (_request, reply) => {
     try {
       await deps.db.query('SELECT 1');
@@ -103,7 +105,7 @@ export function buildApp(deps: AppDeps) {
 
   const auth = requireAuth(deps.db, deps.verifier);
   app.addHook('onRequest', async (request, reply) => {
-    if (request.url === '/health' || request.url === '/ready' || !request.url.startsWith('/v1/')) return;
+    if (request.url === '/health' || request.url === '/ready' || !request.url.startsWith(`${API_PREFIX}/`)) return;
     await auth(request, reply);
   });
 

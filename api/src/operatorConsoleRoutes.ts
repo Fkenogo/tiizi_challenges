@@ -34,7 +34,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return false;
   };
 
-  app.get('/v1/operator/console/overview', async (request, reply) => {
+  app.get('/api/operator/console/overview', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const [counts, activity, decisions] = await Promise.all([
       db.query<Record<string, number>>(
@@ -89,7 +89,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     };
   });
 
-  app.get('/v1/operator/console/members', async (request, reply) => {
+  app.get('/api/operator/console/members', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const q = `%${searchTerm(request)}%`;
     const result = await db.query(
@@ -110,7 +110,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { members: result.rows, limit: pageSize(request), offset: pageOffset(request), identityNote: 'Profile names and account-state fields are not present in the current authoritative member model; member UUIDs are shown as identity references.' };
   });
 
-  app.get('/v1/operator/console/members/:memberId', async (request, reply) => {
+  app.get('/api/operator/console/members/:memberId', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const { memberId } = request.params as { memberId: string };
     const result = await db.query(
@@ -139,7 +139,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { ...result.rows[0], groups: groups.rows, challenges: challenges.rows };
   });
 
-  app.get('/v1/operator/console/groups', async (request, reply) => {
+  app.get('/api/operator/console/groups', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const q = `%${searchTerm(request)}%`;
     const status = queryValue(request, 'status');
@@ -159,7 +159,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { groups: result.rows, limit: pageSize(request), offset: pageOffset(request) };
   });
 
-  app.get('/v1/operator/console/groups/:groupId', async (request, reply) => {
+  app.get('/api/operator/console/groups/:groupId', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const { groupId } = request.params as { groupId: string };
     const group = await db.query(
@@ -180,7 +180,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { ...group.rows[0], memberships: memberships.rows, challenges: challenges.rows };
   });
 
-  app.get('/v1/operator/console/activities', async (request, reply) => {
+  app.get('/api/operator/console/activities', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const q = `%${searchTerm(request)}%`;
     const kind = queryValue(request, 'kind');
@@ -208,7 +208,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { items: items.rows, recentAcceptedRecords: recent.rows, limit: pageSize(request), offset: pageOffset(request) };
   });
 
-  app.get('/v1/operator/console/challenges', async (request, reply) => {
+  app.get('/api/operator/console/challenges', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const q = `%${searchTerm(request)}%`;
     const status = queryValue(request, 'status');
@@ -235,7 +235,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { challenges: result.rows, limit: pageSize(request), offset: pageOffset(request) };
   });
 
-  app.get('/v1/operator/console/challenges/:challengeId', async (request, reply) => {
+  app.get('/api/operator/console/challenges/:challengeId', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const { challengeId } = request.params as { challengeId: string };
     const result = await db.query(
@@ -268,7 +268,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { ...result.rows[0], causeDecisions: decisions.rows, recentAcceptedActivities: activities.rows };
   });
 
-  app.get('/v1/operator/console/support', async (request, reply) => {
+  app.get('/api/operator/console/support', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const q = `%${searchTerm(request)}%`;
     const result = await db.query(
@@ -286,7 +286,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { configurations: result.rows, limit: pageSize(request), offset: pageOffset(request), financialScope: 'Configuration only; no contribution or payment records are represented.' };
   });
 
-  app.get('/v1/operator/console/localisation', async (request, reply) => {
+  app.get('/api/operator/console/localisation', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const q = `%${searchTerm(request)}%`;
     const result = await db.query(
@@ -305,7 +305,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { localisedFields: result.rows, coverage: coverage.rows, defaultLocales: defaults.rows, limit: pageSize(request), offset: pageOffset(request), editable: false };
   });
 
-  app.get('/v1/operator/console/access', async (request, reply) => {
+  app.get('/api/operator/console/access', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const readers = await db.query(
       `SELECT r.member_id AS "memberId",r.grant_reference AS "grantReference",r.granted_at AS "grantedAt",
@@ -318,7 +318,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { currentOperatorMemberId: authenticatedMember(request).memberId, consoleReaders: readers.rows, socialCauseReviewers: causeReviewers.rows, canManageAccess: false };
   });
 
-  app.get('/v1/operator/console/audit', async (request, reply) => {
+  app.get('/api/operator/console/audit', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     const q = `%${searchTerm(request)}%`;
     const status = queryValue(request, 'decision');
@@ -335,7 +335,7 @@ export function registerOperatorConsoleRoutes(app: FastifyInstance, db: Db): voi
     return { decisions: result.rows, scope: 'Social Cause decisions only', limit: pageSize(request), offset: pageOffset(request) };
   });
 
-  app.get('/v1/operator/console/health', async (request, reply) => {
+  app.get('/api/operator/console/health', async (request, reply) => {
     if (!await authorize(request, reply)) return;
     await db.query('SELECT 1');
     return { api: 'healthy', database: 'healthy', checkedAt: new Date().toISOString(), scope: 'API process and database connectivity only' };

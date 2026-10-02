@@ -266,7 +266,7 @@ describe('establishment eligibility gate', () => {
     const id = String(item.rows[0].knowledge_id);
     const revised = await app.inject({
       method: 'PATCH',
-      url: `/v1/admin/knowledge/${id}`,
+      url: `/api/admin/knowledge/${id}`,
       headers: authHeaders(`rev-token-${tag}`),
       payload: {
         name,
@@ -341,7 +341,7 @@ describe('compatibility administration', () => {
 
     const response = await app.inject({
       method: 'PUT',
-      url: `/v1/admin/knowledge/${id}/compatibility`,
+      url: `/api/admin/knowledge/${id}/compatibility`,
       headers: authHeaders(`adm-token-${tag}`),
       payload: {
         primaryMetrics: ['duration', 'repetitions'],
@@ -360,7 +360,7 @@ describe('compatibility administration', () => {
     // The public item shape exposes the contract for future creation UI.
     const read = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${id}`,
+      url: `/api/knowledge/${id}`,
       headers: authHeaders(`adm-token-${tag}`),
     });
     expect(read.statusCode).toBe(200);
@@ -379,7 +379,7 @@ describe('compatibility administration', () => {
     // 'reps' expresses repetitions, which is not declared.
     const incoherent = await app.inject({
       method: 'PUT',
-      url: `/v1/admin/knowledge/${id}/compatibility`,
+      url: `/api/admin/knowledge/${id}/compatibility`,
       headers,
       payload: { primaryMetrics: ['duration'], compatibleUnits: ['reps'] },
     });
@@ -387,7 +387,7 @@ describe('compatibility administration', () => {
 
     const overlap = await app.inject({
       method: 'PUT',
-      url: `/v1/admin/knowledge/${id}/compatibility`,
+      url: `/api/admin/knowledge/${id}/compatibility`,
       headers,
       payload: { primaryMetrics: ['repetitions'], secondaryMetrics: ['repetitions'] },
     });
@@ -395,7 +395,7 @@ describe('compatibility administration', () => {
 
     const ungoverned = await app.inject({
       method: 'PUT',
-      url: `/v1/admin/knowledge/${id}/compatibility`,
+      url: `/api/admin/knowledge/${id}/compatibility`,
       headers,
       payload: { primaryMetrics: ['repetitions'], compatibleUnits: ['smoots'] },
     });
@@ -403,7 +403,7 @@ describe('compatibility administration', () => {
 
     const unknownMetric = await app.inject({
       method: 'PUT',
-      url: `/v1/admin/knowledge/${id}/compatibility`,
+      url: `/api/admin/knowledge/${id}/compatibility`,
       headers,
       payload: { primaryMetrics: ['cardio'] },
     });
@@ -419,7 +419,7 @@ describe('compatibility administration', () => {
 
     const forbidden = await app.inject({
       method: 'PUT',
-      url: `/v1/admin/knowledge/${id}/compatibility`,
+      url: `/api/admin/knowledge/${id}/compatibility`,
       headers: authHeaders(`token-${tag}`),
       payload: { primaryMetrics: ['repetitions'], compatibleUnits: ['reps'] },
     });
@@ -428,7 +428,7 @@ describe('compatibility administration', () => {
     await db.query(`UPDATE members SET role = 'admin' WHERE auth_subject = $1`, [`member-${tag}`]);
     const missing = await app.inject({
       method: 'PUT',
-      url: '/v1/admin/knowledge/00000000-0000-4000-8000-000000000000/compatibility',
+      url: '/api/admin/knowledge/00000000-0000-4000-8000-000000000000/compatibility',
       headers: authHeaders(`token-${tag}`),
       payload: { primaryMetrics: ['repetitions'] },
     });
@@ -577,7 +577,7 @@ describe('establishment compatibility enforcement (route)', () => {
     ]);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, `combo-${w.token}`, { metric: 'repetitions', unit: 'minutes' }),
     });
@@ -604,7 +604,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const unsupportedUnit = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: body(w, `strict-${w.token}`, { unit: 'fortnights' }),
     });
@@ -612,7 +612,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const thin = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: body(w, `thin-${w.token}`),
     });
@@ -620,7 +620,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const thinGrandfathered = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: body(w, `thin-grand-${w.token}`),
     });
@@ -628,7 +628,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const draft = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: body(w, `draft-${w.token}`),
     });
@@ -636,7 +636,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const unknown = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: body(w, `no-such-activity-${w.token}`),
     });
@@ -659,7 +659,7 @@ describe('establishment compatibility enforcement (route)', () => {
     ]);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, 'FIT-TST-802'),
     });
@@ -678,7 +678,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const rawIds = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: {
         ...body(w, `raw-${w.token}`),
@@ -689,7 +689,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const smuggled = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: {
         ...body(w, `raw-${w.token}`),
@@ -709,7 +709,7 @@ describe('establishment compatibility enforcement (route)', () => {
 
     const ungovernedMetric = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers,
       payload: body(w, `raw-${w.token}`, { metric: 'steps_count' }),
     });

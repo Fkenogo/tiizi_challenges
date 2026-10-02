@@ -165,7 +165,7 @@ export function resolveS3bOccurrence(at: Date): S3bOccurrenceFields {
  * the result for diagnostics. No implementation/provider terminology
  * reaches members.
  *
- * S3b: activity-application denials (POST /v1/challenges/:id/activity)
+ * S3b: activity-application denials (POST /api/challenges/:id/activity)
  * map the same way. Governed rejections (the server's durable decision
  * that this entry does not count) are NEVER retryable-by-default: the
  * member must change the entry or accept the decision. Retryable marks

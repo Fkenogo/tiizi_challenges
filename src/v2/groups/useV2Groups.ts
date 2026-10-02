@@ -39,15 +39,15 @@ import {
  * TIIZI S4a — V2 Groups read/write hooks (evolved from the S2-G hooks).
  *
  * Reads:
- * - `GET /v1/memberships/me` — the member's Groups (the SAME contract the
+ * - `GET /api/memberships/me` — the member's Groups (the SAME contract the
  *   Challenge creation journey consumes);
- * - `GET /v1/groups/:groupId` — canonical Group detail (Group Home's only
+ * - `GET /api/groups/:groupId` — canonical Group detail (Group Home's only
  *   truth source; server-derived relationship, steward, count, settings);
- * - `GET /v1/challenges?groupId=` — the Group's hosted Challenges, scoped
+ * - `GET /api/challenges?groupId=` — the Group's hosted Challenges, scoped
  *   server-side under the existing Challenge visibility authority.
  *
- * Writes go through the governed authorities only (`POST /v1/groups`,
- * `POST /v1/groups/:groupId/join`) and then invalidate the reads so
+ * Writes go through the governed authorities only (`POST /api/groups`,
+ * `POST /api/groups/:groupId/join`) and then invalidate the reads so
  * persistence is proven by the server, never by client state.
  */
 

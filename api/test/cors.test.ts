@@ -141,7 +141,7 @@ describe('production CORS wiring', () => {
       const app = buildTestApp();
       const res = await app.inject({
         method: 'GET',
-        url: '/v1/memberships/me',
+        url: '/api/memberships/me',
         headers: { origin: 'https://evil.example' },
       });
       expect(res.statusCode).toBe(401);

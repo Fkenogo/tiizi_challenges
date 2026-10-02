@@ -48,46 +48,46 @@ describe('Platform Operator Console read boundary', () => {
   it('requires the explicit active read grant and denies ordinary members', async () => {
     const f = await fixture();
     // Group ownership/stewardship is not Platform Operator authority.
-    for (const url of ['/v1/operator/console/overview', '/v1/operator/console/members', '/v1/operator/console/groups', '/v1/operator/console/challenges', '/v1/operator/console/support', '/v1/operator/console/access']) {
+    for (const url of ['/api/operator/console/overview', '/api/operator/console/members', '/api/operator/console/groups', '/api/operator/console/challenges', '/api/operator/console/support', '/api/operator/console/access']) {
       expect((await f.app.inject({ method: 'GET', url, headers: f.memberAuth })).statusCode).toBe(403);
       expect((await f.app.inject({ method: 'GET', url, headers: f.stewardAuth })).statusCode).toBe(403);
       expect((await f.app.inject({ method: 'GET', url })).statusCode).toBe(401);
     }
-    const authorized = await f.app.inject({ method: 'GET', url: '/v1/operator/console/groups', headers: f.operatorAuth });
+    const authorized = await f.app.inject({ method: 'GET', url: '/api/operator/console/groups', headers: f.operatorAuth });
     expect(authorized.statusCode).toBe(200);
     await db.query("UPDATE platform_operator_console_readers SET revoked_at=now(),revoked_reference='test revoke' WHERE member_id=$1", [f.operator]);
-    expect((await f.app.inject({ method: 'GET', url: '/v1/operator/console/groups', headers: f.operatorAuth })).statusCode).toBe(403);
+    expect((await f.app.inject({ method: 'GET', url: '/api/operator/console/groups', headers: f.operatorAuth })).statusCode).toBe(403);
     // Revoking read access does not alter the separate Cause decision grant.
-    expect((await f.app.inject({ method: 'GET', url: '/v1/operator/social-causes/pending', headers: f.operatorAuth })).statusCode).toBe(503);
+    expect((await f.app.inject({ method: 'GET', url: '/api/operator/social-causes/pending', headers: f.operatorAuth })).statusCode).toBe(503);
   });
 
   it('returns authoritative Overview, directory, Group, Challenge, Activity, Support, localisation, access, health, and audit data', async () => {
     const f = await fixture();
-    const overview = await f.app.inject({ method: 'GET', url: '/v1/operator/console/overview', headers: f.operatorAuth });
+    const overview = await f.app.inject({ method: 'GET', url: '/api/operator/console/overview', headers: f.operatorAuth });
     expect(overview.statusCode).toBe(200);
     expect(overview.json()).toMatchObject({ counts: { members: 3, groups: 2, challenges: 1, pending_causes: 1, support_enabled: 1 }, lifecycle: [{ status: 'establishment', count: 1 }] });
 
-    const members = await f.app.inject({ method: 'GET', url: `/v1/operator/console/members?q=${f.member.slice(0, 8)}`, headers: f.operatorAuth });
+    const members = await f.app.inject({ method: 'GET', url: `/api/operator/console/members?q=${f.member.slice(0, 8)}`, headers: f.operatorAuth });
     expect(members.json().members).toHaveLength(1);
     expect(members.json().members[0]).toMatchObject({ memberId: f.member, activeGroups: 0, activeChallenges: 0 });
-    expect((await f.app.inject({ method: 'GET', url: `/v1/operator/console/members/${f.member}`, headers: f.operatorAuth })).statusCode).toBe(200);
+    expect((await f.app.inject({ method: 'GET', url: `/api/operator/console/members/${f.member}`, headers: f.operatorAuth })).statusCode).toBe(200);
 
-    const groups = await f.app.inject({ method: 'GET', url: '/v1/operator/console/groups?visibility=private', headers: f.operatorAuth });
+    const groups = await f.app.inject({ method: 'GET', url: '/api/operator/console/groups?visibility=private', headers: f.operatorAuth });
     expect(groups.json().groups[0]).toMatchObject({ groupId: f.groupId, memberCount: 1, challengeCount: 1, isPrivate: true });
-    expect((await f.app.inject({ method: 'GET', url: `/v1/operator/console/groups/${f.groupId}`, headers: f.operatorAuth })).json().challenges).toHaveLength(1);
+    expect((await f.app.inject({ method: 'GET', url: `/api/operator/console/groups/${f.groupId}`, headers: f.operatorAuth })).json().challenges).toHaveLength(1);
 
-    const challenges = await f.app.inject({ method: 'GET', url: '/v1/operator/console/challenges?type=collective&supportTiizi=enabled', headers: f.operatorAuth });
+    const challenges = await f.app.inject({ method: 'GET', url: '/api/operator/console/challenges?type=collective&supportTiizi=enabled', headers: f.operatorAuth });
     expect(challenges.json().challenges[0]).toMatchObject({ challengeId: f.challengeId, causeStatus: 'pending_approval', supportTiiziEnabled: true });
-    expect((await f.app.inject({ method: 'GET', url: `/v1/operator/console/challenges/${f.challengeId}`, headers: f.operatorAuth })).json()).toMatchObject({ beneficiary: 'Garden Trust', paymentDestinationReference: 'beneficiary-local-reference' });
+    expect((await f.app.inject({ method: 'GET', url: `/api/operator/console/challenges/${f.challengeId}`, headers: f.operatorAuth })).json()).toMatchObject({ beneficiary: 'Garden Trust', paymentDestinationReference: 'beneficiary-local-reference' });
 
-    const activities = await f.app.inject({ method: 'GET', url: '/v1/operator/console/activities?kind=fitness&lifecycle=published', headers: f.operatorAuth });
+    const activities = await f.app.inject({ method: 'GET', url: '/api/operator/console/activities?kind=fitness&lifecycle=published', headers: f.operatorAuth });
     expect(activities.json().items[0]).toMatchObject({ name: 'Walking', kind: 'fitness', lifecycle: 'published' });
-    const support = await f.app.inject({ method: 'GET', url: '/v1/operator/console/support?q=Garden', headers: f.operatorAuth });
+    const support = await f.app.inject({ method: 'GET', url: '/api/operator/console/support?q=Garden', headers: f.operatorAuth });
     expect(support.json().configurations[0]).toMatchObject({ causeTitle: 'Garden Cause', supportTiiziEnabled: true });
-    const localisation = await f.app.inject({ method: 'GET', url: '/v1/operator/console/localisation?q=sw', headers: f.operatorAuth });
+    const localisation = await f.app.inject({ method: 'GET', url: '/api/operator/console/localisation?q=sw', headers: f.operatorAuth });
     expect(localisation.json().localisedFields[0]).toMatchObject({ locale: 'sw', field: 'name', value: 'Kutembea' });
-    expect((await f.app.inject({ method: 'GET', url: '/v1/operator/console/access', headers: f.operatorAuth })).json()).toMatchObject({ currentOperatorMemberId: f.operator, canManageAccess: false });
-    expect((await f.app.inject({ method: 'GET', url: '/v1/operator/console/health', headers: f.operatorAuth })).json()).toMatchObject({ api: 'healthy', database: 'healthy' });
-    expect((await f.app.inject({ method: 'GET', url: '/v1/operator/console/audit', headers: f.operatorAuth })).json()).toMatchObject({ decisions: [], scope: 'Social Cause decisions only' });
+    expect((await f.app.inject({ method: 'GET', url: '/api/operator/console/access', headers: f.operatorAuth })).json()).toMatchObject({ currentOperatorMemberId: f.operator, canManageAccess: false });
+    expect((await f.app.inject({ method: 'GET', url: '/api/operator/console/health', headers: f.operatorAuth })).json()).toMatchObject({ api: 'healthy', database: 'healthy' });
+    expect((await f.app.inject({ method: 'GET', url: '/api/operator/console/audit', headers: f.operatorAuth })).json()).toMatchObject({ decisions: [], scope: 'Social Cause decisions only' });
   });
 });

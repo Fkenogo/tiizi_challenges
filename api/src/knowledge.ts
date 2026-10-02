@@ -2425,7 +2425,7 @@ const identityResponseSchema = {
 };
 
 export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
-  app.get('/v1/knowledge', {
+  app.get('/api/knowledge', {
     schema: {
       response: {
         200: {
@@ -2458,7 +2458,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     },
   };
 
-  app.get('/v1/knowledge/code/:code', {
+  app.get('/api/knowledge/code/:code', {
     schema: { response: { 200: knowledgeItemSchema, 404: notFoundSchema } },
   }, async (request, reply) => {
     const { code } = request.params as { code: string };
@@ -2473,7 +2473,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return localized;
   });
 
-  app.get('/v1/knowledge/:id', {
+  app.get('/api/knowledge/:id', {
     schema: { response: { 200: knowledgeItemSchema, 404: notFoundSchema } },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -2487,7 +2487,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return item;
   });
 
-  app.get('/v1/knowledge/:id/versions/:version', {
+  app.get('/api/knowledge/:id/versions/:version', {
     schema: { response: { 200: knowledgeItemSchema, 404: notFoundSchema } },
   }, async (request, reply) => {
     const { id, version } = request.params as { id: string; version: string };
@@ -2501,7 +2501,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return item;
   });
 
-  app.get('/v1/knowledge/:id/versions/:version/texts', {
+  app.get('/api/knowledge/:id/versions/:version/texts', {
     schema: {
       response: {
         200: {
@@ -2537,14 +2537,14 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return { texts };
   });
 
-  app.get('/v1/compat/knowledge-ids', {
+  app.get('/api/compat/knowledge-ids', {
     schema: { response: { 200: identityResponseSchema } },
   }, async (request) => {
     const query = parseKnowledgeIdentityQuery(request.query);
     return { mappings: await resolveKnowledgeIdentity(db, query) };
   });
 
-  app.get('/v1/admin/knowledge', {
+  app.get('/api/admin/knowledge', {
     schema: {
       response: {
         200: {
@@ -2565,7 +2565,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return { items: await listKnowledgeForAdmin(db, { kind, lifecycle }) };
   });
 
-  app.post('/v1/admin/knowledge', {
+  app.post('/api/admin/knowledge', {
     schema: { response: { 201: knowledgeItemSchema } },
   }, async (request, reply) => {
     await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
@@ -2573,7 +2573,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return reply.status(201).send(item);
   });
 
-  app.patch('/v1/admin/knowledge/:id', {
+  app.patch('/api/admin/knowledge/:id', {
     schema: { response: { 200: knowledgeItemSchema } },
   }, async (request) => {
     await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
@@ -2581,7 +2581,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return reviseKnowledgeItem(db, id, (request.body ?? {}) as KnowledgeContentInput);
   });
 
-  app.post('/v1/admin/knowledge/:id/publish', {
+  app.post('/api/admin/knowledge/:id/publish', {
     schema: { response: { 200: knowledgeItemSchema } },
   }, async (request) => {
     await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
@@ -2589,7 +2589,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return setKnowledgeLifecycle(db, id, 'published');
   });
 
-  app.post('/v1/admin/knowledge/:id/retire', {
+  app.post('/api/admin/knowledge/:id/retire', {
     schema: { response: { 200: knowledgeItemSchema } },
   }, async (request) => {
     await requireKnowledgeAdmin(db, authenticatedMember(request).memberId);
@@ -2597,7 +2597,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return setKnowledgeLifecycle(db, id, 'retired');
   });
 
-  app.put('/v1/admin/knowledge/:id/compatibility', {
+  app.put('/api/admin/knowledge/:id/compatibility', {
     schema: {
       body: {
         type: 'object',
@@ -2621,7 +2621,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return setMeasurementCompatibility(db, id, body);
   });
 
-  app.get('/v1/admin/knowledge/:id/texts', {
+  app.get('/api/admin/knowledge/:id/texts', {
     schema: {
       response: {
         200: {
@@ -2650,7 +2650,7 @@ export function registerKnowledgeRoutes(app: FastifyInstance, db: Db): void {
     return { texts: await listKnowledgeTexts(db, id) };
   });
 
-  app.put('/v1/admin/knowledge/:id/texts', {
+  app.put('/api/admin/knowledge/:id/texts', {
     schema: {
       response: {
         200: {

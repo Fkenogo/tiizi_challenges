@@ -1,7 +1,7 @@
 /**
  * Phase C3B V2 Challenge list surface.
  *
- * Data comes ONLY from GET /v1/challenges. V1 (Firestore) and V2
+ * Data comes ONLY from GET /api/challenges. V1 (Firestore) and V2
  * (PostgreSQL) Challenges are separate identities from separate sources:
  * this screen never merges, deduplicates, or heuristically matches them —
  * V1 cards render from Firestore, V2 cards from the V2 API.

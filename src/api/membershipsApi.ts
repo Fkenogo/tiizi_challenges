@@ -1,4 +1,4 @@
-import { apiFetch } from './apiClient';
+import { API_PREFIX, apiFetch } from './apiClient';
 
 export interface ApiMembershipGroup {
   id: string;
@@ -36,5 +36,5 @@ export interface MyMembershipsResponse {
 
 /** Current user's authoritative Group memberships from the Tiizi API/PostgreSQL. */
 export function fetchMyMemberships(): Promise<MyMembershipsResponse> {
-  return apiFetch<MyMembershipsResponse>('/v1/memberships/me');
+  return apiFetch<MyMembershipsResponse>(`${API_PREFIX}/memberships/me`);
 }

@@ -36,7 +36,7 @@ import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } fr
  * TIIZI S4a CORR-001 — progressive Group formation wizard.
  *
  * One logical step at a time over the EXISTING governed authority
- * (`POST /v1/groups` — single submission at Review, no new mutation):
+ * (`POST /api/groups` — single submission at Review, no new mutation):
  *
  * 1. Identity — name (required), tagline + description (optional).
  * 2. Look & focus — curated cover (optional), location context (optional),

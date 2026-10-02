@@ -8,7 +8,7 @@ import {
   testDb,
 } from './helpers.js';
 
-describe('GET /v1/memberships/me', () => {
+describe('GET /api/memberships/me', () => {
   it('returns the caller memberships in provider-neutral shape', async () => {
     const db = testDb();
     const memberId = await seedMember(db, 'uid-a');
@@ -18,7 +18,7 @@ describe('GET /v1/memberships/me', () => {
     const app = buildTestApp({ tokenA: 'uid-a' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('tokenA'),
     });
 
@@ -57,7 +57,7 @@ describe('GET /v1/memberships/me', () => {
     await seedMembership(db, groupId, memberId, { role: 'member', status: 'active' });
 
     const app = buildTestApp({ token: 'uid-host-policy' });
-    const res = await app.inject({ method: 'GET', url: '/v1/memberships/me', headers: authHeaders('token') });
+    const res = await app.inject({ method: 'GET', url: '/api/memberships/me', headers: authHeaders('token') });
 
     expect(res.statusCode).toBe(200);
     expect(res.json().memberships[0].group.allowMemberChallenges).toBe(false);
@@ -72,7 +72,7 @@ describe('GET /v1/memberships/me', () => {
     const app = buildTestApp({ t: 'super-secret-uid-123' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('t'),
     });
 
@@ -91,7 +91,7 @@ describe('GET /v1/memberships/me', () => {
     await seedMembership(db, groupId, memberId);
 
     const app = buildTestApp({ token: 'uid-goal-search' });
-    const res = await app.inject({ method: 'GET', url: '/v1/memberships/me', headers: authHeaders('token') });
+    const res = await app.inject({ method: 'GET', url: '/api/memberships/me', headers: authHeaders('token') });
 
     expect(res.statusCode).toBe(200);
     expect(res.json().memberships[0].group.goals).toEqual([
@@ -113,7 +113,7 @@ describe('GET /v1/memberships/me', () => {
     const app = buildTestApp({ t: 'uid-a' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('t'),
     });
 
@@ -128,7 +128,7 @@ describe('GET /v1/memberships/me', () => {
     const app = buildTestApp({ t: 'lonely-uid' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('t'),
     });
     expect(res.statusCode).toBe(200);

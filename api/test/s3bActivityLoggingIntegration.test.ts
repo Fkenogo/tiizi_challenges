@@ -5,10 +5,10 @@
  * These tests exercise the real application seams end to end (no mocked
  * resolver around the route):
  *
- *   governed identity-based Challenge establishment (POST /v1/challenges)
+ *   governed identity-based Challenge establishment (POST /api/challenges)
  *     -> persisted Challenge pinned to immutable Knowledge identity
  *     -> active participation (join_creator)
- *     -> POST /v1/challenges/:id/activity
+ *     -> POST /api/challenges/:id/activity
  *     -> production route resolver (identity-first)
  *     -> applyChallengeActivity
  *     -> accepted activity record
@@ -167,7 +167,7 @@ function establishmentBody(w: World, canonicalKey: string) {
 async function establish(app: ReturnType<typeof productionApp>, w: World, canonicalKey: string) {
   const response = await app.inject({
     method: 'POST',
-    url: '/v1/challenges',
+    url: '/api/challenges',
     headers: authHeaders(w.token),
     payload: establishmentBody(w, canonicalKey),
   });
@@ -230,7 +230,7 @@ async function submit(
 ) {
   return app.inject({
     method: 'POST',
-    url: `/v1/challenges/${challengeId}/activity`,
+    url: `/api/challenges/${challengeId}/activity`,
     headers: { ...authHeaders(w.token), 'content-type': 'application/json' },
     payload: {
       ...payload,

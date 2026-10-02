@@ -1,7 +1,7 @@
 /**
  * Phase C3B V2 Challenge detail surface.
  *
- * Governing and progress truth comes ONLY from GET /v1/challenges/:id
+ * Governing and progress truth comes ONLY from GET /api/challenges/:id
  * (immutable config, own Participation, Derived Truth). No V1
  * challengeMembers / challengeActivitySummaries / Firestore leaderboard /
  * workouts / wellnessLogs reads anywhere on this screen.

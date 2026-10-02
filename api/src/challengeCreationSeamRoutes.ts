@@ -5,13 +5,13 @@
  * for the future V2 challenge-creation experience. This module is a thin
  * adapter: it owns no semantics of its own and creates no second authority.
  *
- * - GET  /v1/knowledge/:id/options
+ * - GET  /api/knowledge/:id/options
  *     → describeComposerActivityOptions (PF-04 Composer — valid Metric /
  *       Unit / Component / Load-basis choices for one canonical Activity).
  *       Adds a purely derived `unitsByMetric` presentation grouping (the
  *       SAME governed Unit→Metric vocabulary the validator enforces — no
  *       second compatibility opinion; the client never re-derives it).
- * - POST /v1/challenge-definitions/preview
+ * - POST /api/challenge-definitions/preview
  *     → previewChallengeComposer (PF-04)
  *       → validateChallengeDefinition (PF-03 semantic validation).
  *
@@ -60,7 +60,7 @@ export function registerChallengeCreationSeamRoutes(app: FastifyInstance, db: Db
    * names are never identity. Unknown, unpublished or malformed identities
    * are 404 — options are never invented. Read-only.
    */
-  app.get('/v1/knowledge/:id/options', async (request, reply) => {
+  app.get('/api/knowledge/:id/options', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
       const options = await describeComposerActivityOptions(db, id);
@@ -80,7 +80,7 @@ export function registerChallengeCreationSeamRoutes(app: FastifyInstance, db: Db
    * response. The same validator used by establishment stays the authority;
    * there is no second validator here. Persists nothing.
    */
-  app.post('/v1/challenge-definitions/preview', async (request, reply) => {
+  app.post('/api/challenge-definitions/preview', async (request, reply) => {
     const draft = request.body;
     if (typeof draft !== 'object' || draft === null || Array.isArray(draft)) {
       return reply.status(400).send({

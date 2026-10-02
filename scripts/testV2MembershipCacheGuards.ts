@@ -25,7 +25,7 @@
  *      served, merged, or replaced by this lifecycle.
  *
  * No emulator, database, or network access: the "server" is a counting
- * queryFn standing in for GET /v1/memberships/me.
+ * queryFn standing in for GET /api/memberships/me.
  */
 import { QueryClient } from '@tanstack/react-query';
 import {
@@ -131,7 +131,7 @@ async function main(): Promise<void> {
     bScoped?.isInvalidated !== true && (bScoped?.dataUpdatedAt ?? -1) === bUpdatedAt);
 
   // ─── C + D. governed creation succeeds; S2-G boundary invalidates ─────
-  // The server now holds the governed Group (POST /v1/groups succeeded).
+  // The server now holds the governed Group (POST /api/groups succeeded).
   serverA = [membership(NEW_GROUP_ID, 'Tiizi Founders Fitness Group')];
   // This is the exact S2-G useCreateGroup onSuccess body.
   await invalidateV2Memberships(client);

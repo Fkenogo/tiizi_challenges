@@ -1,4 +1,4 @@
-import { apiFetch } from './apiClient';
+import { API_PREFIX, apiFetch } from './apiClient';
 
 export interface OperatorPage<T> { [key: string]: T[] | number | string | boolean | undefined; limit: number; offset: number; }
 export interface OperatorOverview {
@@ -19,16 +19,16 @@ function withQuery(path: string, query: Record<string, string | number | undefin
   return suffix ? `${path}?${suffix}` : path;
 }
 
-export const fetchOperatorOverview = () => apiFetch<OperatorOverview>('/v1/operator/console/overview');
-export const fetchOperatorMembers = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery('/v1/operator/console/members', query));
-export const fetchOperatorMember = (id: string) => apiFetch<Record<string, any>>(`/v1/operator/console/members/${encodeURIComponent(id)}`);
-export const fetchOperatorGroups = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery('/v1/operator/console/groups', query));
-export const fetchOperatorGroup = (id: string) => apiFetch<Record<string, any>>(`/v1/operator/console/groups/${encodeURIComponent(id)}`);
-export const fetchOperatorActivities = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery('/v1/operator/console/activities', query));
-export const fetchOperatorChallenges = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery('/v1/operator/console/challenges', query));
-export const fetchOperatorChallenge = (id: string) => apiFetch<Record<string, any>>(`/v1/operator/console/challenges/${encodeURIComponent(id)}`);
-export const fetchOperatorSupport = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery('/v1/operator/console/support', query));
-export const fetchOperatorLocalisation = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery('/v1/operator/console/localisation', query));
-export const fetchOperatorAccess = () => apiFetch<Record<string, any>>('/v1/operator/console/access');
-export const fetchOperatorAudit = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery('/v1/operator/console/audit', query));
-export const fetchOperatorHealth = () => apiFetch<{ api: string; database: string; checkedAt: string; scope: string }>('/v1/operator/console/health');
+export const fetchOperatorOverview = () => apiFetch<OperatorOverview>(`${API_PREFIX}/operator/console/overview`);
+export const fetchOperatorMembers = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery(`${API_PREFIX}/operator/console/members`, query));
+export const fetchOperatorMember = (id: string) => apiFetch<Record<string, any>>(`${API_PREFIX}/operator/console/members/${encodeURIComponent(id)}`);
+export const fetchOperatorGroups = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery(`${API_PREFIX}/operator/console/groups`, query));
+export const fetchOperatorGroup = (id: string) => apiFetch<Record<string, any>>(`${API_PREFIX}/operator/console/groups/${encodeURIComponent(id)}`);
+export const fetchOperatorActivities = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery(`${API_PREFIX}/operator/console/activities`, query));
+export const fetchOperatorChallenges = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery(`${API_PREFIX}/operator/console/challenges`, query));
+export const fetchOperatorChallenge = (id: string) => apiFetch<Record<string, any>>(`${API_PREFIX}/operator/console/challenges/${encodeURIComponent(id)}`);
+export const fetchOperatorSupport = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery(`${API_PREFIX}/operator/console/support`, query));
+export const fetchOperatorLocalisation = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery(`${API_PREFIX}/operator/console/localisation`, query));
+export const fetchOperatorAccess = () => apiFetch<Record<string, any>>(`${API_PREFIX}/operator/console/access`);
+export const fetchOperatorAudit = (query: Record<string, string | number | undefined>) => apiFetch<Record<string, any>>(withQuery(`${API_PREFIX}/operator/console/audit`, query));
+export const fetchOperatorHealth = () => apiFetch<{ api: string; database: string; checkedAt: string; scope: string }>(`${API_PREFIX}/operator/console/health`);

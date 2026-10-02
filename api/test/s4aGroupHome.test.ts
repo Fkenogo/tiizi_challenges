@@ -7,7 +7,7 @@
  * A. Group creation persists the governed configuration (isPrivate,
  *    requireAdminApproval, allowMemberChallenges) to PostgreSQL.
  * B. The creator becomes the correct singular Accountable Steward / owner.
- * C. GET /v1/groups/:groupId returns canonical Group truth and leaks no
+ * C. GET /api/groups/:groupId returns canonical Group truth and leaks no
  *    Firebase UID, legacy id, owner attribution internals, or invite code.
  * D. The viewer membership relationship is server-derived (steward / member /
  *    pending / none) — never client-declared.
@@ -15,7 +15,7 @@
  * F. Unauthorized / non-visible Group reads fail closed (401 unauthenticated,
  *    404 unknown-or-invisible with no existence oracle, 503 store outage,
  *    503 PostgreSQL outage, 400 malformed id).
- * G. GET /v1/challenges?groupId= returns only genuine Challenges of that
+ * G. GET /api/challenges?groupId= returns only genuine Challenges of that
  *    Group (entitled subset for members; EOG §9 discovery projection for
  *    public Groups; empty for private Groups to outsiders).
  * H. The existing unfiltered Challenge list behaviour is unchanged.
@@ -74,7 +74,7 @@ async function createViaApi(
   token: string,
   body: Record<string, unknown>,
 ): Promise<CreatedGroup> {
-  const res = await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders(token), payload: body });
+  const res = await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders(token), payload: body });
   expect(res.statusCode).toBe(201);
   return res.json() as CreatedGroup;
 }
@@ -86,7 +86,7 @@ async function detailFor(
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const res = await app.inject({
     method: 'GET',
-    url: `/v1/groups/${groupId}`,
+    url: `/api/groups/${groupId}`,
     headers: authHeaders(token),
   });
   return { status: res.statusCode, body: res.json() as Record<string, unknown> };
@@ -204,7 +204,7 @@ describe('s4a creator becomes the singular Accountable Steward (B)', () => {
     );
     const join = await app2.inject({
       method: 'POST',
-      url: `/v1/groups/${created.id}/join`,
+      url: `/api/groups/${created.id}/join`,
       headers: authHeaders('token-joiner'),
       payload: {},
     });
@@ -257,8 +257,8 @@ describe('s4a viewer relationship is server-derived (D) + count is live (E)', ()
       testDb(),
     );
     // Join the open group → active member; request the gated group → pending.
-    expect((await app2.inject({ method: 'POST', url: `/v1/groups/${open.id}/join`, headers: authHeaders('token-viewer'), payload: {} })).statusCode).toBe(200);
-    const pendingJoin = await app2.inject({ method: 'POST', url: `/v1/groups/${gated.id}/join`, headers: authHeaders('token-viewer'), payload: {} });
+    expect((await app2.inject({ method: 'POST', url: `/api/groups/${open.id}/join`, headers: authHeaders('token-viewer'), payload: {} })).statusCode).toBe(200);
+    const pendingJoin = await app2.inject({ method: 'POST', url: `/api/groups/${gated.id}/join`, headers: authHeaders('token-viewer'), payload: {} });
     expect(pendingJoin.statusCode).toBe(200);
     expect((pendingJoin.json() as { status: string }).status).toBe('pending');
 
@@ -290,7 +290,7 @@ describe('s4a reads fail closed (F)', () => {
 
   it('unauthenticated reads are 401', async () => {
     const { app, open } = await setup();
-    const res = await app.inject({ method: 'GET', url: `/v1/groups/${open.id}` });
+    const res = await app.inject({ method: 'GET', url: `/api/groups/${open.id}` });
     expect(res.statusCode).toBe(401);
   });
 
@@ -360,7 +360,7 @@ describe('s4a group-scoped Challenge list (G) + unfiltered list unchanged (H)', 
   async function scoped(app: ReturnType<typeof buildTestApp>, token: string, groupId: string) {
     return app.inject({
       method: 'GET',
-      url: `/v1/challenges?groupId=${groupId}`,
+      url: `/api/challenges?groupId=${groupId}`,
       headers: authHeaders(token),
     });
   }
@@ -400,7 +400,7 @@ describe('s4a group-scoped Challenge list (G) + unfiltered list unchanged (H)', 
 
   it('unfiltered list keeps its contract and scope', async () => {
     const { app, homeChallenge, awayChallenge, otherChallenge } = await setup();
-    const res = await app.inject({ method: 'GET', url: '/v1/challenges', headers: authHeaders('token-owner') });
+    const res = await app.inject({ method: 'GET', url: '/api/challenges', headers: authHeaders('token-owner') });
     expect(res.statusCode).toBe(200);
     const body = res.json() as { memberId: string; challenges: Array<{ challengeId: string }> };
     expect(body).not.toHaveProperty('groupId');
@@ -430,7 +430,7 @@ describe('s4a existing Group behaviour unregressed (I)', () => {
     await seedMembership(db, legacyId, member, { status: 'active' });
     const legacyJoin = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${legacyId}/join`,
+      url: `/api/groups/${legacyId}/join`,
       headers: authHeaders('token-member'),
       payload: {},
     });
@@ -438,20 +438,20 @@ describe('s4a existing Group behaviour unregressed (I)', () => {
     expect((legacyJoin.json() as { status: string }).status).toBe('joined');
 
     // Public join → joined; approval join → pending; owner leave → 403; member leave → left.
-    const join = await app.inject({ method: 'POST', url: `/v1/groups/${open.id}/join`, headers: authHeaders('token-member'), payload: {} });
+    const join = await app.inject({ method: 'POST', url: `/api/groups/${open.id}/join`, headers: authHeaders('token-member'), payload: {} });
     expect(join.statusCode).toBe(200);
     expect((join.json() as { status: string }).status).toBe('joined');
-    const approval = await app.inject({ method: 'POST', url: `/v1/groups/${gated.id}/join`, headers: authHeaders('token-member'), payload: {} });
+    const approval = await app.inject({ method: 'POST', url: `/api/groups/${gated.id}/join`, headers: authHeaders('token-member'), payload: {} });
     expect((approval.json() as { status: string }).status).toBe('pending');
-    const ownerLeave = await app.inject({ method: 'POST', url: `/v1/groups/${open.id}/leave`, headers: authHeaders('token-owner'), payload: {} });
+    const ownerLeave = await app.inject({ method: 'POST', url: `/api/groups/${open.id}/leave`, headers: authHeaders('token-owner'), payload: {} });
     expect(ownerLeave.statusCode).toBe(403);
-    const leave = await app.inject({ method: 'POST', url: `/v1/groups/${open.id}/leave`, headers: authHeaders('token-member'), payload: {} });
+    const leave = await app.inject({ method: 'POST', url: `/api/groups/${open.id}/leave`, headers: authHeaders('token-member'), payload: {} });
     expect((leave.json() as { status: string }).status).toBe('left');
 
     // Smuggled actor identity still rejected on creation.
     const forged = await app.inject({
       method: 'POST',
-      url: '/v1/groups',
+      url: '/api/groups',
       headers: authHeaders('token-member'),
       payload: { name: 'Forged', ownerId: 'intruder' },
     });

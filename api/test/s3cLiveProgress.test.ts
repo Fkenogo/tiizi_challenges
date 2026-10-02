@@ -513,7 +513,7 @@ describe('s3c contributors HTTP route', () => {
     );
     const ok = await app.inject({
       method: 'GET',
-      url: `/v1/challenges/${coll.challengeId}/contributors`,
+      url: `/api/challenges/${coll.challengeId}/contributors`,
       headers: authHeaders('token-s3c'),
     });
     expect(ok.statusCode).toBe(200);
@@ -539,7 +539,7 @@ describe('s3c contributors HTTP route', () => {
     for (const id of [comp.challengeId, streak.challengeId]) {
       const res = await appAll.inject({
         method: 'GET',
-        url: `/v1/challenges/${id}/contributors`,
+        url: `/api/challenges/${id}/contributors`,
         headers: authHeaders('token-s3c'),
       });
       expect(res.statusCode).toBe(404);

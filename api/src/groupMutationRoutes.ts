@@ -2,11 +2,11 @@
  * EBC-01 governed Group mutation routes — the trusted server-side boundary
  * for V2 Group mutations.
  *
- * - POST /v1/groups — governed Group creation;
- * - POST /v1/groups/:groupId/join — governed membership join/add;
- * - POST /v1/groups/:groupId/leave — governed membership leave/withdraw.
+ * - POST /api/groups — governed Group creation;
+ * - POST /api/groups/:groupId/join — governed membership join/add;
+ * - POST /api/groups/:groupId/leave — governed membership leave/withdraw.
  *
- * Identity discipline (fail closed): the global /v1/ auth hook resolves the
+ * Identity discipline (fail closed): the global /api/ auth hook resolves the
  * Bearer token to an internal Member UUID server-side; these routes resolve
  * the Firebase subject through `members` and NEVER accept actor/member
  * identity from the client. Request bodies carry governing terms only
@@ -288,7 +288,7 @@ export function registerGroupMutationRoutes(
 ): void {
   void deps;
 
-  app.patch('/v1/groups/:groupId', {
+  app.patch('/api/groups/:groupId', {
     validatorCompiler: groupMutationSettingsValidatorCompiler,
     schema: { params: groupIdParamsSchema, body: { type: 'object', additionalProperties: false } },
   }, async (request) => {
@@ -297,7 +297,7 @@ export function registerGroupMutationRoutes(
     return updateGovernedGroupSettings(db, member.memberId, groupId, request.body as Record<string, unknown>);
   });
 
-  app.post('/v1/groups/resolve-invite', {
+  app.post('/api/groups/resolve-invite', {
     validatorCompiler: groupInviteBodyValidatorCompiler,
     schema: {
       body: { type: 'object', additionalProperties: false, required: ['code'], properties: { code: { type: 'string', minLength: 1, maxLength: 64 } } },
@@ -313,7 +313,7 @@ export function registerGroupMutationRoutes(
   });
 
   for (const decision of ['approve', 'reject'] as const) {
-    app.post(`/v1/groups/:groupId/applications/:memberId/${decision}`, {
+    app.post(`/api/groups/:groupId/applications/:memberId/${decision}`, {
       validatorCompiler: groupApplicationValidatorCompiler,
       schema: {
         params: { type: 'object', required: ['groupId', 'memberId'], properties: { groupId: { type: 'string', format: 'uuid' }, memberId: { type: 'string', format: 'uuid' } } },
@@ -327,7 +327,7 @@ export function registerGroupMutationRoutes(
   }
 
   app.post(
-    '/v1/groups',
+    '/api/groups',
     {
       validatorCompiler: groupMutationCreateValidatorCompiler,
       schema: {
@@ -361,7 +361,7 @@ export function registerGroupMutationRoutes(
   );
 
   app.post(
-    '/v1/groups/:groupId/join',
+    '/api/groups/:groupId/join',
     {
       validatorCompiler: groupMutationEmptyValidatorCompiler,
       schema: {
@@ -390,7 +390,7 @@ export function registerGroupMutationRoutes(
   );
 
   app.post(
-    '/v1/groups/:groupId/leave',
+    '/api/groups/:groupId/leave',
     {
       validatorCompiler: groupMutationEmptyValidatorCompiler,
       schema: {

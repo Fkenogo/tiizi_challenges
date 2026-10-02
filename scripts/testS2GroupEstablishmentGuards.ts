@@ -7,11 +7,11 @@
  *
  * - draft validation is UX completeness only (server stays authority);
  * - member-facing stewardship language is singular "Accountable Steward";
- * - the read contract is the SAME `GET /v1/memberships/me` the Challenge
+ * - the read contract is the SAME `GET /api/memberships/me` the Challenge
  *   journey consumes — no second Group integration mechanism;
  * - establishment submits identity (name + optional description) plus the
  *   governed Community Setup (isPrivate / requireAdminApproval /
- *   allowMemberChallenges) through `POST /v1/groups`; no client-generated
+ *   allowMemberChallenges) through `POST /api/groups`; no client-generated
  *   owner/steward or actor identity, no media/location/Charter fields;
  * - no direct Firestore write and no direct PostgreSQL access from V2;
  * - no hard-coded preview Group;
@@ -95,20 +95,23 @@ check('other roles map to Member', groupRoleLabel('member') === 'Member');
 
 // ─── 2. Read contract is the SAME as the Challenge journey ───────────────
 // S4a evolution note: Group Home adds exactly two charter-authorized reads —
-// the canonical detail (`GET /v1/groups/:groupId` via fetchGroupDetail) and
-// the governed hosted-Challenge scope (`GET /v1/challenges?groupId=` via
+// the canonical detail (`GET /api/groups/:groupId` via fetchGroupDetail) and
+// the governed hosted-Challenge scope (`GET /api/challenges?groupId=` via
 // listGroupChallengesV2). Both are consumed through the shared API clients;
 // no inline Group URL may appear in the hooks (no second integration).
 console.log('read contract');
 const hooks = read('src/v2/groups/useV2Groups.ts');
 const membershipsApi = read('src/api/membershipsApi.ts');
 check('groups hook uses the shared memberships client', hooks.includes('fetchMyMemberships'));
-check('the shared client reads GET /v1/memberships/me', membershipsApi.includes('/v1/memberships/me'));
+// The client composes the path through the canonical API_PREFIX constant;
+// assert the prefix is used rather than a hard-coded namespace literal.
+check('the shared client reads GET /api/memberships/me',
+  membershipsApi.includes('API_PREFIX') && membershipsApi.includes('${API_PREFIX}/memberships/me'));
 check('detail read goes through the shared Group client', hooks.includes('fetchGroupDetail'));
 check('hosted Challenges go through the shared Challenge client', hooks.includes('listGroupChallengesV2'));
 check('join from Home goes through the shared Group client', hooks.includes('joinGroup'));
 check('no groups hook invents an inline Group read path',
-  !/\/v1\/groups(\?|'|"|\s*`)/.test(
+  !/\/api\/groups(\?|'|"|\s*`)/.test(
     hooks.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((line) => {
       const idx = line.indexOf('//');
       return idx < 0 ? line : line.slice(0, idx);
@@ -136,7 +139,8 @@ function objectAfter(source: string, marker: string): string {
 }
 
 const createBody = objectAfter(groupsApi, 'body: {');
-check('client posts to POST /v1/groups', /['"]\/v1\/groups['"]/.test(groupsApi) && groupsApi.includes("method: 'POST'"));
+check('client posts to POST /api/groups',
+  groupsApi.includes('API_PREFIX') && groupsApi.includes('${API_PREFIX}/groups') && groupsApi.includes("method: 'POST'"));
 check('create body carries only identity + governed setup + richer identity (S4a/CORR-001)',
   createBody.includes('name,') && createBody.includes('description')
   && createBody.includes('isPrivate') && createBody.includes('requireAdminApproval')

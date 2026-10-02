@@ -1,4 +1,4 @@
-import { apiFetch } from './apiClient';
+import { API_PREFIX, apiFetch } from './apiClient';
 
 export interface GroupIdentityMapping {
   /** Transitional Firestore document id (lookup key only, never a domain id). */
@@ -26,7 +26,7 @@ function buildQuery(legacyIds: string[], uuids: string[]): string {
   const params = new URLSearchParams();
   for (const legacyId of legacyIds) params.append('legacyId', legacyId);
   for (const uuid of uuids) params.append('id', uuid);
-  return `/v1/compat/group-ids?${params.toString()}`;
+  return `${API_PREFIX}/compat/group-ids?${params.toString()}`;
 }
 
 async function fetchUncached(legacyIds: string[], uuids: string[]): Promise<void> {

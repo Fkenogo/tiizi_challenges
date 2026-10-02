@@ -34,7 +34,7 @@ function toDatetimeLocalValue(date: Date): string {
  * S3b — Challenge activity logging (CORR-001, as amended by CORR-002).
  *
  * Binds the existing governed activity-application seam
- * (`POST /v1/challenges/:id/activity`) to the V2 Challenge detail.
+ * (`POST /api/challenges/:id/activity`) to the V2 Challenge detail.
  *
  * CORR-001 corrections (preserved):
  * - The S3b payload NEVER sends a client-derived `occurred_day`; the

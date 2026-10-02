@@ -7,10 +7,10 @@
  * - governed values persist to PostgreSQL on creation;
  * - unknown cover ids, overlong strings, oversized arrays and mistyped
  *   fields fail closed with 400 (never persisted, never shadowed);
- * - `GET /v1/groups/:groupId` exposes them on the member projection and
+ * - `GET /api/groups/:groupId` exposes them on the member projection and
  *   the pre-join-appropriate subset on the discoverable projection (rules
  *   stay member-only);
- * - `GET /v1/memberships/me` exposes the card set (cover/tagline/location/
+ * - `GET /api/memberships/me` exposes the card set (cover/tagline/location/
  *   focusTags) with legacy-tolerant defaults;
  * - pre-extension rows with empty optional fields read with honest defaults;
  * - join leaves the richer Group fields intact.
@@ -54,7 +54,7 @@ describe('corr-001 richer identity persists and validates', () => {
       rules: ['Encourage every pace.'],
       coverId: 'cover-3',
     };
-    const created = await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders('t-corr'), payload });
+    const created = await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('t-corr'), payload });
     expect(created.statusCode).toBe(201);
     const createdBody = created.json() as { id: string; legacyId: string };
     const group = await db.query<{ cover_id: string; tagline: string; location: string; focus_tags: string[]; rules: string[]; goal_ids: string[]; custom_goal: string; community_norm_ids: string[]; custom_community_norm: string }>(
@@ -62,16 +62,16 @@ describe('corr-001 richer identity persists and validates', () => {
     );
     expect(group.rows[0]).toMatchObject({ cover_id: payload.coverId, tagline: payload.tagline, location: payload.location, focus_tags: payload.focusTags, rules: payload.rules, goal_ids: payload.goalIds, custom_goal: payload.customGoal, community_norm_ids: payload.communityNormIds, custom_community_norm: payload.customCommunityNorm });
 
-    const detail = await app.inject({ method: 'GET', url: `/v1/groups/${createdBody.id}`, headers: authHeaders('t-corr') });
+    const detail = await app.inject({ method: 'GET', url: `/api/groups/${createdBody.id}`, headers: authHeaders('t-corr') });
     expect(detail.statusCode).toBe(200);
     expect(detail.json()).toMatchObject({ ...payload, viewerRelationship: 'steward' });
 
-    const options = await app.inject({ method: 'GET', url: '/v1/groups/options', headers: authHeaders('t-corr') });
+    const options = await app.inject({ method: 'GET', url: '/api/groups/options', headers: authHeaders('t-corr') });
     expect(options.statusCode).toBe(200);
     expect(options.json().goals).toContainEqual({ id: 'build_strength', label: 'Build strength' });
     expect(options.json().communityNorms).toContainEqual({ id: 'log_honestly', label: 'Log Activities honestly.' });
 
-    const mine = await app.inject({ method: 'GET', url: '/v1/memberships/me', headers: authHeaders('t-corr') });
+    const mine = await app.inject({ method: 'GET', url: '/api/memberships/me', headers: authHeaders('t-corr') });
     expect(mine.statusCode).toBe(200);
     const groups = (mine.json() as { memberships: Array<{ group: Record<string, unknown> }> }).memberships;
     expect(groups).toHaveLength(1);
@@ -106,7 +106,7 @@ describe('corr-001 richer identity persists and validates', () => {
       { name: 'Mistyped tags', focusTags: 'Running' },
     ];
     for (const payload of cases) {
-      const res = await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders('t-corr'), payload });
+      const res = await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('t-corr'), payload });
       expect(res.statusCode).toBe(400);
     }
     const persisted = await db.query(`SELECT COUNT(*)::int AS n FROM groups`);
@@ -123,15 +123,15 @@ describe('corr-001 richer identity persists and validates', () => {
       { 't-o': ownerSub, 't-x': outSub },
       {},
     );
-    const created = (await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders('t-o'), payload: { name: 'Legacy Shaped' } })).json() as { id: string; legacyId: string };
+    const created = (await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('t-o'), payload: { name: 'Legacy Shaped' } })).json() as { id: string; legacyId: string };
     // Simulate a pre-extension PostgreSQL row with no optional values.
     await db.query(`UPDATE groups SET cover_id=NULL, tagline='', location='', focus_tags='{}', rules='{}' WHERE group_id=$1`, [created.id]);
-    const full = await app.inject({ method: 'GET', url: `/v1/groups/${created.id}`, headers: authHeaders('t-o') });
+    const full = await app.inject({ method: 'GET', url: `/api/groups/${created.id}`, headers: authHeaders('t-o') });
     expect(full.statusCode).toBe(200);
     expect(full.json()).toMatchObject({
       coverId: null, tagline: '', location: '', focusTags: [], rules: [],
     });
-    const subset = await app.inject({ method: 'GET', url: `/v1/groups/${created.id}`, headers: authHeaders('t-x') });
+    const subset = await app.inject({ method: 'GET', url: `/api/groups/${created.id}`, headers: authHeaders('t-x') });
     expect(subset.statusCode).toBe(200);
     expect(subset.json()).toMatchObject({
       coverId: null, tagline: '', location: '', focusTags: [], rules: null,
@@ -149,10 +149,10 @@ describe('corr-001 richer identity persists and validates', () => {
       {},
     );
     const created = (await app.inject({
-      method: 'POST', url: '/v1/groups', headers: authHeaders('t-o'),
+      method: 'POST', url: '/api/groups', headers: authHeaders('t-o'),
       payload: { name: 'Sync Group', coverId: 'cover-5', tagline: 'Kept.', focusTags: ['Mobility & Flexibility'] },
     })).json() as { id: string };
-    const join = await app.inject({ method: 'POST', url: `/v1/groups/${created.id}/join`, headers: authHeaders('t-j'), payload: {} });
+    const join = await app.inject({ method: 'POST', url: `/api/groups/${created.id}/join`, headers: authHeaders('t-j'), payload: {} });
     expect(join.statusCode).toBe(200);
     const persisted = await db.query<{ cover_id: string | null; tagline: string }>(
       `SELECT cover_id, tagline FROM groups WHERE group_id = $1`, [created.id],

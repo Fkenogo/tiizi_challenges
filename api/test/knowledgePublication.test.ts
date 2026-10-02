@@ -369,7 +369,7 @@ describe('PKG-2A publication readiness', () => {
     // Asking for published at creation with incomplete content → 422, nothing stored as published.
     const direct = await app.inject({
       method: 'POST',
-      url: '/v1/admin/knowledge',
+      url: '/api/admin/knowledge',
       headers,
       payload: { ...baseFitness({ contentClasses: ['T'] }), lifecycle: 'published' },
     });
@@ -381,7 +381,7 @@ describe('PKG-2A publication readiness', () => {
     // without content, and no silent publish).
     const created = await app.inject({
       method: 'POST',
-      url: '/v1/admin/knowledge',
+      url: '/api/admin/knowledge',
       headers,
       payload: baseFitness({ contentClasses: ['T'] }),
     });
@@ -390,14 +390,14 @@ describe('PKG-2A publication readiness', () => {
     expect(createdBody.lifecycle).toBe('draft');
     const publish = await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${createdBody.id}/publish`,
+      url: `/api/admin/knowledge/${createdBody.id}/publish`,
       headers: authHeaders('adm'),
     });
     expect(publish.statusCode).toBe(422);
     // Locale on a missing item → 404, not a bypass vector.
     const missing = await app.inject({
       method: 'PUT',
-      url: '/v1/admin/knowledge/00000000-0000-0000-0000-000000000000/texts',
+      url: '/api/admin/knowledge/00000000-0000-0000-0000-000000000000/texts',
       headers,
       payload: { locale: 'fr', field: 'description', value: 'x' },
     });

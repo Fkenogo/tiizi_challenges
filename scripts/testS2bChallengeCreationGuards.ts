@@ -13,7 +13,7 @@
  *   appear only where the governed Activity requires them;
  * - creator participation is explicit and never automatic;
  * - preview and establishment go through the server authorities
- *   (POST /v1/challenge-definitions/preview, POST /v1/challenges) — no
+ *   (POST /api/challenge-definitions/preview, POST /api/challenges) — no
  *   semantic rules are duplicated client-side and no direct Challenge write
  *   exists in the V2 experience;
  * - governed denials map to clear member-facing copy;
@@ -153,7 +153,8 @@ const wizardSource = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
 check('host picker binds the member real memberships', wizardSource.includes('useV2Memberships'));
 check('no hardcoded Group list in the wizard', !/Nairobi Morning Movers|INITIAL_GROUPS|mockGroups/.test(wizardSource));
 const membershipsApi = read('src/api/membershipsApi.ts');
-check('memberships come from GET /v1/memberships/me', membershipsApi.includes('/v1/memberships/me'));
+check('memberships come from GET /api/memberships/me',
+  membershipsApi.includes('API_PREFIX') && membershipsApi.includes('${API_PREFIX}/memberships/me'));
 check('host results stay hidden until the user searches', wizardSource.includes("search.trim() !== '' && <ul aria-label=\"Matching host Groups\""));
 check('host results keep the governed challenge-creation eligibility filter', wizardSource.includes("membership.group.allowMemberChallenges !== false") && wizardSource.includes("['owner', 'admin', 'steward']"));
 check('host selector uses the shared Group cover catalogue renderer', wizardSource.includes('coverFor(membership.group.coverId, membership.groupId)') && wizardSource.includes('coverGradientFor'));
@@ -163,7 +164,8 @@ check('host selection retains canonical membership groupId and selected state', 
 console.log('catalogue boundary');
 const apiSource = read('src/api/challengeCreationApi.ts');
 check('catalogue requests composerSelectable=true', apiSource.includes("composerSelectable: 'true'"));
-check('catalogue calls GET /v1/knowledge', apiSource.includes('/v1/knowledge?'));
+check('catalogue calls GET /api/knowledge',
+  apiSource.includes('API_PREFIX') && apiSource.includes('${API_PREFIX}/knowledge?'));
 check('wizard uses the composer catalogue hook', wizardSource.includes('useComposerCatalogue'));
 
 // ─── Options binding + progressive disclosure ───────────────────────────────
@@ -241,7 +243,8 @@ check('wizard copystates the explicit choice', wizardSource.includes('Will you t
 // ─── Server preview / no duplicated semantics ───────────────────────────────
 console.log('server preview + single semantic authority');
 check('wizard uses the S2a preview seam', wizardSource.includes('previewChallengeDefinition'));
-check('preview endpoint is the governed seam', apiSource.includes('/v1/challenge-definitions/preview'));
+check('preview endpoint is the governed seam',
+  apiSource.includes('API_PREFIX') && apiSource.includes('${API_PREFIX}/challenge-definitions/preview'));
 const draftModule = read('src/v2/challenges/challengeCreationDraft.ts');
 check('no PF-03 rule duplication (no governed metric vocabulary table client-side)',
   !/CANONICAL_METRICS|isCanonicalMetric|unit_metric_mismatch|missing_required_components/.test(draftModule));
@@ -259,7 +262,8 @@ check('member-facing preview copy strips internal tokens', (() => {
 
 // ─── Establishment path ─────────────────────────────────────────────────────
 console.log('establishment');
-check('establishment posts to /v1/challenges', apiSource.includes("'/v1/challenges'"));
+check('establishment posts to /api/challenges',
+  apiSource.includes('API_PREFIX') && apiSource.includes('${API_PREFIX}/challenges'));
 check('establishment body carries the governed fields', (() => {
   const body = toEstablishmentBody(baseState({ challengeType: 'streak', durationDays: 7 }), { activate: false, joinCreator: false, idempotencyKey: 'k' });
   return body.group_id === GROUP_ID && body.challenge_type === 'streak'
@@ -293,8 +297,8 @@ check('created screen shows participation state', /myParticipation/.test(created
 check('created screen renders persisted detail progress (measurement config no longer duplicated)',
   /V2ProgressSection/.test(createdSource) && !/MeasurementSummary/.test(createdSource));
 const hooksSource = read('src/v2/challenges/useChallengeCreation.ts');
-check('detail hook uses GET /v1/challenges/:id client', hooksSource.includes('getChallengeV2'));
-check('list hook uses GET /v1/challenges client', hooksSource.includes('listChallengesV2'));
+check('detail hook uses GET /api/challenges/:id client', hooksSource.includes('getChallengeV2'));
+check('list hook uses GET /api/challenges client', hooksSource.includes('listChallengesV2'));
 check('list invalidated after creation', hooksSource.includes("['v2-challenge-list']")
   // S3a canonical cache contract: the same scope via the shared constant.
   || hooksSource.includes('V2_CHALLENGE_LIST_SCOPE'));

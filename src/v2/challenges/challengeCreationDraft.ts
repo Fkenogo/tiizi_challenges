@@ -6,8 +6,8 @@
  * It carries NO semantic validation: "is this step filled in enough to move
  * on?" is deliberately a UX completeness question (client draft gating), and
  * final validity belongs ONLY to the server seam
- * (POST /v1/challenge-definitions/preview → PF-03) and establishment
- * (POST /v1/challenges). Duplicating PF-03 rules here would create a second
+ * (POST /api/challenge-definitions/preview → PF-03) and establishment
+ * (POST /api/challenges). Duplicating PF-03 rules here would create a second
  * authority — it does not exist in this file.
  *
  * Human-facing terminology (Together / Race / Streak) maps to the canonical
@@ -530,7 +530,7 @@ export interface EstablishOptions {
   idempotencyKey?: string;
 }
 
-/** Visible Wizard state → governed establishment body (POST /v1/challenges). */
+/** Visible Wizard state → governed establishment body (POST /api/challenges). */
 export function toEstablishmentBody(
   state: WizardState,
   options: EstablishOptions,
