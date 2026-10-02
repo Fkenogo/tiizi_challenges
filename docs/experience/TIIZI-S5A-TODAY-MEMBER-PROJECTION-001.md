@@ -1,6 +1,6 @@
 # TIIZI-S5a — Today Member Projection / Read Model 001
 
-**Status:** IMPLEMENTED CANDIDATE / RECONCILED / AWAITING FOUNDER REVIEW. S5b is NOT STARTED.
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED (TIIZI-S5A-FOUNDER-ACCEPTANCE-AND-CLOSURE-001). S5b is NOT STARTED.
 
 **Authoritative base (reconciled):** post-V1-Exclusion-Pass-001 `origin/main` @ `5d556e129defcf174ff1060dced577b5ebfc1df3`. The original implementation base was `6866e325aeb64b12d17748b4638cd500028f86ee`.
 
@@ -120,3 +120,37 @@ with own contribution; Race own progress only; no invented live ranking; no reco
 scoring; `joinability: "not_asserted"` where authority does not establish it; countdown omitted
 while boundary equivalence remains unproven; no Feed, invitations, notifications, Recognition
 inference, payment execution, Cause task, scheduler authority, or Today UI.
+
+## 9. Founder acceptance and closure
+
+**Founder disposition: S5a Today Member Projection is APPROVED.** The reconciled implementation was accepted
+and merged.
+
+| Item | Value |
+| --- | --- |
+| Reviewed head | `eb803bce90e823dcc613e66c491e4e8bed36f4fc` |
+| Pre-merge `main` | `5d556e129defcf174ff1060dced577b5ebfc1df3` |
+| Merge commit | `12ab7654632d8ce45c3a95fcf7e21b3e5afed6d2` (normal merge commit) |
+| Merge path | normal merge — no squash, no rebase-merge, no force, no protection bypass |
+| Ancestry | reviewed head verified ancestor of resulting `main` |
+| Repository CI (reviewed head) | api, api contract (/api namespace), api image, boundary (V1 exclusion + API namespace), functions, web — **all green** |
+| External check | Cloudflare Workers Builds — fail, **non-gating under FD-S3-005** |
+| Deployment | none |
+
+Accepted on merge, unchanged from the reconciled candidate:
+
+- `GET /api/today` is the canonical Today member projection, registered through the canonical `API_PREFIX`
+  namespace introduced by V1 Exclusion Pass 001.
+- There is no `/v1` Today endpoint and no `/v1` compatibility alias, redirect, proxy or fallback.
+- The permanent V1 exclusion boundary is preserved and enforced in CI.
+- The Challenge detail path is the current V2 route `/v2/challenges/:id`.
+- Existing Product Truth authorities are preserved: authenticated member scoping; server-authoritative
+  `governingToday`; authoritative Streak state; Together shared totals with own contribution; Race own progress
+  only; no invented live ranking; no recommendation scoring; `joinability: "not_asserted"` where authority does
+  not establish it.
+- Countdown remains omitted while governing-day boundary equivalence remains unproven.
+- No Feed, invitation, notification, Recognition, payment, Cause or scheduler authority, and no Today UI.
+
+Explicitly not started or not implemented: **S5b — Today Experience Assembly (NOT STARTED)**;
+**S5c — Founder Preview (NOT STARTED)**; **Group Feed (NOT IMPLEMENTED — deferred to its separate follow-up)**;
+**V1 Pass 002 (NOT STARTED)**.
