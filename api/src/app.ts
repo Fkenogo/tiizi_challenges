@@ -11,6 +11,7 @@ import {
   type ChallengeActivityRouteDeps,
 } from './challengeActivityRoutes.js';
 import { registerChallengeReadRoutes } from './challengeReads.js';
+import { registerTodayRoutes } from './today.js';
 import { registerGroupReadRoutes } from './groupReads.js';
 import {
   registerParticipationRoutes,
@@ -121,6 +122,7 @@ export function buildApp(deps: AppDeps) {
     ...(deps.challengeActivity ?? {}),
     groupStore: groupReadStore,
   });
+  registerTodayRoutes(app, deps.db, deps.challengeActivity ?? {});
   // S4a governed Group detail read (Group Home). Same live store seam as
   // the governed mutations; absent store fails closed per-route.
   registerGroupReadRoutes(app, deps.db, { store: groupReadStore });
