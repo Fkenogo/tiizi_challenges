@@ -131,6 +131,26 @@ export function progressPercent(value: number, target: number | null): number {
   return Math.min(100, Math.max(0, Math.round((value / target) * 100)));
 }
 
+/**
+ * Initial presentation limit for growing Today sections (Your Challenges, In
+ * your Groups, Coming up). Today stays a concise action-oriented home as
+ * membership grows: the first two served items render, the rest wait behind
+ * an explicit View more affordance. `Do today` is deliberately NOT limited —
+ * required actions are never hidden to shorten the screen.
+ */
+export const TODAY_SECTION_LIMIT = 2;
+
+/**
+ * The items one growing section presents for local expansion state.
+ * Presentation only: `slice` preserves the server-provided order exactly,
+ * nothing is re-sorted, filtered, counted, or derived. The caller renders the
+ * returned prefix and offers View more / Show less around it.
+ */
+export function visibleSectionItems<T>(items: readonly T[], expanded: boolean): T[] {
+  if (expanded) return [...items];
+  return items.slice(0, TODAY_SECTION_LIMIT);
+}
+
 /** Together progress line: shared total against the shared goal. */
 export function togetherSummary(challenge: Extract<V2TodayJoinedChallenge, { challengeType: 'collective' }>): string {
   const { groupTotal, target, unit } = challenge.progress;

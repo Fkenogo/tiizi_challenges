@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
 import type {
@@ -25,8 +26,10 @@ import {
   progressPercent,
   raceActivitySummary,
   requirementProgress,
+  TODAY_SECTION_LIMIT,
   togetherSummary,
   upcomingSummary,
+  visibleSectionItems,
 } from './todayView';
 
 /**
@@ -54,6 +57,12 @@ export function V2TodayScreen() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const today = useV2Today();
+  // Progressive disclosure is local presentation state only: each growing
+  // section initially presents the first TODAY_SECTION_LIMIT served items in
+  // server order, expanding inline on request. `Do today` is never limited.
+  const [showAllChallenges, setShowAllChallenges] = useState(false);
+  const [showAllOpportunities, setShowAllOpportunities] = useState(false);
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
 
   if (today.isLoading) {
     return (
@@ -115,7 +124,14 @@ export function V2TodayScreen() {
         <V2EmptyState
           title="Nothing needs you today"
           message="You have no active Challenges yet. When you join one, today's requirements and your progress will show up here."
-          action={<V2Button onClick={() => navigate('/v2/challenges')}>Find a Challenge</V2Button>}
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <V2Button onClick={() => navigate('/v2/challenges')}>Find a Challenge</V2Button>
+              <V2Button variant="secondary" onClick={() => navigate('/v2/groups')}>
+                Find a Group
+              </V2Button>
+            </div>
+          }
         />
       ) : (
         <div className="space-y-6">
@@ -137,14 +153,14 @@ export function V2TodayScreen() {
             </section>
           )}
 
-          {/* 3. Active Challenge progress. */}
+          {/* 3. Active Challenge progress (progressively disclosed). */}
           {projection.joinedChallengeProgress.length > 0 && (
             <section aria-labelledby="today-progress">
               <h2 id="today-progress" className="mb-3 text-base font-black text-slate-900">
                 Your Challenges
               </h2>
               <div className="space-y-3">
-                {projection.joinedChallengeProgress.map((challenge) => (
+                {visibleSectionItems(projection.joinedChallengeProgress, showAllChallenges).map((challenge) => (
                   <ActiveChallengeCard
                     key={challenge.challengeId}
                     challenge={challenge}
@@ -152,6 +168,12 @@ export function V2TodayScreen() {
                   />
                 ))}
               </div>
+              <SectionToggle
+                total={projection.joinedChallengeProgress.length}
+                expanded={showAllChallenges}
+                onToggle={() => setShowAllChallenges((next) => !next)}
+                label="Challenges"
+              />
             </section>
           )}
 
@@ -165,7 +187,7 @@ export function V2TodayScreen() {
                 Challenges hosted by Groups you belong to.
               </p>
               <div className="space-y-3">
-                {projection.groupChallengeOpportunities.map((opportunity) => (
+                {visibleSectionItems(projection.groupChallengeOpportunities, showAllOpportunities).map((opportunity) => (
                   <OpportunityCard
                     key={opportunity.challengeId}
                     opportunity={opportunity}
@@ -173,6 +195,12 @@ export function V2TodayScreen() {
                   />
                 ))}
               </div>
+              <SectionToggle
+                total={projection.groupChallengeOpportunities.length}
+                expanded={showAllOpportunities}
+                onToggle={() => setShowAllOpportunities((next) => !next)}
+                label="Group Challenges"
+              />
             </section>
           )}
 
@@ -183,7 +211,7 @@ export function V2TodayScreen() {
                 Coming up
               </h2>
               <div className="space-y-2">
-                {projection.upcoming.map((item) => (
+                {visibleSectionItems(projection.upcoming, showAllUpcoming).map((item) => (
                   <button
                     key={`${item.challengeId}-${item.kind}`}
                     type="button"
@@ -200,6 +228,12 @@ export function V2TodayScreen() {
                   </button>
                 ))}
               </div>
+              <SectionToggle
+                total={projection.upcoming.length}
+                expanded={showAllUpcoming}
+                onToggle={() => setShowAllUpcoming((next) => !next)}
+                label="upcoming items"
+              />
             </section>
           )}
 
@@ -455,5 +489,35 @@ function ProgressBar({ value, target }: { value: number; target: number | null }
     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100" role="presentation">
       <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
     </div>
+  );
+}
+
+/**
+ * Progressive-disclosure toggle for one growing Today section. Renders
+ * nothing when the section already fits the initial limit, so short sections
+ * never gain a redundant control. Labels state the consequence honestly from
+ * the served total — no count is invented.
+ */
+function SectionToggle({
+  total,
+  expanded,
+  onToggle,
+  label,
+}: {
+  total: number;
+  expanded: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  if (total <= TODAY_SECTION_LIMIT) return null;
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className="mt-3 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-slate-50"
+    >
+      {expanded ? `Show less ${label}` : `View more ${label} (${total - TODAY_SECTION_LIMIT} more)`}
+    </button>
   );
 }

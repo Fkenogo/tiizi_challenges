@@ -50,7 +50,7 @@ Type-specific progress presentation:
 - **Streak** — Today's requirements stay in the higher-priority Do today section; the Challenge card
   carries compact streak context only.
 
-Two presentation defects were found and fixed in the Founder preview: the pending-requirement marker
+Two presentation defects were found and fixed in the Development preview: the pending-requirement marker
 previously rendered a colour-hidden tick, and the preview identity had no display name.
 
 ## 3. Prototype decisions applied
@@ -124,7 +124,7 @@ than a synthetic history.
 ## 7. Validation
 
 - Frontend typecheck + production build — pass.
-- S5b Today guards (`npm run test:s5b-today`, 32 checks) — pass.
+- S5b Today guards (`npm run test:s5b-today`, 43 checks) — pass.
 - V2 experience boundary, V2 runtime boundary, V2 frontend guards — pass.
 - V1 exclusion boundary guard + regression fixture — pass.
 - API typecheck + build, S5a Today projection suite (5/5), `/api` namespace contract suite (59/59) — pass.
@@ -136,9 +136,14 @@ than a synthetic history.
   projection returned `finalizedResults = 0`: no finalized result was fabricated merely for preview
   coverage. The Recent Results rendering path exists and is covered at the code/guard level, but it was
   NOT visually demonstrated by the Development fixture. Static responsive-layout/source audit: PASS.
-  Live authenticated API/Today preview: PASS. Actual Founder visual verification across
-  mobile/tablet/desktop widths (including ruling out horizontal overflow or visual layout defects at
-  those widths): PENDING FOUNDER REVIEW.
+  Live authenticated API/Today preview: PASS.
+
+### Acceptance target
+
+The ordinary Tiizi member application is MOBILE-FIRST. Phone/mobile is the primary Founder
+acceptance target for the member Today experience; wider layouts remain technically responsive,
+and desktop visual verification is not an S5b acceptance gate. (Desktop is primarily relevant to
+the Platform Operator Console, whose requirements are unchanged.)
 
 ## 8. Deliberately absent
 
@@ -146,3 +151,41 @@ No Group Feed, community moments, invitation inbox, notification badge/count, re
 personalized ranking, Recognition, donation/payment CTA, Social Cause task, scheduler control, fake
 analytics, prototype review fixture, Reference Mode chrome, hardcoded countdown, V1 route, or `/app/*`
 link. No API, schema, migration, or domain-authority change. No deployment.
+
+## 9. Founder review correction 001 (bounded, presentation-only)
+
+The Founder performed a first visual/product review of the candidate and returned four bounded
+findings. No Product Truth, API contract, schema, migration, engine, authority, or namespace change
+resulted. `GET /api/today` is untouched.
+
+**Founder-observed functional evidence (recorded, not overstated):** the Founder manually verified
+Today → Challenge → Log Activity → governed activity application → return/refresh of Today → the
+previously pending requirement displayed as completed. This is evidence that the governed logging
+path works end to end from Today; it is NOT acceptance of all S5b.
+
+1. **Concise Today (progressive disclosure).** Today must stay an action-oriented home, not a
+   catalogue. `Your Challenges`, `In your Groups`, and `Coming up` now initially present the first
+   two served items in exact server order behind an accessible View more / Show less toggle
+   (`visibleSectionItems()` in `todayView.ts`; expansion is local presentation state only; no API
+   pagination, no reordering, no recomputed counts). `Do today` is deliberately never limited —
+   required actions are never hidden to shorten the screen.
+2. **New-member zero state.** Verified against the live server: a legitimate member with no
+   participation returns `requiredToday = 0, joined = 0, opportunities = 0, upcoming = 0,
+   finalized = 0`, and Today renders the product zero state ("Nothing needs you today"). The
+   primary CTA remains Find a Challenge (`/v2/challenges`, the governed Challenge browse surface);
+   a secondary Find a Group action leads to `/v2/groups`, which exposes the governed My Groups /
+   Discover browse modes. No route was invented. A repeatable local method reviews the empty state
+   without disturbing the populated scenario: `npm run preview:s5b:empty` ensures the
+   `newmember@tiizi.local` identity (Auth emulator + member row only; zero fixtures), while
+   `npm run preview:s5b:seed` keeps the populated `amara@tiizi.local` scenario.
+3. **Activity logging phone layout.** Functional path PASS (see evidence above); the logging sheet
+   was not phone-optimised. Root cause: the shared `V2Sheet` panel had no height containment or
+   scroll (`max-w-3xl`, fixed padding, no safe-area handling), and the logging form had no
+   long-name wrapping or viewport guards. Correction is presentation-only in the existing
+   components: the sheet panel is now height-contained (`max-h-[92dvh]`) with internal scroll,
+   phone-first padding plus safe-area inset (wider-layout padding unchanged), and the logging
+   fields wrap long names with in-viewport inputs and a full-width phone submit. The governed
+   application authority (`buildS3bActivityPayload`, idempotency, server-derived day) is unchanged;
+   no second logging path, no new fields, no schema/migration change.
+4. **Acceptance target.** Phone/mobile is the primary Founder acceptance target; desktop
+   verification is not an S5b acceptance gate (see §7).

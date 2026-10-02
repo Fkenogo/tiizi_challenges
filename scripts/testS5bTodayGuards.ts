@@ -15,7 +15,13 @@
  *      (`joinability: 'not_asserted'`);
  *   E. the screen consumes only the `/api` namespace and only V2 routes, and
  *      the placeholder engineering copy is gone;
- *   F. the screen renders no deferred/unsupported capability.
+ *   F. the screen renders no deferred/unsupported capability;
+ *   G. growing sections stay concise (first two served items, server order
+ *      preserved) behind an accessible View more / Show less toggle, while
+ *      Do today is never limited;
+ *   H. the shared activity-logging sheet stays phone-safe (presentation only;
+ *      the governed application authority is untouched);
+ *   I. the zero state offers governed Challenge and Group discovery.
  */
 import { readFileSync } from 'node:fs';
 import {
@@ -31,7 +37,9 @@ import {
   requirementProgress,
   serverHour,
   togetherSummary,
+  TODAY_SECTION_LIMIT,
   upcomingSummary,
+  visibleSectionItems,
 } from '../src/v2/today/todayView.js';
 import type {
   V2TodayJoinedChallenge,
@@ -325,6 +333,81 @@ check(
 check(
   'F3 the Today read is member-scoped and disabled until signed in',
   hook.includes('useAuth') && hook.includes('enabled: !!user') && hook.includes('v2TodayKey(user?.uid)'),
+);
+
+// ---------------------------------------------------------------------------
+// G. Progressive disclosure: concise sections, server order preserved
+// ---------------------------------------------------------------------------
+
+check(
+  'G1 the initial presentation limit is two items per growing section',
+  TODAY_SECTION_LIMIT === 2,
+);
+check(
+  'G2 a collapsed section presents the first two served items in server order',
+  JSON.stringify(visibleSectionItems(['a', 'b', 'c', 'd'], false)) === JSON.stringify(['a', 'b']),
+);
+check(
+  'G3 an expanded section exposes every served item in server order',
+  JSON.stringify(visibleSectionItems(['a', 'b', 'c', 'd'], true)) === JSON.stringify(['a', 'b', 'c', 'd']),
+);
+check(
+  'G4 short sections render whole with no redundant toggle state',
+  visibleSectionItems(['a'], false).length === 1
+    && visibleSectionItems([], false).length === 0
+    && visibleSectionItems(['a', 'b'], false).length === 2,
+);
+check(
+  'G5 the screen limits only the growing sections through the shared helper, never Do today',
+  screen.includes('visibleSectionItems(projection.joinedChallengeProgress')
+    && screen.includes('visibleSectionItems(projection.groupChallengeOpportunities')
+    && screen.includes('visibleSectionItems(projection.upcoming')
+    && screen.includes('projection.requiredToday.map')
+    && !/visibleSectionItems\(projection\.requiredToday/.test(screen),
+);
+check(
+  'G6 View more / Show less is an accessible inline toggle with honest counts',
+  screen.includes('aria-expanded={expanded}')
+    && screen.includes('View more')
+    && screen.includes('Show less')
+    && !/\.sort\(/.test(screen)
+    && !/\.reverse\(\)/.test(screen),
+);
+
+// ---------------------------------------------------------------------------
+// H. Activity logging sheet stays phone-safe (presentation only)
+// ---------------------------------------------------------------------------
+
+const primitives = code(read('src/v2/components/V2Primitives.tsx'));
+const loggingSection = code(read('src/v2/challenges/V2LoggingSection.tsx'));
+
+check(
+  'H1 the shared sheet constrains panel height and scrolls instead of overflowing',
+  primitives.includes('max-h-[') && primitives.includes('overflow-y-auto'),
+);
+check(
+  'H2 the sheet respects the phone safe area and phone-first padding',
+  primitives.includes('safe-area-inset-bottom') && primitives.includes('sm:p-5'),
+);
+check(
+  'H3 the logging form wraps long activity names and keeps inputs in-viewport',
+  loggingSection.includes('break-words') && loggingSection.includes('max-w-full'),
+);
+check(
+  'H4 the logging authority path is untouched by the presentation correction',
+  loggingSection.includes('buildS3bActivityPayload')
+    && loggingSection.includes('useLogActivityV2')
+    && loggingSection.includes('deriveSubmitKey'),
+);
+
+// ---------------------------------------------------------------------------
+// I. Zero state offers governed discovery (Challenge + Group)
+// ---------------------------------------------------------------------------
+
+check(
+  'I1 the zero state keeps Find a Challenge and adds Find a Group on real routes',
+  screen.includes("navigate('/v2/challenges')") && screen.includes("navigate('/v2/groups')")
+    && screen.includes('Find a Challenge') && screen.includes('Find a Group'),
 );
 
 if (failures > 0) {
