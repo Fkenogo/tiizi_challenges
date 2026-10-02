@@ -1,7 +1,7 @@
 # Challenge Social Cause Operator Approval Assembly 001
 
 Status: **Functionally accepted, subject to Founder preview inspection; Challenge Founder Experience Review 001 remains OPEN. Current operating model is recorded in TIIZI-PLATFORM-OPERATOR-CONSOLE-BASELINE-001.**
-Starting candidate: `545c985989bf7e91bf805c98087d574a69da28b1`  
+Starting candidate: `545c985989bf7e91bf805c98087d574a69da28b1`<br>
 Branch: `impl/tiizi-challenge-founder-experience-review-001`
 
 ## Existing authority and lifecycle evidence

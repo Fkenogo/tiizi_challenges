@@ -1,7 +1,7 @@
 # TIIZI Challenge Founder Experience Review 001 — Correction 003
 
-Status: **Founder-directed candidate; Review 001 remains OPEN**  
-Base: `7991c3354209c95ed96b1cb3ff20df0a91ecf662`  
+Status: **Founder-directed candidate; Review 001 remains OPEN**<br>
+Base: `7991c3354209c95ed96b1cb3ff20df0a91ecf662`<br>
 Branch: `impl/tiizi-challenge-founder-experience-review-001`
 
 This correction binds the latest Founder preview direction to the existing
