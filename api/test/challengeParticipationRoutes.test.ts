@@ -120,13 +120,13 @@ function appFor(subject: string, authority: GroupMembershipAuthority) {
 
 const UNKNOWN_UUID = '00000000-0000-4000-8000-000000000000';
 
-describe('POST /v1/challenges/:challengeId/join', () => {
+describe('POST /api/challenges/:challengeId/join', () => {
   it('opens a participation episode on the current config version', async () => {
     const fx = await setupJoinableChallenge('c3b-join-ok');
     const app = appFor(fx.subject, stubAuthority(true));
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${fx.challengeId}/join`,
+      url: `/api/challenges/${fx.challengeId}/join`,
       headers: authHeaders('token-c3b'),
     });
     expect(response.statusCode).toBe(200);
@@ -148,8 +148,8 @@ describe('POST /v1/challenges/:challengeId/join', () => {
     const fx = await setupJoinableChallenge('c3b-join-dup');
     const app = appFor(fx.subject, stubAuthority(true));
     const headers = authHeaders('token-c3b');
-    expect((await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers })).statusCode).toBe(200);
-    const second = await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers });
+    expect((await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers })).statusCode).toBe(200);
+    const second = await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers });
     expect(second.statusCode).toBe(409);
     expect((second.json() as { error: { code: string } }).error.code).toBe('participation_exists');
   });
@@ -159,7 +159,7 @@ describe('POST /v1/challenges/:challengeId/join', () => {
     const app = appFor(fx.subject, stubAuthority(true));
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${UNKNOWN_UUID}/join`,
+      url: `/api/challenges/${UNKNOWN_UUID}/join`,
       headers: authHeaders('token-c3b'),
     });
     expect(response.statusCode).toBe(404);
@@ -170,7 +170,7 @@ describe('POST /v1/challenges/:challengeId/join', () => {
     const app = appFor(fx.subject, stubAuthority(true));
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${fx.challengeId}/join`,
+      url: `/api/challenges/${fx.challengeId}/join`,
       headers: authHeaders('token-c3b'),
     });
     expect(response.statusCode).toBe(422);
@@ -188,7 +188,7 @@ describe('POST /v1/challenges/:challengeId/join', () => {
     const app = appFor(fx.subject, stubAuthority(false));
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${fx.challengeId}/join`,
+      url: `/api/challenges/${fx.challengeId}/join`,
       headers: authHeaders('token-c3b'),
     });
     expect(response.statusCode).toBe(403);
@@ -199,7 +199,7 @@ describe('POST /v1/challenges/:challengeId/join', () => {
     const app = appFor(fx.subject, stubAuthority(true, { throwError: 'firestore down' }));
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${fx.challengeId}/join`,
+      url: `/api/challenges/${fx.challengeId}/join`,
       headers: authHeaders('token-c3b'),
     });
     expect(response.statusCode).toBe(503);
@@ -208,19 +208,19 @@ describe('POST /v1/challenges/:challengeId/join', () => {
   it('requires authentication', async () => {
     const fx = await setupJoinableChallenge('c3b-join-401');
     const app = appFor(fx.subject, stubAuthority(true));
-    const response = await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join` });
+    const response = await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join` });
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe('POST /v1/challenges/:challengeId/withdraw', () => {
+describe('POST /api/challenges/:challengeId/withdraw', () => {
   it('closes the caller episode and preserves the historical row', async () => {
     const db = testDb();
     const fx = await setupJoinableChallenge('c3b-wd-ok');
     const app = appFor(fx.subject, stubAuthority(true));
     const headers = authHeaders('token-c3b');
-    await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers });
-    const response = await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/withdraw`, headers });
+    await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers });
+    const response = await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/withdraw`, headers });
     expect(response.statusCode).toBe(200);
     const body = response.json() as { status: string; exitedAt: string | null; exitReason: string | null };
     expect(body.status).toBe('withdrawn');
@@ -237,8 +237,8 @@ describe('POST /v1/challenges/:challengeId/withdraw', () => {
     const fx = await setupJoinableChallenge('c3b-wd-404');
     const app = appFor(fx.subject, stubAuthority(true));
     const headers = authHeaders('token-c3b');
-    const joinUrl = `/v1/challenges/${fx.challengeId}/join`;
-    const withdrawUrl = `/v1/challenges/${fx.challengeId}/withdraw`;
+    const joinUrl = `/api/challenges/${fx.challengeId}/join`;
+    const withdrawUrl = `/api/challenges/${fx.challengeId}/withdraw`;
     expect((await app.inject({ method: 'POST', url: withdrawUrl, headers })).statusCode).toBe(404);
     await app.inject({ method: 'POST', url: joinUrl, headers });
     expect((await app.inject({ method: 'POST', url: withdrawUrl, headers })).statusCode).toBe(200);
@@ -251,12 +251,12 @@ describe('POST /v1/challenges/:challengeId/withdraw', () => {
     expect(
       (await app.inject({
         method: 'POST',
-        url: `/v1/challenges/${UNKNOWN_UUID}/withdraw`,
+        url: `/api/challenges/${UNKNOWN_UUID}/withdraw`,
         headers: authHeaders('token-c3b'),
       })).statusCode,
     ).toBe(404);
     expect(
-      (await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/withdraw` })).statusCode,
+      (await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/withdraw` })).statusCode,
     ).toBe(401);
   });
 });

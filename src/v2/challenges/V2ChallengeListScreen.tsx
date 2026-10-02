@@ -16,7 +16,7 @@ const INITIAL_RESULTS = 8;
 /**
  * S2b — V2 Challenges entry point.
  *
- * Real read binding to GET /v1/challenges (persisted V2 truth) with loading,
+ * Real read binding to GET /api/challenges (persisted V2 truth) with loading,
  * empty and populated states, and the Create Challenge action that starts the
  * V2 creation journey. Deliberately NOT full S3 discovery/detail/results.
  *

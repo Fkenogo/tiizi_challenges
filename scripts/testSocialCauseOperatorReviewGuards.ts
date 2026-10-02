@@ -17,7 +17,7 @@ const pages = read('src/v2/operator/operatorPages.tsx');
 const checks: Array<[string, boolean]> = [
   ['runtime wires the scoped Postgres Cause-review authority', runtime.includes('createPostgresSocialCauseReviewerAuthority(db)')],
   ['authority is explicit, revocable, and not inferred from Group roles', provider.includes('platform_operator_cause_reviewers') && provider.includes('revoked_at IS NULL')],
-  ['pending queue and detail require Operator authority before reading', /app\.get\('\/v1\/operator\/social-causes\/pending',[\s\S]*?requireOperator[\s\S]*?db\.query/.test(route) && /app\.get\('\/v1\/operator\/social-causes\/:challengeId',[\s\S]*?requireOperator[\s\S]*?db\.query/.test(route)],
+  ['pending queue and detail require Operator authority before reading', /app\.get\('\/api\/operator\/social-causes\/pending',[\s\S]*?requireOperator[\s\S]*?db\.query/.test(route) && /app\.get\('\/api\/operator\/social-causes\/:challengeId',[\s\S]*?requireOperator[\s\S]*?db\.query/.test(route)],
   ['approval decision rejects Challenge creator self-review', route.includes('cause_creator_cannot_decide')],
   ['decision reason, authority, and timestamp use the existing audit store', route.includes('challenge_social_cause_decisions') && route.includes('decision_reason=$4')],
   ['review UI is wired into the existing Operator Review route', routes.includes('<Route path="review" element={<SocialCauseReviewPage />} />')],
@@ -33,7 +33,7 @@ const checks: Array<[string, boolean]> = [
   ['Cause detail includes existing Challenge and Support Tiizi context without payment execution', route.includes('support_tiizi_enabled AS "supportTiiziEnabled"') && screen.includes('Support Tiizi') && screen.includes('does not handle payments')],
   ['authority migration is narrowly scoped to Cause review', migration.includes('platform_operator_cause_reviewers') && !/CREATE TABLE[^;]*operator_roles/i.test(migration)],
   ['Console read API requires an explicit active, separately scoped roster grant', consoleRoutes.includes('canReadOperatorConsole') && consoleRoutes.includes('reply.code(403)') && consoleMigration.includes('platform_operator_console_readers') && consoleMigration.includes('no rows')],
-  ['Console read endpoints expose directory, Challenge, Support, locale, access, health and audit projections', ['members', 'groups', 'activities', 'challenges', 'support', 'localisation', 'access', 'health', 'audit'].every((part) => consoleRoutes.includes(`/v1/operator/console/${part}`))],
+  ['Console read endpoints expose directory, Challenge, Support, locale, access, health and audit projections', ['members', 'groups', 'activities', 'challenges', 'support', 'localisation', 'access', 'health', 'audit'].every((part) => consoleRoutes.includes(`/api/operator/console/${part}`))],
   ['operator data views are read-only and unsupported Templates/Settings remain bounded', pages.includes('fetchOperatorMembers') && pages.includes('fetchOperatorChallenges') && pages.includes('This capability is not available in the current Product Truth') && pages.includes('separate Firestore') && pages.includes('No authoritative Platform Operator settings model')],
 ];
 let failures = 0;

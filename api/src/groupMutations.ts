@@ -48,7 +48,13 @@
  */
 
 import type { Db } from './db.js';
-import { isGroupDocActive } from './firestoreGroupAuthority.js';
+// Provider-neutral Group liveness predicate. This module must NOT reach the
+// legacy Firestore authority adapter: the predicate lives in the neutral
+// `groupLiveness.ts` module and is imported from there by the PostgreSQL
+// authority and the governed read paths too. Reaching into
+// `firestoreGroupAuthority.ts` for a duplicate would put a legacy Firestore
+// authority module inside the active API module graph (boundary guard check 2).
+import { isGroupDocActive } from './groupLiveness.js';
 import { GroupMutationError } from './groupErrors.js';
 export { GroupMutationError } from './groupErrors.js';
 

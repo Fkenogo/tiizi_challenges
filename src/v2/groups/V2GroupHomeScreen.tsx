@@ -29,8 +29,8 @@ import { V2PendingApplications } from './V2PendingApplications';
  * I do (Launch/Join/Log affordances). Configuration lives in the secondary
  * About surface — a regular member never lands on a settings-dominated page.
  *
- * Bound to the canonical read (`GET /v1/groups/:groupId`) plus the governed
- * hosted-Challenge scope (`GET /v1/challenges?groupId=`). Reference
+ * Bound to the canonical read (`GET /api/groups/:groupId`) plus the governed
+ * hosted-Challenge scope (`GET /api/challenges?groupId=`). Reference
  * composition (GroupDetailView hero + tabs spirit) without prototype
  * semantics: singular steward, no Feed, no Leaderboard, no plural Admins,
  * no presence, no media fabrication, no invented social behaviour.

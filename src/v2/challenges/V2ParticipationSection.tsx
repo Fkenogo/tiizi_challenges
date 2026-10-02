@@ -9,7 +9,7 @@ import { useJoinChallengeV2, useWithdrawChallengeV2 } from './useChallengeCreati
  * S3a — Challenge participation/access section.
  *
  * Binds the existing governed participation seams
- * (`POST /v1/challenges/:id/join`, `POST /v1/challenges/:id/withdraw`)
+ * (`POST /api/challenges/:id/join`, `POST /api/challenges/:id/withdraw`)
  * to the V2 Challenge detail. All state shown comes from the
  * authoritative read (`detail.myParticipation`); the component never
  * infers participation from unrelated fields and never manufactures
@@ -30,7 +30,7 @@ export { participationViewFor, type S3aParticipationView } from './participation
  *
  * Opened ONLY from the hero's secondary "Leave Challenge" action. Reuses
  * the existing governed withdraw path (`useWithdrawChallengeV2` →
- * `POST /v1/challenges/:id/withdraw`) with the same refetch-only truth
+ * `POST /api/challenges/:id/withdraw`) with the same refetch-only truth
  * contract — no second endpoint, no client-manufactured membership state.
  * The first selection opens this confirmation; only explicit confirmation
  * executes the leave. Cancellation performs no mutation. After a confirmed

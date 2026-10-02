@@ -5,13 +5,13 @@
  * S2a transport seam and the governed establishment route. These tests prove
  * the server side of that vertical assembly without adding any new authority:
  *
- * - GET /v1/knowledge/:id/options carries the derived `unitsByMetric`
+ * - GET /api/knowledge/:id/options carries the derived `unitsByMetric`
  *   presentation grouping (the single governed measurement vocabulary — no
  *   second compatibility opinion, no client-side unit invention);
  * - a PF-04-shaped draft configured for each Challenge type establishes
- *   through POST /v1/challenges (governed creation authority), never by a
+ *   through POST /api/challenges (governed creation authority), never by a
  *   direct write;
- * - the persisted V2 read (GET /v1/challenges/:id) exposes the governing
+ * - the persisted V2 read (GET /api/challenges/:id) exposes the governing
  *   Metric / Components / Load Reporting Basis / Duration mode / Completion
  *   occurrence so a created Challenge can be re-read and rendered honestly
  *   after refresh;
@@ -199,7 +199,7 @@ describe('S2b options seam — derived unitsByMetric', () => {
     const { app, world: w } = await world();
     const response = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${seeded.id}/options`,
+      url: `/api/knowledge/${seeded.id}/options`,
       headers: authHeaders(w.token),
     });
     expect(response.statusCode).toBe(200);
@@ -215,7 +215,7 @@ describe('S2b options seam — derived unitsByMetric', () => {
   });
 });
 
-describe('S2b governed establishment through POST /v1/challenges', () => {
+describe('S2b governed establishment through POST /api/challenges', () => {
   it('establishes a Together (collective) Challenge and re-reads its measurement truth', async () => {
     const seeded = await seedActivity({
       code: 'FIT-TST-910',
@@ -226,7 +226,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const { app, world: w } = await world();
     const created = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {
         challenge_type: 'collective',
@@ -253,7 +253,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
 
     const detail = await app.inject({
       method: 'GET',
-      url: `/v1/challenges/${established.challengeId}`,
+      url: `/api/challenges/${established.challengeId}`,
       headers: authHeaders(w.token),
     });
     expect(detail.statusCode).toBe(200);
@@ -289,7 +289,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const { app, world: w } = await world();
     const created = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {
         challenge_type: 'competitive',
@@ -310,7 +310,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const established = created.json() as { challengeId: string };
     const detail = await app.inject({
       method: 'GET',
-      url: `/v1/challenges/${established.challengeId}`,
+      url: `/api/challenges/${established.challengeId}`,
       headers: authHeaders(w.token),
     });
     const detailJson = detail.json() as {
@@ -333,7 +333,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const { app, world: w } = await world();
     const created = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {
         challenge_type: 'streak',
@@ -357,7 +357,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const established = created.json() as { challengeId: string };
     const detail = await app.inject({
       method: 'GET',
-      url: `/v1/challenges/${established.challengeId}`,
+      url: `/api/challenges/${established.challengeId}`,
       headers: authHeaders(w.token),
     });
     const detailJson = detail.json() as {
@@ -387,7 +387,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const { app, world: w } = await world();
     const created = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {
         challenge_type: 'competitive',
@@ -409,7 +409,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const established = created.json() as { challengeId: string };
     const detail = await app.inject({
       method: 'GET',
-      url: `/v1/challenges/${established.challengeId}`,
+      url: `/api/challenges/${established.challengeId}`,
       headers: authHeaders(w.token),
     });
     const detailJson = detail.json() as { config: { activities: Array<{ requiredComponents: string[] }> } };
@@ -418,7 +418,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     // Partial Component coverage is rejected by the single semantic authority.
     const partial = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {
         challenge_type: 'competitive',
@@ -450,7 +450,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const { app, world: w } = await world();
     const created = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {
         challenge_type: 'competitive',
@@ -471,7 +471,7 @@ describe('S2b governed establishment through POST /v1/challenges', () => {
     const established = created.json() as { challengeId: string };
     const detail = await app.inject({
       method: 'GET',
-      url: `/v1/challenges/${established.challengeId}`,
+      url: `/api/challenges/${established.challengeId}`,
       headers: authHeaders(w.token),
     });
     const detailJson = detail.json() as { config: { activities: Array<{ loadReportingBasis: string | null }> } };
@@ -491,7 +491,7 @@ describe('S2b governed denials', () => {
     const before = await testDb().query<{ count: string }>(`SELECT COUNT(*) AS count FROM challenges`);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {
         challenge_type: 'competitive',

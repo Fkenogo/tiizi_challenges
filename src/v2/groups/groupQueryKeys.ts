@@ -8,9 +8,9 @@ import { invalidateV2Memberships } from '../memberships/membershipQueryKeys';
  * contract (`src/v2/memberships/membershipQueryKeys.ts`) and the Challenge
  * contract (`src/v2/challenges/challengeQueryKeys.ts`):
  *
- * - detail scope `v2-group-detail` + groupId + uid (`GET /v1/groups/:groupId`);
+ * - detail scope `v2-group-detail` + groupId + uid (`GET /api/groups/:groupId`);
  * - hosted-challenges scope `v2-group-challenges` + groupId + uid
- *   (`GET /v1/challenges?groupId=`);
+ *   (`GET /api/challenges?groupId=`);
  * - the authenticated uid isolates each signed-in user's entries;
  * - array literals must never be repeated in hooks: build keys only through
  *   `v2GroupDetailKey` / `v2GroupChallengesKey`, invalidate only through

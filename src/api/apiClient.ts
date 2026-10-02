@@ -15,6 +15,24 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Canonical active API namespace prefix — the single client-side source of
+ * truth for the Tiizi API path prefix.
+ *
+ * `/api` is a PRODUCT-NEUTRAL namespace and carries no API-version meaning.
+ * It deliberately does NOT reuse the retired `/v1` prefix, which was an
+ * informal convention that read as if it versioned the API and collided
+ * conceptually with the ARCHIVED Product V1 browser routes (`/app/*`).
+ *
+ * Every API caller composes paths through this constant. Do not inline a
+ * namespace prefix anywhere else, and never add a `/v1` fallback: archived
+ * Product V1 is excluded from V2 engineering consideration (see `AGENTS.md`).
+ */
+export const API_PREFIX = '/api';
+
+/** Prefix a request path with the canonical active API namespace. */
+export const apiPath = (path: string): string => `${API_PREFIX}${path}`;
+
 export function isTiiziApiEnabled(): boolean {
   return import.meta.env.VITE_TIIZI_API_ENABLED === 'true';
 }

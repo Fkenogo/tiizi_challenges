@@ -506,7 +506,7 @@ describe('EBC-02 rejected path', () => {
     });
     const denied = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/activity`,
+      url: `/api/challenges/${setup.challengeId}/activity`,
       headers: authHeaders('tok'),
       payload: {
         activity_kind: 'fitness',
@@ -545,7 +545,7 @@ describe('EBC-02 boundary / security', () => {
     });
     const denied = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/activity`,
+      url: `/api/challenges/${setup.challengeId}/activity`,
       headers: authHeaders('tok'),
       payload: {
         activity_kind: 'fitness',
@@ -585,7 +585,7 @@ describe('EBC-02 boundary / security', () => {
     ]) {
       const denied = await app.inject({
         method: 'POST',
-        url: `/v1/challenges/${setup.challengeId}/activity`,
+        url: `/api/challenges/${setup.challengeId}/activity`,
         headers: authHeaders('tok'),
         payload: {
           activity_kind: 'fitness',
@@ -621,7 +621,7 @@ describe('EBC-02 boundary / security', () => {
     });
     const denied = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/activity`,
+      url: `/api/challenges/${setup.challengeId}/activity`,
       headers: authHeaders('tok'),
       payload: {
         activity_kind: 'fitness',

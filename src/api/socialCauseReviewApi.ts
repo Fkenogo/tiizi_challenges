@@ -1,4 +1,4 @@
-import { apiFetch } from './apiClient';
+import { API_PREFIX, apiFetch } from './apiClient';
 
 export type SocialCauseDecision = 'approved' | 'revision_required';
 
@@ -32,12 +32,12 @@ export interface SocialCauseReviewItem {
 }
 
 export async function fetchPendingSocialCauses(): Promise<SocialCauseReviewItem[]> {
-  const response = await apiFetch<{ causes: SocialCauseReviewItem[] }>('/v1/operator/social-causes/pending');
+  const response = await apiFetch<{ causes: SocialCauseReviewItem[] }>(`${API_PREFIX}/operator/social-causes/pending`);
   return response.causes;
 }
 
 export function fetchSocialCauseReview(challengeId: string): Promise<SocialCauseReviewItem> {
-  return apiFetch<SocialCauseReviewItem>(`/v1/operator/social-causes/${encodeURIComponent(challengeId)}`);
+  return apiFetch<SocialCauseReviewItem>(`${API_PREFIX}/operator/social-causes/${encodeURIComponent(challengeId)}`);
 }
 
 export function decideSocialCause(
@@ -45,7 +45,7 @@ export function decideSocialCause(
   decision: SocialCauseDecision,
   reason: string,
 ): Promise<{ challengeId: string; decision: SocialCauseDecision }> {
-  return apiFetch(`/v1/challenges/${encodeURIComponent(challengeId)}/social-cause/decision`, {
+  return apiFetch(`${API_PREFIX}/challenges/${encodeURIComponent(challengeId)}/social-cause/decision`, {
     method: 'POST',
     body: { decision, reason },
   });

@@ -4,6 +4,21 @@ Provider-neutral Node.js + TypeScript service. One service, no microservices.
 Runs as a normal Node process (`npm run dev` / `npm run start`) behind
 `DATABASE_URL`; later container deployment just wraps the same process.
 
+## Active API namespace
+
+All domain routes are served under **`/api`** — a product-neutral namespace that
+carries no API-version meaning. The canonical prefix is defined once in
+`src/apiPrefix.ts` (`API_PREFIX`) and is used by the route registrations and by
+the authentication `onRequest` hook in `src/app.ts`.
+
+`GET /health` and `GET /ready` are unversioned infrastructure routes: they sit
+outside `/api` and are exempt from authentication.
+
+The retired `/v1` prefix is **not** an active surface. There is deliberately no
+alias, redirect, proxy, duplicate registration, fallback, or transitional
+adapter. See `docs/architecture/TIIZI-API-NAMESPACE-CORRECTION-001.md` and the
+repository-root `AGENTS.md`.
+
 ## Library choices
 
 - **HTTP: Fastify 5.** Lightweight, actively maintained, first-class
@@ -112,13 +127,13 @@ writes (deployed after the flag cutover).
   `details` JSONB for kind-specific content) + append-only
   `knowledge_item_versions` (UPDATE/DELETE rejected by trigger) + `members.role`
   (existing Tiizi role vocabulary, no new roles).
-- Routes: `GET /v1/knowledge` (published only), `GET /v1/knowledge/:id`
+- Routes: `GET /api/knowledge` (published only), `GET /api/knowledge/:id`
   (any lifecycle — history stays resolvable), `GET
-  /v1/knowledge/:id/versions/:version`, `GET /v1/compat/knowledge-ids`
-  (transitional legacy lookup, read-only, capped), `GET /v1/admin/knowledge`,
-  `POST /v1/admin/knowledge` (starts at version 1), `PATCH
-  /v1/admin/knowledge/:id` (atomic +1 + immutable history row), `POST
-  /v1/admin/knowledge/:id/publish|retire` (forward-only, no version bump).
+  /api/knowledge/:id/versions/:version`, `GET /api/compat/knowledge-ids`
+  (transitional legacy lookup, read-only, capped), `GET /api/admin/knowledge`,
+  `POST /api/admin/knowledge` (starts at version 1), `PATCH
+  /api/admin/knowledge/:id` (atomic +1 + immutable history row), `POST
+  /api/admin/knowledge/:id/publish|retire` (forward-only, no version bump).
   No destructive delete. Admin = super_admin/admin/moderator/content_manager
   (mirrors canModerateChallenges ∪ canManageExercises).
 - Importer (read-only Firestore source, dry-run/apply, idempotent,
@@ -206,7 +221,7 @@ Authority mode contract (`TIIZI_KNOWLEDGE_AUTHORITY_MODE` for functions,
   Frontend: runtime lists and canonical by-ID reads use API/PG authority
   only — no silent Firestore fallback on API 404, 5xx, network failure, or
   retired/missing records. Legacy Firestore IDs remain resolvable through
-  the API compatibility mapping (`GET /v1/compat/knowledge-ids`, backed by
+  the API compatibility mapping (`GET /api/compat/knowledge-ids`, backed by
   the PG `legacy_firestore_id` mapping) — never by treating Firestore as
   authority. Firestore document IDs are never canonical domain IDs.
 
@@ -251,9 +266,9 @@ has diverged from the authority.
 This retained V1 parity surface translates legacy Firestore group document
 ids to Tiizi UUIDs. It is not part of V2 Group Product Truth or authority:
 
-- Domain objects keep the Tiizi UUID as `id` (`/v1/memberships/me` carries
+- Domain objects keep the Tiizi UUID as `id` (`/api/memberships/me` carries
   no Firestore ids at all).
-- `GET /v1/compat/group-ids?legacyId=…&id=…` resolves UUID ↔ legacy
+- `GET /api/compat/group-ids?legacyId=…&id=…` resolves UUID ↔ legacy
   Firestore id in both directions. Authenticated, read-only (resolving never
   mints UUIDs), capped at 200 ids per request.
 - The adapter is `src/api/groupIdentityBridge.ts`; its only consumer is the

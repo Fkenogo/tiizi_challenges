@@ -2,8 +2,8 @@
  * Phase C3B V2 participation mutations — the minimum authenticated
  * Challenge-management surface the frontend needs.
  *
- * - POST /v1/challenges/:challengeId/join — open a participation episode;
- * - POST /v1/challenges/:challengeId/withdraw — close the caller's active
+ * - POST /api/challenges/:challengeId/join — open a participation episode;
+ * - POST /api/challenges/:challengeId/withdraw — close the caller's active
  *   episode (history preserved, never deleted).
  *
  * Both reuse the existing C2A domain seams (joinChallenge /
@@ -127,7 +127,7 @@ export function registerParticipationRoutes(
   const authority = deps.groupMembershipAuthority ?? missingAuthority();
 
   app.post(
-    '/v1/challenges/:challengeId/join',
+    '/api/challenges/:challengeId/join',
     { schema: { params: challengeIdParamsSchema } },
     async (request) => {
       const member = authenticatedMember(request);
@@ -147,7 +147,7 @@ export function registerParticipationRoutes(
   );
 
   app.post(
-    '/v1/challenges/:challengeId/withdraw',
+    '/api/challenges/:challengeId/withdraw',
     { schema: { params: challengeIdParamsSchema } },
     async (request) => {
       const member = authenticatedMember(request);

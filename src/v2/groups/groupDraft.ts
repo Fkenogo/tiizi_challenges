@@ -6,7 +6,7 @@ import type { CreateGroupInput } from '../../api/groupsApi';
  * React-free and side-effect-free so it can be asserted directly by the
  * boundary guards. Client validation here decides only basic UX
  * completeness per step; it is NEVER semantic or persistence authority. The
- * governed server authority (`POST /v1/groups` → `createGovernedGroup`)
+ * governed server authority (`POST /api/groups` → `createGovernedGroup`)
  * remains the single authority for what a Group may be and who becomes its
  * Accountable Steward.
  */

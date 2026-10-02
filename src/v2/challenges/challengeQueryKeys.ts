@@ -20,8 +20,8 @@ import { V2_GROUP_CHALLENGES_SCOPE } from '../groups/groupQueryKeys';
  * stale for up to its staleTime — a repeat of the S2-G/S2b stale-cache
  * defect. Participation mutations must invalidate through
  * `invalidateV2ChallengeReads` so BOTH families are marked stale; every
- * refetch remains authenticated server truth (`GET /v1/challenges`,
- * `GET /v1/challenges/:id`). No client-derived participation state is
+ * refetch remains authenticated server truth (`GET /api/challenges`,
+ * `GET /api/challenges/:id`). No client-derived participation state is
  * ever injected — invalidation only marks entries stale.
  *
  * Key semantics:
@@ -40,13 +40,13 @@ export const V2_CHALLENGE_DETAIL_SCOPE = 'v2-challenge-detail';
 
 /**
  * S3c — canonical cache family scope for the collective contributor
- * projection (`GET /v1/challenges/:id/contributors`).
+ * projection (`GET /api/challenges/:id/contributors`).
  */
 export const V2_CHALLENGE_CONTRIBUTORS_SCOPE = 'v2-challenge-contributors';
 
 /**
  * S3c — canonical cache family scope for the competitive leaderboard
- * (`GET /v1/challenges/:id/leaderboard`) as consumed by V2 S3c screens.
+ * (`GET /api/challenges/:id/leaderboard`) as consumed by V2 S3c screens.
  */
 export const V2_CHALLENGE_LEADERBOARD_SCOPE = 'v2-challenge-leaderboard';
 

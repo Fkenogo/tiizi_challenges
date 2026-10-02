@@ -41,11 +41,11 @@ import type { WizardState } from './challengeCreationDraft';
  *    Create another Challenge).
  *
  * Everything shown comes from the persisted V2 read
- * (GET /v1/challenges/:id) plus the bounded S3c seams (contributors,
+ * (GET /api/challenges/:id) plus the bounded S3c seams (contributors,
  * competitive leaderboard) plus neutral name resolution — there is no
  * mock-only success screen. S3a binds the existing join/withdraw seams
  * below the progress; S3b binds the existing activity-application seam
- * (POST /v1/challenges/:id/activity) through the hero CTA dialog for
+ * (POST /api/challenges/:id/activity) through the hero CTA dialog for
  * joined participants on active Challenges; S3c binds live
  * progress/type-state reads. S3d routes the progress slot by honest
  * end-state: a live Challenge keeps the S3c surfaces unchanged, while an

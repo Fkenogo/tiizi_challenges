@@ -1,4 +1,4 @@
-import { ApiError, apiFetch, apiFetchRaw } from './apiClient';
+import { API_PREFIX, ApiError, apiFetch, apiFetchRaw } from './apiClient';
 import type { ApiKnowledgeItem } from './knowledgeApi';
 
 /**
@@ -9,7 +9,7 @@ import type { ApiKnowledgeItem } from './knowledgeApi';
  * never writes a Challenge directly (no Firestore write, no direct database
  * access). Semantic authority stays server-side:
  *   Composer (PF-04) → PF-03 validator → governed establishment
- *   (POST /v1/challenges) → ChallengeCreationAuthority.
+ *   (POST (/api/)challenges) → ChallengeCreationAuthority.
  *
  * The draft shape mirrors the PF-04 contract exactly. It is a transport
  * contract, not a second validator: no rule here decides validity.
@@ -111,13 +111,13 @@ export async function fetchComposerSelectableKnowledge(
   const query = new URLSearchParams({ composerSelectable: 'true' });
   if (kind) query.set('kind', kind);
   if (search && search.trim()) query.set('search', search.trim());
-  const response = await apiFetch<{ items: ApiKnowledgeItem[] }>(`/v1/knowledge?${query.toString()}`);
+  const response = await apiFetch<{ items: ApiKnowledgeItem[] }>(`${API_PREFIX}/knowledge?${query.toString()}`);
   return response.items;
 }
 
 /** Governed Metric/Unit/Component/Load-basis options for one Activity. */
 export function fetchActivityOptions(identity: string): Promise<ActivityOptionsResponse> {
-  return apiFetch<ActivityOptionsResponse>(`/v1/knowledge/${encodeURIComponent(identity)}/options`);
+  return apiFetch<ActivityOptionsResponse>(`${API_PREFIX}/knowledge/${encodeURIComponent(identity)}/options`);
 }
 
 interface PreviewBody {
@@ -135,7 +135,7 @@ interface PreviewBody {
 export async function previewChallengeDefinition(
   draft: ChallengeComposerDraft,
 ): Promise<ComposerPreviewResult> {
-  const result = await apiFetchRaw<PreviewBody>('/v1/challenge-definitions/preview', {
+  const result = await apiFetchRaw<PreviewBody>(`${API_PREFIX}/challenge-definitions/preview`, {
     method: 'POST',
     body: draft,
   });
@@ -202,7 +202,7 @@ export interface EstablishChallengeResponse {
 export function establishChallengeV2(
   body: EstablishChallengeBody,
 ): Promise<EstablishChallengeResponse> {
-  return apiFetch<EstablishChallengeResponse>('/v1/challenges', { method: 'POST', body });
+  return apiFetch<EstablishChallengeResponse>(`${API_PREFIX}/challenges`, { method: 'POST', body });
 }
 
 /**

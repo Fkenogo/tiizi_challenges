@@ -197,7 +197,8 @@ check('Home has loading/error/not-found/empty states',
   homeScreen.includes('Loading this Group') && homeScreen.includes('We could not load this Group')
   && homeScreen.includes('We could not find this Group') && homeScreen.includes('No Challenges here yet'));
 check('join from Home reuses the governed join authority',
-  homeScreen.includes('useJoinGroup') && read('src/api/groupsApi.ts').includes('/v1/groups/${groupId}/join'));
+  homeScreen.includes('useJoinGroup')
+  && read('src/api/groupsApi.ts').includes('${API_PREFIX}/groups/${groupId}/join'));
 
 function query(overrides: Partial<GroupHomeQueryState>): GroupHomeQueryState {
   return { isLoading: false, isError: false, isSuccess: false, detail: undefined, ...overrides };

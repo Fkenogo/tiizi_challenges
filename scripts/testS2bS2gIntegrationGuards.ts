@@ -8,11 +8,11 @@
  *   (the obsolete `s2b-preview-group` manufacture is gone); the host Group
  *   MUST come from the governed S2-G journey;
  * - S2b Step 2 ("Who is hosting?") reads the member's REAL Groups through
- *   the accepted `GET /v1/memberships/me` contract — wizard → hook →
+ *   the accepted `GET /api/memberships/me` contract — wizard → hook →
  *   client → endpoint, no second Group read authority;
  * - a Group established through the S2-G authority is selectable as
  *   Challenge host, and its real governed identity flows into the
- *   `POST /v1/challenges` establishment body;
+ *   `POST /api/challenges` establishment body;
  * - no Group means no manufacture and no silent substitution: the wizard
  *   blocks with a link to the real S2-G creation journey, and the
  *   establishment contract refuses without a host Group;
@@ -100,7 +100,8 @@ check('seed retains only the member identity link',
 console.log('Step 2 membership binding');
 check('wizard Step 2 binds the memberships hook', wizard.includes('useV2Memberships'));
 check('memberships hook reads the shared client', hooks.includes('fetchMyMemberships'));
-check('shared client reads GET /v1/memberships/me', membershipsApi.includes('/v1/memberships/me'));
+check('shared client reads GET /api/memberships/me',
+  membershipsApi.includes('API_PREFIX') && membershipsApi.includes('${API_PREFIX}/memberships/me'));
 check('S2b host read uses the canonical key factory', hooks.includes('v2MembershipsKey'));
 check('S2-G groups read uses the canonical key factory',
   read('src/v2/groups/useV2Groups.ts').includes('v2MembershipsKey'));
@@ -108,7 +109,7 @@ check('mismatched legacy key family is gone',
   !hooks.includes('v2-create-memberships')
   && !read('src/v2/groups/useV2Groups.ts').includes('v2-create-memberships'));
 check('no second Group read authority in the S2b experience',
-  !/\/v1\/groups(\?|'|"|\s*`)/.test(wizard) && !/\/v1\/groups(\?|'|"|\s*`)/.test(hooks));
+  !/\/api\/groups(\?|'|"|\s*`)/.test(wizard) && !/\/api\/groups(\?|'|"|\s*`)/.test(hooks));
 
 // ─── D. S2-G-established Group is selectable as host ─────────────────────
 console.log('real Group hosting');
@@ -153,7 +154,8 @@ check('empty state links the real S2-G creation journey (no "later experience")'
 
 // ─── F. Challenge creation uses the selected real Group identity ─────────
 console.log('establishment authority binding');
-check('establishment posts to the governed seam', creationApi.includes("'/v1/challenges'"));
+check('establishment posts to the governed seam',
+  creationApi.includes('API_PREFIX') && creationApi.includes('${API_PREFIX}/challenges'));
 check('selected membership identity is the established host',
   toEstablishmentBody(hosted, { activate: false, joinCreator: false }).group_id === GROUP_ID);
 
@@ -187,7 +189,8 @@ console.log('S2b invariants');
 check('creator participation defaults to NOT joining',
   createInitialWizardState(new Date(2026, 5, 1)).creatorJoins === false);
 check('wizard uses the S2a preview seam', wizard.includes('previewChallengeDefinition'));
-check('preview endpoint is the governed seam', creationApi.includes('/v1/challenge-definitions/preview'));
+check('preview endpoint is the governed seam',
+  creationApi.includes('API_PREFIX') && creationApi.includes('${API_PREFIX}/challenge-definitions/preview'));
 
 // ─── J. Knowledge fixtures without Group state ───────────────────────────
 console.log('knowledge fixtures');

@@ -16,9 +16,9 @@ describe('S4b governed member roster', () => {
     const steward = await seedMember(db, 's4b-owner'); const ordinary = await seedMember(db, 's4b-member');
     const ownerUid = await subject(db, steward); const memberUid = await subject(db, ordinary);
     const app = buildTestApp({ owner: ownerUid, member: memberUid });
-    const created = (await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders('owner'), payload: { name: 'Miles' } })).json() as { id: string };
+    const created = (await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('owner'), payload: { name: 'Miles' } })).json() as { id: string };
     await seedMembership(db, created.id, ordinary, { status: 'active', role: 'admin' });
-    const response = await app.inject({ method: 'GET', url: `/v1/groups/${created.id}/members`, headers: authHeaders('member') });
+    const response = await app.inject({ method: 'GET', url: `/api/groups/${created.id}/members`, headers: authHeaders('member') });
     expect(response.statusCode).toBe(200);
     const body = response.json() as { groupId: string; members: Array<Record<string, unknown>> };
     expect(body.members).toHaveLength(2);
@@ -34,16 +34,16 @@ describe('S4b governed member roster', () => {
     const db = testDb();
     const owner = await seedMember(db, 's4b-private-owner'); const outsider = await seedMember(db, 's4b-outsider'); const pending = await seedMember(db, 's4b-pending'); const ended = await seedMember(db, 's4b-ended');
     const app = buildTestApp({ owner: await subject(db, owner), outsider: await subject(db, outsider), pending: await subject(db, pending), ended: await subject(db, ended) });
-    const created = (await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders('owner'), payload: { name: 'Private', isPrivate: true } })).json() as { id: string };
+    const created = (await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('owner'), payload: { name: 'Private', isPrivate: true } })).json() as { id: string };
     await seedMembership(db, created.id, pending, { status: 'pending', role: 'admin' });
     await seedMembership(db, created.id, ended, { status: 'left', role: 'admin' });
     for (const token of ['outsider', 'pending', 'ended']) {
-      const response = await app.inject({ method: 'GET', url: `/v1/groups/${created.id}/members`, headers: authHeaders(token) });
+      const response = await app.inject({ method: 'GET', url: `/api/groups/${created.id}/members`, headers: authHeaders(token) });
       expect(response.statusCode).toBe(404);
       expect(response.body).not.toContain('Private');
     }
-    expect((await app.inject({ method: 'GET', url: `/v1/groups/${created.id}/members` })).statusCode).toBe(401);
-    const malformed = await app.inject({ method: 'GET', url: '/v1/groups/not-an-id/members', headers: authHeaders('outsider') });
+    expect((await app.inject({ method: 'GET', url: `/api/groups/${created.id}/members` })).statusCode).toBe(401);
+    const malformed = await app.inject({ method: 'GET', url: '/api/groups/not-an-id/members', headers: authHeaders('outsider') });
     expect(malformed.statusCode).toBe(400);
   });
 
@@ -54,15 +54,15 @@ describe('S4b governed member roster', () => {
     const ownerUid = await subject(db, owner);
     const outsiderUid = await subject(db, outsider);
     const app = buildTestApp({ owner: ownerUid, outsider: outsiderUid });
-    const created = (await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders('owner'), payload: { name: 'PG roster' } })).json() as { id: string };
+    const created = (await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('owner'), payload: { name: 'PG roster' } })).json() as { id: string };
     await seedMembership(db, created.id, outsider, { status: 'active', role: 'member' });
-    const authorized = await app.inject({ method: 'GET', url: `/v1/groups/${created.id}/members`, headers: authHeaders('outsider') });
+    const authorized = await app.inject({ method: 'GET', url: `/api/groups/${created.id}/members`, headers: authHeaders('outsider') });
     expect(authorized.statusCode).toBe(200);
     expect((authorized.json() as { members: unknown[] }).members).toHaveLength(2);
     await db.query(`UPDATE group_memberships SET status='pending' WHERE group_id=$1 AND member_id=$2`, [created.id, outsider]);
-    expect((await app.inject({ method: 'GET', url: `/v1/groups/${created.id}/members`, headers: authHeaders('outsider') })).statusCode).toBe(404);
+    expect((await app.inject({ method: 'GET', url: `/api/groups/${created.id}/members`, headers: authHeaders('outsider') })).statusCode).toBe(404);
     const outageApp = buildTestApp({ owner: ownerUid }, { db: groupAuthorityUnavailableDb(db) });
-    expect((await outageApp.inject({ method: 'GET', url: `/v1/groups/${created.id}/members`, headers: authHeaders('owner') })).statusCode).toBe(503);
+    expect((await outageApp.inject({ method: 'GET', url: `/api/groups/${created.id}/members`, headers: authHeaders('owner') })).statusCode).toBe(503);
   });
 
   it('reuses governed leave: ordinary Member leaves durably while the Steward remains blocked', async () => {
@@ -70,19 +70,19 @@ describe('S4b governed member roster', () => {
     const steward = await seedMember(db, 's4b-leave-owner'); const member = await seedMember(db, 's4b-leave-member');
     const ownerUid = await subject(db, steward); const memberUid = await subject(db, member);
     const app = buildTestApp({ owner: ownerUid, member: memberUid });
-    const created = (await app.inject({ method: 'POST', url: '/v1/groups', headers: authHeaders('owner'), payload: { name: 'Leave test' } })).json() as { id: string };
+    const created = (await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('owner'), payload: { name: 'Leave test' } })).json() as { id: string };
     await seedMembership(db, created.id, member, { status: 'active', role: 'admin' });
-    const blocked = await app.inject({ method: 'POST', url: `/v1/groups/${created.id}/leave`, headers: authHeaders('owner'), payload: {} });
+    const blocked = await app.inject({ method: 'POST', url: `/api/groups/${created.id}/leave`, headers: authHeaders('owner'), payload: {} });
     expect(blocked.statusCode).toBe(403);
     expect(blocked.body).toContain('cannot leave while responsible');
-    const left = await app.inject({ method: 'POST', url: `/v1/groups/${created.id}/leave`, headers: authHeaders('member'), payload: {} });
+    const left = await app.inject({ method: 'POST', url: `/api/groups/${created.id}/leave`, headers: authHeaders('member'), payload: {} });
     expect(left.statusCode).toBe(200);
     const persisted = await db.query<{ status: string; left_at: string | null }>(`SELECT status,left_at FROM group_memberships WHERE group_id=$1 AND member_id=$2`, [created.id, member]);
     expect(persisted.rows[0].status).toBe('left');
     expect(persisted.rows[0].left_at).not.toBeNull();
-    const roster = await app.inject({ method: 'GET', url: `/v1/groups/${created.id}/members`, headers: authHeaders('member') });
+    const roster = await app.inject({ method: 'GET', url: `/api/groups/${created.id}/members`, headers: authHeaders('member') });
     expect(roster.statusCode).toBe(404);
-    const stewardRoster = await app.inject({ method: 'GET', url: `/v1/groups/${created.id}/members`, headers: authHeaders('owner') });
+    const stewardRoster = await app.inject({ method: 'GET', url: `/api/groups/${created.id}/members`, headers: authHeaders('owner') });
     expect(stewardRoster.statusCode).toBe(200);
   });
 });

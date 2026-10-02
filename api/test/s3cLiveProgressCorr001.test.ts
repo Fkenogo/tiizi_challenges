@@ -158,7 +158,7 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
   ) {
     const res = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${challengeId}/activity`,
+      url: `/api/challenges/${challengeId}/activity`,
       headers: authHeaders(token),
       payload: {
         activity_kind: 'fitness',
@@ -181,7 +181,7 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
 
     // 1. Member joins (episode 1).
     const join1 = await app.inject({
-      method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA'),
+      method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA'),
     });
     expect(join1.statusCode).toBe(200);
     const episode1 = (join1.json() as { participationId: string }).participationId;
@@ -193,13 +193,13 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
 
     // 3. Leaves/withdraws.
     const withdraw = await app.inject({
-      method: 'POST', url: `/v1/challenges/${fx.challengeId}/withdraw`, headers: authHeaders('tokA'),
+      method: 'POST', url: `/api/challenges/${fx.challengeId}/withdraw`, headers: authHeaders('tokA'),
     });
     expect(withdraw.statusCode).toBe(200);
 
     // 4. Rejoins creating a new participation episode.
     const join2 = await app.inject({
-      method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA'),
+      method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA'),
     });
     expect(join2.statusCode).toBe(200);
     const episode2 = (join2.json() as { participationId: string }).participationId;
@@ -210,7 +210,7 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
 
     // 6. GET contributor route: reconciled member-level truth.
     const rollupRes = await app.inject({
-      method: 'GET', url: `/v1/challenges/${fx.challengeId}/contributors`, headers: authHeaders('tokA'),
+      method: 'GET', url: `/api/challenges/${fx.challengeId}/contributors`, headers: authHeaders('tokA'),
     });
     expect(rollupRes.statusCode).toBe(200);
     const rollup = rollupRes.json() as {
@@ -234,7 +234,7 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
 
     // Detail agrees; "You" resolves to the current episode.
     const detailRes = await app.inject({
-      method: 'GET', url: `/v1/challenges/${fx.challengeId}`, headers: authHeaders('tokA'),
+      method: 'GET', url: `/api/challenges/${fx.challengeId}`, headers: authHeaders('tokA'),
     });
     expect(detailRes.statusCode).toBe(200);
     const detailBody = detailRes.json() as {
@@ -276,13 +276,13 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
     const app = appFor({ tokA: fx.subjectA, tokB: subjectB }, new Set([fx.groupId]));
 
     // A: join -> 40 -> withdraw -> rejoin -> 70 (two episodes, 110 total).
-    await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA') });
+    await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA') });
     await postActivity(app, fx.challengeId, 'tokA', fx.key, 40, new Date().toISOString());
-    await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/withdraw`, headers: authHeaders('tokA') });
-    await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA') });
+    await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/withdraw`, headers: authHeaders('tokA') });
+    await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA') });
     await postActivity(app, fx.challengeId, 'tokA', fx.key, 70, new Date().toISOString());
     // B: join -> 30 (one episode).
-    await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers: authHeaders('tokB') });
+    await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers: authHeaders('tokB') });
     await postActivity(app, fx.challengeId, 'tokB', fx.key, 30, new Date().toISOString());
 
     const rollup = await getChallengeContributors(db, fx.memberA, fx.challengeId, {
@@ -307,7 +307,7 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
     const fx = await liveCollective();
     const wall = Date.now();
     const app = appFor({ tokA: fx.subjectA }, new Set([fx.groupId]));
-    await app.inject({ method: 'POST', url: `/v1/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA') });
+    await app.inject({ method: 'POST', url: `/api/challenges/${fx.challengeId}/join`, headers: authHeaders('tokA') });
     await postActivity(app, fx.challengeId, 'tokA', fx.key, 25, new Date().toISOString());
 
     // Foreign member in another group: 404, no leak.
@@ -318,7 +318,7 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
     await seedMembership(db, groupF, memberF, { status: 'active' });
     const appForeign = appFor({ tokF: subjectF }, new Set([groupF]));
     const hidden = await appForeign.inject({
-      method: 'GET', url: `/v1/challenges/${fx.challengeId}/contributors`, headers: authHeaders('tokF'),
+      method: 'GET', url: `/api/challenges/${fx.challengeId}/contributors`, headers: authHeaders('tokF'),
     });
     expect(hidden.statusCode).toBe(404);
 
@@ -343,7 +343,7 @@ describe('CORR-001 Blocker 1: leave/rejoin reconciliation over HTTP routes', () 
     );
     await activateChallenge(db, other.challenge_id);
     const appOther = appFor({ tokF: subjectF }, new Set([groupF]));
-    await appOther.inject({ method: 'POST', url: `/v1/challenges/${other.challenge_id}/join`, headers: authHeaders('tokF') });
+    await appOther.inject({ method: 'POST', url: `/api/challenges/${other.challenge_id}/join`, headers: authHeaders('tokF') });
     await postActivity(appOther, other.challenge_id, 'tokF', keyF, 999, new Date().toISOString());
 
     const rollupA = await getChallengeContributors(db, fx.memberA, fx.challengeId, {

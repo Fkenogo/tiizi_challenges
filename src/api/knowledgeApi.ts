@@ -1,4 +1,4 @@
-import { apiFetch } from './apiClient';
+import { API_PREFIX, apiFetch } from './apiClient';
 import type { AdminExerciseInput } from '../services/adminExerciseService';
 import type { AdminWellnessActivityInput } from '../services/adminWellnessActivityService';
 import type { CatalogExercise } from '../types';
@@ -91,7 +91,7 @@ function listQuery(params: { kind?: ApiKnowledgeKind; search?: string }): string
   if (params.kind) query.set('kind', params.kind);
   if (params.search) query.set('search', params.search);
   const suffix = query.toString();
-  return `/v1/knowledge${suffix ? `?${suffix}` : ''}`;
+  return `${API_PREFIX}/knowledge${suffix ? `?${suffix}` : ''}`;
 }
 
 /** Runtime listing: published records only (enforced server-side). */
@@ -108,18 +108,18 @@ export async function fetchPublishedActivities(search?: string, category?: strin
   const query = new URLSearchParams({ canonicalOnly: 'true' });
   if (search?.trim()) query.set('search', search.trim());
   if (category) query.set('category', category);
-  const response = await apiFetch<KnowledgeListResponse>(`/v1/knowledge?${query.toString()}`);
+  const response = await apiFetch<KnowledgeListResponse>(`${API_PREFIX}/knowledge?${query.toString()}`);
   return response.items;
 }
 
 /** By-UUID fetch (unfiltered lifecycle — historical resolution preserved). */
 export function fetchKnowledgeById(id: string): Promise<ApiKnowledgeItem> {
-  return apiFetch<ApiKnowledgeItem>(`/v1/knowledge/${encodeURIComponent(id)}`);
+  return apiFetch<ApiKnowledgeItem>(`${API_PREFIX}/knowledge/${encodeURIComponent(id)}`);
 }
 
 /** By immutable Activity Code (unfiltered lifecycle — historical resolution). */
 export function fetchKnowledgeByCode(code: string): Promise<ApiKnowledgeItem> {
-  return apiFetch<ApiKnowledgeItem>(`/v1/knowledge/code/${encodeURIComponent(code)}`);
+  return apiFetch<ApiKnowledgeItem>(`${API_PREFIX}/knowledge/code/${encodeURIComponent(code)}`);
 }
 
 /** Admin listing across lifecycle states. */
@@ -132,7 +132,7 @@ export async function fetchAdminKnowledgeList(
   if (lifecycle) query.set('lifecycle', lifecycle);
   const suffix = query.toString();
   const response = await apiFetch<KnowledgeListResponse>(
-    `/v1/admin/knowledge${suffix ? `?${suffix}` : ''}`,
+    `${API_PREFIX}/admin/knowledge${suffix ? `?${suffix}` : ''}`,
   );
   return response.items;
 }
@@ -142,7 +142,7 @@ export function createKnowledgeItem(
   content: ApiKnowledgeContentInput,
   lifecycle?: 'draft' | 'published',
 ): Promise<ApiKnowledgeItem> {
-  return apiFetch<ApiKnowledgeItem>('/v1/admin/knowledge', {
+  return apiFetch<ApiKnowledgeItem>(`${API_PREFIX}/admin/knowledge`, {
     method: 'POST',
     body: { kind, ...content, ...(lifecycle ? { lifecycle } : {}) },
   });
@@ -152,21 +152,21 @@ export function reviseKnowledgeItem(
   id: string,
   content: ApiKnowledgeContentInput,
 ): Promise<ApiKnowledgeItem> {
-  return apiFetch<ApiKnowledgeItem>(`/v1/admin/knowledge/${encodeURIComponent(id)}`, {
+  return apiFetch<ApiKnowledgeItem>(`${API_PREFIX}/admin/knowledge/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: content,
   });
 }
 
 export function publishKnowledgeItem(id: string): Promise<ApiKnowledgeItem> {
-  return apiFetch<ApiKnowledgeItem>(`/v1/admin/knowledge/${encodeURIComponent(id)}/publish`, {
+  return apiFetch<ApiKnowledgeItem>(`${API_PREFIX}/admin/knowledge/${encodeURIComponent(id)}/publish`, {
     method: 'POST',
     body: {},
   });
 }
 
 export function retireKnowledgeItem(id: string): Promise<ApiKnowledgeItem> {
-  return apiFetch<ApiKnowledgeItem>(`/v1/admin/knowledge/${encodeURIComponent(id)}/retire`, {
+  return apiFetch<ApiKnowledgeItem>(`${API_PREFIX}/admin/knowledge/${encodeURIComponent(id)}/retire`, {
     method: 'POST',
     body: {},
   });

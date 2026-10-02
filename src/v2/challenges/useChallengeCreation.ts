@@ -128,7 +128,7 @@ export function useChallengeDetailV2(challengeId: string | undefined) {
 }
 
 /**
- * S3a — governed join over the existing `POST /v1/challenges/:id/join`
+ * S3a — governed join over the existing `POST /api/challenges/:id/join`
  * seam. The server is the sole authority; success only marks the
  * canonical + legacy Challenge reads stale (see `challengeQueryKeys.ts`)
  * so the authoritative refetch determines final `myParticipation` state.
@@ -147,7 +147,7 @@ export function useJoinChallengeV2() {
 
 /**
  * S3a — governed withdraw over the existing
- * `POST /v1/challenges/:id/withdraw` seam. Closes the caller's active
+ * `POST /api/challenges/:id/withdraw` seam. Closes the caller's active
  * episode; history is preserved server-side. Same refetch-only truth
  * contract as join: no client-derived participation state.
  */
@@ -164,7 +164,7 @@ export function useWithdrawChallengeV2() {
 
 /**
  * S3b — governed activity logging over the existing
- * `POST /v1/challenges/:id/activity` seam. The server is the sole
+ * `POST /api/challenges/:id/activity` seam. The server is the sole
  * authority: it decides acceptance/rejection, scores server-side, and
  * replays idempotent duplicates. Success only marks the canonical +
  * legacy Challenge reads stale (see `challengeQueryKeys.ts`) so the
@@ -186,7 +186,7 @@ export function useLogActivityV2() {
 
 /**
  * S3c — collective contributor projection over the bounded
- * `GET /v1/challenges/:id/contributors` seam (Together / Collective only).
+ * `GET /api/challenges/:id/contributors` seam (Together / Collective only).
  * Contribution visibility, NOT a leaderboard: the response carries no
  * position/rank. Refetch-only truth under the canonical contract.
  */
@@ -205,7 +205,7 @@ export function useChallengeContributorsV2(
 
 /**
  * S3c — competitive leaderboard over the existing
- * `GET /v1/challenges/:id/leaderboard` seam (Race / Competitive only).
+ * `GET /api/challenges/:id/leaderboard` seam (Race / Competitive only).
  * Server positions only (standard competition ranking); the client never
  * ranks. Refetch-only truth under the canonical contract. CORR-001
  * Blocker 2: enabled for live (unfinalized) Challenges only — frozen

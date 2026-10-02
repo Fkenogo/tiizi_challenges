@@ -1,8 +1,8 @@
 /**
- * Phase C2B runtime route: POST /v1/challenges/:challengeId/activity.
+ * Phase C2B runtime route: POST /api/challenges/:challengeId/activity.
  *
  * The narrow V2 transaction surface. Authenticated via the existing Tiizi
- * API auth adapter (the /v1/ onRequest hook populates request.member; the
+ * API auth adapter (the /api/ onRequest hook populates request.member; the
  * member identity is server-derived, never taken from the client).
  *
  * The request carries ONLY legitimate client Evidence inputs. Points,
@@ -176,7 +176,7 @@ export function registerChallengeActivityRoutes(
 ): void {
   const authority = deps.groupMembershipAuthority ?? missingAuthority();
   app.post(
-    '/v1/challenges/:challengeId/activity',
+    '/api/challenges/:challengeId/activity',
     {
       validatorCompiler: c2bValidatorCompiler,
       schema: {

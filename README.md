@@ -1,5 +1,12 @@
 # Tiizi Fitness PWA
 
+## Engineering rules — read first
+
+- [Repository Engineering Instructions](AGENTS.md) — authoritative,
+  repository-level. Establishes the **Tiizi V1 exclusion boundary** (archived
+  Product V1 is excluded from V2 engineering consideration), the V2
+  architectural rules, and the CI `boundary` gate that enforces them.
+
 ## Start Here — Tiizi Version 2
 
 - [Tiizi V2 Programme Guide](docs/programme/TIIZI-V2-PROGRAMME-GUIDE.md) — human-readable orientation: where Tiizi came from, where the programme is now, what carries forward from V1/early knowledge work, and how V2 returns to implementation

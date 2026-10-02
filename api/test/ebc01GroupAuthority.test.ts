@@ -37,7 +37,7 @@ describe('governed group creation', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/groups',
+      url: '/api/groups',
       headers: authHeaders('owner-token'),
       payload: { name: 'River Runners', description: 'dawn patrol' },
     });
@@ -72,7 +72,7 @@ describe('governed group creation', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/groups',
+      url: '/api/groups',
       headers: authHeaders('real-token'),
       payload: { name: 'Hijack', ownerId: 'attacker-uid', userId: 'attacker-uid' },
     });
@@ -89,7 +89,7 @@ describe('governed group creation', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/groups',
+      url: '/api/groups',
       headers: authHeaders('owner-token'),
       payload: { name: 'Unlucky' },
     });
@@ -104,7 +104,7 @@ describe('governed group creation', () => {
     const app = buildApp({ db: testDb(), verifier: stubVerifier({ 't': 'owner-uid' }) });
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/groups',
+      url: '/api/groups',
       headers: authHeaders('t'),
       payload: { name: 'NoStore' },
     });
@@ -121,7 +121,7 @@ describe('governed membership join / leave', () => {
   ) {
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/groups',
+      url: '/api/groups',
       headers: authHeaders(token),
       payload,
     });
@@ -139,7 +139,7 @@ describe('governed membership join / leave', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/join`,
+      url: `/api/groups/${group.id}/join`,
       headers: authHeaders('join-token'),
       payload: {},
     });
@@ -165,7 +165,7 @@ describe('governed membership join / leave', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/join`,
+      url: `/api/groups/${group.id}/join`,
       headers: authHeaders('join-token'),
       payload: {},
     });
@@ -188,14 +188,14 @@ describe('governed membership join / leave', () => {
     const group = await createdGroup(app, 'owner-token');
     await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/join`,
+      url: `/api/groups/${group.id}/join`,
       headers: authHeaders('join-token'),
       payload: {},
     });
 
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/leave`,
+      url: `/api/groups/${group.id}/leave`,
       headers: authHeaders('join-token'),
       payload: {},
     });
@@ -221,7 +221,7 @@ describe('governed membership join / leave', () => {
 
     const ownerLeave = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/leave`,
+      url: `/api/groups/${group.id}/leave`,
       headers: authHeaders('owner-token'),
       payload: {},
     });
@@ -229,7 +229,7 @@ describe('governed membership join / leave', () => {
 
     const strangerLeave = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/leave`,
+      url: `/api/groups/${group.id}/leave`,
       headers: authHeaders('stranger-token'),
       payload: {},
     });
@@ -252,7 +252,7 @@ describe('governed membership join / leave', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${groupId}/join`,
+      url: `/api/groups/${groupId}/join`,
       headers: authHeaders('join-token'),
       payload: {},
     });
@@ -273,7 +273,7 @@ describe('governed membership join / leave', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/join`,
+      url: `/api/groups/${group.id}/join`,
       headers: authHeaders('join-token'),
       payload: {},
     });
@@ -291,7 +291,7 @@ describe('governed membership join / leave', () => {
     for (const action of ['join', 'leave'] as const) {
       const response = await app.inject({
         method: 'POST',
-        url: `/v1/groups/${missing}/${action}`,
+        url: `/api/groups/${missing}/${action}`,
         headers: authHeaders('join-token'),
         payload: {},
       });
@@ -308,7 +308,7 @@ describe('governed membership join / leave', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/groups/${group.id}/join`,
+      url: `/api/groups/${group.id}/join`,
       headers: authHeaders('join-token'),
       payload: { userId: 'owner-uid', memberId: 'whatever' },
     });

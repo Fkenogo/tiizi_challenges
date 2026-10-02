@@ -159,7 +159,7 @@ describe('governed challenge establishment', () => {
         eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(testDb(), kind)(key),
       },
     });
-    const response = await app.inject({ method: 'POST', url: '/v1/challenges', headers: authHeaders(w.creatorToken), payload: validBody(w, {
+    const response = await app.inject({ method: 'POST', url: '/api/challenges', headers: authHeaders(w.creatorToken), payload: validBody(w, {
       cover_id: 'challenge-3', support_tiizi_enabled: true,
       social_cause: { title: 'Park care', description: 'Restore the park', purpose: 'Clean paths', beneficiary: 'Local Park Trust', payment_destination_reference: 'beneficiary-wallet-123' },
     }) });
@@ -171,16 +171,16 @@ describe('governed challenge establishment', () => {
     const cause = await testDb().query<{ approval_status: string }>('SELECT approval_status FROM challenge_social_causes WHERE challenge_id=$1', [created.challengeId]);
     expect(cause.rows[0].approval_status).toBe('pending_approval');
     await expect(testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId])).rejects.toThrow(/approved Social Cause/);
-    const approved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(operatorToken), payload: { decision: 'approved', reason: 'Beneficiary and destination verified' } });
+    const approved = await app.inject({ method: 'POST', url: `/api/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(operatorToken), payload: { decision: 'approved', reason: 'Beneficiary and destination verified' } });
     expect(approved.statusCode).toBe(200);
-    const revised = await app.inject({ method: 'PUT', url: `/v1/challenges/${created.challengeId}/social-cause`, headers: authHeaders(w.creatorToken), payload: {
+    const revised = await app.inject({ method: 'PUT', url: `/api/challenges/${created.challengeId}/social-cause`, headers: authHeaders(w.creatorToken), payload: {
       title: 'Park care', description: 'Restore the park', purpose: 'Clean paths', beneficiary: 'Local Park Trust', payment_destination_reference: 'beneficiary-wallet-updated',
     } });
     expect(revised.statusCode).toBe(200);
     const reset = await testDb().query<{ approval_status: string; approval_authority: string | null }>('SELECT approval_status,approval_authority FROM challenge_social_causes WHERE challenge_id=$1', [created.challengeId]);
     expect(reset.rows[0]).toEqual({ approval_status: 'pending_approval', approval_authority: null });
     await expect(testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId])).rejects.toThrow(/approved Social Cause/);
-    const reapproved = await app.inject({ method: 'POST', url: `/v1/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(operatorToken), payload: { decision: 'approved', reason: 'Updated destination verified' } });
+    const reapproved = await app.inject({ method: 'POST', url: `/api/challenges/${created.challengeId}/social-cause/decision`, headers: authHeaders(operatorToken), payload: { decision: 'approved', reason: 'Updated destination verified' } });
     expect(reapproved.statusCode).toBe(200);
     await testDb().query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [created.challengeId]);
     const live = await testDb().query<{ status: string }>('SELECT status FROM challenges WHERE challenge_id=$1', [created.challengeId]);
@@ -192,7 +192,7 @@ describe('governed challenge establishment', () => {
   it('requires Platform Operator authority for Cause decisions and permits approved activation', async () => {
     const w = await world();
     const app = buildApp({ db: testDb(), verifier: stubVerifier(tokensFor(w)), socialCauseApproval: { isPlatformOperator: async () => false } });
-    const response = await app.inject({ method: 'POST', url: `/v1/challenges/${w.groupId}/social-cause/decision`, headers: authHeaders(w.creatorToken), payload: { decision: 'approved', reason: 'ok' } });
+    const response = await app.inject({ method: 'POST', url: `/api/challenges/${w.groupId}/social-cause/decision`, headers: authHeaders(w.creatorToken), payload: { decision: 'approved', reason: 'ok' } });
     expect(response.statusCode).toBe(403);
   });
 
@@ -202,7 +202,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -245,7 +245,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -261,7 +261,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -276,7 +276,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -291,7 +291,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -307,7 +307,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -321,7 +321,7 @@ describe('governed challenge establishment', () => {
     const before = await allRowCounts();
     const denied = await refused.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -331,7 +331,7 @@ describe('governed challenge establishment', () => {
     const allowed = appFor(w, () => ({ permitted: true, role: 'owner', allow: false }));
     const created = await allowed.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -344,7 +344,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: { ...validBody(w), created_by_member_id: '00000000-0000-4000-8000-000000000000' },
     });
@@ -359,7 +359,7 @@ describe('governed challenge establishment', () => {
 
     const first = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w, { idempotency_key: key }),
     });
@@ -368,7 +368,7 @@ describe('governed challenge establishment', () => {
 
     const second = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w, { idempotency_key: key }),
     });
@@ -389,7 +389,7 @@ describe('governed challenge establishment', () => {
 
     const first = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w, { idempotency_key: key }),
     });
@@ -397,7 +397,7 @@ describe('governed challenge establishment', () => {
 
     const conflict = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w, { idempotency_key: key, title: 'A different undertaking' }),
     });
@@ -422,7 +422,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });
@@ -439,7 +439,7 @@ describe('governed challenge establishment', () => {
 
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.creatorToken),
       payload: validBody(w),
     });

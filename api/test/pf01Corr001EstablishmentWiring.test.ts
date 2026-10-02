@@ -4,11 +4,11 @@
  * Independent review finding: PF-01 proved
  * createDbKnowledgeEligibilityResolverByIdentity in isolation, but the
  * normal API composition (api/src/index.ts) still wired the quarantined
- * exact-name resolver, and POST /v1/challenges defaulted pins to exact
+ * exact-name resolver, and POST /api/challenges defaulted pins to exact
  * display-name resolution.
  *
  * This suite proves the CORRECTED composition through the real
- * application/runtime path (buildApp + POST /v1/challenges with the same
+ * application/runtime path (buildApp + POST /api/challenges with the same
  * identity deps index.ts wires — stubbed creation authority standing in
  * for Firestore):
  *
@@ -156,7 +156,7 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
     const app = productionApp(w.token, w.uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {}),
     });
@@ -171,7 +171,7 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
     const app = productionApp(w.token, w.uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {}),
     });
@@ -210,7 +210,7 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
     const app = productionApp(w.token, w.uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, { canonical_key: w.knowledgeId }),
     });
@@ -232,7 +232,7 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
     const before = await challengeCount();
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, { canonical_key: 'Push-Up' }),
     });
@@ -255,7 +255,7 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
     // permitted for the repetitions-only Push-Up contract.
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: {
         ...body(w, { metric: 'duration', target_value: 10, unit: 'minutes' }),
@@ -292,14 +292,14 @@ describe('PF-01-CORR-001 production establishment wiring', () => {
     const app = defaultPinsApp(w.token, uid);
     const byCode = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, {}, 'Default-pins code'),
     });
     expect(byCode.statusCode).toBe(201);
     const byName = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders(w.token),
       payload: body(w, { canonical_key: 'Push-Up' }, 'Default-pins name'),
     });

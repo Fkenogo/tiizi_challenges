@@ -64,13 +64,13 @@ describe('Platform Operator Social Cause review boundary', () => {
   it('only an explicitly rostered Operator can list/open pending Causes', async () => {
     const f = await fixture();
     for (const headers of [f.creatorAuth, f.stewardAuth, f.participantAuth]) {
-      expect((await f.app.inject({ method: 'GET', url: '/v1/operator/social-causes/pending', headers })).statusCode).toBe(403);
-      expect((await f.app.inject({ method: 'GET', url: `/v1/operator/social-causes/${f.challengeId}`, headers })).statusCode).toBe(403);
+      expect((await f.app.inject({ method: 'GET', url: '/api/operator/social-causes/pending', headers })).statusCode).toBe(403);
+      expect((await f.app.inject({ method: 'GET', url: `/api/operator/social-causes/${f.challengeId}`, headers })).statusCode).toBe(403);
     }
-    const list = await f.app.inject({ method: 'GET', url: '/v1/operator/social-causes/pending', headers: f.operatorAuth });
+    const list = await f.app.inject({ method: 'GET', url: '/api/operator/social-causes/pending', headers: f.operatorAuth });
     expect(list.statusCode).toBe(200);
     expect(list.json()).toMatchObject({ causes: [{ challengeId: f.challengeId, title: 'Community garden', approvalStatus: 'pending_approval' }] });
-    const detail = await f.app.inject({ method: 'GET', url: `/v1/operator/social-causes/${f.challengeId}`, headers: f.operatorAuth });
+    const detail = await f.app.inject({ method: 'GET', url: `/api/operator/social-causes/${f.challengeId}`, headers: f.operatorAuth });
     expect(detail.statusCode).toBe(200);
     expect(detail.json()).toMatchObject({
       beneficiary: 'Community Garden Trust', paymentDestinationReference: 'beneficiary-wallet-reference',
@@ -81,16 +81,16 @@ describe('Platform Operator Social Cause review boundary', () => {
       `UPDATE platform_operator_cause_reviewers SET revoked_at=now(),revoked_reference='test revocation' WHERE member_id=$1`,
       [f.operator],
     );
-    expect((await f.app.inject({ method: 'GET', url: '/v1/operator/social-causes/pending', headers: f.operatorAuth })).statusCode).toBe(403);
+    expect((await f.app.inject({ method: 'GET', url: '/api/operator/social-causes/pending', headers: f.operatorAuth })).statusCode).toBe(403);
   });
 
   it('prevents participants, Group stewards, and Challenge creators from deciding; Operator approval is persisted and audited', async () => {
     const f = await fixture();
     for (const headers of [f.creatorAuth, f.stewardAuth, f.participantAuth]) {
-      expect((await f.app.inject({ method: 'POST', url: `/v1/challenges/${f.challengeId}/social-cause/decision`, headers, payload: { decision: 'approved', reason: 'reviewed' } })).statusCode).toBe(403);
+      expect((await f.app.inject({ method: 'POST', url: `/api/challenges/${f.challengeId}/social-cause/decision`, headers, payload: { decision: 'approved', reason: 'reviewed' } })).statusCode).toBe(403);
     }
     await expect(db.query("UPDATE challenges SET status='active' WHERE challenge_id=$1", [f.challengeId])).rejects.toThrow(/approved Social Cause/);
-    const decision = await f.app.inject({ method: 'POST', url: `/v1/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'approved', reason: 'Beneficiary and payment destination reviewed' } });
+    const decision = await f.app.inject({ method: 'POST', url: `/api/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'approved', reason: 'Beneficiary and payment destination reviewed' } });
     expect(decision.statusCode).toBe(200);
     const state = await db.query<{ approval_status: string; approval_authority: string; decision_count: string; status: string }>(
       `SELECT c.approval_status,c.approval_authority,count(d.decision_id)::text AS decision_count,h.status
@@ -98,7 +98,7 @@ describe('Platform Operator Social Cause review boundary', () => {
        LEFT JOIN challenge_social_cause_decisions d USING(challenge_id)
        WHERE c.challenge_id=$1 GROUP BY c.approval_status,c.approval_authority,h.status`, [f.challengeId]);
     expect(state.rows[0]).toEqual({ approval_status: 'approved', approval_authority: f.operator, decision_count: '1', status: 'establishment' });
-    const review = await f.app.inject({ method: 'GET', url: `/v1/operator/social-causes/${f.challengeId}`, headers: f.operatorAuth });
+    const review = await f.app.inject({ method: 'GET', url: `/api/operator/social-causes/${f.challengeId}`, headers: f.operatorAuth });
     expect(review.json()).toMatchObject({
       currentOperatorMemberId: f.operator,
       decisions: [{ decision: 'approved', authorityMemberId: f.operator, reason: 'Beneficiary and payment destination reviewed' }],
@@ -111,14 +111,14 @@ describe('Platform Operator Social Cause review boundary', () => {
   it('a creator cannot self-approve even if accidentally present on the Operator roster', async () => {
     const f = await fixture();
     await db.query("INSERT INTO platform_operator_cause_reviewers (member_id,grant_reference) VALUES ($1,'test overlap')", [f.creator]);
-    const response = await f.app.inject({ method: 'POST', url: `/v1/challenges/${f.challengeId}/social-cause/decision`, headers: f.creatorAuth, payload: { decision: 'approved', reason: 'self review' } });
+    const response = await f.app.inject({ method: 'POST', url: `/api/challenges/${f.challengeId}/social-cause/decision`, headers: f.creatorAuth, payload: { decision: 'approved', reason: 'self review' } });
     expect(response.statusCode).toBe(403);
     expect(response.json()).toMatchObject({ error: { code: 'cause_creator_cannot_decide' } });
   });
 
   it('revision-required remains unable to activate and approval does not auto-activate regardless of schedule', async () => {
     const f = await fixture({ startDate: '2026-08-01' });
-    const response = await f.app.inject({ method: 'POST', url: `/v1/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'revision_required', reason: 'Confirm destination ownership' } });
+    const response = await f.app.inject({ method: 'POST', url: `/api/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'revision_required', reason: 'Confirm destination ownership' } });
     expect(response.statusCode).toBe(200);
     await expect(activateChallenge(db, f.challengeId)).rejects.toThrow(/approved Social Cause/);
     const state = await db.query<{ approval_status: string; status: string }>(
@@ -128,7 +128,7 @@ describe('Platform Operator Social Cause review boundary', () => {
 
   it('Operator approval before start waits for the shared scheduled lifecycle pass', async () => {
     const f = await fixture({ startDate: '2026-12-01' });
-    const response = await f.app.inject({ method: 'POST', url: `/v1/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'approved', reason: 'Verified' } });
+    const response = await f.app.inject({ method: 'POST', url: `/api/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'approved', reason: 'Verified' } });
     expect(response.statusCode).toBe(200);
     expect((await processScheduledChallengeStarts(db, new Date('2026-11-30T12:00:00Z')))
       .find((outcome) => outcome.challenge_id === f.challengeId)).toMatchObject({ due: false, activated: false });
@@ -143,7 +143,7 @@ describe('Platform Operator Social Cause review boundary', () => {
 
   it('approval after the scheduled start does not auto-activate; the explicit lifecycle transition succeeds', async () => {
     const f = await fixture({ startDate: '2026-08-01' });
-    const response = await f.app.inject({ method: 'POST', url: `/v1/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'approved', reason: 'Verified after the scheduled start' } });
+    const response = await f.app.inject({ method: 'POST', url: `/api/challenges/${f.challengeId}/social-cause/decision`, headers: f.operatorAuth, payload: { decision: 'approved', reason: 'Verified after the scheduled start' } });
     expect(response.statusCode).toBe(200);
     const afterApproval = await db.query<{ approval_status: string; status: string }>(
       `SELECT c.approval_status,h.status FROM challenge_social_causes c JOIN challenges h USING(challenge_id) WHERE c.challenge_id=$1`, [f.challengeId]);

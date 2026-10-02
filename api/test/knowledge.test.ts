@@ -68,7 +68,7 @@ function jsonHeaders(token: string): Record<string, string> {
 async function createAsAdmin(app: ReturnType<typeof buildTestApp>, payload: Record<string, unknown>) {
   return app.inject({
     method: 'POST',
-    url: '/v1/admin/knowledge',
+    url: '/api/admin/knowledge',
     headers: jsonHeaders('adm'),
     payload,
   });
@@ -229,12 +229,12 @@ describe('knowledge admin authorization', () => {
     await seedAdmin('admin-uid');
     const app = buildTestApp({ m: 'member-uid', adm: 'admin-uid' });
 
-    const anon = await app.inject({ method: 'POST', url: '/v1/admin/knowledge', payload: {} });
+    const anon = await app.inject({ method: 'POST', url: '/api/admin/knowledge', payload: {} });
     expect(anon.statusCode).toBe(401);
 
     const forbidden = await app.inject({
       method: 'POST',
-      url: '/v1/admin/knowledge',
+      url: '/api/admin/knowledge',
       headers: jsonHeaders('m'),
       payload: fitnessPayload(),
     });
@@ -243,7 +243,7 @@ describe('knowledge admin authorization', () => {
 
     const adminList = await app.inject({
       method: 'GET',
-      url: '/v1/admin/knowledge',
+      url: '/api/admin/knowledge',
       headers: authHeaders('m'),
     });
     expect(adminList.statusCode).toBe(403);
@@ -263,7 +263,7 @@ describe('knowledge admin authorization', () => {
     for (const token of ['a1', 'a2', 'a3']) {
       const res = await app.inject({
         method: 'GET',
-        url: '/v1/admin/knowledge',
+        url: '/api/admin/knowledge',
         headers: authHeaders(token),
       });
       expect(res.statusCode).toBe(200);
@@ -271,7 +271,7 @@ describe('knowledge admin authorization', () => {
     for (const token of ['p', 's']) {
       const res = await app.inject({
         method: 'GET',
-        url: '/v1/admin/knowledge',
+        url: '/api/admin/knowledge',
         headers: authHeaders(token),
       });
       expect(res.statusCode).toBe(403);
@@ -297,7 +297,7 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const history = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${body.id}/versions/1`,
+      url: `/api/knowledge/${body.id}/versions/1`,
       headers: authHeaders('adm'),
     });
     expect(history.statusCode).toBe(200);
@@ -330,7 +330,7 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const second = await app.inject({
       method: 'PATCH',
-      url: `/v1/admin/knowledge/${created.id}`,
+      url: `/api/admin/knowledge/${created.id}`,
       headers,
       payload: fitnessPayload({ name: 'Push-Ups v2', description: 'Revised' }),
     });
@@ -339,7 +339,7 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const third = await app.inject({
       method: 'PATCH',
-      url: `/v1/admin/knowledge/${created.id}`,
+      url: `/api/admin/knowledge/${created.id}`,
       headers,
       payload: fitnessPayload({ name: 'Push-Ups v3', description: 'Revised again' }),
     });
@@ -347,19 +347,19 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const first = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${created.id}/versions/1`,
+      url: `/api/knowledge/${created.id}/versions/1`,
       headers: authHeaders('adm'),
     });
     expect(first.json().name).toBe('Push-Ups');
     const middle = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${created.id}/versions/2`,
+      url: `/api/knowledge/${created.id}/versions/2`,
       headers: authHeaders('adm'),
     });
     expect(middle.json().name).toBe('Push-Ups v2');
     const missing = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${created.id}/versions/9`,
+      url: `/api/knowledge/${created.id}/versions/9`,
       headers: authHeaders('adm'),
     });
     expect(missing.statusCode).toBe(404);
@@ -379,7 +379,7 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const published = await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${created.id}/publish`,
+      url: `/api/admin/knowledge/${created.id}/publish`,
       headers: authHeaders('adm'),
     });
     expect(published.statusCode).toBe(200);
@@ -387,14 +387,14 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const retired = await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${created.id}/retire`,
+      url: `/api/admin/knowledge/${created.id}/retire`,
       headers: authHeaders('adm'),
     });
     expect(retired.json()).toMatchObject({ lifecycle: 'retired', knowledgeVersion: 1 });
 
     const noSecondVersion = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${created.id}/versions/2`,
+      url: `/api/knowledge/${created.id}/versions/2`,
       headers: authHeaders('adm'),
     });
     expect(noSecondVersion.statusCode).toBe(404);
@@ -414,15 +414,15 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const republish = await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${created.id}/publish`,
+      url: `/api/admin/knowledge/${created.id}/publish`,
       headers,
     });
     expect(republish.statusCode).toBe(200);
 
-    await app.inject({ method: 'POST', url: `/v1/admin/knowledge/${created.id}/retire`, headers });
+    await app.inject({ method: 'POST', url: `/api/admin/knowledge/${created.id}/retire`, headers });
     const republishRetired = await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${created.id}/publish`,
+      url: `/api/admin/knowledge/${created.id}/publish`,
       headers,
     });
     expect(republishRetired.statusCode).toBe(409);
@@ -430,7 +430,7 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const reRetire = await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${created.id}/retire`,
+      url: `/api/admin/knowledge/${created.id}/retire`,
       headers,
     });
     expect(reRetire.statusCode).toBe(200);
@@ -445,13 +445,13 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
     const [first, second] = await Promise.all([
       app.inject({
         method: 'PATCH',
-        url: `/v1/admin/knowledge/${created.id}`,
+        url: `/api/admin/knowledge/${created.id}`,
         headers,
         payload: fitnessPayload({ name: 'Concurrent A' }),
       }),
       app.inject({
         method: 'PATCH',
-        url: `/v1/admin/knowledge/${created.id}`,
+        url: `/api/admin/knowledge/${created.id}`,
         headers,
         payload: fitnessPayload({ name: 'Concurrent B' }),
       }),
@@ -463,7 +463,7 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const current = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${created.id}`,
+      url: `/api/knowledge/${created.id}`,
       headers: authHeaders('adm'),
     });
     expect(current.json().knowledgeVersion).toBe(3);
@@ -484,7 +484,7 @@ describe('knowledge admin writes (create / revise / lifecycle)', () => {
 
     const intact = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${created.id}/versions/1`,
+      url: `/api/knowledge/${created.id}/versions/1`,
       headers: authHeaders('adm'),
     });
     expect(intact.statusCode).toBe(200);
@@ -507,7 +507,7 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
     ).json();
     await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${pub.id}/publish`,
+      url: `/api/admin/knowledge/${pub.id}/publish`,
       headers: authHeaders('adm'),
     });
     await createAsAdmin(app, { ...fitnessPayload({ name: 'Beta Draft' }), lifecycle: 'draft' });
@@ -519,24 +519,24 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
     ).json();
     await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${retiring.id}/publish`,
+      url: `/api/admin/knowledge/${retiring.id}/publish`,
       headers: authHeaders('adm'),
     });
     await app.inject({
       method: 'POST',
-      url: `/v1/admin/knowledge/${retiring.id}/retire`,
+      url: `/api/admin/knowledge/${retiring.id}/retire`,
       headers: authHeaders('adm'),
     });
 
     const headers = authHeaders('m');
-    const all = await app.inject({ method: 'GET', url: '/v1/knowledge', headers });
+    const all = await app.inject({ method: 'GET', url: '/api/knowledge', headers });
     expect(all.statusCode).toBe(200);
     expect(all.json().items.map((item: { name: string }) => item.name)).toEqual(['Alpha Press']);
 
-    const fitness = await app.inject({ method: 'GET', url: '/v1/knowledge?kind=fitness', headers });
+    const fitness = await app.inject({ method: 'GET', url: '/api/knowledge?kind=fitness', headers });
     expect(fitness.json().items).toHaveLength(1);
 
-    const search = await app.inject({ method: 'GET', url: '/v1/knowledge?search=alpha', headers });
+    const search = await app.inject({ method: 'GET', url: '/api/knowledge?search=alpha', headers });
     expect(search.json().items.map((item: { name: string }) => item.name)).toEqual(['Alpha Press']);
 
     const codedPublished = (
@@ -555,11 +555,11 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
     expect(codedPublished.activityCode).toBe('FIT-TST-901');
     await app.inject({
       method: 'PUT',
-      url: `/v1/admin/knowledge/${codedPublished.id}/compatibility`,
+      url: `/api/admin/knowledge/${codedPublished.id}/compatibility`,
       headers: jsonHeaders('adm'),
       payload: { primaryMetrics: ['repetitions'], compatibleUnits: ['reps'] },
     });
-    const codedPublish = await app.inject({ method: 'POST', url: `/v1/admin/knowledge/${codedPublished.id}/publish`, headers: authHeaders('adm') });
+    const codedPublish = await app.inject({ method: 'POST', url: `/api/admin/knowledge/${codedPublished.id}/publish`, headers: authHeaders('adm') });
     expect(codedPublish.statusCode).toBe(200);
     const codedDraft = (
       await createAsAdmin(app, {
@@ -567,35 +567,35 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
         lifecycle: 'draft',
       })
     ).json();
-    const canonical = await app.inject({ method: 'GET', url: '/v1/knowledge?canonicalOnly=true', headers });
+    const canonical = await app.inject({ method: 'GET', url: '/api/knowledge?canonicalOnly=true', headers });
     expect(canonical.json().items.map((item: { activityCode: string }) => item.activityCode)).toEqual(['FIT-TST-901']);
-    const category = await app.inject({ method: 'GET', url: '/v1/knowledge?canonicalOnly=true&category=Strength', headers });
+    const category = await app.inject({ method: 'GET', url: '/api/knowledge?canonicalOnly=true&category=Strength', headers });
     expect(category.json().items.map((item: { id: string }) => item.id)).toEqual([codedPublished.id]);
-    const familySearch = await app.inject({ method: 'GET', url: '/v1/knowledge?canonicalOnly=true&search=Strength', headers });
+    const familySearch = await app.inject({ method: 'GET', url: '/api/knowledge?canonicalOnly=true&search=Strength', headers });
     expect(familySearch.json().items.map((item: { id: string }) => item.id)).toEqual([codedPublished.id]);
-    const guideDetail = await app.inject({ method: 'GET', url: `/v1/knowledge/${codedPublished.id}`, headers });
+    const guideDetail = await app.inject({ method: 'GET', url: `/api/knowledge/${codedPublished.id}`, headers });
     expect(guideDetail.json()).toMatchObject({
       activityCode: 'FIT-TST-901', lifecycle: 'published', name: 'Zeta Press', category: 'Strength',
       subcategory: 'Strength', measurementGuidance: 'Count full controlled repetitions.',
       setup: 'Start in a stable position.', execution: 'Complete one controlled repetition.',
     });
-    const composerList = await app.inject({ method: 'GET', url: '/v1/knowledge?composerSelectable=true', headers });
+    const composerList = await app.inject({ method: 'GET', url: '/api/knowledge?composerSelectable=true', headers });
     expect(composerList.json().items.map((item: { id: string }) => item.id)).toContain(codedPublished.id);
-    const draftById = await app.inject({ method: 'GET', url: `/v1/knowledge/${codedDraft.id}`, headers });
-    const draftByCode = await app.inject({ method: 'GET', url: '/v1/knowledge/code/FIT-TST-902', headers });
+    const draftById = await app.inject({ method: 'GET', url: `/api/knowledge/${codedDraft.id}`, headers });
+    const draftByCode = await app.inject({ method: 'GET', url: '/api/knowledge/code/FIT-TST-902', headers });
     expect(draftById.json().lifecycle).toBe('draft');
     expect(draftByCode.json().lifecycle).toBe('draft');
 
     // Admin list sees every lifecycle state.
     const adminAll = await app.inject({
       method: 'GET',
-      url: '/v1/admin/knowledge',
+      url: '/api/admin/knowledge',
       headers: authHeaders('adm'),
     });
     expect(adminAll.json().items).toHaveLength(5);
     const retiredOnly = await app.inject({
       method: 'GET',
-      url: '/v1/admin/knowledge?lifecycle=retired',
+      url: '/api/admin/knowledge?lifecycle=retired',
       headers: authHeaders('adm'),
     });
     expect(retiredOnly.json().items.map((item: { name: string }) => item.name)).toEqual([
@@ -605,7 +605,7 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
     // By-ID reads stay unfiltered so retired history resolves.
     const retiredById = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${retiring.id}`,
+      url: `/api/knowledge/${retiring.id}`,
       headers,
     });
     expect(retiredById.statusCode).toBe(200);
@@ -613,11 +613,11 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
 
     const unknown = await app.inject({
       method: 'GET',
-      url: '/v1/knowledge/00000000-0000-0000-0000-000000000000',
+      url: '/api/knowledge/00000000-0000-0000-0000-000000000000',
       headers,
     });
     expect(unknown.statusCode).toBe(404);
-    const notUuid = await app.inject({ method: 'GET', url: '/v1/knowledge/push-ups', headers });
+    const notUuid = await app.inject({ method: 'GET', url: '/api/knowledge/push-ups', headers });
     expect(notUuid.statusCode).toBe(404);
     void pub;
   });
@@ -630,7 +630,7 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
 
     const list = await app.inject({
       method: 'GET',
-      url: '/v1/knowledge',
+      url: '/api/knowledge',
       headers: authHeaders('m'),
     });
     for (const item of list.json().items as Array<{ id: string }>) {
@@ -641,7 +641,7 @@ describe('knowledge runtime reads (published-only listing, compat lookup)', () =
     // Non-legacy items have no compat mapping; lookup creates nothing.
     const compat = await app.inject({
       method: 'GET',
-      url: `/v1/compat/knowledge-ids?id=${created.id}&legacyId=ghost-doc`,
+      url: `/api/compat/knowledge-ids?id=${created.id}&legacyId=ghost-doc`,
       headers: authHeaders('m'),
     });
     expect(compat.statusCode).toBe(200);
@@ -763,7 +763,7 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
     const app = buildTestApp({ adm: 'admin-uid', p: 'plain-uid' });
     const compat = await app.inject({
       method: 'GET',
-      url: '/v1/compat/knowledge-ids?legacyId=push-ups',
+      url: '/api/compat/knowledge-ids?legacyId=push-ups',
       headers: authHeaders('adm'),
     });
     expect(compat.json()).toEqual({
@@ -791,7 +791,7 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
     const app = buildTestApp({ adm: 'admin-uid' });
     const compat = await app.inject({
       method: 'GET',
-      url: '/v1/compat/knowledge-ids?legacyId=push-ups',
+      url: '/api/compat/knowledge-ids?legacyId=push-ups',
       headers: authHeaders('adm'),
     });
     const id = compat.json().mappings[0].id as string;
@@ -800,7 +800,7 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
     // (PKG-2A-CORR: published revisions satisfy the KCS gate.)
     await app.inject({
       method: 'PATCH',
-      url: `/v1/admin/knowledge/${id}`,
+      url: `/api/admin/knowledge/${id}`,
       headers: jsonHeaders('adm'),
       payload: fitnessPayload({
         name: 'API Revised',
@@ -811,7 +811,7 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
     await runKnowledgeImport(db, source([fitnessDoc('push-ups')]), { dryRun: false });
     const kept = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${id}`,
+      url: `/api/knowledge/${id}`,
       headers: authHeaders('adm'),
     });
     expect(kept.json()).toMatchObject({ name: 'API Revised', knowledgeVersion: 2 });
@@ -824,13 +824,13 @@ describe('runKnowledgeImport (read-only Firestore source → PostgreSQL)', () =>
     );
     const moved = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${id}`,
+      url: `/api/knowledge/${id}`,
       headers: authHeaders('adm'),
     });
     expect(moved.json()).toMatchObject({ name: 'Firestore v5', knowledgeVersion: 5 });
     const historic = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${id}/versions/5`,
+      url: `/api/knowledge/${id}/versions/5`,
       headers: authHeaders('adm'),
     });
     expect(historic.json().name).toBe('Firestore v5');

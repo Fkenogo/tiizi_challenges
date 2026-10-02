@@ -1,12 +1,12 @@
 /**
  * S2a — Challenge creation API seam (transport only) — focused proofs.
  *
- * - GET  /v1/knowledge/:id/options returns Knowledge-derived Composer
+ * - GET  /api/knowledge/:id/options returns Knowledge-derived Composer
  *   choices (Metrics, Units, Components, supported Load Reporting Bases)
  *   through the already-merged PF-04 authority.
- * - POST /v1/challenge-definitions/preview runs the Composer draft through
+ * - POST /api/challenge-definitions/preview runs the Composer draft through
  *   the single PF-03 validator and writes nothing.
- * - GET  /v1/knowledge?composerSelectable=true filters to NEW-V2
+ * - GET  /api/knowledge?composerSelectable=true filters to NEW-V2
  *   Composer-selectable candidates without changing plain listing.
  *
  * The seam owns no semantics: every governance decision below is made by the
@@ -91,7 +91,7 @@ describe('S2a activity options seam', () => {
     const app = await readWorld('opt-token');
     const byUuid = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${created.id}/options`,
+      url: `/api/knowledge/${created.id}/options`,
       headers: authHeaders('opt-token'),
     });
     expect(byUuid.statusCode).toBe(200);
@@ -108,7 +108,7 @@ describe('S2a activity options seam', () => {
     // The immutable Activity Code resolves to the same canonical identity.
     const byCode = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/FIT-TST-931/options`,
+      url: `/api/knowledge/FIT-TST-931/options`,
       headers: authHeaders('opt-token'),
     });
     expect(byCode.statusCode).toBe(200);
@@ -119,7 +119,7 @@ describe('S2a activity options seam', () => {
     const app = await readWorld('opt2-token');
     const unknown = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/00000000-0000-4000-8000-000000000001/options`,
+      url: `/api/knowledge/00000000-0000-4000-8000-000000000001/options`,
       headers: authHeaders('opt2-token'),
     });
     expect(unknown.statusCode).toBe(404);
@@ -132,7 +132,7 @@ describe('S2a activity options seam', () => {
     );
     const draftResponse = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/${draft.id}/options`,
+      url: `/api/knowledge/${draft.id}/options`,
       headers: authHeaders('opt2-token'),
     });
     expect(draftResponse.statusCode).toBe(404);
@@ -140,7 +140,7 @@ describe('S2a activity options seam', () => {
     // Display names never resolve (identity is UUID/Code only).
     const byName = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge/S2a%20Options%20Hold/options`,
+      url: `/api/knowledge/S2a%20Options%20Hold/options`,
       headers: authHeaders('opt2-token'),
     });
     expect(byName.statusCode).toBe(404);
@@ -215,7 +215,7 @@ describe('S2a composer-selectable catalogue boundary', () => {
     if (kind) query.set('kind', kind);
     const response = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge?${query.toString()}`,
+      url: `/api/knowledge?${query.toString()}`,
       headers: authHeaders(token),
     });
     expect(response.statusCode).toBe(200);
@@ -246,7 +246,7 @@ describe('S2a composer-selectable catalogue boundary', () => {
     const app = await readWorld('cat-plain-x');
     const response = await app.inject({
       method: 'GET',
-      url: `/v1/knowledge?kind=fitness`,
+      url: `/api/knowledge?kind=fitness`,
       headers: authHeaders('cat-plain-x'),
     });
     expect(response.statusCode).toBe(200);
@@ -270,7 +270,7 @@ describe('S2a Composer preview seam', () => {
     const before = await Promise.all(tables.map(countRows));
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenge-definitions/preview',
+      url: '/api/challenge-definitions/preview',
       headers: authHeaders('prev-token'),
       payload: {
         draftKind: 'pf04-v1',
@@ -312,7 +312,7 @@ describe('S2a Composer preview seam', () => {
     // Incomplete draft: surfaced by the PF-04 composer (MISSING_FIELD).
     const missing = await app.inject({
       method: 'POST',
-      url: '/v1/challenge-definitions/preview',
+      url: '/api/challenge-definitions/preview',
       headers: authHeaders('prev2-token'),
       payload: { draftKind: 'pf04-v1', mode: 'CHALLENGE', activities: [] },
     });
@@ -325,7 +325,7 @@ describe('S2a Composer preview seam', () => {
     // never reimplemented in the route.
     const semantic = await app.inject({
       method: 'POST',
-      url: '/v1/challenge-definitions/preview',
+      url: '/api/challenge-definitions/preview',
       headers: authHeaders('prev2-token'),
       payload: {
         draftKind: 'pf04-v1',
@@ -352,7 +352,7 @@ describe('S2a Composer preview seam', () => {
     // Non-object body: rejected by the transport, not the domain.
     const nonObject = await app.inject({
       method: 'POST',
-      url: '/v1/challenge-definitions/preview',
+      url: '/api/challenge-definitions/preview',
       headers: authHeaders('prev2-token'),
       payload: [1, 2, 3],
     });

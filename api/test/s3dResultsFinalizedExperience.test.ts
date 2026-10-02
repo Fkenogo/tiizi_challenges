@@ -341,7 +341,7 @@ describe('S3d lifecycle states', () => {
     const app = buildTestApp(setup.tokens, { challengeActivity: { groupMembershipAuthority: allEligible } });
     const denied = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/activity`,
+      url: `/api/challenges/${setup.challengeId}/activity`,
       headers: authHeaders(Object.keys(setup.tokens)[0]),
       payload: {
         activity_kind: 'fitness',

@@ -2,13 +2,13 @@
  * PF-03-CORR-001 governed V2 Challenge establishment route — the minimum
  * API/domain boundary for governed V2 Challenge creation.
  *
- * - POST /v1/challenges — establish a V2 Challenge atomically.
+ * - POST /api/challenges — establish a V2 Challenge atomically.
  *
  * This is NOT the full PKG-1 creation wizard: one governed establishment
  * call carrying validated governing inputs, for later EBC-05 integration.
  *
  * Authority discipline (fail closed):
- * - the global /v1/ auth hook resolves the Bearer token to an internal
+ * - the global /api/ auth hook resolves the Bearer token to an internal
  *   Member UUID server-side; that UUID is the Challenge creator. The body
  *   carries NO actor/member identity (additionalProperties:false rejects
  *   smuggled created_by_member_id / knowledge ids / Firestore ids with 400);
@@ -439,7 +439,7 @@ export function registerChallengeCreationRoutes(
   deps: ChallengeCreationRouteDeps = {},
 ): void {
   app.post(
-    '/v1/challenges',
+    '/api/challenges',
     {
       validatorCompiler: challengeCreationValidatorCompiler,
       schema: {

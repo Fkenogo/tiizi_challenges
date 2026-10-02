@@ -4,11 +4,11 @@
  * Proves the member-facing Group establishment chain end to end over the
  * real API routes and PostgreSQL test database:
  *
- * - an authenticated member establishes a Group through `POST /v1/groups`;
+ * - an authenticated member establishes a Group through `POST /api/groups`;
  * - the creator becomes owner/active (Accountable Steward) through the
  *   governed authority — never client-supplied;
  * - Group + Accountable Steward membership commit atomically in PostgreSQL;
- * - `GET /v1/memberships/me` (the SAME contract the Challenge creation
+ * - `GET /api/memberships/me` (the SAME contract the Challenge creation
  *   journey consumes) immediately exposes the newly created Group;
  * - the response never leaks the Firebase UID;
  * - client-supplied actor identity is rejected and never used;
@@ -47,7 +47,7 @@ async function establish(
 ) {
   return app.inject({
     method: 'POST',
-    url: '/v1/groups',
+    url: '/api/groups',
     headers: authHeaders(token),
     payload,
   });
@@ -74,7 +74,7 @@ describe('S2-G governed Group establishment', () => {
     // The read contract the Challenge creation journey consumes exposes it.
     const mine = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('founder-token'),
     });
     expect(mine.statusCode).toBe(200);
@@ -143,7 +143,7 @@ describe('S2-G governed Group establishment', () => {
 
     const mine = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('founder-token'),
     });
     expect(mine.body).not.toContain('secret-uid-xyz');
@@ -186,7 +186,7 @@ describe('S2-G governed Group establishment', () => {
     const app = buildApp({ db: testDb(), verifier: stubVerifier({ t: 'founder-uid' }) });
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/groups',
+      url: '/api/groups',
       headers: authHeaders('t'),
       payload: { name: 'No Store' },
     });

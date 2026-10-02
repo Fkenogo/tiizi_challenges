@@ -8,7 +8,7 @@ import {
   testDb,
 } from './helpers.js';
 
-describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
+describe('GET /api/compat/group-ids (transitional identity bridge)', () => {
   it('maps legacy Firestore ids to Tiizi UUIDs', async () => {
     const db = testDb();
     const groupId = await seedGroup(db, { legacyId: 'fs-g1', name: 'Runners' });
@@ -18,7 +18,7 @@ describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
     const app = buildTestApp({ t: 'uid-a' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/compat/group-ids?legacyId=fs-g1&legacyId=fs-g2',
+      url: '/api/compat/group-ids?legacyId=fs-g1&legacyId=fs-g2',
       headers: authHeaders('t'),
     });
 
@@ -39,7 +39,7 @@ describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
     const app = buildTestApp({ t: 'uid-a' });
     const res = await app.inject({
       method: 'GET',
-      url: `/v1/compat/group-ids?id=${groupId}`,
+      url: `/api/compat/group-ids?id=${groupId}`,
       headers: authHeaders('t'),
     });
 
@@ -57,7 +57,7 @@ describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
     const app = buildTestApp({ t: 'uid-a' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/compat/group-ids?legacyId=fs-known&legacyId=fs-ghost&id=00000000-0000-0000-0000-000000000000',
+      url: '/api/compat/group-ids?legacyId=fs-known&legacyId=fs-ghost&id=00000000-0000-0000-0000-000000000000',
       headers: authHeaders('t'),
     });
 
@@ -72,7 +72,7 @@ describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
     await seedMember(db, 'uid-a');
 
     const app = buildTestApp({ t: 'uid-a' });
-    for (const url of ['/v1/compat/group-ids', '/v1/compat/group-ids?id=not-a-uuid']) {
+    for (const url of ['/api/compat/group-ids', '/api/compat/group-ids?id=not-a-uuid']) {
       const res = await app.inject({ method: 'GET', url, headers: authHeaders('t') });
       expect(res.statusCode).toBe(200);
       expect(res.json()).toEqual({ mappings: [] });
@@ -87,7 +87,7 @@ describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
     const app = buildTestApp({ t: 'uid-a' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/compat/group-ids?legacyId=fs-never-seen',
+      url: '/api/compat/group-ids?legacyId=fs-never-seen',
       headers: authHeaders('t'),
     });
 
@@ -97,13 +97,13 @@ describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
     expect(after.rows[0].count).toBe(before.rows[0].count);
   });
 
-  it('requires authentication like every other /v1 route', async () => {
+  it('requires authentication like every other /api route', async () => {
     const app = buildTestApp({});
-    const res = await app.inject({ method: 'GET', url: '/v1/compat/group-ids?legacyId=x' });
+    const res = await app.inject({ method: 'GET', url: '/api/compat/group-ids?legacyId=x' });
     expect(res.statusCode).toBe(401);
   });
 
-  it('round-trips through memberships: UUID from /v1/memberships/me resolves back', async () => {
+  it('round-trips through memberships: UUID from /api/memberships/me resolves back', async () => {
     const db = testDb();
     const memberId = await seedMember(db, 'uid-a');
     const groupId = await seedGroup(db, { legacyId: 'fs-round', name: 'Round' });
@@ -112,14 +112,14 @@ describe('GET /v1/compat/group-ids (transitional identity bridge)', () => {
     const app = buildTestApp({ t: 'uid-a' });
     const me = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('t'),
     });
     const uuid = me.json().memberships[0].groupId as string;
 
     const resolved = await app.inject({
       method: 'GET',
-      url: `/v1/compat/group-ids?id=${uuid}`,
+      url: `/api/compat/group-ids?id=${uuid}`,
       headers: authHeaders('t'),
     });
     expect(resolved.json()).toEqual({ mappings: [{ legacyId: 'fs-round', id: uuid }] });

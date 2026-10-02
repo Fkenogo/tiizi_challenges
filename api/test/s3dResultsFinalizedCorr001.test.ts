@@ -235,7 +235,7 @@ describe('CORR-001 A — server-authoritative join lifecycle', () => {
     );
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/join`,
+      url: `/api/challenges/${setup.challengeId}/join`,
       headers: authHeaders('token-a'),
     });
     expect(response.statusCode).toBe(422);
@@ -266,7 +266,7 @@ describe('CORR-001 A — server-authoritative join lifecycle', () => {
     );
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/join`,
+      url: `/api/challenges/${setup.challengeId}/join`,
       headers: authHeaders('token-a'),
     });
     expect(response.statusCode).toBe(200);
@@ -301,7 +301,7 @@ describe('CORR-001 B — server-authoritative withdrawal lifecycle', () => {
     );
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/withdraw`,
+      url: `/api/challenges/${setup.challengeId}/withdraw`,
       headers: authHeaders('token-a'),
     });
     expect(response.statusCode).toBe(200);
@@ -328,7 +328,7 @@ describe('CORR-001 B — server-authoritative withdrawal lifecycle', () => {
     );
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/withdraw`,
+      url: `/api/challenges/${setup.challengeId}/withdraw`,
       headers: authHeaders('token-a'),
     });
     expect(response.statusCode).toBe(422);
@@ -358,7 +358,7 @@ describe('CORR-001 B — server-authoritative withdrawal lifecycle', () => {
     );
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/withdraw`,
+      url: `/api/challenges/${setup.challengeId}/withdraw`,
       headers: authHeaders('token-a'),
     });
     expect(response.statusCode).toBe(422);
@@ -389,7 +389,7 @@ describe('CORR-001 B — server-authoritative withdrawal lifecycle', () => {
     );
     const response = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/withdraw`,
+      url: `/api/challenges/${setup.challengeId}/withdraw`,
       headers: authHeaders('token-a'),
     });
     expect(response.statusCode).toBe(422);

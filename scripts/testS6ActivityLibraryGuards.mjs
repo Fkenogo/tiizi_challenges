@@ -10,7 +10,7 @@ const api = read('api/src/knowledge.ts');
 const resultComponent = ui.split('function ActivityCard(')[1]?.split('function displayText(')[0] ?? '';
 const thumbnail = read('src/v2/components/ActivityThumbnail.tsx');
 const checks = [
-  ['member browse uses the authenticated Knowledge API', ui.includes('fetchPublishedActivities') && knowledgeApi.includes('apiFetch<KnowledgeListResponse>') && knowledgeApi.includes('/v1/knowledge?')],
+  ['member browse uses the authenticated Knowledge API', ui.includes('fetchPublishedActivities') && knowledgeApi.includes('apiFetch<KnowledgeListResponse>') && knowledgeApi.includes('API_PREFIX') && knowledgeApi.includes('${API_PREFIX}/knowledge?')],
   ['Library list uses the canonical-only filter', knowledgeApi.includes("canonicalOnly: 'true'") && api.includes('query.canonicalOnly === true')],
   ['search and governed category filtering are exposed', knowledgeApi.includes('query.set(\'search\'') && knowledgeApi.includes('query.set(\'category\'') && api.includes('subcategory ILIKE')],
   ['member detail renders only Published coded V2 identities', ui.includes("item.lifecycle === 'published'") && ui.includes('ACTIVITY_CODE.test(item.activityCode)')],

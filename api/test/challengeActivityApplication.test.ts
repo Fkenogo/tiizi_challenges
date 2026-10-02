@@ -265,7 +265,7 @@ describe('auth / authority', () => {
     // The stub subject above does not match the seeded member: unknown_member.
     const denied = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${setup.challengeId}/activity`,
+      url: `/api/challenges/${setup.challengeId}/activity`,
       headers: authHeaders('tok-c2b'),
       payload: {
         activity_kind: 'fitness',
@@ -312,7 +312,7 @@ describe('auth / authority', () => {
     });
     const ok = await app.inject({
       method: 'POST',
-      url: `/v1/challenges/${challenge.challenge_id}/activity`,
+      url: `/api/challenges/${challenge.challenge_id}/activity`,
       headers: authHeaders('tok-ok'),
       payload: {
         activity_kind: 'fitness',
@@ -337,7 +337,7 @@ describe('auth / authority', () => {
     ]) {
       const rejected = await app.inject({
         method: 'POST',
-        url: `/v1/challenges/${challenge.challenge_id}/activity`,
+        url: `/api/challenges/${challenge.challenge_id}/activity`,
         headers: authHeaders('tok-ok'),
         payload: {
           activity_kind: 'fitness',
@@ -358,7 +358,7 @@ describe('auth / authority', () => {
     const app = buildTestApp({});
     const denied = await app.inject({
       method: 'POST',
-      url: '/v1/challenges/00000000-0000-4000-8000-000000000000/activity',
+      url: '/api/challenges/00000000-0000-4000-8000-000000000000/activity',
       payload: {
         activity_kind: 'fitness',
         canonical_key: 'push-up',
@@ -1171,7 +1171,7 @@ describe('derived truth', () => {
     ]) {
       const rejected = await app.inject({
         method: 'POST',
-        url: `/v1/challenges/${challenge.challenge_id}/activity`,
+        url: `/api/challenges/${challenge.challenge_id}/activity`,
         headers: authHeaders('tok-derived'),
         payload: {
           activity_kind: 'fitness',

@@ -9,7 +9,7 @@ import {
 describe('authentication adapter', () => {
   it('rejects requests without a token', async () => {
     const app = buildTestApp({});
-    const res = await app.inject({ method: 'GET', url: '/v1/memberships/me' });
+    const res = await app.inject({ method: 'GET', url: '/api/memberships/me' });
     expect(res.statusCode).toBe(401);
     expect(res.json().error.code).toBe('missing_token');
   });
@@ -18,7 +18,7 @@ describe('authentication adapter', () => {
     const app = buildTestApp({});
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: { authorization: 'Token abc' },
     });
     expect(res.statusCode).toBe(401);
@@ -28,7 +28,7 @@ describe('authentication adapter', () => {
     const app = buildTestApp({ good: 'uid-1' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('bad'),
     });
     expect(res.statusCode).toBe(401);
@@ -39,7 +39,7 @@ describe('authentication adapter', () => {
     const app = buildTestApp({ good: 'ghost-uid' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('good'),
     });
     expect(res.statusCode).toBe(401);
@@ -51,7 +51,7 @@ describe('authentication adapter', () => {
     const app = buildTestApp({ good: 'known-uid' });
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/memberships/me',
+      url: '/api/memberships/me',
       headers: authHeaders('good'),
     });
     expect(res.statusCode).toBe(200);

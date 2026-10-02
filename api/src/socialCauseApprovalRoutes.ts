@@ -52,7 +52,7 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
     return true;
   }
 
-  app.get('/v1/operator/social-causes/pending', async (request, reply) => {
+  app.get('/api/operator/social-causes/pending', async (request, reply) => {
     const actor = authenticatedMember(request);
     if (!await requireOperator(actor.memberId, reply)) return;
     const result = await db.query<CauseReviewRow>(
@@ -61,7 +61,7 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
     return reply.code(200).send({ causes: result.rows });
   });
 
-  app.get('/v1/operator/social-causes/:challengeId', async (request, reply) => {
+  app.get('/api/operator/social-causes/:challengeId', async (request, reply) => {
     const actor = authenticatedMember(request);
     if (!await requireOperator(actor.memberId, reply)) return;
     const { challengeId } = request.params as { challengeId: string };
@@ -76,7 +76,7 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
     return reply.code(200).send({ ...result.rows[0], currentOperatorMemberId: actor.memberId, decisions: decisions.rows });
   });
 
-  app.delete('/v1/challenges/:challengeId/social-cause', async (request, reply) => {
+  app.delete('/api/challenges/:challengeId/social-cause', async (request, reply) => {
     const actor = authenticatedMember(request);
     const { challengeId } = request.params as { challengeId: string };
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(challengeId)) return reply.code(400).send({ error: { code: 'invalid_challenge', message: 'Challenge id must be a UUID' } });
@@ -90,7 +90,7 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
     return reply.code(200).send({ challengeId, approvalStatus: 'removed' });
   });
 
-  app.put('/v1/challenges/:challengeId/social-cause', async (request, reply) => {
+  app.put('/api/challenges/:challengeId/social-cause', async (request, reply) => {
     const actor = authenticatedMember(request);
     const { challengeId } = request.params as { challengeId: string };
     const body = request.body as Record<string, unknown>;
@@ -116,7 +116,7 @@ export function registerSocialCauseApprovalRoutes(app: FastifyInstance, db: Db, 
     return reply.code(200).send({ challengeId, approvalStatus: 'pending_approval' });
   });
 
-  app.post('/v1/challenges/:challengeId/social-cause/decision', async (request, reply) => {
+  app.post('/api/challenges/:challengeId/social-cause/decision', async (request, reply) => {
     const actor = authenticatedMember(request);
     if (!await requireOperator(actor.memberId, reply)) return;
     const { challengeId } = request.params as { challengeId: string };

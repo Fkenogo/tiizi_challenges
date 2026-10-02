@@ -1,7 +1,7 @@
 /**
  * PF-03-CORR-001 — authoritative establishment wiring + current-version gate.
  *
- * Integration proofs through the REAL POST /v1/challenges path: the route
+ * Integration proofs through the REAL POST /api/challenges path: the route
  * consumes validateChallengeDefinition as its single semantic authority,
  * new definitions pin the current Activity version, and establishment
  * persists immutable PF-03 snapshots.
@@ -241,7 +241,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c01', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c01'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
@@ -263,7 +263,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c02', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c02'),
       payload: postBody(groupId, [durationActivity('FIT-TST-902')]),
     });
@@ -280,7 +280,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c03', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c03'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
@@ -300,7 +300,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c04', uid);
     const bad = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c04'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
@@ -315,7 +315,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     expect(JSON.stringify(bad.json())).toMatch(/unsupported_load_basis/);
     const good = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c04'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
@@ -337,7 +337,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c05', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c05'),
       payload: postBody(groupId, [{
         ...durationActivity('FIT-TST-905'),
@@ -354,7 +354,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c06', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c06'),
       payload: postBody(groupId, [{
         ...durationActivity('FIT-TST-906'),
@@ -373,7 +373,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c07', uid);
     const missing = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c07'),
       payload: postBody(groupId, [{
         activity_kind: 'wellness',
@@ -387,7 +387,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     expect(JSON.stringify(missing.json())).toMatch(/missing_occurrence/);
     const good = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c07'),
       payload: postBody(groupId, [{
         activity_kind: 'wellness',
@@ -409,7 +409,7 @@ describe('PF-03-CORR route authority (proofs 1-8)', () => {
     const app = routeApp('c08', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c08'),
       payload: postBody(groupId, [{
         ...durationActivity('PF-03-CORR Hold'),
@@ -445,7 +445,7 @@ describe('PF-03-CORR current-version gate (proofs 9-12)', () => {
     const app = routeApp('c09', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c09'),
       payload: postBody(groupId, [{
         ...durationActivity('FIT-TST-908'),
@@ -461,7 +461,7 @@ describe('PF-03-CORR current-version gate (proofs 9-12)', () => {
     const app = routeApp('c10', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c10'),
       payload: postBody(groupId, [{
         ...durationActivity('FIT-TST-909'),
@@ -478,7 +478,7 @@ describe('PF-03-CORR current-version gate (proofs 9-12)', () => {
     const app = routeApp('c11', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c11'),
       payload: postBody(groupId, [durationActivity('FIT-TST-910')]),
     });
@@ -497,7 +497,7 @@ describe('PF-03-CORR current-version gate (proofs 9-12)', () => {
     // Preview built against v3 establishes while v3 is current.
     const first = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c12'),
       payload: payload(3),
     });
@@ -515,7 +515,7 @@ describe('PF-03-CORR current-version gate (proofs 9-12)', () => {
     // The same explicit v3 is now stale; the definition must be reviewed.
     const second = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c12'),
       payload: payload(3),
     });
@@ -524,7 +524,7 @@ describe('PF-03-CORR current-version gate (proofs 9-12)', () => {
     // Omitted version now pins v4.
     const third = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c12'),
       payload: postBody(groupId, [durationActivity('FIT-TST-911')], { title: 'CORR v4 pin' }),
     });
@@ -541,7 +541,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     const app = routeApp('c13', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c13'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
@@ -573,7 +573,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     const app = routeApp('c14', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c14'),
       payload: postBody(groupId, [
         { ...durationActivity('FIT-TST-912'), component_ids: ['LEFT', 'RIGHT'] },
@@ -627,7 +627,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     ]) {
       const response = await app.inject({
         method: 'POST',
-        url: '/v1/challenges',
+        url: '/api/challenges',
         headers: authHeaders('c15'),
         payload: postBody(groupId, [activity]),
       });
@@ -642,7 +642,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     const app = routeApp('c16', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c16'),
       payload: postBody(groupId, [durationActivity('FIT-TST-914')], {
         challenge_type: 'streak',
@@ -661,7 +661,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     const app = routeApp('c17', uid);
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c17'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
@@ -688,7 +688,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     const key = 'corr-key-18';
     const first = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c18'),
       payload: postBody(groupId, [durationActivity('FIT-TST-915')], { idempotency_key: key }),
     });
@@ -697,7 +697,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     // Same key + same request replays the original.
     const replay = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c18'),
       payload: postBody(groupId, [durationActivity('FIT-TST-915')], { idempotency_key: key }),
     });
@@ -706,7 +706,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     // Same key + different target is a different request: 409, no new state.
     const conflict = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c18'),
       payload: postBody(groupId, [durationActivity('FIT-TST-915', { target_value: 90 })], {
         idempotency_key: key,
@@ -716,7 +716,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     // Same key + different Duration mode is a different request too.
     const modeConflict = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c18'),
       payload: postBody(groupId, [durationActivity('FIT-TST-915', { duration_mode: 'ACCUMULATED' })], {
         idempotency_key: key,
@@ -731,7 +731,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     const denied = routeApp('c19', uid, denyAuthority());
     const response = await denied.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c19'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
@@ -759,7 +759,7 @@ describe('PF-03-CORR persistence, targets and authority (proofs 13-20)', () => {
     }
     const response = await app.inject({
       method: 'POST',
-      url: '/v1/challenges',
+      url: '/api/challenges',
       headers: authHeaders('c20'),
       payload: postBody(groupId, [{
         activity_kind: 'fitness',
