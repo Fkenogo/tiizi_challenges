@@ -1,6 +1,6 @@
 # TIIZI-S5 — Today Experience Charter 001
 
-**Task:** TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001 — reference reconciliation and bounded implementation readiness. **Documentation only; implementation NOT STARTED.**
+**Task:** TIIZI-S5-TODAY-EXPERIENCE-CHARTER-001 — reference reconciliation and bounded implementation readiness. **Authoritative charter; S5a implemented candidate is recorded below.**
 
 **Canonical implementation base reviewed:** `origin/main` @ `a2275fe2a80a4ec283e606412fadf91d1da4f468` (post PR #65).
 
@@ -8,7 +8,7 @@
 
 **Experience Reference inspected:** `Fkenogo/tiizi-prototye` @ `cfa696fbd09180c6fdaeaf14d2e8784d8b05d6a6`, including `docs/TIIZI-EXPERIENCE-REFERENCE.md`, `src/components/today/TodayView.tsx`, and `src/data/assumptionsData.ts`. This repository is an experience reference, not Product Truth or backend authority.
 
-**Status:** S5a is ready for Founder charter merge. S5b and S5c remain subsequent slices. No implementation has started or is authorized by this documentation task.
+**Status:** Charter merged and authoritative on `origin/main` @ `6866e325aeb64b12d17748b4638cd500028f86ee`. S5a implementation is an unmerged candidate; S5b and S5c remain subsequent slices.
 
 ## 1. Founder dispositions
 
@@ -88,20 +88,20 @@ Challenge `startDate`, `endDate`, `timezone`, lifecycle status, and server `gove
 
 **Purpose:** one authenticated, member-scoped server projection supporting the reconciled Today assembly. Identity is resolved from the authenticated request, never accepted from request body/query as a member selector. The endpoint composes current authorities and returns no client-derived truth.
 
-**Contract capability (shape to finalize during S5a implementation):**
+**Contract direction (implemented shape is recorded in the S5a implementation record):**
 
 ```text
 GET /v1/today
 {
   serverNow,
   activeChallengeCount,
-  dayContexts: [{ challengeId, timezone, governingToday, governingDayEndsAt? }],
-  requiredToday: [{ challengeRef, requiredActivities: [{ activityRef, label, target, unit, state }] }],
-  activeProgress: [{ challenge summary, own authoritative progress, detailHref }],
-  opportunities: [{ challenge summary, group summary, joinPath }],
-  upcoming: [{ challenge summary, boundary: "starts" | "ends", governingDate }],
-  results: [{ challengeRef, finalizedAt, detailHref }],
-  sections: { invitations: "unavailable", communityMoments: "unavailable", recognition: "unavailable" }
+  todayContext: { serverNow, activeChallengeCount, timezoneContexts },
+  requiredToday: [{ Challenge, governingToday, requirements, streak }],
+  joinedChallengeProgress: [{ Challenge, typeSpecificOwnProgress }],
+  groupChallengeOpportunities: [{ Challenge, Group, joinability: "not_asserted" }],
+  upcoming: [{ Challenge, kind: "starts" | "ends", lifecycleDate }],
+  finalizedResults: [{ Challenge, detailPath }],
+  unsupportedSections: { invitations, communityMoments, notifications }
 }
 ```
 
@@ -149,13 +149,13 @@ Member Today remains mobile-first, single-column, with one primary action per co
 
 ## 8. Programme disposition
 
-Master Programme v2.21 remains internally consistent after reconciliation and is advanced to **v2.22** to record the Founder dispositions and S5a boundary. Stage G remains Active. S1–S4 and S6 remain complete/accepted/merged. S5 remains the next unresolved member-facing slice with this sequence:
+At charter approval, Master Programme v2.21 advanced to **v2.22** to record the Founder dispositions and S5a boundary. Stage G remains Active. S1–S4 and S6 remain complete/accepted/merged. The current implementation state is now recorded in [S5a Today Member Projection 001](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md), and Master Programme v2.23 synchronizes that candidate status. S5 remains an active unresolved member-facing slice with this sequence:
 
-1. **S5a — Today Member Projection / Read Model:** immediate next slice; `GET /v1/today`; documentation charter ready for Founder merge. Not implemented.
+1. **S5a — Today Member Projection / Read Model:** `GET /v1/today`; implemented candidate awaiting Founder review; final implementation candidate commit `106579d854b98bba0b69c1590fa4f6f75c279a42` (runtime source was introduced in `b84451e1fe69b4e37334fc9d054792599f79b9bf`).
 2. **S5b — Today Experience Assembly:** follows S5a; member-facing assembly; not started.
 3. **S5c — Founder Preview / Acceptance:** follows S5b; not started.
 
-S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains absent and authority-gated. S9 production scheduler remains absent. S10 remains excluded pending commercial model. No implementation started in this documentation task.
+S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains absent and authority-gated. S9 production scheduler remains absent. S10 remains excluded pending commercial model. No S5b assembly, deployment, production access, or production mutation occurred.
 
 ## 9. Validation and publication record
 
@@ -173,8 +173,12 @@ S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains 
 
 **S5 TODAY EXPERIENCE:** FOUNDER DIRECTION RECONCILED WITH EXPERIENCE REFERENCE
 
-**S5a TODAY MEMBER PROJECTION:** READY FOR FOUNDER CHARTER MERGE
+**S5a TODAY MEMBER PROJECTION:** IMPLEMENTED CANDIDATE — AWAITING FOUNDER REVIEW
 
-**IMPLEMENTATION:** NOT STARTED
+**S5b TODAY EXPERIENCE ASSEMBLY:** NOT STARTED
 
 **MERGE STATUS:** NOT MERGED — AWAITING FOUNDER
+
+## 11. S5a implementation record
+
+Implementation status, exact field provenance, query composition, security boundary, validation, and candidate SHA are recorded in [TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md). This record does not advance S5b, mark Today complete, alter Product Truth, or authorize deployment or production access.
