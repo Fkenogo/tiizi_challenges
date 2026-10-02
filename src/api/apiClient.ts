@@ -84,9 +84,21 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
     } catch {
       // Keep the generic message when the body is not JSON.
     }
+    if (import.meta.env.DEV) {
+      // Keep local diagnosis useful without logging bearer tokens or response
+      // bodies, which may contain member and beneficiary information.
+      console.warn('[Tiizi API] request failed', { path, status: response.status, code });
+    }
     throw new ApiError(response.status, code, message);
   }
-  return (await response.json()) as T;
+  try {
+    return (await response.json()) as T;
+  } catch {
+    if (import.meta.env.DEV) {
+      console.warn('[Tiizi API] response was not valid JSON', { path, status: response.status });
+    }
+    throw new ApiError(response.status, 'invalid_response', 'The API returned an invalid response');
+  }
 }
 
 /** Non-throwing transport result for endpoints whose error body carries data. */

@@ -15,10 +15,13 @@ import { useAuth } from '../../hooks/useAuth';
 export function ProtectedRoute({
   children,
   loginPath = '/app/login',
+  loginQuery,
 }: {
   children: React.ReactNode;
   /** Unauthenticated entry route. V1 default preserved; V2 supplies its own. */
   loginPath?: string;
+  /** Optional entry hints for the requested path; never affects session authority. */
+  loginQuery?: (requestedPath: string) => Record<string, string>;
 }) {
   const { isAuthenticated, isReady } = useAuth();
   const location = useLocation();
@@ -29,7 +32,8 @@ export function ProtectedRoute({
 
   if (!isAuthenticated) {
     const requestedPath = `${location.pathname}${location.search}${location.hash}`;
-    return <Navigate to={`${loginPath}?next=${encodeURIComponent(requestedPath)}`} replace />;
+    const query = new URLSearchParams({ next: requestedPath, ...(loginQuery?.(requestedPath) ?? {}) });
+    return <Navigate to={`${loginPath}?${query.toString()}`} replace />;
   }
 
   return <>{children}</>;

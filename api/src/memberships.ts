@@ -8,6 +8,7 @@ export interface ApiMembershipGroup {
   name: string;
   description: string;
   isPrivate: boolean;
+  allowMemberChallenges: boolean;
   /** Governed Group presentation fields read from authoritative PostgreSQL. */
   coverId: string | null;
   tagline: string;
@@ -44,6 +45,7 @@ interface MembershipRow {
   group_name: string;
   group_description: string;
   group_is_private: boolean;
+  group_allow_member_challenges: boolean;
   group_cover_id: string | null;
   group_tagline: string | null;
   group_location: string | null;
@@ -61,6 +63,7 @@ export async function listMembershipsForMember(db: Db, memberId: string): Promis
     `SELECT m.group_id, m.role, m.status, m.joined_at,
             g.name AS group_name, g.description AS group_description,
             g.is_private AS group_is_private,
+            g.allow_member_challenges AS group_allow_member_challenges,
             g.cover_id AS group_cover_id, g.tagline AS group_tagline,
             g.location AS group_location, g.focus_tags AS group_focus_tags,
             g.goal_ids AS group_goal_ids, g.custom_goal AS group_custom_goal
@@ -81,6 +84,7 @@ export async function listMembershipsForMember(db: Db, memberId: string): Promis
       name: row.group_name,
       description: row.group_description ?? '',
       isPrivate: Boolean(row.group_is_private),
+      allowMemberChallenges: row.group_allow_member_challenges !== false,
       coverId: typeof row.group_cover_id === 'string' ? row.group_cover_id : null,
       tagline: typeof row.group_tagline === 'string' ? row.group_tagline : '',
       location: typeof row.group_location === 'string' ? row.group_location : '',
@@ -94,12 +98,14 @@ export async function listPendingMembershipsForMember(db: Db, memberId: string):
   const result = await db.query<{
     group_id: string; requested_at: string | Date | null; created_at: string | Date;
     group_name: string; group_description: string; group_is_private: boolean;
+    group_allow_member_challenges: boolean;
     group_cover_id: string | null; group_tagline: string | null;
     group_location: string | null; group_focus_tags: unknown;
     group_goal_ids: unknown; group_custom_goal: string | null;
   }>(
     `SELECT gm.group_id, gm.requested_at, gm.created_at,
        g.name AS group_name, g.description AS group_description, g.is_private AS group_is_private,
+       g.allow_member_challenges AS group_allow_member_challenges,
        g.cover_id AS group_cover_id, g.tagline AS group_tagline,
        g.location AS group_location, g.focus_tags AS group_focus_tags,
        g.goal_ids AS group_goal_ids, g.custom_goal AS group_custom_goal
@@ -113,6 +119,7 @@ export async function listPendingMembershipsForMember(db: Db, memberId: string):
     group: {
       id: String(row.group_id), name: row.group_name, description: row.group_description ?? '',
       isPrivate: Boolean(row.group_is_private),
+      allowMemberChallenges: row.group_allow_member_challenges !== false,
       coverId: typeof row.group_cover_id === 'string' ? row.group_cover_id : null,
       tagline: typeof row.group_tagline === 'string' ? row.group_tagline : '',
       location: typeof row.group_location === 'string' ? row.group_location : '',
@@ -136,7 +143,7 @@ export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
       pendingMemberships: { type: 'array', items: { type: 'object', required: ['groupId', 'requestedAt', 'group'], properties: {
         groupId: { type: 'string', format: 'uuid' }, requestedAt: { type: 'string' }, group: { type: 'object', required: ['id', 'name', 'description', 'isPrivate'], properties: {
           id: { type: 'string', format: 'uuid' }, name: { type: 'string' }, description: { type: 'string' }, isPrivate: { type: 'boolean' },
-          coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] }, tagline: { type: 'string' }, location: { type: 'string' }, focusTags: { type: 'array', items: { type: 'string' } }, goals: { type: 'array', items: { type: 'string' } },
+          allowMemberChallenges: { type: 'boolean' }, coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] }, tagline: { type: 'string' }, location: { type: 'string' }, focusTags: { type: 'array', items: { type: 'string' } }, goals: { type: 'array', items: { type: 'string' } },
         } },
       } } },
               memberships: {
@@ -157,6 +164,7 @@ export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
                         name: { type: 'string' },
                         description: { type: 'string' },
                         isPrivate: { type: 'boolean' },
+                        allowMemberChallenges: { type: 'boolean' },
                         coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
                         tagline: { type: 'string' },
                         location: { type: 'string' },

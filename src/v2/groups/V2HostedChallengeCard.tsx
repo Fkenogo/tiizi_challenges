@@ -206,7 +206,7 @@ export function V2HostedChallengeCard({
             )}
             {mine && (
               <p className="mt-1 text-[11px] text-slate-600">
-                Your contribution: <strong className="text-slate-900">{mine.progress.cumulativeTotal}{challenge.goalUnit ? ` ${challenge.goalUnit}` : ''}</strong>
+                Your activity contribution: <strong className="text-slate-900">{mine.progress.cumulativeTotal}{challenge.goalUnit ? ` ${challenge.goalUnit}` : ''}</strong>
               </p>
             )}
           </div>

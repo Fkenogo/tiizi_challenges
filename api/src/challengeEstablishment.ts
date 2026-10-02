@@ -371,6 +371,9 @@ export function hashDefinitionRequest(input: {
   definition: NormalizedChallengeDefinition;
   activate: boolean;
   joinCreator: boolean;
+  coverId?: string | null;
+  supportTiiziEnabled?: boolean;
+  socialCause?: DefinitionEstablishmentInput['socialCause'];
 }): string {
   const canonical = {
     path: 'pf03-v1',
@@ -379,6 +382,9 @@ export function hashDefinitionRequest(input: {
     definition: input.definition,
     activate: input.activate,
     joinCreator: input.joinCreator,
+    coverId: input.coverId ?? null,
+    supportTiiziEnabled: input.supportTiiziEnabled === true,
+    socialCause: input.socialCause ?? null,
   };
   return createHash('sha256').update(JSON.stringify(canonical), 'utf8').digest('hex');
 }
@@ -394,6 +400,9 @@ export interface DefinitionEstablishmentInput {
   joinCreator: boolean;
   /** Bounded retry contract (same semantics as the legacy seam). */
   idempotencyKey?: string;
+  coverId?: string | null;
+  supportTiiziEnabled?: boolean;
+  socialCause?: { title: string; description: string; purpose: string; beneficiary: string; paymentDestinationReference: string } | null;
 }
 
 /**
@@ -424,6 +433,9 @@ export async function establishChallengeDefinitionV2(
       definition,
       activate: input.activate,
       joinCreator: input.joinCreator,
+      coverId: input.coverId ?? null,
+      supportTiiziEnabled: input.supportTiiziEnabled === true,
+      socialCause: input.socialCause ?? null,
     });
 
   // Live Group authority, outside the transaction (fail closed) — the same
@@ -452,15 +464,15 @@ export async function establishChallengeDefinitionV2(
     return await db.transaction(async (tx) => {
       const inserted = await tx.query(
         `INSERT INTO challenges
-           (group_id, created_by_member_id, challenge_type, title, description,
+           (group_id, created_by_member_id, challenge_type, title, cover_id, support_tiizi_enabled, description,
             instructions, start_date, end_date,
             goal_value, goal_unit, required_consecutive_days, reset_on_miss,
             timezone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          RETURNING *`,
         [
           input.groupId, input.creatorMemberId, definition.challengeType,
-          definition.title, definition.description, definition.instructions,
+          definition.title, input.coverId ?? null, input.supportTiiziEnabled === true, definition.description, definition.instructions,
           definition.window.startDate, definition.window.endDate,
           definition.goalValue, definition.goalUnit,
           definition.requiredConsecutiveDays, definition.resetOnMiss,
@@ -468,6 +480,15 @@ export async function establishChallengeDefinitionV2(
         ],
       );
       const challengeRow = normalizeChallengeRow(inserted.rows[0] as never);
+      if (input.socialCause) {
+        await tx.query(
+          `INSERT INTO challenge_social_causes
+             (challenge_id,title,description,purpose,beneficiary,payment_destination_reference,destination_owner,approval_status)
+           VALUES ($1,$2,$3,$4,$5,$6,'beneficiary','pending_approval')`,
+          [challengeRow.challenge_id, input.socialCause.title, input.socialCause.description, input.socialCause.purpose,
+            input.socialCause.beneficiary, input.socialCause.paymentDestinationReference],
+        );
+      }
       const { activities } = await insertChallengeDefinitionVersion(
         tx,
         challengeRow.challenge_id,
@@ -489,7 +510,7 @@ export async function establishChallengeDefinitionV2(
       }
       let status = challengeRow.status;
       let activated = false;
-      if (input.activate && status !== 'active') {
+      if (input.activate && status !== 'active' && !input.socialCause) {
         const next = await activateChallenge(tx, challengeRow.challenge_id);
         status = next.status;
         activated = true;

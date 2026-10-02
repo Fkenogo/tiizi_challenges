@@ -36,3 +36,10 @@ export function v2NextQuery(next: string): string {
   if (!next || next === V2_DEFAULT_NEXT) return '';
   return `?next=${encodeURIComponent(next)}`;
 }
+
+/** The Development-only sign-in handoff hint is limited to the real review route. */
+export function v2AuthEntryHints(requestedPath: string, isDevelopment: boolean): Record<string, string> {
+  return isDevelopment && requestedPath === '/v2/operator/review'
+    ? { operatorPreview: '1' }
+    : {};
+}

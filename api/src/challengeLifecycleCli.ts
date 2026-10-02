@@ -1,10 +1,12 @@
 /**
- * EBC-04 Challenge lifecycle CLI — the schedulable entrypoint for the
- * deterministic expiry/finalization/rebuild seams (no scheduler is deployed
- * here; a later job invokes these commands).
+ * Challenge lifecycle CLI — deterministic scheduled-start and
+ * expiry/finalization/rebuild seams. No scheduler is deployed here; S9 may
+ * invoke `process-lifecycle` as its governed job command.
  *
  * Usage:
- *   tsx src/challengeLifecycleCli.ts process-expired [--now <ISO>]
+ *   tsx src/challengeLifecycleCli.ts process-lifecycle [--now <ISO>]
+ *   tsx src/challengeLifecycleCli.ts process-scheduled [--now <ISO>]
+ *   tsx src/challengeLifecycleCli.ts process-expired [--now <ISO>] # compatibility alias for process-lifecycle
  *   tsx src/challengeLifecycleCli.ts finalize <challengeId> [--now <ISO>]
  *   tsx src/challengeLifecycleCli.ts rebuild <challengeId> [--repair-finalized]
  *
@@ -18,6 +20,7 @@ import { createPool, databaseUrl, type Db } from './db.js';
 import {
   finalizeChallenge,
   processExpiredChallenges,
+  processScheduledChallengeStarts,
   rebuildChallengeDerived,
 } from './challengeFinalization.js';
 
@@ -36,8 +39,26 @@ function readNow(args: string[]): Date {
 
 export async function runLifecycleCommand(db: Db, argv: string[]): Promise<void> {
   const [command, ...rest] = argv;
-  if (command === 'process-expired') {
-    const outcomes = await processExpiredChallenges(db, readNow(rest));
+  if (command === 'process-scheduled') {
+    const outcomes = await processScheduledChallengeStarts(db, readNow(rest));
+    for (const outcome of outcomes) {
+      console.log(
+        `lifecycle: ${outcome.challenge_id} due=${outcome.due} `
+        + `activated=${outcome.activated} blockedBy=${outcome.blockedBy ?? 'none'}`,
+      );
+    }
+    return;
+  }
+  if (command === 'process-lifecycle' || command === 'process-expired') {
+    const now = readNow(rest);
+    const starts = await processScheduledChallengeStarts(db, now);
+    for (const outcome of starts) {
+      console.log(
+        `lifecycle: ${outcome.challenge_id} due=${outcome.due} `
+        + `activated=${outcome.activated} blockedBy=${outcome.blockedBy ?? 'none'}`,
+      );
+    }
+    const outcomes = await processExpiredChallenges(db, now);
     for (const outcome of outcomes) {
       console.log(
         `lifecycle: ${outcome.challenge_id} expired=${outcome.expired} `
@@ -74,7 +95,7 @@ export async function runLifecycleCommand(db: Db, argv: string[]): Promise<void>
     }
     return;
   }
-  cliFail(`unknown command '${command ?? '(none)'}' (expected process-expired|finalize|rebuild)`);
+  cliFail(`unknown command '${command ?? '(none)'}' (expected process-lifecycle|process-scheduled|finalize|rebuild)`);
 }
 
 async function main(): Promise<void> {

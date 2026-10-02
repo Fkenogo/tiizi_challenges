@@ -1,4 +1,5 @@
 import { ProtectedRoute } from '../../components/Auth/ProtectedRoute';
+import { v2AuthEntryHints } from './v2NextPath';
 
 /**
  * TIIZI S1 CORR-001 — V2 authentication boundary.
@@ -14,5 +15,12 @@ import { ProtectedRoute } from '../../components/Auth/ProtectedRoute';
 export const V2_SIGN_IN_PATH = '/v2/sign-in';
 
 export function V2Authenticated({ children }: { children: React.ReactNode }) {
-  return <ProtectedRoute loginPath={V2_SIGN_IN_PATH}>{children}</ProtectedRoute>;
+  return (
+    <ProtectedRoute
+      loginPath={V2_SIGN_IN_PATH}
+      loginQuery={(requestedPath) => v2AuthEntryHints(requestedPath, import.meta.env.DEV)}
+    >
+      {children}
+    </ProtectedRoute>
+  );
 }

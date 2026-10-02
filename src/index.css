@@ -131,6 +131,15 @@ select {
     overflow-x: visible;
   }
 
+  body.operator-desktop #root {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+    background: transparent;
+    overflow-x: visible;
+  }
+
   body.admin-desktop {
     background: #f1f5f9;
   }

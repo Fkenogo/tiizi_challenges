@@ -33,6 +33,7 @@ import {
   createInitialWizardState,
   creationErrorMessage,
   deriveEndDate,
+  inclusiveDurationDays,
   firstIncompleteStep,
   formatDay,
   isWizardComplete,
@@ -100,6 +101,7 @@ function baseState(overrides: Partial<WizardState> = {}): WizardState {
     groupId: GROUP_ID,
     groupName: 'Nairobi Morning Movers',
     title: 'June Race',
+    coverId: 'challenge-1',
     activities: [activity()],
     startDate: '2026-06-01',
     durationDays: 14,
@@ -108,18 +110,20 @@ function baseState(overrides: Partial<WizardState> = {}): WizardState {
   };
 }
 
-// ─── Visible six steps → governed draft ─────────────────────────────────────
-console.log('visible six-step structure');
-check('six visible steps in the adopted order', VISIBLE_STEPS.length === 6
+// ─── Visible seven steps → governed draft ───────────────────────────────────
+console.log('visible seven-step structure');
+check('seven visible steps in the adopted order', VISIBLE_STEPS.length === 7
   && VISIBLE_STEPS[0] === 'HOW_IT_WORKS'
-  && VISIBLE_STEPS[2] === 'WHAT_ARE_WE_DOING'
-  && VISIBLE_STEPS[5] === 'REVIEW_AND_CREATE');
+  && VISIBLE_STEPS[1] === 'WHO_IS_HOSTING'
+  && VISIBLE_STEPS[2] === 'CHALLENGE_DETAILS'
+  && VISIBLE_STEPS[3] === 'WHAT_ARE_WE_DOING'
+  && VISIBLE_STEPS[6] === 'REVIEW_AND_CREATE');
 check('type terminology is human-facing', challengeTypeLabel('collective') === 'Together'
   && challengeTypeLabel('competitive') === 'Race'
   && challengeTypeLabel('streak') === 'Streak');
 check('internal values are never the label', challengeTypeLabel('collective') !== 'collective');
 
-console.log('six steps map to the governed PF-04 draft');
+console.log('seven steps map to the governed PF-04 draft');
 const draft = toComposerDraft(baseState());
 check('draft kind/mode are the governed contract', draft.draftKind === 'pf04-v1' && draft.mode === 'CHALLENGE');
 check('type + basics + window present', draft.challengeType === 'competitive'
@@ -135,7 +139,8 @@ console.log('Group context');
 const noGroup = baseState({ groupId: null, groupName: null });
 check('host step is incomplete without a Group', assessVisibleStep(noGroup, 'WHO_IS_HOSTING').complete === false
   && assessVisibleStep(noGroup, 'WHO_IS_HOSTING').missing.includes('group'));
-check('with a Group + title the host step completes', assessVisibleStep(baseState(), 'WHO_IS_HOSTING').complete === true);
+check('host step needs only a permitted Group', assessVisibleStep(baseState({ title: '' }), 'WHO_IS_HOSTING').complete === true);
+check('Challenge title belongs to details step', assessVisibleStep(baseState({ title: '' }), 'CHALLENGE_DETAILS').complete === false);
 let threw = false;
 try {
   toEstablishmentBody(noGroup, { activate: true, joinCreator: false });
@@ -149,6 +154,10 @@ check('host picker binds the member real memberships', wizardSource.includes('us
 check('no hardcoded Group list in the wizard', !/Nairobi Morning Movers|INITIAL_GROUPS|mockGroups/.test(wizardSource));
 const membershipsApi = read('src/api/membershipsApi.ts');
 check('memberships come from GET /v1/memberships/me', membershipsApi.includes('/v1/memberships/me'));
+check('host results stay hidden until the user searches', wizardSource.includes("search.trim() !== '' && <ul aria-label=\"Matching host Groups\""));
+check('host results keep the governed challenge-creation eligibility filter', wizardSource.includes("membership.group.allowMemberChallenges !== false") && wizardSource.includes("['owner', 'admin', 'steward']"));
+check('host selector uses the shared Group cover catalogue renderer', wizardSource.includes('coverFor(membership.group.coverId, membership.groupId)') && wizardSource.includes('coverGradientFor'));
+check('host selection retains canonical membership groupId and selected state', wizardSource.includes('onSelectGroup(membership)') && wizardSource.includes('aria-pressed={state.groupId === membership.groupId}') && wizardSource.includes('Selected Group:'));
 
 // ─── Composer-selectable catalogue only ─────────────────────────────────────
 console.log('catalogue boundary');
@@ -218,6 +227,11 @@ check('client never invents compatibility (no metricForUnit client-side)', !wiza
 console.log('creator participation');
 const initial = createInitialWizardState(new Date(2026, 5, 1));
 check('creator participation defaults to NOT joining', initial.creatorJoins === false);
+check('Support a Cause and Support Tiizi default OFF', initial.socialCauseEnabled === false && initial.supportTiiziEnabled === false);
+check('Challenge creation persists selected cover reference', toEstablishmentBody(baseState(), { activate: false, joinCreator: false }).cover_id === 'challenge-1');
+check('Support Tiizi persists only governed enablement', toEstablishmentBody(baseState({ supportTiiziEnabled: true }), { activate: false, joinCreator: false }).support_tiizi_enabled === true);
+check('Cause config is included only after explicit opt-in', !('social_cause' in toEstablishmentBody(baseState(), { activate: false, joinCreator: false }))
+  && 'social_cause' in toEstablishmentBody(baseState({ socialCauseEnabled: true, socialCauseTitle: 'Park', socialCauseDescription: 'Care', socialCausePurpose: 'Clean', socialCauseBeneficiary: 'Trust', socialCauseDestination: 'wallet' }), { activate: false, joinCreator: false }));
 const joinBody = toEstablishmentBody(baseState({ creatorJoins: true }), { activate: true, joinCreator: true });
 const noJoinBody = toEstablishmentBody(baseState({ creatorJoins: false }), { activate: true, joinCreator: false });
 check('join_creator reflects the explicit choice', joinBody.join_creator === true && noJoinBody.join_creator === false);
@@ -271,6 +285,10 @@ check('unknown codes fall back safely', /try again/i.test(creationErrorMessage('
 console.log('created context + list binding');
 const createdSource = read('src/v2/challenges/V2CreatedChallengeScreen.tsx');
 check('created screen reads persisted detail', createdSource.includes('useChallengeDetailV2'));
+check('created screen clearly communicates pending Cause approval and inactive scheduled-start consequence',
+  /approvalStatus === ['"]pending_approval['"]/.test(createdSource)
+  && /Cause approval pending/.test(createdSource)
+  && /remain inactive if its scheduled start arrives before approval/.test(createdSource));
 check('created screen shows participation state', /myParticipation/.test(createdSource));
 check('created screen renders persisted detail progress (measurement config no longer duplicated)',
   /V2ProgressSection/.test(createdSource) && !/MeasurementSummary/.test(createdSource));
@@ -292,10 +310,12 @@ check('friendly day label', formatDay('2026-06-14') === '14 Jun 2026');
 check('streak requires the governed timezone', assessVisibleStep(
   baseState({ challengeType: 'streak', timezone: '' }), 'WHEN_DOES_IT_RUN',
 ).complete === false);
-check('timezone labels are friendly, not raw IANA', (() => {
-  const summary = summarize(baseState({ timezone: 'Africa/Nairobi' }));
-  return summary.includes('Nairobi time') && !summary.includes('Africa/Nairobi');
+check('what-counts summary omits schedule and timezone before the schedule step', (() => {
+  const summary = summarize(baseState({ timezone: 'Africa/Nairobi', durationDays: 14 }));
+  return !/14 days|Africa\/Nairobi|Nairobi time|UTC[+-]/.test(summary);
 })());
+check('custom date range calculates inclusive calendar duration', inclusiveDurationDays('2026-06-01', '2026-06-14') === 14
+  && inclusiveDurationDays('2026-06-01', '2026-05-31') === null);
 check('only Streak allows multiple activities', allowsMultipleActivities('streak')
   && !allowsMultipleActivities('collective') && !allowsMultipleActivities('competitive'));
 

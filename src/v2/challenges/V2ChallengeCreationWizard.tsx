@@ -29,7 +29,6 @@ import {
 import {
   CHALLENGE_TYPE_OPTIONS,
   DURATION_OPTIONS,
-  TIMEZONE_OPTIONS,
   VISIBLE_STEPS,
   VISIBLE_STEP_META,
   allowsMultipleActivities,
@@ -40,6 +39,7 @@ import {
   createInitialWizardState,
   creationErrorMessage,
   deriveEndDate,
+  inclusiveDurationDays,
   formatDay,
   isWizardComplete,
   loadBasisLabel,
@@ -64,9 +64,11 @@ import {
   useV2Memberships,
 } from './useChallengeCreation';
 import type { ApiMembership } from '../../api/membershipsApi';
+import { coverFor, coverGradientFor } from '../groups/groupCovers';
+import { CHALLENGE_COVER_IDS, challengeCoverGradient, challengeCoverLabel } from './challengeCovers';
 
 /**
- * S2b — the six-step V2 Challenge Creation experience.
+ * S2b — the seven-step V2 Challenge Creation experience.
  *
  * Visible structure follows the adopted Experience Reference; the draft it
  * composes is the governed PF-04 Composer draft. All semantic validation and
@@ -168,7 +170,8 @@ export function V2ChallengeCreationWizard() {
   // server-side through the governed Challenge authority.
   useEffect(() => {
     if (preselected.current) return;
-    const list = memberships.data?.memberships ?? [];
+    const list = memberships.data?.memberships.filter((membership) => membership.group.allowMemberChallenges !== false
+      || ['owner', 'admin', 'steward'].includes(membership.role.toLowerCase())) ?? [];
     const hinted = (location.state as { groupId?: unknown } | null)?.groupId;
     const hintedMatch =
       typeof hinted === 'string' ? list.find((membership) => membership.groupId === hinted) : undefined;
@@ -329,10 +332,10 @@ export function V2ChallengeCreationWizard() {
           onSelectGroup={(membership) =>
             update({ groupId: membership.groupId, groupName: membership.group.name })
           }
-          onTitle={(title) => update({ title })}
-          onDescription={(description) => update({ description })}
         />
       )}
+
+      {currentStep === 'CHALLENGE_DETAILS' && <StepChallengeDetails state={state} onUpdate={update} />}
 
       {currentStep === 'WHAT_ARE_WE_DOING' && (
         <StepActivities
@@ -455,16 +458,13 @@ function StepHosting({
   memberships,
   state,
   onSelectGroup,
-  onTitle,
-  onDescription,
 }: {
   memberships: ReturnType<typeof useV2Memberships>;
   state: WizardState;
   onSelectGroup: (membership: ApiMembership) => void;
-  onTitle: (title: string) => void;
-  onDescription: (description: string) => void;
 }) {
   const navigate = useNavigate();
+  const [search, setSearch] = useState('');
   if (memberships.isLoading) return <V2LoadingState label="Loading your Groups…" />;
   if (memberships.isError) {
     return (
@@ -476,7 +476,12 @@ function StepHosting({
     );
   }
   const list = memberships.data?.memberships ?? [];
-  if (list.length === 0) {
+  const eligible = list.filter((membership) => membership.group.allowMemberChallenges !== false
+    || ['owner', 'admin', 'steward'].includes(membership.role.toLowerCase()));
+  const filtered = eligible.filter((membership) =>
+    `${membership.group.name} ${membership.group.description}`.toLowerCase().includes(search.trim().toLowerCase()),
+  );
+  if (eligible.length === 0) {
     return (
       <V2EmptyState
         title="A Challenge belongs to a Group"
@@ -496,36 +501,44 @@ function StepHosting({
         Challenges are hosted inside a Group. Choose the Group that will host this Challenge.
       </p>
       <div>
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-600">Host Group</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {list.map((membership) => (
-            <V2ChoiceCard
-              key={membership.groupId}
-              selected={state.groupId === membership.groupId}
-              onClick={() => onSelectGroup(membership)}
-              title={membership.group.name}
-              subtitle={roleLabel(membership.role)}
-              description={membership.group.description || undefined}
-            />
+        <V2Field label="Search Groups">
+          <V2TextInput value={search} onChange={setSearch} placeholder="Find a Group you can host in…" />
+        </V2Field>
+        {search.trim() !== '' && <ul aria-label="Matching host Groups" className="mt-3 space-y-2">
+          {filtered.map((membership) => (
+            <li key={membership.groupId}>
+              <button type="button" aria-pressed={state.groupId === membership.groupId}
+                onClick={() => onSelectGroup(membership)}
+                className={`flex min-h-[84px] w-full items-center gap-3 rounded-xl border p-3 text-left ${state.groupId === membership.groupId ? 'border-orange-400 bg-orange-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                <span className={`h-14 w-14 shrink-0 rounded-lg bg-gradient-to-br ${coverGradientFor(coverFor(membership.group.coverId, membership.groupId))}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold text-slate-900">{membership.group.name}</span><span className="block truncate text-xs text-slate-500">{roleLabel(membership.role)}</span>
+                  {(membership.group.focusTags ?? []).length > 0 && <span className="mt-1 flex flex-wrap gap-1">{(membership.group.focusTags ?? []).slice(0, 3).map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>)}</span>}
+                  {(membership.group.goals ?? []).length > 0 && <span className="mt-1 block truncate text-[11px] text-slate-500">Goals: {(membership.group.goals ?? []).slice(0, 2).join(' · ')}</span>}
+                </span>
+                <span className="shrink-0 text-xs font-bold text-primary">{state.groupId === membership.groupId ? 'Selected' : 'Select'}</span>
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>}
+        {search.trim() === '' && <p className="mt-3 text-sm text-slate-500">Search by Group name to see Groups you can host in.</p>}
+        {search.trim() !== '' && filtered.length === 0 && <p className="mt-3 text-sm text-slate-500">No host Groups match that search.</p>}
+        {state.groupId && <p className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-bold text-slate-800">Selected Group: {state.groupName}. Search again to change your selection.</p>}
       </div>
-      <V2Field label="Challenge title">
-        <V2TextInput
-          value={state.title}
-          onChange={onTitle}
-          placeholder="e.g. Sunrise 500 km community walk"
-        />
-      </V2Field>
-      <V2Field label="Description" hint="Tell the Group why this Challenge matters and how everyone contributes.">
-        <V2TextArea
-          value={state.description}
-          onChange={onDescription}
-          placeholder="Share what this Challenge means to your Group…"
-        />
-      </V2Field>
     </div>
   );
+}
+
+function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void }) {
+  return <div className="space-y-4">
+    <p className="text-sm leading-6 text-slate-600">Give the Challenge a clear name and a short description for your Group.</p>
+    <V2Field label="Challenge title"><V2TextInput value={state.title} onChange={(title) => onUpdate({ title })} placeholder="e.g. Sunrise walking streak" /></V2Field>
+    <V2Field label="Description" hint="Optional. Explain what this Challenge means to your Group."><V2TextArea value={state.description} onChange={(description) => onUpdate({ description })} placeholder="Add a short description…" /></V2Field>
+    <fieldset><legend className="mb-2 text-sm font-bold text-slate-900">Challenge background</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{CHALLENGE_COVER_IDS.map((cover) => <button key={cover} type="button" aria-pressed={state.coverId === cover} onClick={() => onUpdate({ coverId: cover })} className={`overflow-hidden rounded-xl border text-left ${state.coverId === cover ? 'border-orange-500 ring-2 ring-orange-300' : 'border-slate-200'}`}><span className={`block h-16 bg-gradient-to-br ${challengeCoverGradient(cover)}`} /><span className="block px-2 py-1.5 text-xs font-bold">{challengeCoverLabel(cover)}</span></button>)}</div></fieldset>
+    <section className="rounded-2xl border border-slate-200 p-4"><h3 className="text-sm font-black">Optional support</h3><label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.socialCauseEnabled} onChange={(event) => onUpdate({ socialCauseEnabled: event.target.checked })} />Support a Cause</label>
+      {state.socialCauseEnabled && <div className="mt-2 grid gap-3 rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">A Platform Operator must approve this Cause before the Challenge can go live. Tiizi does not hold Cause funds.</p><V2Field label="Cause title"><V2TextInput value={state.socialCauseTitle} onChange={(socialCauseTitle) => onUpdate({ socialCauseTitle })} /></V2Field><V2Field label="Description"><V2TextArea value={state.socialCauseDescription} onChange={(socialCauseDescription) => onUpdate({ socialCauseDescription })} /></V2Field><V2Field label="Purpose"><V2TextInput value={state.socialCausePurpose} onChange={(socialCausePurpose) => onUpdate({ socialCausePurpose })} /></V2Field><V2Field label="Beneficiary"><V2TextInput value={state.socialCauseBeneficiary} onChange={(socialCauseBeneficiary) => onUpdate({ socialCauseBeneficiary })} /></V2Field><V2Field label="External payment destination reference" hint="This destination belongs to the beneficiary."><V2TextInput value={state.socialCauseDestination} onChange={(socialCauseDestination) => onUpdate({ socialCauseDestination })} /></V2Field></div>}
+      <label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.supportTiiziEnabled} onChange={(event) => onUpdate({ supportTiiziEnabled: event.target.checked })} />Support Tiizi</label>{state.supportTiiziEnabled && <p className="ml-7 text-xs text-slate-600">Voluntary support for Tiizi. Participation never depends on financial support. The platform controls its payment destination.</p>}
+    </section>
+  </div>;
 }
 
 function StepActivities({
@@ -687,7 +700,7 @@ function StepWhatCounts({
   }
   const type = state.challengeType;
   const targetLabel =
-    type === 'collective' ? 'Shared goal each contribution adds to'
+    type === 'collective' ? 'Shared goal'
       : type === 'streak' ? 'Daily requirement'
         : 'Target to reach';
 
@@ -819,42 +832,42 @@ function StepSchedule({
   state: WizardState;
   onUpdate: (patch: Partial<WizardState>) => void;
 }) {
-  const endDate = deriveEndDate(state.startDate, state.durationDays);
+  const duration = inclusiveDurationDays(state.startDate, state.endDate);
+  const updateStartDate = (startDate: string) => {
+    const endDate = state.scheduleMode === 'preset' ? deriveEndDate(startDate, state.durationDays) : state.endDate;
+    onUpdate({ startDate, endDate, ...(state.scheduleMode === 'custom' ? { durationDays: inclusiveDurationDays(startDate, endDate) ?? 0 } : {}) });
+  };
+  const updateEndDate = (endDate: string) => onUpdate({ endDate, durationDays: inclusiveDurationDays(state.startDate, endDate) ?? 0 });
   return (
     <div className="space-y-5">
       <p className="text-sm leading-6 text-slate-600">
-        Pick a start date, how long it runs, and the time it follows.
+        Choose when the Challenge starts. Use a preset duration or set both dates.
       </p>
       <div>
         <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-600">Duration</p>
         <div className="flex flex-wrap gap-2">
           {DURATION_OPTIONS.map((days) => (
-            <V2Chip key={days} selected={state.durationDays === days} onClick={() => onUpdate({ durationDays: days })}>
+            <V2Chip key={days} selected={state.scheduleMode === 'preset' && state.durationDays === days} onClick={() => onUpdate({ scheduleMode: 'preset', durationDays: days, endDate: deriveEndDate(state.startDate, days) })}>
               {days} days
             </V2Chip>
           ))}
+          <V2Chip selected={state.scheduleMode === 'custom'} onClick={() => onUpdate({ scheduleMode: 'custom', durationDays: inclusiveDurationDays(state.startDate, state.endDate) ?? state.durationDays })}>Custom</V2Chip>
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <V2Field label="Start date">
-          <V2TextInput type="date" value={state.startDate} onChange={(startDate) => onUpdate({ startDate })} />
+          <V2TextInput type="date" value={state.startDate} onChange={updateStartDate} />
         </V2Field>
-        <V2Field label="Time setting" hint="Daily requirements reset when the day ends in this time.">
-          <V2Select
-            value={state.timezone}
-            options={TIMEZONE_OPTIONS}
-            onChange={(timezone) => onUpdate({ timezone })}
-          />
-        </V2Field>
+        {state.scheduleMode === 'custom' && <V2Field label="End date"><V2TextInput type="date" min={state.startDate} value={state.endDate} onChange={updateEndDate} /></V2Field>}
       </div>
       <V2Card className="bg-slate-50">
         <p className="text-sm font-bold text-slate-900">
-          {state.startDate && /^\d{4}-\d{2}-\d{2}$/.test(state.startDate)
-            ? `Runs ${formatDay(state.startDate)} → ${formatDay(endDate)}`
+          {duration !== null
+            ? `Runs ${formatDay(state.startDate)} → ${formatDay(state.endDate)}`
             : 'Choose a start date'}
         </p>
         <p className="mt-1 text-xs text-slate-600">
-          {state.durationDays} days, following {timezoneLabel(state.timezone)}.
+          {duration !== null ? `${duration} inclusive days · Dates use your local time (${timezoneLabel(state.timezone)}).` : 'Choose an end date on or after the start date.'}
         </p>
       </V2Card>
     </div>
@@ -874,24 +887,22 @@ function StepReview({
   onUpdate: (patch: Partial<WizardState>) => void;
   onEditStep: (step: (typeof VISIBLE_STEPS)[number]) => void;
 }) {
-  const endDate = deriveEndDate(state.startDate, state.durationDays);
+  const endDate = state.endDate;
   return (
     <div className="space-y-4">
-      <p className="text-sm leading-6 text-slate-600">{summarize(state)}</p>
-
       <V2Card className="bg-slate-900 text-white">
+        <div className={`mb-3 h-28 rounded-xl bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge background preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">
-            {challengeTypeLabel(state.challengeType)}
-          </span>
+          <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">{challengeTypeLabel(state.challengeType)}</span>
           <span className="text-[11px] font-bold text-white/70">{state.durationDays} days</span>
         </div>
         <p className="mt-2 text-lg font-black">{state.title || 'Your Challenge'}</p>
-        <p className="mt-1 text-sm text-white/80">{summarize(state)}</p>
+        {state.description && <p className="mt-1 text-sm text-white/80">{state.description}</p>}
         <p className="mt-3 text-xs font-bold text-white/60">
-          Host Group: {state.groupName ?? '—'} · {timezoneLabel(state.timezone)}
+          Host Group: {state.groupName ?? '—'}
         </p>
       </V2Card>
+      <V2Card><p className="text-sm font-black">Optional support</p><p className="mt-2 text-sm">Support a Cause: {state.socialCauseEnabled ? `Enabled — ${state.socialCauseTitle} · beneficiary: ${state.socialCauseBeneficiary}` : 'Off'}</p>{state.socialCauseEnabled && <p className="mt-1 text-xs text-amber-800">A Platform Operator must approve the Cause before this Challenge can go live.</p>}<p className="mt-1 text-sm">Support Tiizi: {state.supportTiiziEnabled ? 'Enabled' : 'Off'}</p><p className="mt-1 text-xs text-slate-600">Participation is never conditional on financial support.</p><button type="button" className="mt-2 text-xs font-bold text-primary" onClick={() => onEditStep('CHALLENGE_DETAILS')}>Edit support options</button></V2Card>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReviewCard label="Host Group" value={state.groupName ?? '—'} onEdit={() => onEditStep('WHO_IS_HOSTING')} />
@@ -902,8 +913,8 @@ function StepReview({
           onEdit={() => onEditStep('WHAT_ARE_WE_DOING')}
         />
         <ReviewCard
-          label="Schedule & time"
-          value={`${state.durationDays} days · starts ${formatDay(state.startDate)} (ends ${formatDay(endDate)})`}
+          label="Schedule"
+          value={`${formatDay(state.startDate)} – ${formatDay(endDate)} · ${state.durationDays} days`}
           onEdit={() => onEditStep('WHEN_DOES_IT_RUN')}
         />
         <ReviewCard
@@ -920,7 +931,7 @@ function StepReview({
       <V2Card>
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">What counts</p>
         <ul className="mt-2 space-y-1 text-sm leading-6 text-slate-600">
-          {whatCountsExplanation(state.challengeType, state.timezone).map((line) => (
+          {whatCountsExplanation(state.challengeType).map((line) => (
             <li key={line}>• {line}</li>
           ))}
         </ul>

@@ -46,6 +46,7 @@ import {
   type GoverningSnapshot,
 } from './challengeConfigs.js';
 import {
+  activateChallenge,
   getChallenge,
   normalizeChallengeRow,
   type ChallengeRow,
@@ -538,6 +539,64 @@ export interface ExpiredProcessingOutcome {
   ended: boolean;
   finalized: boolean;
   alreadyFinalized: boolean;
+}
+
+export interface ScheduledStartProcessingOutcome {
+  challenge_id: string;
+  due: boolean;
+  activated: boolean;
+  blockedBy: 'cause_approval' | 'invalid_timezone' | 'activation_error' | null;
+}
+
+/**
+ * Scheduled-start seam for the general Challenge lifecycle. This is the
+ * start-side counterpart to processExpiredChallenges: callers (the lifecycle
+ * CLI now, a governed scheduled job later) run it for every Challenge, with
+ * no participant request or Cause-specific activation path.
+ *
+ * A Cause approval only removes its database guard. This shared pass invokes
+ * the canonical activation transition once the Challenge-local start day has
+ * arrived; pending and revision-required Causes remain establishing.
+ */
+export async function processScheduledChallengeStarts(
+  db: Db,
+  now: Date = new Date(),
+): Promise<ScheduledStartProcessingOutcome[]> {
+  const establishing = await db.query<{
+    challenge_id: unknown;
+    start_date: string | Date;
+    timezone: unknown;
+  }>(`SELECT challenge_id,start_date,timezone FROM challenges WHERE status='establishment'`);
+  const outcomes: ScheduledStartProcessingOutcome[] = [];
+  for (const row of establishing.rows) {
+    const challengeId = String(row.challenge_id);
+    const startDate = toDayString(row.start_date);
+    const timezone = row.timezone == null ? 'UTC' : String(row.timezone);
+    let due: boolean;
+    try {
+      due = dayInTimezone(now, timezone) >= startDate;
+    } catch {
+      outcomes.push({ challenge_id: challengeId, due: false, activated: false, blockedBy: 'invalid_timezone' });
+      continue;
+    }
+    if (!due) {
+      outcomes.push({ challenge_id: challengeId, due: false, activated: false, blockedBy: null });
+      continue;
+    }
+    try {
+      await activateChallenge(db, challengeId, now);
+      outcomes.push({ challenge_id: challengeId, due: true, activated: true, blockedBy: null });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      outcomes.push({
+        challenge_id: challengeId,
+        due: true,
+        activated: false,
+        blockedBy: /approved Social Cause before activation/.test(message) ? 'cause_approval' : 'activation_error',
+      });
+    }
+  }
+  return outcomes;
 }
 
 /**

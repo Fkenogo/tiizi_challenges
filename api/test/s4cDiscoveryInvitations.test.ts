@@ -3,7 +3,7 @@ import { createPostgresGroupMembershipAuthority } from '../src/postgresGroupAuth
 import { authHeaders, buildTestApp, groupAuthorityUnavailableDb, seedMember, testDb } from './helpers.js';
 
 beforeEach(async () => {
-  await testDb().query('TRUNCATE challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals');
+  await testDb().query('TRUNCATE challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals');
 });
 
 async function createGroup(app: ReturnType<typeof buildTestApp>, token: string, payload: Record<string, unknown>) {

@@ -1,13 +1,17 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState, V2Page, V2SectionHeader } from '../components/V2Primitives';
-import { useChallengeListV2, useV2Memberships } from './useChallengeCreation';
+import { V2Button, V2Chip, V2EmptyState, V2ErrorState, V2Field, V2LoadingState, V2Page, V2SectionHeader, V2TextInput } from '../components/V2Primitives';
+import { useChallengeListV2 } from './useChallengeCreation';
 import {
   challengeTypeLabel,
   formatDayRange,
-  timezoneLabel,
 } from './challengeCreationDraft';
 import { endStateFor, statusLabelForEndState, type V2ChallengeEndState } from './challengeEndState';
 import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
+import { challengeCoverGradient } from './challengeCovers';
+import { filterChallengeDiscovery, type ChallengeDomainFilter, type ChallengeLifecycleFilter, type ChallengeTypeFilter } from './challengeDiscovery';
+
+const INITIAL_RESULTS = 8;
 
 /**
  * S2b — V2 Challenges entry point.
@@ -51,11 +55,12 @@ export { participationLabel };
 export function V2ChallengeListScreen() {
   const navigate = useNavigate();
   const challenges = useChallengeListV2();
-  const memberships = useV2Memberships();
-
-  const groupName = (groupId: string): string | null =>
-    memberships.data?.memberships.find((membership) => membership.groupId === groupId)?.group.name
-    ?? null;
+  const [search, setSearch] = useState('');
+  const [lifecycle, setLifecycle] = useState<ChallengeLifecycleFilter>('all');
+  const [type, setType] = useState<ChallengeTypeFilter>('all');
+  const [domain, setDomain] = useState<ChallengeDomainFilter>('all');
+  const [visibleCount, setVisibleCount] = useState(INITIAL_RESULTS);
+  useEffect(() => setVisibleCount(INITIAL_RESULTS), [search, lifecycle, type, domain]);
 
   const createAction = (
     <div className="flex flex-col items-end gap-1">
@@ -99,9 +104,27 @@ export function V2ChallengeListScreen() {
         />
       )}
 
-      {challenges.isSuccess && challenges.data.challenges.length > 0 && (
-        <ul className="space-y-3">
-          {challenges.data.challenges.map((challenge: V2ChallengeSummary) => {
+      {challenges.isSuccess && challenges.data.challenges.length > 0 && (() => {
+        const filtered = filterChallengeDiscovery(challenges.data.challenges, { search, lifecycle, type, domain });
+        const visible = filtered.slice(0, visibleCount);
+        return <section aria-label="Challenge discovery" className="mt-5 space-y-4">
+          <V2Field label="Search Challenges" hint="Search names, descriptions, Groups, Activities, type, or Fitness/Wellness categories.">
+            <V2TextInput value={search} onChange={setSearch} placeholder="Search Challenges…" />
+          </V2Field>
+          <div className="space-y-3">
+            <FilterRow label="Status" value={lifecycle} onChange={setLifecycle} options={[
+              ['all', 'All'], ['active', 'Active / Ongoing'], ['upcoming', 'Scheduled / Upcoming'], ['completed', 'Completed'],
+            ]} />
+            <FilterRow label="Type" value={type} onChange={setType} options={[
+              ['all', 'All'], ['collective', 'Together'], ['competitive', 'Race'], ['streak', 'Streak'],
+            ]} />
+            <FilterRow label="Domain" value={domain} onChange={setDomain} options={[
+              ['all', 'All'], ['fitness', 'Fitness'], ['wellness', 'Wellness'],
+            ]} />
+          </div>
+          {filtered.length === 0 ? <V2EmptyState title="No matching Challenges" message="Try another search or change a filter." /> : (
+          <ul className="space-y-2">
+          {visible.map((challenge: V2ChallengeSummary) => {
             const participation = participationLabel(challenge);
             const endState = endStateFor(challenge);
             return (
@@ -109,37 +132,40 @@ export function V2ChallengeListScreen() {
               <button
                 type="button"
                 onClick={() => navigate(`/v2/challenges/${challenge.challengeId}`)}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-slate-300"
+                className="flex min-h-[86px] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-4"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-bold text-primary">
-                    {challengeTypeLabel(challenge.challengeType)}
+                <span className={`h-14 w-14 shrink-0 rounded-xl bg-gradient-to-br ${challengeCoverGradient(challenge.coverId)} ${challenge.coverId ? '' : 'flex items-center justify-center text-xs font-black uppercase text-white/80'}`} aria-hidden="true">{challenge.coverId ? '' : challengeTypeLabel(challenge.challengeType).slice(0, 1)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-primary">{challengeTypeLabel(challenge.challengeType)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusTone(endState)}`}>{statusLabelForEndState(challenge.status, endState)}</span>
+                    {participation && <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${participation.className}`}>{participation.text}</span>}
                   </span>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${statusTone(endState)}`}>
-                    {statusLabelForEndState(challenge.status, endState)}
-                  </span>
-                  {participation && (
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${participation.className}`}>
-                      {participation.text}
-                    </span>
-                  )}
-                  <span className="text-[11px] font-bold text-slate-400">
-                    {groupName(challenge.groupId) ?? 'Your group'}
-                  </span>
-                </div>
-                <p className="mt-2 text-base font-black text-slate-900">{challenge.title}</p>
-                {challenge.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">{challenge.description}</p>
-                )}
-                <p className="mt-2 text-xs font-bold text-slate-500">
-                  {formatDayRange(challenge.startDate, challenge.endDate)} · {timezoneLabel(challenge.timezone)}
-                </p>
+                  <span className="mt-1 block truncate text-sm font-black text-slate-900">{challenge.title}</span>
+                  <span className="mt-0.5 block truncate text-xs text-slate-500">{challenge.groupName ?? 'Group Challenge'} · {challenge.activities.map((activity) => `${activity.name} · ${activity.domain === 'wellness' ? 'Wellness' : 'Fitness'}${activity.category ? ` · ${activity.category}` : ''}`).join(' / ')}</span>
+                  <span className="mt-0.5 block text-xs font-semibold text-slate-500">{formatDayRange(challenge.startDate, challenge.endDate)}</span>
+                </span>
+                <span className="shrink-0 text-lg text-slate-300" aria-hidden="true">›</span>
               </button>
             </li>
             );
           })}
-        </ul>
-      )}
+          </ul>)}
+          {filtered.length > visible.length && <div className="flex justify-center"><V2Button variant="secondary" onClick={() => setVisibleCount((count) => count + INITIAL_RESULTS)}>View more Challenges</V2Button></div>}
+        </section>;
+      })()}
     </V2Page>
   );
+}
+
+function FilterRow<T extends string>({ label, value, onChange, options }: {
+  label: string;
+  value: T;
+  onChange: (value: T) => void;
+  options: ReadonlyArray<readonly [T, string]>;
+}) {
+  return <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+    <span className="w-16 shrink-0 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">{label}</span>
+    <div className="flex flex-wrap gap-1.5">{options.map(([key, text]) => <V2Chip key={key} selected={value === key} onClick={() => onChange(key)}>{text}</V2Chip>)}</div>
+  </div>;
 }

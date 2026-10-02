@@ -144,7 +144,13 @@ export interface ApiOwnParticipation {
 export interface ApiChallengeSummary {
   challengeId: string;
   groupId: string;
+  /** Governed current Group identity, read from PostgreSQL for discovery. */
+  groupName: string | null;
+  /** Pinned Knowledge presentation metadata for search and domain filtering. */
+  activities: ApiChallengeActivityDiscovery[];
   title: string;
+  coverId: string | null;
+  supportTiiziEnabled: boolean;
   description: string;
   challengeType: 'collective' | 'competitive' | 'streak';
   status: 'establishment' | 'active' | 'ended';
@@ -170,6 +176,13 @@ export interface ApiChallengeSummary {
   myParticipation: ApiOwnParticipation | null;
 }
 
+export interface ApiChallengeActivityDiscovery {
+  name: string;
+  domain: 'fitness' | 'wellness';
+  category: string;
+  subcategory: string;
+}
+
 /**
  * EBC-04 frozen terminal result: the authoritative historical truth for an
  * ended + finalized Challenge. Null while unfinalized.
@@ -186,6 +199,7 @@ export interface ApiFinalResult {
 
 export interface ApiChallengeDetail extends ApiChallengeSummary {
   instructions: string;
+  socialCause: { title: string; description: string; purpose: string; beneficiary: string; approvalStatus: 'pending_approval' | 'approved' | 'revision_required'; decisionReason: string | null } | null;
   activatedAt: string | null;
   endedAt: string | null;
   /** EBC-04 finalization marker mirror (NULL = not finalized). */
@@ -212,6 +226,9 @@ export interface ApiChallengeDetail extends ApiChallengeSummary {
       /** Authoritative configured kind (fitness|wellness) from the pinned
        *  Knowledge item — never inferred from name/unit/prefix. */
       activityKind: 'fitness' | 'wellness';
+      /** Canonical Knowledge identity pins for an explicit new Challenge reuse flow. */
+      knowledgeId: string;
+      activityCode: string | null;
       /** Governing Metric of this configuration. Null ONLY on pre-PF-03 rows. */
       metric: string | null;
       targetValue: number;
@@ -570,6 +587,7 @@ async function reconstructFinalizedParticipations(
 
 async function toSummary(
   challenge: ChallengeRow,
+  discovery: { groupName: string | null; activities: ApiChallengeActivityDiscovery[] },
   challengeDerived: Map<string, ChallengeDerivedRow>,
   episodesByChallenge: Map<string, ParticipationRow[]>,
   participationDerived: Map<string, ParticipationTruthState>,
@@ -596,7 +614,11 @@ async function toSummary(
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
+    groupName: discovery.groupName,
+    activities: discovery.activities,
     title: challenge.title,
+    coverId: challenge.cover_id ?? null,
+    supportTiiziEnabled: challenge.support_tiizi_enabled === true,
     description: challenge.description,
     challengeType: challenge.challenge_type,
     status: challenge.status,
@@ -701,6 +723,37 @@ async function assembleChallengeSummaries(
   now: Date,
 ): Promise<ApiChallengeSummary[]> {
   const challenges = await fetchChallenges(db, ids);
+  const discoveryByChallenge = new Map<string, { groupName: string | null; activities: ApiChallengeActivityDiscovery[] }>();
+  if (ids.length > 0) {
+    const discoveryRows = await db.query<{
+      challenge_id: string; group_name: string | null; position: number | null;
+      name: string | null; kind: string | null; category: string | null; subcategory: string | null;
+    }>(
+      `SELECT c.challenge_id, g.name AS group_name, ac.position,
+              COALESCE(kiv.name, ki.name) AS name, ki.kind,
+              COALESCE(kiv.category, ki.category) AS category,
+              COALESCE(kiv.subcategory, ki.subcategory) AS subcategory
+       FROM challenges c
+       LEFT JOIN groups g ON g.group_id = c.group_id
+       LEFT JOIN challenge_activity_configs ac
+         ON ac.challenge_id = c.challenge_id AND ac.version = c.current_config_version
+       LEFT JOIN knowledge_items ki ON ki.knowledge_id = ac.knowledge_id
+       LEFT JOIN knowledge_item_versions kiv
+         ON kiv.item_id = ac.knowledge_id AND kiv.version = ac.knowledge_version
+       WHERE c.challenge_id = ANY($1::uuid[])
+       ORDER BY c.challenge_id ASC, ac.position ASC`,
+      [ids],
+    );
+    for (const row of discoveryRows.rows) {
+      const id = String(row.challenge_id);
+      const entry = discoveryByChallenge.get(id) ?? { groupName: row.group_name, activities: [] };
+      if (entry.groupName === null && row.group_name) entry.groupName = row.group_name;
+      if (row.name && (row.kind === 'fitness' || row.kind === 'wellness')) {
+        entry.activities.push({ name: row.name, domain: row.kind, category: row.category ?? '', subcategory: row.subcategory ?? '' });
+      }
+      discoveryByChallenge.set(id, entry);
+    }
+  }
   const participationIds: string[] = [];
   for (const episodes of episodesByChallenge.values()) {
     for (const episode of episodes) participationIds.push(episode.participation_id);
@@ -724,6 +777,7 @@ async function assembleChallengeSummaries(
     challenges.map((challenge) =>
       toSummary(
         challenge,
+        discoveryByChallenge.get(challenge.challenge_id) ?? { groupName: null, activities: [] },
         challengeDerived,
         episodesByChallenge,
         participationDerived,
@@ -878,10 +932,44 @@ export async function getChallengeDetail(
   // in the Challenge timezone. The client formats this value; it never
   // determines the Challenge day from the device clock.
   const now = deps.now ?? new Date();
+  const discovery = await db.query<{
+    group_name: string | null; name: string | null; kind: string | null;
+    category: string | null; subcategory: string | null;
+  }>(
+    `SELECT g.name AS group_name, COALESCE(kiv.name, ki.name) AS name, ki.kind,
+            COALESCE(kiv.category, ki.category) AS category,
+            COALESCE(kiv.subcategory, ki.subcategory) AS subcategory
+     FROM challenges c
+     LEFT JOIN groups g ON g.group_id = c.group_id
+     LEFT JOIN challenge_activity_configs ac
+       ON ac.challenge_id = c.challenge_id AND ac.version = c.current_config_version
+     LEFT JOIN knowledge_items ki ON ki.knowledge_id = ac.knowledge_id
+     LEFT JOIN knowledge_item_versions kiv
+       ON kiv.item_id = ac.knowledge_id AND kiv.version = ac.knowledge_version
+     WHERE c.challenge_id = $1
+     ORDER BY ac.position ASC`,
+    [challengeId],
+  );
+  const discoveryRows = discovery.rows;
+  const groupName = discoveryRows.find((row) => row.group_name)?.group_name ?? null;
+  const activities: ApiChallengeActivityDiscovery[] = discoveryRows.flatMap((row) =>
+    row.name && (row.kind === 'fitness' || row.kind === 'wellness')
+      ? [{ name: row.name, domain: row.kind, category: row.category ?? '', subcategory: row.subcategory ?? '' }]
+      : [],
+  );
+  const causeResult = await db.query<{ title: string; description: string; purpose: string; beneficiary: string; approval_status: 'pending_approval' | 'approved' | 'revision_required'; decision_reason: string | null }>(
+    `SELECT title,description,purpose,beneficiary,approval_status,decision_reason FROM challenge_social_causes WHERE challenge_id=$1 AND approval_status <> 'removed'`,
+    [challengeId],
+  );
+  const cause = causeResult.rows[0];
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
+    groupName,
+    activities,
     title: challenge.title,
+    coverId: challenge.cover_id ?? null,
+    supportTiiziEnabled: challenge.support_tiizi_enabled === true,
     description: challenge.description,
     challengeType: challenge.challenge_type,
     status: challenge.status,
@@ -901,6 +989,7 @@ export async function getChallengeDetail(
       ? toOwnParticipation(episode, participationDerived, episodeFinal)
       : null,
     instructions: challenge.instructions,
+    socialCause: cause ? { title: cause.title, description: cause.description, purpose: cause.purpose, beneficiary: cause.beneficiary, approvalStatus: cause.approval_status, decisionReason: cause.decision_reason } : null,
     activatedAt: challenge.activated_at,
     endedAt: challenge.ended_at,
     finalizedAt: challenge.finalized_at,
@@ -941,6 +1030,8 @@ function toConfigContract(
         canonicalKey: a.canonical_key,
         activityVariant: a.activity_variant,
         activityKind: kind!,
+        knowledgeId: a.knowledge_id,
+        activityCode: a.activity_code,
         metric: a.metric,
         targetValue: a.target_value,
         unit: a.unit,

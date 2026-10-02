@@ -261,7 +261,7 @@ function LogWorkoutScreen() {
                 </div>
                 <p className="text-[12px] text-primary/70">Every contribution moves the team closer.</p>
                 {_rp.userContributionTotal > 0 && (
-                  <p className="text-[11px] text-primary/60">Your contribution: {_rp.userContributionTotal.toLocaleString()} {displayUnit} total</p>
+                  <p className="text-[11px] text-primary/60">Your activity contribution: {_rp.userContributionTotal.toLocaleString()} {displayUnit} total</p>
                 )}
               </div>
             )}

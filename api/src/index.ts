@@ -5,6 +5,7 @@ import { createPool, databaseUrl } from './db.js';
 import { createPostgresGroupMembershipAuthority, createPostgresChallengeCreationAuthority } from './postgresGroupAuthority.js';
 import { createDbKnowledgeIdentityResolver } from './knowledgePins.js';
 import { createDbKnowledgeEligibilityResolverByIdentity } from './knowledgeEligibility.js';
+import { createPostgresSocialCauseReviewerAuthority } from './socialCauseApprovalAuthority.js';
 
 async function main(): Promise<void> {
   const db = createPool(databaseUrl());
@@ -23,9 +24,11 @@ async function main(): Promise<void> {
       eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolverByIdentity(db, kind)(key),
       pinsFor: async (kind, key) => createDbKnowledgeIdentityResolver(db, kind)(key),
     },
+    socialCauseApproval: createPostgresSocialCauseReviewerAuthority(db),
   });
   const port = Number(process.env.PORT ?? 4000);
-  await app.listen({ port, host: '0.0.0.0' });
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen({ port, host });
   console.log(`tiizi-api listening on :${port}`);
 }
 

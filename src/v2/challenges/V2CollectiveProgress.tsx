@@ -73,7 +73,7 @@ export function V2CollectiveProgress({ detail }: { detail: V2ChallengeDetail }) 
       {view.hasJoined && (
         <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2">
           <p className="text-sm font-bold text-emerald-900">
-            Your contribution: {view.ownContribution.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}
+            Your activity contribution: {view.ownContribution.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}
             {view.ownShare !== null && (
               <span className="font-medium"> · {Math.round(view.ownShare * 100)}% of the shared total</span>
             )}

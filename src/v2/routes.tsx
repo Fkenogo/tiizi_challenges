@@ -16,6 +16,7 @@ import { V2GroupHomeScreen } from './groups/V2GroupHomeScreen';
 import { V2GroupSettingsScreen } from './groups/V2GroupSettingsScreen';
 import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
+import { SocialCauseReviewPage } from './operator/SocialCauseReviewPage';
 import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
 import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
@@ -91,7 +92,7 @@ export function V2Routes() {
             <Route path="activities" element={<V2OperatorPage section="activities" />} />
             <Route path="challenges" element={<V2OperatorPage section="challenges" />} />
             <Route path="templates" element={<V2OperatorPage section="templates" />} />
-            <Route path="review" element={<V2OperatorPage section="review" />} />
+            <Route path="review" element={<SocialCauseReviewPage />} />
             <Route path="support" element={<V2OperatorPage section="support" />} />
             <Route path="content" element={<V2OperatorPage section="content" />} />
             <Route path="access" element={<V2OperatorPage section="access" />} />
