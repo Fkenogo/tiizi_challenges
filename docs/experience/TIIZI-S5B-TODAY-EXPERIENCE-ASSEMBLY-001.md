@@ -1,6 +1,6 @@
 # TIIZI-S5b — Today Experience Assembly 001
 
-**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED (PR #70). **S5c — Founder Preview / Acceptance is COMPLETE / FOUNDER ACCEPTED** (Master Programme v2.29; [`TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md`](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md)); **S5 — TODAY is COMPLETE / FOUNDER ACCEPTED / CLOSED.** The Founder preview and correction cycle this record documents is the S5c evidence; S5c reconciles it rather than duplicating it.
+**Status:** S5b COMPLETE / FOUNDER ACCEPTED / MERGED (PR #70). S5c remains OPEN pending Founder desktop visual verification required by S5 charter §6; S5 is not closed. This record preserves S5b acceptance and evidence; see [`TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md`](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md).
 
 **Authoritative base:** `origin/main` @ `44a32d2d26f09ab68f6f548d52db9b24e26dd287`
 (post S5a closure, Master Programme v2.25).
@@ -355,7 +355,10 @@ existing API, server-derived governing day, timezone authority, idempotency, and
 schema, migration, engine, deployment, or Cloudflare change was introduced by Correction 001C.
 
 **Final programme status (at this entry):** S5b TODAY EXPERIENCE ASSEMBLY — COMPLETE / FOUNDER ACCEPTED / MERGED;
-S5c NOT STARTED. Group Feed NOT IMPLEMENTED — FOLLOW-UP REQUIRED. V1 Pass 002 NOT STARTED.
+At the time of this historical S5b closure, S5c was NOT STARTED. Subsequent evidence reconciliation found the charter-required desktop review unproven; S5c remains OPEN pending Founder desktop visual verification. Group Feed NOT IMPLEMENTED — FOLLOW-UP REQUIRED. V1 Pass 002 NOT STARTED.
 
-S5c was subsequently reconciled as COMPLETE / FOUNDER ACCEPTED and S5 was closed in Master Programme v2.29; see
+S5c was subsequently entered as an evidence gap in Master Programme v2.29; desktop visual verification remains outstanding and S5 is not closed. See
 [`TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md`](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md). This entry's status is preserved as the historical record at the time of the S5b closure.
+
+
+**Desktop evidence clarification (2026-10-03):** the wide-browser logging-sheet geometry observation in §11 is implementation verification, not an attributable Founder review of the assembled Today experience. The charter §6 desktop review requirement remains open; this historical S5b record does not waive it.

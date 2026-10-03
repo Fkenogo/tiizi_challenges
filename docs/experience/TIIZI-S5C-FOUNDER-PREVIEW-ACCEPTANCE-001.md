@@ -1,8 +1,8 @@
 # TIIZI-S5c — Founder Preview / Acceptance and S5 Closure 001
 
-**Status:** COMPLETE / FOUNDER ACCEPTED. **S5 — TODAY is COMPLETE / FOUNDER ACCEPTED / CLOSED.**
+**Status:** EVIDENCE GAP — FOUNDER DESKTOP VISUAL VERIFICATION REQUIRED. **S5 remains OPEN; do not mark S5c complete or close S5 yet.**
 
-**Document type:** Documentation-only evidence reconciliation and Founder acceptance record.
+**Document type:** Documentation-only evidence reconciliation and bounded Founder-review disposition record.
 
 **Authoritative base:** `origin/main` @ `ce181dd0c9247b195e9c8d95fd6d4bde81cc8b1b`
 (post PR #71, Master Programme v2.28).
@@ -46,7 +46,7 @@ Founder review during S5b already produced. No requirement is manufactured here.
 
 | # | Acceptance subject | Source of authority | Classification | Evidence already produced |
 | --- | --- | --- | --- | --- |
-| 1 | Founder preview of the assembled S5 Today experience | Charter §8 item 3 | **SATISFIED** | S5b record §§7–9, §12; PR #70 Founder preview at `/v2/today` against LOCAL Development DB |
+| 1 | Founder preview of the assembled S5 Today experience on mobile | Charter §8 item 3 | **SATISFIED** | S5b record §§7–9, §12; PR #70 Founder preview at `/v2/today` against LOCAL Development DB; desktop review is tracked separately below |
 | 2 | Populated Today composition | Charter §6; S5b §2 | **SATISFIED** | S5b §12 — Morning Momentum once under Do today; Reps Race and Summit Steps Together under Your Challenges |
 | 3 | Do today behavior | Charter §6; S5b §2 | **SATISFIED** | S5b §§9, 12 — requirements rendered from server `requiredToday`; logged Push-Up reflected as Done with 1/2 complete |
 | 4 | Active Challenge presentation (Together / Race / Streak) | Charter §3, §6; S5b §2 | **SATISFIED** | S5b §2, §12 — shared total + own contribution (Together); own-only progress (Race); compact streak context (Streak) |
@@ -65,9 +65,10 @@ Founder review during S5b already produced. No requirement is manufactured here.
 | 17 | Founder-requested corrections 001B and 001C re-reviewed and accepted | S5b §11, §12 | **SATISFIED** | S5b §12 — “Founder disposition (2026-10-03): ACCEPTED” |
 | 18 | Attributable Founder acceptance of the merged implementation | Master Programme §19 | **SATISFIED** | S5b §12 — PR #70 reviewed head `9e20cff8c86aa7d460b2bdb79dc5eb72cb119898`; merge `2827aa8b2d35421a0b654032c3e750682ed54d86`, merged 2026-10-03T11:22:11Z |
 | 19 | Repository CI green on the reviewed head | Master Programme §19 | **SATISFIED** | S5b §12 — API, API contract, API image, boundary, functions, web all passed |
-| 20 | Additional S5c implementation or evidence beyond the above | — | **NOT AUTHORITATIVELY DEFINED** | No repository text defines any further S5c requirement |
+| 20 | Additional S5c implementation or evidence beyond the above | — | **NOT AUTHORITATIVELY DEFINED** | No repository text defines any further S5c implementation requirement |
+| 21 | Desktop visual review of assembled Today experience | Charter §6 | **NOT SATISFIED — REMAINING ACTION** | S5b §7 scoped desktop visual verification out of its acceptance gate; wide-browser geometry is not attributable Founder review of assembled Today. No Founder disposition waives the charter requirement. |
 
-**Requirements found NOT SATISFIED:** none.
+**Requirements found NOT SATISFIED:** desktop visual review (one bounded remaining Founder action).
 
 **Requirements found NOT APPLICABLE:** none — every charter boundary for S5 was reviewed and found
 preserved in §4 below rather than being out of scope.
@@ -85,9 +86,9 @@ Three independent findings from canonical repository authority support this conc
 2. **The preview and acceptance S5c exists to record already happened.** The Founder reviewed the
    assembled Today experience during S5b, returned bounded corrections 001, 001A, 001B and 001C,
    re-reviewed each correction, and issued an attributable acceptance on 2026-10-03 recorded in
-   S5b §12. Every subject matter a Founder Preview / Acceptance gate would cover — the composed
-   surface, its states, its boundaries, its mobile presentation, and the preserved Product Truth —
-   was reviewed in that cycle.
+   S5b §12. The Founder reviewed the composed surface, its states and boundaries, mobile presentation, and
+   preserved Product Truth in that cycle. This record does not establish the charter-required desktop
+   visual review.
 3. **A separate label does not create a separate deliverable.** Master Programme §18 states: “Status
    must describe the tracked item precisely.” The S5c label is a programme bookkeeping step in the
    S5 sequence. Treating the label as authorization for another Today implementation, another
@@ -96,8 +97,9 @@ Three independent findings from canonical repository authority support this conc
 
 ## 4. S5 charter boundary audit (charter §7 and §§2, 4, 6)
 
-No contradiction was found between the accepted S5 implementation and the authoritative charter.
-No S5a or S5b implementation was reopened.
+No product-boundary contradiction was found between the accepted S5 implementation and the
+authoritative charter. The desktop review evidence requirement remains open as recorded in §5. No
+S5a or S5b implementation was reopened.
 
 | Charter boundary | Source | Status in accepted S5 | Finding |
 | --- | --- | --- | --- |
@@ -123,35 +125,41 @@ retained their prior variants and geometry, and that activity logging continues 
 governed S3b submission path with its existing API, server-derived governing day, timezone
 authority, idempotency, and scoring. No second participation or activity authority exists.
 
-## 5. Residual observations carried forward (no product defect, no S5 requirement reopened)
+## 5. Residual observations and open evidence
 
 These are recorded for accuracy. They are not S5c requirements, they were not silently closed, and
 none requires implementation.
 
-1. **Desktop visual verification was not performed.** Charter §6 states “S5b must be reviewed on
-   mobile and desktop.” S5b §7 records that desktop visual verification was explicitly scoped out
-   of the S5b acceptance gate, and S5b §9 item 4 records that phone/mobile is the primary
-   acceptance target. Desktop/wide-layout behaviour was covered by a static responsive-layout and
-   source audit (PASS) and by the wide-browser logging-sheet geometry observation, but not by a
-   dedicated Founder desktop visual review. This is a recorded scope decision, not a hidden gap.
+1. **Desktop visual review remains unproven — sole remaining S5c action.** Charter §6 requires
+   “S5b must be reviewed on mobile and desktop.” S5b §7 records desktop visual verification scoped
+   out of its acceptance gate, but that implementation-record statement does not amend the charter.
+   S5b §9 item 4 makes mobile the primary target; it does not waive desktop review. The static
+   responsive audit and wide-browser logging-sheet geometry observation are not attributable
+   Founder review of the assembled Today experience. No Founder disposition accepting the scope
+   change is recorded. Founder must visually verify the existing assembled Today experience at a
+   desktop/wide viewport. No implementation or redesign is requested; leave accepted mobile
+   implementation untouched and stop for that review.
 2. **Recent Results was not visually demonstrated by the Development fixture.** S5b §7 records that
    the Development projection returned `finalizedResults = 0`, so no finalized result was fabricated
    merely for preview coverage; the rendering path is covered at code and guard level.
-3. **The new-member browser rendering was not re-verified in the Correction 001B pass.** S5b records
-   that the local empty-preview credential was unset, that the credential was not reset or replaced,
-   and that the copy, routes and separator behaviour are covered by S5b guards. This is recorded
-   rather than overstated.
+3. **New-member browser rendering — subsequently resolved.** The coding agent could not reopen the
+   identity during Correction 001B because the local credential was unavailable (S5b §11 historical
+   verification note). The Founder subsequently reviewed and accepted the corrected new-member
+   Today rendering, recorded in S5b §12: “Good morning/evening, Newmember”; 0 active Challenges;
+   “Ready to get moving?”; “Join a Challenge to start tracking activities and progress here.”;
+   Find a Challenge; Find a Group; and no orphan separator. This verification gap is closed.
 4. **The external Cloudflare Workers Build check continues to fail.** It remains non-gating under
    the established **FD-S3-005** treatment, unchanged by this record. It is reported separately from
    repository CI and is not treated as an S5 acceptance criterion.
 
 ## 6. Disposition
 
-**DISPOSITION A — S5c EVIDENCE SATISFIED.**
+**DISPOSITION A2 — S5c REMAINS OPEN FOR ONE BOUNDED FOUNDER EVIDENCE ACTION.**
 
-The existing Founder-review evidence produced during S5b substantively satisfies the S5c Founder
-Preview / Acceptance gate. No authoritative S5c requirement remains unproven, and none is defined
-that the existing evidence fails to satisfy.
+The existing Founder-review evidence produced during S5b satisfies the recorded mobile and
+functional acceptance subjects. However, the authoritative S5 charter §6 requirement for desktop
+review remains unproven. The only remaining action is Founder desktop visual verification of the
+assembled Today experience. No product implementation or redesign is required by this evidence gap. Stop for Founder review; do not close S5 yet.
 
 **Programme state proposed:**
 
@@ -159,8 +167,8 @@ that the existing evidence fails to satisfy.
 | --- | --- |
 | S5a — Today Member Projection / Read Model | COMPLETE / FOUNDER ACCEPTED / MERGED |
 | S5b — Today Experience Assembly | COMPLETE / FOUNDER ACCEPTED / MERGED / CLOSED |
-| S5c — Founder Preview / Acceptance | COMPLETE / FOUNDER ACCEPTED |
-| **S5 — Today** | **COMPLETE / FOUNDER ACCEPTED / CLOSED** |
+| S5c — Founder Preview / Acceptance | OPEN — AWAITING FOUNDER DESKTOP VISUAL VERIFICATION |
+| **S5 — Today** | **OPEN — do not mark CLOSED until desktop visual verification is recorded** |
 | Group Feed | NOT IMPLEMENTED — FOLLOW-UP REQUIRED |
 | V1 Pass 002 | NOT STARTED |
 | S7 | NOT BEGUN — PF-06-gated |
@@ -172,7 +180,8 @@ completes only the Today member projection and member-facing assembly that S5a a
 
 ## 7. Validation and publication record
 
-- Documentation-only change: this record and the Master Programme only. No product code, API,
+- Documentation-only reconciliation across five files: this record, the S5 charter, the S5a record,
+  the S5b record, and the Master Programme. No product code, API,
   schema, migration, guard, test, fixture, or configuration change.
 - `git diff --check` required before commit; worktree clean after commit.
 - Primary dirty checkout `/Volumes/PRODUCTION/Projects/tiizi_revamp` was not used for edits and
@@ -187,9 +196,9 @@ completes only the Today member projection and member-facing assembly that S5a a
 
 ## 8. Founder acceptance statement
 
-**S5c TODAY FOUNDER PREVIEW / ACCEPTANCE:** COMPLETE / FOUNDER ACCEPTED
+**S5c TODAY FOUNDER PREVIEW / ACCEPTANCE:** OPEN — FOUNDER DESKTOP VISUAL VERIFICATION REQUIRED
 
-**S5 — TODAY EXPERIENCE:** COMPLETE / FOUNDER ACCEPTED / CLOSED
+**S5 — TODAY EXPERIENCE:** OPEN — NOT CLOSED
 
 **GROUP FEED:** NOT IMPLEMENTED — FOLLOW-UP REQUIRED
 

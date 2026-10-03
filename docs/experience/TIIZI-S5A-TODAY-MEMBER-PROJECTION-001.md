@@ -152,5 +152,5 @@ Accepted on merge, unchanged from the reconciled candidate:
 - No Feed, invitation, notification, Recognition, payment, Cause or scheduler authority, and no Today UI.
 
 Explicitly not started or not implemented: **S5b — Today Experience Assembly (NOT STARTED)**;
-**S5c — Founder Preview / Acceptance** (COMPLETE / FOUNDER ACCEPTED — recorded in Master Programme v2.29 and [`TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md`](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md); this line's NOT STARTED state is the historical record at S5a closure); **Group Feed (NOT IMPLEMENTED — deferred to its separate follow-up)**;
+**S5c — Founder Preview / Acceptance** (OPEN pending Founder desktop visual verification; the NOT STARTED state in this historical S5a closure entry predates the current evidence gap, recorded in Master Programme v2.29 and [`TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md`](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md)); **Group Feed (NOT IMPLEMENTED — deferred to its separate follow-up)**;
 **V1 Pass 002 (NOT STARTED)**.
