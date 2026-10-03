@@ -1,6 +1,6 @@
 # TIIZI-S5b — Today Experience Assembly 001
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING FOUNDER REVIEW. S5c is NOT STARTED.
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED (PR #70). S5c is NOT STARTED.
 
 **Authoritative base:** `origin/main` @ `44a32d2d26f09ab68f6f548d52db9b24e26dd287`
 (post S5a closure, Master Programme v2.25).
@@ -289,9 +289,10 @@ authority.
   API contract, API image, boundary, functions, and web. The separate Cloudflare Workers Build
   check failed; it remains non-gating under the recorded FD-S3-005 treatment.
 
-The candidate remains **IMPLEMENTED CANDIDATE / FOUNDER REVIEW CORRECTIONS APPLIED / AWAITING FINAL
-FOUNDER RE-REVIEW**. S5c remains NOT STARTED; Group Feed remains NOT IMPLEMENTED (separate follow-up);
-V1 Pass 002 remains NOT STARTED. No deployment or merge.
+At this point in the historical candidate record, S5b remained **IMPLEMENTED CANDIDATE / FOUNDER
+REVIEW CORRECTIONS APPLIED / AWAITING FINAL FOUNDER RE-REVIEW**. Its later Founder disposition and
+merge are recorded below. S5c remains NOT STARTED; Group Feed remains NOT IMPLEMENTED (separate
+follow-up); V1 Pass 002 remains NOT STARTED. No deployment occurred.
 
 ### Correction 001C — focused mobile activity logging
 
@@ -312,11 +313,46 @@ capability only.
 Activity Product Truth is unchanged: the existing S3b payload, submit key, hook, API, server-derived
 governing day, timezone authority, idempotency, scoring, and acceptance path remain the sole
 submission path. The final phone-sized Amara preview showed the dimmed/blurred Challenge page behind
-both the form and Recorded state. **The corrected activity-logging visual review remains pending
-Founder review.**
+both the form and Recorded state. At the time of this correction record, the activity-logging visual
+review remained pending; the later acceptance is recorded below.
 
 Correction 001C validation: S5b Today guard suite **63 checks**; boundary guard and regression; V2
 experience, runtime, and frontend boundaries; S3b logging and correction guards; frontend TypeScript
 typecheck and production build; S5a projection tests 5/5; `git diff --check` — all pass. The S5b
-candidate remains awaiting final activity-logging visual review; S5c NOT STARTED; Group Feed NOT
-IMPLEMENTED (follow-up); V1 Pass 002 NOT STARTED.
+candidate was awaiting final activity-logging visual review at this point in the Correction 001C
+record; see §5 for the later acceptance and merge. S5c NOT STARTED; Group Feed NOT IMPLEMENTED
+(follow-up); V1 Pass 002 NOT STARTED.
+
+## 5. Founder acceptance and merge closure
+
+**Founder disposition (2026-10-03): ACCEPTED.** The Founder reviewed and accepted the final focused
+mobile activity-logging presentation, including task focus, obscured Challenge background,
+mobile-bounded geometry, accessible Close and primary action, contained vertical scrolling, and the
+Recorded state within the same presentation. The Founder also accepted the previously reviewed
+Today composition, deduplication, two-item progressive disclosure, Today refresh after logging,
+new-member zero state, and existing Product Truth / governed activity authority.
+
+Accepted Today behavior includes Morning Momentum appearing once in Do today; Your Challenges
+showing Reps Race and Summit Steps Together without repeating Morning Momentum; and no unnecessary
+View more when only those two challenges remain. Logging refreshes Today. The accepted new-member
+state reads “Ready to get moving?” and “Join a Challenge to start tracking activities and progress
+here.”, offers Find a Challenge and Find a Group, and shows truthful “0 active Challenges” without
+an orphan separator.
+
+**Implementation merge:** PR #70, reviewed head
+`9e20cff8c86aa7d460b2bdb79dc5eb72cb119898`; pre-merge `origin/main`
+`44a32d2d26f09ab68f6f548d52db9b24e26dd287`; normal merge commit
+`2827aa8b2d35421a0b654032c3e750682ed54d86`; merged `2026-10-03T11:22:11Z`. The reviewed head is
+an ancestor of post-merge `origin/main` at that merge commit.
+
+On the exact reviewed head, all six repository CI jobs passed: API, API contract, API image,
+boundary, functions, and web. The separate Cloudflare Workers Build failed and remains distinct
+under FD-S3-005. S5b guards passed **63/63**; S5a projection passed **5/5**; boundary and regression,
+V2 experience/runtime/frontend, S3b activity logging, and S3b logging correction guards passed.
+
+Activity Product Truth remains unchanged: logging still uses the sole governed S3b path, with its
+existing API, server-derived governing day, timezone authority, idempotency, and scoring. No API,
+schema, migration, engine, deployment, or Cloudflare change was introduced by Correction 001C.
+
+**Final programme status:** S5b TODAY EXPERIENCE ASSEMBLY — COMPLETE / FOUNDER ACCEPTED / MERGED.
+S5c NOT STARTED. Group Feed NOT IMPLEMENTED — FOLLOW-UP REQUIRED. V1 Pass 002 NOT STARTED.
