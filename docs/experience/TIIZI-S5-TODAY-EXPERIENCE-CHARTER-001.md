@@ -136,7 +136,9 @@ Intentional low-activity states:
 - Only upcoming Challenges: show bounded upcoming state and link to detail; no active progress or action card.
 - Unsupported upstream sections: omit their content; do not simulate them or represent them as permanent exclusions from eventual Product Truth.
 
-Member Today remains mobile-first, single-column, with one primary action per compact card and no horizontal scrolling. Desktop may widen the same ordered content but may not add information bands. S5b must be reviewed on mobile and desktop. Prototype desktop density does not set mobile information architecture.
+**Current form-factor authority (Founder clarification, 2026-10-03): TIIZI MEMBER / USER APPLICATION IS MOBILE ONLY.** Member Today is designed, assembled, and Founder-reviewed against mobile presentation. The member application has no desktop layout, desktop-responsive expansion, desktop-specific information architecture, or desktop Founder visual-acceptance requirement. The **Platform Operator Console is a distinct experience and requires desktop layout and desktop Founder review**. Do not transfer Operator Console requirements to the member app.
+
+The earlier sentences in this paragraph that said desktop may widen the member content and that “S5b must be reviewed on mobile and desktop” are superseded by the Founder clarification recorded in §13. They are retained here as historical charter wording explaining the former A2 disposition; they are no longer current authority.
 
 ## 7. Preserved boundaries
 
@@ -151,11 +153,11 @@ Member Today remains mobile-first, single-column, with one primary action per co
 
 ## 8. Programme disposition
 
-At charter approval, Master Programme v2.21 advanced to **v2.22** to record the Founder dispositions and S5a boundary. Stage G remains Active. S1–S4 and S6 remain complete/accepted/merged. The current implementation state is now recorded in [S5a Today Member Projection 001](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md), and Master Programme v2.23 synchronizes that candidate status. S5 remains an active unresolved member-facing slice with this sequence:
+At charter approval, Master Programme v2.21 advanced to **v2.22** to record the Founder dispositions and S5a boundary. Stage G remains Active. S1–S4 and S6 remain complete/accepted/merged. The following sequence records the state at charter approval and is historical; current status is in §12 and Master Programme v2.30. The current implementation state is now recorded in [S5a Today Member Projection 001](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md), and Master Programme v2.23 synchronized that candidate status:
 
 1. **S5a — Today Member Projection / Read Model:** `GET /api/today`; implemented candidate awaiting Founder review; final implementation candidate commit `106579d854b98bba0b69c1590fa4f6f75c279a42` (runtime source was introduced in `b84451e1fe69b4e37334fc9d054792599f79b9bf`).
 2. **S5b — Today Experience Assembly:** follows S5a; member-facing assembly; not started.
-3. **S5c — Founder Preview / Acceptance:** follows S5b; not started.
+3. **S5c — Founder Preview / Acceptance:** follows S5b; not started at charter approval (historical).
 
 S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains absent and authority-gated. S9 production scheduler remains absent. S10 remains excluded pending commercial model. No S5b assembly, deployment, production access, or production mutation occurred.
 
@@ -173,6 +175,8 @@ S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains 
 
 ## 10. Founder acceptance statements
 
+*(Historical — the state recorded at charter approval. The current S5 position is recorded in §12.)*
+
 **S5 TODAY EXPERIENCE:** FOUNDER DIRECTION RECONCILED WITH EXPERIENCE REFERENCE
 
 **S5a TODAY MEMBER PROJECTION:** IMPLEMENTED CANDIDATE — AWAITING FOUNDER REVIEW
@@ -184,3 +188,33 @@ S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains 
 ## 11. S5a implementation record
 
 Implementation status, exact field provenance, query composition, security boundary, validation, and candidate SHA are recorded in [TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md). This record does not advance S5b, mark Today complete, alter Product Truth, or authorize deployment or production access.
+
+## 12. S5c Founder Preview / Acceptance and S5 closure
+
+**S5c Founder Preview / Acceptance is SATISFIED against the mobile-only member form factor. S5 is READY FOR FINAL CLOSURE, subject to Founder disposition and merge of PR #72.**
+
+S5c introduced no new product implementation. Its purpose was the final Founder Preview /
+Acceptance of the assembled S5 capability. The preview and correction cycle occurred during S5b and is merged. The earlier A2 disposition held S5 open because the then-current §6 required mobile and desktop review. The Founder clarification in §13 supersedes that requirement: desktop review was not performed and is not claimed, but it is NOT APPLICABLE to the mobile-only member experience. The existing mobile Founder review evidence satisfies S5c; no additional mobile S5 requirement remains unresolved.
+
+The sequence recorded in §8 is complete; S5 is ready for final closure subject to Founder disposition and merge of PR #72:
+
+1. **S5a — Today Member Projection / Read Model:** COMPLETE / FOUNDER ACCEPTED / MERGED.
+2. **S5b — Today Experience Assembly:** COMPLETE / FOUNDER ACCEPTED / MERGED / CLOSED.
+3. **S5c — Founder Preview / Acceptance:** SATISFIED — MOBILE FOUNDER PREVIEW ACCEPTED.
+
+The §10 statements above are the historical state at charter approval and are preserved as
+historical evidence. S5 is ready for final closure upon Founder disposition and merge of PR #72. Group Feed remains deferred and NOT IMPLEMENTED; V1 Pass 002 remains NOT
+STARTED; S7, S8 payment/contribution execution, and the S9 production scheduler remain absent.
+Deferred capabilities are NOT completed by this closure. See
+[TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md).
+
+
+## 13. Founder form-factor clarification and supersession (2026-10-03)
+
+**Authoritative rule:** **TIIZI MEMBER / USER APPLICATION = MOBILE. TIIZI PLATFORM OPERATOR CONSOLE = DESKTOP.**
+
+The Founder clarified that the member application does not require desktop layout, desktop-responsive expansion, desktop information architecture, desktop visual acceptance, or widening at large browser widths. The mobile-oriented bounded member surface is not a defect merely because it appears narrow in a desktop browser. Future member experience work is designed and Founder-reviewed against mobile presentation.
+
+The Platform Operator Console is separate: it requires desktop layout and desktop Founder review. This requirement does not apply to the member app.
+
+This clarification explicitly supersedes the earlier §6 sentence “S5b must be reviewed on mobile and desktop” and the permission that desktop may widen member content. Those statements remain preserved as historical wording, but are no longer current authority. Desktop visual review was not performed and is not claimed; it is **NOT APPLICABLE / SUPERSEDED**, not SATISFIED.
