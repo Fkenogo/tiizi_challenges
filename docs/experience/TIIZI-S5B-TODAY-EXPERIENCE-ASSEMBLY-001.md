@@ -285,8 +285,9 @@ authority.
   frontend guards; S3b activity-logging and S3b CORR-001 guards; frontend TypeScript check and
   production build; S5a Today projection tests 5/5; `git diff --check` — all pass. The standard
   `tsx` launcher initially hit a sandbox IPC `EPERM`; the TypeScript guard files passed when run via
-  `node --import tsx`. GitHub CI and the external Cloudflare Workers check are not observable from
-  this environment.
+  `node --import tsx`. GitHub Actions for implementation commit `6734126` passed across API,
+  API contract, API image, boundary, functions, and web. The separate Cloudflare Workers Build
+  check failed; it remains non-gating under the recorded FD-S3-005 treatment.
 
 The candidate remains **IMPLEMENTED CANDIDATE / FOUNDER REVIEW CORRECTIONS APPLIED / AWAITING FINAL
 FOUNDER RE-REVIEW**. S5c remains NOT STARTED; Group Feed remains NOT IMPLEMENTED (separate follow-up);
