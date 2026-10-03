@@ -1,6 +1,6 @@
 # TIIZI-S5b — Today Experience Assembly 001
 
-**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED (PR #70). S5c is NOT STARTED.
+**Status:** COMPLETE / FOUNDER ACCEPTED / MERGED (PR #70). **S5c — Founder Preview / Acceptance is COMPLETE / FOUNDER ACCEPTED** (Master Programme v2.29; [`TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md`](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md)); **S5 — TODAY is COMPLETE / FOUNDER ACCEPTED / CLOSED.** The Founder preview and correction cycle this record documents is the S5c evidence; S5c reconciles it rather than duplicating it.
 
 **Authoritative base:** `origin/main` @ `44a32d2d26f09ab68f6f548d52db9b24e26dd287`
 (post S5a closure, Master Programme v2.25).
@@ -354,5 +354,8 @@ Activity Product Truth remains unchanged: logging still uses the sole governed S
 existing API, server-derived governing day, timezone authority, idempotency, and scoring. No API,
 schema, migration, engine, deployment, or Cloudflare change was introduced by Correction 001C.
 
-**Final programme status:** S5b TODAY EXPERIENCE ASSEMBLY — COMPLETE / FOUNDER ACCEPTED / MERGED.
+**Final programme status (at this entry):** S5b TODAY EXPERIENCE ASSEMBLY — COMPLETE / FOUNDER ACCEPTED / MERGED;
 S5c NOT STARTED. Group Feed NOT IMPLEMENTED — FOLLOW-UP REQUIRED. V1 Pass 002 NOT STARTED.
+
+S5c was subsequently reconciled as COMPLETE / FOUNDER ACCEPTED and S5 was closed in Master Programme v2.29; see
+[`TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md`](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md). This entry's status is preserved as the historical record at the time of the S5b closure.

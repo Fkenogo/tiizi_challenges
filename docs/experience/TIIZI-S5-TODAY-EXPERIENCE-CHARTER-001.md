@@ -173,6 +173,8 @@ S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains 
 
 ## 10. Founder acceptance statements
 
+*(Historical — the state recorded at charter approval. The current S5 position is recorded in §12.)*
+
 **S5 TODAY EXPERIENCE:** FOUNDER DIRECTION RECONCILED WITH EXPERIENCE REFERENCE
 
 **S5a TODAY MEMBER PROJECTION:** IMPLEMENTED CANDIDATE — AWAITING FOUNDER REVIEW
@@ -184,3 +186,24 @@ S7 remains PF-06-gated and not begun. S8 payment/contribution execution remains 
 ## 11. S5a implementation record
 
 Implementation status, exact field provenance, query composition, security boundary, validation, and candidate SHA are recorded in [TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md](./TIIZI-S5A-TODAY-MEMBER-PROJECTION-001.md). This record does not advance S5b, mark Today complete, alter Product Truth, or authorize deployment or production access.
+
+## 12. S5c Founder Preview / Acceptance and S5 closure
+
+**S5c is COMPLETE / FOUNDER ACCEPTED. S5 — TODAY is COMPLETE / FOUNDER ACCEPTED / CLOSED.**
+
+S5c introduced no new product implementation. Its purpose was the final Founder Preview /
+Acceptance of the assembled S5 capability. The preview and correction cycle occurred during S5b and
+is merged; S5c reconciles that evidence rather than duplicating it, and requires no further
+implementation, preview session, or UI pass.
+
+The sequence recorded in §8 is therefore complete:
+
+1. **S5a — Today Member Projection / Read Model:** COMPLETE / FOUNDER ACCEPTED / MERGED.
+2. **S5b — Today Experience Assembly:** COMPLETE / FOUNDER ACCEPTED / MERGED / CLOSED.
+3. **S5c — Founder Preview / Acceptance:** COMPLETE / FOUNDER ACCEPTED.
+
+The §10 statements above are the historical state at charter approval and are preserved as
+historical evidence. Group Feed remains deferred and NOT IMPLEMENTED; V1 Pass 002 remains NOT
+STARTED; S7, S8 payment/contribution execution, and the S9 production scheduler remain absent.
+Deferred capabilities are NOT completed by this closure. See
+[TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md](./TIIZI-S5C-FOUNDER-PREVIEW-ACCEPTANCE-001.md).
