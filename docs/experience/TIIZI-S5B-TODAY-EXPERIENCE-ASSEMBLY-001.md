@@ -124,7 +124,7 @@ than a synthetic history.
 ## 7. Validation
 
 - Frontend typecheck + production build — pass.
-- S5b Today guards (`npm run test:s5b-today`, 49 checks) — pass.
+- Initial S5b Today guard run (`npm run test:s5b-today`, 49 checks at the original candidate) — pass; the current Correction 001C suite contains 63 checks.
 - V2 experience boundary, V2 runtime boundary, V2 frontend guards — pass.
 - V1 exclusion boundary guard + regression fixture — pass.
 - API typecheck + build, S5a Today projection suite (5/5), `/api` namespace contract suite (59/59) — pass.
@@ -253,7 +253,7 @@ authority.
    unchanged. No second submission path was added.
 5. **Validation and preview.** Correction 001B guards cover the approved copy, omitted empty-date
    separator, explicit member sheet variant, shared form/Recorded geometry, containment, and
-   unchanged logging authority. The guard suite now contains 56 checks (49 before this correction).
+   unchanged logging authority. The suite contained 56 checks after Correction 001B (49 at the initial candidate); Correction 001C brings the current suite to 63 checks.
 
 ### Correction 001B verification record
 
