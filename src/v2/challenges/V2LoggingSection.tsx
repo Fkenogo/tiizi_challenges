@@ -318,11 +318,11 @@ function LogActivityFields({
             }))}
           />
         </V2Field>
-        <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <p className="text-sm font-bold text-slate-900">
+        <div className="min-w-0 rounded-xl bg-slate-50 px-3 py-2">
+          <p className="break-words text-sm font-bold text-slate-900">
             <V2ActivityName canonicalKey={selected.canonicalKey} />
           </p>
-          <p className="mt-0.5 text-xs text-slate-600">
+          <p className="mt-0.5 break-words text-xs text-slate-600">
             Target {selected.targetValue} {selected.unit}
             {selected.activityVariant ? ` · ${selected.activityVariant}` : ''}
           </p>
@@ -341,10 +341,10 @@ function LogActivityFields({
             type="datetime-local"
             value={when}
             onChange={(event) => onWhen(event.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary"
+            className="w-full min-w-0 max-w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary"
           />
         </V2Field>
-        <div>
+        <div className="[&>button]:w-full sm:[&>button]:w-auto">
           <V2Button onClick={onSubmit} disabled={pending}>
             {pending ? 'Recording…' : 'Log activity'}
           </V2Button>
@@ -384,10 +384,11 @@ function LogActivityFields({
 }
 
 /**
- * CORR-002 §5 — the Log Activity overlay.
+ * CORR-002 §5 — the focused Log Activity mobile sheet.
  *
  * Opened from the hero "Log activity" CTA via the existing `V2Sheet`
- * primitive (bottom sheet on mobile, centred dialog on larger screens).
+ * primitive. Focused presentation obscures and isolates the logging task
+ * while preserving its mobile-first, bounded sheet geometry.
  * Wraps the unchanged governed `V2LogActivityForm`: same allowed
  * activities, identity, units, validation, timestamp handling,
  * API/application path, success handling and invalidation. Closing the
@@ -404,7 +405,7 @@ export function V2LogActivityDialog({
 }) {
   const view = loggingViewFor(detail);
   return (
-    <V2Sheet open={open} onClose={onClose} title="Log activity">
+    <V2Sheet open={open} onClose={onClose} title="Log activity" variant="focused">
       {view.kind === 'empty' ? (
         <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
       ) : (

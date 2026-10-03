@@ -118,6 +118,8 @@ jobs:
         run: npm run test:v2-experience-boundary
       - name: Existing V2 runtime boundary guard
         run: npm run test:v2-runtime-boundary
+      - name: S5b Today experience guards
+        run: npm run test:s5b-today
 
   # API contract verification through the canonical /api namespace. Proves
   # representative authenticated READ and WRITE operations work on /api and
