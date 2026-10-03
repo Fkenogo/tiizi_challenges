@@ -449,11 +449,14 @@ export function V2Sheet({
   onClose,
   title,
   children,
+  variant = 'default',
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  /** Keep member-only task flows proportionate to the mobile-first shell. */
+  variant?: 'default' | 'member';
 }) {
   const [closing, setClosing] = useState(false);
   if (!open && !closing) return null;
@@ -468,7 +471,7 @@ export function V2Sheet({
         }}
         className="absolute inset-0 h-full w-full cursor-default bg-slate-900/40"
       />
-      <div className="absolute inset-x-0 bottom-0 mx-auto max-h-[92dvh] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:bottom-8 sm:rounded-3xl sm:p-5 sm:pb-8">
+      <div className={`absolute inset-x-0 bottom-0 mx-auto max-h-[92dvh] w-full ${variant === 'member' ? 'max-w-md' : 'max-w-3xl'} overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:bottom-8 sm:rounded-3xl sm:p-5 sm:pb-8`}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-black text-slate-900">{title}</h2>
           <button

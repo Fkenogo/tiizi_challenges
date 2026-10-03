@@ -404,7 +404,7 @@ export function V2LogActivityDialog({
 }) {
   const view = loggingViewFor(detail);
   return (
-    <V2Sheet open={open} onClose={onClose} title="Log activity">
+    <V2Sheet open={open} onClose={onClose} title="Log activity" variant="member">
       {view.kind === 'empty' ? (
         <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
       ) : (

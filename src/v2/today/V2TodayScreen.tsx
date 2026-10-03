@@ -116,8 +116,12 @@ export function V2TodayScreen() {
           {greetingFor(projection.todayContext.serverNow, timezone, displayName)}
         </h1>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
-          {governingDay && <span className="font-medium">{formatGoverningDay(governingDay)}</span>}
-          <span aria-hidden className="text-slate-300">•</span>
+          {governingDay && (
+            <>
+              <span className="font-medium">{formatGoverningDay(governingDay)}</span>
+              <span aria-hidden className="text-slate-300">•</span>
+            </>
+          )}
           <span>
             {projection.todayContext.activeChallengeCount === 1
               ? '1 active Challenge'
@@ -128,8 +132,8 @@ export function V2TodayScreen() {
 
       {isTodayEmpty(projection) ? (
         <V2EmptyState
-          title="Nothing needs you today"
-          message="You have no active Challenges yet. When you join one, today's requirements and your progress will show up here."
+          title="Ready to get moving?"
+          message="Join a Challenge to start tracking activities and progress here."
           action={
             <div className="flex flex-wrap items-center justify-center gap-2">
               <V2Button onClick={() => navigate('/v2/challenges')}>Find a Challenge</V2Button>

@@ -88,8 +88,8 @@ joinability without this UI being reconsidered, and the S5b guards assert the ru
 - **V1 exclusion** — no `/app/*` target is produced or navigated to; no archived V1 module is imported;
   Challenge links use the projection's `/v2/challenges/:id` `detailPath` verbatim.
 - **Routing** — every navigation target is a current `/v2/*` route.
-- **Zero state** — a member with no authoritative content sees a product empty state ("Nothing needs you
-  today") with a real next step; no engineering copy, and the former `V2TodayPlaceholder` / "Next: Today
+- **Zero state** — a member with no authoritative content sees a product empty state ("Ready to get
+  moving?") with a real next step; no engineering copy, and the former `V2TodayPlaceholder` / "Next: Today
   read models (S5)" text is removed.
 - **Absent capability** — Feed, invitations, notifications, Recognition, milestones, payment, Cause
   tasks, scheduler controls, and fake analytics are omitted, never simulated.
@@ -206,3 +206,88 @@ D behind View more). A joined Streak absent from `requiredToday` remains eligibl
 Challenges. If deduplication leaves zero items, Your Challenges is omitted entirely. Do today
 remains unlimited. Implementation: `presentedJoinedChallenges()` in `todayView.ts`; guards J1–J6.
 This is UI composition only — not an API, Product Truth, engine, filtering, or schema change.
+
+## 11. Founder Review Correction 001B — first-visit copy, empty header, and member logging geometry
+
+This bounded presentation correction responds to the Founder's follow-up review. It does not change
+`GET /api/today`, Product Truth, schemas, migrations, Challenge engines, or activity-application
+authority.
+
+1. **New-member copy.** The previous headline, “Nothing needs you today,” was rejected because it
+   could make a new member feel unwanted. The empty state now says **“Ready to get moving?”** and
+   **“Join a Challenge to start tracking activities and progress here.”** The existing Find a
+   Challenge (`/v2/challenges`) and Find a Group (`/v2/groups`) actions remain. No fixture, suggested
+   activity, recommendation, or progress is introduced.
+2. **Empty header.** The separator was rendered unconditionally even when `governingDayFor()` returned
+   `null`, producing “• 0 active Challenges.” An empty member projection has no Challenge timezone
+   context or governing day; its authoritative `serverNow` supports the greeting only, not a
+   Challenge-governed display date. The date and separator now render together only when a governed
+   date exists. For the genuine empty projection, the header shows **“0 active Challenges.”** No
+   device-clock date is substituted and the empty projection remains unchanged.
+3. **V2Sheet consumer audit and geometry root cause.** `V2Sheet` is rendered as a fixed viewport
+   overlay from the React component tree; it is not mounted inside or clipped by the member shell.
+   `V2MemberShell` contains routed content in a centered `max-w-6xl` main, but the sheet panel is
+   fixed to the viewport. The panel's default `max-w-3xl` therefore allowed Log activity to grow to
+   desktop-dialog width in a wide browser, despite its responsive fields. The correction adds an
+   explicit `variant="member"` with a `max-w-md` panel and opts in only the logging dialog. Default
+   sheet geometry is unchanged for other consumers.
+
+   | Consumer | Purpose / context | Geometry impact |
+   | --- | --- | --- |
+   | `src/v2/member/MemberShell.tsx` | Member account actions | Keeps default width; short list content. |
+   | `src/v2/challenges/V2ChallengeHero.tsx` | Challenge description in member detail | Keeps default width for readable long-form text. |
+   | `src/v2/challenges/V2ParticipationSection.tsx` | Leave confirmation in member detail | Keeps default width for confirmation copy and actions. |
+   | `src/v2/challenges/V2LoggingSection.tsx` | Activity form and accepted Recorded result in member detail | Uses member width; form and success content share the same V2Sheet wrapper. |
+   | `src/v2/groups/V2HostedChallengeCard.tsx` (two instances) | Join confirmation in member Group surfaces | Keeps default width for confirmation copy and actions. |
+   | `src/v2/groups/V2GroupHomeScreen.tsx` | About this Group in member Group detail | Keeps default width for longer Group information. |
+
+   There are seven rendered V2Sheet instances across six consumer files; all are member-facing, and
+   none is an Operator Console surface. The change preserves height containment (`max-h-[92dvh]`),
+   internal vertical scrolling, bottom safe-area padding, existing phone-first padding, and the
+   logging form's wrapped activity names, shrinkable fields, and full-width phone action. The
+   Recorded/success state uses the same constrained parent panel as the form. At phone widths the
+   sheet remains full-width within the viewport; on a wide localhost preview the member logging
+   panel caps at `max-w-md` (28rem) rather than expanding toward `max-w-3xl`.
+4. **Logging authority.** `buildS3bActivityPayload`, `deriveSubmitKey`, `useLogActivityV2`, the
+   server-derived governing day, idempotency, API schema, and Challenge Activity authority are
+   unchanged. No second submission path was added.
+5. **Validation and preview.** Correction 001B guards cover the approved copy, omitted empty-date
+   separator, explicit member sheet variant, shared form/Recorded geometry, containment, and
+   unchanged logging authority. The guard suite now contains 56 checks (49 before this correction).
+
+### Correction 001B verification record
+
+**Observed verification (2026-10-03):** `origin/main` at start was
+`44a32d2d26f09ab68f6f548d52db9b24e26dd287`; PR #70's Founder-supplied verified starting head was
+`867f8e6da34876aa73d9dd9addb402a5551bb4a4`. Work was performed in the clean existing
+`impl/tiizi-s5b-today-experience-assembly-001` worktree.
+
+- **Amara / populated Today:** `/v2/today` showed Morning Momentum once under Do today, with Reps
+  Race and Summit Steps Together under Your Challenges. With only two challenges, no View more was
+  shown. The governed activity form accepted a 20-rep Push-Up entry and returned **Recorded**, 100
+  points, Challenge day `2026-10-03`; returning to Today refreshed Push-Up to Done and showed 1/2
+  requirements complete. The outstanding Breathing Practice remained pending.
+- **Logging geometry:** in a wide localhost browser the member app stayed centered and the logging
+  sheet remained capped by the `max-w-md` member variant. At a phone-like 390 × 844 viewport, the
+  form fit the viewport with the selector, amount and datetime fields, Close, and full-width Log
+  activity action visible; the panel retained vertical scrolling. The Recorded state used the same
+  width and remained contained with Close, Log another, and Done accessible. No horizontal overflow
+  was visible. Safe-area padding remains in the shared panel.
+- **Empty projection and new-member preview:** the S5a Today projection API suite passed 5/5,
+  including the empty-member contract: active count zero and all five content arrays empty. No API
+  or projection code changed. The supplied handover records the genuine `newmember@tiizi.local`
+  projection as zero participation and zero content. This session did not reopen that identity in
+  the browser because `TIIZI_S5B_EMPTY_PREVIEW_PASSWORD` is unset in the shell and local env files;
+  the empty-preview script requires that existing local credential, and it was not reset or replaced.
+  The new copy, routes, and orphan-separator behavior are covered by S5b guards. Thus the current
+  browser rendering of the new-member page remains **not re-verified in this pass**.
+- **Checks:** S5b Today guards 56/56; V1 boundary and regression guards; V2 experience/runtime and
+  frontend guards; S3b activity-logging and S3b CORR-001 guards; frontend TypeScript check and
+  production build; S5a Today projection tests 5/5; `git diff --check` — all pass. The standard
+  `tsx` launcher initially hit a sandbox IPC `EPERM`; the TypeScript guard files passed when run via
+  `node --import tsx`. GitHub CI and the external Cloudflare Workers check are not observable from
+  this environment.
+
+The candidate remains **IMPLEMENTED CANDIDATE / FOUNDER REVIEW CORRECTIONS APPLIED / AWAITING FINAL
+FOUNDER RE-REVIEW**. S5c remains NOT STARTED; Group Feed remains NOT IMPLEMENTED (separate follow-up);
+V1 Pass 002 remains NOT STARTED. No deployment or merge.

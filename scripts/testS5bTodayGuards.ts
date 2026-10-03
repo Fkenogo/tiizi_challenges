@@ -320,7 +320,9 @@ check(
 );
 check(
   'E9 the zero state uses product copy and routes to the real Challenges surface',
-  screen.includes('Nothing needs you today') && screen.includes("navigate('/v2/challenges')"),
+  screen.includes('Ready to get moving?')
+    && screen.includes('Join a Challenge to start tracking activities and progress here.')
+    && screen.includes("navigate('/v2/challenges')"),
 );
 check(
   'F1 only current V2 routes are navigated to',
@@ -404,6 +406,28 @@ check(
     && loggingSection.includes('useLogActivityV2')
     && loggingSection.includes('deriveSubmitKey'),
 );
+check(
+  'H5 logging opts into the member-sized sheet variant while other consumers keep the default',
+  loggingSection.includes('title="Log activity" variant="member"')
+    && primitives.includes("variant = 'default'")
+    && primitives.includes("variant === 'member' ? 'max-w-md' : 'max-w-3xl'"),
+);
+check(
+  'H6 the logging member variant keeps the panel viewport-contained and internally scrollable',
+  primitives.includes('max-h-[92dvh]')
+    && primitives.includes('overflow-y-auto')
+    && primitives.includes('max-w-md'),
+);
+check(
+  'H7 form and Recorded state share the same member-sized sheet wrapper',
+  /<V2Sheet[^>]*title="Log activity" variant="member">[\s\S]*?<V2LogActivityForm/.test(loggingSection)
+    && loggingSection.includes("'Recorded.'"),
+);
+check(
+  'H8 the mobile log action fills its available width and input fields remain shrinkable',
+  loggingSection.includes('[&>button]:w-full sm:[&>button]:w-auto')
+    && loggingSection.includes('min-w-0 max-w-full'),
+);
 
 // ---------------------------------------------------------------------------
 // I. Zero state offers governed discovery (Challenge + Group)
@@ -413,6 +437,26 @@ check(
   'I1 the zero state keeps Find a Challenge and adds Find a Group on real routes',
   screen.includes("navigate('/v2/challenges')") && screen.includes("navigate('/v2/groups')")
     && screen.includes('Find a Challenge') && screen.includes('Find a Group'),
+);
+check(
+  'I2 the new-member headline and supporting copy use the Founder-approved wording',
+  screen.includes('title="Ready to get moving?"')
+    && screen.includes('message="Join a Challenge to start tracking activities and progress here."')
+    && !screenSource.includes('Nothing needs you today'),
+);
+check(
+  'I3 no governing date means the active Challenge count renders without an orphan separator',
+  /\{governingDay && \([\s\S]*?formatGoverningDay\(governingDay\)[\s\S]*?text-slate-300">•<\/span>[\s\S]*?\)\}/.test(screen),
+);
+const emptyStateStart = screen.indexOf('{isTodayEmpty(projection) ? (');
+const emptyStateEnd = screen.indexOf(') : (', emptyStateStart);
+const emptyStateBranch = screen.slice(emptyStateStart, emptyStateEnd);
+check(
+  'I4 the empty branch contains only truthful copy and discovery actions, with no projected activity content',
+  emptyStateStart >= 0 && emptyStateEnd > emptyStateStart
+    && emptyStateBranch.includes('<V2EmptyState')
+    && !/projection\.(requiredToday|joinedChallengeProgress|groupChallengeOpportunities|upcoming|finalizedResults)/.test(emptyStateBranch)
+    && !/recommended|suggested|sample Challenge|fake progress/i.test(emptyStateBranch),
 );
 
 // ---------------------------------------------------------------------------
