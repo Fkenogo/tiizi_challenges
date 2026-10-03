@@ -320,10 +320,10 @@ Correction 001C validation: S5b Today guard suite **63 checks**; boundary guard 
 experience, runtime, and frontend boundaries; S3b logging and correction guards; frontend TypeScript
 typecheck and production build; S5a projection tests 5/5; `git diff --check` — all pass. The S5b
 candidate was awaiting final activity-logging visual review at this point in the Correction 001C
-record; see §5 for the later acceptance and merge. S5c NOT STARTED; Group Feed NOT IMPLEMENTED
+record; see §12 for the later acceptance and merge. S5c NOT STARTED; Group Feed NOT IMPLEMENTED
 (follow-up); V1 Pass 002 NOT STARTED.
 
-## 5. Founder acceptance and merge closure
+## 12. Founder acceptance and merge closure
 
 **Founder disposition (2026-10-03): ACCEPTED.** The Founder reviewed and accepted the final focused
 mobile activity-logging presentation, including task focus, obscured Challenge background,
