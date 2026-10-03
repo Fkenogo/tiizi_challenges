@@ -384,10 +384,11 @@ function LogActivityFields({
 }
 
 /**
- * CORR-002 §5 — the Log Activity overlay.
+ * CORR-002 §5 — the focused Log Activity mobile sheet.
  *
  * Opened from the hero "Log activity" CTA via the existing `V2Sheet`
- * primitive (bottom sheet on mobile, centred dialog on larger screens).
+ * primitive. Focused presentation obscures and isolates the logging task
+ * while preserving its mobile-first, bounded sheet geometry.
  * Wraps the unchanged governed `V2LogActivityForm`: same allowed
  * activities, identity, units, validation, timestamp handling,
  * API/application path, success handling and invalidation. Closing the
@@ -404,7 +405,7 @@ export function V2LogActivityDialog({
 }) {
   const view = loggingViewFor(detail);
   return (
-    <V2Sheet open={open} onClose={onClose} title="Log activity" variant="member">
+    <V2Sheet open={open} onClose={onClose} title="Log activity" variant="focused">
       {view.kind === 'empty' ? (
         <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
       ) : (

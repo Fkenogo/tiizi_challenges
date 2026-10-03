@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * TIIZI S1 — shared V2 experience primitives.
@@ -456,25 +456,98 @@ export function V2Sheet({
   title: string;
   children: React.ReactNode;
   /** Keep member-only task flows proportionate to the mobile-first shell. */
-  variant?: 'default' | 'member';
+  variant?: 'default' | 'member' | 'focused';
 }) {
   const [closing, setClosing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  const focused = variant === 'focused';
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!open || !focused) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const focusableElements = () => Array.from(panel.querySelectorAll<HTMLElement>(
+      'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',
+    ));
+    const focusInitialControl = () => {
+      const initial = panel.querySelector<HTMLElement>('[data-v2-sheet-initial-focus]');
+      (initial ?? panel).focus({ preventScroll: true });
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = focusableElements();
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        panel.focus({ preventScroll: true });
+      } else if (!panel.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const handleFocusIn = (event: FocusEvent) => {
+      if (event.target instanceof Node && !panel.contains(event.target)) focusInitialControl();
+    };
+
+    focusInitialControl();
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('focusin', handleFocusIn);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('focusin', handleFocusIn);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [open, focused]);
+
   if (!open && !closing) return null;
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={title}>
       <button
         type="button"
         aria-label="Close"
+        aria-hidden="true"
+        tabIndex={-1}
         onClick={() => {
           setClosing(false);
           onClose();
         }}
-        className="absolute inset-0 h-full w-full cursor-default bg-slate-900/40"
+        className={`absolute inset-0 h-full w-full cursor-default ${variant === 'focused' ? 'bg-slate-950/75 backdrop-blur-sm' : 'bg-slate-900/40'}`}
       />
-      <div className={`absolute inset-x-0 bottom-0 mx-auto max-h-[92dvh] w-full ${variant === 'member' ? 'max-w-md' : 'max-w-3xl'} overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:bottom-8 sm:rounded-3xl sm:p-5 sm:pb-8`}>
-        <div className="mb-3 flex items-center justify-between">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className={`absolute inset-x-0 bottom-0 mx-auto max-h-[92dvh] w-full ${variant === 'default' ? 'max-w-3xl' : 'max-w-md'} ${focused ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-contain'} rounded-t-3xl bg-white p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:bottom-8 sm:rounded-3xl sm:p-5 sm:pb-8`}
+      >
+        <div className={`mb-3 flex items-center justify-between ${focused ? 'shrink-0' : ''}`}>
           <h2 className="text-base font-black text-slate-900">{title}</h2>
           <button
+            data-v2-sheet-initial-focus
             type="button"
             onClick={() => {
               setClosing(false);
@@ -485,7 +558,9 @@ export function V2Sheet({
             Close
           </button>
         </div>
-        {children}
+        <div className={focused ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain' : ''}>
+          {children}
+        </div>
       </div>
     </div>
   );

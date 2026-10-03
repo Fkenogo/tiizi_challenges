@@ -292,3 +292,31 @@ authority.
 The candidate remains **IMPLEMENTED CANDIDATE / FOUNDER REVIEW CORRECTIONS APPLIED / AWAITING FINAL
 FOUNDER RE-REVIEW**. S5c remains NOT STARTED; Group Feed remains NOT IMPLEMENTED (separate follow-up);
 V1 Pass 002 remains NOT STARTED. No deployment or merge.
+
+### Correction 001C — focused mobile activity logging
+
+**Founder disposition:** populated Today behavior and the new-member state are accepted. This
+includes Morning Momentum once under Do today; Reps Race and Summit Steps Together under Your
+Challenges without an unnecessary View more; and the empty state “Ready to get moving?” with its
+approved supporting copy, Find a Challenge / Find a Group links, and the `0 active Challenges`
+header without an orphan separator. These accepted states are unchanged by this correction.
+
+The remaining Founder finding concerned visual focus: Challenge details competed with the activity
+task behind the constrained logger. The logging consumer now explicitly opts into V2Sheet's focused
+presentation: a dark, blurred viewport backdrop, modal interaction isolation, focus containment and
+restoration, Escape dismissal, a scroll-locked background, a fixed Close header, and an independently
+scrollable mobile-bounded panel. The Recorded result stays inside that same presentation. Other
+V2Sheet consumers retain their prior variant and geometry; the shared primitive gained an opt-in
+capability only.
+
+Activity Product Truth is unchanged: the existing S3b payload, submit key, hook, API, server-derived
+governing day, timezone authority, idempotency, scoring, and acceptance path remain the sole
+submission path. The final phone-sized Amara preview showed the dimmed/blurred Challenge page behind
+both the form and Recorded state. **The corrected activity-logging visual review remains pending
+Founder review.**
+
+Correction 001C validation: S5b Today guard suite **63 checks**; boundary guard and regression; V2
+experience, runtime, and frontend boundaries; S3b logging and correction guards; frontend TypeScript
+typecheck and production build; S5a projection tests 5/5; `git diff --check` — all pass. The S5b
+candidate remains awaiting final activity-logging visual review; S5c NOT STARTED; Group Feed NOT
+IMPLEMENTED (follow-up); V1 Pass 002 NOT STARTED.

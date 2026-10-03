@@ -407,26 +407,70 @@ check(
     && loggingSection.includes('deriveSubmitKey'),
 );
 check(
-  'H5 logging opts into the member-sized sheet variant while other consumers keep the default',
-  loggingSection.includes('title="Log activity" variant="member"')
+  'H5 logging opts into the focused sheet variant while other consumers keep the default',
+  loggingSection.includes('title="Log activity" variant="focused"')
     && primitives.includes("variant = 'default'")
-    && primitives.includes("variant === 'member' ? 'max-w-md' : 'max-w-3xl'"),
+    && primitives.includes("variant === 'default' ? 'max-w-3xl' : 'max-w-md'"),
 );
 check(
-  'H6 the logging member variant keeps the panel viewport-contained and internally scrollable',
+  'H6 the focused member variant keeps the panel viewport-contained and internally scrollable',
   primitives.includes('max-h-[92dvh]')
     && primitives.includes('overflow-y-auto')
     && primitives.includes('max-w-md'),
 );
 check(
-  'H7 form and Recorded state share the same member-sized sheet wrapper',
-  /<V2Sheet[^>]*title="Log activity" variant="member">[\s\S]*?<V2LogActivityForm/.test(loggingSection)
+  'H7 form and Recorded state share the same focused sheet wrapper',
+  /<V2Sheet[^>]*title="Log activity" variant="focused">[\s\S]*?<V2LogActivityForm/.test(loggingSection)
     && loggingSection.includes("'Recorded.'"),
 );
 check(
   'H8 the mobile log action fills its available width and input fields remain shrinkable',
   loggingSection.includes('[&>button]:w-full sm:[&>button]:w-auto')
     && loggingSection.includes('min-w-0 max-w-full'),
+);
+const nonLoggingSheetFiles = [
+  'src/v2/member/MemberShell.tsx',
+  'src/v2/challenges/V2ChallengeHero.tsx',
+  'src/v2/challenges/V2ParticipationSection.tsx',
+  'src/v2/groups/V2HostedChallengeCard.tsx',
+  'src/v2/groups/V2GroupHomeScreen.tsx',
+];
+const nonLoggingSheets = nonLoggingSheetFiles.map((path) => code(read(path))).join('\n');
+check(
+  'H9 focused logging uses a strong blurred backdrop without changing default sheet backdrops',
+  primitives.includes("variant === 'focused' ? 'bg-slate-950/75 backdrop-blur-sm' : 'bg-slate-900/40'")
+    && loggingSection.includes('variant="focused"'),
+);
+check(
+  'H10 focused mode traps keyboard focus, locks page scrolling, and supports Escape dismissal',
+  primitives.includes("document.body.style.overflow = 'hidden'")
+    && primitives.includes("event.key === 'Escape'")
+    && /event\.key (?:===|!==) 'Tab'/.test(primitives)
+    && primitives.includes('focusin'),
+);
+check(
+  'H11 modal semantics and full-screen overlay prevent background interaction',
+  primitives.includes('fixed inset-0 z-50')
+    && primitives.includes('aria-modal="true"')
+    && primitives.includes('aria-hidden="true"'),
+);
+check(
+  'H12 focused activity modal retains bounded mobile width and internal vertical scrolling',
+  primitives.includes("variant === 'default' ? 'max-w-3xl' : 'max-w-md'")
+    && primitives.includes('max-h-[92dvh]')
+    && primitives.includes('overflow-y-auto')
+    && primitives.includes('safe-area-inset-bottom'),
+);
+check(
+  'H13 unrelated V2Sheet consumers do not opt into logging-specific focused presentation',
+  (nonLoggingSheets.match(/<V2Sheet/g) ?? []).length === 6
+    && !nonLoggingSheets.includes('variant="focused"'),
+);
+check(
+  'H14 focused sheets keep Close visible while their content scrolls independently',
+  primitives.includes("focused ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-contain'")
+    && primitives.includes("focused ? 'shrink-0' : ''")
+    && primitives.includes("focused ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain' : ''"),
 );
 
 // ---------------------------------------------------------------------------
