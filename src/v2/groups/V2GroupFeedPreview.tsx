@@ -1,12 +1,25 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../api/apiClient';
+import { useAuth } from '../../hooks/useAuth';
 import { V2Button } from '../components/V2Primitives';
+import { removeV2GroupFeed } from './groupFeedQueryKeys';
 import { V2GroupFeedEvent } from './V2GroupFeedEvent';
 import { useV2GroupFeed } from './useV2GroupFeed';
 
 export function V2GroupFeedPreview({ groupId }: { groupId: string }) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const feed = useV2GroupFeed(groupId, true, true);
+  const handledDenied = useRef(false);
   const events = feed.data?.pages[0]?.events.slice(0, 3) ?? [];
+  useEffect(() => {
+    if (!(feed.error instanceof ApiError) || feed.error.status !== 404 || handledDenied.current) return;
+    handledDenied.current = true;
+    void removeV2GroupFeed(queryClient, groupId, user?.uid);
+    void queryClient.invalidateQueries({ queryKey: ['v2-group-detail', groupId, user?.uid], exact: true });
+  }, [feed.error, groupId, queryClient, user?.uid]);
   return (
     <section aria-labelledby="group-activity-heading" className="space-y-2">
       <div className="flex items-center justify-between gap-3">

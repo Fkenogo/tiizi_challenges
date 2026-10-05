@@ -25,6 +25,8 @@ assert.match(preview, /useV2GroupFeed\(groupId, true, true\)/);
 assert.match(preview, /slice\(0, 3\)/);
 assert.match(preview, /Group activity will appear here as Challenges progress\./);
 assert.match(preview, /View all activity/);
+assert.match(preview, /feed\.error\.status !== 404/);
+assert.match(preview, /v2-group-detail/);
 assert.match(routes, /groups\/\:groupId\/feed/);
 assert.match(screen, /Load more activity/);
 assert.match(screen, /resetQueries\(\{ queryKey, exact: true \}\)/);
