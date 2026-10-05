@@ -20,7 +20,7 @@ Evidence was taken from the canonical programme and experience authorities, curr
 
 **Authority order used:** Founder-approved Product Truth and governance; current V2 PostgreSQL/domain authority; accepted S4/S5 experience records; adopted prototype for presentation only. Prototype mock data, UI state and handlers do not establish event eligibility, persistence, consent, audience, privacy, Kudo semantics, or backend truth.
 
-**V1 boundary:** `AGENTS.md` §§1–3 is binding. The V1 Feed screens, hooks, services, Firestore collections, Functions, rules, indexes and historical reports are excluded from V2 implementation authority. Their physical presence is not a compatibility requirement. This assessment uses no V1 artifact to derive V2 behavior. Any inventory of those artifacts below is labeled **HISTORICAL / NON-AUTHORITATIVE**, solely to mark the exclusion boundary. No V1 Feed code is to be revived, imported, adapted, bridged, or used as a fallback.
+**V1 exclusion:** Archived V1 Feed behavior is frozen, non-authoritative, and excluded from V2 Feed design and implementation by `AGENTS.md` §§1–3. Do not inspect or use V1 Feed material as inspiration, precedent, compatibility, migration, fallback, or a source of missing Product Truth. Its physical presence creates no V2 authority.
 
 ## 3. Current V2 Group and adjacent capabilities
 
@@ -125,7 +125,7 @@ The following are required design constraints for a future authorized slice; imp
 - **Read membership check:** check current active/joined relationship on every page/read, not just at Group entry or in a stale client cache. Stewardship confers no Feed bypass. Pending, rejected, left and unknown viewers receive no Feed. Public/discoverable visibility does not mean public Feed access.
 - **No cross-member data leak:** per-item disclosure is separate from Group membership. Do not expose raw activity values, notes, evidence, health-like detail, timestamps precise enough to infer sensitive routines, profile/avatar fields not otherwise authorized, participant lists, private participation, or results/ranks by default.
 - **Source restriction/correction:** keep only minimal presentation data, re-check source and Group visibility, and suppress/redact when no longer visible. Preserve traceability within governance; do not copy protected source data into an immutable permanent card. Decide withdrawal and correction handling before publication.
-- **Trusted publication:** reject client-created event records, client-chosen actor/member IDs, event timestamps, event types and counters. Use server-only mutation/domain events from the authoritative PostgreSQL transaction or trusted outbox worker. Never generate from client-side interpretation or legacy Firestore.
+- **Trusted publication:** reject client-created event records, client-chosen actor/member IDs, event timestamps, event types and counters. Use server-only mutation/domain events from the authoritative PostgreSQL transaction or trusted outbox worker. Never generate from client-side interpretation.
 - **Idempotency and ordering:** unique event/source transition key; retry-safe publisher; monotonic server-owned ordering; no client backdating or popularity sort. Challenge transitions need explicit event identity and transition/version scope to prevent duplicate join/start/finalization events.
 - **Cursor integrity:** opaque authenticated cursor bound to Group, order/version and keyset; bounded page size; stable tie-break; reject cross-tenant, tampered, stale-version or inconsistent cursors.
 - **Moderation and deletion:** current Product Truth does not define Feed moderation/reporting or event removal authority. Determine an authorized correction/takedown path and audit trail before implementation. No client free-text means no free-post moderation surface, but event privacy and source correction still require governance.
@@ -178,28 +178,28 @@ Identifiers below are **proposed for Founder disposition**, not adopted programm
 | **GF-06 — Founder preview and acceptance** | Review actual mobile Group Feed and authorized event/privacy behavior | Required before closure; no merge/deploy inferred from assessment. |
 | **GF-07 — Today bounded community summary** | Small member-specific summary sourced from GF-03's authoritative Feed read seam | Only after GF-06 acceptance; separate S5 follow-up, no second stream/store/authority. |
 
-Do not start S7/S8/S9 or any V1 exclusion pass under this assessment. Do not implement any proposed slice from this document alone; each slice requires its own Founder-authorized task.
+Do not start S7/S8/S9 under this assessment. Do not implement any proposed slice from this document alone; each slice requires its own Founder-authorized task.
 
-## 15. Historical V1 Feed inventory (HISTORICAL / NON-AUTHORITATIVE)
+## 15. V1 exclusion
 
-The repository still contains V1-named Group Feed screens/cards, reaction/comment hooks and services, activity-summary services, Firestore feed collection references, Functions, rules/indexes and legacy Feed guards/reports (for example `src/features/Groups/GroupFeedScreen.tsx`, `FeedCard.tsx`, `src/hooks/useFeedReactions.ts`, `src/hooks/useFeedComments.ts`, `firestore.rules`, `functions/src/memberActivitySummaries.ts`, and `scripts/testGroupFeed*`). These are V1-only artifacts. This inventory is provided to make the exclusion boundary visible, **not** as an implementation survey or source of V2 semantics. Historical reports and guard expectations are likewise non-authoritative for V2. Use the standing V1 boundary checks; do not import V1 code, revive Firestore authority, treat legacy guards as Product Truth, or create compatibility paths.
+**V1 exclusion:** Archived V1 Feed behavior is frozen, non-authoritative, and excluded from V2 Feed design and implementation by `AGENTS.md` §§1–3. Do not inspect or use V1 Feed material as inspiration, precedent, compatibility, migration, fallback, or a source of missing Product Truth. Its physical presence creates no V2 authority.
 
 ## 16. Programme, implementation and review disposition
 
-- **Master Programme impact:** none. v2.31 remains unchanged; the Master Programme is the programme status authority and this assessment does not change implementation status or authorize a work package.
-- **Files changed:** this assessment document only.
+- **Master Programme impact:** this assessment remains the analytical record; Master Programme v2.32 records the later Founder-approved GF-01 status. The effective Product Truth and implementation boundary are in `docs/product-truth/TIIZI-GF-01-GROUP-FEED-EVENT-CONTRACT.md`. GF-02 remains unauthorized.
+- **Assessment provenance:** the original assessment changed only this assessment record. The subsequent GF-01 disposition adds the effective contract and the minimal Master Programme update; see the PR change set.
 - **Product implementation:** none. No UI, API, route, hook, service, migration, table, schema, policy, guard, test fixture or Today behavior was changed.
 - **Deployment:** none.
-- **Dirty primary checkout:** untouched by this assessment. Work occurred in a separate clean worktree created at the requested SHA. The pre-existing separate `gf-assess-001` worktree and its untracked draft were left untouched.
+- **Dirty primary checkout:** untouched. Work occurred in a separate clean documentation worktree based on the assessment branch. The separate GF-01 draft worktree was read as a draft source and remains unmodified.
 - **Fetch/base:** `git fetch origin --prune` completed; fetched `origin/main` is `d71994ffb92c98da986a1205b47febbeff4df484`, with no advancement.
-- **Branch/head:** to be filled after documentation commit.
-- **PR:** documentation-only PR to be opened for Founder review; do not merge.
+- **Branch/head:** recorded in the PR and final implementation report.
+- **PR:** existing documentation-only PR #74 is updated for Founder review; do not merge.
 
 ## Final status
 
-**GROUP FEED:** ASSESSED — NOT IMPLEMENTED  
+**GROUP FEED:** GF-01 PRODUCT TRUTH APPROVED / EFFECTIVE — IMPLEMENTATION NOT STARTED
 **KUDOS:** CONCEPTUALLY PRESENT IN V2 PRODUCT TRUTH; NO ACTIVE V2 CAPABILITY — IMPLEMENTATION/OPERATIONS REQUIRE SEPARATE AUTHORIZATION  
 **TODAY COMMUNITY SUMMARY:** DEFERRED PENDING GROUP FEED  
-**V1 FEED:** HISTORICAL / EXCLUDED FROM V2 IMPLEMENTATION  
+**V1 FEED:** FROZEN / NON-AUTHORITATIVE / EXCLUDED FROM V2 BY `AGENTS.md`
 **IMPLEMENTATION:** NOT STARTED  
 **STOP FOR FOUNDER REVIEW.**
