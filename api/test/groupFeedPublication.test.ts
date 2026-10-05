@@ -11,17 +11,24 @@ import { seedGroup, seedMember, testDb } from './helpers.js';
 
 let seq = 0;
 
-async function challenge(groupId: string, status: 'establishment' | 'active' | 'ended' = 'establishment') {
+async function challenge(
+  groupId: string,
+  status: 'establishment' | 'active' | 'ended' = 'establishment',
+  challengeType: 'streak' | 'collective' = 'streak',
+) {
   const memberId = await seedMember(testDb(), `feed-pub-${++seq}`);
   const result = await testDb().query<{ challenge_id: string }>(
     `INSERT INTO challenges
       (group_id, created_by_member_id, challenge_type, status, title, start_date, end_date,
-       activated_at, ended_at, required_consecutive_days, timezone)
-     VALUES ($1, $2, 'streak', $3, 'Publication source', '2026-06-01', '2026-06-30',
-       CASE WHEN $3 IN ('active','ended') THEN now() ELSE NULL END,
-       CASE WHEN $3 = 'ended' THEN now() ELSE NULL END, 1, 'UTC')
+       activated_at, ended_at, goal_value, goal_unit, required_consecutive_days, timezone)
+     VALUES ($1, $2, $3, $4, 'Publication source', '2026-06-01', '2026-06-30',
+       CASE WHEN $4 IN ('active','ended') THEN now() ELSE NULL END,
+       CASE WHEN $4 = 'ended' THEN now() ELSE NULL END,
+       CASE WHEN $3 = 'collective' THEN 100 ELSE NULL END,
+       CASE WHEN $3 = 'collective' THEN 'km' ELSE NULL END,
+       CASE WHEN $3 = 'collective' THEN NULL ELSE 1 END, 'UTC')
      RETURNING challenge_id`,
-    [groupId, memberId, status],
+    [groupId, memberId, challengeType, status],
   );
   return result.rows[0].challenge_id;
 }
@@ -100,6 +107,9 @@ describe('GF-02 trusted publication outbox', () => {
     });
     expect(expired).toBe(1);
     expect((await testDb().query('SELECT feed_event_id FROM group_feed_projection')).rows).toHaveLength(0);
+    expect((await testDb().query<{ status: string }>(
+      'SELECT status FROM challenges WHERE challenge_id = $1', [challengeId],
+    )).rows[0].status).toBe('establishment');
     expect((await testDb().query('SELECT outbox_id, status, expired_at, attempt_count FROM group_feed_outbox')).rows)
       .toMatchObject([{ outbox_id: event.outboxId, status: 'expired', attempt_count: 0 }]);
     expect((await testDb().query<{ expired_at: Date | null }>(
@@ -122,6 +132,9 @@ describe('GF-02 trusted publication outbox', () => {
     expect((await testDb().query<{ status: string }>(
       'SELECT status FROM group_feed_outbox WHERE outbox_id = $1', [event.outboxId],
     )).rows[0].status).toBe('blocked');
+    expect((await testDb().query<{ status: string }>(
+      'SELECT status FROM challenges WHERE challenge_id = $1', [challengeId],
+    )).rows[0].status).toBe('establishment');
     expect((await testDb().query('SELECT feed_event_id FROM group_feed_projection')).rows).toHaveLength(0);
 
     expect(await retryBlockedGroupFeedOutbox(testDb(), { now })).toBe(1);
@@ -159,6 +172,12 @@ describe('GF-02 trusted publication outbox', () => {
     await processGroupFeedOutboxBatch(testDb(), { now });
     expect(await suppressGroupFeedProjection(testDb(), event.outboxId, 'system_safety', now)).toBe(true);
     expect((await testDb().query<{ status: string }>(
+      'SELECT status FROM group_feed_outbox WHERE outbox_id = $1', [event.outboxId],
+    )).rows[0].status).toBe('projected');
+    expect((await testDb().query<{ suppressed_at: Date | null }>(
+      'SELECT suppressed_at FROM group_feed_projection WHERE feed_event_id = $1', [event.outboxId],
+    )).rows[0].suppressed_at).not.toBeNull();
+    expect((await testDb().query<{ status: string }>(
       'SELECT status FROM challenges WHERE challenge_id = $1', [challengeId],
     )).rows[0].status).toBe('establishment');
     const restoredAt = new Date(now.getTime() + 1_000);
@@ -166,6 +185,9 @@ describe('GF-02 trusted publication outbox', () => {
     expect((await testDb().query<{ suppression_reason_code: string | null }>(
       'SELECT suppression_reason_code FROM group_feed_projection WHERE feed_event_id = $1', [event.outboxId],
     )).rows[0].suppression_reason_code).toBeNull();
+    expect((await testDb().query<{ status: string }>(
+      'SELECT status FROM group_feed_outbox WHERE outbox_id = $1', [event.outboxId],
+    )).rows[0].status).toBe('projected');
     expect((await testDb().query<{ action_type: string; actor_kind: string }>(
       'SELECT action_type, actor_kind FROM group_feed_projection_actions ORDER BY acted_at, action_id',
     )).rows.map((row) => [row.action_type, row.actor_kind])).toEqual([
@@ -173,7 +195,7 @@ describe('GF-02 trusted publication outbox', () => {
     ]);
   });
 
-  it('does not project an outbox row whose Group scope no longer matches its Challenge', async () => {
+  it('blocks an outbox Group/source mismatch without projecting or changing Challenge truth, then recovers after correction', async () => {
     const sourceGroupId = await seedGroup(testDb(), { name: 'Source group' });
     const otherGroupId = await seedGroup(testDb(), { name: 'Other group' });
     const challengeId = await challenge(sourceGroupId);
@@ -182,13 +204,60 @@ describe('GF-02 trusted publication outbox', () => {
     });
     await testDb().query('UPDATE group_feed_outbox SET group_id = $2 WHERE outbox_id = $1', [event.outboxId, otherGroupId]);
     const result = await processGroupFeedOutboxBatch(testDb(), { now: new Date(Date.now() + 2_000) });
-    expect(result.suppressed).toBe(1);
-    expect((await testDb().query<{ group_id: string; suppressed_at: Date | null }>(
-      'SELECT group_id, suppressed_at FROM group_feed_projection WHERE feed_event_id = $1', [event.outboxId],
-    )).rows[0]).toMatchObject({ group_id: otherGroupId });
-    expect((await testDb().query<{ suppressed_at: Date | null }>(
-      'SELECT suppressed_at FROM group_feed_projection WHERE feed_event_id = $1', [event.outboxId],
-    )).rows[0].suppressed_at).not.toBeNull();
+    expect(result).toMatchObject({ blocked: 1, blockedIds: [event.outboxId], suppressed: 0 });
+    expect((await testDb().query<{ status: string; group_id: string; last_error_code: string | null; claimed_until: Date | null }>(
+      'SELECT status, group_id, last_error_code, claimed_until FROM group_feed_outbox WHERE outbox_id = $1',
+      [event.outboxId],
+    )).rows[0]).toMatchObject({
+      status: 'blocked', group_id: otherGroupId, last_error_code: 'group_scope_mismatch', claimed_until: null,
+    });
+    expect((await testDb().query('SELECT feed_event_id FROM group_feed_projection WHERE feed_event_id = $1', [event.outboxId])).rows)
+      .toHaveLength(0);
+    expect((await testDb().query<{ group_id: string }>(
+      'SELECT group_id FROM challenges WHERE challenge_id = $1', [challengeId],
+    )).rows[0].group_id).toBe(sourceGroupId);
+
+    await testDb().query('UPDATE group_feed_outbox SET group_id = $2 WHERE outbox_id = $1', [event.outboxId, sourceGroupId]);
+    expect(await retryBlockedGroupFeedOutbox(testDb(), { now: new Date(Date.now() + 4_000) })).toBe(1);
+    expect(await processGroupFeedOutboxBatch(testDb(), { now: new Date(Date.now() + 6_000) }))
+      .toMatchObject({ projected: 1, blocked: 0 });
+    expect((await testDb().query<{ group_id: string }>(
+      'SELECT group_id FROM group_feed_projection WHERE feed_event_id = $1', [event.outboxId],
+    )).rows[0].group_id).toBe(sourceGroupId);
+    expect((await testDb().query('SELECT feed_event_id FROM group_feed_projection WHERE group_id = $1', [otherGroupId])).rows)
+      .toHaveLength(0);
+  });
+
+  it('completes an ineligible but same-Group source as a projected suppressed projection', async () => {
+    const groupId = await seedGroup(testDb(), { name: 'Corrected source group' });
+    const challengeId = await challenge(groupId, 'active', 'collective');
+    await testDb().query(
+      `INSERT INTO challenge_derived_state (challenge_id, challenge_type, scoring_version,
+        collective_goal_reached, goal_completed_at)
+       VALUES ($1, 'collective', 'v1', TRUE, now())`,
+      [challengeId],
+    );
+    const event = await recordChallengePublication(testDb(), {
+      eventType: 'together_goal_achieved', challengeId, sourceTransitionVersion: 1,
+    });
+    await testDb().query(
+      `UPDATE challenge_derived_state SET collective_goal_reached = FALSE, goal_completed_at = NULL
+       WHERE challenge_id = $1`,
+      [challengeId],
+    );
+    const result = await processGroupFeedOutboxBatch(testDb(), { now: new Date(Date.now() + 2_000) });
+    expect(result).toMatchObject({ projected: 0, suppressed: 1, blocked: 0 });
+    expect((await testDb().query<{ status: string; last_error_code: string | null }>(
+      'SELECT status, last_error_code FROM group_feed_outbox WHERE outbox_id = $1', [event.outboxId],
+    )).rows[0]).toMatchObject({ status: 'projected', last_error_code: null });
+    expect((await testDb().query<{ group_id: string; suppression_reason_code: string | null }>(
+      'SELECT group_id, suppression_reason_code FROM group_feed_projection WHERE feed_event_id = $1',
+      [event.outboxId],
+    )).rows[0]).toMatchObject({ group_id: groupId, suppression_reason_code: 'source_invalidated' });
+    expect((await testDb().query<{ action_type: string; reason_code: string }>(
+      'SELECT action_type, reason_code FROM group_feed_projection_actions WHERE feed_event_id = $1',
+      [event.outboxId],
+    )).rows).toMatchObject([{ action_type: 'suppressed', reason_code: 'source_invalidated' }]);
   });
 
   it('rejects event families outside the GF-01 allow-list at the database boundary', async () => {

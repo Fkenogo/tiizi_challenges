@@ -43,13 +43,14 @@ Each batch is limited to 100 rows and prints a structured summary. These command
 
 Executed from the isolated branch worktree:
 
-- API full test suite: **825 passed, 8 skipped; 61 files passed, 1 skipped**. The skips are the existing Firestore-emulator suite (8 tests; emulator not configured).
+- API full test suite after R1 correction: **826 passed, 8 skipped; 61 files passed, 1 skipped**. The skips are the existing Firestore-emulator suite (8 tests; emulator not configured).
 - API typecheck: **passed** (`npm run typecheck`).
 - API build: **passed** (`npm run build`).
 - Root architecture guards: **passed** (`npm run test:architecture-guards`): boundary guard, boundary regression fixtures, V2 experience boundary, V2 runtime boundary, and V2 frontend guards.
 - Root application build: **passed** (`npm run build`, TypeScript and Vite). Existing informational warnings reported stale Browserslist data and a large bundle chunk.
-- Focused lifecycle/finalization rerun: **46 passed** across scheduled lifecycle and EBC-04 ending/finalization suites.
-- `git diff --check`: **passed** before final report-only documentation addition; rerun at final validation.
+- Focused GF-02 and source-seam rerun after R1 correction: **110 passed across 6 files** (`groupFeedPublication`, `groupFeedCli`, `challengeEstablishment`, `challengeScheduledLifecycle`, `challengeActivityApplication`, and `ebc04EndingFinalizationRebuild`).
+- Root boundary guard: **passed** (`npm run test:boundary`).
+- `git diff --check`: **passed** for the correction commit.
 
 Root/frontend and API dependencies were installed from the lockfiles using offline npm cache in ignored `node_modules`; no lockfiles changed. Root architecture guard verified the V2-to-V1 runtime boundary, including its V1 Feed inaccessibility guard. V1 Feed implementation files were not opened, inspected, or reused.
 
@@ -80,3 +81,13 @@ TLC-001 remains deferred for Tiizi. This package does not change prior readiness
 - `docs/programme/working/TIIZI-GF-02-POSTGRESQL-PUBLICATION-AUTHORITY-IMPLEMENTATION.md`
 
 The exact implementation commit, validation rerun results, PR identity, and any subsequent review finding will be recorded in the delivery response.
+
+## R1 targeted review correction
+
+Reviewed PR #75 head `166ba9d1e8c565d4a71a6eff98588cc63c6a9aa7` returned **GF-02 IMPLEMENTED — R1 CORRECTION REQUIRED**. Current `origin/main` was fetched before correction and remained `7e2113e1f97de87897ebd698fbbddfef434e74cf`; the existing PR branch was continued.
+
+**Finding 1 — Group/source mismatch:** the prior worker classified a Challenge Group mismatch as ordinary invalidation and wrote a suppressed projection using the poisoned outbox Group. The worker now re-reads and locks the authoritative Challenge source (`FOR SHARE`), distinguishes Group mismatch, missing source, invalid publication identity, and same-Group source ineligibility, and does not swallow database errors as invalidation. Group mismatch blocks the outbox with fixed code `group_scope_mismatch`, clears the claim, and writes no projection. Missing source and invalid publication identity also block with bounded fixed codes. A same-Group source transition that is no longer eligible can still create a system-suppressed projection. The new test proves no projection is written under the substituted Group, Challenge Group truth remains unchanged, the outbox retains the mismatch for diagnosis, and the trusted blocked-row recovery path succeeds after the inconsistency is explicitly corrected.
+
+**Finding 2 — processing/suppression states:** migration 025 no longer allows `suppressed` as an outbox status. Outbox processing is limited to `pending`, `processing`, `projected`, `blocked`, and `expired`. Projection suppression remains in `group_feed_projection.suppressed_at` and `suppression_reason_code`, with the existing system action trace. Applying and restoring suppression leave outbox status `projected`. Same-Group source invalidation that creates an already-suppressed projection also completes the outbox as `projected`. Added assertions cover projected→suppressed, suppressed→restored, source invalidation, and Group mismatch. Recovery remains deterministic; projection errors remain isolated from Challenge truth.
+
+Migration 025 was corrected directly while unmerged and undeployed; no migration 026 was added. No database deployment occurred. GF-02 remains an implemented candidate awaiting R1 revalidation, not complete or Founder accepted. GF-03 remains unstarted.

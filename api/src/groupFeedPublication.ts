@@ -64,7 +64,7 @@ interface OutboxRow extends Record<string, unknown> {
   contract_version: number;
   source_transition_at: string | Date;
   idempotency_key: string;
-  status: 'pending' | 'processing' | 'projected' | 'blocked' | 'suppressed' | 'expired';
+  status: 'pending' | 'processing' | 'projected' | 'blocked' | 'expired';
   attempt_count: number;
   claimed_until: string | Date | null;
 }
@@ -92,7 +92,7 @@ async function challengeSource(tx: Db, challengeId: string): Promise<ChallengePu
   const result = await tx.query<ChallengePublicationSource>(
     `SELECT challenge_id, group_id, challenge_type, status, current_config_version,
             created_at, activated_at, ended_at, finalized_at
-     FROM challenges WHERE challenge_id = $1`,
+     FROM challenges WHERE challenge_id = $1 FOR SHARE`,
     [challengeId],
   );
   const source = result.rows[0];
@@ -242,14 +242,42 @@ async function loadOutbox(tx: Db, outboxId: string): Promise<OutboxRowNormalized
   return row;
 }
 
-async function isSourceTransitionCurrent(tx: Db, row: OutboxRowNormalized): Promise<boolean> {
-  const source = await challengeSource(tx, row.source_id).catch(() => null);
-  if (!source || source.group_id !== row.group_id || row.source_type !== 'challenge') return false;
-  const timestamp = await transitionTimestamp(tx, source, row.event_type).catch(() => null);
-  return timestamp != null
-    && sameInstant(timestamp, row.source_transition_at)
-    && row.contract_version === GROUP_FEED_CONTRACT_VERSION
-    && isEventType(row.event_type);
+type SourceTransitionCheck =
+  | { kind: 'current'; source: ChallengePublicationSource }
+  | { kind: 'source_missing' }
+  | { kind: 'group_scope_mismatch' }
+  | { kind: 'not_eligible'; source: ChallengePublicationSource }
+  | { kind: 'identity_invalid' };
+
+async function inspectSourceTransition(tx: Db, row: OutboxRowNormalized): Promise<SourceTransitionCheck> {
+  if (row.source_type !== 'challenge' || !isEventType(row.event_type)
+      || !Number.isInteger(Number(row.source_transition_version))
+      || Number(row.source_transition_version) < 1
+      || row.contract_version !== GROUP_FEED_CONTRACT_VERSION) {
+    return { kind: 'identity_invalid' };
+  }
+  const result = await tx.query<ChallengePublicationSource>(
+    `SELECT challenge_id, group_id, challenge_type, status, current_config_version,
+            created_at, activated_at, ended_at, finalized_at
+     FROM challenges WHERE challenge_id = $1 FOR SHARE`,
+    [row.source_id],
+  );
+  const source = result.rows[0];
+  if (!source) return { kind: 'source_missing' };
+  // Establish the authoritative Group binding before evaluating event eligibility.
+  if (source.group_id !== row.group_id) return { kind: 'group_scope_mismatch' };
+  if (row.event_type !== 'together_goal_achieved' && Number(row.source_transition_version) !== 1) {
+    return { kind: 'identity_invalid' };
+  }
+  if (row.event_type === 'together_goal_achieved'
+      && Number(row.source_transition_version) !== Number(source.current_config_version)) {
+    return { kind: 'not_eligible', source };
+  }
+  const timestamp = await transitionTimestamp(tx, source, row.event_type);
+  if (timestamp == null || !sameInstant(timestamp, row.source_transition_at)) {
+    return { kind: 'not_eligible', source };
+  }
+  return { kind: 'current', source };
 }
 
 async function appendSystemAction(
@@ -267,12 +295,31 @@ async function appendSystemAction(
   );
 }
 
-async function projectOne(db: Db, claimed: OutboxRowNormalized, now: Date): Promise<'projected' | 'suppressed' | 'lost-lease'> {
+async function projectOne(
+  db: Db,
+  claimed: OutboxRowNormalized,
+  now: Date,
+): Promise<'projected' | 'suppressed' | 'blocked' | 'lost-lease'> {
   return db.transaction(async (tx) => {
     const row = await loadOutbox(tx, claimed.outbox_id);
     if (row.status !== 'processing' || row.claimed_until == null
         || new Date(row.claimed_until).getTime() < now.getTime()) return 'lost-lease';
-    if (!await isSourceTransitionCurrent(tx, row)) {
+    const sourceCheck = await inspectSourceTransition(tx, row);
+    if (sourceCheck.kind === 'group_scope_mismatch'
+        || sourceCheck.kind === 'source_missing'
+        || sourceCheck.kind === 'identity_invalid') {
+      const errorCode = sourceCheck.kind === 'group_scope_mismatch'
+        ? 'group_scope_mismatch'
+        : sourceCheck.kind === 'source_missing' ? 'source_missing' : 'source_identity_invalid';
+      await tx.query(
+        `UPDATE group_feed_outbox SET status = 'blocked', claimed_until = NULL,
+           last_error_code = $2, last_error_at = $3
+         WHERE outbox_id = $1 AND status = 'processing'`,
+        [row.outbox_id, errorCode, now.toISOString()],
+      );
+      return 'blocked';
+    }
+    if (sourceCheck.kind === 'not_eligible') {
       await tx.query(
         `INSERT INTO group_feed_projection
            (feed_event_id, group_id, source_type, source_id, event_type,
@@ -285,8 +332,8 @@ async function projectOne(db: Db, claimed: OutboxRowNormalized, now: Date): Prom
       );
       await appendSystemAction(tx, row, 'suppressed', 'source_invalidated', now);
       await tx.query(
-        `UPDATE group_feed_outbox SET status = 'suppressed', claimed_until = NULL,
-           processed_at = $2, last_error_code = 'source_invalidated', last_error_at = $2
+        `UPDATE group_feed_outbox SET status = 'projected', claimed_until = NULL,
+           processed_at = $2, last_error_code = NULL, last_error_at = NULL
          WHERE outbox_id = $1`,
         [row.outbox_id, now.toISOString()],
       );
@@ -396,6 +443,10 @@ export async function processGroupFeedOutboxBatch(
       const result = await projectOne(db, row, now);
       if (result === 'projected') summary.projected += 1;
       else if (result === 'suppressed') summary.suppressed += 1;
+      else if (result === 'blocked') {
+        summary.blocked += 1;
+        summary.blockedIds.push(row.outbox_id);
+      }
       else summary.lostLease += 1;
     } catch (error) {
       const code = error instanceof GroupFeedPublicationError ? error.code : 'projection_failure';
@@ -487,7 +538,9 @@ export async function restoreGroupFeedProjectionAfterSourceRevalidation(
       [feedEventId],
     );
     const row = outbox.rows[0];
-    if (!row || !await isSourceTransitionCurrent(tx, row)) return false;
+    if (!row) return false;
+    const sourceCheck = await inspectSourceTransition(tx, row);
+    if (sourceCheck.kind !== 'current') return false;
     const prior = await tx.query<{ suppression_reason_code: GroupFeedSuppressionReason | null }>(
       'SELECT suppression_reason_code FROM group_feed_projection WHERE feed_event_id = $1 AND suppressed_at IS NOT NULL',
       [feedEventId],

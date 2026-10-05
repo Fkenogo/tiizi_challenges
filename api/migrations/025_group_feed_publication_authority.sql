@@ -16,7 +16,7 @@ CREATE TABLE group_feed_outbox (
   source_transition_at TIMESTAMPTZ NOT NULL,
   idempotency_key TEXT NOT NULL UNIQUE,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN (
-    'pending', 'processing', 'projected', 'blocked', 'suppressed', 'expired'
+    'pending', 'processing', 'projected', 'blocked', 'expired'
   )),
   attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
   next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
