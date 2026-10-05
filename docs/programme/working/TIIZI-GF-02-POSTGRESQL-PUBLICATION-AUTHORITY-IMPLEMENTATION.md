@@ -1,10 +1,10 @@
 # TIIZI — GF-02 PostgreSQL Publication Authority — Implementation Record
 
-**Status:** IMPLEMENTED CANDIDATE — AWAITING GF-02 R1 TARGETED TECHNICAL REVIEW  
-**Canonical base:** `origin/main` at `7e2113e1f97de87897ebd698fbbddfef434e74cf`  
-**Branch:** `codex/gf02-publication-authority`  
-**Programme:** Master Programme 2.33  
-**Migration:** `025_group_feed_publication_authority.sql`  
+**Status:** COMPLETE / R1 TECHNICALLY ACCEPTED / FOUNDER ACCEPTED / READY FOR MERGE
+**Canonical base:** `origin/main` at `7e2113e1f97de87897ebd698fbbddfef434e74cf`
+**Branch:** `codex/gf02-publication-authority`
+**Programme:** Master Programme 2.34
+**Migration:** `025_group_feed_publication_authority.sql`
 **Review classification:** R1 — targeted technical review
 
 ## Authority and boundary
@@ -91,3 +91,11 @@ Reviewed PR #75 head `166ba9d1e8c565d4a71a6eff98588cc63c6a9aa7` returned **GF-02
 **Finding 2 — processing/suppression states:** migration 025 no longer allows `suppressed` as an outbox status. Outbox processing is limited to `pending`, `processing`, `projected`, `blocked`, and `expired`. Projection suppression remains in `group_feed_projection.suppressed_at` and `suppression_reason_code`, with the existing system action trace. Applying and restoring suppression leave outbox status `projected`. Same-Group source invalidation that creates an already-suppressed projection also completes the outbox as `projected`. Added assertions cover projected→suppressed, suppressed→restored, source invalidation, and Group mismatch. Recovery remains deterministic; projection errors remain isolated from Challenge truth.
 
 Migration 025 was corrected directly while unmerged and undeployed; no migration 026 was added. No database deployment occurred. GF-02 remains an implemented candidate awaiting R1 revalidation, not complete or Founder accepted. GF-03 remains unstarted.
+
+## Founder acceptance and merge closure
+
+Founder disposition: **GF-02 COMPLETE / R1 TECHNICALLY ACCEPTED / FOUNDER ACCEPTED / READY FOR MERGE**, with R2 escalation not required. PR #75 was reviewed at corrected technical head `1e063d026f0f412e2657e1f40becf65b1ce0f0d2`; initial implementation head `166ba9d1e8c565d4a71a6eff98588cc63c6a9aa7`. R1 Finding 1 (Group/source mismatch fails closed as blocked with no projection) and Finding 2 (outbox processing state is separate from projection suppression) are closed.
+
+The technical head passed the complete API suite (826 passed; 8 existing Firestore-emulator tests skipped), focused GF-02/source-seam tests (110 passed across 6 files), API typecheck/build, root boundary guard and root application build. Repository CI on the reviewed technical head was green: API, API contract, API image, web, Functions, and boundary. The Cloudflare Workers Builds check failed separately and is treated as the documented non-gating external check; no Cloudflare configuration was changed and no deployment occurred. Migration 025 remains code-authorized and NOT deployed.
+
+The closure commit changes programme/implementation records only. It records no additional technical implementation. GF-03 remains unstarted and NOT IMPLEMENTATION-AUTHORISED; member Feed reads/API/UI remain unimplemented. Today GF-07, Kudos, Share and Recognition remain deferred. No production scheduler or deployment was added.
