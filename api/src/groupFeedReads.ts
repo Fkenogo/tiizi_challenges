@@ -12,6 +12,7 @@ export const GROUP_FEED_CURSOR_SECRET_ENV = 'TIIZI_GROUP_FEED_CURSOR_SECRET';
 const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const ORDERING = 'source_transition_at_desc_feed_event_id_desc';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const BASE64URL_RE = /^[A-Za-z0-9_-]+$/;
 
 const TITLES = {
   challenge_established: 'A new Challenge is available',
@@ -85,6 +86,13 @@ function signature(payload: string, secret: Buffer): Buffer {
   return createHmac('sha256', secret).update(payload).digest();
 }
 
+function decodeCanonicalBase64Url(value: string): Buffer {
+  if (!value || !BASE64URL_RE.test(value)) return invalidCursor();
+  const decoded = Buffer.from(value, 'base64url');
+  if (decoded.length === 0 || decoded.toString('base64url') !== value) return invalidCursor();
+  return decoded;
+}
+
 function encodeCursor(payload: CursorPayload, secret: Buffer): string {
   const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
   return `${body}.${signature(body, secret).toString('base64url')}`;
@@ -100,10 +108,11 @@ function decodeCursor(
   try {
     const parts = value.split('.');
     if (parts.length !== 2 || !parts[0] || !parts[1]) return invalidCursor();
-    const supplied = Buffer.from(parts[1], 'base64url');
+    const body = decodeCanonicalBase64Url(parts[0]);
+    const supplied = decodeCanonicalBase64Url(parts[1]);
     const expected = signature(parts[0], secret);
     if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return invalidCursor();
-    const parsed = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8')) as Partial<CursorPayload>;
+    const parsed = JSON.parse(body.toString('utf8')) as Partial<CursorPayload>;
     if (parsed.v !== 1 || parsed.groupId !== groupId || parsed.ordering !== ORDERING
         || parsed.direction !== 'desc' || parsed.pageSize !== pageSize
         || typeof parsed.issuedAt !== 'number' || typeof parsed.expiresAt !== 'number'

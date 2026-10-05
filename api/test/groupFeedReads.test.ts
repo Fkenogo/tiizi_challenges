@@ -54,6 +54,18 @@ function signedCursor(fields: Record<string, unknown>): string {
   return `${body}.${createHmac('sha256', key).update(body).digest('base64url')}`;
 }
 
+function aliasUnusedTerminalBits(encoded: string, decodedLength: number): string {
+  const remainder = decodedLength % 3;
+  const unusedBits = remainder === 1 ? 4 : remainder === 2 ? 2 : 0;
+  if (unusedBits === 0) throw new Error('encoded value has no unused terminal bits');
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const terminal = alphabet.indexOf(encoded.at(-1)!);
+  const unusedMask = (1 << unusedBits) - 1;
+  const aliasTerminal = (terminal & ~unusedMask) | (((terminal & unusedMask) + 1) % (1 << unusedBits));
+  if (aliasTerminal === terminal) throw new Error('terminal alias did not change the encoding');
+  return `${encoded.slice(0, -1)}${alphabet[aliasTerminal]}`;
+}
+
 beforeEach(async () => {
   await testDb().query('TRUNCATE group_feed_projection_actions, group_feed_projection, group_feed_outbox CASCADE');
   await testDb().query('TRUNCATE challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals CASCADE');
@@ -262,6 +274,7 @@ describe('GF-03 Group Feed member read boundary', () => {
   });
 
   it('binds the signed cursor to its Group and rejects tampering, expiry, and unsupported versions', async () => {
+    process.env.TIIZI_GROUP_FEED_CURSOR_SECRET = 'test-only-cursor-secret-with-sufficient-entropy';
     const { groupId, memberId } = await fixture();
     const authority = createPostgresGroupMembershipAuthority(testDb());
     const challengeIds = await Promise.all(Array.from({ length: 3 }, () => source(groupId)));
@@ -276,13 +289,49 @@ describe('GF-03 Group Feed member read boundary', () => {
     expect(second.events).toHaveLength(1);
     expect(second.events[0].feedEventId).not.toBe(first.events[0].feedEventId);
 
+    const [cursorBody, cursorSignature] = first.nextCursor!.split('.');
+    const signatureBytes = Buffer.from(cursorSignature, 'base64url');
+    const signatureAlias = aliasUnusedTerminalBits(cursorSignature, signatureBytes.length);
+    expect(signatureAlias).not.toBe(cursorSignature);
+    expect(Buffer.from(signatureAlias, 'base64url')).toEqual(signatureBytes);
+    await expect(getGroupFeedPage(testDb(), authority, memberId, groupId, {
+      limit: 1, cursor: `${cursorBody}.${signatureAlias}`, now,
+    })).rejects.toMatchObject({ statusCode: 400, code: 'invalid_cursor' });
+    await expect(getGroupFeedPage(testDb(), authority, memberId, groupId, {
+      limit: 1, cursor: `${cursorBody}=.${cursorSignature}`, now,
+    })).rejects.toMatchObject({ statusCode: 400, code: 'invalid_cursor' });
+    await expect(getGroupFeedPage(testDb(), authority, memberId, groupId, {
+      limit: 1, cursor: `${cursorBody}.${cursorSignature}=`, now,
+    })).rejects.toMatchObject({ statusCode: 400, code: 'invalid_cursor' });
+
+    let paddingLength = 0;
+    let paddedBody = '';
+    let paddedCursor = '';
+    do {
+      paddedCursor = signedCursor({ ...JSON.parse(Buffer.from(cursorBody, 'base64url').toString('utf8')), padding: 'x'.repeat(paddingLength) });
+      paddedBody = paddedCursor.split('.')[0];
+      paddingLength += 1;
+    } while (Buffer.from(paddedBody, 'base64url').length % 3 === 0);
+    const paddedBodyBytes = Buffer.from(paddedBody, 'base64url');
+    const bodyAlias = aliasUnusedTerminalBits(paddedBody, paddedBodyBytes.length);
+    expect(Buffer.from(bodyAlias, 'base64url')).toEqual(paddedBodyBytes);
+    const bodyAliasSignature = createHmac('sha256', process.env.TIIZI_GROUP_FEED_CURSOR_SECRET!)
+      .update(bodyAlias).digest('base64url');
+    await expect(getGroupFeedPage(testDb(), authority, memberId, groupId, {
+      limit: 1, cursor: `${bodyAlias}.${bodyAliasSignature}`, now,
+    })).rejects.toMatchObject({ statusCode: 400, code: 'invalid_cursor' });
+
     const otherGroup = await seedGroup(testDb());
     const otherMember = await seedMember(testDb(), `gf03-cursor-other-${++seq}`);
     await seedMembership(testDb(), otherGroup, otherMember);
     await expect(getGroupFeedPage(testDb(), authority, otherMember, otherGroup, { limit: 1, cursor: first.nextCursor!, now }))
       .rejects.toMatchObject({ statusCode: 400, code: 'invalid_cursor' });
+    const ordinaryMutation = cursorSignature[0] === 'A' ? 'B' : 'A';
     await expect(getGroupFeedPage(testDb(), authority, memberId, groupId, {
-      limit: 1, cursor: `${first.nextCursor!.slice(0, -1)}x`, now,
+      limit: 1, cursor: `${cursorBody}.${ordinaryMutation}${cursorSignature.slice(1)}`, now,
+    })).rejects.toMatchObject({ statusCode: 400, code: 'invalid_cursor' });
+    await expect(getGroupFeedPage(testDb(), authority, memberId, groupId, {
+      limit: 2, cursor: first.nextCursor!, now,
     })).rejects.toMatchObject({ statusCode: 400, code: 'invalid_cursor' });
 
     const base = JSON.parse(Buffer.from(first.nextCursor!.split('.')[0], 'base64url').toString('utf8')) as Record<string, unknown>;
