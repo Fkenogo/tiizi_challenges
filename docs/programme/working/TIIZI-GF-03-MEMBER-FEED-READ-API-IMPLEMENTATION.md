@@ -1,6 +1,6 @@
 # TIIZI — GF-03 Member Feed Read Model & API — Implementation Record
 
-**Status:** IMPLEMENTED / INDEPENDENT R2 REVIEW FINDING OPEN (P2) / AWAITING CORRECTION AND RE-REVIEW
+**Status:** IMPLEMENTED / INDEPENDENT R2 REVIEW PASS / AWAITING FOUNDER ACCEPTANCE
 **Canonical base:** `ec4a6385ad59f75415cf48480cfc9fb149d265ee`
 **Branch:** `codex/gf03-member-feed-read-api`
 **Review classification:** R2 — independent high-rigor review required
@@ -16,7 +16,7 @@ The read query consumes only `group_feed_projection`, scoped to the route Group,
 
 Cards contain only Feed event ID, allow-listed event type, current visible Challenge ID/title, the fixed GF-01 presentation title, source transition timestamp, and a server-derived Challenge navigation target. GF-02 operational fields, suppression reasons, Activity, evidence, notes, identities and result values are absent. Responses use `Cache-Control: private, no-store`, including authentication failures.
 
-Pagination uses 20 by default and 50 maximum, newest first by `(source_transition_at DESC, feed_event_id DESC)`. The opaque cursor binds version, Group, ordering, direction, page size, last returned/scan boundary, issue time and 24-hour expiry. HMAC-SHA-256 uses the runtime secret `TIIZI_GROUP_FEED_CURSOR_SECRET` (minimum 32 UTF-8 bytes), following the API's existing runtime-secret convention. R2 found that noncanonical base64url signature aliases can decode to the same HMAC bytes and be accepted; see the independent review record for the P2 finding and required correction.
+Pagination uses 20 by default and 50 maximum, newest first by `(source_transition_at DESC, feed_event_id DESC)`. The opaque cursor binds version, Group, ordering, direction, page size, last returned/scan boundary, issue time and 24-hour expiry. HMAC-SHA-256 uses the runtime secret `TIIZI_GROUP_FEED_CURSOR_SECRET` (minimum 32 UTF-8 bytes), following the API's existing runtime-secret convention. Both body and signature require strict unpadded canonical base64url encoding; noncanonical aliases fail generically before HMAC/payload validation. HMAC-SHA-256 and `timingSafeEqual` remain unchanged. The correction closes the independent P2 finding; see the R2 review record.
 
 Ended/finalized consolidation occurs in the relational visibility set before page limiting. An ended card is omitted only when an unsuppressed, retained finalized projection exists for the same Group and Challenge and its current source remains visible. No GF-02 event is modified.
 
@@ -27,6 +27,7 @@ Ended/finalized consolidation occurs in the relational visibility set before pag
 - `api/test/groupFeedReads.test.ts` — focused security/contract tests.
 - `api/.env.example`, `api/README.md`, `api/DEPLOY.md` — signing-secret configuration seam.
 - `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` — programme version/status update.
+- `docs/programme/working/TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md` — original P2 finding and independent closure evidence.
 
 No migration was added or changed. Migration 025 remains undeployed. GF-04, Feed UI, Group Home, Today, Kudos, Share, Recognition, notifications, moderation UI and production scheduling remain out of scope.
 
@@ -48,4 +49,4 @@ Required evidence: exact implementation SHA, reviewed diff, focused security/con
 
 ## Independent R2 review result
 
-See [`TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md`](TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md). Independent reviewer session `/root/gf03_r2_final_review` assessed exact implementation SHA `e8958e6b881c3998cad178ed7ca65875a503daab` against base `ec4a6385ad59f75415cf48480cfc9fb149d265ee`. Disposition: **FINDING OPEN (P2)** for acceptance of noncanonical base64url signature aliases. PR #76 remains draft and unmerged pending correction and independent re-review.
+See [`TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md`](TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md). The original P2 finding was identified on `e8958e6b881c3998cad178ed7ca65875a503daab`; corrected technical SHA `875e33780f9a2ed400be33e517fa4863e7a3e08d` was independently re-reviewed by session `/root/gf03_r2_final_review`. Disposition: **R2 REVIEW — PASS / P2 FINDING CLOSED**. Founder acceptance remains pending.
