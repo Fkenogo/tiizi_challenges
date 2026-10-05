@@ -180,7 +180,7 @@ Today may consume only a bounded summary from the **single V2 Group Feed read au
 
 ## 12. Explicit exclusions
 
-GF-01 v1 does not authorize or include: Kudos/reactions; Platform Recognition issuance; Share-to-Group capability; member join/leave events; individual result/rank cards; live Race progress or ranking; Streak continuation/day events; arbitrary percent thresholds; Challenge extension; Cause activation/closing/contribution events until their authority exists; Steward change or announcements until their authority exists; comments/replies; free-form posts; media/file uploads; messaging/presence; Group/Challenge social graph; Leaderboards; system notifications; separate Today stream/store; V1 code or Firestore authority; deletion/transfer lifecycle not already authorized; Operator moderation UI; deployment.
+GF-01 v1 does not authorize or include: Kudos/reactions; Platform Recognition issuance; Share-to-Group capability; member join/leave events; individual result/rank cards; live Race progress or ranking; Streak continuation/day events; arbitrary percent thresholds; Challenge extension; Cause activation/closing/contribution events until their authority exists; Steward change or announcements until their authority exists; comments/replies; free-form posts; media/file uploads; messaging/presence; Group/Challenge social graph; Leaderboards; system notifications; separate Today stream/store; deletion/transfer lifecycle not already authorized; Operator moderation UI; deployment.
 
 **Kudos boundary:** the concept remains lightweight peer/community acknowledgement, categorically separate from policy-governed Platform Recognition. Kudos are explicitly excluded from GF-01 implementation authority. Their target, repetition/toggle, undo, counts, privacy, identity, abuse/rate limits, moderation and idempotency are not decided here. Neither Kudos nor Recognition may alter Activity, progress, ranking, Streak, completion, results or governance.
 
@@ -213,7 +213,7 @@ Founder disposition: **APPROVED / EFFECTIVE**, subject to the bounded correction
 
 Master Programme v2.32 records GF-01 COMPLETE / FOUNDER APPROVED; V2 Group Feed Product Truth/event contract ready for engineering translation; GF-02 as the next proposed Feed engineering package and NOT IMPLEMENTATION-AUTHORISED unless separately authorized. This does not displace Stage G completion work or authorize GF-02.
 
-No S7/S8/S9/V1 work is opened. This contract records Product Truth only and makes no source, API, UI, database, migration, Today, deployment or production change. No V2 Feed implementation occurred, and no V1 Feed implementation was used as a V2 design authority.
+No S7/S8/S9 work is opened. This contract records Product Truth only and makes no source, API, UI, database, migration, Today, deployment or production change. No V2 Feed implementation occurred.
 
 ## Final disposition
 

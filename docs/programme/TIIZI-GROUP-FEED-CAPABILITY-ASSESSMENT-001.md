@@ -24,7 +24,7 @@ Evidence was taken from the canonical programme and experience authorities, curr
 
 ## 3. Current V2 Group and adjacent capabilities
 
-The active V2 architecture requires PostgreSQL as the sole authority for Group, membership, Group-scoped Challenge, participation, activity application and Knowledge (`AGENTS.md` §1.2–2). Firebase Auth supplies identity only. API routes are in `/api/*`, registered through the canonical prefix; `/v1/*` must not be reintroduced.
+The active V2 architecture requires PostgreSQL as the sole authority for Group, membership, Group-scoped Challenge, participation, activity application and Knowledge (`AGENTS.md` §1.2–2). Firebase Auth supplies identity only. API routes are in `/api/*`, registered through the canonical prefix.
 
 Current authorities relevant to a future Feed:
 
@@ -150,7 +150,10 @@ Use an explicit “View all activity” route/panel for keyset-paginated Feed pa
 
 Kudo affordance is omitted unless the separately authorized Kudo capability supplies a real server count/current-viewer state and governed action. The reference's Kudo button is not sufficient authority. Comments, replies, composer/free-form posts, arbitrary reactions, bookmarking, media uploads and member-to-member sharing are not part of this initial Feed contract; explicit Share-to-Group may be a distinct future capability under FR-V2-212 only after its own authorization and privacy design.
 
-## 13. Missing decisions requiring Founder/Product Truth
+## 13. GF-01 decision inputs — resolved by approved GF-01 contract
+
+These were open at assessment time. Founder disposition GF-01 subsequently resolved them. Current authoritative decisions are in `docs/product-truth/TIIZI-GF-01-GROUP-FEED-EVENT-CONTRACT.md`. This section remains assessment provenance and must not be treated as an open-decision register.
+
 
 1. Versioned automatic event allow-list: exact event families and transition boundaries; which require explicit Share; whether join, Challenge creation/start/end, threshold milestones, finalization, steward changes and cause acknowledgements are eligible.
 2. Per-event presentation contract: allowed identity, data fields, precision, wording and deep-link targets; treatment of Challenge privacy, personal participation, results and Rank.
@@ -165,18 +168,18 @@ Kudo affordance is omitted unless the separately authorized Kudo capability supp
 
 ## 14. Smallest correct programme sequence
 
-Identifiers below are **proposed for Founder disposition**, not adopted programme state. These should remain separate enough to permit review at each authority boundary:
+This sequence was recommended for assessment and review. Current status: GF-01 is COMPLETE / FOUNDER APPROVED / EFFECTIVE; GF-02 is the next proposed Feed engineering package and NOT IMPLEMENTATION-AUTHORISED. GF-03 onward remain planned/proposed only. GF-K / Kudos and GF-07 / Today summary remain separately deferred. No downstream package is authorized by this sequence.
 
 | Proposed slice | Outcome | Separation/dependency |
 |---|---|---|
-| **GF-01 — Product Truth and Event Contract** | Founder-approved audience, event allow-list, source transition identity, card fields/wording, Share disposition, visibility/history, correction, retention, ordering/pagination and moderation decisions | First and required. Documentation/authority only. Explicitly exclude Kudo details that require a separate decision. |
-| **GF-02 — PostgreSQL publication authority** | Migration/domain transaction outbox, event contract validation, stable dedupe/idempotency and publisher/projection failure policy | Only after GF-01. Keep separate from client/UI. Source actions only publish contracted events. |
-| **GF-03 — Group Feed read model/API** | Member-scoped Group read, event projection/query/cursor, source-visibility suppression, pagination, cache/query contract | Can share code branch with GF-02 only if persistence/API remains one reviewable vertical slice and product contract is frozen. Requires its own security review. |
-| **GF-04 — Mobile Group Feed assembly** | Additive mobile Group Home entry/section, cards, loading/empty/error and pagination/navigation | After GF-03. Preserve S4/S5, no Today yet. Founder preview/acceptance is a distinct gate. |
-| **GF-K — Kudo Product Truth and capability** | Separately decide recipient, audience, persistence, toggle/undo, counter/privacy/idempotency/abuse/moderation | Separate authorization. Not a prerequisite to a useful Feed and must not block GF-01–04 unless Founder wants it in first release. |
-| **GF-05 — Kudo persistence/API/UI (conditional)** | Implement governed Kudo action/count and mobile affordance | Only after GF-K and a Founder authorization; never bundled implicitly into Feed cards. |
-| **GF-06 — Founder preview and acceptance** | Review actual mobile Group Feed and authorized event/privacy behavior | Required before closure; no merge/deploy inferred from assessment. |
-| **GF-07 — Today bounded community summary** | Small member-specific summary sourced from GF-03's authoritative Feed read seam | Only after GF-06 acceptance; separate S5 follow-up, no second stream/store/authority. |
+| **GF-01 — Product Truth and Event Contract** | **COMPLETE / FOUNDER APPROVED / EFFECTIVE**; effective contract at `docs/product-truth/TIIZI-GF-01-GROUP-FEED-EVENT-CONTRACT.md` | Completed first. Documentation/authority only. Kudo details remain separate. |
+| **GF-02 — PostgreSQL publication authority** | Migration/domain transaction outbox, event contract validation, stable dedupe/idempotency and publisher/projection failure policy | Next proposed Feed engineering package; **NOT IMPLEMENTATION-AUTHORISED**. Keep separate from client/UI. |
+| **GF-03 — Group Feed read model/API** | Member-scoped Group read, event projection/query/cursor, source-visibility suppression, pagination, cache/query contract | Planned/proposed only; requires separate authorization and security review. |
+| **GF-04 — Mobile Group Feed assembly** | Additive mobile Group Home entry/section, cards, loading/empty/error and pagination/navigation | Planned/proposed only; after separately authorized GF-03. Preserve S4/S5, no Today yet. Founder preview/acceptance is distinct. |
+| **GF-K — Kudo Product Truth and capability** | Separately decide recipient, audience, persistence, toggle/undo, counter/privacy/idempotency/abuse/moderation | Separately deferred; requires its own V2 authority and authorization. Not a prerequisite to Feed. |
+| **GF-05 — Kudo persistence/API/UI (conditional)** | Implement governed Kudo action/count and mobile affordance | Deferred/proposed only; requires GF-K and separate Founder authorization. |
+| **GF-06 — Founder preview and acceptance** | Review actual mobile Group Feed and authorized event/privacy behavior | Planned/proposed only, after any separately authorized implementation; no merge/deploy inferred. |
+| **GF-07 — Today bounded community summary** | Small member-specific summary sourced from GF-03's authoritative Feed read seam | Separately deferred/planned only; no authorization in GF-01. Requires separate authorization after Feed acceptance; no second stream/store/authority. |
 
 Do not start S7/S8/S9 under this assessment. Do not implement any proposed slice from this document alone; each slice requires its own Founder-authorized task.
 
