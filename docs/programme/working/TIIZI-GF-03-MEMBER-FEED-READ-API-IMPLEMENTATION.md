@@ -1,6 +1,6 @@
 # TIIZI — GF-03 Member Feed Read Model & API — Implementation Record
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING INDEPENDENT R2 REVIEW
+**Status:** IMPLEMENTED / INDEPENDENT R2 REVIEW FINDING OPEN (P2) / AWAITING CORRECTION AND RE-REVIEW
 **Canonical base:** `ec4a6385ad59f75415cf48480cfc9fb149d265ee`
 **Branch:** `codex/gf03-member-feed-read-api`
 **Review classification:** R2 — independent high-rigor review required
@@ -16,7 +16,7 @@ The read query consumes only `group_feed_projection`, scoped to the route Group,
 
 Cards contain only Feed event ID, allow-listed event type, current visible Challenge ID/title, the fixed GF-01 presentation title, source transition timestamp, and a server-derived Challenge navigation target. GF-02 operational fields, suppression reasons, Activity, evidence, notes, identities and result values are absent. Responses use `Cache-Control: private, no-store`, including authentication failures.
 
-Pagination uses 20 by default and 50 maximum, newest first by `(source_transition_at DESC, feed_event_id DESC)`. The opaque cursor binds version, Group, ordering, direction, page size, last returned/scan boundary, issue time and 24-hour expiry. HMAC-SHA-256 uses the runtime secret `TIIZI_GROUP_FEED_CURSOR_SECRET` (minimum 32 UTF-8 bytes), following the API's existing runtime-secret convention. Tampered, cross-Group, expired, and unsupported cursors fail with one generic error.
+Pagination uses 20 by default and 50 maximum, newest first by `(source_transition_at DESC, feed_event_id DESC)`. The opaque cursor binds version, Group, ordering, direction, page size, last returned/scan boundary, issue time and 24-hour expiry. HMAC-SHA-256 uses the runtime secret `TIIZI_GROUP_FEED_CURSOR_SECRET` (minimum 32 UTF-8 bytes), following the API's existing runtime-secret convention. R2 found that noncanonical base64url signature aliases can decode to the same HMAC bytes and be accepted; see the independent review record for the P2 finding and required correction.
 
 Ended/finalized consolidation occurs in the relational visibility set before page limiting. An ended card is omitted only when an unsuppressed, retained finalized projection exists for the same Group and Challenge and its current source remains visible. No GF-02 event is modified.
 
@@ -45,3 +45,7 @@ The implementing agent does not self-certify final technical acceptance. The ind
 9. scope creep, migration 025 containment, and absence of UI/Today/social features.
 
 Required evidence: exact implementation SHA, reviewed diff, focused security/contract test results, full API validation, and any findings with disposition. No merge or deployment is authorized by this record.
+
+## Independent R2 review result
+
+See [`TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md`](TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md). Independent reviewer session `/root/gf03_r2_final_review` assessed exact implementation SHA `e8958e6b881c3998cad178ed7ca65875a503daab` against base `ec4a6385ad59f75415cf48480cfc9fb149d265ee`. Disposition: **FINDING OPEN (P2)** for acceptance of noncanonical base64url signature aliases. PR #76 remains draft and unmerged pending correction and independent re-review.
