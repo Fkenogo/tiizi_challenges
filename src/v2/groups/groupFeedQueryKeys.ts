@@ -14,3 +14,10 @@ export async function removeV2GroupFeed(queryClient: QueryClient, groupId?: stri
       : v2GroupFeedKey(groupId, uid);
   await queryClient.removeQueries({ queryKey });
 }
+
+/** Remove this Group's Feed state and return the fixed Group Home destination after denial. */
+export async function handleV2GroupFeedDenied(queryClient: QueryClient, groupId: string, uid?: string) {
+  await removeV2GroupFeed(queryClient, groupId, uid);
+  await queryClient.invalidateQueries({ queryKey: ['v2-group-detail', groupId, uid], exact: true });
+  return `/v2/groups/${encodeURIComponent(groupId)}`;
+}

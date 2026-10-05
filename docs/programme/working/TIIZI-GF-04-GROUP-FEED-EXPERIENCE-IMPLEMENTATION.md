@@ -1,6 +1,6 @@
 # TIIZI GF-04 — Group Feed Experience Assembly
 
-**Status:** IMPLEMENTED CANDIDATE / AWAITING R1 TARGETED TECHNICAL REVIEW + FOUNDER MOBILE PREVIEW
+**Status:** IMPLEMENTED CANDIDATE / R1 REVALIDATION + FOUNDER MOBILE PREVIEW PENDING
 **Review classification:** R1 — targeted technical review
 **Canonical base:** `fec8706c6985a9668ad9226868c56d0d90693876`
 **Branch:** `impl/gf-04-group-feed-experience-001`
@@ -20,9 +20,11 @@ Challenge Detail return state is limited to a UUID-shaped Group ID and accepted 
 
 Time uses relative rounded minutes/hours under 24 hours, Yesterday where the viewer-local calendar makes that exact, and a viewer-local calendar date otherwise. Semantic `<time>` includes the authoritative ISO timestamp and accessible full date. Feed actions meet the 44px minimum touch target; rows and navigation have visible keyboard focus.
 
-## Validation
+## Verification evidence
 
-- Focused GF-04 guard and time-format checks: pass.
+- **Structural/source guards:** retain coverage for Group Home placement and audience, route presence, fixed presentation fields, no social affordances, no V1 imports, and no Today integration.
+- **Executable client-state proofs:** deterministic Node/tsx tests use real TanStack QueryClient instances for Group+UID cache isolation, Group leave cleanup, bounded identity/logout cleanup, 404 Feed removal and Group-detail invalidation. Pure policy tests execute the one-time invalid-cursor recovery cycle, refresh reset, fixed 404 destination, ordered page composition, and exact opaque cursor URL transport round-trip. Challenge return-path tests cover matching/mismatched/malformed Group IDs, ignored arbitrary returnTo/external values, and ordinary Challenge entry.
+- Focused GF-04 structural, client-state, and time-format checks: pass after this R1 evidence correction.
 - Existing S4a Group Home guards: pass after updating the old no-Feed assertion to reflect the later Founder-authorized single read surface.
 - V2 experience boundary: pass.
 - V2 frontend guards: pass.
@@ -31,11 +33,11 @@ Time uses relative rounded minutes/hours under 24 hours, Yesterday where the vie
 - `git diff --check`: pass.
 - Preview install/build emitted the existing Browserslist age notice and large-chunk advisory; no build failure.
 
-An implementation mobile walkthrough was inspected locally at 440px viewport width using a temporary controlled fixture that rendered the actual V2 Feed event component. The review covered the populated three-event Group Home placement, compact empty state, full Feed, Load More, all five fixed GF-01 event-title families, and a card → Challenge → Feed return path. The fixture harness and its sample content were removed and are not part of the implementation. The Founder mobile preview and acceptance gate remains pending; no local fabricated data is committed as product truth.
+The Founder mobile preview and acceptance gate remains pending. No local fabricated data is committed as product truth.
 
 ## Files / boundaries
 
-The implementation adds the typed API adapter, scoped query keys/hooks, preview, event row, full screen, contextual route, bounded Challenge return handling, focused guard/time tests, and this record. It updates the Master Programme to GF-04 IMPLEMENTED CANDIDATE / AWAITING R1 REVIEW + FOUNDER MOBILE PREVIEW.
+The implementation adds the typed API adapter, scoped query keys/hooks, preview, event row, full screen, contextual route, bounded Challenge return handling, structural guards, and executable client-state proofs. This correction changes only client testability/policy helpers, their focused tests, and this record. GF-04 remains IMPLEMENTED CANDIDATE / R1 REVALIDATION + FOUNDER MOBILE PREVIEW PENDING; it is not technically accepted.
 
 No GF-01, GF-02 or GF-03 server implementation, route, query, cursor, storage, or migration was changed. Migration 025 remains NOT deployed. No Today, Kudos, Share, Recognition, posts, comments, reactions, notifications, moderation, V1 Feed, scheduler, or production deployment work occurred.
 

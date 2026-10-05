@@ -1,4 +1,5 @@
 import { API_PREFIX, apiFetch } from './apiClient';
+import { groupFeedPagePath } from './groupFeedRequest';
 
 export type GroupFeedEventType =
   | 'challenge_established'
@@ -28,9 +29,5 @@ export function fetchGroupFeedPage(
   groupId: string,
   options: { limit?: number; cursor?: string } = {},
 ): Promise<GroupFeedPage> {
-  const params = new URLSearchParams();
-  if (options.limit !== undefined) params.set('limit', String(options.limit));
-  if (options.cursor !== undefined) params.set('cursor', options.cursor);
-  const query = params.size ? `?${params.toString()}` : '';
-  return apiFetch<GroupFeedPage>(`${API_PREFIX}/groups/${encodeURIComponent(groupId)}/feed${query}`);
+  return apiFetch<GroupFeedPage>(groupFeedPagePath(API_PREFIX, groupId, options));
 }
