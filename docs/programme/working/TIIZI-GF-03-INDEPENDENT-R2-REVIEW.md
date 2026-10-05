@@ -2,8 +2,8 @@
 
 **Package:** GF-03 — Group Feed member read boundary
 **Classification:** R2 — Independent high-rigor review
-**Disposition:** **R2 REVIEW — PASS / P2 FINDING CLOSED / NO NEW FINDINGS; FOUNDER ACCEPTED / READY FOR MERGE**
-**PR:** #76 — OPEN / READY FOR REVIEW / UNMERGED (pre-closure)
+**Disposition:** **R2 REVIEW — PASS / P2 FINDING CLOSED / NO NEW FINDINGS; FOUNDER ACCEPTED / MERGED**
+**PR:** #76 — MERGED by normal merge commit `fda57debdcc9c09b03050341778ddfaebec95716`
 **Canonical base:** `ec4a6385ad59f75415cf48480cfc9fb149d265ee`
 **Exact implementation reviewed:** `e8958e6b881c3998cad178ed7ca65875a503daab`
 **Corrected technical SHA independently re-reviewed:** `875e33780f9a2ed400be33e517fa4863e7a3e08d`
@@ -63,4 +63,4 @@ The cursor decoder base64url-decodes the supplied signature and compares the res
 
 The initial static pass reported no findings; exact-head automated validation exposed the cursor edge; follow-up independent review classified it as P2; the correction and exact-head re-review have now closed it. **R2 REVIEW — PASS / P2 FINDING CLOSED.**
 
-Founder disposition (2026-10-05): **GF-03 ACCEPTED** following the independent R2 PASS and closure of the original P2 finding. The exact corrected technical SHA remains `875e33780f9a2ed400be33e517fa4863e7a3e08d`; no technical changes followed it. PR #76 is ready for merge and remains unmerged pending the normal merge-commit path. Migration 025 is undeployed; no production deployment occurred. GF-04/UI remains not started/not authorized, and Today, Kudos, Share, and Recognition remain excluded.
+Founder disposition (2026-10-05): **GF-03 ACCEPTED** following the independent R2 PASS and closure of the original P2 finding. The exact corrected technical SHA remains `875e33780f9a2ed400be33e517fa4863e7a3e08d`; no technical changes followed it. PR #76 merged by normal merge commit `fda57debdcc9c09b03050341778ddfaebec95716`; the reviewed technical SHA and Founder-acceptance closure head `e7b0843f4acfee3691f1dc4eab6d640f3a6dee95` are ancestors of main. Migration 025 is undeployed; no production deployment occurred. GF-04/UI remains not started/not authorized, and Today, Kudos, Share, and Recognition remain excluded.
