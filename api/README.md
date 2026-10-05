@@ -97,7 +97,7 @@ docker run -p 8080:8080 \
 | Class | Variables |
 |---|---|
 | NON-SECRET | `PORT`, `FIREBASE_PROJECT_ID`, `TIIZI_ALLOWED_ORIGINS`, `TIIZI_DB_POOL_MAX` |
-| SECRET (Secret Manager at runtime) | `DATABASE_URL` (verified TLS: `sslmode=verify-ca` + server CA; unless a secure connector removes embedded passwords), `TIIZI_DB_SERVER_CA_PEM` (server CA PEM) |
+| SECRET (Secret Manager at runtime) | `DATABASE_URL` (verified TLS: `sslmode=verify-ca` + server CA; unless a secure connector removes embedded passwords), `TIIZI_DB_SERVER_CA_PEM` (server CA PEM), `TIIZI_GROUP_FEED_CURSOR_SECRET` (minimum 32 UTF-8 bytes; HMAC-SHA-256 cursor integrity) |
 | FUTURE CUTOVER / NOT YET ENABLED | `TIIZI_KNOWLEDGE_AUTHORITY_MODE`, frontend `VITE_TIIZI_API_BASE_URL`, frontend `VITE_TIIZI_KNOWLEDGE_AUTHORITY_MODE` |
 
 Service-account JSON is not a production deployment mechanism. Never commit

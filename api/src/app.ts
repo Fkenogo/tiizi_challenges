@@ -29,6 +29,7 @@ import { registerChallengeCreationSeamRoutes } from './challengeCreationSeamRout
 import { createPostgresGroupReadStore } from './postgresGroupReadStore.js';
 import { registerSocialCauseApprovalRoutes, type SocialCauseApprovalDeps } from './socialCauseApprovalRoutes.js';
 import { registerOperatorConsoleRoutes } from './operatorConsoleRoutes.js';
+import { registerGroupFeedRoutes } from './groupFeedReads.js';
 import { API_PREFIX } from './apiPrefix.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
@@ -126,6 +127,11 @@ export function buildApp(deps: AppDeps) {
   // S4a governed Group detail read (Group Home). Same live store seam as
   // the governed mutations; absent store fails closed per-route.
   registerGroupReadRoutes(app, deps.db, { store: groupReadStore });
+  // GF-03 member Feed read: current PostgreSQL Group membership remains the
+  // only audience authority; a missing seam fails closed.
+  registerGroupFeedRoutes(app, deps.db, {
+    groupMembershipAuthority: deps.challengeActivity?.groupMembershipAuthority,
+  });
   // C3B V2 participation mutations (join/withdraw). Same live authority as
   // C2B; absent authority fails closed per-route instead of authorizing.
   registerParticipationRoutes(app, deps.db, deps.participation ?? deps.challengeActivity ?? {});
