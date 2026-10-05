@@ -1,6 +1,6 @@
 # TIIZI — GF-03 Member Feed Read Model & API — Implementation Record
 
-**Status:** COMPLETE / INDEPENDENT R2 REVIEW PASS / FOUNDER ACCEPTED / READY FOR MERGE
+**Status:** COMPLETE / INDEPENDENT R2 REVIEW PASS / FOUNDER ACCEPTED / MERGED
 **Canonical base:** `ec4a6385ad59f75415cf48480cfc9fb149d265ee`
 **Branch:** `codex/gf03-member-feed-read-api`
 **Review classification:** R2 — independent high-rigor review required
@@ -45,8 +45,8 @@ The implementing agent does not self-certify final technical acceptance. The ind
 8. disclosure minimization and focused security-test evidence;
 9. scope creep, migration 025 containment, and absence of UI/Today/social features.
 
-Required evidence: exact implementation SHA, reviewed diff, focused security/contract test results, full API validation, and any findings with disposition. No merge or deployment is authorized by this record.
+Required evidence: exact implementation SHA, reviewed diff, focused security/contract test results, full API validation, and any findings with disposition. This review record conveys no deployment authorization.
 
 ## Independent R2 review result
 
-See [`TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md`](TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md). The original P2 finding was identified on `e8958e6b881c3998cad178ed7ca65875a503daab`; corrected technical SHA `875e33780f9a2ed400be33e517fa4863e7a3e08d` was independently re-reviewed by session `/root/gf03_r2_final_review`. Disposition: **R2 REVIEW — PASS / P2 FINDING CLOSED**. Founder acceptance remains pending.
+See [`TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md`](TIIZI-GF-03-INDEPENDENT-R2-REVIEW.md). The original P2 finding was identified on `e8958e6b881c3998cad178ed7ca65875a503daab`; corrected technical SHA `875e33780f9a2ed400be33e517fa4863e7a3e08d` was independently re-reviewed by session `/root/gf03_r2_final_review`. Disposition: **R2 REVIEW — PASS / P2 FINDING CLOSED**. Founder acceptance is recorded; PR #76 merged by normal merge commit `fda57debdcc9c09b03050341778ddfaebec95716`.
