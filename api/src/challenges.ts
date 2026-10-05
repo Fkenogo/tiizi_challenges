@@ -27,6 +27,7 @@
  */
 
 import type { Db } from './db.js';
+import { recordChallengePublication } from './groupFeedPublication.js';
 import { dayInTimezone } from './activityEvents.js';
 import {
   assertCollectiveUnitHomogeneity,
@@ -356,18 +357,25 @@ export async function activateChallenge(
   challengeId: string,
   now: Date = new Date(),
 ): Promise<ChallengeRow> {
-  const current = await readChallenge(db, challengeId);
-  if (current.status === 'active') fail('challenge is already active');
-  if (current.status === 'ended') fail('ended challenges cannot be reopened under the same identity');
-  if (dayInTimezone(now, current.timezone || 'UTC') < current.start_date) {
-    fail(`challenge ${challengeId} cannot activate before scheduled start ${current.start_date}`);
-  }
-  const result = await db.query(
-    `UPDATE challenges SET status = 'active', activated_at = now(), updated_at = now()
-     WHERE challenge_id = $1 RETURNING *`,
-    [challengeId],
-  );
-  return normalizeChallengeRow(result.rows[0] as never);
+  return db.transaction(async (tx) => {
+    const current = await readChallenge(tx, challengeId);
+    if (current.status === 'active') fail('challenge is already active');
+    if (current.status === 'ended') fail('ended challenges cannot be reopened under the same identity');
+    if (dayInTimezone(now, current.timezone || 'UTC') < current.start_date) {
+      fail(`challenge ${challengeId} cannot activate before scheduled start ${current.start_date}`);
+    }
+    const result = await tx.query(
+      `UPDATE challenges SET status = 'active', activated_at = now(), updated_at = now()
+       WHERE challenge_id = $1 AND status = 'establishment' RETURNING *`,
+      [challengeId],
+    );
+    if (result.rows.length === 0) fail('challenge activation lost its establishment transition race');
+    const activated = normalizeChallengeRow(result.rows[0] as never);
+    await recordChallengePublication(tx, {
+      eventType: 'challenge_started', challengeId, sourceTransitionVersion: 1,
+    });
+    return activated;
+  });
 }
 
 /** active (or establishment) -> ended. Terminal: history stays put. */
@@ -379,19 +387,36 @@ export async function activateChallenge(
  * still never reopen (guard trigger) and finalization never reverses this.
  */
 export async function endChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {
-  // Conditional single-statement end: concurrent callers converge instead
-  // of tripping the ended_at write-once guard (only non-ended rows match,
-  // so an existing ended_at is never rewritten). Duplicate calls return
-  // the ended state (EBC-04 idempotent ending).
-  const result = await db.query(
-    `UPDATE challenges SET status = 'ended', ended_at = now(), updated_at = now()
-     WHERE challenge_id = $1 AND status IN ('establishment', 'active') RETURNING *`,
-    [challengeId],
-  );
-  if (result.rows.length > 0) return normalizeChallengeRow(result.rows[0] as never);
-  const current = await readChallenge(db, challengeId);
-  if (current.status === 'ended') return current;
-  fail(`challenge ${challengeId} cannot transition to ended from status '${current.status}'`);
+  return db.transaction(async (tx) => {
+    // Lock and retain the actual source status so only GF-01's canonical
+    // active -> ended transition emits. Ending during establishment remains
+    // existing domain behavior but is outside the automatic Feed allow-list.
+    const locked = await tx.query(
+      'SELECT * FROM challenges WHERE challenge_id = $1 FOR UPDATE',
+      [challengeId],
+    );
+    if (locked.rows.length === 0) fail(`unknown challenge ${challengeId}`);
+    const before = normalizeChallengeRow(locked.rows[0] as never);
+    if (before.status === 'ended') return before;
+    if (before.status !== 'active' && before.status !== 'establishment') {
+      fail(`challenge ${challengeId} cannot transition to ended from status '${before.status}'`);
+    }
+    const result = await tx.query(
+      `UPDATE challenges SET status = 'ended', ended_at = now(), updated_at = now()
+       WHERE challenge_id = $1 AND status = $2 RETURNING *`,
+      [challengeId, before.status],
+    );
+    if (result.rows.length > 0) {
+      const ended = normalizeChallengeRow(result.rows[0] as never);
+      if (before.status === 'active') {
+        await recordChallengePublication(tx, {
+          eventType: 'challenge_ended', challengeId, sourceTransitionVersion: 1,
+        });
+      }
+      return ended;
+    }
+    fail(`challenge ${challengeId} lost its ${before.status} -> ended transition race`);
+  });
 }
 
 export async function getChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {

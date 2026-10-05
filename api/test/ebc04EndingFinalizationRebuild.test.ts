@@ -130,6 +130,7 @@ interface ChallengeSetup {
   memberId: string;
   challengeId: string;
   pins: Record<string, Pin>;
+  crossingClientKey?: string;
 }
 
 async function setupActiveChallenge(
@@ -351,11 +352,12 @@ describe('EBC-04 COLLECTIVE finalization', () => {
     await logAt(db, setup,
       { value: 60, occurred_at: T('2026-06-10T12:00:00Z'), client_key: next('key') },
       '2026-06-10T12:00:00Z');
+    const crossingClientKey = next('key');
     const crossing = await logAt(db, setup,
-      { value: 50, occurred_at: T('2026-06-10T13:00:00Z'), client_key: next('key') },
+      { value: 50, occurred_at: T('2026-06-10T13:00:00Z'), client_key: crossingClientKey },
       '2026-06-10T13:00:00Z');
     expect(crossing.completionTriggered).toBe(true);
-    return setup;
+    return { ...setup, crossingClientKey };
   }
 
   it('6+7: goal-crossing contribution fully counts and ends the Challenge early', async () => {
@@ -365,6 +367,26 @@ describe('EBC-04 COLLECTIVE finalization', () => {
     const recomputed = await recomputeChallengeDerived(db, setup.challengeId);
     expect(recomputed.challenge.collectiveTotal).toBe(110);
     expect(recomputed.challenge.collectiveGoalReached).toBe(true);
+    expect((await db.query<{ event_type: string }>(
+      'SELECT event_type FROM group_feed_outbox WHERE source_id = $1 ORDER BY event_type',
+      [setup.challengeId],
+    )).rows.map((row) => row.event_type)).toEqual([
+      'challenge_ended', 'challenge_started', 'together_goal_achieved',
+    ]);
+    expect((await db.query(
+      "SELECT outbox_id FROM group_feed_outbox WHERE source_id = $1 AND event_type = 'together_goal_achieved'",
+      [setup.challengeId],
+    )).rows).toHaveLength(1);
+    const replay = await logAt(db, setup, {
+      value: 50,
+      occurred_at: T('2026-06-10T13:00:00Z'),
+      client_key: setup.crossingClientKey!,
+    }, '2026-06-10T13:00:00Z');
+    expect(replay.duplicate).toBe(true);
+    expect((await db.query(
+      "SELECT outbox_id FROM group_feed_outbox WHERE source_id = $1 AND event_type = 'together_goal_achieved'",
+      [setup.challengeId],
+    )).rows).toHaveLength(1);
   });
 
   it('8: finalization freezes the final aggregate', async () => {
@@ -377,6 +399,12 @@ describe('EBC-04 COLLECTIVE finalization', () => {
     expect(result.finalization.finalization_version).toBe(FINALIZATION_VERSION);
     expect(result.finalization.config_version).toBe(1);
     expect((await challengeStatus(setup.challengeId)).finalized_at).not.toBeNull();
+    expect((await db.query<{ event_type: string }>(
+      'SELECT event_type FROM group_feed_outbox WHERE source_id = $1 ORDER BY event_type',
+      [setup.challengeId],
+    )).rows.map((row) => row.event_type)).toEqual([
+      'challenge_ended', 'challenge_finalized', 'challenge_started', 'together_goal_achieved',
+    ]);
     const stored = await getChallengeFinal(db, setup.challengeId);
     expect(stored?.result.collective_total).toBe(110);
   });
@@ -400,6 +428,10 @@ describe('EBC-04 COLLECTIVE finalization', () => {
     expect(second.finalization.finalized_at).toBe(first.finalization.finalized_at);
     expect(second.finalization.result).toEqual(first.finalization.result);
     expect(await finalsCount()).toEqual({ challenges: 1, participations: 1 });
+    expect((await db.query<{ event_type: string }>(
+      'SELECT event_type FROM group_feed_outbox WHERE source_id = $1 AND event_type = \'challenge_finalized\'',
+      [setup.challengeId],
+    )).rows).toHaveLength(1);
   });
 });
 

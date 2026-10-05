@@ -19,6 +19,7 @@ import { testDb, seedMember, seedGroup, seedMembership, stubEligibility } from '
 import type { Db } from '../src/db.js';
 
 beforeEach(async () => {
+  await testDb().query('TRUNCATE group_feed_projection_actions, group_feed_projection, group_feed_outbox CASCADE');
   await testDb().query(
     'TRUNCATE challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
@@ -95,7 +96,7 @@ function establishmentInput(world: StubWorld) {
 async function rowCounts(): Promise<Record<string, number>> {
   const db = testDb();
   const out: Record<string, number> = {};
-  for (const table of ['challenges', 'challenge_config_versions', 'challenge_activity_configs', 'challenge_participations']) {
+  for (const table of ['challenges', 'challenge_config_versions', 'challenge_activity_configs', 'challenge_participations', 'group_feed_outbox']) {
     const result = await db.query<{ count: string }>(`SELECT COUNT(*) AS count FROM ${table}`);
     out[table] = Number(result.rows[0].count);
   }
@@ -175,6 +176,35 @@ describe('B. activation failure after create rolls back everything', () => {
   });
 });
 
+describe('GF-02 publication atomicity', () => {
+  it('rolls the establishment back if its required outbox row cannot be persisted', async () => {
+    const world = await stubWorld([{ kind: 'fitness', key: 'push-up' }]);
+    const before = await rowCounts();
+    await expect(
+      establishChallengeV2(
+        faultingDb(testDb(), /INSERT INTO group_feed_outbox/i, 'injected outbox failure'),
+        establishmentInput(world),
+        world.resolvers,
+      ),
+    ).rejects.toThrow(/injected outbox failure/);
+    expect(await rowCounts()).toEqual(before);
+  });
+
+  it('rolls source, outbox, and projection back together on establishment publication failure', async () => {
+    const world = await stubWorld([{ kind: 'fitness', key: 'push-up' }]);
+    const before = await rowCounts();
+    await expect(
+      establishChallengeV2(
+        faultingDb(testDb(), /INSERT INTO group_feed_outbox/i, 'injected publication persistence failure'),
+        establishmentInput(world),
+        world.resolvers,
+      ),
+    ).rejects.toThrow(/injected publication persistence failure/);
+    expect(await rowCounts()).toEqual(before);
+    expect((await testDb().query('SELECT feed_event_id FROM group_feed_projection')).rows).toHaveLength(0);
+  });
+});
+
 describe('C. join failure after create + activate rolls back everything', () => {
   it('zero Challenge, config-version, activity-config and participation rows', async () => {
     const world = await stubWorld([{ kind: 'fitness', key: 'push-up' }]);
@@ -201,6 +231,10 @@ describe('D. success persists create + config + activate + join together', () =>
     expect(result.version.version).toBe(1);
     expect(result.activities).toHaveLength(1);
     expect(result.creatorParticipationId).toMatch(/^[0-9a-f-]{36}$/i);
+    expect((await testDb().query<{ event_type: string }>(
+      'SELECT event_type FROM group_feed_outbox WHERE source_id = $1 ORDER BY event_type',
+      [result.challenge.challenge_id],
+    )).rows.map((row) => row.event_type)).toEqual(['challenge_established', 'challenge_started']);
     expect(await rowCounts()).toMatchObject({
       challenges: 1,
       challenge_config_versions: 1,
@@ -221,12 +255,31 @@ describe('E. create without activate/join persists as one transaction', () => {
     expect(result.challenge.status).toBe('establishment');
     expect(result.activated).toBe(false);
     expect(result.creatorParticipationId).toBeNull();
+    expect((await testDb().query<{ event_type: string }>(
+      'SELECT event_type FROM group_feed_outbox WHERE source_id = $1',
+      [result.challenge.challenge_id],
+    )).rows.map((row) => row.event_type)).toEqual(['challenge_established']);
     expect(await rowCounts()).toMatchObject({
       challenges: 1,
       challenge_config_versions: 1,
       challenge_activity_configs: 1,
       challenge_participations: 0,
     });
+  });
+});
+
+describe('GF-02 establishment replay', () => {
+  it('replays the same establishment and publication identity on request retry', async () => {
+    const world = await stubWorld([{ kind: 'fitness', key: 'push-up' }]);
+    const input = { ...establishmentInput(world), idempotencyKey: 'gf02-establishment-retry' };
+    const first = await establishChallengeV2(testDb(), input, world.resolvers);
+    const second = await establishChallengeV2(testDb(), input, world.resolvers);
+    expect(second.idempotentReplay).toBe(true);
+    expect(second.challenge.challenge_id).toBe(first.challenge.challenge_id);
+    expect((await testDb().query(
+      "SELECT outbox_id FROM group_feed_outbox WHERE source_id = $1 AND event_type = 'challenge_established'",
+      [first.challenge.challenge_id],
+    )).rows).toHaveLength(1);
   });
 });
 

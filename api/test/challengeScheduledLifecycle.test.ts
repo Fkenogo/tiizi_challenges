@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { processScheduledChallengeStarts } from '../src/challengeFinalization.js';
 import { runLifecycleCommand } from '../src/challengeLifecycleCli.js';
-import { activateChallenge, getChallenge } from '../src/challenges.js';
+import { activateChallenge, endChallenge, getChallenge } from '../src/challenges.js';
 import { seedGroup, seedMember, testDb } from './helpers.js';
 import type { Db } from '../src/db.js';
 
@@ -63,6 +63,15 @@ describe('scheduled Challenge lifecycle advancement', () => {
     const due = await processScheduledChallengeStarts(db, START_BOUNDARY);
     expect(due.find((row) => row.challenge_id === challengeId)).toMatchObject({ due: true, activated: true, blockedBy: null });
     expect((await getChallenge(db, challengeId)).status).toBe('active');
+    await processScheduledChallengeStarts(db, AFTER_START);
+    expect((await db.query(
+      "SELECT outbox_id FROM group_feed_outbox WHERE source_id = $1 AND event_type = 'challenge_started'",
+      [challengeId],
+    )).rows).toHaveLength(1);
+    expect((await db.query<{ event_type: string }>(
+      'SELECT event_type FROM group_feed_outbox WHERE source_id = $1 ORDER BY event_type',
+      [challengeId],
+    )).rows.map((row) => row.event_type)).toEqual(['challenge_started']);
   });
 
   it('keeps a pending Cause in establishment after its scheduled start', async () => {
@@ -98,6 +107,16 @@ describe('scheduled Challenge lifecycle advancement', () => {
     const challengeId = await challenge({ title: 'CLI scheduled Challenge' });
     await runLifecycleCommand(db, ['process-lifecycle', '--now', START_BOUNDARY.toISOString()]);
     expect((await getChallenge(db, challengeId)).status).toBe('active');
+  });
+
+  it('does not publish an ended event for establishment-to-ended, outside GF-01 allow-list semantics', async () => {
+    const challengeId = await challenge({ title: 'Establishing Challenge end' });
+    await endChallenge(db, challengeId);
+    expect((await getChallenge(db, challengeId)).status).toBe('ended');
+    expect((await db.query<{ event_type: string }>(
+      "SELECT event_type FROM group_feed_outbox WHERE source_id = $1 AND event_type = 'challenge_ended'",
+      [challengeId],
+    )).rows).toHaveLength(0);
   });
 
   it('keeps revision-required Cause blocked when its scheduled start has arrived', async () => {

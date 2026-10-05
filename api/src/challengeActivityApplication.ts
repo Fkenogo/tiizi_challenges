@@ -76,6 +76,7 @@ import {
   type GoverningVersion,
 } from './challengeConfigs.js';
 import { getChallenge, normalizeChallengeRow, type ChallengeRow } from './challenges.js';
+import { recordChallengePublication } from './groupFeedPublication.js';
 import {
   isParticipationActiveAt,
   listParticipations,
@@ -812,6 +813,18 @@ async function runSubmission(
       ...update.challenge,
       completionsCount: Number((completions.rows[0] as { count: string }).count),
     });
+    if (pinned.snapshot.challenge_type === 'collective' && update.completionTriggered) {
+      await recordChallengePublication(tx, {
+        eventType: 'together_goal_achieved',
+        challengeId,
+        sourceTransitionVersion: pinned.version,
+      });
+      await recordChallengePublication(tx, {
+        eventType: 'challenge_ended',
+        challengeId,
+        sourceTransitionVersion: 1,
+      });
+    }
 
     const partRow = await tx.query(
       `SELECT * FROM challenge_participation_derived WHERE participation_id = $1`,
