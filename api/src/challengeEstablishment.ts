@@ -80,6 +80,7 @@ import {
   type ChallengeConfigResolvers,
   type ConfigVersionRow,
 } from './challengeConfigs.js';
+import { recordChallengePublication } from './groupFeedPublication.js';
 
 export interface EstablishmentInput extends NewChallengeInput {
   /** establishment -> active inside the same transaction when true. */
@@ -339,6 +340,11 @@ export async function establishChallengeV2(
           [idempotencyKey, creatorParticipationId],
         );
       }
+      await recordChallengePublication(tx, {
+        eventType: 'challenge_established',
+        challengeId: created.challenge.challenge_id,
+        sourceTransitionVersion: 1,
+      });
       return {
         challenge: { ...created.challenge, status },
         version: created.version,
@@ -533,6 +539,11 @@ export async function establishChallengeDefinitionV2(
         );
       }
       const version = await getChallengeConfig(tx, challengeRow.challenge_id, 1);
+      await recordChallengePublication(tx, {
+        eventType: 'challenge_established',
+        challengeId: challengeRow.challenge_id,
+        sourceTransitionVersion: 1,
+      });
       return {
         challenge: { ...challengeRow, status },
         version: version.version,

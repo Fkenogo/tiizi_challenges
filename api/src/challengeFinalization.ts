@@ -51,6 +51,7 @@ import {
   normalizeChallengeRow,
   type ChallengeRow,
 } from './challenges.js';
+import { recordChallengePublication } from './groupFeedPublication.js';
 import {
   computeFinishingPositions,
   countCompletingMembers,
@@ -433,6 +434,9 @@ export async function finalizeChallenge(
         );
       } else {
         challenge = normalizeChallengeRow(ended.rows[0] as never);
+        await recordChallengePublication(tx, {
+          eventType: 'challenge_ended', challengeId, sourceTransitionVersion: 1,
+        });
       }
     }
     if (challenge.finalized_at) {
@@ -519,6 +523,9 @@ export async function finalizeChallenge(
        WHERE challenge_id = $1 AND finalized_at IS NULL`,
       [challengeId, finalizedAt],
     );
+    await recordChallengePublication(tx, {
+      eventType: 'challenge_finalized', challengeId, sourceTransitionVersion: 1,
+    });
     const stored = await readFinalizationTx(tx, challengeId);
     if (!stored) fail(500, 'finalization_missing', 'finalization writes did not persist');
     const done = stored as FinalizeResult;
