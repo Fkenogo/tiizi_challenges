@@ -142,12 +142,14 @@ export function V2Button({
   type = 'button',
   variant = 'primary',
   disabled,
+  className = '',
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   type?: 'button' | 'submit';
   variant?: 'primary' | 'secondary' | 'ghost' | 'success';
   disabled?: boolean;
+  className?: string;
 }) {
   const tone =
     variant === 'primary'
@@ -162,7 +164,7 @@ export function V2Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone}`}
+      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone} ${className}`}
     >
       {children}
     </button>

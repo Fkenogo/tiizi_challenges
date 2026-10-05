@@ -18,6 +18,7 @@ import { groupHomeErrorStatus, groupHomeViewFor, viewerMayCreateChallenge } from
 import { useJoinGroup, useLeaveV2Group, useV2GroupChallenges, useV2GroupDetail, useV2GroupRoster, useV2Groups } from './useV2Groups';
 import { V2HostedChallengeCard } from './V2HostedChallengeCard';
 import { V2PendingApplications } from './V2PendingApplications';
+import { V2GroupFeedPreview } from './V2GroupFeedPreview';
 
 /**
  * TIIZI S4a CORR-001 — Group Home (`/v2/groups/:groupId`).
@@ -32,7 +33,8 @@ import { V2PendingApplications } from './V2PendingApplications';
  * Bound to the canonical read (`GET /api/groups/:groupId`) plus the governed
  * hosted-Challenge scope (`GET /api/challenges?groupId=`). Reference
  * composition (GroupDetailView hero + tabs spirit) without prototype
- * semantics: singular steward, no Feed, no Leaderboard, no plural Admins,
+ * semantics: singular steward, one bounded GF-04 Group activity preview,
+ * no Leaderboard, no plural Admins,
  * no presence, no media fabrication, no invented social behaviour.
  * Internal identifiers, provider ids, raw backend field names and state
  * codes are never rendered.
@@ -390,6 +392,8 @@ function GroupHomeBody({
         )}
         {hostedState.isSuccess && challenges.length > 4 && <div className="mt-3 flex justify-center"><V2Button variant="secondary" onClick={() => setShowAllChallenges((value) => !value)}>{showAllChallenges ? 'Show fewer Challenges' : `View more Challenges (${challenges.length - 4} more)`}</V2Button></div>}
       </section>}
+
+      {viewerIsGroupMember && <V2GroupFeedPreview groupId={detail.id} />}
 
       <section aria-label="Members" className="space-y-2">
         <div className="flex items-end justify-between gap-3">

@@ -287,7 +287,11 @@ check('join converges through the canonical invalidation contract',
 check('no Group Leaderboard surface in Group code (the governed count hooks are reuse, not a surface)',
   !/V2CompetitiveProgress|getCompetitiveLeaderboardV2\(|getChallengeContributorsV2\(|Top Performers|global ranking|Global ranking/i.test(anyGroupCode)
   && !/entries\.map|contributors\.map/i.test(anyGroupCode));
-check('no Feed in Group code', !/\bFeed\b|\bfeed\b/.test(anyGroupCode.replace(/refetch|refresh/gi, '')));
+check('Group Feed stays within the authorized single member read surface',
+  homeCode.includes('V2GroupFeedPreview')
+  && read('src/v2/groups/V2GroupFeedScreen.tsx').includes('useV2GroupFeed')
+  && read('src/api/groupFeedApi.ts').includes('/feed')
+  && !/composer|reaction|Kudos|Share/i.test(read('src/v2/groups/V2GroupFeedPreview.tsx')));
 check('no client ranking/progress authority',
   !/computeFinishingPositions|memberFinishingPositions|recomputeChallengeDerived/.test(anyGroupCode));
 check('wizard honors a Group Home handoff only against real memberships',
