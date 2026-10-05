@@ -37,6 +37,10 @@ for the Secret Manager step. Do not encode instance names in the image.
   (`--set-secrets=/secrets/tiizi-db-server-ca/server-ca.pem=TIIZI_DB_SERVER_CA_PEM:latest`);
   bind it as an env secret for the two Functions authority callables, where
   the reader materializes it to a 0600 temp file. No service-account JSON.
+- Store `TIIZI_GROUP_FEED_CURSOR_SECRET` as a runtime secret and bind it to
+  the API service only. Use at least 32 random UTF-8 bytes. The API requires it
+  to authenticate the Group Feed's 24-hour HMAC-SHA-256 cursors; never place
+  its value in this repository or in a client bundle.
 - Give the API service identity ADC/workload-identity rights only. No
   service-account JSON is deployed with the container.
 - Set non-secret env: `FIREBASE_PROJECT_ID`, `TIIZI_ALLOWED_ORIGINS`

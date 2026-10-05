@@ -2,7 +2,7 @@
 
 **Document type:** Governed programme-management roadmap
 
-**Version:** 2.34
+**Version:** 2.35
 
 **Status:** Approved programme baseline
 
@@ -32,13 +32,15 @@ This document is not a constitutional instrument and does not establish constitu
 
 The Programme Dashboard must be updated whenever programme status, next action or dependency changes.
 
+**GF-03 implementation update (2026-10-05):** Founder-authorized on canonical `origin/main` `ec4a6385ad59f75415cf48480cfc9fb149d265ee`. Member read service and the single `GET /api/groups/:groupId/feed` route are implemented on branch `codex/gf03-member-feed-read-api`; implementation remains **AWAITING INDEPENDENT R2 REVIEW**. This package does not implement GF-04/UI, Today, Kudos, Share or Recognition; migration 025 remains undeployed. Independent review authority: [FEF-EWPCS-001-AMD-001 — Development Preview and Proportionate Review](https://github.com/Fkenogo/founder-engineering-framework/blob/main/docs/engineering/FEF-EWPCS-001-AMD-001-DEVELOPMENT-PREVIEW-AND-PROPORTIONATE-REVIEW.md) (external FEF authority; APPROVED — ACTIVE).
+
 **S4 authority and closure (2026-09-26):** TIIZI-GROUP-PG-AUTHORITY-TRANSITION-001 is **COMPLETE / FOUNDER ACCEPTED / MERGED** (PR #50; merge commit `7cffb4b8f7c9b50c613a91067b7ca8c05554e52b`). V2 Group, Group Membership, and Group-scoped Challenge authority use PostgreSQL through the Tiizi API; Firebase Auth remains authentication/identity only, V1 is frozen/reference-only, and no V1 operational-data migration or reconciliation is required. S1–S3 and S4a–S4d are **COMPLETE / FOUNDER ACCEPTED / MERGED**. S6 is COMPLETE / FOUNDER ACCEPTED / MERGED (PR #60; accepted source `8f46378bf0c8bd38c28897131b2b248ce4e671d9`; merge `86e236eebade9047dc7a3450c0d023868ac556ef`). The DEVELOPMENT catalogue has 118 Published Activities, all publication-ready, Challenge-eligible, and composer-selectable. The compact Activity Guide and aligned Challenge Step 3 discovery/explicit add-remove flow are accepted; Activity images are deferred and not required for S6 closure. No production catalogue population/publication or deployment occurred. “Challenge Creation — Founder Experience Review” remains a separate outstanding follow-on.
 
 ## 3. Programme Metrics
 
 | Metric            | Current  |
 | ----------------- | -------- |
-| Programme Version | 2.33     |
+| Programme Version | 2.35     |
 | Total Stages      | 7        |
 | Completed Stages  | 5        |
 | Active Stage      | Stage G  |
