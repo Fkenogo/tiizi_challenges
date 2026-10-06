@@ -399,11 +399,13 @@ describe('EBC-04 COLLECTIVE finalization', () => {
     expect(result.finalization.finalization_version).toBe(FINALIZATION_VERSION);
     expect(result.finalization.config_version).toBe(1);
     expect((await challengeStatus(setup.challengeId)).finalized_at).not.toBeNull();
+    // GF-01 v1.1: finalization commits authoritative truth but emits no Group
+    // Feed event. The earlier ended event remains the visible Feed card.
     expect((await db.query<{ event_type: string }>(
       'SELECT event_type FROM group_feed_outbox WHERE source_id = $1 ORDER BY event_type',
       [setup.challengeId],
     )).rows.map((row) => row.event_type)).toEqual([
-      'challenge_ended', 'challenge_finalized', 'challenge_started', 'together_goal_achieved',
+      'challenge_ended', 'challenge_started', 'together_goal_achieved',
     ]);
     const stored = await getChallengeFinal(db, setup.challengeId);
     expect(stored?.result.collective_total).toBe(110);
@@ -428,10 +430,12 @@ describe('EBC-04 COLLECTIVE finalization', () => {
     expect(second.finalization.finalized_at).toBe(first.finalization.finalized_at);
     expect(second.finalization.result).toEqual(first.finalization.result);
     expect(await finalsCount()).toEqual({ challenges: 1, participations: 1 });
+    // GF-01 v1.1: repeated finalization stays idempotent and still emits no
+    // finalized Group Feed event.
     expect((await db.query<{ event_type: string }>(
       'SELECT event_type FROM group_feed_outbox WHERE source_id = $1 AND event_type = \'challenge_finalized\'',
       [setup.challengeId],
-    )).rows).toHaveLength(1);
+    )).rows).toHaveLength(0);
   });
 });
 

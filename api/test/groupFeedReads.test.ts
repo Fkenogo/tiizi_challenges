@@ -104,14 +104,13 @@ describe('GF-03 Group Feed member read boundary', () => {
     expect(response.headers['cache-control']).toBe('private, no-store');
   });
 
-  it('uses the five fixed GF-01 presentation titles verbatim', async () => {
+  it('uses the four fixed GF-01 v1.1 presentation titles verbatim', async () => {
     const { groupId, memberId } = await fixture();
     const expected = new Map([
       ['challenge_established', 'A new Challenge is available'],
       ['challenge_started', 'The Challenge has started'],
       ['together_goal_achieved', 'The Group reached its Challenge goal'],
       ['challenge_ended', 'The Challenge has ended'],
-      ['challenge_finalized', 'Challenge results are ready'],
     ]);
     let index = 0;
     for (const eventType of expected.keys()) {
@@ -393,13 +392,20 @@ describe('GF-03 Group Feed member read boundary', () => {
     expect(page.events.map((event) => event.eventType)).toEqual(['challenge_started', 'challenge_established']);
   });
 
-  it('uses finalized consolidation only when that finalized projection is eligible and visible', async () => {
+  it('keeps ended visible after finalization and never returns a finalized card', async () => {
+    // GF-01 v1.1: no finalized Group Feed event exists. Legacy finalized
+    // projection rows (inserted here directly as SQL fixtures) are excluded
+    // by the read allow-list; the ended card remains independently visible.
     const { groupId, memberId } = await fixture();
     const visibleChallenge = await source(groupId, 'Visible finalized');
     const suppressedChallenge = await source(groupId, 'Suppressed finalized');
     const expiredChallenge = await source(groupId, 'Expired finalized');
+    await testDb().query(
+      "UPDATE challenges SET status='ended', ended_at=now(), finalized_at=now() WHERE challenge_id=$1",
+      [visibleChallenge],
+    );
     await project(groupId, visibleChallenge, 'challenge_ended', new Date(Date.now() - 1000));
-    const visibleFinal = await project(groupId, visibleChallenge, 'challenge_finalized', new Date(Date.now() - 500));
+    await project(groupId, visibleChallenge, 'challenge_finalized', new Date(Date.now() - 500));
     await project(groupId, suppressedChallenge, 'challenge_ended', new Date(Date.now() - 900));
     const suppressedFinal = await project(groupId, suppressedChallenge, 'challenge_finalized', new Date(Date.now() - 400));
     await testDb().query("UPDATE group_feed_projection SET suppressed_at=now(), suppression_reason_code='system_safety' WHERE feed_event_id=$1", [suppressedFinal]);
@@ -408,16 +414,21 @@ describe('GF-03 Group Feed member read boundary', () => {
     const page = await getGroupFeedPage(testDb(), createPostgresGroupMembershipAuthority(testDb()), memberId, groupId);
     const eventsByChallenge = new Map<string, string[]>([]);
     for (const event of page.events) eventsByChallenge.set(event.challengeId, [...(eventsByChallenge.get(event.challengeId) ?? []), event.eventType]);
-    expect(eventsByChallenge.get(visibleChallenge)).toEqual(['challenge_finalized']);
+    expect(eventsByChallenge.get(visibleChallenge)).toEqual(['challenge_ended']);
     expect(eventsByChallenge.get(suppressedChallenge)).toEqual(['challenge_ended']);
     expect(eventsByChallenge.get(expiredChallenge)).toEqual(['challenge_ended']);
-    expect(page.events.some((event) => event.feedEventId === visibleFinal)).toBe(true);
+    expect(page.events.some((event) => (event.eventType as string) === 'challenge_finalized')).toBe(false);
+    expect(page.events.some((event) => (event.presentationTitle as string) === 'Challenge results are ready')).toBe(false);
   });
 
-  it('applies ended/finalized consolidation before keyset page composition', async () => {
+  it('serves all four families in source-transition order without consolidation', async () => {
     const { groupId, memberId } = await fixture();
-    const older = await source(groupId, 'Consolidated pair');
+    const older = await source(groupId, 'Ended pair');
     const newest = await source(groupId, 'Newer event');
+    await testDb().query(
+      "UPDATE challenges SET status='ended', ended_at=now(), finalized_at=now() WHERE challenge_id=$1",
+      [older],
+    );
     await project(groupId, older, 'challenge_ended', new Date(Date.now() - 3000));
     await project(groupId, older, 'challenge_finalized', new Date(Date.now() - 2000));
     await project(groupId, newest, 'challenge_started', new Date(Date.now() - 1000));
@@ -425,7 +436,7 @@ describe('GF-03 Group Feed member read boundary', () => {
     const first = await getGroupFeedPage(testDb(), authority, memberId, groupId, { limit: 1 });
     const second = await getGroupFeedPage(testDb(), authority, memberId, groupId, { limit: 1, cursor: first.nextCursor! });
     expect(first.events.map((event) => event.eventType)).toEqual(['challenge_started']);
-    expect(second.events.map((event) => event.eventType)).toEqual(['challenge_finalized']);
+    expect(second.events.map((event) => event.eventType)).toEqual(['challenge_ended']);
     expect(second.nextCursor).toBeNull();
   });
 

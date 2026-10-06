@@ -1,12 +1,14 @@
 import type { Db } from './db.js';
 
 export const GROUP_FEED_CONTRACT_VERSION = 1 as const;
+// GF-01 v1.1: exactly four automatic Group Feed families. Challenge
+// finalization remains authoritative Challenge/domain truth but no longer
+// publishes a Group Feed event.
 export const GROUP_FEED_EVENT_TYPES = [
   'challenge_established',
   'challenge_started',
   'together_goal_achieved',
   'challenge_ended',
-  'challenge_finalized',
 ] as const;
 
 export type GroupFeedEventType = (typeof GROUP_FEED_EVENT_TYPES)[number];
@@ -112,15 +114,6 @@ async function transitionTimestamp(
       return source.activated_at == null ? null : iso(source.activated_at);
     case 'challenge_ended':
       return source.status !== 'ended' || source.ended_at == null ? null : iso(source.ended_at);
-    case 'challenge_finalized': {
-      if (source.status !== 'ended' || source.finalized_at == null) return null;
-      const final = await tx.query<{ finalized_at: string | Date }>(
-        'SELECT finalized_at FROM challenge_finalizations WHERE challenge_id = $1',
-        [source.challenge_id],
-      );
-      const row = final.rows[0];
-      return row && sameInstant(row.finalized_at, source.finalized_at) ? iso(source.finalized_at) : null;
-    }
     case 'together_goal_achieved': {
       if (source.challenge_type !== 'collective') return null;
       const derived = await tx.query<{
