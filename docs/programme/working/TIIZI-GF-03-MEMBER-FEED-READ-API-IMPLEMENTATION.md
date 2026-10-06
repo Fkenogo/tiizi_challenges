@@ -18,7 +18,19 @@ Cards contain only Feed event ID, allow-listed event type, current visible Chall
 
 Pagination uses 20 by default and 50 maximum, newest first by `(source_transition_at DESC, feed_event_id DESC)`. The opaque cursor binds version, Group, ordering, direction, page size, last returned/scan boundary, issue time and 24-hour expiry. HMAC-SHA-256 uses the runtime secret `TIIZI_GROUP_FEED_CURSOR_SECRET` (minimum 32 UTF-8 bytes), following the API's existing runtime-secret convention. Both body and signature require strict unpadded canonical base64url encoding; noncanonical aliases fail generically before HMAC/payload validation. HMAC-SHA-256 and `timingSafeEqual` remain unchanged. The correction closes the independent P2 finding; see the R2 review record.
 
-Ended/finalized consolidation occurs in the relational visibility set before page limiting. An ended card is omitted only when an unsuppressed, retained finalized projection exists for the same Group and Challenge and its current source remains visible. No GF-02 event is modified.
+Historical pre-v1.1 behavior: ended/finalized consolidation occurred in the relational visibility set before page limiting. GF-01 v1.1 removes that behavior; see the correction addendum below. No GF-02 event was modified by the original GF-03 implementation.
+
+## GF-01 v1.1 downstream correction addendum — R1
+
+GF-01 v1.1 narrows the member-visible Group Feed contract to exactly `challenge_established`, `challenge_started`, `together_goal_achieved`, and `challenge_ended`. This correction removes `challenge_finalized` from the read event/title type and SQL response allow-list, and removes “Challenge results are ready” from the Group Feed presentation contract. Historical finalized rows fail the current allow-list and cannot be returned.
+
+Ended/finalized consolidation has been removed. A retained `challenge_ended` event remains visible when current Group/Challenge visibility, membership authorization, suppression, and retention permit it, regardless of later Challenge finalization. Ordering remains `source_transition_at DESC, feed_event_id DESC`.
+
+Authorization and privacy controls remain unchanged: authentication, current membership (including Steward parity), cross-Group isolation, Challenge visibility, generic 404 posture, minimized response, and the signed cursor contract (format, HMAC, canonical base64url, version, expiry, and page limits). The prior R2 review remains historically valid for those unchanged security and cursor controls. This v1.1 downstream amendment is classified **R1 — targeted technical review**, not R2.
+
+No migration was added. Migration 025 remains unedited and undeployed; known finalized projection rows were disposable local preview fixtures, and no shared persistent environment with Group Feed rows was identified in the available repository/environment evidence. Disposable preview databases should be rebuilt or reseeded. GF-03's v1.1 correction is **IMPLEMENTED CANDIDATE / AWAITING R1 TARGETED TECHNICAL REVIEW**; it is not accepted or merged.
+
+Validation on this candidate: focused GF-02/GF-03/finalization suites 72/72 passed; full API suite 850 passed / 8 Firestore-emulator tests skipped; API typecheck/build, root boundary guard, root build, and `git diff --check` passed. The first concurrent full-suite attempt had a Vitest worker RPC timeout after 850 passing tests; the isolated rerun passed cleanly.
 
 ## Files and schema
 
@@ -40,7 +52,7 @@ The implementing agent does not self-certify final technical acceptance. The ind
 3. source visibility and historical-transition validity;
 4. cross-Group source/query/cursor/navigation isolation;
 5. cursor signing, tampering, expiry and pagination behavior;
-6. suppression, retention and ended/finalized consolidation;
+6. suppression, retention and (historically) ended/finalized consolidation; the v1.1 correction removes consolidation;
 7. cache/revocation semantics;
 8. disclosure minimization and focused security-test evidence;
 9. scope creep, migration 025 containment, and absence of UI/Today/social features.

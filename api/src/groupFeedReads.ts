@@ -14,12 +14,13 @@ const ORDERING = 'source_transition_at_desc_feed_event_id_desc';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BASE64URL_RE = /^[A-Za-z0-9_-]+$/;
 
+// GF-01 v1.1: exactly four member-visible Group Feed families. Challenge
+// finalization remains domain truth but is not a Group Feed event.
 const TITLES = {
   challenge_established: 'A new Challenge is available',
   challenge_started: 'The Challenge has started',
   together_goal_achieved: 'The Group reached its Challenge goal',
   challenge_ended: 'The Challenge has ended',
-  challenge_finalized: 'Challenge results are ready',
 } as const;
 
 export type GroupFeedEventType = keyof typeof TITLES;
@@ -176,6 +177,9 @@ export async function getGroupFeedPage(
   await requireCurrentMember(authority, groupId, memberId);
 
   const retentionCutoff = new Date(now.getTime() - RETENTION_MS);
+  // GF-01 v1.1: no finalized Group Feed event exists, so no
+  // ended/finalized presentation consolidation applies. Ended events remain
+  // visible under the normal retention/visibility/suppression rules below.
   const result = await db.query<FeedRow>(
     `SELECT p.feed_event_id, p.event_type, p.source_id AS challenge_id,
             c.title AS challenge_title, p.source_transition_at
@@ -184,27 +188,13 @@ export async function getGroupFeedPage(
      JOIN challenges c ON c.challenge_id = p.source_id AND c.group_id = p.group_id
      WHERE p.group_id = $1
        AND p.source_type = 'challenge'
+       AND p.event_type IN (
+         'challenge_established', 'challenge_started',
+         'together_goal_achieved', 'challenge_ended'
+       )
        AND p.suppressed_at IS NULL
        AND p.source_transition_at >= $2
        AND ($3::timestamptz IS NULL OR (p.source_transition_at, p.feed_event_id) < ($3::timestamptz, $4::uuid))
-       AND NOT (
-         p.event_type = 'challenge_ended'
-         AND EXISTS (
-           SELECT 1
-           FROM group_feed_projection finalized
-           JOIN groups finalized_group
-             ON finalized_group.group_id = finalized.group_id AND finalized_group.status = 'active'
-           JOIN challenges finalized_source
-             ON finalized_source.challenge_id = finalized.source_id
-            AND finalized_source.group_id = finalized.group_id
-           WHERE finalized.group_id = p.group_id
-             AND finalized.source_type = 'challenge'
-             AND finalized.source_id = p.source_id
-             AND finalized.event_type = 'challenge_finalized'
-             AND finalized.suppressed_at IS NULL
-             AND finalized.source_transition_at >= $2
-         )
-       )
      ORDER BY p.source_transition_at DESC, p.feed_event_id DESC
      LIMIT $5`,
     [groupId, retentionCutoff.toISOString(), cursor?.lastScannedAt ?? null, cursor?.lastScannedId ?? null, limit + 1],

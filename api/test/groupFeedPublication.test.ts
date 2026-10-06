@@ -270,6 +270,70 @@ describe('GF-02 trusted publication outbox', () => {
   });
 });
 
+describe('GF-01 v1.1 four-family amendment', () => {
+  it('rejects challenge_finalized at the publication boundary', async () => {
+    const groupId = await seedGroup(testDb(), { name: 'v1.1 group' });
+    const challengeId = await challenge(groupId, 'ended');
+    await expect(recordChallengePublication(testDb(), {
+      eventType: 'challenge_finalized' as never,
+      challengeId,
+      sourceTransitionVersion: 1,
+    })).rejects.toThrow(/not allow-listed/);
+    expect((await testDb().query(
+      "SELECT outbox_id FROM group_feed_outbox WHERE event_type = 'challenge_finalized'",
+    )).rows).toHaveLength(0);
+  });
+
+  it('records and projects the remaining lifecycle transitions normally', async () => {
+    const groupId = await seedGroup(testDb(), { name: 'v1.1 lifecycle group' });
+    const activeId = await challenge(groupId, 'active');
+    const endedId = await challenge(groupId, 'ended');
+    await recordChallengePublication(testDb(), {
+      eventType: 'challenge_started', challengeId: activeId, sourceTransitionVersion: 1,
+    });
+    await recordChallengePublication(testDb(), {
+      eventType: 'challenge_ended', challengeId: endedId, sourceTransitionVersion: 1,
+    });
+    const summary = await processGroupFeedOutboxBatch(testDb(), { now: new Date(Date.now() + 2_000) });
+    expect(summary).toMatchObject({ claimed: 2, projected: 2 });
+    const projected = await testDb().query(
+      'SELECT event_type FROM group_feed_projection ORDER BY event_type',
+    );
+    expect((projected.rows as Array<{ event_type: string }>).map((row) => row.event_type))
+      .toEqual(['challenge_ended', 'challenge_started']);
+  });
+
+  it('refuses to restore a legacy finalized projection after revalidation', async () => {
+    // Legacy finalized rows can exist only as disposable-development history
+    // (025 CHECK is a superset); revalidation must fail closed.
+    const groupId = await seedGroup(testDb(), { name: 'v1.1 legacy group' });
+    const challengeId = await challenge(groupId, 'ended');
+    const feedEventId = crypto.randomUUID();
+    await testDb().query(
+      `INSERT INTO group_feed_outbox
+        (outbox_id, group_id, source_type, source_id, event_type, source_transition_version,
+         contract_version, source_transition_at, idempotency_key, status)
+       VALUES ($1, $2, 'challenge', $3, 'challenge_finalized', 1, 1, now(), $4, 'projected')`,
+      [feedEventId, groupId, challengeId, `v11-legacy-${feedEventId}`],
+    );
+    await testDb().query(
+      `INSERT INTO group_feed_projection
+        (feed_event_id, group_id, source_type, source_id, event_type, source_transition_version,
+         contract_version, source_transition_at)
+       VALUES ($1, $2, 'challenge', $3, 'challenge_finalized', 1, 1, now())`,
+      [feedEventId, groupId, challengeId],
+    );
+    const now = new Date();
+    expect(await suppressGroupFeedProjection(testDb(), feedEventId, 'invalid_projection', now)).toBe(true);
+    expect(await restoreGroupFeedProjectionAfterSourceRevalidation(
+      testDb(), feedEventId, new Date(now.getTime() + 1_000),
+    )).toBe(false);
+    expect((await testDb().query<{ suppressed_at: Date | null }>(
+      'SELECT suppressed_at FROM group_feed_projection WHERE feed_event_id = $1', [feedEventId],
+    )).rows[0].suppressed_at).not.toBeNull();
+  });
+});
+
 function failingProjectionInsertDb(target: ReturnType<typeof testDb>): ReturnType<typeof testDb> {
   const wrap = (tx: ReturnType<typeof testDb>): ReturnType<typeof testDb> => ({
     query: async <T>(sql: string, params?: unknown[]) => {

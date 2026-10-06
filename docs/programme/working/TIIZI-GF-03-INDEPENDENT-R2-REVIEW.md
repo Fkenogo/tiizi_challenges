@@ -64,3 +64,7 @@ The cursor decoder base64url-decodes the supplied signature and compares the res
 The initial static pass reported no findings; exact-head automated validation exposed the cursor edge; follow-up independent review classified it as P2; the correction and exact-head re-review have now closed it. **R2 REVIEW — PASS / P2 FINDING CLOSED.**
 
 Founder disposition (2026-10-05): **GF-03 ACCEPTED** following the independent R2 PASS and closure of the original P2 finding. The exact corrected technical SHA remains `875e33780f9a2ed400be33e517fa4863e7a3e08d`; no technical changes followed it. PR #76 merged by normal merge commit `fda57debdcc9c09b03050341778ddfaebec95716`; the reviewed technical SHA and Founder-acceptance closure head `e7b0843f4acfee3691f1dc4eab6d640f3a6dee95` are ancestors of main. Migration 025 is undeployed; no production deployment occurred. GF-04/UI remains not started/not authorized, and Today, Kudos, Share, and Recognition remain excluded.
+
+## Later Product Truth amendment
+
+GF-01 v1.1 subsequently narrowed Group Feed to four event families and removed ended/finalized consolidation. The R2 disposition above remains the historical review result for the unchanged authorization, privacy, HMAC, canonical cursor, and pagination controls. The v1.1 contract delta is a separate **R1 targeted technical review** and is awaiting that review; this record does not claim R1 acceptance.
