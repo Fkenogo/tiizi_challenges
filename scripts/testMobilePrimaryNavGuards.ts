@@ -19,6 +19,14 @@
  *    Group Settings, with no missing, duplicate, or unauthorized destinations;
  * H. root cause is closed: the Firebase emulator banner (fixed bottom,
  *    z-index 10000) can no longer be injected to occlude the mobile nav.
+ *
+ * TIIZI — V2 MEMBER SHELL FOUNDER CORRECTION 001 adds:
+ * I. the account sheet holds EXACTLY Activity Guide / Profile, with no
+ *    Notifications entry and no Operator entry;
+ * J. Notifications is reachable only through the header bell -> /v2/notifications;
+ * K. the desktop secondary navigation row is gone (no duplicate top area);
+ * L. the member shell contains no Operator link/string, while the separate
+ *    /v2/operator tree (index -> overview) still exists outside the shell.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -93,9 +101,9 @@ check('Challenges screen exposes a contextual Activity Guide entry', /navigate\(
 check('Challenges entry is visually subordinate to Create Challenge',
   listScreen.indexOf('Create Challenge') < listScreen.indexOf('/v2/guide'));
 check('creation activity step links to the Activity Guide', /to="\/v2\/guide"/.test(wizard));
-check('desktop secondary row keeps Activity Guide / Profile / Notifications',
-  /const SECONDARY = \[([\s\S]*?)\] as const;/.test(shell)
-  && ['/v2/guide', '/v2/profile', '/v2/notifications'].every((to) => shell.includes(`'${to}'`)));
+check('Activity Guide + Profile stay reachable from the member shell (account sheet)',
+  /const ACCOUNT = \[([\s\S]*?)\] as const;/.test(shell)
+  && ['/v2/guide', '/v2/profile'].every((to) => shell.includes(`'${to}'`)));
 
 // ─── E. No public/Cloudflare dependency in the shell ──────────────────────
 console.log('E. no public URL dependency');
@@ -117,7 +125,7 @@ console.log('G. exact authorized member route set');
 const memberBlock = routes.split('<V2MemberShell />}>')[1]?.split('<Route path="operator"')[0] ?? '';
 const memberPaths = [...memberBlock.matchAll(/<Route path="([^"]+)" element=\{<(V2[A-Za-z]+)/g)].map((m) => `${m[1]}:${m[2]}`);
 const expectedMember = [
-  'today:V2TodayPage',
+  'today:V2TodayScreen',
   'challenges:V2ChallengeListScreen',
   'challenges/new:V2ChallengeCreationWizard',
   'challenges/:challengeId:V2CreatedChallengeScreen',
@@ -139,6 +147,64 @@ check('Group Home route wraps the screen in the contextual group scope',
 console.log('H. root cause (emulator banner) closed');
 check('connectAuthEmulator disables the SDK warning banner',
   /connectAuthEmulator\(\s*auth,\s*emulatorUrl,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(emulators));
+
+// ─── I. Account sheet = exactly Activity Guide / Profile ─────────────────
+console.log('I. account sheet contents');
+const sheetStart = shell.indexOf('<V2Sheet');
+const sheetEnd = shell.indexOf('</V2Sheet>', sheetStart);
+const accountSheet = sheetStart >= 0 && sheetEnd >= 0
+  ? shell.slice(sheetStart, sheetEnd + '</V2Sheet>'.length)
+  : '';
+const accountConst = (shell.match(/const ACCOUNT = \[([\s\S]*?)\] as const;/) ?? [])[1] ?? '';
+const accountTos = [...accountConst.matchAll(/to: '([^']+)'/g)].map((m) => m[1]);
+check('account sheet exists', accountSheet !== '');
+check('ACCOUNT destinations are exactly Activity Guide + Profile',
+  JSON.stringify(accountTos) === JSON.stringify(['/v2/guide', '/v2/profile']), JSON.stringify(accountTos));
+check('account sheet renders the ACCOUNT destinations', /ACCOUNT\.map/.test(accountSheet));
+const accountLabelKeys = [...accountConst.matchAll(/labelKey: '([^']+)'/g)].map((m) => m[1]);
+check('account sheet labels are exactly Activity Guide + Profile',
+  JSON.stringify(accountLabelKeys) === JSON.stringify(['shell.guide', 'shell.profile']),
+  JSON.stringify(accountLabelKeys));
+check('account sheet renders those labels', /t\(item\.labelKey\)/.test(accountSheet));
+check('account sheet has NO Notifications entry',
+  !/shell\.notifications/.test(accountSheet) && !/v2\/notifications/.test(accountSheet));
+check('account sheet has NO Operator entry', !/operator/i.test(accountSheet));
+
+// ─── J. Notifications reachable only through the header bell ──────────────
+console.log('J. notification bell ownership');
+check('notification trigger remains in the header', /<V2NotificationTrigger/.test(shell));
+check('bell navigates to /v2/notifications',
+  /<V2NotificationTrigger[^>]*onOpen=\{\(\) => navigate\('\/v2\/notifications'\)\}/s.test(shell)
+  || /onOpen=\{\(\) => navigate\('\/v2\/notifications'\)\}/.test(shell));
+check('bell is not part of the account sheet', !/V2NotificationTrigger/.test(accountSheet));
+
+// ─── K. Desktop secondary navigation row removed ─────────────────────────
+console.log('K. no desktop secondary navigation row');
+check('no SECONDARY constant remains', !/const SECONDARY =/.test(shell));
+check('no aria-label="Secondary" region remains', !/aria-label="Secondary"/.test(shell));
+check('no secondary row wrapper remains', !shell.includes('border-t border-slate-100 md:block'));
+check('header keeps exactly one top row',
+  (shell.match(/mx-auto flex h-14 w-full max-w-6xl/g) ?? []).length === 1);
+
+// ─── L. Operator stays outside member navigation ─────────────────────────
+console.log('L. Operator boundary');
+const jsxStart = shell.indexOf('return (');
+const shellJsx = jsxStart >= 0 ? shell.slice(jsxStart) : shell;
+check('member shell JSX has no /v2/operator link', !/\/v2\/operator/.test(shellJsx));
+check('member shell has no Operator label key', !/shell\.operator/.test(shell));
+check('member shell does not compose the Operator shell', !/V2OperatorShell/.test(shell));
+check('operator route tree still exists',
+  /<Route path="operator" element=\{<V2OperatorShell \/>\}>/.test(routes));
+const operatorStart = routes.indexOf('<Route path="operator"');
+const operatorBlock = operatorStart >= 0 ? routes.slice(operatorStart) : '';
+const memberShellOpen = routes.indexOf('<V2MemberShell />');
+const memberShellClose = routes.indexOf('</Route>', memberShellOpen);
+check('/v2/operator redirects to overview (index route)',
+  /<Route index element=\{<Navigate to="overview" replace \/>\}/.test(operatorBlock));
+check('operator overview route is present', /<Route path="overview"/.test(operatorBlock));
+check('operator route tree sits outside the member shell block',
+  memberShellOpen >= 0 && memberShellClose >= 0 && operatorStart > memberShellClose,
+  'operator must remain a sibling route of the member shell, never a child');
 
 if (failures > 0) {
   console.error(`\nMobile primary navigation guard: ${failures} failure(s).`);
