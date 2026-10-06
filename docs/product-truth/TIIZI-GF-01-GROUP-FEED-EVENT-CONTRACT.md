@@ -1,9 +1,11 @@
 # TIIZI — GF-01 GROUP FEED EVENT CONTRACT
 
 **Document type:** V2 Product Truth / event contract
-**Status:** **APPROVED / EFFECTIVE — FOUNDER DISPOSITION (2026-10-05)**
-**Version:** 1.0
+**Status:** **APPROVED / EFFECTIVE — FOUNDER DISPOSITION (2026-10-05), AS AMENDED BY FOUNDER DISPOSITION (2026-10-06)**
+**Version:** 1.1
 **Effective date:** 2026-10-05
+**Amendment date (v1.1):** 2026-10-06
+**Amendment history:** v1.0 APPROVED / EFFECTIVE — FOUNDER DISPOSITION (2026-10-05). v1.1 narrows Group Feed automatic publication from five event families to exactly four: `challenge_finalized` (“Challenge results are ready”) is NO LONGER GROUP-FEED-PUBLISHABLE. Challenge finalization itself remains authoritative Challenge/domain truth; only its authority to publish as a separate Group Feed event is removed.
 **Assessment basis:** `TIIZI-GROUP-FEED-CAPABILITY-ASSESSMENT-001.md` (Founder-directed accepted basis; assessment source commit `d9ac55774f6607d634ef1fb75a18214cc40e0469`, PR #74)
 **Repository baseline reviewed:** `origin/main` = `d71994ffb92c98da986a1205b47febbeff4df484`; Master Programme v2.31.
 
@@ -80,8 +82,8 @@ The classification applies to the event class itself. “Explicit Share only” 
 | Streak continuation/day completion | **NOT PUBLISHABLE** | Routine personal continuity is not an automatic community event and is not an individual milestone. No per-day post, routine, count, or reset state. |
 | Personal Streak milestone/result | **EXPLICIT SHARE ONLY** | T1 §P.5/R.1 requires a Member's affirmative Share. No Share capability ships in GF-01 version one. |
 | Race progress/rank movement | **NOT PUBLISHABLE** | No live progress, rank movement, comparative activity or position-change cards. T1 §§P.4–P.6 prohibit routine personal Activity and system exhaust; no Race movement/rank presentation is authorized here. |
-| Challenge ended | **AUTO-PUBLISH ELIGIBLE** | One event on canonical lifecycle `active → ended` (`challenges.status` transition). It states only that the Challenge window ended; it does not imply goal completion or participant success. |
-| Challenge finalized / Challenge-level final results ready | **AUTO-PUBLISH ELIGIBLE** | One event when canonical finalization atomically changes `finalized_at: null → non-null` and the immutable `challenge_finalizations` record is committed. If finalization fails or remains ended/unfinalized, no card. Card means results were finalized, not that every participant succeeded. |
+| Challenge ended | **AUTO-PUBLISH ELIGIBLE** | One event on canonical lifecycle `active → ended` (`challenges.status` transition). It states only that the Challenge window ended; it does not imply goal completion or participant success. The ended card navigates to canonical Challenge Detail, where finalized results may later be visible. |
+| Challenge finalized / Challenge-level final results ready | **NOT PUBLISHABLE IN GROUP FEED (v1.1 amendment)** | Finalization (`finalized_at: null → non-null` plus the committed immutable `challenge_finalizations` record) remains authoritative Challenge/domain truth, but it no longer publishes a Group Feed event. Rationale: the Group Feed is Group-level Challenge/community lifecycle activity; a separate final-results publication duplicates Challenge-specific activity and would let Group Feed density drift into a Challenge Feed. Finalized results remain available through canonical Challenge Detail and may later be incorporated into a separately authorized Challenge Feed capability — which is deferred/future authority only and is not authorized here. |
 | Individual result/rank / Competitive finish | **EXPLICIT SHARE ONLY** | T1 §R.1 permits a Member to choose to share a Competitive finish; the Feed never auto-publishes an individual result. A future Share may describe only the actor's own generic finish, not numeric rank/score or another member's result. No Share capability ships in GF-01 version one. |
 | Valid Challenge extension | **DEFERRED PENDING FUTURE AUTHORITY** | T1 §P.3 permits this event family, but current V2 has no approved extension mutation/lifecycle authority. A later Product Truth and source transition must define a valid extension before publication. |
 | Accountable Steward change | **DEFERRED PENDING FUTURE AUTHORITY** | EOG §38 requires materially intelligible stewardship history, but current V2 has no authorized transfer/successor transition. Do not infer from role fields, bootstrap or reconciliation. A later stewardship authority must define the event. |
@@ -92,13 +94,13 @@ The classification applies to the event class itself. “Explicit Share only” 
 
 ### Exact version-one automatic event families
 
-Only these five canonical source transitions may produce an automatic GF-01 v1 Feed event: Challenge established, Challenge started, Challenge ended, Together canonical Goal achieved, and Challenge finalized. Challenge ended and Challenge finalized remain distinct source/domain transitions. Where finalization follows the ended transition within the normal V2 finalization lifecycle, the Feed projection MAY suppress, supersede or consolidate the earlier ended presentation under its approved projection contract, to avoid duplicate community cards. This is presentation-only: it MUST retain source-transition traceability and MUST NOT merge or alter lifecycle truth. If finalization does not follow, the ended presentation remains. The event producer uses the authoritative source transaction/transition identifier and a server-owned idempotency key. One source transition produces at most one Feed item per Group. No member join/leave, activity log, Streak day, Race progress/rank, arbitrary threshold, Cause, Stewardship or announcement event is inferred.
+Only these four canonical source transitions may produce an automatic GF-01 v1 Feed event: Challenge established, Challenge started, Challenge ended, and Together canonical Goal achieved. Challenge finalization remains an authoritative Challenge/domain transition but is NOT a Group Feed event and produces no Group Feed card. The ended presentation always remains visible according to normal retention/visibility/suppression rules; the v1.0 ended/finalized presentation-consolidation authority is removed because no finalized Group Feed event remains. The event producer uses the authoritative source transaction/transition identifier and a server-owned idempotency key. One source transition produces at most one Feed item per Group. No member join/leave, activity log, Streak day, Race progress/rank, arbitrary threshold, Cause, Stewardship or announcement event is inferred.
 
 T1 §§P.3 and P.7 allow future extension and aggregation as described above, but neither permits turning all underlying changes into cards. A later threshold taxonomy or event class requires a Product Truth amendment before engineering.
 
 ## 5. Per-event disclosure contract
 
-“Current visibility” means current Group membership plus current authorized visibility to the source Challenge/finalization at read time. T1 §P.8 applies per viewer. The server resolves both Group and Challenge identity from canonical IDs; the client cannot supply actor, title, event text, Group scope or source visibility.
+“Current visibility” means current Group membership plus current authorized visibility to the source Challenge at read time. T1 §P.8 applies per viewer. The server resolves both Group and Challenge identity from canonical IDs; the client cannot supply actor, title, event text, Group scope or source visibility.
 
 | Event | Actor identity | Group / Challenge identity | Fixed title and allowed subtitle | Numbers | Time | Deep link | Personal/result information and visibility |
 |---|---|---|---|---|---|---|---|
@@ -106,9 +108,10 @@ T1 §§P.3 and P.7 allow future extension and aggregation as described above, bu
 | Challenge started | None | Same | **“The Challenge has started”**; no free-form subtitle | Prohibited | Same | Canonical V2 Challenge detail | No participant status/progress/activity. Recheck current Challenge visibility. |
 | Together Goal achieved | None; no contributor attribution | Same | **“The Group reached its Challenge goal”**; no amount, who contributed, or generated congratulatory claim | All values, units, member count and contribution shares prohibited in card | Use canonical goal-crossing server transition time; display nearest minute/date only | Canonical V2 Challenge detail (authoritative progress/result section) | Group-level status only. No individual participation, contribution totals, contributors or rank. Recheck Challenge and derived-state visibility. |
 | Challenge ended | None | Same | **“The Challenge has ended”**; does not say “completed”, “won”, or “goal achieved” | Prohibited | Use server `active → ended` transition time; display nearest minute/date only | Canonical V2 Challenge detail | Does not expose who participated or succeeded. Recheck current Challenge visibility. |
-| Challenge finalized | None | Same | **“Challenge results are ready”**; no winner/podium/award language | Prohibited: no aggregate or individual totals/rank | Use server finalization transition time; display nearest minute/date only | Canonical V2 Challenge detail; authorized result view resolves its own viewer permissions | No individual result, rank, score, finish order, Streak, Recognition or claim about outcomes. Hide if viewer cannot read the source finalization/result projection. |
 
 For all automatic events: no raw Activity, evidence, submission payload, note, exact personal routine, location, health-like detail, email, provider ID, avatar, or profile field is persisted or displayed. Event titles are enumerated templates, not free text. The Group name and Challenge title are resolved from the current source and rendered only if still visible; do not freeze a possibly stale title into a permanent card. A title is never a substitute for the authoritative Challenge or Group detail screen.
+
+(Challenge finalized has no Group Feed disclosure row: v1.1 removed its Group Feed publication authority. Challenge finalization remains upstream Challenge/domain truth and finalized results remain available through canonical Challenge Detail.)
 
 ### Future explicit-Share disclosure ceiling
 
@@ -126,7 +129,7 @@ Persist only what a bounded, rebuildable projection needs: immutable Feed event 
 
 ### 6.3 Correction and restriction
 
-- Re-evaluate Group status/membership and Challenge/finalization visibility on every Feed page/read. If a source becomes inaccessible, corrected so the event is no longer true, deleted/deactivated, or invalidated, suppress the card immediately; do not reveal a “hidden event” placeholder.
+- Re-evaluate Group status/membership and Challenge visibility on every Feed page/read. If a source becomes inaccessible, corrected so the event is no longer true, deleted/deactivated, or invalidated, suppress the card immediately; do not reveal a “hidden event” placeholder.
 - If a correction leaves the event eligible but changes its factual meaning, the projection may be regenerated from corrected upstream truth only through an attributable correction transition. Do not silently rewrite the old card as though corrected truth had always existed. The upstream source remains the truth and retains its own correction history.
 - The Feed never repairs or changes a source fact. Invalid/duplicate projection rows are suppressed; a correct row can be rebuilt from an eligible source transition without making Feed the source.
 - Automatic event cards have no Member withdrawal control. A future explicitly shared card must be withdrawable by its sharing Member under its separate Share contract; withdrawal hides it from Feed/Today but never retracts or alters upstream Activity/Derived Truth.
@@ -186,7 +189,7 @@ GF-01 v1 does not authorize or include: Kudos/reactions; Platform Recognition is
 
 ## 13. Downstream engineering implications (not authorization)
 
-If separately authorized, GF-02 may specify a PostgreSQL transactional outbox/publication record written atomically with the five eligible source transitions and a rebuildable Group-scoped projection. Each source event requires a unique source-transition idempotency key. The projection is not an event authority and should resolve current source names/visibility at read time. Every read reauthorizes current membership and source Challenge access. The Group Feed API uses `/api/*` and the canonical API prefix/client composition; client-created events are impossible. Group-keyed keyset pagination follows §7. Today may later consume only the Group Feed read seam. The projector must not block or change source domain transactions if presentation publication is delayed; failures/retries must be observable and idempotent.
+If separately authorized, GF-02 may specify a PostgreSQL transactional outbox/publication record written atomically with the four eligible source transitions and a rebuildable Group-scoped projection. Each source event requires a unique source-transition idempotency key. The projection is not an event authority and should resolve current source names/visibility at read time. Every read reauthorizes current membership and source Challenge access. The Group Feed API uses `/api/*` and the canonical API prefix/client composition; client-created events are impossible. Group-keyed keyset pagination follows §7. Today may later consume only the Group Feed read seam. The projector must not block or change source domain transactions if presentation publication is delayed; failures/retries must be observable and idempotent.
 
 GF-02 must not begin merely because this contract is effective. A separate Founder authorization is required before engineering starts. Any inability to meet deletion/takedown obligations or to recheck source visibility blocks publication until separately resolved.
 
@@ -197,7 +200,7 @@ Founder disposition: **APPROVED / EFFECTIVE**, subject to the bounded correction
 | Decision | Effective disposition |
 |---|---|
 | FD-GF01-01 — Single Feed/invariants | Record §§1–2 as effective: one Group stream, no Home/Challenge duplicate, projection-only authority and no popularity mechanics. |
-| FD-GF01-02 — Automatic event allow-list | Record only the five automatic transitions in §4: Challenge establishment, Challenge start, Challenge end, Together Goal achieved, and Challenge finalization. All other row classifications are effective as marked. |
+| FD-GF01-02 — Automatic event allow-list | Record only the four automatic transitions in §4: Challenge establishment, Challenge start, Challenge end, and Together Goal achieved. Challenge finalization is NOT PUBLISHABLE IN GROUP FEED (v1.1 amendment, 2026-10-06): it remains authoritative Challenge/domain truth with results available through canonical Challenge Detail, and is eligible only for a separately authorized future Challenge Feed. All other row classifications are effective as marked. |
 | FD-GF01-03 — Minimal disclosure | Record §5: no actor identity, no numbers or individual result/rank in v1 auto cards; template-only titles; current Group/Challenge source-visibility rechecks. |
 | FD-GF01-04 — Audience/history | Record current active/joined members only; pending/rejected/nonmember/former denied; immediate revoke on leave/removal; eligible old cards remain for current readers for the retention window without actor identity. |
 | FD-GF01-05 — Retention/correction | Record GF v1 operating retention baseline of 90 days for the Feed projection, expiry rather than member archive, minimal source-linked projection, immediate suppression on source invalidity/visibility loss, traceable correction and EOG-constrained attribution; this is changeable by attributable future policy without rewriting upstream truth. |
