@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 import { apiPath } from './apiPrefix.js';
+import { GROUP_FEED_EVENT_TYPES, type GroupFeedEventType } from './groupFeedPublication.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
 
 export const GROUP_FEED_PAGE_DEFAULT = 20;
@@ -14,23 +15,31 @@ const ORDERING = 'source_transition_at_desc_feed_event_id_desc';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BASE64URL_RE = /^[A-Za-z0-9_-]+$/;
 
-// GF-01 v1.1: exactly four member-visible Group Feed families. Challenge
-// finalization remains domain truth but is not a Group Feed event.
-const TITLES = {
+// The GF-03 member read contract consumes the GF-02 publication contract
+// directly (GF-01 v1.1) so the member-visible families cannot drift from the
+// publication authority. `satisfies` makes a missing title, an extra title, or
+// a newly added canonical family a compile-time failure here rather than a
+// silent runtime divergence between the two layers.
+//
+// Product Truth: `docs/product-truth/TIIZI-GF-01-GROUP-FEED-EVENT-CONTRACT.md`
+// (GF-01 v1.1); invariant enforced by
+// `api/test/groupFeedContractInvariant.test.ts`.
+export const GROUP_FEED_PRESENTATION_TITLES = {
   challenge_established: 'A new Challenge is available',
   challenge_started: 'The Challenge has started',
   together_goal_achieved: 'The Group reached its Challenge goal',
   challenge_ended: 'The Challenge has ended',
-} as const;
+} as const satisfies Record<GroupFeedEventType, string>;
 
-export type GroupFeedEventType = keyof typeof TITLES;
+// Re-export of the single shared definition (no second declaration exists).
+export type { GroupFeedEventType };
 
 export interface GroupFeedEvent {
   feedEventId: string;
   eventType: GroupFeedEventType;
   challengeId: string;
   challengeTitle: string;
-  presentationTitle: (typeof TITLES)[GroupFeedEventType];
+  presentationTitle: (typeof GROUP_FEED_PRESENTATION_TITLES)[GroupFeedEventType];
   occurredAt: string;
   navigationTarget: { type: 'challenge'; challengeId: string };
 }
@@ -180,6 +189,8 @@ export async function getGroupFeedPage(
   // GF-01 v1.1: no finalized Group Feed event exists, so no
   // ended/finalized presentation consolidation applies. Ended events remain
   // visible under the normal retention/visibility/suppression rules below.
+  // The read allow-list IS the shared publication contract (parameterized, no
+  // interpolated SQL), so reading cannot drift from the publication authority.
   const result = await db.query<FeedRow>(
     `SELECT p.feed_event_id, p.event_type, p.source_id AS challenge_id,
             c.title AS challenge_title, p.source_transition_at
@@ -188,16 +199,20 @@ export async function getGroupFeedPage(
      JOIN challenges c ON c.challenge_id = p.source_id AND c.group_id = p.group_id
      WHERE p.group_id = $1
        AND p.source_type = 'challenge'
-       AND p.event_type IN (
-         'challenge_established', 'challenge_started',
-         'together_goal_achieved', 'challenge_ended'
-       )
+       AND p.event_type = ANY($5::text[])
        AND p.suppressed_at IS NULL
        AND p.source_transition_at >= $2
        AND ($3::timestamptz IS NULL OR (p.source_transition_at, p.feed_event_id) < ($3::timestamptz, $4::uuid))
      ORDER BY p.source_transition_at DESC, p.feed_event_id DESC
-     LIMIT $5`,
-    [groupId, retentionCutoff.toISOString(), cursor?.lastScannedAt ?? null, cursor?.lastScannedId ?? null, limit + 1],
+     LIMIT $6`,
+    [
+      groupId,
+      retentionCutoff.toISOString(),
+      cursor?.lastScannedAt ?? null,
+      cursor?.lastScannedId ?? null,
+      [...GROUP_FEED_EVENT_TYPES],
+      limit + 1,
+    ],
   );
 
   const hasMore = result.rows.length > limit;
@@ -207,7 +222,7 @@ export async function getGroupFeedPage(
     eventType: row.event_type,
     challengeId: String(row.challenge_id),
     challengeTitle: String(row.challenge_title),
-    presentationTitle: TITLES[row.event_type],
+    presentationTitle: GROUP_FEED_PRESENTATION_TITLES[row.event_type],
     occurredAt: new Date(row.source_transition_at).toISOString(),
     navigationTarget: { type: 'challenge', challengeId: String(row.challenge_id) },
   }));
@@ -264,7 +279,7 @@ export function registerGroupFeedRoutes(app: FastifyInstance, db: Db, deps: Grou
               required: ['feedEventId', 'eventType', 'challengeId', 'challengeTitle', 'presentationTitle', 'occurredAt', 'navigationTarget'],
               properties: {
                 feedEventId: { type: 'string', format: 'uuid' },
-                eventType: { type: 'string', enum: Object.keys(TITLES) },
+                eventType: { type: 'string', enum: Object.keys(GROUP_FEED_PRESENTATION_TITLES) },
                 challengeId: { type: 'string', format: 'uuid' },
                 challengeTitle: { type: 'string' },
                 presentationTitle: { type: 'string' },
