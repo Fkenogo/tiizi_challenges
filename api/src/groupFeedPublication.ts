@@ -1,9 +1,23 @@
 import type { Db } from './db.js';
 
 export const GROUP_FEED_CONTRACT_VERSION = 1 as const;
-// GF-01 v1.1: exactly four automatic Group Feed families. Challenge
-// finalization remains authoritative Challenge/domain truth but no longer
-// publishes a Group Feed event.
+/**
+ * The ONE shared canonical automatic Group Feed family contract.
+ *
+ * Traceability (not authority inversion): this is the code-level representation
+ * of already-approved Product Truth — GF-01 v1.1 of
+ * `docs/product-truth/TIIZI-GF-01-GROUP-FEED-EVENT-CONTRACT.md`: exactly four
+ * automatic families, and Challenge finalization remains authoritative
+ * Challenge/domain truth but is NOT Group Feed publishable.
+ *
+ * Both layers consume this single definition and neither may re-declare it:
+ * GF-02 publication authority (`recordChallengePublication` rejects any family
+ * outside this tuple) and the GF-03 member read contract
+ * (`groupFeedReads.ts` derives its allow-list, its presentation titles and its
+ * route enum from it). The exact-family invariant is enforced by
+ * `api/test/groupFeedContractInvariant.test.ts`, which runs in the normal `api`
+ * CI job via `npm test`.
+ */
 export const GROUP_FEED_EVENT_TYPES = [
   'challenge_established',
   'challenge_started',

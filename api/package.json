@@ -10,6 +10,7 @@
     "start": "node dist/src/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "test:group-feed-contract": "vitest run test/groupFeedContractInvariant.test.ts",
     "migrate": "tsx src/migrateCli.ts",
     "migrate:prod": "node dist/src/migrateCli.js",
     "challenge:create-v2": "tsx src/challengeCreateCli.ts",
