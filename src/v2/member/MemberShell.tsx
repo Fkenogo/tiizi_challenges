@@ -5,20 +5,16 @@ import { V2AccountTrigger, V2NavItem, V2NotificationTrigger, V2Sheet } from '../
 import { useV2Locale } from '../i18n/V2Locale';
 
 /**
- * TIIZI — V2 MEMBER SHELL FOUNDER CORRECTION 001.
+ * TIIZI — V2 MEMBER SHELL FOUNDER CORRECTION 002.
  *
- * Adopted reference member shell: mobile-first bottom bar with the three
- * primary V2 destinations, and a clean top area.
+ * Member app is mobile-only at every viewport width: a bounded, centered
+ * mobile canvas with a persistent bottom bar and a clean top area.
  *
- * Corrected navigation ownership (no duplication across surfaces):
- * - PRIMARY (Today / Challenges / Groups) — mobile bottom bar + desktop tabs;
+ * Navigation ownership:
+ * - PRIMARY (Today / Challenges / Groups) — bottom bar at every width;
  * - ACCOUNT (Activity Guide / Profile) — account sheet only;
  * - Notifications — the header bell only;
- * - Operator — NOT member navigation at all; reachable only through the
- *   direct `/v2/operator/overview` route tree, which lives outside this shell.
- *
- * New shell, not a restyled V1 shell: no V1 bottom navigation, no V1
- * Home/Group/onboarding composition.
+ * - Operator — not member navigation; its route tree stays outside this shell.
  */
 
 const PRIMARY = [
@@ -45,97 +41,81 @@ export function V2MemberShell() {
   const [accountOpen, setAccountOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* Top area: brand + primary tabs (desktop) + notification bell + account
-          trigger only. There is deliberately no second navigation row. */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 sm:px-6">
-          <button
-            type="button"
-            onClick={() => navigate('/v2/today')}
-            className="flex items-center gap-2 text-left"
-            aria-label="Tiizi Today"
-          >
-            <V2BrandMark size={30} />
-            <span className="flex flex-col leading-none">
-              <span className="text-lg font-black tracking-tight">tiizi</span>
-              <span className="hidden text-[10px] font-bold uppercase tracking-widest text-primary sm:inline">
-                Together We Move
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <div className="mx-auto min-h-screen w-full max-w-md bg-slate-50 shadow-xl">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="flex h-14 w-full items-center gap-3 px-4">
+            <button
+              type="button"
+              onClick={() => navigate('/v2/today')}
+              className="flex items-center gap-2 text-left"
+              aria-label="Tiizi Today"
+            >
+              <V2BrandMark size={30} />
+              <span className="flex flex-col leading-none">
+                <span className="text-lg font-black tracking-tight">tiizi</span>
+                <span className="hidden text-[10px] font-bold uppercase tracking-widest text-primary sm:inline">
+                  Together We Move
+                </span>
               </span>
-            </span>
-          </button>
+            </button>
 
-          {/* Desktop primary tabs */}
-          <nav className="ml-4 hidden items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 md:flex" aria-label="Primary">
+            <div className="ml-auto flex items-center gap-2">
+              <V2NotificationTrigger unread={false} onOpen={() => navigate('/v2/notifications')} />
+              <V2AccountTrigger name="Member" onOpen={() => setAccountOpen(true)} />
+            </div>
+          </div>
+        </header>
+
+        <main className="w-full pb-24">
+          <Outlet />
+        </main>
+
+        <nav
+          className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-slate-200 bg-white px-2 pb-[env(safe-area-inset-bottom)] pt-1.5"
+          aria-label="Member"
+        >
+          <div className="mx-auto grid w-full grid-cols-3">
             {PRIMARY.map((item) => (
-              <NavLink
-                key={item.key}
-                to={item.to}
-                className={({ isActive }) =>
-                  `rounded-lg px-4 py-1.5 text-xs font-bold transition-colors ${
-                    isActive ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                  }`
-                }
-              >
-                {t(item.labelKey)}
+              <NavLink key={item.key} to={item.to} className={({ isActive }) => navClass(isActive)}>
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={`h-1 w-8 rounded-full ${isActive ? 'bg-primary' : 'bg-transparent'}`}
+                      aria-hidden
+                    />
+                    {t(item.labelKey)}
+                  </>
+                )}
               </NavLink>
             ))}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-2">
-            <V2NotificationTrigger unread={false} onOpen={() => navigate('/v2/notifications')} />
-            <V2AccountTrigger name="Member" onOpen={() => setAccountOpen(true)} />
           </div>
-        </div>
-      </header>
+        </nav>
 
-      {/* Routed member surface */}
-      <main className="mx-auto w-full max-w-6xl pb-24 md:pb-10">
-        <Outlet />
-      </main>
-
-      {/* Mobile primary navigation: exactly Today / Challenges / Groups.
-          Activity Guide is contextual (Challenges), not a primary destination;
-          Profile / Notifications stay in the header (account sheet + bell). */}
-      <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white px-2 pb-[env(safe-area-inset-bottom)] pt-1.5 md:hidden"
-        aria-label="Member"
-      >
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-3">
-          {PRIMARY.map((item) => (
-            <NavLink key={item.key} to={item.to} className={({ isActive }) => navClass(isActive)}>
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={`h-1 w-8 rounded-full ${isActive ? 'bg-primary' : 'bg-transparent'}`}
-                    aria-hidden
-                  />
-                  {t(item.labelKey)}
-                </>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
-
-      <V2Sheet open={accountOpen} onClose={() => setAccountOpen(false)} title="Your account">
-        <div className="space-y-2">
-          {ACCOUNT.map((item) => (
-            <V2NavItem
-              key={item.key}
-              label={t(item.labelKey)}
-              onClick={() => {
-                setAccountOpen(false);
-                navigate(item.to);
-              }}
-            />
-          ))}
-          <p className="px-1 pt-2 text-xs leading-5 text-slate-500">
-            Account settings, language, and sign-out arrive with the next slices. Nothing here changes
-            your V1 profile.
-          </p>
-        </div>
-      </V2Sheet>
+        <V2Sheet
+          open={accountOpen}
+          onClose={() => setAccountOpen(false)}
+          title="Your account"
+          variant="member"
+        >
+          <div className="space-y-2">
+            {ACCOUNT.map((item) => (
+              <V2NavItem
+                key={item.key}
+                label={t(item.labelKey)}
+                onClick={() => {
+                  setAccountOpen(false);
+                  navigate(item.to);
+                }}
+              />
+            ))}
+            <p className="px-1 pt-2 text-xs leading-5 text-slate-500">
+              Account settings, language, and sign-out arrive with the next slices. Nothing here changes
+              your V1 profile.
+            </p>
+          </div>
+        </V2Sheet>
+      </div>
     </div>
   );
 }
