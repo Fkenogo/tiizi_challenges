@@ -542,7 +542,7 @@ export function V2Sheet({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className={`absolute inset-x-0 bottom-0 mx-auto max-h-[92dvh] w-full ${variant === 'default' ? 'max-w-3xl' : 'max-w-md'} ${focused ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-contain'} rounded-t-3xl bg-white p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:bottom-8 sm:rounded-3xl sm:p-5 sm:pb-8`}
+        className={`absolute inset-x-0 bottom-0 mx-auto max-h-[92dvh] w-full ${variant === 'default' ? 'max-w-3xl' : 'max-w-md'} ${focused ? 'flex flex-col overflow-hidden' : 'overflow-y-auto overscroll-contain'} rounded-t-3xl bg-white p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl ${variant === 'member' ? 'sm:bottom-0 sm:rounded-b-none' : 'sm:bottom-8 sm:rounded-3xl'} sm:p-5 sm:pb-8`}
       >
         <div className={`mb-3 flex items-center justify-between ${focused ? 'shrink-0' : ''}`}>
           <h2 className="text-base font-black text-slate-900">{title}</h2>

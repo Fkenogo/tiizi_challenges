@@ -19,7 +19,7 @@ const checks = [
   ['handoff supplies canonical UUID and immutable Activity Code', ui.includes('activityId: item.id, activityCode: item.activityCode') && wizard.includes('candidate.activityCode === preselectedIdentity')],
   ['Composer options still flow through the existing PF-04/PF-03 wizard', wizard.includes('fetchActivityOptions(item.id)') && wizard.includes('previewChallengeDefinition(toComposerDraft(state))')],
   ['Library and detail are V2 member routes', routes.includes('path="guide" element={<V2ActivityLibraryScreen />') && routes.includes('path="guide/:activityId"')],
-  ['Activity Guide remains in secondary mobile navigation', nav.includes("{ to: '/v2/guide', key: 'guide'") && nav.includes('grid-cols-3')],
+  ['Activity Guide remains reachable from the bounded member account sheet', nav.includes("{ to: '/v2/guide', key: 'guide'") && nav.includes("{ to: '/v2/profile', key: 'profile'") && nav.includes('variant="member"')],
   ['Library UI has no direct Firestore or V1 catalogue dependency', !/firestore|features\/(Exercises|Wellness)/i.test(ui)],
   ['loading, error, and empty states are present', ui.includes('V2LoadingState') && ui.includes('V2ErrorState') && ui.includes('V2EmptyState')],
   ['catalogue uses a compact single-column result list', ui.includes('aria-label="Activity results"') && !/grid-cols-(?:2|3)/.test(ui)],

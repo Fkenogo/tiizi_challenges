@@ -6,11 +6,10 @@
  * scripts this file proves the responsive-shell contract statically, and the
  * rendered behaviour is proven separately in a real browser (mobile widths).
  *
- * Proves:
- * A. desktop primary navigation is exactly Today / Challenges / Groups;
- * B. mobile primary navigation is EXACTLY Today / Challenges / Groups —
- *    Activity Guide and Profile are NOT primary mobile destinations;
- * C. the active destination is represented in both navigations;
+ * Proves the Founder-approved mobile-only member experience at every width:
+ * A. PRIMARY is exactly Today / Challenges / Groups;
+ * B. PRIMARY renders only in the fixed bottom member nav;
+ * C. no responsive desktop/top primary nav exists and bottom spacing persists;
  * D. Activity Guide remains reachable as a contextual secondary entry
  *    (Challenges experience + creation activity step) and its route survives;
  * E. mobile navigation does not depend on any public/Cloudflare URL;
@@ -19,6 +18,14 @@
  *    Group Settings, with no missing, duplicate, or unauthorized destinations;
  * H. root cause is closed: the Firebase emulator banner (fixed bottom,
  *    z-index 10000) can no longer be injected to occlude the mobile nav.
+ *
+ * TIIZI — V2 MEMBER SHELL FOUNDER CORRECTION 001 adds:
+ * I. the account sheet holds EXACTLY Activity Guide / Profile, with no
+ *    Notifications entry and no Operator entry;
+ * J. Notifications is reachable only through the header bell -> /v2/notifications;
+ * K. the secondary navigation row is gone (no duplicate top area);
+ * L. the member shell contains no Operator link/string, while the separate
+ *    /v2/operator tree (index -> overview) still exists outside the shell.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -38,6 +45,7 @@ function check(name: string, condition: boolean, detail = ''): void {
 }
 
 const shell = read('src/v2/member/MemberShell.tsx');
+const primitives = read('src/v2/components/V2Primitives.tsx');
 const routes = read('src/v2/routes.tsx');
 const emulators = read('src/lib/firebaseEmulators.ts');
 const listScreen = read('src/v2/challenges/V2ChallengeListScreen.tsx');
@@ -49,33 +57,29 @@ const memberNavEnd = shell.indexOf('</nav>', memberNavStart);
 const memberNav = memberNavStart >= 0 && memberNavEnd >= 0
   ? shell.slice(shell.lastIndexOf('<nav', memberNavStart), memberNavEnd)
   : '';
-/** Isolate the desktop primary <nav> block. */
-const primaryNavStart = shell.indexOf('aria-label="Primary"');
-const primaryNavEnd = shell.indexOf('</nav>', primaryNavStart);
-const primaryNav = primaryNavStart >= 0 && primaryNavEnd >= 0
-  ? shell.slice(shell.lastIndexOf('<nav', primaryNavStart), primaryNavEnd)
-  : '';
-
 /** The PRIMARY destination set (Today / Challenges / Groups). */
 const primaryConst = (shell.match(/const PRIMARY = \[([\s\S]*?)\] as const;/) ?? [])[1] ?? '';
 const primaryTos = [...primaryConst.matchAll(/to: '([^']+)'/g)].map((m) => m[1]);
 
-// ─── A. Desktop primary navigation = Today / Challenges / Groups ──────────
-console.log('A. desktop primary navigation');
-check('desktop primary nav element exists', primaryNav !== '');
-check('desktop primary nav is md:flex', /hidden[^"]*md:flex/.test(primaryNav));
-check('desktop primary nav maps PRIMARY', /PRIMARY\.map/.test(primaryNav));
+// ─── A. Exact PRIMARY destinations ───────────────────────────────────────
+console.log('A. primary destinations');
 check('PRIMARY is exactly today/challenges/groups',
   JSON.stringify(primaryTos) === JSON.stringify(['/v2/today', '/v2/challenges', '/v2/groups']),
   JSON.stringify(primaryTos));
 
-// ─── B. Mobile primary navigation = exactly Today / Challenges / Groups ───
-console.log('B. mobile primary navigation');
+// ─── B. One bottom primary nav at every width ─────────────────────────────
+console.log('B. mobile-only primary navigation at every width');
 check('mobile member nav element exists', memberNav !== '');
-check('mobile member nav is md:hidden', /md:hidden/.test(memberNav));
+check('PRIMARY is rendered only once in the bottom nav', (shell.match(/PRIMARY\.map/g) ?? []).length === 1);
 check('mobile member nav is fixed to the bottom', /fixed[^"]*bottom-0/.test(memberNav));
+check('bottom nav is centered and bounded to the member canvas', /left-1\/2/.test(memberNav) && /max-w-md/.test(memberNav));
+check('bottom nav has no md:hidden breakpoint', !/md:hidden/.test(memberNav));
 check('mobile member nav maps PRIMARY', /PRIMARY\.map/.test(memberNav));
 check('mobile member nav lays out exactly three columns', /grid-cols-3/.test(memberNav));
+check('no top/desktop PRIMARY navigation exists', !/aria-label="Primary"|md:flex/.test(shell));
+check('only one navigation element exists in the member shell', (shell.match(/<nav\b/g) ?? []).length === 1);
+check('member canvas uses the existing max-w-md convention', /mx-auto[^\"]*max-w-md/.test(shell));
+check('main content always reserves bottom-nav space', /<main className="w-full pb-24"/.test(shell) && !/md:pb-/.test(shell));
 check('mobile member nav has NO Activity Guide entry', !/\/v2\/guide/.test(memberNav) && !/shell\.guide/.test(memberNav));
 check('mobile member nav has NO Profile / "You" entry', !/\/v2\/profile/.test(memberNav) && !/>\s*You\s*</.test(memberNav));
 check('mobile member nav does NOT hardcode a fourth/fifth destination', (memberNav.match(/<NavLink/g) ?? []).length === 1,
@@ -83,8 +87,7 @@ check('mobile member nav does NOT hardcode a fourth/fifth destination', (memberN
 
 // ─── C. Active state represented ──────────────────────────────────────────
 console.log('C. active state');
-check('NavLink isActive used by both navigations', (shell.match(/isActive/g) ?? []).length >= 3);
-check('mobile active indicator bar uses isActive', /isActive \? 'bg-primary'/.test(memberNav));
+check('bottom active indicator uses isActive', /isActive \? 'bg-primary'/.test(memberNav));
 
 // ─── D. Activity Guide retained as contextual secondary + route survives ──
 console.log('D. Activity Guide (contextual secondary, not primary)');
@@ -93,9 +96,9 @@ check('Challenges screen exposes a contextual Activity Guide entry', /navigate\(
 check('Challenges entry is visually subordinate to Create Challenge',
   listScreen.indexOf('Create Challenge') < listScreen.indexOf('/v2/guide'));
 check('creation activity step links to the Activity Guide', /to="\/v2\/guide"/.test(wizard));
-check('desktop secondary row keeps Activity Guide / Profile / Notifications',
-  /const SECONDARY = \[([\s\S]*?)\] as const;/.test(shell)
-  && ['/v2/guide', '/v2/profile', '/v2/notifications'].every((to) => shell.includes(`'${to}'`)));
+check('Activity Guide + Profile stay reachable from the member shell (account sheet)',
+  /const ACCOUNT = \[([\s\S]*?)\] as const;/.test(shell)
+  && ['/v2/guide', '/v2/profile'].every((to) => shell.includes(`'${to}'`)));
 
 // ─── E. No public/Cloudflare dependency in the shell ──────────────────────
 console.log('E. no public URL dependency');
@@ -117,7 +120,7 @@ console.log('G. exact authorized member route set');
 const memberBlock = routes.split('<V2MemberShell />}>')[1]?.split('<Route path="operator"')[0] ?? '';
 const memberPaths = [...memberBlock.matchAll(/<Route path="([^"]+)" element=\{<(V2[A-Za-z]+)/g)].map((m) => `${m[1]}:${m[2]}`);
 const expectedMember = [
-  'today:V2TodayPage',
+  'today:V2TodayScreen',
   'challenges:V2ChallengeListScreen',
   'challenges/new:V2ChallengeCreationWizard',
   'challenges/:challengeId:V2CreatedChallengeScreen',
@@ -139,6 +142,68 @@ check('Group Home route wraps the screen in the contextual group scope',
 console.log('H. root cause (emulator banner) closed');
 check('connectAuthEmulator disables the SDK warning banner',
   /connectAuthEmulator\(\s*auth,\s*emulatorUrl,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(emulators));
+
+// ─── I. Account sheet = exactly Activity Guide / Profile ─────────────────
+console.log('I. account sheet contents');
+const sheetStart = shell.indexOf('<V2Sheet');
+const sheetEnd = shell.indexOf('</V2Sheet>', sheetStart);
+const accountSheet = sheetStart >= 0 && sheetEnd >= 0
+  ? shell.slice(sheetStart, sheetEnd + '</V2Sheet>'.length)
+  : '';
+const accountConst = (shell.match(/const ACCOUNT = \[([\s\S]*?)\] as const;/) ?? [])[1] ?? '';
+const accountTos = [...accountConst.matchAll(/to: '([^']+)'/g)].map((m) => m[1]);
+check('account sheet exists', accountSheet !== '');
+check('account sheet uses the bounded member variant', /variant="member"/.test(accountSheet));
+check('member sheet panel remains max-w-md and bottom anchored at desktop widths',
+  /variant === 'default' \? 'max-w-3xl' : 'max-w-md'/.test(primitives)
+  && /variant === 'member' \? 'sm:bottom-0 sm:rounded-b-none'/.test(primitives));
+check('ACCOUNT destinations are exactly Activity Guide + Profile',
+  JSON.stringify(accountTos) === JSON.stringify(['/v2/guide', '/v2/profile']), JSON.stringify(accountTos));
+check('account sheet renders the ACCOUNT destinations', /ACCOUNT\.map/.test(accountSheet));
+const accountLabelKeys = [...accountConst.matchAll(/labelKey: '([^']+)'/g)].map((m) => m[1]);
+check('account sheet labels are exactly Activity Guide + Profile',
+  JSON.stringify(accountLabelKeys) === JSON.stringify(['shell.guide', 'shell.profile']),
+  JSON.stringify(accountLabelKeys));
+check('account sheet renders those labels', /t\(item\.labelKey\)/.test(accountSheet));
+check('account sheet has NO Notifications entry',
+  !/shell\.notifications/.test(accountSheet) && !/v2\/notifications/.test(accountSheet));
+check('account sheet has NO Operator entry', !/operator/i.test(accountSheet));
+
+// ─── J. Notifications reachable only through the header bell ──────────────
+console.log('J. notification bell ownership');
+check('notification trigger remains in the header', /<V2NotificationTrigger/.test(shell));
+check('bell navigates to /v2/notifications',
+  /<V2NotificationTrigger[^>]*onOpen=\{\(\) => navigate\('\/v2\/notifications'\)\}/s.test(shell)
+  || /onOpen=\{\(\) => navigate\('\/v2\/notifications'\)\}/.test(shell));
+check('bell is not part of the account sheet', !/V2NotificationTrigger/.test(accountSheet));
+
+// ─── K. No duplicate/desktop navigation row ──────────────────────────────
+console.log('K. no secondary navigation row');
+check('no SECONDARY constant remains', !/const SECONDARY =/.test(shell));
+check('no aria-label="Secondary" region remains', !/aria-label="Secondary"/.test(shell));
+check('no secondary row wrapper remains', !shell.includes('border-t border-slate-100 md:block'));
+check('header keeps exactly one mobile header row',
+  (shell.match(/flex h-14 w-full items-center/g) ?? []).length === 1);
+
+// ─── L. Operator stays outside member navigation ─────────────────────────
+console.log('L. Operator boundary');
+const jsxStart = shell.indexOf('return (');
+const shellJsx = jsxStart >= 0 ? shell.slice(jsxStart) : shell;
+check('member shell JSX has no /v2/operator link', !/\/v2\/operator/.test(shellJsx));
+check('member shell has no Operator label key', !/shell\.operator/.test(shell));
+check('member shell does not compose the Operator shell', !/V2OperatorShell/.test(shell));
+check('operator route tree still exists',
+  /<Route path="operator" element=\{<V2OperatorShell \/>\}>/.test(routes));
+const operatorStart = routes.indexOf('<Route path="operator"');
+const operatorBlock = operatorStart >= 0 ? routes.slice(operatorStart) : '';
+const memberShellOpen = routes.indexOf('<V2MemberShell />');
+const memberShellClose = routes.indexOf('</Route>', memberShellOpen);
+check('/v2/operator redirects to overview (index route)',
+  /<Route index element=\{<Navigate to="overview" replace \/>\}/.test(operatorBlock));
+check('operator overview route is present', /<Route path="overview"/.test(operatorBlock));
+check('operator route tree sits outside the member shell block',
+  memberShellOpen >= 0 && memberShellClose >= 0 && operatorStart > memberShellClose,
+  'operator must remain a sibling route of the member shell, never a child');
 
 if (failures > 0) {
   console.error(`\nMobile primary navigation guard: ${failures} failure(s).`);
