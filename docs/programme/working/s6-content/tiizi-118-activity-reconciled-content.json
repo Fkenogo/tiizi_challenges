@@ -5723,6 +5723,7 @@
           "Report the number of fruit servings; Tiizi records the declared value without verifying physical quantity."
         ],
         "sessionFraming": "Fruit intake is a repeatable nutrition practice.",
+        "semanticDefinition": "The participant reports a count of fruit servings using their own consistent serving interpretation for the recorded occasion. Tiizi records that declared count and does not verify physical quantity or prescribe a universal serving size.",
         "safetyNotes": [
           "Individuals with specific dietary restrictions or medical conditions should follow clinician or dietitian advice",
           "Discuss dietary changes with a professional if you have a medical condition",
@@ -5779,6 +5780,7 @@
           "Report the number of vegetable servings; Tiizi records the declared value without verifying physical quantity."
         ],
         "sessionFraming": "Vegetable intake is a repeatable nutrition practice.",
+        "semanticDefinition": "The participant reports a count of vegetable servings using their own consistent serving interpretation for the recorded occasion. Tiizi records that declared count and does not verify physical quantity or prescribe a universal serving size.",
         "safetyNotes": [
           "Individuals with specific dietary restrictions or medical conditions should follow clinician or dietitian advice",
           "Discuss dietary changes with a professional if you have a medical condition",
@@ -6009,6 +6011,7 @@
         ],
         "completionMeaning": "Completion means the participant reports that the added-sugar avoidance condition was met for the occurrence being recorded.",
         "avoidanceCondition": "Avoid foods to which sugar has been added during processing or preparation; naturally occurring sugars in whole fruit or plain dairy are not added sugar for this definition.",
+        "semanticDefinition": "The participant reports whether they avoided foods with sugar added during processing or preparation for the recorded occurrence. Naturally occurring sugars in whole fruit or plain dairy are outside this authored avoidance definition; Tiizi records the report without independently verifying it.",
         "safetyNotes": [
           "This is a behavioural practice, not a medical prescription; individuals with medical dietary needs should follow clinician advice",
           "Whole natural sugars in whole fruits are healthy sources of fiber and vitamins",
@@ -6065,6 +6068,7 @@
         ],
         "completionMeaning": "Completion means the participant reports that the sugary-drink avoidance condition was met for the occurrence being recorded.",
         "avoidanceCondition": "Avoid beverages sweetened with sugar, including sodas and pre-sweetened teas or coffees; unsweetened beverages are outside this avoidance definition.",
+        "semanticDefinition": "The participant reports whether they avoided beverages sweetened with sugar, including sodas and pre-sweetened teas or coffees, for the recorded occurrence. Unsweetened beverages are outside this authored avoidance definition; Tiizi records the report without independently verifying it.",
         "safetyNotes": [
           "This is a behavioural practice; individuals with medical dietary needs should follow clinician advice",
           "Discuss dietary changes with a professional if you have a medical condition",
@@ -6105,6 +6109,7 @@
           "Record that duration in hours without converting it to days."
         ],
         "sessionFraming": "The report represents one continuous fasting period. No particular duration, schedule, frequency, or intake protocol is prescribed by this Activity.",
+        "semanticDefinition": "The participant reports the actual elapsed duration, in hours, of one continuous fasting interval they identify. Tiizi records the declared duration without independently verifying the interval; this definition sets no duration, schedule, frequency, or intake protocol.",
         "safetyNotes": [
           "Fasting may not be suitable for everyone. This guide is general Activity information, not medical advice; if you are unsure whether fasting is suitable for you, seek guidance from a qualified health professional."
         ]
@@ -6336,6 +6341,7 @@
           "Report whether the avoidance condition was met."
         ],
         "completionMeaning": "Completion means the participant reports that the late-night snacking avoidance condition was met for the occurrence being recorded.",
+        "semanticDefinition": "The participant reports whether they consumed any snacks during the late-evening occurrence they identified. The Activity does not set a clock cutoff or independently verify the report.",
         "safetyNotes": [
           "Follow any clinician-directed eating guidance that applies to you."
         ],
