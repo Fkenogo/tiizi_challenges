@@ -54,7 +54,7 @@ Reviewed and accepted: full 118-Activity catalogue visible; search; categories; 
 
 ## Boundaries preserved
 
-No production access. No deployment. PR #77 remains frozen: OPEN / DRAFT / UNMERGED at `ee18e629616c3a136ecd069cae5208871348ee09`. Operator Console functional expansion remains paused. GF-04 not begun.
+No production access. No deployment. PR #77 remains frozen: OPEN / DRAFT / UNMERGED at `ee18e629616c3a136ecd069cae5208871348ee09`. Operator Console functional expansion remains paused. GF-04 remains IMPLEMENTED / UNMERGED / FROZEN on PR #77 and was not resumed or modified by this closure.
 
 ## Note recorded for the programme (not a change)
 
