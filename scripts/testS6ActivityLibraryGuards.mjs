@@ -26,6 +26,10 @@ const checks = [
   ['catalogue results omit authored guide prose', !resultComponent.includes('item.description') && !resultComponent.includes('View activity guide')],
   ['compact result shows governed identity context and optional image only', resultComponent.includes('item.kind') && resultComponent.includes('item.category') && resultComponent.includes('item.subcategory') && resultComponent.includes('ActivityThumbnail') && resultComponent.includes('item.id')],
   ['result image uses the optional Knowledge image reference and a neutral fallback', thumbnail.includes('imageUrl?: string | null') && thumbnail.includes('loading="lazy"') && thumbnail.includes('if (!imageUrl || failed)') && !/firebase.storage|imageUploadService/i.test(thumbnail)],
+  ['Fitness / Wellness is a compact first-level selector placed between search and the category rail', ui.indexOf('aria-label="Activity domain"') > ui.indexOf('Search activities') && ui.indexOf('aria-label="Activity domain"') < ui.indexOf('aria-label="Activity categories"') && ui.includes("{ value: 'fitness', label: 'Fitness' }") && ui.includes("{ value: 'wellness', label: 'Wellness' }")],
+  ['domain selection uses the canonical kind, not new taxonomy', ui.includes('activityGuideFilters') && !/new (?:domain|category) taxonomy/i.test(ui)],
+  ['category rail is width-bounded and scrolls inside the member canvas', ui.includes('min-w-0 max-w-full overflow-hidden') && ui.includes('overflow-x-auto') && ui.includes('overscroll-x-contain') && ui.includes('overflow-x-clip')],
+  ['member canvas stays mobile-only (no widened Guide or desktop layout)', ui.includes('<V2Page wide>') && !/md:|lg:|xl:/.test(ui.split('function ActivityCard(')[0])],
 ];
 let failed = false;
 for (const [name, passed] of checks) {

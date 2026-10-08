@@ -104,10 +104,15 @@ export async function fetchPublishedKnowledge(
 }
 
 /** Published canonical V2 Activities for the member Activity Library. */
-export async function fetchPublishedActivities(search?: string, category?: string): Promise<ApiKnowledgeItem[]> {
+export async function fetchPublishedActivities(
+  search?: string,
+  category?: string,
+  kind?: ApiKnowledgeKind,
+): Promise<ApiKnowledgeItem[]> {
   const query = new URLSearchParams({ canonicalOnly: 'true' });
   if (search?.trim()) query.set('search', search.trim());
   if (category) query.set('category', category);
+  if (kind) query.set('kind', kind);
   const response = await apiFetch<KnowledgeListResponse>(`${API_PREFIX}/knowledge?${query.toString()}`);
   return response.items;
 }
