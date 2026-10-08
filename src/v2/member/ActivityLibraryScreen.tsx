@@ -5,6 +5,7 @@ import { ArrowLeft, Search } from 'lucide-react';
 import { fetchKnowledgeById, fetchPublishedActivities, type ApiKnowledgeItem } from '../../api/knowledgeApi';
 import { fetchComposerSelectableKnowledge } from '../../api/challengeCreationApi';
 import { createChallengeWizardRouteState, restoreChallengeWizardRouteState } from '../challenges/challengeCreationDraft';
+import { guideCategories, nextGuideSelection, resolveGuideCategory, type GuideDomain } from './activityGuideFilters';
 import { useAuth } from '../../hooks/useAuth';
 import { ActivityThumbnail } from '../components/ActivityThumbnail';
 import {
@@ -20,6 +21,11 @@ import {
 
 const ACTIVITY_CODE = /^[A-Z]{3}-[A-Z]{3}-\d{3}$/;
 
+const DOMAIN_OPTIONS: ReadonlyArray<{ value: Exclude<GuideDomain, ''>; label: string }> = [
+  { value: 'fitness', label: 'Fitness' },
+  { value: 'wellness', label: 'Wellness' },
+];
+
 function apiConfigured() {
   return typeof import.meta.env.VITE_TIIZI_API_BASE_URL === 'string'
     && import.meta.env.VITE_TIIZI_API_BASE_URL.trim().length > 0;
@@ -28,6 +34,7 @@ function apiConfigured() {
 export function V2ActivityLibraryScreen() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
+  const [domain, setDomain] = useState<GuideDomain>('');
   const [category, setCategory] = useState('');
   const all = useQuery({
     queryKey: ['v2-activity-library', user?.uid],
@@ -35,19 +42,27 @@ export function V2ActivityLibraryScreen() {
     enabled: !!user?.uid && apiConfigured(),
     staleTime: 60_000,
   });
+  const categories = useMemo(() => guideCategories(all.data ?? [], domain), [all.data, domain]);
+  // A category the selected domain does not offer can never filter the list
+  // (no stale-category empty state): it resolves to All categories.
+  const activeCategory = all.data ? resolveGuideCategory(category, categories) : category;
   const results = useQuery({
-    queryKey: ['v2-activity-library-search', user?.uid, search, category],
-    queryFn: () => fetchPublishedActivities(search, category || undefined),
+    queryKey: ['v2-activity-library-search', user?.uid, search, activeCategory, domain],
+    queryFn: () => fetchPublishedActivities(search, activeCategory || undefined, domain || undefined),
     enabled: !!user?.uid && apiConfigured(),
     staleTime: 30_000,
   });
-  const categories = useMemo(
-    () => [...new Set((all.data ?? []).map((item) => item.category).filter(Boolean))].sort(),
-    [all.data],
-  );
+  const filtered = !!(search || activeCategory || domain);
+
+  function toggleDomain(pressed: Exclude<GuideDomain, ''>) {
+    const next = nextGuideSelection(all.data ?? [], { domain, category: activeCategory }, pressed);
+    setDomain(next.domain);
+    setCategory(next.category);
+  }
 
   return (
     <V2Page wide>
+      <div className="min-w-0 max-w-full overflow-x-clip">
       <V2SectionHeader
         eyebrow="Activity Guide"
         title="Explore activities"
@@ -64,6 +79,20 @@ export function V2ActivityLibraryScreen() {
         />
       </label>
 
+      {!all.isLoading && !all.isError && all.data && all.data.length > 0 ? (
+        <div className="mb-3 flex min-w-0 max-w-full gap-2" role="group" aria-label="Activity domain">
+          {DOMAIN_OPTIONS.map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              onClick={() => toggleDomain(option.value)}
+              aria-pressed={domain === option.value}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${domain === option.value ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
+            >{option.label}</button>
+          ))}
+        </div>
+      ) : null}
+
       {all.isLoading || results.isLoading ? <V2LoadingState label="Loading activities…" /> : null}
       {all.isError || results.isError ? (
         <V2ErrorState
@@ -74,30 +103,38 @@ export function V2ActivityLibraryScreen() {
       ) : null}
 
       {!all.isLoading && !all.isError && categories.length > 0 ? (
-        <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Activity categories">
-          <button
-            type="button"
-            onClick={() => setCategory('')}
-            aria-pressed={!category}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${!category ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
-          >All categories</button>
-          {categories.map((value) => (
+        // The rail scrolls INSIDE the member canvas: the wrapper is a width-bounded
+        // (min-w-0 / max-w-full), clipping flex item, so the chip row can never size
+        // or paint beyond the mobile column, whatever the viewport width.
+        <div className="mb-5 min-w-0 max-w-full overflow-hidden">
+          <div
+            className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="Activity categories"
+          >
             <button
               type="button"
-              key={value}
-              onClick={() => setCategory(value === category ? '' : value)}
-              aria-pressed={category === value}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${category === value ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
-            >{value}</button>
-          ))}
+              onClick={() => setCategory('')}
+              aria-pressed={!activeCategory}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${!activeCategory ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
+            >All categories</button>
+            {categories.map((value) => (
+              <button
+                type="button"
+                key={value}
+                onClick={() => setCategory(value === activeCategory ? '' : value)}
+                aria-pressed={activeCategory === value}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${activeCategory === value ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
+              >{value}</button>
+            ))}
+          </div>
         </div>
       ) : null}
 
       {results.isSuccess && results.data.length === 0 ? (
         <V2EmptyState
-          title={search || category ? 'No matching activities' : 'The guide is getting ready'}
-          message={search || category ? 'Try another search or category.' : 'Published activities will appear here when they are ready to share.'}
-          action={search || category ? <V2Button variant="secondary" onClick={() => { setSearch(''); setCategory(''); }}>Clear filters</V2Button> : undefined}
+          title={filtered ? 'No matching activities' : 'The guide is getting ready'}
+          message={filtered ? 'Try another search or category.' : 'Published activities will appear here when they are ready to share.'}
+          action={filtered ? <V2Button variant="secondary" onClick={() => { setSearch(''); setCategory(''); setDomain(''); }}>Clear filters</V2Button> : undefined}
         />
       ) : null}
 
@@ -106,6 +143,7 @@ export function V2ActivityLibraryScreen() {
           {results.data.map((item) => <ActivityCard key={item.id} item={item} />)}
         </div>
       ) : null}
+      </div>
     </V2Page>
   );
 }
