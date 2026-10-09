@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useV2GroupId } from '../group/V2GroupScope';
 import { V2GroupFeedEvent } from './V2GroupFeedEvent';
 import { handleV2GroupFeedDenied, v2GroupFeedKey } from './groupFeedQueryKeys';
-import { composeGroupFeedPages, cursorRecoveryOnFreshPageSuccess, cursorRecoveryOnPageError, cursorRecoveryOnRefresh } from './groupFeedClientPolicy';
+import { composeGroupFeedPages, cursorRecoveryOnFreshPageSuccess, cursorRecoveryOnRefresh, recoverGroupFeedFromInvalidCursor } from './groupFeedClientPolicy';
 import { useV2GroupFeed } from './useV2GroupFeed';
 
 export function V2GroupFeedScreen() {
@@ -24,16 +24,17 @@ export function V2GroupFeedScreen() {
     if (feed.isSuccess && !feed.isFetchingNextPage) recoveredCursor.current = cursorRecoveryOnFreshPageSuccess().attempted;
   }, [feed.isSuccess, feed.isFetchingNextPage]);
 
+  // Any invalid_cursor on the full Feed (Load More, background/refocus refetch, remount) recovers
+  // once per cycle by resetting to page one; a repeat in the same cycle is surfaced, never looped.
   useEffect(() => {
-    const decision = cursorRecoveryOnPageError(
+    if (!(feed.error instanceof ApiError)) return;
+    recoveredCursor.current = recoverGroupFeedFromInvalidCursor(
+      queryClient,
+      queryKey,
       { attempted: recoveredCursor.current },
-      feed.error instanceof ApiError ? feed.error.code : undefined,
-      feed.isFetchNextPageError,
-    );
-    if (!decision.resetToFirstPage) return;
-    recoveredCursor.current = decision.state.attempted;
-    void queryClient.resetQueries({ queryKey, exact: true });
-  }, [feed.error, feed.isFetchNextPageError, queryClient, queryKey]);
+      feed.error.code,
+    ).attempted;
+  }, [feed.error, queryClient, queryKey]);
 
   useEffect(() => {
     if (feed.error instanceof ApiError && feed.error.status === 404 && !handledDenied.current) {
@@ -46,13 +47,20 @@ export function V2GroupFeedScreen() {
 
   if (feed.error instanceof ApiError && feed.error.status === 404) return null;
   if (feed.isFetching && !feed.isFetchingNextPage) return <V2Page><V2LoadingState label="Refreshing Group activity…" /></V2Page>;
-  if (feed.isFetchNextPageError && feed.error instanceof ApiError && feed.error.code === 'invalid_cursor') {
+  const cursorExpired = feed.error instanceof ApiError && feed.error.code === 'invalid_cursor';
+  // Manual refresh / retry-after-exhausted-recovery: a clean page-one cycle that never replays stored cursors.
+  const refreshFromPageOne = () => {
+    recoveredCursor.current = cursorRecoveryOnRefresh().attempted;
+    void queryClient.resetQueries({ queryKey, exact: true });
+  };
+  // Recovery has not run yet for this error: show the refresh state instead of a transient error.
+  if (cursorExpired && !recoveredCursor.current) {
     return <V2Page><V2LoadingState label="Refreshing Group activity…" /></V2Page>;
   }
 
   if (feed.isLoading) return <V2Page><p className="mb-3"><Link to={`/v2/groups/${encodeURIComponent(groupId ?? '')}`} className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-bold text-slate-600 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to Group</Link></p><V2LoadingState label="Loading Group activity…" /></V2Page>;
   if (feed.isError && !(feed.error instanceof ApiError && feed.error.status === 404)) {
-    return <V2Page><p className="mb-3"><Link to={`/v2/groups/${encodeURIComponent(groupId ?? '')}`} className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-bold text-slate-600 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to Group</Link></p><V2ErrorState title="We could not load Group activity" message="Please check your connection and try again." onRetry={() => void feed.refetch()} /></V2Page>;
+    return <V2Page><p className="mb-3"><Link to={`/v2/groups/${encodeURIComponent(groupId ?? '')}`} className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-bold text-slate-600 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to Group</Link></p><V2ErrorState title="We could not load Group activity" message="Please check your connection and try again." onRetry={() => (cursorExpired ? refreshFromPageOne() : void feed.refetch())} /></V2Page>;
   }
 
   const events = composeGroupFeedPages(feed.data?.pages);
@@ -61,7 +69,7 @@ export function V2GroupFeedScreen() {
       <p className="mb-3"><Link to={`/v2/groups/${encodeURIComponent(groupId ?? '')}`} className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-bold text-slate-600 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">← Back to Group</Link></p>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="text-xl font-black tracking-tight text-slate-900">Group activity</h1>
-        <V2Button variant="secondary" className="min-h-11" onClick={() => { recoveredCursor.current = cursorRecoveryOnRefresh().attempted; void queryClient.resetQueries({ queryKey, exact: true }); }} disabled={feed.isFetching}>
+        <V2Button variant="secondary" className="min-h-11" onClick={refreshFromPageOne} disabled={feed.isFetching}>
           {feed.isFetching ? 'Refreshing…' : 'Refresh'}
         </V2Button>
       </div>

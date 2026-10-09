@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { formatGroupFeedTime } from '../src/v2/groups/groupFeedTime';
 import { challengeReturnPath } from '../src/v2/challenges/challengeReturnPath';
-import { QueryClient } from '@tanstack/react-query';
+import { InfiniteQueryObserver, QueryClient } from '@tanstack/react-query';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
@@ -10,8 +10,9 @@ import { GROUP_FEED_EVENT_TYPES, GROUP_FEED_PRESENTATION_TITLES, type GroupFeedE
 import { V2GroupFeedEvent } from '../src/v2/groups/V2GroupFeedEvent';
 import { GROUP_FEED_EVENT_TYPES as SERVER_EVENT_TYPES } from '../api/src/groupFeedPublication';
 import { groupFeedPagePath } from '../src/api/groupFeedRequest';
-import { composeGroupFeedPages, cursorRecoveryOnFreshPageSuccess, cursorRecoveryOnPageError, cursorRecoveryOnRefresh } from '../src/v2/groups/groupFeedClientPolicy';
+import { composeGroupFeedPages, cursorRecoveryOnFreshPageSuccess, cursorRecoveryOnPageError, cursorRecoveryOnRefresh, recoverGroupFeedFromInvalidCursor } from '../src/v2/groups/groupFeedClientPolicy';
 import { handleV2GroupFeedDenied, removeV2GroupFeed, v2GroupFeedKey } from '../src/v2/groups/groupFeedQueryKeys';
+import { v2GroupDetailKey } from '../src/v2/groups/groupQueryKeys';
 
 const read = (path: string) => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -37,7 +38,7 @@ assert.match(preview, /slice\(0, 3\)/);
 assert.match(preview, /Group activity will appear here as Challenges progress\./);
 assert.match(preview, /View all activity/);
 assert.match(preview, /feed\.error\.status !== 404/);
-assert.match(preview, /v2-group-detail/);
+assert.match(preview, /v2GroupDetailKey\(groupId, user\?\.uid\)/);
 assert.match(routes, /groups\/\:groupId\/feed/);
 assert.match(screen, /Load more activity/);
 assert.match(screen, /resetQueries\(\{ queryKey, exact: true \}\)/);
@@ -92,18 +93,18 @@ assert.equal(queryClient.getQueryCache().findAll({ queryKey: ['v2-group-feed'] }
 assert.deepEqual(queryClient.getQueryData(['unrelated', 'preserved']), { value: true }, 'Feed-family cleanup preserves unrelated cache');
 
 let recovery = { attempted: false };
-let decision = cursorRecoveryOnPageError(recovery, 'network_error', true);
+let decision = cursorRecoveryOnPageError(recovery, 'network_error');
 assert.equal(decision.resetToFirstPage, false, 'ordinary network error does not reset cursor');
-decision = cursorRecoveryOnPageError(recovery, 'invalid_cursor', false);
-assert.equal(decision.resetToFirstPage, false, 'invalid cursor on a non-load-more request does not enter recovery');
-decision = cursorRecoveryOnPageError(recovery, 'invalid_cursor', true);
-assert.equal(decision.resetToFirstPage, true, 'first invalid cursor during Load More resets to page one');
+assert.equal(cursorRecoveryOnPageError(recovery, 'feed_unavailable').resetToFirstPage, false, 'ordinary server error does not reset cursor');
+assert.equal(cursorRecoveryOnPageError(recovery, undefined).resetToFirstPage, false, 'unclassified error does not reset cursor');
+decision = cursorRecoveryOnPageError(recovery, 'invalid_cursor');
+assert.equal(decision.resetToFirstPage, true, 'first invalid cursor in a cycle (any request kind) resets to page one');
 recovery = decision.state;
-decision = cursorRecoveryOnPageError(recovery, 'invalid_cursor', true);
+decision = cursorRecoveryOnPageError(recovery, 'invalid_cursor');
 assert.equal(decision.resetToFirstPage, false, 'second invalid cursor in same recovery cycle does not loop');
 recovery = cursorRecoveryOnFreshPageSuccess();
 assert.equal(recovery.attempted, false, 'successful fresh first page completes recovery cycle');
-assert.equal(cursorRecoveryOnPageError(recovery, 'invalid_cursor', true).resetToFirstPage, true, 'later independent cursor recovery is allowed');
+assert.equal(cursorRecoveryOnPageError(recovery, 'invalid_cursor').resetToFirstPage, true, 'later independent cursor recovery is allowed');
 assert.equal(cursorRecoveryOnRefresh().attempted, false, 'user refresh begins a clean page-one cycle');
 
 const deniedClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -218,6 +219,144 @@ assert.match(hook, /const limit = preview \? 3 : undefined/);
 assert.match(screen, /isFetchNextPageError/);
 assert.match(screen, /V2EmptyState/); assert.match(screen, /V2ErrorState/); assert.match(screen, /V2LoadingState/);
 assert.match(preview, /role="status"/); assert.match(preview, /role="alert"/);
+
+
+// ---------------------------------------------------------------------------
+// R1 NB-1 — expired cursor recovery on ANY full-feed request (real infinite query + expiring-cursor server).
+// ---------------------------------------------------------------------------
+type FakePage = { events: string[]; nextCursor: string | null };
+function makeFeedHarness() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const key = [...v2GroupFeedKey(groupA, uid1), 'full'] as const;
+  const state = { expired: false, failWith: undefined as string | undefined, alwaysInvalid: false, calls: [] as Array<string | undefined> };
+  const pagesByCursor: Record<string, FakePage> = {
+    first: { events: ['A', 'B'], nextCursor: 'c1' },
+    c1: { events: ['C'], nextCursor: null },
+  };
+  const observer = new InfiniteQueryObserver(qc, {
+    queryKey: key,
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: FakePage) => last.nextCursor ?? undefined,
+    staleTime: 0,
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }) => {
+      state.calls.push(pageParam);
+      if (state.failWith) throw Object.assign(new Error(state.failWith), { code: state.failWith });
+      if (state.alwaysInvalid || (pageParam !== undefined && state.expired)) throw Object.assign(new Error('invalid_cursor'), { code: 'invalid_cursor' });
+      return pagesByCursor[pageParam ?? 'first'];
+    },
+  });
+  const unsubscribe = observer.subscribe(() => undefined);
+  const settle = async () => { for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 5)); };
+  const errorCode = () => (observer.getCurrentResult().error as { code?: string } | null)?.code;
+  return { qc, key, state, observer, settle, errorCode, close: () => { unsubscribe(); qc.clear(); } };
+}
+
+// 1. Load More hits an expired cursor -> resets once and refetches page one with NO cursor.
+{
+  const h = makeFeedHarness();
+  await h.observer.refetch(); await h.settle();
+  h.state.expired = true; h.state.calls.length = 0;
+  await h.observer.fetchNextPage(); await h.settle(); // Load More with a now-expired cursor
+  assert.equal(h.errorCode(), 'invalid_cursor', 'Load More surfaces invalid_cursor');
+  const next = recoverGroupFeedFromInvalidCursor(h.qc, h.key, { attempted: false }, h.errorCode());
+  await h.settle();
+  assert.equal(next.attempted, true, 'recovery consumed for this cycle');
+  assert.deepEqual(h.state.calls.slice(1), [undefined], 'reset refetches page one with no cursor');
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 1, 'accumulated pages were discarded');
+  assert.equal(h.errorCode(), undefined, 'error cleared after recovery');
+  h.close();
+}
+
+// 2. Background/refocus REFETCH replays the stored (now expired) cursor: not a Load More, must still recover once.
+{
+  const h = makeFeedHarness();
+  await h.observer.refetch(); await h.observer.fetchNextPage(); await h.settle();
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 2);
+  assert.deepEqual(h.state.calls, [undefined, 'c1'], 'sanity: page two was loaded with its stored cursor');
+  h.state.expired = true; h.state.calls.length = 0;
+  await h.observer.refetch(); await h.settle(); // what refetchOnWindowFocus / refetchOnMount do
+  assert.equal(h.errorCode(), 'invalid_cursor', 'refetch replayed the expired stored cursor');
+  assert.equal(h.observer.getCurrentResult().isFetchNextPageError, false, 'this failure is NOT a Load More error (old recovery path would not run)');
+  assert.ok(h.state.calls.includes('c1'), 'the expired cursor was replayed by the refetch');
+  h.state.calls.length = 0;
+  const next = recoverGroupFeedFromInvalidCursor(h.qc, h.key, { attempted: false }, h.errorCode());
+  await h.settle();
+  assert.equal(next.attempted, true);
+  assert.deepEqual(h.state.calls, [undefined], 'recovery fetched ONLY page one; the expired cursor was not replayed');
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 1);
+  assert.equal(h.errorCode(), undefined);
+  // 3. a fresh page-one success re-arms recovery for a later independent expiry.
+  const rearmed = cursorRecoveryOnFreshPageSuccess();
+  h.state.expired = false;
+  await h.observer.fetchNextPage(); await h.settle();
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 2, 'page two reloaded after recovery');
+  h.state.expired = true; await h.observer.refetch(); await h.settle();
+  assert.equal(h.errorCode(), 'invalid_cursor', 'second independent expiry');
+  h.state.calls.length = 0;
+  assert.equal(recoverGroupFeedFromInvalidCursor(h.qc, h.key, rearmed, h.errorCode()).attempted, true, 're-armed recovery resets again');
+  await h.settle();
+  assert.deepEqual(h.state.calls, [undefined], 'second recovery also starts from page one');
+  h.close();
+}
+
+// 4. Bounded: if page one itself keeps returning invalid_cursor, exactly one reset happens (no loop).
+{
+  const h = makeFeedHarness();
+  await h.observer.refetch(); await h.settle();
+  h.state.alwaysInvalid = true; h.state.calls.length = 0;
+  await h.observer.refetch(); await h.settle();
+  let cycle = { attempted: false };
+  let resets = 0;
+  for (let i = 0; i < 4; i++) {
+    const before = h.state.calls.length;
+    cycle = recoverGroupFeedFromInvalidCursor(h.qc, h.key, cycle, h.errorCode());
+    await h.settle();
+    if (h.state.calls.length > before) resets++;
+  }
+  assert.equal(resets, 1, 'exactly one recovery fetch per cycle; repeated invalid_cursor does not loop');
+  assert.equal(h.errorCode(), 'invalid_cursor', 'the repeat is surfaced, not retried');
+  // 5. Manual Refresh / retry begins a clean page-one cycle even after exhaustion.
+  h.state.alwaysInvalid = false; h.state.calls.length = 0;
+  const refreshed = cursorRecoveryOnRefresh();
+  await h.qc.resetQueries({ queryKey: h.key, exact: true }); await h.settle();
+  assert.equal(refreshed.attempted, false);
+  assert.deepEqual(h.state.calls, [undefined], 'Refresh fetched page one with no stale cursor');
+  assert.equal(h.errorCode(), undefined);
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 1);
+  h.close();
+}
+
+// 6. Ordinary errors never reset pagination.
+{
+  const h = makeFeedHarness();
+  await h.observer.refetch(); await h.observer.fetchNextPage(); await h.settle();
+  h.state.failWith = 'network_error'; h.state.calls.length = 0;
+  await h.observer.refetch(); await h.settle();
+  const callsBefore = h.state.calls.length;
+  const next = recoverGroupFeedFromInvalidCursor(h.qc, h.key, { attempted: false }, h.errorCode());
+  await h.settle();
+  assert.equal(next.attempted, false, 'ordinary error leaves recovery unarmed/unspent');
+  assert.equal(h.state.calls.length, callsBefore, 'ordinary error triggered no reset or refetch');
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 2, 'accumulated pages preserved on ordinary error');
+  h.close();
+}
+
+// Source-level: the screen routes EVERY Feed error through the shared policy; no Load-More-only gate remains.
+assert.match(screen, /recoverGroupFeedFromInvalidCursor\(/);
+assert.doesNotMatch(screen, /isFetchNextPageError,\s*\n?\s*\);|cursorRecoveryOnPageError\([^)]*isFetchNextPageError/, 'recovery is not gated on a Load More error');
+assert.match(screen, /refreshFromPageOne/, 'Refresh and exhausted-recovery retry share one clean page-one path');
+assert.match(hook, /code !== 'invalid_cursor'/, 'the query never auto-retries an invalid cursor');
+
+// R1 NB-2 — Group-detail key comes only from the canonical helper; no literal may drift back in.
+const feedKeys = await read('../src/v2/groups/groupFeedQueryKeys.ts');
+for (const [name, text] of [['groupFeedQueryKeys', feedKeys], ['V2GroupFeedPreview', preview], ['V2GroupFeedScreen', screen], ['useV2GroupFeed', hook]] as const) {
+  assert.doesNotMatch(text, /['"]v2-group-detail['"]/, `${name} must not hard-code the Group detail key`);
+}
+assert.match(feedKeys, /v2GroupDetailKey\(groupId, uid\)/);
+assert.match(preview, /v2GroupDetailKey\(groupId, user\?\.uid\)/);
+assert.match(feedKeys, /from '\.\/groupQueryKeys'/);
+assert.match(preview, /from '\.\/groupQueryKeys'/);
+assert.deepEqual(v2GroupDetailKey(groupA, uid1), ['v2-group-detail', groupA, uid1], 'canonical key shape is unchanged');
 
 queryClient.clear();
 deniedClient.clear();
