@@ -65,6 +65,7 @@
     "test:s3c-finalized-query": "tsx scripts/testS3cFinalizedQueryLifecycle.ts",
     "test:s3d-results": "tsx scripts/testS3dResultsGuards.ts",
     "test:s4a-group-home": "tsx scripts/testS4aGroupHomeGuards.ts",
+    "test:gf04-group-feed": "tsx scripts/testGF04GroupFeedGuards.ts",
     "test:s4b-members": "node scripts/testS4bMembersGuards.mjs",
     "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",

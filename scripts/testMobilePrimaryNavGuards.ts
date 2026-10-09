@@ -127,13 +127,14 @@ const expectedMember = [
   'groups:V2GroupsScreen',
   'groups/new:V2CreateGroupScreen',
   'groups/:groupId:V2GroupHomeRoute',
+  'groups/:groupId/feed:V2GroupFeedRoute',
   'groups/:groupId/settings:V2GroupHomeRouteSettings',
   'guide:V2ActivityLibraryScreen',
   'guide/:activityId:V2ActivityGuideDetailScreen',
   'profile:V2ProfilePage',
   'notifications:V2NotificationsPage',
 ];
-check('member routes are exactly the approved set including S4d settings and S6 Guide',
+check('member routes are exactly the approved set including S4d settings, S6 Guide and the GF-04 Group Feed',
   JSON.stringify(memberPaths) === JSON.stringify(expectedMember), JSON.stringify(memberPaths));
 check('Group Home route wraps the screen in the contextual group scope',
   routes.includes('V2GroupScope groupId={groupId ?? null}'));

@@ -1,4 +1,8 @@
 import { Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../hooks/useAuth';
+import { removeV2GroupFeed } from './groups/groupFeedQueryKeys';
 import { V2LocaleProvider } from './i18n/V2Locale';
 import { V2GroupScope } from './group/V2GroupScope';
 import { V2Authenticated } from './auth/V2AuthGuard';
@@ -14,6 +18,7 @@ import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
 import { V2GroupHomeScreen } from './groups/V2GroupHomeScreen';
 import { V2GroupSettingsScreen } from './groups/V2GroupSettingsScreen';
+import { V2GroupFeedScreen } from './groups/V2GroupFeedScreen';
 import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
 import { SocialCauseReviewPage } from './operator/SocialCauseReviewPage';
@@ -39,6 +44,13 @@ import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen'
  */
 
 function V2ProtectedScope() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const previousUid = useRef(user?.uid);
+  useEffect(() => {
+    if (previousUid.current !== user?.uid) void removeV2GroupFeed(queryClient);
+    previousUid.current = user?.uid;
+  }, [queryClient, user?.uid]);
   return (
     <V2Authenticated>
       <V2GroupScope groupId={null}>
@@ -62,6 +74,11 @@ function V2GroupHomeRoute() {
   );
 }
 
+function V2GroupFeedRoute() {
+  const { groupId } = useParams();
+  return <V2GroupScope groupId={groupId ?? null}><V2GroupFeedScreen /></V2GroupScope>;
+}
+
 export function V2Routes() {
   return (
     <V2LocaleProvider>
@@ -78,6 +95,7 @@ export function V2Routes() {
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />
             <Route path="groups/:groupId" element={<V2GroupHomeRoute />} />
+            <Route path="groups/:groupId/feed" element={<V2GroupFeedRoute />} />
             <Route path="groups/:groupId/settings" element={<V2GroupHomeRouteSettings />} />
             <Route path="guide" element={<V2ActivityLibraryScreen />} />
             <Route path="guide/:activityId" element={<V2ActivityGuideDetailScreen />} />
