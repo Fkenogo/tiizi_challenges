@@ -1,8 +1,9 @@
 # TIIZI — MEMBER COMPLETION FOUNDER DISPOSITION 001
 
-**Date:** 2026-10-10 (revised; finalization pass; §5 aligned by Recommendation Authority Reconciliation 001 and Founder Disposition 001 on vocabularies)
-**Base:** `365c958bf69f6d79ae262e81045abae9c777c19c` (canonical `main`). Master Programme 2.50 → 2.51 → **2.52**
+**Date:** 2026-10-10 (revised; finalization pass; §5 aligned by Recommendation Authority Reconciliation 001 and Founder Disposition 001 on vocabularies; §10 extended by the PR #90 Codex findings correction)
+**Base:** `365c958bf69f6d79ae262e81045abae9c777c19c` (canonical `main`). Master Programme 2.50 → 2.51 → 2.52 → 2.53 → 2.54 → **2.55**
 **Basis:** `docs/programme/TIIZI-MEMBER-COMPLETION-ASSESSMENT-001.md` (commit `0ee5da0`); first revised disposition candidate `2bf79f7`
+**Provenance (programme version chain represented by this document):** v2.51 revised disposition (media pre-pilot, Challenge Feed authorized in principle) → v2.52 finalization pass (no-skip onboarding, R2, CF-01 v0.2, BG-1, migration rule) → v2.53 Interest/Goal/Focus-Area Recommendation Authority Reconciliation 001 (§5 authority basis) → v2.54 FD-MC-04d / FD-MC-04e bounded pilot resolution (§5 now carries the final vocabularies, stable-ID requirement, custom-text rule and pre-existing-member rule) → v2.55 stewardship precondition for account deletion (§10). **This document contains the decisions of all of these versions.**
 **Companion records:** `docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md` (v0.2); `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md`
 **Status:** **FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED / AWAITING FINAL REVIEW AND PR.**
 **Nature:** Documentation, Product Truth and programme alignment only. **No implementation is authorized.** Each work package below still needs its own Founder authorization before it starts. No PR has been opened.
@@ -42,7 +43,7 @@ Historical records are annotated, not erased.
 | **FD-MC-04d** | **EFFECTIVE (approved 2026-10-10)** | Goal-based relevance approved for V2: Member Goals as bounded REC-1 relevance inputs; Group Goals as the corresponding Group-side relevance attributes. A new, narrow relationship that creates no access, eligibility, membership, participation or scoring effect (§5) |
 | **FD-MC-04e** | **EFFECTIVE (approved 2026-10-10)** | Bounded KNW-04 resolution for the V2 pilot: Member Interest vocabulary = the governed 12 Focus Area concepts; Member Goal vocabulary = the governed 9 Group Goal concepts; entities stay distinct; KNW-04 stays open only for broader evolution (§5) |
 | FD-MC-05 | EFFECTIVE | Versioned Terms/Privacy consent record before pilot (§6). No legal wording invented |
-| **FD-MC-06a** | **EFFECTIVE in principle** | IDP-03 Option A (§10) |
+| **FD-MC-06a** | **EFFECTIVE in principle** | IDP-03 Option A (§10) Includes the stewardship precondition: an Accountable Steward may request deletion but fulfilment cannot proceed until stewardship is transferred under governed Group authority (§10) |
 | **FD-MC-07a** | **EFFECTIVE** | Cloudflare R2 selected as the initial object-storage provider behind a provider-neutral port (§8) |
 | **FD-MC-09a** | **EFFECTIVE** | Challenge Feed v1 event decisions, retention and access (CF-01 v0.2 §4, §5) |
 | **FD-MC-09b** | **EFFECTIVE** | Comments/replies are not required before pilot; later, with separate Product Truth/moderation decision; FR-V2-133 remains in force |
@@ -197,6 +198,17 @@ Comments and replies are **not required before pilot**. They are a later capabil
 - Remove their Kudos.
 - Preserve the internal historical UUID where immutable records require it.
 
+**Stewardship precondition (EFFECTIVE; part of FD-MC-06a / LIFE-1 pilot lifecycle authority).** A member who is the Accountable Steward of one or more active Groups **MAY submit** an account-deletion request, but **deletion fulfilment MUST NOT proceed while they remain Accountable Steward of any active Group.** Before final fulfilment:
+1. every active Group for which the member is Accountable Steward must have stewardship transferred to an eligible successor;
+2. the transfer must complete under existing governed Group authority;
+3. the successor must hold the required valid Group relationship;
+4. the Group must never be left without its required Accountable Steward;
+5. only after all stewardship obligations are cleared may the lifecycle flow proceed: anonymize the member-facing identity, remove the Profile image, remove Interests / Goals, withdraw member-owned Challenge Feed Shares, remove their Kudos, sever operational email/auth linkage as permitted, and complete the deleted-anonymized state.
+
+While blocked, the request may remain in the state **PENDING — STEWARDSHIP TRANSFER REQUIRED**. LIFE-1 and the Operator **must not**: auto-select a successor; silently transfer stewardship; automatically close or dissolve the Group; sever authentication first; or leave a Group attached to an unauthenticatable Accountable Steward. If an Operator-assisted stewardship transfer is already authorized by existing Group governance, it may be used; if no such authority exists, the member must perform the existing governed transfer before fulfilment can continue.
+
+*Recorded dependency (verified, not a new decision):* at the base commit **no stewardship-transfer mutation exists in V2** — GF-01 §4 records "Accountable Steward change" as "DEFERRED PENDING FUTURE AUTHORITY: current V2 has no authorized transfer/successor transition", and the S4B record shows a Steward is blocked from leaving (`403 owner_cannot_leave`). The rule above is therefore enforceable today only as a *block*: a steward's deletion request stays PENDING until a governed transfer capability exists. Whether such a capability (member-initiated or Operator-assisted) must exist before pilot is an open Founder input (§14 item 10). This record does not create, design or authorize that capability.
+
 **Policy/legal inputs (not to be invented by engineering):** the exact legal retention period and the deletion service level.
 
 **Post-pilot (may remain):** self-service data export; fully automated deletion.
@@ -245,7 +257,7 @@ Migration 025 remains Group-Feed-specific and unchanged and is not deployed. **I
 
 ## 14. Remaining Founder inputs (genuinely open)
 
-1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping definition (technical, within the vocabulary normalization package) and legacy/custom focus-tag handling design. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable. 9. **Streak milestone qualifying schedule** (CF-01 §11 item 7): required before CF-2 implements the Streak milestone Share family.
+1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping definition (technical, within the vocabulary normalization package) and legacy/custom focus-tag handling design. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable. 9. **Streak milestone qualifying schedule** (CF-01 §11 item 7): required before CF-2 implements the Streak milestone Share family. 10. **Stewardship transfer capability:** no governed transfer exists in V2 today (GF-01 §4); decide whether one (member-initiated or Operator-assisted, under existing Group governance) is required before pilot so that Steward deletion requests can be fulfilled, or whether such requests remain PENDING — STEWARDSHIP TRANSFER REQUIRED during pilot.
 
 ## 15. Boundaries
 
