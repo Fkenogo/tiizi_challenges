@@ -4,7 +4,7 @@
 **Base:** `365c958bf69f6d79ae262e81045abae9c777c19c`
 **Status:** **PROVIDER DIRECTION DECIDED (Cloudflare R2, FD-MC-07a); ASSESSMENT / MEDIA-1 PREPARATION. NO IMPLEMENTATION AUTHORIZED.** MEDIA-1 is now a concrete Tiizi decision record, not a provider comparison. Remaining MEDIA-1 items are in §7.
 **Direction (Founder, 2026-10-10):** Media capability is required before pilot, covering member profile images, Group covers and Challenge covers. The current local-gradient covers are temporary and do not satisfy it.
-**Related:** `TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md` §7; IDP-04; `TIIZI-V2-FORWARD-TECHNOLOGY-ARCHITECTURE-DECISION.md`; `TIIZI-CF-001-…` (§R2 "architecture-dependent").
+**Related:** `TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md` §8 (media; ownership §8.5, Challenge-cover mutation §8.6); IDP-04; `docs/architecture/TIIZI-V2-FORWARD-TECHNOLOGY-ARCHITECTURE-DECISION.md`; `docs/architecture/TIIZI-CF-001-CLOUDFLARE-CAPABILITY-AND-ARCHITECTURE-ALIGNMENT-ASSESSMENT.md` (§2 "Cloudflare capability fit matrix", R2 row rated **ARCHITECTURE-DEPENDENT**; also §1.13 and §12.B).
 
 ## 1. External guidance — MV-206 v0.1
 
@@ -12,7 +12,7 @@ Read from `Fkenogo/miledge-ventures` (`docs/miledge-ventures-knowledge/02-archit
 
 ## 2. Tiizi-side facts
 
-- Settled direction (ARCH-001): **S3-compatible object store + API-issued signed URLs**, metadata in PostgreSQL. Vendor was left as an open procurement choice; CF-001 rated R2 "architecture-dependent: adopt only behind an S3-compatible adapter with API-issued signed URLs". MEDIA-1 is that decision point.
+- Settled direction (ARCH-001): **S3-compatible object store + API-issued signed URLs**, metadata in PostgreSQL. Vendor was left as an open procurement choice; `docs/architecture/TIIZI-CF-001-CLOUDFLARE-CAPABILITY-AND-ARCHITECTURE-ALIGNMENT-ASSESSMENT.md` rates R2 **ARCHITECTURE-DEPENDENT** in its §2 "Cloudflare capability fit matrix" and, in §12.B, says R2 "waits for the S3-compatible object-storage procurement decision; adopt only behind an S3-compatible adapter with API-issued signed URLs". MEDIA-1 is that decision point.
 - Today: Group and Challenge covers are an allowlisted `cover_id` rendered as local gradients (migrations 018, 022; `groupCovers.ts`, `challengeCovers.ts`). Profile has nothing. `storage.rules` still holds Firebase paths for `group-covers/` and `challenge-covers/` keyed by Firebase uid; those are legacy and not V2 authority (AGENTS §2.3-2.4).
 - Who may change what today: Group cover is set through Group Settings by the Accountable Steward; Challenge cover is chosen in the creation wizard.
 - No object-storage vendor, bucket, adapter, upload endpoint or media table exists.
