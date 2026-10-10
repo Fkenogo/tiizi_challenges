@@ -57,7 +57,8 @@ export function V2GroupFeedScreen() {
     const saved = feedScrollByGroup.get(scrollKey);
     if (saved) window.scrollTo(0, saved);
   }, [feed.data, scrollKey]);
-  useEffect(() => () => { feedScrollByGroup.set(scrollKey, window.scrollY); }, [scrollKey]);
+  // Layout-effect cleanup runs before the next route's DOM is committed, so the real offset is read.
+  useLayoutEffect(() => () => { feedScrollByGroup.set(scrollKey, window.scrollY); }, [scrollKey]);
 
   if (feed.error instanceof ApiError && feed.error.status === 404) return null;
   const hasCachedPages = (feed.data?.pages.length ?? 0) > 0;
