@@ -10,7 +10,7 @@ import { GROUP_FEED_EVENT_TYPES, GROUP_FEED_PRESENTATION_TITLES, type GroupFeedE
 import { V2GroupFeedEvent } from '../src/v2/groups/V2GroupFeedEvent';
 import { GROUP_FEED_EVENT_TYPES as SERVER_EVENT_TYPES } from '../api/src/groupFeedPublication';
 import { groupFeedPagePath } from '../src/api/groupFeedRequest';
-import { composeGroupFeedPages, cursorRecoveryOnFreshPageSuccess, cursorRecoveryOnPageError, cursorRecoveryOnRefresh, recoverGroupFeedFromInvalidCursor } from '../src/v2/groups/groupFeedClientPolicy';
+import { composeGroupFeedPages, groupFeedBlockingView, cursorRecoveryOnFreshPageSuccess, cursorRecoveryOnPageError, cursorRecoveryOnRefresh, recoverGroupFeedFromInvalidCursor } from '../src/v2/groups/groupFeedClientPolicy';
 import { handleV2GroupFeedDenied, removeV2GroupFeed, v2GroupFeedKey } from '../src/v2/groups/groupFeedQueryKeys';
 import { v2GroupDetailKey } from '../src/v2/groups/groupQueryKeys';
 
@@ -357,6 +357,85 @@ assert.match(preview, /v2GroupDetailKey\(groupId, user\?\.uid\)/);
 assert.match(feedKeys, /from '\.\/groupQueryKeys'/);
 assert.match(preview, /from '\.\/groupQueryKeys'/);
 assert.deepEqual(v2GroupDetailKey(groupA, uid1), ['v2-group-detail', groupA, uid1], 'canonical key shape is unchanged');
+
+// ---------------------------------------------------------------------------
+// Founder follow-up 001 NB-3 — non-destructive refresh (real infinite query, real policy).
+// ---------------------------------------------------------------------------
+const viewOf = (r: { data?: { pages: unknown[] }; isPending: boolean; isError: boolean }) =>
+  groupFeedBlockingView({ hasCachedPages: (r.data?.pages.length ?? 0) > 0, isPending: r.isPending, isError: r.isError });
+{
+  // 1. first load with no cached data still uses the full loading state.
+  const h = makeFeedHarness();
+  const first = h.observer.getCurrentResult();
+  assert.equal(viewOf(first), 'loading', 'first load with no cache shows the full loading state');
+  await h.observer.refetch(); await h.settle();
+  await h.observer.fetchNextPage(); await h.settle();
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 2, 'two pages loaded (page one + Load More)');
+
+  // 2. background / refocus refetch with a cached Feed keeps every loaded event rendered.
+  const pending = h.observer.refetch();
+  const during = h.observer.getCurrentResult();
+  assert.equal(during.isFetching, true, 'refetch in flight');
+  assert.equal(during.data?.pages.length, 2, 'loaded pages stay available while refetching');
+  assert.equal(viewOf(during), 'content', 'background refetch never replaces the Feed with a loading screen');
+  await pending; await h.settle();
+
+  // 3. manual Refresh (refetch in place) keeps events visible and refreshes them.
+  h.state.calls.length = 0;
+  const manual = h.observer.refetch();
+  assert.equal(viewOf(h.observer.getCurrentResult()), 'content', 'manual Refresh keeps the list rendered');
+  await manual; await h.settle();
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 2, 'manual Refresh keeps loaded pages');
+
+  // 4. non-cursor refetch failure with cached pages never blanks the Feed.
+  h.state.failWith = 'feed_unavailable';
+  await h.observer.refetch(); await h.settle();
+  assert.equal(h.observer.getCurrentResult().isError, true);
+  assert.equal(viewOf(h.observer.getCurrentResult()), 'content', 'refetch error with cached pages keeps the Feed (inline error only)');
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 2, 'cached pages survive a failed refetch');
+  h.state.failWith = undefined;
+
+  // 5. Challenge -> Back to Group activity: unmount, remount (refetchOnMount: always) keeps loaded pages.
+  h.state.calls.length = 0;
+  await h.observer.refetch(); await h.settle();
+  const remount = new InfiniteQueryObserver(h.qc, {
+    queryKey: h.key,
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: FakePage) => last.nextCursor ?? undefined,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }) => {
+      h.state.calls.push(pageParam);
+      return pageParam === undefined ? { events: ['A', 'B'], nextCursor: 'c1' } : { events: ['C'], nextCursor: null };
+    },
+  });
+  const initial = remount.getCurrentResult();
+  assert.equal(initial.data?.pages.length, 2, 'returning from a Challenge starts from the cached loaded pages');
+  assert.equal(viewOf(initial), 'content', 'return renders the cached Feed immediately (no blank/loading)');
+  const off = remount.subscribe(() => undefined);
+  await h.settle();
+  assert.equal(remount.getCurrentResult().data?.pages.length, 2, 'background refetch on return keeps both loaded pages');
+  assert.deepEqual(h.state.calls.slice(-2), [undefined, 'c1'], 'freshness preserved: return still refetches (no network suppression)');
+  off();
+
+  // 6. an expired cursor with cached pages still recovers once, to page one only.
+  h.state.expired = true; h.state.calls.length = 0;
+  await h.observer.refetch(); await h.settle();
+  assert.equal(viewOf(h.observer.getCurrentResult()), 'content', 'cached Feed stays visible until recovery runs');
+  const recovered = recoverGroupFeedFromInvalidCursor(h.qc, h.key, { attempted: false }, h.errorCode());
+  await h.settle();
+  assert.equal(recovered.attempted, true);
+  assert.equal(h.observer.getCurrentResult().data?.pages.length, 1, 'invalid_cursor still resets safely to page one');
+  h.close();
+}
+
+// Screen/preview wiring: no whole-Feed replacement for background refetch; Refresh refetches in place.
+assert.doesNotMatch(screen, /feed\.isFetching && !feed\.isFetchingNextPage\) return <V2Page>/, 'no whole-screen replacement on refetch');
+assert.match(screen, /const refreshInPlace = \(\) => \{[\s\S]*?void feed\.refetch\(\);/, 'manual Refresh refetches the stored pages in place');
+assert.match(screen, /onClick=\{refreshInPlace\}/);
+assert.match(screen, /feedScrollByGroup/, 'scroll position is kept across Challenge return');
+assert.match(screen, /handleV2GroupFeedDenied\(queryClient, groupId/, '404 handling retained');
+assert.doesNotMatch(preview, /feed\.isSuccess && !feed\.isFetching && events\.length > 0/, 'preview keeps events visible while refetching');
 
 queryClient.clear();
 deniedClient.clear();

@@ -29,13 +29,13 @@ export function V2GroupFeedPreview({ groupId }: { groupId: string }) {
           View all activity
         </Link>
       </div>
-      {(feed.isLoading || (feed.isFetching && !feed.isFetchingNextPage)) && <p role="status" className="rounded-xl bg-white px-4 py-3 text-sm text-slate-500">Loading Group activity…</p>}
-      {feed.isError && <div className="rounded-xl border border-slate-200 bg-white px-4 py-3" role="alert">
+      {feed.isLoading && <p role="status" className="rounded-xl bg-white px-4 py-3 text-sm text-slate-500">Loading Group activity…</p>}
+      {feed.isError && events.length === 0 && <div className="rounded-xl border border-slate-200 bg-white px-4 py-3" role="alert">
         <p className="text-sm text-slate-600">{feed.error instanceof ApiError && feed.error.status === 404 ? 'Group activity is unavailable.' : 'We could not load Group activity just now.'}</p>
         <V2Button variant="secondary" className="min-h-11" onClick={() => void feed.refetch()} disabled={feed.isFetching}>Try again</V2Button>
       </div>}
       {feed.isSuccess && !feed.isFetching && events.length === 0 && <p className="rounded-xl bg-white px-4 py-3 text-sm text-slate-500">Group activity will appear here as Challenges progress.</p>}
-      {feed.isSuccess && !feed.isFetching && events.length > 0 && <ul className="space-y-2">{events.map((event) => <V2GroupFeedEvent key={event.feedEventId} event={event} groupId={groupId} />)}</ul>}
+      {events.length > 0 && <ul className="space-y-2">{events.map((event) => <V2GroupFeedEvent key={event.feedEventId} event={event} groupId={groupId} />)}</ul>}
     </section>
   );
 }

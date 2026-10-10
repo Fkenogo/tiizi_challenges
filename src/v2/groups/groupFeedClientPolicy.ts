@@ -49,3 +49,21 @@ export function cursorRecoveryOnRefresh(): CursorRecoveryState {
 export function composeGroupFeedPages(pages: readonly GroupFeedPage[] | undefined) {
   return pages?.flatMap((page) => page.events) ?? [];
 }
+
+/**
+ * NB-3 — what may replace the whole Feed screen. Only the first load (no cached page at all)
+ * and a failure with nothing cached may. Once any page is cached, a background/refocus/manual
+ * refetch, a remount (Challenge → Back to Group activity) and even a refetch error keep the
+ * already loaded events on screen; progress and errors are shown inline instead.
+ */
+export type GroupFeedBlockingView = 'loading' | 'error' | 'content';
+
+export function groupFeedBlockingView(state: {
+  hasCachedPages: boolean;
+  isPending: boolean;
+  isError: boolean;
+}): GroupFeedBlockingView {
+  if (state.hasCachedPages) return 'content';
+  if (state.isPending) return 'loading';
+  return state.isError ? 'error' : 'content';
+}

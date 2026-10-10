@@ -281,7 +281,9 @@ check('finalized Challenges show served frozen results (no live fetch as truth)'
 check('streaks carry no fabricated participant count',
   !/streak.*participant|participant.*streak/i.test(cardCode));
 check('CTA is permission-gated: Join inline (confirmed) / Log+Results navigate',
-  cardCode.includes('joinChallengeV2') && cardCode.includes('Log activity') && cardCode.includes('View results'));
+  cardCode.includes('joinChallengeV2') && cardCode.includes('hostedChallengeCtaLabel')
+  && read('src/v2/groups/hostedChallengeCta.ts').includes('Log activity')
+  && read('src/v2/groups/hostedChallengeCta.ts').includes('View results'));
 check('join converges through the canonical invalidation contract',
   cardCode.includes('invalidateV2ChallengeReads'));
 check('no Group Leaderboard surface in Group code (the governed count hooks are reuse, not a surface)',
@@ -333,6 +335,35 @@ check('view/draft/cover models import API types only (no stores/mutations)',
   ));
 check('no V1 experience in Group surfaces',
   !/from '\.\.\/\.\.\/features\//.test(anyGroupCode) && !/\bBottomNav\b/.test(anyGroupCode));
+
+// ---- Founder follow-up 001: Log activity only while logging is canonically open ----
+{
+  const { hostedChallengeCtaLabel } = await import('../src/v2/groups/hostedChallengeCta');
+  const { challengeLoggingOpen } = await import('../src/v2/challenges/challengeEndState');
+  const base = {
+    challengeId: 'c1', groupId: 'g1', groupName: 'G', activities: [], title: 'T', description: '',
+    challengeType: 'collective', status: 'active', startDate: '2026-10-01', endDate: '2026-10-28',
+    timezone: 'UTC', governingToday: '2026-10-10', finalized: false, currentConfigVersion: 1,
+    goalValue: 1000, goalUnit: 'reps', collectiveTotal: 10, collectiveGoalReached: false, completionsCount: 0,
+    myParticipation: { status: 'active' },
+  } as never as Parameters<typeof hostedChallengeCtaLabel>[0];
+  const variant = (patch: Record<string, unknown>) => ({ ...(base as object), ...patch }) as unknown as typeof base;
+  check('running + eligible participant => Log activity', hostedChallengeCtaLabel(base) === 'Log activity');
+  check('finished (ended, goal crossed) => NO Log activity',
+    hostedChallengeCtaLabel(variant({ status: 'ended', collectiveGoalReached: true })) === 'View');
+  check('ended / non-finalized => NO Log activity and no results implied',
+    hostedChallengeCtaLabel(variant({ status: 'ended', finalized: false })) === 'View');
+  check('window-expired-unprocessed (active, governing day past end) => NO Log activity',
+    hostedChallengeCtaLabel(variant({ governingToday: '2026-10-29' })) === 'View');
+  check('finalized => existing result/view action only',
+    hostedChallengeCtaLabel(variant({ status: 'ended', finalized: true })) === 'View results');
+  check('scheduled/upcoming => NO premature Log activity',
+    hostedChallengeCtaLabel(variant({ status: 'establishment' })) === 'View');
+  check('non-participant running => no Log activity (Join is the inline action)',
+    hostedChallengeCtaLabel(variant({ myParticipation: null })) === 'View');
+  check('helper composes the canonical gates (status active + live end state)',
+    challengeLoggingOpen(base) && !challengeLoggingOpen(variant({ status: 'ended' })));
+}
 
 if (failures > 0) {
   console.error(`\nS4a CORR-001 guards: ${failures} failure(s).`);
