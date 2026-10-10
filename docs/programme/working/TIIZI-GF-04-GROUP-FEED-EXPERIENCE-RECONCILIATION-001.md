@@ -1,6 +1,6 @@
 # TIIZI GF-04 Group Feed Experience — Reconciliation 001
 
-**Status:** GF-04 RECONCILIATION 001 — FOUNDER ACCEPTED / READY TO MERGE. Accepted implementation head `f3628ef581950a4e2954228b8430d817c4382210` (PR #88). Not merged; marked MERGED only when the merge occurs.
+**Status:** GF-04 RECONCILIATION 001 — COMPLETE / FOUNDER ACCEPTED / MERGED / CLOSED. PR #88; accepted head `d5ade7d750986cc94ef8390c1d7f646b53a36428`; merge commit `08e5f6571f5519ed943f43f72002b22111a02a80`.
 
 **Base:** `origin/main` `0893bac165ff17ce14feb27bbee6f1800cbcb2c2`. **Branch:** `reconcile/gf-04-group-feed-experience-001`.
 
@@ -41,7 +41,7 @@ No GF-01 / GF-02 / GF-03 change, no migration change, no scheduler, Kudos, Share
 
 ## Founder acceptance (2026-10-10)
 
-**Final status:** GF-04 RECONCILIATION 001 — FOUNDER ACCEPTED / READY TO MERGE.
+**Acceptance-stage status (superseded by Final closure below):** FOUNDER ACCEPTED / READY TO MERGE.
 
 **Accepted implementation head:** `f3628ef581950a4e2954228b8430d817c4382210` (PR #88, branch `reconcile/gf-04-group-feed-experience-001`; direct descendant of the R1-reviewed head `627b033fa44a5854d811324a4465d3d51f39be2d` via `6573fd1` and `f3628ef`). Repository CI: SUCCESS.
 
@@ -68,3 +68,27 @@ No deployment, no production access, no scheduler deployed, no GF-01 / GF-02 / G
 
 ### Migration 025 follow-up
 **NON-BLOCKING FOR GF-04 / MUST BE RECONCILED BEFORE MIGRATION 025 DEPLOYMENT.** See "Known gap" above; the storage CHECK constraints remain a historical superset of GF-01 v1.1 and migration 025 is NOT deployed.
+
+## Final closure (2026-10-10)
+
+**Final disposition:** GF-04 RECONCILIATION 001 — COMPLETE / FOUNDER ACCEPTED / MERGED / CLOSED.
+
+| Item | Value |
+| --- | --- |
+| Pull request | #88 (`reconcile/gf-04-group-feed-experience-001`) |
+| Accepted source head | `d5ade7d750986cc94ef8390c1d7f646b53a36428` |
+| Accepted implementation head | `f3628ef581950a4e2954228b8430d817c4382210` |
+| Merge commit (main) | `08e5f6571f5519ed943f43f72002b22111a02a80` |
+| Founder acceptance | 2026-10-10 |
+| Repository CI | Green (Cloudflare Workers Builds is the external, non-gating check) |
+| Deployment / production access | None |
+| Scheduler | None deployed; the Together-goal publication evidence is DEVELOPMENT/local only and used the existing local feed processor |
+
+### PR #77 supersession
+PR #77 (`impl/gf-04-group-feed-experience-001`, head `ee18e629616c3a136ecd069cae5208871348ee09`) was historical implementation source only. Its five-family implementation is stale, it **MUST NOT be merged**, and the canonical implementation is PR #88 / main. It is not modified or closed by this record.
+
+### Migration 025 follow-up (unchanged in substance)
+**NON-BLOCKING FOR GF-04 / MUST BE RECONCILED BEFORE MIGRATION 025 DEPLOYMENT.** Migration 025 is unchanged, no migration 026 exists, and migration 025 is NOT deployed.
+
+### Boundaries
+Documentation-only closure. No application, migration, Product Truth or deployment change. The next product capability is not begun.
