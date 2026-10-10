@@ -7,7 +7,7 @@
 **Companion:** `docs/programme/TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md`
 
 **Status:**
-- **EFFECTIVE (Founder-decided, 2026-10-10):** §2 amendment; §3 invariants that restate existing Product Truth; §4 v1 event decisions; §5 retention and access; §6 Share, Kudos and announcement rules; §7 comments status; §9 boundary with the Group Feed.
+- **EFFECTIVE (Founder-decided, 2026-10-10; exception: the qualifying Streak milestone schedule in S2 is pending, see §4.2 and §11):** §2 amendment; §3 invariants that restate existing Product Truth; §4 v1 event decisions; §5 retention and access; §6 Share, Kudos and announcement rules; §7 comments status; §9 boundary with the Group Feed.
 - **PROPOSED (genuinely unresolved detail):** the items marked **[PROPOSED]** in-line and listed in §11. Everything not so marked is effective.
 - **Implementation:** **not authorized.** CF-2 (publication/event model) and later packages need separate Founder authorization.
 
@@ -62,8 +62,10 @@ All automatic cards are template-typed. A2, A4 and A5 are the same source transi
 | # | Moment | What the member may share | Excluded | Source of truth |
 |---|---|---|---|---|
 | S1 | **Accepted participant activity** | Activity name; the member's **own accepted value**; unit; their display name | Notes, evidence, location, raw metadata | `challenge_activity_records` (accepted) |
-| S2 | **Streak milestone** | The member's **own** milestone only | Anyone else's data | Participation derived state |
+| S2 | **Streak milestone — EFFECTIVE capability; qualifying milestone definition PENDING** | A member may explicitly Share only their **own** governed Streak milestone. The canonical qualifying milestone schedule is **not yet defined** and **MUST be decided before CF-2 implements this event family**. Historical V1/legacy threshold behavior is not authority | Anyone else's data; ordinary daily Streak progress (never auto-published) | Participation derived state (milestone schedule undefined) |
 | S3 | **Race finish / personal result** | The member's **own** result only | **No numeric final position** in a Feed Share; canonical Challenge Results continues to show authorized result truth | `challenge_participation_finals` |
+
+**S2 boundary.** Explicit, previewed, self-only, withdrawable Share (§6.1) applies as for the other Share events, and no other member's Streak data may be shared. What is **not** decided is which Streak thresholds count as a "milestone". No schedule (for example 3/7/14, or every 7 days) is selected, and V1 or archived implementation behavior is not authority for one. The schedule is **PROPOSED / REQUIRES FOUNDER DECISION BEFORE CF-2 IMPLEMENTATION** (§11 item 7). CF-2 must not invent a milestone generator; until decided, the S2 event family is not implemented.
 
 ### 4.3 NOT APPROPRIATE (not published in v1, by any route)
 
@@ -132,7 +134,7 @@ The existing invariant test for the four Group Feed families must continue to pa
 
 ## 11. Remaining open detail (all [PROPOSED])
 
-1. Kudos-able item set (system cards or not). 2. Rule for when a Challenge creator is an authorized distinct administration actor, and the announcement length bound. 3. Table/projection design, idempotency-key format and migration numbering (assigned when CF-2 starts). 4. Placement and layout (CF-4). 5. Read-API response shape (CF-3). 6. Whether Kudos counts display for A-cards if later made Kudos-able. All other content above is Founder-decided.
+1. Kudos-able item set (system cards or not). 2. Rule for when a Challenge creator is an authorized distinct administration actor, and the announcement length bound. 3. Table/projection design, idempotency-key format and migration numbering (assigned when CF-2 starts). 4. Placement and layout (CF-4). 5. Read-API response shape (CF-3). 6. Whether Kudos counts display for A-cards if later made Kudos-able. 7. **Streak milestone qualifying schedule — REQUIRES FOUNDER DECISION BEFORE CF-2 IMPLEMENTATION.** The S2 capability (a member may explicitly Share their own governed Streak milestone) is effective, but the canonical qualifying milestone schedule/thresholds are not defined in V2 Product Truth; no schedule is selected here and historical V1/legacy threshold behavior is not authority. All other content above is Founder-decided.
 
 ## 12. Non-goals
 

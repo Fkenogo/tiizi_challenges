@@ -161,7 +161,7 @@ There is still no Home Feed. Group Feed and Challenge Feed are separate capabili
 | 5 | Challenge ended | AUTOMATIC | Generic |
 | 6 | Finalized results ready | AUTOMATIC | Generic "Results are ready"; actual results stay on Challenge Detail |
 | 7 | Accepted participant activity | **EXPLICIT SHARE ONLY** | Activity name, the member's own accepted value, unit, display name. No notes/evidence/location/raw metadata |
-| 8 | Streak milestone | **EXPLICIT SHARE ONLY** | The member's own milestone only |
+| 8 | Streak milestone | **EXPLICIT SHARE ONLY** (capability effective; **qualifying milestone schedule pending Founder decision before CF-2**) | The member's own governed milestone only; no schedule selected |
 | 9 | Race finish / personal result | **EXPLICIT SHARE ONLY** | The member's own result only; **no numeric final position** in a Feed Share |
 
 **NOT APPROPRIATE:** participant left; live Race rank/position movement; routine automatic personal activity; a "Challenge established" card inside the Challenge's own Feed.
@@ -245,7 +245,7 @@ Migration 025 remains Group-Feed-specific and unchanged and is not deployed. **I
 
 ## 14. Remaining Founder inputs (genuinely open)
 
-1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping definition (technical, within the vocabulary normalization package) and legacy/custom focus-tag handling design. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable.
+1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping definition (technical, within the vocabulary normalization package) and legacy/custom focus-tag handling design. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable. 9. **Streak milestone qualifying schedule** (CF-01 §11 item 7): required before CF-2 implements the Streak milestone Share family.
 
 ## 15. Boundaries
 
