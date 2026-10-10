@@ -1,6 +1,6 @@
 # TIIZI — MEMBER COMPLETION FOUNDER DISPOSITION 001
 
-**Date:** 2026-10-10 (revised; finalization pass; §5 aligned by Recommendation Authority Reconciliation 001)
+**Date:** 2026-10-10 (revised; finalization pass; §5 aligned by Recommendation Authority Reconciliation 001 and Founder Disposition 001 on vocabularies)
 **Base:** `365c958bf69f6d79ae262e81045abae9c777c19c` (canonical `main`). Master Programme 2.50 → 2.51 → **2.52**
 **Basis:** `docs/programme/TIIZI-MEMBER-COMPLETION-ASSESSMENT-001.md` (commit `0ee5da0`); first revised disposition candidate `2bf79f7`
 **Companion records:** `docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md` (v0.2); `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md`
@@ -39,8 +39,8 @@ Historical records are annotated, not erased.
 | **FD-MC-04a** | **EFFECTIVE (new)** | **No skip.** Interests: multi-select, min 1, max 5. Goals: multi-select, min 1, max 3. Both editable in Profile |
 | **FD-MC-04b** | **EFFECTIVE (approved with verification)** | Governed Group Focus Areas = starting Interest vocabulary; governed Group Goals = starting Goal vocabulary; stable IDs stored. Verification and reconciliation required before REC-1 implementation (§5). *Member Interest and Member Goal remain distinct concepts from Group Focus Area and Group Goal; only the starting vocabulary is shared.* |
 | **FD-MC-04c** | **EFFECTIVE** | REC-1 is a pre-pilot capability that **operationalizes** the already-authorized interest-based discovery/recommendation capability (§5.0) |
-| **FD-MC-04d** | **OPEN — Founder confirmation needed** | Goal-based relevance: confirm Member Goals as a recommendation input and the narrow amendment/annotation of CORR-001 so Group Goals may be used as a Group-side relevance attribute. Until confirmed, REC-1 does not use Group Goals as a matching key |
-| **FD-MC-04e** | **OPEN — Founder confirmation needed** | Record FD-MC-04b as a bounded V2 starting-vocabulary disposition under KNW-04 (without closing KNW-04 generally), and REC-1's relationship to the future Discovery & Personalisation governance programme |
+| **FD-MC-04d** | **EFFECTIVE (approved 2026-10-10)** | Goal-based relevance approved for V2: Member Goals as bounded REC-1 relevance inputs; Group Goals as the corresponding Group-side relevance attributes. A new, narrow relationship that creates no access, eligibility, membership, participation or scoring effect (§5) |
+| **FD-MC-04e** | **EFFECTIVE (approved 2026-10-10)** | Bounded KNW-04 resolution for the V2 pilot: Member Interest vocabulary = the governed 12 Focus Area concepts; Member Goal vocabulary = the governed 9 Group Goal concepts; entities stay distinct; KNW-04 stays open only for broader evolution (§5) |
 | FD-MC-05 | EFFECTIVE | Versioned Terms/Privacy consent record before pilot (§6). No legal wording invented |
 | **FD-MC-06a** | **EFFECTIVE in principle** | IDP-03 Option A (§10) |
 | **FD-MC-07a** | **EFFECTIVE** | Cloudflare R2 selected as the initial object-storage provider behind a provider-neutral port (§8) |
@@ -65,33 +65,50 @@ The V2 entry flow includes a bounded step in which the member **must** choose:
 
 **Flow shape (PROPOSED, experience detail):** short welcome (how Tiizi works), interests step, goals step, then Today. The welcome screen being skippable is an experience detail; the interests and goals steps are not skippable.
 
-**Open implementation detail (not a Founder decision):** returning-member behaviour for members who predate this flow or were seeded without selections (they have no stored selections). Proposed: they are routed into the same required step on next entry. To be settled in MC-3.
+**Pre-existing members (EFFECTIVE):** a V2 member without canonical Interest/Goal selections must complete the same bounded onboarding selection (interests 1–5, goals 1–3, no skip) on next V2 entry. V1 preference data is not imported automatically.
 
-## 5. Vocabulary, verification and REC-1
+## 5. Vocabularies, relevance authority and REC-1
 
-### 5.0 Authority basis (corrected by Reconciliation 001)
-REC-1 does **not** create recommendation authority from nothing. Founder-approved Stage F Product Truth (T1 §E.8, §O.2, §S.2, §S.4, §S.5; FR-V2-053; CIC §4.2/§4.3) already permits interest-based Challenge and Group discovery and recommendation. The later S4 statement that Focus Areas and Goals confer no recommendation authority is an implementation and authority boundary on Group metadata and on the S4 slice: those fields do not themselves create recommendation, ranking, access, eligibility, membership or participation. REC-1 is the explicit governed capability that relates Member Interests and Group/Challenge metadata as relevance inputs inside the already-authorized discoverable set. **Interests: already authorized. Goals: a new relationship** (Member Goals approved as an input by the 2026-10-10 direction; Group Goals as a matching key pending FD-MC-04d, because the approved Group metadata Product Truth states Group Goals do not rank, recommend or match Groups). Full trace: `TIIZI-INTEREST-GOAL-FOCUS-AREA-RECOMMENDATION-AUTHORITY-RECONCILIATION-001.md`.
+### 5.0 Final authority interpretation (EFFECTIVE)
+Foundation Product Truth already authorized interest-based discovery and recommendation (Stage F T1 §E.8, §O.2, §S.2, §S.4, §S.5; FR-V2-053; CIC §4.2/§4.3). The later S4 statements were non-delegation/scope boundaries: Focus Areas and Goals did not themselves create a recommender, and the S4 slice did not implement recommendation. FD-MC-04d now adds the narrow Member Goal ↔ Group Goal relevance relationship. FD-MC-04e establishes the bounded V2 pilot vocabularies. **REC-1 does not invent interest-based recommendation from nothing**; it operationalizes an authorized capability and adds the approved Goal relationship. Full trace: `TIIZI-INTEREST-GOAL-FOCUS-AREA-RECOMMENDATION-AUTHORITY-RECONCILIATION-001.md`.
 
-### 5.1 Approved direction
-Interest vocabulary starts from the governed **Group Focus Areas**; Goal vocabulary starts from the governed **Group Goals**. Member selections are stored as stable IDs.
+### 5.1 Decisions
+**FD-MC-04d — APPROVED.** Goal-based relevance is approved for V2. Member Goals may be used by REC-1 as bounded relevance inputs, and Group Goals may be used as the corresponding Group-side relevance attributes. This is a new, narrow relationship. It does not mean that Group Goals create recommendation authority by themselves; that Member Goals create access; that Goals create eligibility, Group membership or Challenge participation; that Goals affect Challenge scoring, progress or results; or that recommendation becomes endorsement. REC-1 is the explicit governed capability that relates these independent facts.
 
-### 5.2 Preliminary verification observations (from reading the code at `365c958`; formal verification is an entry gate for REC-1)
-- **(Verified in Reconciliation 001.) Focus Areas are the governed Knowledge taxonomy.** `src/v2/groups/groupFocusAreas.ts` defines 12 entries as exact Fitness/Wellness *categories* from the governed Knowledge taxonomy (EKG-01 §5). This makes an Activity-category → Focus-Area mapping likely close to identity, but it must still be defined explicitly and approved.
-- **Focus Areas have no stable IDs.** The client list and the API list (`api/src/groupVocabulary.ts`) carry labels/categories only. Stable IDs must be defined and versioned before member selections can be stored as IDs. (`GROUP_GOALS` already has stable ids such as `build_strength`.)
-- **Group `focus_tags` are not guaranteed conformant.** They are stored as label strings. The validated Group route accepts the standard labels plus at most one custom label of up to 30 characters; the domain sanitizer treats tags as bounded free-text strings ("free-text focus chips, presentation only"); legacy tags are read as stored.
-- **No recommendation logic exists.** Group discovery orders by creation date; Today opportunities are un-joined Challenges in the member's own Groups, not relevance-ranked.
+**S4 Group Goal wording, narrowly clarified.** *Historical meaning (unchanged):* at S4 acceptance, Group Goals did not themselves rank, recommend or match Groups, and S4 did not implement a recommender. *New effective clarification (FD-MC-04d):* a separately governed recommendation capability MAY use Group Goals as descriptive relevance inputs, together with Member Goals, inside the already-authorized discoverable set.
 
-### 5.3 REC-1 entry gates (all before implementation)
-1. Verify current storage and validation of Group `focus_tags` (confirm the observations above against data and tests).
-2. Reconcile/normalize them to stable governed IDs where needed (including a decision on legacy/custom tags: map, retain as non-matching presentation, or migrate), without changing Group presentation unexpectedly.
-3. Define and approve an explicit governed **Activity-category → Focus-Area mapping** for Challenge relevance.
-4. Define stable IDs and a vocabulary version for Interests and Goals.
+**FD-MC-04e — APPROVED (bounded KNW-04 resolution for the V2 pilot).** KNW-04 is resolved only for the bounded V2 pilot recommendation/profile scope. For this scope the **Member Interest vocabulary is the governed 12 Focus Area concepts** and the **Member Goal vocabulary is the governed 9 Group Goal concepts**. Sharing a vocabulary does not collapse the entities: a Member Interest is a Profile expression; a Group Focus Area is Group descriptive metadata; a Member Goal is a Profile expression; a Group Goal is Group descriptive metadata; an Activity category is a Knowledge classification. The Member owns their Interest and Goal expressions; the Group Steward establishes Group Focus Areas and Goals under Group authority; Knowledge Authority governs Activity and category meaning; REC-1 relates those facts for relevance only.
 
-### 5.4 REC-1 requirements (EFFECTIVE)
-Purpose: rank relevant Groups and Challenges using member interests/goals (goals subject to §5.0 / FD-MC-04d on the Group side). It **must**: rank only inside already-authorized discoverable results; never create visibility, access or eligibility; be deterministic and explainable for v1; fall back to the ordinary existing ordering when no match exists; never present hidden or non-discoverable entities. **No ML requirement for v1.** Recommendation is a navigation aid, not endorsement. Results must still respect Group and Challenge visibility, membership rules, participation eligibility, location or other authorized constraints, and ordinary authorization.
+**KNW-04 status:** *RESOLVED for the bounded V2 pilot recommendation/profile scope* (vocabulary and ownership as above). *OPEN for broader future evolution* only: adding or removing controlled concepts, taxonomy lifecycle beyond pilot, broader personalization capabilities, and future custom-vocabulary governance.
 
-### 5.5 Status
-**REC-1: PRE-PILOT capability, APPROVED in principle, NOT STARTED, implementation not authorized.** Depends on MC-3 data and the §5.3 gates.
+### 5.2 Ownership and definitions (final)
+| Concept | Final definition | Owner / authority |
+|---|---|---|
+| **Member Interest** | A Profile expression, by the member, of interest in one of the governed 12 Focus Area concepts, held as that concept's stable ID, for the declared purpose of relevance. Private preference data; creates no access, eligibility or participation | The Member (Participant Authority) |
+| **Member Goal** | A Profile expression, by the member, of one of the governed 9 Group Goal concepts, held as that concept's stable ID, for relevance only. Not a Challenge target, Policy or Activity | The Member |
+| **Group Focus Area** | Descriptive Group metadata selecting from the governed 12 concepts | The Group Steward, under Group authority |
+| **Group Goal** | Descriptive Group metadata selecting from the governed 9 concepts | The Group Steward, under Group authority |
+| **Activity category** | Knowledge classification (EKG-01 §5), the same 12 concepts | Knowledge Authority |
+| **Relevance result** | Derived, non-canonical, not Profile truth, not persisted in v1 | REC-1 (application capability) |
+
+### 5.3 Stable IDs (REQUIRED before MC-3 / REC-1 implementation)
+**Recorded inconsistency.** `api/src/groupVocabulary.ts` states "IDs are stable API values", but `GROUP_FOCUS_AREAS` there has only `domain` and `label` (the client copy has `domain` and `category`), with **no id**. Group Goals and Community Norms do have IDs. Requirements for the 12 Focus Areas: **stable, application-owned machine IDs; immutable once published; UI labels may evolve without changing identity; Member Interests store IDs, not labels; Group Focus Areas must ultimately normalize to IDs; Challenge Activity-category mapping uses governed IDs/relations; free-text labels are never canonical recommendation keys.** No ID values are chosen or proposed in this docs pass (repository convention does not require the Product Truth record to specify them); the vocabulary normalization package defines them, and any values it proposes are implementation candidates until that package begins.
+
+### 5.4 Custom text (EFFECTIVE)
+REC-1 v1 **must not** use arbitrary custom text as a recommendation key. Governed Focus Area IDs and governed Group Goal IDs participate. Custom focus tags and custom Group goal text remain **display/descriptive metadata only** and receive **no relevance weight** unless later mapped through an explicitly governed normalization process.
+
+### 5.5 Challenge relevance (EFFECTIVE)
+No synthetic Challenge Focus Area field is added for recommendation. Challenge relevance derives from (1) the canonical Activities pinned to the Challenge, (2) their governed Activity categories, (3) the hosting Group's governed Focus Areas, and (4) the hosting Group's governed Goals where applicable. REC-1 may combine those signals; weighting belongs to REC-1 design.
+
+### 5.6 REC-1 requirements and authority status (EFFECTIVE)
+REC-1 ranks Groups and Challenges using Member Interests and Goals inside already-authorized discoverable results. It **must**: never create visibility, access, membership, participation or eligibility; be deterministic and explainable for v1; fall back to the existing ordering when no match exists; never present hidden or non-discoverable entities; use no ML in v1; not infer interests from behaviour in v1; not store results as Profile truth; never expose one member's interests/goals to others. Recommendation is a navigation aid, not endorsement.
+**Authority status: CLEAR.** REC-1 is no longer blocked by recommendation authority. It remains pre-pilot, NOT STARTED, and implementation is not authorized.
+
+### 5.7 Remaining REC-1 technical prerequisites (not implemented in this pass)
+1. Mint stable Focus Area IDs. 2. Normalize governed Group Focus Areas to IDs (verify real stored `focus_tags` first). 3. Preserve custom values as non-ranking metadata. 4. Persist Member Interest and Goal IDs (MC-2/MC-3). 5. Define the Challenge Activity-category relevance mapping. 6. Implement deterministic ranking within already-authorized discovery. 7. Provide fallback ordering.
+
+### 5.8 Preliminary verification (from code at `365c958`)
+Focus Areas equal the 12 governed Knowledge categories (`groupFocusAreas.ts`, `groupVocabulary.ts`, `knowledge.ts` V2 categories). They have no IDs (§5.3). Group `focus_tags` are label strings; the validated route accepts the standard labels plus at most one custom label of up to 30 characters, the domain sanitizer treats them as bounded free-text strings, and legacy tags are read as stored. No recommendation logic exists (Group discovery orders by creation date).
 
 ## 6. Consent (FD-MC-05)
 Record: member identity, Terms version, Privacy version, timestamp, source/context, accountable actor. Version identifiers and the wording come from the legal text owner; engineering does not invent them. Prospective withdrawal per CIC §4.27.
@@ -206,8 +223,8 @@ Migration 025 remains Group-Feed-specific and unchanged and is not deployed. **I
 |---|---|---|
 | **MC-1** | Member Bootstrap | none (first technical blocker) |
 | **MC-2** | Profile Foundation (profile store, display-name history, interests/goals persistence, Profile page, sign out) | MC-1; Profile Product Truth contract |
-| **MC-3** | Onboarding + Consent | MC-1, MC-2; legal version ids; vocabulary stable ids (§5.3 items 2, 4) |
-| **REC-1** | Relevance Recommendations | MC-3 data; §5.3 gates complete |
+| **MC-3** | Onboarding + Consent | MC-1, MC-2; legal version ids; stable Focus Area IDs (§5.3) |
+| **REC-1** | Relevance Recommendations | MC-3 data; technical prerequisites in §5.7 (authority is clear) |
 | **MC-4** | Member Identity Projection | MC-2 |
 | **MEDIA-1** | Media decision record | none |
 | **MEDIA-2** | Media implementation (2a core+R2 adapter; 2b profile; 2c Group cover; 2d Challenge cover) | MEDIA-1; 2a needs R2 account/credentials/non-production env; 2b needs MC-2 |
@@ -228,7 +245,7 @@ Migration 025 remains Group-Feed-specific and unchanged and is not deployed. **I
 
 ## 14. Remaining Founder inputs (genuinely open)
 
-1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping approval and legacy/custom focus-tag treatment. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable. 9. **FD-MC-04d** and **FD-MC-04e** (§3): Goal-based relevance and the KNW-04 positioning of the starting vocabulary.
+1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping definition (technical, within the vocabulary normalization package) and legacy/custom focus-tag handling design. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable.
 
 ## 15. Boundaries
 
