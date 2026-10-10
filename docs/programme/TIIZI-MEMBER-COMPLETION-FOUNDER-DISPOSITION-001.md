@@ -1,12 +1,12 @@
 # TIIZI — MEMBER COMPLETION FOUNDER DISPOSITION 001
 
-**Date:** 2026-10-10 (revised; finalization pass; §5 aligned by Recommendation Authority Reconciliation 001 and Founder Disposition 001 on vocabularies; §10 extended by the PR #90 Codex findings correction)
-**Base:** `365c958bf69f6d79ae262e81045abae9c777c19c` (canonical `main`). Master Programme 2.50 → 2.51 → 2.52 → 2.53 → 2.54 → **2.55**
+**Date:** 2026-10-10 (revised; finalization pass; §5 aligned by Recommendation Authority Reconciliation 001 and Founder Disposition 001 on vocabularies; §10 and §8.5 extended by the PR #90 Codex findings corrections)
+**Base:** `365c958bf69f6d79ae262e81045abae9c777c19c` (canonical `main`). Master Programme 2.50 → 2.51 → 2.52 → 2.53 → 2.54 → 2.55 → **2.56**
 **Basis:** `docs/programme/TIIZI-MEMBER-COMPLETION-ASSESSMENT-001.md` (commit `0ee5da0`); first revised disposition candidate `2bf79f7`
-**Provenance (programme version chain represented by this document):** v2.51 revised disposition (media pre-pilot, Challenge Feed authorized in principle) → v2.52 finalization pass (no-skip onboarding, R2, CF-01 v0.2, BG-1, migration rule) → v2.53 Interest/Goal/Focus-Area Recommendation Authority Reconciliation 001 (§5 authority basis) → v2.54 FD-MC-04d / FD-MC-04e bounded pilot resolution (§5 now carries the final vocabularies, stable-ID requirement, custom-text rule and pre-existing-member rule) → v2.55 stewardship precondition for account deletion (§10). **This document contains the decisions of all of these versions.**
+**Provenance (programme version chain represented by this document):** v2.51 revised disposition (media pre-pilot, Challenge Feed authorized in principle) → v2.52 finalization pass (no-skip onboarding, R2, CF-01 v0.2, BG-1, migration rule) → v2.53 Interest/Goal/Focus-Area Recommendation Authority Reconciliation 001 (§5 authority basis) → v2.54 FD-MC-04d / FD-MC-04e bounded pilot resolution (§5 now carries the final vocabularies, stable-ID requirement, custom-text rule and pre-existing-member rule) → v2.55 stewardship precondition for account deletion (§10) → v2.56 stewardship precondition keyed to any Group that still requires an Accountable Steward, STEW-1 Accountable Steward Transfer as a pre-pilot requirement (§10.1), and scope-based media ownership (§8.5). **This document contains the decisions of all of these versions.**
 **Companion records:** `docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md` (v0.2); `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md`
-**Status:** **FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED / AWAITING FINAL REVIEW AND PR.**
-**Nature:** Documentation, Product Truth and programme alignment only. **No implementation is authorized.** Each work package below still needs its own Founder authorization before it starts. No PR has been opened.
+**Status:** **FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED. PR #90 — OPEN / UNDER REVIEW / UNMERGED.**
+**Nature:** Documentation, Product Truth and programme alignment only. **No implementation is authorized.** Each work package below still needs its own Founder authorization before it starts. This record is carried by PR #90, which is open, under review and unmerged; the PR is documentation only and authorizes no implementation.
 
 ## 1. How to read this record
 
@@ -137,6 +137,12 @@ Tiizi voluntarily adopts **MV-206 v0.1 — Media Storage & Delivery Guidance** (
 
 The existing curated gradient catalogue remains the **fallback/default**.
 
+### 8.5 Media ownership is scope-based (EFFECTIVE, v2.56)
+1. **Profile image** — scope: Member/Profile. Member-owned personal media; **removed when that member reaches deleted-anonymized.**
+2. **Group cover** — scope: Group. Belongs to the governed Group context; **survives uploader/account deletion**; replacement and deletion follow Group media authority, not the uploader's account lifecycle.
+3. **Challenge cover** — scope: Challenge. Belongs to the governed Challenge context; **survives uploader/account deletion** where the Challenge or its history still requires it; replacement and deletion follow Challenge media/lifecycle authority.
+The **uploader is attribution/audit metadata, not ownership authority**, for Group- and Challenge-scoped assets. If the uploader later becomes deleted-anonymized: retain the asset while its Group/Challenge lifecycle requires it; retain only the minimum internal attribution needed for audit; ordinary presentation renders the actor as "Former member" or omits the name per the identity lifecycle; never erase historical Group/Challenge media solely because the uploader closed their account. The proposed data model (Media Capability Assessment §5) is updated conceptually to scope type / scope id / uploaded-by attribution; no schema is implemented here.
+
 ### 8.4 MEDIA-1 — now a concrete decision record
 MEDIA-1 must produce a Tiizi media decision record, not only a comparison. The provider and visibility baseline above are decided. Still to resolve in MEDIA-1: API-mediated vs scoped direct upload; exact size and pixel limits; variants; delivery/access mechanics consistent with the visibility baseline; replacement and deletion; moderation/takedown; cost and budget ownership; the bounded non-production proof plan including the optional Cloudflare Images evaluation.
 
@@ -191,23 +197,40 @@ Comments and replies are **not required before pilot**. They are a later capabil
 - **Request account deletion** as a durable, auditable request.
 - Manual Operator fulfilment is acceptable for pilot.
 - Anonymize member-facing identity to **"Former member"**.
-- Remove the profile image (object deleted).
+- Remove the member's profile image (object deleted); Group and Challenge covers are not removed (§8.5).
 - Remove interests and goals.
 - Sever/remove operational email and auth linkage as permitted by the auth lifecycle.
 - Withdraw the member's Challenge Feed Shares.
 - Remove their Kudos.
 - Preserve the internal historical UUID where immutable records require it.
 
-**Stewardship precondition (EFFECTIVE; part of FD-MC-06a / LIFE-1 pilot lifecycle authority).** A member who is the Accountable Steward of one or more active Groups **MAY submit** an account-deletion request, but **deletion fulfilment MUST NOT proceed while they remain Accountable Steward of any active Group.** Before final fulfilment:
-1. every active Group for which the member is Accountable Steward must have stewardship transferred to an eligible successor;
-2. the transfer must complete under existing governed Group authority;
+**Stewardship precondition (EFFECTIVE; part of FD-MC-06a / LIFE-1 pilot lifecycle authority; revised v2.56).** A member who is the Accountable Steward of any Group may **submit** an account-deletion request, but **deletion fulfilment MUST NOT proceed while the member remains the required Accountable Steward of ANY Group whose current governed lifecycle state still requires an Accountable Steward.** The rule is deliberately **not** keyed to `status = active`: it includes inactive, suspended and any other non-active state in which the canonical Group retains the Accountable Steward requirement. Only a future governed terminal Group state that explicitly no longer requires stewardship may cease to block deletion; **no such exemption exists today and none is invented here.** Before final fulfilment:
+1. every such Group must have stewardship transferred to an eligible successor;
+2. the transfer must complete under existing governed Group authority (STEW-1, §10.1);
 3. the successor must hold the required valid Group relationship;
 4. the Group must never be left without its required Accountable Steward;
-5. only after all stewardship obligations are cleared may the lifecycle flow proceed: anonymize the member-facing identity, remove the Profile image, remove Interests / Goals, withdraw member-owned Challenge Feed Shares, remove their Kudos, sever operational email/auth linkage as permitted, and complete the deleted-anonymized state.
+5. only after all stewardship obligations are cleared may the lifecycle proceed: anonymize the member-facing identity, remove the Profile image, remove Interests / Goals, withdraw member-owned Challenge Feed Shares, remove their Kudos, sever operational email/auth linkage as permitted, and complete the deleted-anonymized state.
 
-While blocked, the request may remain in the state **PENDING — STEWARDSHIP TRANSFER REQUIRED**. LIFE-1 and the Operator **must not**: auto-select a successor; silently transfer stewardship; automatically close or dissolve the Group; sever authentication first; or leave a Group attached to an unauthenticatable Accountable Steward. If an Operator-assisted stewardship transfer is already authorized by existing Group governance, it may be used; if no such authority exists, the member must perform the existing governed transfer before fulfilment can continue.
+While blocked, the request may remain **PENDING — STEWARDSHIP TRANSFER REQUIRED**. LIFE-1 and the Operator **must not**: auto-select a successor; silently transfer stewardship; automatically close or dissolve the Group; sever authentication first; or leave a Group attached to an unauthenticatable Accountable Steward.
 
-*Recorded dependency (verified, not a new decision):* at the base commit **no stewardship-transfer mutation exists in V2** — GF-01 §4 records "Accountable Steward change" as "DEFERRED PENDING FUTURE AUTHORITY: current V2 has no authorized transfer/successor transition", and the S4B record shows a Steward is blocked from leaving (`403 owner_cannot_leave`). The rule above is therefore enforceable today only as a *block*: a steward's deletion request stays PENDING until a governed transfer capability exists. Whether such a capability (member-initiated or Operator-assisted) must exist before pilot is an open Founder input (§14 item 10). This record does not create, design or authorize that capability.
+**Media on deletion (clarification, §8.5).** Only the deleting member's **Profile image** is removed. Group covers and Challenge covers are scoped to the Group/Challenge, survive the uploader's account deletion, and follow their own Group/Challenge media authority.
+
+*Recorded dependency (verified):* at the base commit **no stewardship-transfer mutation exists in V2** — GF-01 §4 records "Accountable Steward change" as "DEFERRED PENDING FUTURE AUTHORITY: current V2 has no authorized transfer/successor transition", and the S4B record shows a Steward is blocked from leaving (`403 owner_cannot_leave`). The Founder has therefore required **STEW-1** (§10.1) before pilot. Until STEW-1 exists, a Steward's deletion request simply stays PENDING.
+
+### 10.1 STEW-1 — Accountable Steward Transfer (PRE-PILOT; EFFECTIVE Product Truth minimum)
+Reason: LIFE-1 includes account deletion before pilot; without a governed transfer path an Accountable Steward could be permanently unable to complete deletion. STEW-1 is a **bounded** new work package. It does **not** reopen S4, which remains COMPLETE / FOUNDER ACCEPTED / MERGED; S4B's steward-leave block is unchanged.
+1. The current Accountable Steward may initiate a transfer.
+2. The successor must already hold an eligible current Group membership.
+3. The successor must not be pending, rejected, left, or otherwise ineligible.
+4. The transfer is **atomic**: exactly one Accountable Steward before, exactly one after; never zero, never two.
+5. Durable audit records the Group, outgoing steward, incoming steward, initiating actor and timestamp.
+6. The outgoing steward remains an ordinary Group member after the transfer unless they separately leave.
+7. No automatic successor selection.
+8. No silent transfer during account deletion.
+9. No Group dissolution as a substitute.
+10. **Successor acceptance (pilot):** the proposed successor must **affirmatively accept** stewardship before the atomic transfer completes; responsibility is never silently imposed on another member.
+11. LIFE-1 deletion fulfilment **consumes the completed STEW-1 state**: it proceeds only when no Group still requires the deleting member as Accountable Steward.
+**Not authorized by this decision:** Operator-assisted or emergency reassignment. No existing explicit V2 authority covers it (verified above), so it is recorded as **future recovery governance**, not pilot STEW-1. STEW-1 must also conform to existing governance (EOG-E1-01 §4 requires exactly one Accountable Steward at all times, with an atomic transition; CIC §4.3). Detailed contract, eligibility edge cases and the request/accept interaction are STEW-1 design, not decided here.
 
 **Policy/legal inputs (not to be invented by engineering):** the exact legal retention period and the deletion service level.
 
@@ -241,7 +264,8 @@ Migration 025 remains Group-Feed-specific and unchanged and is not deployed. **I
 | **MEDIA-1** | Media decision record | none |
 | **MEDIA-2** | Media implementation (2a core+R2 adapter; 2b profile; 2c Group cover; 2d Challenge cover) | MEDIA-1; 2a needs R2 account/credentials/non-production env; 2b needs MC-2 |
 | **MEDIA-3** | Media Founder preview | MEDIA-2 |
-| **LIFE-1** | Account Lifecycle (pilot minimum) | MC-2; consumers of Shares/Kudos/media removal (CF-5, MEDIA-2b) wired at the end |
+| **STEW-1** | Accountable Steward Transfer (§10.1) — **PRE-PILOT** | Existing Group governance (S4 complete, unchanged); MC-4 not required |
+| **LIFE-1** | Account Lifecycle (pilot minimum) | MC-2; **STEW-1 for deleting an Accountable Steward**; consumers of Shares/Kudos/media removal (CF-5, MEDIA-2b) wired at the end |
 | **CF-1** | Challenge Feed Product Truth (CF-01) | Founder review of remaining detail |
 | **CF-2** | Publication/Event Model | CF-1; BG-1 for production draining |
 | **CF-3** | Read API | CF-2; MC-4 for names |
@@ -252,15 +276,15 @@ Migration 025 remains Group-Feed-specific and unchanged and is not deployed. **I
 
 **Can proceed in parallel now (docs/decisions):** MEDIA-1, CF-1 remaining detail, Profile Product Truth contract (MC-2a), vocabulary ID definition and focus-tag verification (REC-1 gates), legal version ids and IDP-03 policy inputs, BG-1 design/selection.
 **In parallel after MC-1:** MC-2 ∥ MEDIA-2a ∥ CF-2 (automatic, actor-free moments) ∥ BG-1.
-**In parallel after MC-2:** MC-3 ∥ MC-4 ∥ MEDIA-2b/2c/2d ∥ LIFE-1.
-**Serial constraints:** MC-1 → MC-2; MC-3 → REC-1; MC-4 and CF-3 → name-bearing Feed items; CF-2…4 → CF-5 → CF-6; MEDIA-2 → MEDIA-3. Migration numbers are assigned only when each package starts.
+**In parallel after MC-2:** MC-3 ∥ MC-4 ∥ MEDIA-2b/2c/2d ∥ LIFE-1 (non-steward paths). **STEW-1 may proceed in parallel at any time** (it depends only on existing Group governance).
+**Serial constraints:** MC-1 → MC-2; MC-3 → REC-1; MC-4 and CF-3 → name-bearing Feed items; CF-2…4 → CF-5 → CF-6; MEDIA-2 → MEDIA-3; STEW-1 → LIFE-1 fulfilment for any Accountable Steward. Migration numbers are assigned only when each package starts.
 
 ## 14. Remaining Founder inputs (genuinely open)
 
-1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping definition (technical, within the vocabulary normalization package) and legacy/custom focus-tag handling design. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable. 9. **Streak milestone qualifying schedule** (CF-01 §11 item 7): required before CF-2 implements the Streak milestone Share family. 10. **Stewardship transfer capability:** no governed transfer exists in V2 today (GF-01 §4); decide whether one (member-initiated or Operator-assisted, under existing Group governance) is required before pilot so that Steward deletion requests can be fulfilled, or whether such requests remain PENDING — STEWARDSHIP TRANSFER REQUIRED during pilot.
+1. Legal text owner and Terms/Privacy version identifiers; re-acceptance policy. 2. Deletion SLA and legal retention period; who fulfils manually. 3. MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner). 4. Whether Kudos applies to automatic system cards or only to member-owned Shares and announcements (CF-01 §6 proposes the latter). 5. Definition of the "authorized, distinct Challenge-administration actor" for announcements. 6. Activity-category → Focus-Area mapping definition (technical, within the vocabulary normalization package) and legacy/custom focus-tag handling design. 7. BG-1 technology/hosting choice. 8. Whether the fallback treatment for pre-existing seeded members (no selections) is acceptable. 9. **Streak milestone qualifying schedule** (CF-01 §11 item 7): required before CF-2 implements the Streak milestone Share family. 10. *(Resolved v2.56)* Stewardship transfer is required pre-pilot as STEW-1 (§10.1); remaining STEW-1 inputs: detailed contract and any future Operator-assisted/emergency recovery governance (not pilot).
 
 ## 15. Boundaries
 
-GF-01/02/03/04 behaviour, the four Group Feed families, and migration 025 are unchanged. No migration created or reserved. No scheduler, media upload, Kudos, Share, announcement or recommendation code. No application code. No deployment, no production access. V1 not consulted for design. Miledge authority not copied into Tiizi. **No PR opened.**
+GF-01/02/03/04 behaviour, the four Group Feed families, and migration 025 are unchanged. No migration created or reserved. No scheduler, media upload, Kudos, Share, announcement or recommendation code. No application code. No deployment, no production access. V1 not consulted for design. Miledge authority not copied into Tiizi. **PR #90 is open, under review and unmerged (documentation only).**
 
-**Disposition:** TIIZI MEMBER COMPLETION FOUNDER DISPOSITION 001 — FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED / AWAITING FINAL REVIEW AND PR.
+**Disposition:** TIIZI MEMBER COMPLETION FOUNDER DISPOSITION 001 — FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED / PR #90 OPEN, UNDER REVIEW, UNMERGED.

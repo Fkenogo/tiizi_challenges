@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-10
 **Base candidate:** `bf4b47a3f612a6b77462aa210087a3cb1b291ce9` (reconciliation first filed at `7f9a65d`) (branch `claude/zealous-keller-09wyyw`); canonical `main` `365c958bf69f6d79ae262e81045abae9c777c19c`
-**Status:** **AUTHORITY RECONCILED / FD-MC-04d AND FD-MC-04e APPROVED (2026-10-10) / REC-1 AUTHORITY CLEAR / AWAITING FINAL PR REVIEW. DOCUMENTATION / AUTHORITY ONLY. NO IMPLEMENTATION AUTHORIZED. NO PR OPENED.** Sections 0-11 record the analysis as first filed; §12 records the Founder disposition that resolves its open items and **governs where they differ**.
+**Status:** **AUTHORITY RECONCILED / FD-MC-04d AND FD-MC-04e APPROVED (2026-10-10) / REC-1 AUTHORITY CLEAR / PR #90 OPEN / UNDER REVIEW / UNMERGED. DOCUMENTATION / AUTHORITY ONLY. NO IMPLEMENTATION AUTHORIZED.** Sections 0-11 record the analysis as first filed; §12 records the Founder disposition that resolves its open items and **governs where they differ**.
 **Companions:** `TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md` (§5); `docs/experience/TIIZI-V2-GROUP-METADATA-PRODUCT-TRUTH-CORR-001.md`
 
 ## 0. Result in one page
@@ -194,4 +194,4 @@ Custom focus tags and custom Group goal text are display/descriptive only and ca
 
 Documentation only. No recommendation code, no normalization, no schema or migration, no change to Group metadata behaviour, no change to GF-01…04, R2, Challenge Feed, Kudos, announcements, lifecycle, BG-1, onboarding minimums or migration rules. No deployment, no production access. V1 used only as historical context already in the repository, never as authority.
 
-**Disposition:** TIIZI INTEREST / GOAL / FOCUS-AREA RECOMMENDATION AUTHORITY RECONCILIATION 001 — AUTHORITY RECONCILED / PILOT VOCABULARIES APPROVED / REC-1 AUTHORITY CLEAR / AWAITING FINAL PR REVIEW.
+**Disposition:** TIIZI INTEREST / GOAL / FOCUS-AREA RECOMMENDATION AUTHORITY RECONCILIATION 001 — AUTHORITY RECONCILED / PILOT VOCABULARIES APPROVED / REC-1 AUTHORITY CLEAR / PR #90 OPEN, UNDER REVIEW, UNMERGED.
