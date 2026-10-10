@@ -2,7 +2,7 @@
 
 **Document type:** Governed programme-management roadmap
 
-**Version:** 2.59
+**Version:** 2.60
 
 **Status:** Approved programme baseline
 
@@ -40,7 +40,7 @@ The Programme Dashboard must be updated whenever programme status, next action o
 
 | Metric            | Current  |
 | ----------------- | -------- |
-| Programme Version | 2.59     |
+| Programme Version | 2.60     |
 | Total Stages      | 7        |
 | Completed Stages  | 5        |
 | Active Stage      | Stage G  |
@@ -1100,6 +1100,7 @@ These rules apply throughout the Version 2 programme and may be changed only thr
 
 ## 23. Programme Change Log
 
+| 2.60 | 2026-10-10 | **PR #90 CURRENT-HEAD REVIEW CORRECTION 006 — PARTICIPATION TERMINALITY; RETURNING CONSENT GATE; RACE SHARE SOURCE; PREFERENCE-ID SEQUENCING** | Documentation only; no code, migration, deployment configuration | Clarifies that ended/window-expired but unfinalized participation remains live/nonterminal for deletion (pending) until the Challenge is canonically finalized; adds independent current Terms/Privacy acceptance checks to the returning-member gate (no V1 consent import, no invented legal copy); binds CF-01 S3 Race Share to the governed member result (Challenge + Member), not per-episode finals rows; sequences Preference persistence after stable Focus Area IDs (mint 12 IDs → normalize → MC-3 persists Interests/Goals → Profile consumes MC-3; MC-2 base Profile only). Master Programme 2.59 → 2.60. | Focus Area ID minting remains an open bounded design prerequisite. LIFE-1 prerequisites unchanged. No deployment or production access. |
 | 2.59 | 2026-10-10 | **PR #90 CURRENT-HEAD REVIEW CORRECTION 005 — COMPOSITE PARTICIPATION LIVENESS; FR-V2-129 TRACE ALIGNED** | Documentation only; no code, migration, deployment configuration | Records the Founder clarification: participation liveness = relationship state plus Challenge lifecycle state; a participation in a finalized Challenge is historical/terminal by lifecycle context even if the preserved row stays `active` (no new post-finalization state; finalized result truth immutable; deletion not blocked by it); ended-but-not-finalized participation still requires an authorized closure transition; LIFE-1 consumer-audit prerequisite for every reader treating `status = active` as current (Operator console counts known). Aligns the FR-V2-129 body and trace row with the Group Feed (GF-01…GF-04) / Challenge Feed (CF-01 §4 A1–A6, S1–S3) split; FR numbering unchanged. Master Programme 2.58 → 2.59. | LIFE-1 prerequisites open: pending-application transition; ended-not-finalized closure transition; consumer audit. No deployment or production access. |
 | 2.58 | 2026-10-10 | **PR #90 CURRENT-HEAD REVIEW CORRECTION 004 — CANONICAL RELATIONSHIP CLOSURE; STEW-1 → MC-4 DEPENDENCY; DISPLAY-NAME CAPTURE; REFERENCE FIXES** | Documentation only; no code, migration, deployment configuration | Records Founder decisions: (1) projection/count exclusion cannot substitute for closing a canonical relationship; if no authorized terminal transition exists, account-deletion fulfilment remains pending (ended-but-not-finalized Challenge participation recorded as a concrete LIFE-1 prerequisite); (2) STEW-1's usable member-facing interaction depends on MC-4 member identity (backend design may proceed in parallel; MC-4 does not depend on STEW-1); (3) a V2 member without a canonical display name completes a one-time display-name capture before shared identity projections, then Interests 1–5, then Goals 1–3, no skip, no V1 import, no email-prefix identity. Also corrects the Media assessment's Cloudflare and Disposition references and removes the resolved pre-existing-member question from the open list. Master Programme 2.57 → 2.58. | LIFE-1 prerequisites open: pending-application terminal transition; ended-not-finalized participation closure transition. No deployment or production access. |
 | 2.57 | 2026-10-10 | **PR #90 CURRENT-HEAD REVIEW CORRECTION 003 — LIVE-RELATIONSHIP CLOSURE; FEED-AUDIENCE-BOUND KUDOS; CURRENT-AUTHORITY-BOUND CHALLENGE COVER** | Documentation only; no code, migration, deployment configuration | Records Founder decisions: (1) all governed nonterminal Group/Challenge relationships close to existing terminal states before a member reaches deleted-anonymized and before auth severance, history preserved, STEW-1 remains the stewardship-specific prerequisite, missing transitions recorded as LIFE-1 prerequisites; (2) Kudos mutation requires the same current Feed audience predicate as reading the item; (3) Challenge-cover mutation by the creator requires a current eligible Group relationship, with Accountable-Steward override throughout the lifecycle and creator identity as attribution only. Disposition provenance extended through 2.57. Master Programme 2.56 → 2.57. | LIFE-1 prerequisites open: terminal transition for pending Group applications; treatment of participation in ended-not-finalized Challenges. No deployment or production access. |
