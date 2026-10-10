@@ -5,6 +5,23 @@
 **Status:** **ASSESSMENT ONLY / NO IMPLEMENTATION AUTHORIZED. STOP FOR FOUNDER REVIEW.**
 **Scope:** (A) V2 Profile, (B) V2 onboarding / profile completion, (C) Challenge Feed, (D) sequencing. This record authorizes nothing. The Master Programme is intentionally not updated.
 
+## Founder disposition update (2026-10-10) — READ FIRST
+
+This assessment is preserved as written (commit `0ee5da0`). The Founder has since superseded parts of its recommendations. **Where this document conflicts with `TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md`, that record governs.** Status of this assessment is unchanged: assessment only, no implementation authorized.
+
+| Assessment position | Now |
+|---|---|
+| §A.7 / §A.9 / FD-MC-07: profile image blocked and deferred; pilot uses initials | **SUPERSEDED.** Media (profile, Group cover, Challenge cover) is required before pilot; MV-206 voluntarily adopted as external guidance. See `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` |
+| §0.6 / §C.1 / §C.8 / FD-MC-09: Challenge Feed contradicts settled Truth; none for pilot | **SUPERSEDED.** Tiizi will have a governed Challenge-specific Feed, pre-pilot. See `TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md` |
+| §B.7 / FD-MC-04: interests/goals not collected until a consumer exists | **SUPERSEDED.** Interests and goals are required onboarding components, for recommendation relevance only |
+| §B.3: progressive, non-blocking, no interests/goals | **REVISED.** Still no V1 gate; a bounded interests/goals step is part of onboarding |
+| §D.2: Challenge Feed last | **SUPERSEDED.** Re-planned sequence in the Disposition §10 |
+| FD-MC-01 / 02 / 03 / 05 / 06 | **APPROVED / directed** as recorded in the Disposition |
+| §C.6 migration 025 and outbox | **Stands.** 025 stays Group-Feed-specific; a Challenge Feed uses its own tables |
+| §C.4 event matrix | Retained as the first-pass analysis; the revised proposal is CF-01 §4 |
+
+The factual findings (§A–§C evidence, including the member-provisioning gap, the lost sign-up name, and the absence of recommendation logic noted in the Disposition) are unchanged.
+
 ## 0. Executive summary
 
 1. **A brand-new V2 sign-up cannot use the product today.** Sign-up creates a Firebase Auth account only. Nothing creates the PostgreSQL `members` row, and every `/api/*` call from an unknown subject returns `401 unknown_member` (`api/src/auth.ts:121-124`; `api/README.md` "No auto-provisioning … not yet implemented"). `createMember` exists but has no caller. Member rows exist today only because preview scripts seed them. This is the real "onboarding" gap and it is infrastructure, not experience. It blocks pilot more than Profile or Feed do.

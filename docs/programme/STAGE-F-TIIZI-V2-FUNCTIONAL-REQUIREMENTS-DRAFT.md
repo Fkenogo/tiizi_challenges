@@ -950,6 +950,8 @@ it.
 
 ### FR-V2-128 — Challenge information surface *(SUPERSEDED)*
 
+> **FOUNDER SUPERSESSION 2026-10-10 (Member Completion Founder Disposition 001):** the "no Challenge-specific Feed" effect recorded below is now **HISTORICAL / SUPERSEDED**. Effective direction: *Tiizi includes a governed Challenge-specific Feed as a Challenge-local engagement surface. Its content does not create or alter Challenge Truth.* There is still no Home Feed, and the Group Feed is unchanged. Detailed contract: `docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md`. FR-V2-133 and FR-V2-212 are not changed by this note. The original reconciliation text follows unaltered.
+
 > **Original text:** "A Challenge SHOULD provide a social Feed or equivalent shared
 > activity surface."
 >
@@ -1641,7 +1643,7 @@ plus any new requirements introduced through reconciliation.
 | FR-V2-125 | New participation | KEEP | §20 | Unchanged | — | — |
 | FR-V2-126 | New progress | KEEP | §20 | Unchanged | — | — |
 | FR-V2-127 | Preserve original | KEEP | §20 | Unchanged | — | — |
-| FR-V2-128 | Challenge Feed | SUPERSEDED | §21 | Settled: Group Feed is single stream, no Home Feed | Reconciliation F-E-01; Notifications baseline §§3,7 | SUPERSEDED — No active replacement FR. Challenge Feed concept replaced by Group Feed (single community stream) + Challenge view (operational). Home is not a Feed. T1 §§O,P; Notifications baseline §§3,7. |
+| FR-V2-128 | Challenge Feed | SUPERSEDED (reconciliation F-E-01); "no Challenge-specific Feed" effect itself superseded by Founder direction 2026-10-10 — see CF-01 | §21 | Settled: Group Feed is single stream, no Home Feed | Reconciliation F-E-01; Notifications baseline §§3,7 | SUPERSEDED — No active replacement FR. Challenge Feed concept replaced by Group Feed (single community stream) + Challenge view (operational). Home is not a Feed. T1 §§O,P; Notifications baseline §§3,7. |
 | FR-V2-129 | Feed events | SUPERSEDED | §21 | Settled: state events + explicit Share only | Reconciliation F-E-01; Notifications baseline §§8-12 | SUPERSEDED — No active replacement FR. Feed content model replaced by: meaningful automatic state events + explicit Share-to-Group only. T1 §P; Notifications baseline §§8-12. |
 | FR-V2-130 | Feed is not truth source | KEEP | §21 | Unchanged | — | — |
 | FR-V2-131 | Kudos | KEEP | §21 | Unchanged | — | — |

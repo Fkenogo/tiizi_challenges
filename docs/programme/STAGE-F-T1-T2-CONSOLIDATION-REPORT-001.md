@@ -106,7 +106,7 @@ Re-checked authority surfaces materially relevant to T1/T2:
 | F-B-02 | Competitive tie-break/non-completer ordering deferred (Competitive ¶206, ¶225, ¶528/566/596-597) | Shared position for ties; no position for non-completers (Calculation §§16-17) |
 | F-C-01 | Weekly-frequency Streak (Logical Model §11.4 ¶650-660) | Daily-only Streak (Calculation §20) |
 | F-C-02 | Streak late-join/timezone deferred (Streak ¶294-296, ¶649) | Late joining allowed with fixed denominator; one governing timezone (Calculation §§27-28, 30-31) |
-| F-E-01 | Challenge Feed SHOULD / Activity MAY surface / comments MAY (FR-V2-128/129/133, SharedExp §26) | No Home Feed; Group Feed = single community stream; Share-to-Group explicit; no comments/replies (Notifications baseline) |
+| F-E-01 *(Challenge-specific-Feed effect superseded by Founder direction 2026-10-10; see `docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md`; rest of row stands)* | Challenge Feed SHOULD / Activity MAY surface / comments MAY (FR-V2-128/129/133, SharedExp §26) | No Home Feed; Group Feed = single community stream; Share-to-Group explicit; no comments/replies (Notifications baseline) |
 | F-GOV-01 | "Challenge Engine"/"Challenge Feed"/"leaderboard-as-standing" phrasing | Aligned to EOG-E1-01 §35 terminology |
 
 ## 7. Genuine Deferrals Preserved
