@@ -13,10 +13,10 @@ This assessment is preserved as written (commit `0ee5da0`). The Founder has sinc
 |---|---|
 | §A.7 / §A.9 / FD-MC-07: profile image blocked and deferred; pilot uses initials | **SUPERSEDED.** Media (profile, Group cover, Challenge cover) is required before pilot; MV-206 voluntarily adopted as external guidance. See `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` |
 | §0.6 / §C.1 / §C.8 / FD-MC-09: Challenge Feed contradicts settled Truth; none for pilot | **SUPERSEDED.** Tiizi will have a governed Challenge-specific Feed, pre-pilot. See `TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md` |
-| §B.7 / FD-MC-04: interests/goals not collected until a consumer exists | **SUPERSEDED.** Interests and goals are required onboarding components, for recommendation relevance only |
-| §B.3: progressive, non-blocking, no interests/goals | **REVISED.** Still no V1 gate; a bounded interests/goals step is part of onboarding |
-| §D.2: Challenge Feed last | **SUPERSEDED.** Re-planned sequence in the Disposition §10 |
-| FD-MC-01 / 02 / 03 / 05 / 06 | **APPROVED / directed** as recorded in the Disposition |
+| §B.7 / FD-MC-04: interests/goals not collected until a consumer exists | **SUPERSEDED.** Required onboarding inputs, for recommendation relevance only; REC-1 is a pre-pilot capability |
+| §B.3: progressive, non-blocking, no interests/goals | **REVISED.** Interests (1–5) and goals (1–3) are required onboarding inputs with **no skip** (FD-MC-04a); EA-01 M4 "no forced setup" is narrowed to minimum preference inputs; no V1 flow |
+| §D.2: Challenge Feed last | **SUPERSEDED.** Re-planned, parallel pre-pilot programme in the Disposition §13 |
+| FD-MC-01 / 02 / 03 / 04a-c / 05 / 06a / 07a / 09a,b,d / 10 | **DECIDED** as recorded in the Disposition (finalization pass). Cloudflare R2 selected as initial provider; Challenge Feed v1 allow-list, retention, Kudos, announcements decided; comments later; BG-1 scheduler prerequisite |
 | §C.6 migration 025 and outbox | **Stands.** 025 stays Group-Feed-specific; a Challenge Feed uses its own tables |
 | §C.4 event matrix | Retained as the first-pass analysis; the revised proposal is CF-01 §4 |
 
@@ -91,7 +91,7 @@ Principle exists (CIC §4.2: Member is authority for own profile content; Partic
 
 ### A.8 New schema / API / migration needed
 
-Yes, for any real Profile: (1) a profile store keyed 1:1 by `member_id` (new migration 026+; CIC §4.2 says Profile has no independent identity, so either columns on `members` or a 1:1 table; this is an engineering design choice for the work package); (2) `GET/PATCH /api/me` (or equivalent via the canonical prefix constant); (3) a member-identity projection endpoint/field for shared-group attribution; (4) a consent record table if consent is captured (IDP-02); (5) member provisioning at the auth boundary (§B). **Migration 025 is unrelated and must not be touched.** No Firestore for any of this (AGENTS §2.3-2.4).
+Yes, for any real Profile: (1) a profile store keyed 1:1 by `member_id` (new migration, numbered sequentially when the authorized package begins; CIC §4.2 says Profile has no independent identity, so either columns on `members` or a 1:1 table; this is an engineering design choice for the work package); (2) `GET/PATCH /api/me` (or equivalent via the canonical prefix constant); (3) a member-identity projection endpoint/field for shared-group attribution; (4) a consent record table if consent is captured (IDP-02); (5) member provisioning at the auth boundary (§B). **Migration 025 is unrelated and must not be touched.** No Firestore for any of this (AGENTS §2.3-2.4).
 
 ### A.9 Minimum pilot-ready Profile
 
@@ -196,7 +196,7 @@ Result: **nothing is both new and clearly authorized.** The only auto-eligible r
 - **Membership visibility:** must recheck current Group membership *and* Challenge visibility per read (T1 §P.8, FR-V2-136/137). Challenge reads already do this.
 - **Historical access:** unaddressed for Challenge scope; GF-01's "no former-member entitlement" would be the safe default, but past participants of an ended Challenge are exactly who would want it. Founder decision.
 - **API / read model:** a new Challenge-scoped read (e.g. under the canonical API prefix) and a projection; none exists.
-- **New migration?** Yes, a new migration (026+) and new tables. Not an extension of 025.
+- **New migration?** Yes, a new migration (numbered when the authorized package begins) and new tables. Not an extension of 025.
 
 ### C.6 Migration 025 and outbox reuse
 
@@ -255,7 +255,7 @@ Media storage (IDP-04 + vendor) ──> Profile photo (post-pilot)
 
 | WP | Title | Depends on | Notes |
 |---|---|---|---|
-| MC-1 | Member provisioning + persisted display name + versioned consent record | FD-MC-01/02/05 | New migration 026+; fixes lost sign-up name; API tests for idempotency and concurrent first requests |
+| MC-1 | Member provisioning + persisted display name + versioned consent record | FD-MC-01/02/05 | New migration (number assigned when the package begins); fixes lost sign-up name; API tests for idempotency and concurrent first requests |
 | MC-2 | Profile Product Truth contract (pilot) | FD-MC-02/03/04/08 | Docs-only, like GF-01; field list, visibility matrix, edit/audit rules |
 | MC-3 | V2 Profile read/self-edit (`/api/me`, `/v2/profile`, sign-out) | MC-1, MC-2 | Initials avatar; no photo; honest empty states |
 | MC-4 | Member identity projection for shared-group contexts | MC-2, FD-MC-08 | Replaces "Tiizi member" in roster, contributors, Race, results; minimum-necessary |
@@ -269,7 +269,7 @@ Suggested order: MC-1 → MC-2 → MC-3 → MC-4 → MC-5; MC-6 in parallel as a
 
 - **Authority gaps:** Profile field definitions, edit/completion workflow, account lifecycle (IDP-03), profile media (IDP-04), field-level visibility matrix, consent capture, Share/Kudos/Recognition operations, Challenge Feed concept itself.
 - **Implementation gaps:** member provisioning; display-name persistence (and loss bug); `/v2/profile` content; sign-out; member identity projection; consent record; orientation.
-- **Schema/API gaps:** profile store, `/api/me`, identity projection, consent table, (if ever) Challenge Feed tables and read API. All need migration 026+.
+- **Schema/API gaps:** profile store, `/api/me`, identity projection, consent table, (if ever) Challenge Feed tables and read API. All need migrations, numbered sequentially only when each authorized package begins (no number is reserved).
 - **Media:** blocked; no approved record found in repo; direction settled, vendor not.
 - **Privacy/consent:** IDP-01/02 approved but unenforced and unimplemented in V2; `email` must stay privileged; no health/body/birth/contact collection at pilot.
 

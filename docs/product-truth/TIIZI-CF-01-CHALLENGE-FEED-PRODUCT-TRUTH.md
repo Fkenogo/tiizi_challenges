@@ -1,130 +1,141 @@
 # TIIZI — CF-01 CHALLENGE FEED PRODUCT TRUTH / CAPABILITY DEFINITION
 
 **Document type:** V2 Product Truth / capability definition (CF-1)
-**Version:** 0.1 (draft)
+**Version:** 0.2
 **Date:** 2026-10-10
 **Base:** `365c958bf69f6d79ae262e81045abae9c777c19c`
-**Status:**
-- **§2 amendment — EFFECTIVE by Founder direction (2026-10-10):** Tiizi includes a governed Challenge-specific Feed.
-- **§3–§14 detailed contract — PROPOSED, AWAITING FOUNDER REVIEW.** Nothing below §2 is Product Truth until the Founder accepts it. Anything marked *Founder decision* is open.
-- **No implementation is authorized** (CF-2…CF-6 are separate packages).
 **Companion:** `docs/programme/TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md`
 
-**V1 exclusion:** Archived V1 feed behaviour is not consulted or used (AGENTS.md §1). This definition derives from V2 Product Truth and V2 runtime only.
+**Status:**
+- **EFFECTIVE (Founder-decided, 2026-10-10):** §2 amendment; §3 invariants that restate existing Product Truth; §4 v1 event decisions; §5 retention and access; §6 Share, Kudos and announcement rules; §7 comments status; §9 boundary with the Group Feed.
+- **PROPOSED (genuinely unresolved detail):** the items marked **[PROPOSED]** in-line and listed in §11. Everything not so marked is effective.
+- **Implementation:** **not authorized.** CF-2 (publication/event model) and later packages need separate Founder authorization.
+
+**V1 exclusion:** archived V1 feed behaviour is not consulted (AGENTS.md §1).
 
 ## 1. Authority chain and supersession
 
 | Record | Position |
 |---|---|
-| Stage F T1 §P (Group Feed), §Q (Kudos), §R (Sharing); FR-V2-130, 131, 132, 134, 136, 137 | In force; govern feeds generally (Feed is never truth; Kudos never affect performance; Feed does not expand visibility) |
-| FR-V2-128 as reconciled by F-E-01 ("no Challenge-specific Feed") | **SUPERSEDED by the 2026-10-10 Founder direction.** Original text retained as history |
-| FR-V2-129 / FR-V2-212 | In force **for the Group Feed**. Applied to the Challenge Feed by analogy only where §6 says so (Founder decision) |
-| FR-V2-133 (no comments/replies in initial V2) | **Not reopened by this record.** See §9 |
+| Stage F T1 §P/§Q/§R; FR-V2-130, 131, 132, 134, 136, 137 | In force; general feed rules (Feed is never truth; Kudos never affect performance; Feed does not expand visibility) |
+| FR-V2-128 as reconciled by F-E-01 ("no Challenge-specific Feed") | **SUPERSEDED** by the 2026-10-10 Founder direction. Original text retained as history |
+| FR-V2-129, FR-V2-212 | In force for the Group Feed; the Challenge Feed's Share follows the same affirmative principle (§6.1) |
+| FR-V2-133 (no comments/replies in initial V2) | **Remains in force** for general member comments/replies (§7) |
 | GF-01 v1.1 / GF-02 / GF-03 / GF-04 | **Unchanged.** Group Feed has exactly four automatic families |
-| Migration 025 | **Unchanged**; stays Group-Feed-specific |
+| Migration 025 | **Unchanged**; Group-Feed-specific; not deployed; its event-type CHECK gap must be reconciled before deployment |
 
 ## 2. Effective amendment
 
 > **Tiizi includes a governed Challenge-specific Feed as a Challenge-local engagement surface. Its content does not create or alter Challenge Truth.**
 
-Consequences that are part of the amendment: there is still no Home Feed; the Group Feed is unchanged; the Challenge Feed is a different capability with its own scope, storage and read model.
+There is still no Home Feed. The Group Feed remains the single community stream *of the Group* and is unchanged.
 
-## 3. Invariants (proposed)
+## 3. Invariants (EFFECTIVE)
 
 1. Exactly one Challenge Feed per Challenge. It answers "What is happening in this Challenge?"
-2. It is scoped to one Challenge and is **not** a Group Feed, a Home/Today stream, or a view over the Group Feed.
-3. Every entry derives from canonical PostgreSQL truth (Challenge lifecycle, participation, accepted activity, derived state, finalization) or from an explicit, validated member action (Share, Kudos) or a Steward announcement. Client-authored payloads, client timestamps and client-computed facts never create Feed truth.
+2. It is scoped to one Challenge; it is not a Group Feed, not a Home/Today stream and not a view over the Group Feed.
+3. Entries derive from canonical PostgreSQL truth (Challenge lifecycle, participation, accepted activity, derived state, finalization), from an explicit validated member action (Share, Kudos), or from a steward announcement. Client-authored payloads, client timestamps and client-computed facts never create Feed truth.
 4. Showing something in the Feed never makes it Challenge evidence, score, progress, completion, ranking, result or Recognition (FR-V2-130/132/134). A Feed row can be suppressed, expired or withdrawn without touching Challenge truth.
-5. The Feed does not expand visibility. Current Group membership **and** current Challenge visibility are rechecked on every read for every viewer (T1 §P.8; FR-V2-136/137).
-6. Minimum disclosure: no raw evidence, notes, location, exact time-of-day routine, health-like detail, email or provider ids.
-7. Cards are typed, template-generated, or a validated structured Share. **No free-form posts or member captions in the first version.** Steward announcement is the only free text and is a later/SHOULD-tier item.
-8. Kudos and any reaction never count toward ranking, recommendation, status or influence (T1 §Q.4).
-9. Publication is server-side, transactional with the source transition where the source is a Challenge transition, idempotent by a server-owned key, and **cannot block or fail the source transaction's business outcome** beyond what the existing outbox pattern already does.
+5. The Feed does not expand visibility; current Group membership and current Challenge visibility are rechecked on every read for every viewer (T1 §P.8; FR-V2-136/137).
+6. Minimum disclosure: no raw evidence, notes, location, exact routine time, health-like detail, email or provider ids.
+7. No member-authored free-form posts, captions or comments in v1. Steward announcements are the only free text.
+8. Kudos and any reaction never count toward ranking, recommendation, status, progress, results or Recognition.
+9. Automatic publication is server-side, idempotent by a server-owned key, and must not be able to alter or fail the source Challenge's business outcome.
 
-## 4. Candidate Feed moments
+## 4. v1 event allow-list (EFFECTIVE)
 
-Legend. **Mode:** AUTO = system-published from a canonical transition; SHARE = published only after the member's explicit, previewed Share; ANN = steward-authored. **Classification:** AUTHORIZED (proposed to be allow-listed) / AUTHORIZED WITH EXPLICIT SHARE ONLY / DEFERRED / NOT APPROPRIATE. Every row is a proposal for Founder review.
+### 4.1 AUTOMATIC
 
-| # | Moment | Classification | Mode | Actor shown | Amount / metric shown | Source of truth | Privacy implication | Persistence | Dedupe / idempotency | Retention (proposed) | Audience | Historical visibility | Duplicates Group Feed? |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Accepted participant activity | **AUTHORIZED WITH EXPLICIT SHARE ONLY** | SHARE | Yes (sharer, by choice) | Sharer's own value+unit and activity name only (ceiling; *Founder decision*) | `challenge_activity_records` (accepted) | Personal/health-adjacent; never automatic (T1 §P.4 spirit) | Share row referencing the source record, not a copy of evidence | One Share per (member, source record); re-share is a no-op | See §8 | Challenge-visible members | Same as live while retained | No |
-| 2 | Participant joined | **AUTHORIZED** | AUTO | Yes (display name via MC-4) | None | `challenge_participations` insert | Discloses a commitment, but participation is already visible to Challenge viewers (Together contributors, Race board). *Founder confirm* | Event row | Key = participation episode id | See §8 | Challenge-visible members | Retained per §8; not hidden on later exit | No (GF-01: join is NOT PUBLISHABLE in Group Feed) |
-| 3 | Participant left | **NOT APPROPRIATE** | — | — | — | — | Reveals withdrawal/offboarding | None | — | — | — | — | No |
-| 4 | Challenge started | **AUTHORIZED** | AUTO | None | None | `challenges` `establishment→active` | Low | Event row | Key = challenge + `started` | §8 | Challenge-visible | As live | **Same source transition as a Group Feed event, separate publication.** Intentional: different audience/scope |
-| 5 | Together contribution / progress moments | **AUTHORIZED** (fixed percent milestones only) | AUTO | None | Percent milestone only; no per-person amounts | `challenge_derived_state` | Group total is already visible in Challenge Detail; no attribution | Event row | Key = challenge + goal version + milestone | §8 | Challenge-visible | As live | No (Group Feed has only goal-reached; GF-01 forbids other thresholds there) |
-| 6 | Together goal reached | **AUTHORIZED** | AUTO | None | None (or "goal reached") | `collective_goal_reached false→true` | Low | Event row | Key = challenge + goal version | §8 | Challenge-visible | As live | **Same source transition as `together_goal_achieved`, separate publication** |
-| 7 | Streak milestones | **AUTHORIZED WITH EXPLICIT SHARE ONLY** | SHARE | Yes (sharer) | Sharer's own milestone label (e.g., days) | derived/participation | Personal consistency | Share row | One per (member, milestone) | §8 | Challenge-visible | As live | No |
-| 8 | Race progress moments | Rank/position change: **NOT APPROPRIATE**. Personal finish: **AUTHORIZED WITH EXPLICIT SHARE ONLY**. "First to finish" and similar: **DEFERRED / NEEDS PRODUCT TRUTH** | SHARE | Sharer | Generic finish only; no numeric rank unless Founder allows | derived / finals | Comparative pressure; popularity mechanics | Share row | Per (member, finish) | §8 | Challenge-visible | As live | No |
-| 9 | Challenge ended | **AUTHORIZED** | AUTO | None | None | `challenges` `active→ended` | Low; does not imply success | Event row | Key = challenge + `ended` | §8 | Challenge-visible | As live | **Same source transition as `challenge_ended`, separate publication** |
-| 10 | Finalized results | **AUTHORIZED** (card only) | AUTO | None | None in card ("Results are ready"); values live on Challenge Detail | `challenge_finalizations` | Results are shown elsewhere; card carries none | Event row | Key = challenge (exactly once) | §8 | Challenge-visible | As live | **No** — v1.1 removed this from the Group Feed and reserved it for a Challenge Feed |
-| 11 | Participant result moment | **AUTHORIZED WITH EXPLICIT SHARE ONLY** | SHARE | Sharer | Sharer's own generic result (completed / finished); numeric rank only if Founder allows | `challenge_participation_finals` | Personal result | Share row | Per participation final | §8 | Challenge-visible | As live | No |
-| 12 | Steward announcement | **DEFERRED / NEEDS PRODUCT TRUTH** (SHOULD-tier) | ANN | Steward role label | Text only | New authoring authority | Free text; moderation | Announcement row | Client idempotency key | §8 | Challenge-visible | As live | No (GF-01 defers Group announcements separately) |
-| 13 | Kudos | See §9 | SHARE-like action on a Feed item | Kudos giver (visible to item owner only; *Founder decision*) | Aggregate count (display policy *Founder decision*) | new | Popularity risk | Kudos row | One per (giver, item), toggle | Follows item | Challenge-visible | Follows item | No |
-| 14 | Comments / replies | **DEFERRED** (LATER) | — | — | — | — | Moderation | — | — | — | — | — | No |
-| 15 | Recognition | **DEFERRED** (MOT-01) | SHARE | — | — | — | Credential implication | — | — | — | — | — | No |
-| 16 | Challenge established | **NOT APPROPRIATE** as a Challenge Feed entry | — | — | — | — | The Challenge's own creation precedes its audience; the Challenge Detail is the record | — | — | — | — | — | (Group Feed carries it) |
+| # | Moment | Actor shown | Metric shown | Source of truth | Persistence | Dedupe / idempotency |
+|---|---|---|---|---|---|---|
+| A1 | **Participant joined** | The participant's **display name only**; no other personal data | None | `challenge_participations` insert (episode) | Event row referencing the participation episode | Key = participation episode id |
+| A2 | **Challenge started** | None | None | `challenges` `establishment → active` | Event row | Key = challenge + `started` |
+| A3 | **Together progress milestone** | None (actor-free) | **Percentage only: 25%, 50%, 75%** | Together derived state | Event row | Key = challenge + goal version + milestone |
+| A4 | **Together goal reached** | None | None | `collective_goal_reached false → true` | Event row | Key = challenge + goal version |
+| A5 | **Challenge ended** | None | None | `challenges` `active → ended` | Event row | Key = challenge + `ended` |
+| A6 | **Finalized results ready** | None | Generic "Results are ready" card; actual results remain on Challenge Detail | `challenge_finalizations` | Event row | Key = challenge (exactly once) |
 
-**Net effect:** automatic entries are actor-free lifecycle and group-level progress moments; all personal content is explicit Share. The only auto moment with an actor is "participant joined" (row 2), flagged for Founder confirmation.
+All automatic cards are template-typed. A2, A4 and A5 are the same source transitions that publish to the Group Feed; the Challenge Feed records them as **separate publications** for a different audience and never reads the Group Feed.
 
-## 5. Audience, access and history (proposed)
+### 4.2 EXPLICIT SHARE ONLY
 
-- **Read audience:** a member who currently (a) has an `active`/`joined` membership of the Challenge's Group and (b) currently passes the Challenge visibility rule. Group Steward gets no extra read right.
-- **Pending/rejected/non-member/left members:** no read. Denial indistinguishable from not-found, as in GF-01.
-- **Leave Group / lose Challenge visibility:** access ends on the next read; clear client cache.
-- **Participants who exited the Challenge but remain in the Group:** may still read (they retain Challenge visibility) *(Founder decision: confirm)*.
-- **Ended/finalized Challenges:** feed stays readable to current audience for the retention window, so participants can revisit it.
-- **Actor later deactivated/deleted:** actor shown as "Former member" (LIFE-1); their Shares and Kudos are removed or anonymized per the lifecycle decision.
-- **Account deletion of an item owner:** their Share rows are withdrawn.
+| # | Moment | What the member may share | Excluded | Source of truth |
+|---|---|---|---|---|
+| S1 | **Accepted participant activity** | Activity name; the member's **own accepted value**; unit; their display name | Notes, evidence, location, raw metadata | `challenge_activity_records` (accepted) |
+| S2 | **Streak milestone** | The member's **own** milestone only | Anyone else's data | Participation derived state |
+| S3 | **Race finish / personal result** | The member's **own** result only | **No numeric final position** in a Feed Share; canonical Challenge Results continues to show authorized result truth | `challenge_participation_finals` |
 
-## 6. Explicit Share rules (proposed)
+### 4.3 NOT APPROPRIATE (not published in v1, by any route)
 
-Separate affirmative act after the activity, milestone or result; default is **not** shared (T1 §R.1). Member sees a **preview** of exactly what will appear and chooses to publish to this Challenge's feed. Self-only: a member shares only their own items. No free-text caption in v1. Withdrawable by the sharer at any time (hides the item; never alters the underlying activity or results). Duplicate-share prevention by source record. Shared content respects Challenge visibility at every read. Whether FR-V2-212's "Share to Group" rule must be mirrored literally for the Challenge Feed is a *Founder decision* (recommended: yes, same pattern). External share (T1 §R.2) remains independent and out of scope.
+Participant left; live Race rank/position movement; routine automatic personal activity; a "Challenge established" card inside the Challenge's own Feed.
 
-## 7. Persistence and idempotency (proposed)
+### 4.4 Duplication with the Group Feed
+Only A2, A4 and A5 coincide with Group Feed source transitions. That is intentional: separate publication records, separate projections, different audiences. A1, A3, A6 and all Shares and announcements do not appear in the Group Feed.
 
-Own tables (new migration 026+; **not** `group_feed_*`): an outbox/publication record for automatic moments (Challenge id, event type, source transition id/version, server transition time, idempotency key, state), a rebuildable projection, and separate tables for Share, Kudos and announcements when those tiers are built. Persist references and minimal state, not copies of evidence or names; resolve names/titles at read time. Server-owned idempotency keys of the form (challenge, event type, source transition version) or (member, source record). A separate recorder from `recordChallengePublication`; the five existing domain write paths must not gain a second publication dependency unless CF-2 is authorized and proves it cannot fail the source transaction.
+## 5. Retention, audience, ordering (EFFECTIVE)
 
-## 8. Retention, ordering, pagination (proposed)
+- **Retention:** the Feed is available for the **Challenge lifetime plus 90 days after the Challenge ends**. After expiry the Feed projection/presentation is removed. Canonical Challenge evidence and results are never deleted or changed because of Feed retention. Shares, Kudos and announcements follow their Feed item.
+- **Audience:** a member who still holds authorized Group and Challenge visibility. A participant who has exited the Challenge may read while they remain otherwise authorized to view that Challenge. Leaving or losing Group or Challenge visibility removes Feed access on the next read; denial is indistinguishable from not-found.
+- **Ordering and paging:** newest first by server-assigned transition (or Share/announcement) time, tie-break event UUID; never by Kudos count. Keyset pagination with a **signed, Challenge-bound, expiring cursor**; default page **20**, maximum **50**.
+- **Account deletion (per FD-MC-06a):** the member's Shares are withdrawn and their Kudos removed; their participant name renders as "Former member".
 
-- **Retention:** the Group Feed's 90 days is a Group Feed operating policy, not a rule for this feed. Proposed: automatic moments retained for the Challenge's life plus 90 days after it ends; Shares and Kudos follow their item; expiry removes projection only, never Challenge truth. *Founder decision.*
-- **Ordering:** newest first by server-assigned source-transition (or Share) timestamp, tie-break by event UUID. Never by Kudos count or popularity.
-- **Pagination:** keyset only; default 20, max 50; signed, Challenge-bound, expiring cursor — the GF-01 §7 pattern as design precedent, not authority.
+## 6. Engagement (EFFECTIVE)
 
-## 9. Engagement layer (proposed tiers)
+### 6.1 Explicit Share
+Explicit member action; **preview before publishing**; **self-only**; **default is not shared**; **withdrawable** by the sharer (hides the item; never alters the underlying activity or result); the underlying activity/result never changes; one source item cannot silently create duplicate shares (one active Share per member per source item). Ordinary activity is never published automatically. No free-text caption. Same affirmative principle as FR-V2-212 / T1 §R.1. External sharing is independent and out of scope.
 
-| Feature | Tier | Authority / who may act | Audience | Persistence | Undo / delete | Moderation / abuse | Notification dependency | Privacy |
-|---|---|---|---|---|---|---|---|---|
-| Explicit Share | **MUST HAVE** | Participant, own items only | Challenge-visible | Share row → source record | Sharer withdraws; hides item | Structured only, no free text, so low | None | Preview + consent; own data only |
-| Kudos (single lightweight reaction) | **MUST HAVE** | Any member who can read the item; not on own item | Item visible to audience; giver identity visible to item owner only (*Founder decision*) | Kudos row; one per giver+item | Toggle off removes it | Rate limit; no counts used for ranking | None for v1 (a later notification is optional) | Counts never used for ranking/recommendation/status |
-| Steward announcements | **SHOULD HAVE** | Group Accountable Steward (Challenge creator inclusion = *Founder decision*) | Challenge-visible | Announcement row with author, time | Author/steward edit and delete; edit history kept | Free text: length limit, report path, operator suppression | Optional | Steward-authored only; no member data |
-| Multiple reaction types | LATER | — | — | — | — | — | — | — |
-| Comments / replies | **LATER** | Would require superseding FR-V2-133 for this feed (*Founder decision FD-MC-09b*) | — | — | — | Highest moderation cost | Needed to be useful | — |
-| Notifications for feed activity | LATER | Notifications is currently a placeholder | — | — | — | — | — | — |
+### 6.2 Kudos — REQUIRED BEFORE PILOT
+One Kudos type only. Any Challenge-visible member may Kudos an item. **No self-Kudos.** One Kudos per member per item. **Toggle off / undo** supported. The **aggregate Kudos count is visible** to Challenge Feed viewers; the **giver sees their own active/inactive state**. **No public list of givers in v1.** Never affects ranking, recommendation, status, progress, results or Recognition. Rate-limiting and abuse protections are required. The Feed item's retention controls the Kudos lifetime. Kudos is distinct from Platform Recognition.
+- **[PROPOSED]** Which items are Kudos-able: member-owned Shares and steward announcements. Whether automatic system cards (A1–A6) are Kudos-able is not decided; "no self-Kudos" implies an item owner, which system cards lack, and A1 belongs to the joiner. Until decided, treat system cards as not Kudos-able.
 
-Engagement actions must not modify evidence, score, progress, results or Recognition truth.
+### 6.3 Steward announcements — REQUIRED BEFORE PILOT
+**Authors:** the Group Accountable Steward; and the Challenge creator **where the creator is an authorized, distinct Challenge-administration actor**. **Requirements:** attributed author; timestamp; bounded text length; edit and delete; **durable edit history**; operator suppression/takedown; no effect on Challenge truth; **no member-authored free-form posts**.
+- **[PROPOSED]** Precise rule for when a Challenge creator qualifies. The repository records `created_by_member_id` per Challenge and Groups may allow members to create Challenges, but no distinct Challenge-administration authority is defined; this must be defined before CF-5. The text length bound is also to be set.
 
-## 10. Moderation and takedown (proposed)
+### 6.4 Summary tiers
+| Feature | Tier |
+|---|---|
+| Automatic moments (§4.1) | Required before pilot |
+| Explicit Share (§6.1) | Required before pilot |
+| Kudos (§6.2) | **Required before pilot** |
+| Steward announcements (§6.3) | **Required before pilot** |
+| Comments / replies, multiple reaction types, feed notifications, aggregation, external share | Later |
 
-Automatic moments are template-typed. Share is structured. Kudos is a toggle. Therefore the first version needs no general social-content moderation. It does need the same narrow **projection-suppression** capability GF-01 §9 describes (an attributable system/operator action that hides a Feed row without changing source truth) and, for announcements, report/remove.
+Engagement actions never modify evidence, score, progress, results or Recognition truth.
 
-## 11. Read model and API (proposed, for CF-3)
+## 7. Comments and replies (EFFECTIVE)
+Not required before pilot. A later capability requiring a separate Product Truth and moderation decision; not part of CF-5 v1. **FR-V2-133 remains in force** for general member comments/replies.
 
-A Challenge-scoped read under the canonical API prefix (client composed via the mirror constant). Per request: authenticate; map to member; recheck Group membership and Challenge visibility; read the projection; resolve titles/names at read time; apply suppression and retention filters; return typed items with the viewer's own Share/Kudos state. No client-supplied event content. Responses follow the existing indistinguishable-not-found posture.
+## 8. Moderation, suppression, persistence (EFFECTIVE direction; mechanisms PROPOSED)
 
-## 12. Mobile experience (proposed, for CF-4)
+Automatic cards are templates; Shares and Kudos are structured; announcements are the only free text. An attributable **operator suppression/takedown** capability is required (projection-only; never alters source truth), consistent with GF-01 §9. **[PROPOSED]** persistence shape: a Challenge-scoped publication/outbox and rebuildable projection for automatic moments, and separate tables for Shares, Kudos and announcements; references and minimal state, not copies of evidence or names; names and titles resolved at read time; own tables, **not** `group_feed_*`. Table design and migration numbers are assigned when CF-2 is authorized and begins (no number reserved now). A recorder separate from `recordChallengePublication`; the existing domain write paths must not gain a second publication dependency unless CF-2 proves it cannot fail the source transaction.
 
-Mobile-only member shell (Today / Challenges / Groups unchanged). A compact "Challenge activity" section on Challenge Detail with "View all" to a full feed screen, mirroring the proven Group Feed structure (first-page preview of the same read model; refresh and load-more; cached pages stay visible). Placement relative to progress/results is an experience decision for CF-4. Share and Kudos affordances live on the item and on the post-logging confirmation.
+## 9. Boundary with the Group Feed (EFFECTIVE)
 
-## 13. Dependencies
+| Aspect | Group Feed (GF-01 v1.1, unchanged) | Challenge Feed |
+|---|---|---|
+| Question | "What is happening in this Group?" | "What is happening in this Challenge?" |
+| Scope | One per Group | One per Challenge |
+| Content | Four automatic, actor-free, number-free cards | §4 allow-list |
+| Participant activity | Never | Explicit Share only |
+| Engagement | None | Share, Kudos, announcements |
+| Storage / API | `group_feed_*` (migration 025); Group read API | Own storage and read API |
+| Cross-reads | None | None |
 
-Actor-bearing moments (joined, Share, Kudos attribution) depend on **MC-4 member identity projection**. Actor-free moments (started, goal, milestones, ended, results-ready) do not. Profile images depend on MEDIA-2b. A scheduler or equivalent processor is needed to drain the outbox in any environment beyond manual local runs.
+The existing invariant test for the four Group Feed families must continue to pass untouched.
 
-## 14. Explicit non-goals
+## 10. Read model, experience and dependencies
 
-No Home Feed. No change to the Group Feed. No change to GF-01/02/03/04 or migration 025. No Recognition issuance. No comments in v1. No free-form member posts. No media in the Feed. No ranking by popularity. No external sharing. No implementation by this document.
+- **Read model [PROPOSED]:** a Challenge-scoped read under the canonical API prefix; per request authenticate, map the member, recheck Group and Challenge visibility, read the projection, resolve names/titles at read time, apply suppression and retention, return typed items plus the viewer's own Share/Kudos state.
+- **Experience [PROPOSED]:** mobile-only; a compact "Challenge activity" section on Challenge Detail with "View all"; Share and Kudos on the item and after logging. Placement is a CF-4 experience decision.
+- **Dependencies:** name-bearing items (A1, S1–S3) depend on MC-4 (member identity projection). Actor-free automatic moments do not. Production draining of publication, retention expiry and media cleanup depend on BG-1. Operator suppression is needed before CF-5 is declared complete.
 
-## 15. Open Founder decisions
+## 11. Remaining open detail (all [PROPOSED])
 
-(a) Whether the metric ceiling for shared activity may include value+unit. (b) Confirm "participant joined" as automatic with actor. (c) Together milestone percent set (proposed 25/50/75). (d) Retention and historical access. (e) Kudos giver visibility and count display. (f) Announcement authors. (g) Comments timing (FD-MC-09b). (h) Mirror FR-V2-212 for Share. (i) Whether a Race "finish" Share may show numeric position.
+1. Kudos-able item set (system cards or not). 2. Rule for when a Challenge creator is an authorized distinct administration actor, and the announcement length bound. 3. Table/projection design, idempotency-key format and migration numbering (assigned when CF-2 starts). 4. Placement and layout (CF-4). 5. Read-API response shape (CF-3). 6. Whether Kudos counts display for A-cards if later made Kudos-able. All other content above is Founder-decided.
 
-**Disposition:** CF-01 v0.1 — direction EFFECTIVE; detailed contract PROPOSED / AWAITING FOUNDER REVIEW. No implementation authorized.
+## 12. Non-goals
+
+No Home Feed. No change to the Group Feed, GF-01/02/03/04 or migration 025. No Recognition issuance. No general comments or replies. No free-form member posts. No media in the Feed. No popularity ranking. No external sharing. No implementation by this document.
+
+**Disposition:** CF-01 v0.2 — Founder-decided v1 contract EFFECTIVE; remaining detail PROPOSED. CF-2 not authorized.
