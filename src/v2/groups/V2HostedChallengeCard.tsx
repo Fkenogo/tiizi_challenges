@@ -17,6 +17,7 @@ import {
   useCompetitiveLeaderboardV2,
 } from '../challenges/useChallengeCreation';
 import { invalidateV2ChallengeReads } from '../challenges/challengeQueryKeys';
+import { hostedChallengeCtaLabel } from './hostedChallengeCta';
 import { joinChallengeV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
 
 /**
@@ -117,16 +118,19 @@ export function V2HostedChallengeCard({
     }
   };
 
+  const ctaLabel = hostedChallengeCtaLabel(challenge);
+  const ctaPrimary = ctaLabel === 'Log activity';
+
   const cta = canJoinInline ? (
     <V2Button variant="secondary" onClick={() => setJoinOpen(true)}>
       Join
     </V2Button>
   ) : (
     <V2Button
-      variant={mine ? 'primary' : 'secondary'}
+      variant={ctaPrimary ? 'primary' : 'secondary'}
       onClick={() => onOpen(challenge.challengeId)}
     >
-      {mine ? 'Log activity' : challenge.finalized || challenge.status === 'ended' ? 'View results' : 'View'}
+      {ctaLabel}
     </V2Button>
   );
 

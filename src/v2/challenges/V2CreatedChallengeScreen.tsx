@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   V2Button,
   V2ErrorState,
@@ -27,6 +27,7 @@ import { fetchKnowledgeByCode, fetchKnowledgeById } from '../../api/knowledgeApi
 import { fetchActivityOptions } from '../../api/challengeCreationApi';
 import { createChallengeWizardRouteState, createInitialWizardState, type WizardActivity } from './challengeCreationDraft';
 import type { WizardState } from './challengeCreationDraft';
+import { challengeReturnPath } from './challengeReturnPath';
 
 /**
  * S3c — created-Challenge context, reassembled by CORR-002 around the
@@ -70,6 +71,7 @@ import type { WizardState } from './challengeCreationDraft';
 export function V2CreatedChallengeScreen() {
   const { challengeId } = useParams<{ challengeId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const detail = useChallengeDetailV2(challengeId);
   const memberships = useV2Memberships();
   const [logOpen, setLogOpen] = useState(false);
@@ -98,6 +100,8 @@ export function V2CreatedChallengeScreen() {
   }
 
   const challenge = detail.data;
+  const challengeBackPath = challengeReturnPath(location.state, challenge.groupId);
+  const returnedFromFeed = challengeBackPath !== '/v2/challenges';
   const groupName =
     memberships.data?.memberships.find((membership) => membership.groupId === challenge.groupId)?.group.name
     ?? 'Your group';
@@ -181,11 +185,11 @@ export function V2CreatedChallengeScreen() {
       <div className="mb-3">
         <button
           type="button"
-          onClick={() => navigate('/v2/challenges')}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+          onClick={() => navigate(challengeBackPath)}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span aria-hidden>←</span>
-          <span>Back to Challenges</span>
+          <span>{returnedFromFeed ? 'Back to Group activity' : 'Back to Challenges'}</span>
         </button>
       </div>
 

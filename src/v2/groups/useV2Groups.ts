@@ -27,6 +27,7 @@ import {
   type V2GroupSettingsPatch,
 } from '../../api/groupsApi';
 import { listGroupChallengesV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
+import { removeV2GroupFeed } from './groupFeedQueryKeys';
 import {
   invalidateV2GroupReads,
   v2GroupChallengesKey,
@@ -146,6 +147,7 @@ export function useLeaveV2Group(groupId: string | null) {
   return useMutation({
     mutationFn: () => leaveGroupV2(groupId as string),
     onSuccess: async () => {
+      await removeV2GroupFeed(queryClient, groupId ?? undefined, user?.uid);
       await invalidateV2Memberships(queryClient);
       await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
       await queryClient.invalidateQueries({ queryKey: ['v2-group-roster', groupId] });

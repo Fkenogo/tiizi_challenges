@@ -53,6 +53,17 @@ export function loggingAvailableForEndState(state: V2ChallengeEndState): boolean
   return state === 'live';
 }
 
+/**
+ * Logging-open predicate for surfaces that only hold the list/summary read
+ * (Group Home hosted card). It composes the SAME two canonical gates the
+ * Challenge detail applies before it offers "Log activity": served status is
+ * `active` (an `establishment`/scheduled or `ended` Challenge is never
+ * loggable) and the governed end state is `live`. No second lifecycle rule.
+ */
+export function challengeLoggingOpen(challenge: ChallengeEndStateInput): boolean {
+  return challenge.status === 'active' && loggingAvailableForEndState(endStateFor(challenge));
+}
+
 /** Hero Leave action is offered only while the Challenge is genuinely live. */
 export function participationMutableForEndState(state: V2ChallengeEndState): boolean {
   return state === 'live';
