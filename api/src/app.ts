@@ -31,6 +31,7 @@ import { registerSocialCauseApprovalRoutes, type SocialCauseApprovalDeps } from 
 import { registerOperatorConsoleRoutes } from './operatorConsoleRoutes.js';
 import { registerGroupFeedRoutes } from './groupFeedReads.js';
 import { API_PREFIX } from './apiPrefix.js';
+import { isMemberBootstrapRequest, registerMemberBootstrapRoutes } from './memberBootstrap.js';
 /* No member activity-history route in C1: Tiizi is not a personal activity
  * logger (Stage F), and no user-facing personal-history capability is
  * approved. The ledger is readable internally via listEffectiveEvents for
@@ -108,9 +109,12 @@ export function buildApp(deps: AppDeps) {
   const auth = requireAuth(deps.db, deps.verifier);
   app.addHook('onRequest', async (request, reply) => {
     if (request.url === '/health' || request.url === '/ready' || !request.url.startsWith(`${API_PREFIX}/`)) return;
+    // MC-1: the single explicit provisioning seam verifies the token itself.
+    if (isMemberBootstrapRequest(request.method, request.url)) return;
     await auth(request, reply);
   });
 
+  registerMemberBootstrapRoutes(app, deps.db, deps.verifier);
   registerMembershipRoutes(app, deps.db);
   registerGroupIdentityRoutes(app, deps.db);
   registerKnowledgeRoutes(app, deps.db);

@@ -8,6 +8,8 @@ import {
   isPasswordResetVisibleError,
   normalizeFirebaseAuthError,
 } from '../../utils/firebaseAuthErrors';
+import { v2SignUpNameHandoff } from './signUpNameHandoff';
+import { signOutThenClearHandoff } from './v2SignUpFlow';
 import { resolveV2NextPath, v2NextQuery } from './v2NextPath';
 import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2AuthLayout';
 
@@ -171,7 +173,7 @@ export function V2SignInPage() {
     setError('');
     setWorking(true);
     try {
-      await logout();
+      await signOutThenClearHandoff(logout, v2SignUpNameHandoff);
     } catch (err) {
       setError(normalizeFirebaseAuthError(err));
     } finally {

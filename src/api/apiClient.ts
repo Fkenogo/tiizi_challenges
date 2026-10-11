@@ -66,11 +66,18 @@ function apiBaseUrl(): string {
 export interface ApiRequestInit {
   method?: 'GET' | 'POST' | 'PATCH';
   body?: unknown;
+  /**
+   * Explicit bearer token for this one request. When supplied the transport
+   * NEVER consults the mutable global `auth.currentUser`, so a caller that
+   * captured a specific Firebase user can bind the request to that identity
+   * (used by the MC-1 member bootstrap). Omitted = unchanged behaviour.
+   */
+  bearerToken?: string;
 }
 
 /** Authenticated transport shared by apiFetch and apiFetchRaw. */
 async function authorizedFetch(path: string, init?: ApiRequestInit): Promise<Response> {
-  const token = await auth.currentUser?.getIdToken();
+  const token = init?.bearerToken ?? (await auth.currentUser?.getIdToken());
   if (!token) throw new ApiError(401, 'not_signed_in', 'Sign-in is required');
 
   try {

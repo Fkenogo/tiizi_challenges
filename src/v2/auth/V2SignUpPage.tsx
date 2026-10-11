@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizeFirebaseAuthError } from '../../utils/firebaseAuthErrors';
+import { isV2DisplayNameTooLong, normalizeV2DisplayName } from './v2DisplayName';
+import { v2EmailSignUp } from './v2EmailSignUp';
 import { resolveV2NextPath, v2NextQuery } from './v2NextPath';
 import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2AuthLayout';
 
@@ -20,7 +22,7 @@ const EMAIL_PATTERN = /\S+@\S+\.\S+/;
 export function V2SignUpPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { signup, loginWithGoogle, isAuthenticated, isReady } = useAuth();
+  const { loginWithGoogle, isAuthenticated, isReady } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -32,11 +34,13 @@ export function V2SignUpPage() {
   const next = resolveV2NextPath(params.get('next'));
 
   useEffect(() => {
-    if (isReady && isAuthenticated) navigate(next, { replace: true });
-  }, [isReady, isAuthenticated, navigate, next]);
+    // While sign-up is in flight, wait so the shell (and member bootstrap)
+    // starts only after the name hand-off is recorded.
+    if (isReady && isAuthenticated && !working) navigate(next, { replace: true });
+  }, [isReady, isAuthenticated, working, navigate, next]);
 
   const canSubmit =
-    name.trim().length > 0
+    normalizeV2DisplayName(name) !== null
     && EMAIL_PATTERN.test(email.trim())
     && password.length >= 6
     && password === confirmPassword
@@ -47,7 +51,9 @@ export function V2SignUpPage() {
     setError('');
     setWorking(true);
     try {
-      await signup(name.trim(), email.trim(), password);
+      // V2-only account creation: records the name hand-off the moment Firebase
+      // returns the user, before any fallible follow-up (see v2SignUpFlow).
+      await v2EmailSignUp(name, email.trim(), password);
       navigate(next);
     } catch (err) {
       setError(normalizeFirebaseAuthError(err));
@@ -124,6 +130,9 @@ export function V2SignUpPage() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Repeat your password"
         />
+        {isV2DisplayNameTooLong(name) && (
+          <p className="text-xs font-bold text-red-600">Please use 120 characters or fewer for your name.</p>
+        )}
         {password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword && (
           <p className="text-xs font-bold text-red-600">Passwords do not match yet.</p>
         )}

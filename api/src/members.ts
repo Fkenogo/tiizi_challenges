@@ -31,3 +31,56 @@ export async function createMember(
   );
   return { memberId: String(result.rows[0].member_id) };
 }
+
+export interface BootstrappedMember extends MemberRow {
+  /** True only for the request that created the mapping. */
+  created: boolean;
+}
+
+/**
+ * MC-1 explicit member bootstrap seam. Resolves (provider, subject) to the
+ * canonical member, creating exactly one ordinary `member` row on first use.
+ *
+ * Race safety comes from the `members_auth_identity_unique` constraint, not a
+ * check-then-insert: concurrent first requests all issue the same single
+ * INSERT ... ON CONFLICT DO NOTHING. One inserts; the others wait on the
+ * unique index, conflict, and then read the committed row.
+ *
+ * An existing mapping is returned untouched (role, display_name and every
+ * other column are never updated). Only `role = 'member'` is ever written, and
+ * the optional canonical display name is INSERT-ONLY: when several first
+ * requests race with different names, the single winning insert fixes the
+ * canonical value and every losing request returns the existing row unchanged.
+ */
+export async function bootstrapMember(
+  db: Db,
+  provider: string,
+  subject: string,
+  displayName: string | null = null,
+): Promise<BootstrappedMember> {
+  const inserted = await db.query<{ member_id: string }>(
+    `INSERT INTO members (auth_provider, auth_subject, role, display_name)
+     VALUES ($1, $2, 'member', $3)
+     ON CONFLICT ON CONSTRAINT members_auth_identity_unique DO NOTHING
+     RETURNING member_id`,
+    [provider, subject, displayName],
+  );
+  if (inserted.rows[0]) return { memberId: String(inserted.rows[0].member_id), created: true };
+
+  const existing = await findMemberByAuth(db, provider, subject);
+  if (!existing) {
+    // A conflict with no readable row means the mapping is inconsistent.
+    // Fail closed rather than provisioning around it.
+    throw new MemberBootstrapError();
+  }
+  return { memberId: existing.memberId, created: false };
+}
+
+export class MemberBootstrapError extends Error {
+  readonly statusCode = 409;
+  readonly code = 'member_mapping_inconsistent';
+
+  constructor() {
+    super('Member identity mapping could not be resolved');
+  }
+}
