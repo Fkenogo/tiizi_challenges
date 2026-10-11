@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { isV2DisplayNameTooLong, normalizeV2DisplayName } from '../src/v2/auth/v2DisplayName.js';
 import { bootstrapGateStatus, createMemberBootstrapSession } from '../src/v2/auth/memberBootstrapSession.js';
 import { persistV2SignUpName } from '../src/v2/auth/persistV2SignUpName.js';
-import { createSignUpNameHandoff, resolveBootstrapDisplayName, v2SignUpNameHandoff } from '../src/v2/auth/signUpNameHandoff.js';
+import { createSignUpNameHandoff, resolveBootstrapDisplayName, SIGN_UP_NAME_HANDOFF_KEY, v2SignUpNameHandoff, type HandoffStorage } from '../src/v2/auth/signUpNameHandoff.js';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail = ''): void {
@@ -71,6 +71,42 @@ async function main() {
   h.clear('uidA');
   check('clear removes it', h.peek('uidA') === null);
 
+  console.log('reload-safe hand-off (session storage, injectable)');
+  const fakeStore = (): HandoffStorage & { data: Map<string, string> } => {
+    const data = new Map<string, string>();
+    return { data, getItem: (k) => data.get(k) ?? null, setItem: (k, v) => { data.set(k, v); }, removeItem: (k) => { data.delete(k); } };
+  };
+  const store = fakeStore();
+  createSignUpNameHandoff(store).set('uidR', '  Reload Me ');
+  const afterReload = createSignUpNameHandoff(store); // fresh module/memory, same browser session
+  check('hand-off survives recreation of the in-memory module within the same session', afterReload.peek('uidR') === 'Reload Me');
+  check('UID A hand-off cannot be read by UID B after reload', afterReload.peek('uidB') === null);
+  check('stored record holds only uid + normalised name',
+    JSON.stringify(JSON.parse(store.data.get(SIGN_UP_NAME_HANDOFF_KEY) ?? '{}')) === JSON.stringify({ uid: 'uidR', name: 'Reload Me' }));
+  afterReload.clear('uidB');
+  check('clearing another uid does not remove this uid\'s hand-off', afterReload.peek('uidR') === 'Reload Me');
+  afterReload.clear('uidR');
+  check('successful-bootstrap clear removes the stored record', store.data.size === 0 && createSignUpNameHandoff(store).peek('uidR') === null);
+  createSignUpNameHandoff(store).set('uidS', 'Sign Out Me');
+  createSignUpNameHandoff(store).clearAll();
+  check('sign-out (clearAll) removes the stored record', store.data.size === 0);
+  for (const bad of ['not json', '{"uid":"u","name":""}', '{"uid":7,"name":"x"}', JSON.stringify({ uid: 'u', name: 'x'.repeat(121) }), 'null', '[]']) {
+    const bs = fakeStore();
+    bs.data.set(SIGN_UP_NAME_HANDOFF_KEY, bad);
+    const hb = createSignUpNameHandoff(bs);
+    check(`corrupt stored hand-off fails closed and is dropped: ${bad.slice(0, 24)}`, hb.peek('u') === null && bs.data.size === 0);
+  }
+  const throwing: HandoffStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
+  const ht = createSignUpNameHandoff(throwing);
+  ht.set('uidT', 'Blocked Storage');
+  check('unavailable storage degrades to the in-memory mirror without throwing', ht.peek('uidT') === 'Blocked Storage');
+  const failStore = fakeStore();
+  const hf = createSignUpNameHandoff(failStore);
+  hf.set('uidF', 'Retry Keeps Me');
+  const failingBoot = createMemberBootstrapSession(async () => { throw new Error('down'); }, (u) => hf.clear(u));
+  await failingBoot.ensure('uidF', hf.peek('uidF')).catch(() => {});
+  check('failed bootstrap retains the stored hand-off for explicit retry', createSignUpNameHandoff(failStore).peek('uidF') === 'Retry Keeps Me');
+
   console.log('updateProfile failure still hands the name to bootstrap');
   v2SignUpNameHandoff.clearAll();
   // A bare object makes Firebase updateProfile reject; the carrier must swallow it.
@@ -79,6 +115,13 @@ async function main() {
   check('carrier does not throw when updateProfile rejects', !threw);
   check('entered name is retained for that uid despite the failure', v2SignUpNameHandoff.peek('new-uid') === 'Fred Kenogo');
   check('and is unavailable to another uid', v2SignUpNameHandoff.peek('other-uid') === null);
+  // Reload-equivalent before bootstrap: a fresh hand-off over the same session store still has it.
+  const reloadStore = fakeStore();
+  const prior = createSignUpNameHandoff(reloadStore);
+  prior.set('new-uid', 'Fred Kenogo'); // what persistV2SignUpName does before updateProfile
+  const reloaded = createSignUpNameHandoff(reloadStore);
+  check('updateProfile failed + reload: explicit signup name still resolves for bootstrap (Firebase name absent)',
+    resolveBootstrapDisplayName(reloaded, 'new-uid', null) === 'Fred Kenogo');
   v2SignUpNameHandoff.clearAll();
 
   console.log('handoff cleared after successful bootstrap');
@@ -154,8 +197,10 @@ async function main() {
   check('gate resolves the name via hand-off then valid Firebase displayName (never email)',
     /resolveBootstrapDisplayName\(v2SignUpNameHandoff, uid, firebaseNameRef\.current\)/.test(gate) && /user\?\.displayName/.test(gate));
   check('gate renders children only through the UID-bound status', /bootstrapGateStatus\(outcome, uid\)/.test(gate) && !/state === 'ready'/.test(gate));
-  check('hand-off is memory only (no browser storage)', !/localStorage|sessionStorage|indexedDB/.test(read('src/v2/auth/signUpNameHandoff.ts').replace(/\/\*[\s\S]*?\*\//g, '')));
+  check('hand-off uses sessionStorage only (never localStorage / indexedDB)', /sessionStorage/.test(read('src/v2/auth/signUpNameHandoff.ts')) && !/localStorage|indexedDB/.test(read('src/v2/auth/signUpNameHandoff.ts').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')));
   check('sign-up name input has no HTML maxLength (UTF-16 semantics)', !/maxLength/.test(signUp));
+  check('V2 sign-out paths clear the hand-off',
+    /clearAll\(\); void logout\(\)/.test(gate) && /v2SignUpNameHandoff\.clearAll\(\);\s*await logout\(\)/.test(read('src/v2/auth/V2SignInPage.tsx')));
   console.log('V1 freeze');
   const v1Signup = read('src/features/Auth/SignupScreen.tsx');
   check('archived V1 SignupScreen carries no MC-1 behaviour',
