@@ -2,7 +2,7 @@
 
 **Document type:** Governed programme-management roadmap
 
-**Version:** 2.65
+**Version:** 2.66
 
 **Status:** Approved programme baseline
 
@@ -1100,6 +1100,7 @@ These rules apply throughout the Version 2 programme and may be changed only thr
 
 ## 23. Programme Change Log
 
+| 2.66 | 2026-10-11 | **MC-1 CORRECTION 005 — SIGN-UP NAME CAPTURE PRECEDES LEGACY CACHE / BOOTSTRAP TOKEN BOUND TO GATE UID / HAND-OFF CLEARED ONLY AFTER SUCCESSFUL LOGOUT** | Code + tests + docs; migration 026, server, shared `AuthContext` and V1 unchanged; NOT deployed | Resolves three Codex findings on b846b21: V2 email sign-up now creates the Firebase account itself and records the UID-keyed name hand-off immediately, before any fallible follow-up (the shared `AuthContext.signup` with its legacy profile cache is no longer used by V2); the bootstrap request is bound to one captured Firebase user (name + token from the same object, explicit bearer token, abort on identity mismatch); the hand-off is cleared only after sign-out succeeds. MC-1 remains IMPLEMENTED CANDIDATE / NOT FOUNDER ACCEPTED; MC-2 not started. | Awaiting current-head review + CI. |
 | 2.65 | 2026-10-11 | **MC-1 CORRECTION 004 — RELOAD-SAFE V2 SIGN-UP NAME HANDOFF / CONTRACT RECORD ALIGNED** | Code + tests + docs; migration 026, shared `AuthContext` and V1 unchanged; NOT deployed | The V2-only sign-up name hand-off is now reload-safe within the browser session (`sessionStorage`, `{uid, name}` only, UID-matched, cleared on successful bootstrap and V2 sign-out; non-canonical, never `localStorage`). The MC-1 implementation record's bootstrap contract is rewritten (optional insert-only `displayName` body; `400 invalid_display_name`; no stale 'no body' / 'updateProfile failure ⇒ NULL' statements). MC-1 remains IMPLEMENTED CANDIDATE / NOT FOUNDER ACCEPTED; MC-2 not started. | Awaiting current-head review + CI. |
 | 2.64 | 2026-10-11 | **MC-1 CORRECTION 003 — RELIABLE SIGN-UP NAME HANDOFF / UID-BOUND GATE / UNICODE LIMIT ALIGNMENT** | Code + tests + docs; migration 026 and shared `AuthContext`/V1 unchanged; NOT deployed | Resolves three Codex findings on 8ea1f4c: the entered V2 sign-up name now reaches the first bootstrap through a V2-only, in-memory, UID-keyed hand-off even if Firebase `updateProfile` fails (cleared after successful bootstrap/sign-out); the bootstrap gate renders children only when the ready outcome's uid equals the current uid (direct A→B switch fails closed); the sign-up name limit is enforced in Unicode code points (HTML `maxLength` removed). MC-1 remains IMPLEMENTED CANDIDATE / NOT FOUNDER ACCEPTED; MC-2 not started. | Awaiting current-head review + CI. |
 | 2.63 | 2026-10-11 | **MC-1 CORRECTION 002 — V2-ONLY DISPLAY-NAME CARRIER / V1 FREEZE PRESERVED** | Code + tests + docs; migration 026 unchanged; NOT deployed | Removes the Correction 001 `updateProfile` from the shared `AuthContext` (it also served archived V1 signup); the V2 sign-up name is carried to the Firebase user by a V2-only helper. Also resolves a Codex P1: unusable Firebase display names are omitted client-side so they cannot block bootstrap. Adds V1-freeze guard checks. MC-1 remains IMPLEMENTED CANDIDATE / NOT FOUNDER ACCEPTED; MC-2 not started. | Awaiting current-head review + CI. |

@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LoadingSpinner } from '../../components/Mobile';
 import { useAuth } from '../../hooks/useAuth';
-import { bootstrapMember } from '../../api/memberBootstrapApi';
+import { bootstrapMemberWithToken } from '../../api/memberBootstrapApi';
+import { auth } from '../../lib/firebaseAuth';
+import { bootstrapCapturedUser } from './bootstrapCapturedUser';
 import {
   bootstrapGateStatus,
   createMemberBootstrapSession,
   type BootstrapOutcome,
 } from './memberBootstrapSession';
-import { resolveBootstrapDisplayName, v2SignUpNameHandoff } from './signUpNameHandoff';
+import { v2SignUpNameHandoff } from './signUpNameHandoff';
+import { signOutThenClearHandoff } from './v2SignUpFlow';
 
 // The transient sign-up name is cleared as soon as that uid's bootstrap succeeds.
-const v2MemberBootstrapSession = createMemberBootstrapSession(
-  bootstrapMember,
-  (uid) => v2SignUpNameHandoff.clear(uid),
-);
+const v2MemberBootstrapSession = createMemberBootstrapSession((uid) => v2SignUpNameHandoff.clear(uid));
 
 /**
  * MC-1 — V2 member session establishment.
@@ -30,27 +30,39 @@ const v2MemberBootstrapSession = createMemberBootstrapSession(
 export function V2MemberBootstrapGate({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const uid = user?.uid ?? null;
-  // The Firebase user's actual displayName (never the localStorage fallback
-  // profile, never email-derived); read at call time, not render time.
-  const firebaseNameRef = useRef<string | null | undefined>(null);
-  firebaseNameRef.current = user?.displayName;
   // Outcome is bound to the uid it was produced for (see bootstrapGateStatus).
   const [outcome, setOutcome] = useState<BootstrapOutcome | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [signOutFailed, setSignOutFailed] = useState(false);
 
   useEffect(() => {
     if (!uid) return;
     let cancelled = false;
     setOutcome(null);
-    const name = resolveBootstrapDisplayName(v2SignUpNameHandoff, uid, firebaseNameRef.current);
-    v2MemberBootstrapSession.ensure(uid, name).then(
+    // Capture the Firebase user for THIS uid; its name, token and request stay
+    // bound together even if the global auth.currentUser changes meanwhile.
+    const captured = user;
+    const run = () =>
+      bootstrapCapturedUser({
+        user: captured as NonNullable<typeof captured>,
+        expectedUid: uid,
+        currentUid: () => auth.currentUser?.uid ?? null,
+        handoff: v2SignUpNameHandoff,
+        send: bootstrapMemberWithToken,
+      });
+    v2MemberBootstrapSession.ensure(uid, run).then(
       () => { if (!cancelled) setOutcome({ uid, status: 'ready' }); },
       () => { if (!cancelled) setOutcome({ uid, status: 'failed' }); },
     );
     return () => { cancelled = true; };
-  }, [uid, attempt]);
+  }, [uid, attempt]); // eslint-disable-line react-hooks/exhaustive-deps -- `user` is captured for this uid on purpose
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  // Clear the sign-up hand-off only after sign-out actually succeeds.
+  const signOut = useCallback(() => {
+    setSignOutFailed(false);
+    signOutThenClearHandoff(logout, v2SignUpNameHandoff).catch(() => setSignOutFailed(true));
+  }, [logout]);
 
   const status = bootstrapGateStatus(outcome, uid);
   if (status === 'ready') return <>{children}</>;
@@ -63,6 +75,9 @@ export function V2MemberBootstrapGate({ children }: { children: React.ReactNode 
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Please check your connection and try again. Your sign-in is fine.
         </p>
+        {signOutFailed && (
+          <p className="mt-3 text-xs font-bold text-red-600">We couldn't sign you out. Please try again.</p>
+        )}
         <button
           type="button"
           onClick={retry}
@@ -72,7 +87,7 @@ export function V2MemberBootstrapGate({ children }: { children: React.ReactNode 
         </button>
         <button
           type="button"
-          onClick={() => { v2SignUpNameHandoff.clearAll(); void logout(); }}
+          onClick={signOut}
           className="mt-2 w-full rounded-2xl px-4 py-3 text-sm font-bold text-slate-600"
         >
           Sign out

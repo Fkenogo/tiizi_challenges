@@ -10,22 +10,22 @@ import type { MemberBootstrapResult } from '../../api/memberBootstrapApi';
  * only an explicit user action (calling `ensure` again) re-attempts.
  */
 export interface MemberBootstrapSession {
-  ensure(uid: string, displayName?: string | null): Promise<void>;
+  /** `run` performs the identity-bound bootstrap for exactly this uid. */
+  ensure(uid: string, run: () => Promise<MemberBootstrapResult>): Promise<void>;
 }
 
 export function createMemberBootstrapSession(
-  run: (displayName?: string | null) => Promise<MemberBootstrapResult>,
   onBootstrapped?: (uid: string) => void,
 ): MemberBootstrapSession {
   const ready = new Set<string>();
   const inFlight = new Map<string, Promise<void>>();
 
   return {
-    ensure(uid: string, displayName?: string | null): Promise<void> {
+    ensure(uid: string, run: () => Promise<MemberBootstrapResult>): Promise<void> {
       if (ready.has(uid)) return Promise.resolve();
       const existing = inFlight.get(uid);
       if (existing) return existing;
-      const promise = run(displayName).then(
+      const promise = run().then(
         () => {
           ready.add(uid);
           inFlight.delete(uid);
