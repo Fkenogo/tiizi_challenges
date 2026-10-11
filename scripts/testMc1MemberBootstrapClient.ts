@@ -5,6 +5,7 @@
  * sign-in path (email sign-up, sign-in, Google).
  */
 import { readFileSync } from 'node:fs';
+import { normalizeV2DisplayName } from '../src/v2/auth/v2DisplayName.js';
 import { createMemberBootstrapSession } from '../src/v2/auth/memberBootstrapSession.js';
 
 let failures = 0;
@@ -43,6 +44,15 @@ async function main() {
   await flaky.ensure('uid');
   check('explicit retry re-attempts and can succeed', attempts === 2);
 
+  console.log('V2 display-name normalisation (mirrors API bound)');
+  check('trims and preserves Unicode', normalizeV2DisplayName('  Wanjiru Müller 李 ') === 'Wanjiru Müller 李');
+  check('empty / whitespace / null / undefined are omitted',
+    normalizeV2DisplayName('   ') === null && normalizeV2DisplayName(null) === null && normalizeV2DisplayName(undefined) === null);
+  check('121 code points omitted, 120 kept',
+    normalizeV2DisplayName('x'.repeat(121)) === null && normalizeV2DisplayName('x'.repeat(120)) === 'x'.repeat(120));
+  check('astral code points counted as one each', normalizeV2DisplayName('😀'.repeat(120)) !== null && normalizeV2DisplayName('😀'.repeat(121)) === null);
+  check('control characters omitted', normalizeV2DisplayName('a\u0000b') === null && normalizeV2DisplayName('a\nb') === null);
+
   console.log('source contracts');
   const guard = read('src/v2/auth/V2AuthGuard.tsx');
   check('V2 authenticated boundary wraps children in the bootstrap gate',
@@ -63,9 +73,22 @@ async function main() {
     && /body: \{ displayName: name \}/.test(api) && !/uid|memberId|role/i.test(api.replace(/memberId: string/, '')));
   check('gate sends the Firebase user displayName, not the fallback profile',
     /user\?\.displayName/.test(gate) && !/profile\./.test(gate) && !/useAuth\(\)[^;]*profile/.test(gate));
-  const authCtxSrc = read('src/context/AuthContext.tsx');
-  check('email signup writes the entered name to the Firebase user (updateProfile)',
-    /updateProfile\(credentials\.user, \{ displayName: enteredName \}\)/.test(authCtxSrc));
+  const carrier = read('src/v2/auth/persistV2SignUpName.ts');
+  check('V2-only carrier owns the Firebase updateProfile of the entered name',
+    /updateProfile\(user, \{ displayName \}\)/.test(carrier) && /normalizeV2DisplayName\(enteredName\)/.test(carrier));
+  check('V2 sign-up page invokes the carrier after account creation, before navigating',
+    signUp.indexOf('await signup(') < signUp.indexOf('persistV2SignUpName(auth.currentUser')
+    && signUp.indexOf('persistV2SignUpName(auth.currentUser') < signUp.indexOf('navigate(next);'));
+  check('carrier never derives from email', !/email/i.test(carrier.replace(/\/\*[\s\S]*?\*\//g, '')));
+  check('gate normalises Firebase displayName so an unusable value cannot block bootstrap',
+    /normalizeV2DisplayName\(user\?\.displayName\)/.test(gate));
+  console.log('V1 freeze');
+  const v1Signup = read('src/features/Auth/SignupScreen.tsx');
+  check('archived V1 SignupScreen carries no MC-1 behaviour',
+    !/updateProfile|bootstrap|persistV2|src\/v2|\.\.\/v2/i.test(v1Signup));
+  const shared = read('src/context/AuthContext.tsx');
+  check('shared AuthContext has no MC-1 display-name persistence (updateProfile)', !/updateProfile/.test(shared));
+  check('shared AuthContext has no import of V2 modules', !/\/v2\//.test(shared));
   check('sign-up page does not enter the shell before sign-up completes', /isAuthenticated && !working/.test(signUp));
   check('no /v1 target', !/\/v1/.test(api));
   const authCtx = read('src/context/AuthContext.tsx');

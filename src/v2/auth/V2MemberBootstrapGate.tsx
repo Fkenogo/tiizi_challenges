@@ -3,6 +3,7 @@ import { LoadingSpinner } from '../../components/Mobile';
 import { useAuth } from '../../hooks/useAuth';
 import { bootstrapMember } from '../../api/memberBootstrapApi';
 import { createMemberBootstrapSession } from './memberBootstrapSession';
+import { normalizeV2DisplayName } from './v2DisplayName';
 
 const v2MemberBootstrapSession = createMemberBootstrapSession(bootstrapMember);
 
@@ -26,7 +27,8 @@ export function V2MemberBootstrapGate({ children }: { children: React.ReactNode 
   // The Firebase user's actual displayName only (never the localStorage
   // fallback profile, never an email-derived value). Read at call time.
   const displayNameRef = useRef<string | null>(null);
-  displayNameRef.current = user?.displayName?.trim() || null;
+  // Unusable values are omitted so they can never block the bootstrap.
+  displayNameRef.current = normalizeV2DisplayName(user?.displayName);
   const [state, setState] = useState<GateState>('working');
   const [attempt, setAttempt] = useState(0);
 

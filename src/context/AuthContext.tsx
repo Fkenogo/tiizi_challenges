@@ -8,7 +8,6 @@ import {
   signInWithPopup,
   signInWithRedirect,
   signOut,
-  updateProfile,
 } from 'firebase/auth';
 import { auth } from '../lib/firebaseAuth';
 
@@ -83,18 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!password) {
       throw new Error('Password is required to create an account.');
     }
-    const credentials = await createUserWithEmailAndPassword(auth, email, password);
-    const enteredName = displayName.trim();
-    if (enteredName) {
-      // Persist the exact member-entered name on the Firebase user so the V2
-      // bootstrap can send it canonically. Best effort: a failure leaves the
-      // name absent (later governed completion), never an email-derived one.
-      try {
-        await updateProfile(credentials.user, { displayName: enteredName });
-      } catch {
-        // intentionally ignored
-      }
-    }
+    await createUserWithEmailAndPassword(auth, email, password);
     const nextProfile = { displayName: displayName || 'Tiizi User', email };
     persistProfile(nextProfile);
   };

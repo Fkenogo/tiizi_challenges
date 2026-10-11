@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../lib/firebaseAuth';
 import { normalizeFirebaseAuthError } from '../../utils/firebaseAuthErrors';
+import { persistV2SignUpName } from './persistV2SignUpName';
+import { normalizeV2DisplayName } from './v2DisplayName';
 import { resolveV2NextPath, v2NextQuery } from './v2NextPath';
 import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2AuthLayout';
 
@@ -38,7 +41,7 @@ export function V2SignUpPage() {
   }, [isReady, isAuthenticated, working, navigate, next]);
 
   const canSubmit =
-    name.trim().length > 0
+    normalizeV2DisplayName(name) !== null
     && EMAIL_PATTERN.test(email.trim())
     && password.length >= 6
     && password === confirmPassword
@@ -50,6 +53,8 @@ export function V2SignUpPage() {
     setWorking(true);
     try {
       await signup(name.trim(), email.trim(), password);
+      // V2-only: carry the entered name onto the Firebase user before the shell.
+      if (auth.currentUser) await persistV2SignUpName(auth.currentUser, name);
       navigate(next);
     } catch (err) {
       setError(normalizeFirebaseAuthError(err));
@@ -97,6 +102,7 @@ export function V2SignUpPage() {
         <V2AuthField
           label="Your name"
           type="text"
+          maxLength={120}
           autoComplete="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
