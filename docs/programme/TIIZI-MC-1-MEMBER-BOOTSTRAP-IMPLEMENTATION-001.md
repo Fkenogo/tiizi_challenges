@@ -1,6 +1,6 @@
 # TIIZI MC-1 — V2 Member Bootstrap: Implementation Record 001
 
-**Status:** IMPLEMENTED CANDIDATE / TECHNICALLY VALIDATED — AWAITING TECHNICAL + FOUNDER REVIEW. Not Founder accepted. Not merged. Not deployed.
+**Status:** FOUNDER ACCEPTED / MERGED / CLOSED (PR #91, merge `c41c17e`, accepted head `b20287a`; see [`TIIZI-MC-1-CLOSURE-RECORD-001.md`](TIIZI-MC-1-CLOSURE-RECORD-001.md)). Migration 026 merged as code, NOT deployed.
 **Baseline:** Master Programme 2.60, main `250facf`. **Migration:** `026_member_canonical_display_name.sql` (code-authorised only; NOT deployed).
 
 ## Root cause
