@@ -68,6 +68,7 @@
     "test:gf04-group-feed": "tsx scripts/testGF04GroupFeedGuards.ts",
     "test:s4b-members": "node scripts/testS4bMembersGuards.mjs",
     "preview:s2b:seed": "tsx scripts/previewS2bSeed.ts",
+    "test:mc1-member-bootstrap": "tsx scripts/testMc1MemberBootstrapClient.ts",
     "test:v2-auth-returns": "tsx scripts/testV2AuthReturnPaths.ts",
     "test:firebase-emulator-mode": "tsx scripts/testFirebaseEmulatorMode.ts",
     "test:mobile-primary-nav": "tsx scripts/testMobilePrimaryNavGuards.ts",

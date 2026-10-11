@@ -284,13 +284,18 @@ surface. It does not participate in V2 authority or data establishment.
 - `members.member_id` is the internal Tiizi UUID. Firebase is an external
   identity mapping: `(auth_provider, auth_subject)`, unique, never a domain
   key. Request code receives `member_id` only (see `src/auth.ts`).
-- No auto-provisioning: an authenticated Firebase UID with no linked member
-  gets `401 unknown_member`. Signup migration is intentionally out of scope.
-- Intended future boundary (not yet implemented): authentication succeeds →
-  the Tiizi API creates/links the Member row transactionally
-  (`findMemberByAuth` then `createMember` inside one transaction at the auth
-  hook), so the first authenticated request establishes identity exactly
-  once. Documented here so Phase B can implement it without redesign.
+- No implicit provisioning: on every normal `/api/*` route an authenticated
+  Firebase UID with no linked member still gets `401 unknown_member`.
+- MC-1 explicit bootstrap: `POST /api/members/bootstrap` is the ONLY seam that
+  provisions a member. It verifies the bearer token itself, takes the actor
+  from the verified Firebase UID only (body and query are ignored), and runs
+  one `INSERT ... ON CONFLICT ON CONSTRAINT members_auth_identity_unique DO
+  NOTHING` (race-safe, idempotent), then reads the existing row on conflict.
+  Response: `{ memberId, created }`. It creates an ordinary `member` role only
+  and never updates an existing row. The V2 client calls it once after
+  authentication (`V2MemberBootstrapGate`). No display name is stored (no
+  authorised storage exists yet; see
+  `docs/programme/TIIZI-MC-1-MEMBER-BOOTSTRAP-IMPLEMENTATION-001.md`).
 
 ## PostgreSQL portability (pgcrypto assessment)
 
