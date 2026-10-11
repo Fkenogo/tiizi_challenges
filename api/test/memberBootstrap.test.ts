@@ -14,7 +14,8 @@ async function memberRows() {
     auth_provider: string;
     auth_subject: string;
     role: string;
-  }>('SELECT member_id, auth_provider, auth_subject, role FROM members ORDER BY created_at');
+    display_name: string | null;
+  }>('SELECT member_id, auth_provider, auth_subject, role, display_name FROM members ORDER BY created_at');
   return result.rows;
 }
 
@@ -189,5 +190,115 @@ describe('MC-1 member bootstrap', () => {
     const res = await app.inject({ method: 'POST', url: BOOTSTRAP, headers: authHeaders('tok') });
     expect(res.statusCode).toBe(409);
     expect(res.json().error.code).toBe('member_mapping_inconsistent');
+  });
+
+  describe('canonical first-create display name', () => {
+    const post = (app: ReturnType<typeof buildTestApp>, payload?: unknown, token = 'tok') =>
+      app.inject({
+        method: 'POST',
+        url: BOOTSTRAP,
+        headers: { ...authHeaders(token), ...(payload === undefined ? {} : { 'content-type': 'application/json' }) },
+        ...(payload === undefined ? {} : { payload: payload as object }),
+      });
+
+    it('A: email signup name is persisted (trimmed, Unicode preserved) on first creation', async () => {
+      const app = buildTestApp({ tok: 'uid-n1' });
+      const res = await post(app, { displayName: '  Wanjiru Müller 李  ' });
+      expect(res.statusCode).toBe(200);
+      expect(Object.keys(res.json()).sort()).toEqual(['created', 'memberId']);
+      const rows = await memberRows();
+      expect(rows).toHaveLength(1);
+      expect(rows[0].display_name).toBe('Wanjiru Müller 李');
+      expect(rows[0].role).toBe('member');
+    });
+
+    it('B: repeat bootstrap never overwrites the existing name', async () => {
+      const app = buildTestApp({ tok: 'uid-n2' });
+      await post(app, { displayName: 'First Name' });
+      const again = await post(app, { displayName: 'Other Name' });
+      expect(again.json().created).toBe(false);
+      const none = await post(app);
+      expect(none.json().created).toBe(false);
+      const rows = await memberRows();
+      expect(rows).toHaveLength(1);
+      expect(rows[0].display_name).toBe('First Name');
+    });
+
+    it('B: an existing member with NULL name is not backfilled by bootstrap', async () => {
+      await seedMember(testDb(), 'legacy-uid');
+      const app = buildTestApp({ tok: 'legacy-uid' });
+      const res = await post(app, { displayName: 'Late Name' });
+      expect(res.json().created).toBe(false);
+      expect((await memberRows())[0].display_name).toBeNull();
+    });
+
+    it('C: body identity/authority fields cannot influence actor or authority', async () => {
+      const victim = await seedMember(testDb(), 'victim-uid');
+      const app = buildTestApp({ tok: 'attacker-uid' });
+      const res = await post(app, {
+        displayName: 'Attacker',
+        uid: 'victim-uid', authSubject: 'victim-uid', memberId: victim,
+        role: 'super_admin', isAdmin: true, operator: true,
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().memberId).not.toBe(victim);
+      const rows = await memberRows();
+      expect(rows.find((r) => r.member_id === victim)?.display_name).toBeNull();
+      const attacker = rows.find((r) => r.auth_subject === 'attacker-uid');
+      expect(attacker).toMatchObject({ role: 'member', display_name: 'Attacker' });
+      expect(await count('platform_operator_cause_reviewers')).toBe(0);
+    });
+
+    it('D/F: absent displayName creates the member with NULL (nothing derived)', async () => {
+      const app = buildTestApp({ tok: 'someone.else@example.com' });
+      for (const payload of [undefined, {}, { displayName: null }]) {
+        await testDb().query('TRUNCATE members CASCADE');
+        const res = await post(app, payload);
+        expect(res.statusCode).toBe(200);
+        const rows = await memberRows();
+        expect(rows).toHaveLength(1);
+        expect(rows[0].display_name).toBeNull();
+      }
+    });
+
+    it('E: a provider (Google) name seeds first creation and never overwrites later', async () => {
+      const app = buildTestApp({ tok: 'google-uid' });
+      expect((await post(app, { displayName: 'Provider Name' })).json().created).toBe(true);
+      await post(app, { displayName: 'Changed Provider Name' });
+      expect((await memberRows())[0].display_name).toBe('Provider Name');
+    });
+
+    it('rejects explicitly supplied empty, whitespace, non-string, oversize or control-char names', async () => {
+      const app = buildTestApp({ tok: 'uid-bad' });
+      for (const bad of ['', '   ', 42, ['x'], { a: 1 }, 'x'.repeat(121), 'bad\u0000name', 'line\nbreak']) {
+        const res = await post(app, { displayName: bad });
+        expect(res.statusCode, JSON.stringify(bad)).toBe(400);
+        expect(res.json().error.code).toBe('invalid_display_name');
+      }
+      expect(await memberRows()).toHaveLength(0);
+      expect((await post(app, { displayName: 'x'.repeat(120) })).statusCode).toBe(200);
+    });
+
+    it('G: concurrent first creations with differing names converge on one winning name', async () => {
+      const app = buildTestApp({ tok: 'uid-race' });
+      const names = Array.from({ length: 6 }, (_, i) => `Name ${i}`);
+      const responses = await Promise.all(names.map((displayName) => post(app, { displayName })));
+      for (const res of responses) expect(res.statusCode).toBe(200);
+      expect(new Set(responses.map((r) => r.json().memberId)).size).toBe(1);
+      expect(responses.filter((r) => r.json().created === true)).toHaveLength(1);
+      const rows = await memberRows();
+      expect(rows).toHaveLength(1);
+      expect(names).toContain(rows[0].display_name);
+      // The winner is the only request that reported created:true.
+      const winnerIdx = responses.findIndex((r) => r.json().created === true);
+      expect(rows[0].display_name).toBe(names[winnerIdx]);
+    });
+
+    it('database rejects non-trimmed or oversize stored names', async () => {
+      const insert = (name: string) =>
+        testDb().query(`INSERT INTO members (auth_provider, auth_subject, display_name) VALUES ('firebase', $1, $2)`, [`s-${name.length}`, name]);
+      await expect(insert(' padded')).rejects.toThrow();
+      await expect(insert('x'.repeat(121))).rejects.toThrow();
+    });
   });
 });

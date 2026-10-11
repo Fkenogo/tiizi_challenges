@@ -32,8 +32,10 @@ export function V2SignUpPage() {
   const next = resolveV2NextPath(params.get('next'));
 
   useEffect(() => {
-    if (isReady && isAuthenticated) navigate(next, { replace: true });
-  }, [isReady, isAuthenticated, navigate, next]);
+    // While sign-up is in flight, wait: the entered name must be written to the
+    // Firebase user before the V2 shell (and its member bootstrap) starts.
+    if (isReady && isAuthenticated && !working) navigate(next, { replace: true });
+  }, [isReady, isAuthenticated, working, navigate, next]);
 
   const canSubmit =
     name.trim().length > 0

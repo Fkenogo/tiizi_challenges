@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoadingSpinner } from '../../components/Mobile';
 import { useAuth } from '../../hooks/useAuth';
 import { bootstrapMember } from '../../api/memberBootstrapApi';
@@ -23,6 +23,10 @@ type GateState = 'working' | 'ready' | 'failed';
 export function V2MemberBootstrapGate({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const uid = user?.uid ?? null;
+  // The Firebase user's actual displayName only (never the localStorage
+  // fallback profile, never an email-derived value). Read at call time.
+  const displayNameRef = useRef<string | null>(null);
+  displayNameRef.current = user?.displayName?.trim() || null;
   const [state, setState] = useState<GateState>('working');
   const [attempt, setAttempt] = useState(0);
 
@@ -30,7 +34,7 @@ export function V2MemberBootstrapGate({ children }: { children: React.ReactNode 
     if (!uid) return;
     let cancelled = false;
     setState('working');
-    v2MemberBootstrapSession.ensure(uid).then(
+    v2MemberBootstrapSession.ensure(uid, displayNameRef.current).then(
       () => { if (!cancelled) setState('ready'); },
       () => { if (!cancelled) setState('failed'); },
     );

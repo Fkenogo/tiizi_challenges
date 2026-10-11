@@ -292,10 +292,10 @@ surface. It does not participate in V2 authority or data establishment.
   one `INSERT ... ON CONFLICT ON CONSTRAINT members_auth_identity_unique DO
   NOTHING` (race-safe, idempotent), then reads the existing row on conflict.
   Response: `{ memberId, created }`. It creates an ordinary `member` role only
-  and never updates an existing row. The V2 client calls it once after
-  authentication (`V2MemberBootstrapGate`). No display name is stored (no
-  authorised storage exists yet; see
-  `docs/programme/TIIZI-MC-1-MEMBER-BOOTSTRAP-IMPLEMENTATION-001.md`).
+  and never updates an existing row. An optional body `displayName` is stored
+  insert-only in `members.display_name` (migration 026). The V2 client calls
+  it once after authentication (`V2MemberBootstrapGate`); see
+  `docs/programme/TIIZI-MC-1-MEMBER-BOOTSTRAP-IMPLEMENTATION-001.md`.
 
 ## PostgreSQL portability (pgcrypto assessment)
 

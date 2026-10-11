@@ -46,20 +46,24 @@ export interface BootstrappedMember extends MemberRow {
  * INSERT ... ON CONFLICT DO NOTHING. One inserts; the others wait on the
  * unique index, conflict, and then read the committed row.
  *
- * An existing mapping is returned untouched (role and any other column are
- * never updated). Only `role = 'member'` is ever written here.
+ * An existing mapping is returned untouched (role, display_name and every
+ * other column are never updated). Only `role = 'member'` is ever written, and
+ * the optional canonical display name is INSERT-ONLY: when several first
+ * requests race with different names, the single winning insert fixes the
+ * canonical value and every losing request returns the existing row unchanged.
  */
 export async function bootstrapMember(
   db: Db,
   provider: string,
   subject: string,
+  displayName: string | null = null,
 ): Promise<BootstrappedMember> {
   const inserted = await db.query<{ member_id: string }>(
-    `INSERT INTO members (auth_provider, auth_subject, role)
-     VALUES ($1, $2, 'member')
+    `INSERT INTO members (auth_provider, auth_subject, role, display_name)
+     VALUES ($1, $2, 'member', $3)
      ON CONFLICT ON CONSTRAINT members_auth_identity_unique DO NOTHING
      RETURNING member_id`,
-    [provider, subject],
+    [provider, subject, displayName],
   );
   if (inserted.rows[0]) return { memberId: String(inserted.rows[0].member_id), created: true };
 

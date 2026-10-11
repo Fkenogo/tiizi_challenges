@@ -9,20 +9,20 @@ import type { MemberBootstrapResult } from '../../api/memberBootstrapApi';
  * user action (calling `ensure` again) re-attempts. There is no retry loop.
  */
 export interface MemberBootstrapSession {
-  ensure(uid: string): Promise<void>;
+  ensure(uid: string, displayName?: string | null): Promise<void>;
 }
 
 export function createMemberBootstrapSession(
-  run: () => Promise<MemberBootstrapResult>,
+  run: (displayName?: string | null) => Promise<MemberBootstrapResult>,
 ): MemberBootstrapSession {
   let readyUid: string | null = null;
   let inFlight: { uid: string; promise: Promise<void> } | null = null;
 
   return {
-    ensure(uid: string): Promise<void> {
+    ensure(uid: string, displayName?: string | null): Promise<void> {
       if (readyUid === uid) return Promise.resolve();
       if (inFlight && inFlight.uid === uid) return inFlight.promise;
-      const promise = run().then(
+      const promise = run(displayName).then(
         () => {
           readyUid = uid;
           if (inFlight?.promise === promise) inFlight = null;

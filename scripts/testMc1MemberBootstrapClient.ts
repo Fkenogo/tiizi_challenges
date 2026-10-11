@@ -31,6 +31,11 @@ async function main() {
     if (attempts === 1) throw new Error('down');
     return { memberId: 'm', created: false };
   });
+  const names: Array<string | null | undefined> = [];
+  const named = createMemberBootstrapSession(async (n) => { names.push(n); return { memberId: 'm', created: true }; });
+  await named.ensure('u', 'Fred Kenogo');
+  check('session forwards the display name to the bootstrap call', names[0] === 'Fred Kenogo');
+
   let failed = false;
   await flaky.ensure('uid').catch(() => { failed = true; });
   check('failure rejects (fail closed, not treated as provisioned)', failed);
@@ -53,11 +58,18 @@ async function main() {
   check('gate offers a user-initiated retry and sign-out', /Try again/.test(gate) && /Sign out/.test(gate));
   check('gate has no automatic retry timers', !/setTimeout|setInterval/.test(gate));
   const api = read('src/api/memberBootstrapApi.ts');
-  check('client composes the path through apiPath and POSTs with no body',
-    /apiPath\('\/members\/bootstrap'\)/.test(api) && /method: 'POST'/.test(api) && !/body:/.test(api));
+  check('client composes the path through apiPath and POSTs; body carries only displayName',
+    /apiPath\('\/members\/bootstrap'\)/.test(api) && /method: 'POST'/.test(api)
+    && /body: \{ displayName: name \}/.test(api) && !/uid|memberId|role/i.test(api.replace(/memberId: string/, '')));
+  check('gate sends the Firebase user displayName, not the fallback profile',
+    /user\?\.displayName/.test(gate) && !/profile\./.test(gate) && !/useAuth\(\)[^;]*profile/.test(gate));
+  const authCtxSrc = read('src/context/AuthContext.tsx');
+  check('email signup writes the entered name to the Firebase user (updateProfile)',
+    /updateProfile\(credentials\.user, \{ displayName: enteredName \}\)/.test(authCtxSrc));
+  check('sign-up page does not enter the shell before sign-up completes', /isAuthenticated && !working/.test(signUp));
   check('no /v1 target', !/\/v1/.test(api));
   const authCtx = read('src/context/AuthContext.tsx');
-  check('shared AuthContext (V1-shared) is untouched by MC-1', !/bootstrap/i.test(authCtx));
+  check('shared AuthContext does not call bootstrap itself', !/bootstrapMember|members\/bootstrap/.test(authCtx));
 
   if (failures > 0) { console.error(`\n${failures} check(s) failed`); process.exit(1); }
   console.log('\nAll MC-1 client checks passed');
