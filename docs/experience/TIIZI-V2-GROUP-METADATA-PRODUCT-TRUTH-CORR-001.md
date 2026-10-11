@@ -15,6 +15,8 @@ The Group metadata fields are descriptive identity/discovery information.
 They do not determine Activity eligibility, Challenge authority, ranking,
 recommendation, matching, scoring, or enforcement.
 
+> **Narrow clarification (2026-10-10, Founder Disposition FD-MC-04d; nothing else in this document is changed):** the statements below that these fields do not rank, recommend or match describe the **historical meaning at S4 acceptance** — Focus Areas and Group Goals did not themselves rank, recommend or match Groups, and S4 did not implement a recommender. They were scope and authority boundaries, not a platform-wide prohibition (Stage F Product Truth already permits interest-based discovery and recommendation). **New effective clarification:** a separately governed recommendation capability (REC-1) MAY use governed Focus Area IDs and governed Group Goal IDs as descriptive relevance inputs, together with Member Interests and Member Goals, inside the already-authorized discoverable set. These fields still create no recommendation authority by themselves, no access, eligibility, membership or participation, and custom Focus Area / custom Goal text carries no relevance weight in REC-1 v1. See `docs/programme/TIIZI-INTEREST-GOAL-FOCUS-AREA-RECOMMENDATION-AUTHORITY-RECONCILIATION-001.md` §12.
+
 ## Focus Areas
 
 The bounded standard vocabulary reuses the canonical Fitness and Wellness

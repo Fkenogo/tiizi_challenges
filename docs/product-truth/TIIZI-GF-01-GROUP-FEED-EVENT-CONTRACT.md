@@ -11,6 +11,8 @@
 
 This contract records the Founder disposition approving GF-01 subject to the bounded corrections in the disposition. It establishes V2 Group Feed Product Truth for engineering translation. It does not authorize GF-02, implementation, Share, Kudos, Today GF-07, Recognition, API, schema, migration, UI, deployment, or any other excluded capability.
 
+> **Editorial cross-reference (2026-10-10; no rule in this contract is changed):** the reconciliation line below that restates FR-V2-128 ("no Challenge-specific … Feed") is historical. By Founder direction of 2026-10-10 Tiizi includes a separate, governed Challenge-specific Feed (`docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md`). That is a different capability from this Group Feed. GF-01 v1.1's four automatic families, audience, disclosure, retention and pagination rules, and migration 025's Group-Feed-specific scope, are unchanged.
+
 ## 1. Purpose and authority
 
 The Group Feed is the single community stream belonging to one Group. It answers **“What is happening in this Group?”** It presents only an explicit, bounded set of meaningful Group/Challenge state events. It is a projection of authoritative source truth and never establishes or changes that truth.
