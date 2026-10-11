@@ -18,3 +18,8 @@ export function normalizeV2DisplayName(raw: string | null | undefined): string |
   if (/\p{Cc}/u.test(name)) return null;
   return name;
 }
+
+/** True when a non-empty name exceeds the bound, counted in Unicode code points. */
+export function isV2DisplayNameTooLong(raw: string): boolean {
+  return [...raw.trim().normalize('NFC')].length > V2_DISPLAY_NAME_MAX_LENGTH;
+}

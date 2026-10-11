@@ -5,8 +5,10 @@
  * sign-in path (email sign-up, sign-in, Google).
  */
 import { readFileSync } from 'node:fs';
-import { normalizeV2DisplayName } from '../src/v2/auth/v2DisplayName.js';
-import { createMemberBootstrapSession } from '../src/v2/auth/memberBootstrapSession.js';
+import { isV2DisplayNameTooLong, normalizeV2DisplayName } from '../src/v2/auth/v2DisplayName.js';
+import { bootstrapGateStatus, createMemberBootstrapSession } from '../src/v2/auth/memberBootstrapSession.js';
+import { persistV2SignUpName } from '../src/v2/auth/persistV2SignUpName.js';
+import { createSignUpNameHandoff, resolveBootstrapDisplayName, v2SignUpNameHandoff } from '../src/v2/auth/signUpNameHandoff.js';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail = ''): void {
@@ -53,6 +55,75 @@ async function main() {
   check('astral code points counted as one each', normalizeV2DisplayName('😀'.repeat(120)) !== null && normalizeV2DisplayName('😀'.repeat(121)) === null);
   check('control characters omitted', normalizeV2DisplayName('a\u0000b') === null && normalizeV2DisplayName('a\nb') === null);
 
+  console.log('sign-up name hand-off (UID-bound, transient)');
+  const h = createSignUpNameHandoff();
+  h.set('uidA', '  Ada Lovelace ');
+  check('hand-off stores the normalised name for its own uid', h.peek('uidA') === 'Ada Lovelace');
+  check('hand-off cannot cross identities', h.peek('uidB') === null);
+  check('precedence 1: hand-off for THIS uid beats Firebase displayName',
+    resolveBootstrapDisplayName(h, 'uidA', 'Firebase Name') === 'Ada Lovelace');
+  check('precedence 2: valid Firebase displayName when no hand-off',
+    resolveBootstrapDisplayName(h, 'uidB', ' Grace Hopper ') === 'Grace Hopper');
+  check('precedence 3: none (no email derivation) when neither is usable',
+    resolveBootstrapDisplayName(h, 'uidB', null) === null && resolveBootstrapDisplayName(h, 'uidB', 'x'.repeat(121)) === null);
+  h.set('uidC', '   ');
+  check('unusable entered name is not retained', h.peek('uidC') === null);
+  h.clear('uidA');
+  check('clear removes it', h.peek('uidA') === null);
+
+  console.log('updateProfile failure still hands the name to bootstrap');
+  v2SignUpNameHandoff.clearAll();
+  // A bare object makes Firebase updateProfile reject; the carrier must swallow it.
+  let threw = false;
+  await persistV2SignUpName({ uid: 'new-uid' } as never, '  Fred Kenogo ').catch(() => { threw = true; });
+  check('carrier does not throw when updateProfile rejects', !threw);
+  check('entered name is retained for that uid despite the failure', v2SignUpNameHandoff.peek('new-uid') === 'Fred Kenogo');
+  check('and is unavailable to another uid', v2SignUpNameHandoff.peek('other-uid') === null);
+  v2SignUpNameHandoff.clearAll();
+
+  console.log('handoff cleared after successful bootstrap');
+  const hh = createSignUpNameHandoff();
+  hh.set('u1', 'Name One');
+  const sent: Array<string | null | undefined> = [];
+  const cleared = createMemberBootstrapSession(async (n) => { sent.push(n); return { memberId: 'm', created: true }; }, (uid) => hh.clear(uid));
+  await cleared.ensure('u1', resolveBootstrapDisplayName(hh, 'u1', null));
+  check('bootstrap received the retained name', sent[0] === 'Name One');
+  check('hand-off cleared once bootstrap succeeded', hh.peek('u1') === null);
+  const keep = createSignUpNameHandoff();
+  keep.set('u2', 'Keep Me');
+  const failing = createMemberBootstrapSession(async () => { throw new Error('x'); }, (uid) => keep.clear(uid));
+  await failing.ensure('u2', 'Keep Me').catch(() => {});
+  check('hand-off retained after a FAILED bootstrap (retry can reuse it)', keep.peek('u2') === 'Keep Me');
+
+  console.log('UID-bound ready state');
+  check('ready for A is ready for A', bootstrapGateStatus({ uid: 'A', status: 'ready' }, 'A') === 'ready');
+  check('direct A -> B (no null in between): children stay blocked for B',
+    bootstrapGateStatus({ uid: 'A', status: 'ready' }, 'B') === 'working');
+  check('failed outcome of A does not show failure for B', bootstrapGateStatus({ uid: 'A', status: 'failed' }, 'B') === 'working');
+  check('null user never reads as ready', bootstrapGateStatus({ uid: 'A', status: 'ready' }, null) === 'working');
+  let resolveA: (v: { memberId: string; created: boolean }) => void = () => {};
+  const started: string[] = [];
+  const sess = createMemberBootstrapSession((n) => {
+    started.push(String(n));
+    return n === 'nameA' ? new Promise((r) => { resolveA = r; }) : Promise.resolve({ memberId: 'b', created: true });
+  });
+  const pendingA = sess.ensure('A', 'nameA');
+  await sess.ensure('B', 'nameB');
+  check('B completes independently while A is still in flight', started.length === 2);
+  // Gate-equivalent: outcome recorded for B only.
+  const outcomeAfterB = { uid: 'B', status: 'ready' as const };
+  resolveA({ memberId: 'a', created: true });
+  await pendingA;
+  check('late completion of A does not make B or the gate-state for another uid ready',
+    bootstrapGateStatus({ uid: 'A', status: 'ready' }, 'B') === 'working' && bootstrapGateStatus(outcomeAfterB, 'B') === 'ready');
+  check('B ready state is not disturbed by A (no re-bootstrap for B)', (await sess.ensure('B'), started.length === 2));
+
+  console.log('Unicode code-point limit');
+  check('120 emoji (240 UTF-16 units) accepted', normalizeV2DisplayName('😀'.repeat(120)) !== null);
+  check('121 emoji rejected', normalizeV2DisplayName('😀'.repeat(121)) === null);
+  check('61 emoji is not too long', !isV2DisplayNameTooLong('😀'.repeat(61)));
+  check('121 code points flagged too long', isV2DisplayNameTooLong('x'.repeat(121)) && !isV2DisplayNameTooLong('x'.repeat(120)));
+
   console.log('source contracts');
   const guard = read('src/v2/auth/V2AuthGuard.tsx');
   check('V2 authenticated boundary wraps children in the bootstrap gate',
@@ -64,7 +135,7 @@ async function main() {
   check('auth pages do not call bootstrap or the members API themselves',
     !/bootstrapMember|members\/bootstrap/.test(signUp + signIn));
   const gate = read('src/v2/auth/V2MemberBootstrapGate.tsx');
-  check('gate renders children only after ready', /state === 'ready'\) return <>\{children\}<\/>/.test(gate));
+  check('gate renders children only when its status is ready', /status === 'ready'\) return <>\{children\}<\/>/.test(gate));
   check('gate offers a user-initiated retry and sign-out', /Try again/.test(gate) && /Sign out/.test(gate));
   check('gate has no automatic retry timers', !/setTimeout|setInterval/.test(gate));
   const api = read('src/api/memberBootstrapApi.ts');
@@ -80,8 +151,11 @@ async function main() {
     signUp.indexOf('await signup(') < signUp.indexOf('persistV2SignUpName(auth.currentUser')
     && signUp.indexOf('persistV2SignUpName(auth.currentUser') < signUp.indexOf('navigate(next);'));
   check('carrier never derives from email', !/email/i.test(carrier.replace(/\/\*[\s\S]*?\*\//g, '')));
-  check('gate normalises Firebase displayName so an unusable value cannot block bootstrap',
-    /normalizeV2DisplayName\(user\?\.displayName\)/.test(gate));
+  check('gate resolves the name via hand-off then valid Firebase displayName (never email)',
+    /resolveBootstrapDisplayName\(v2SignUpNameHandoff, uid, firebaseNameRef\.current\)/.test(gate) && /user\?\.displayName/.test(gate));
+  check('gate renders children only through the UID-bound status', /bootstrapGateStatus\(outcome, uid\)/.test(gate) && !/state === 'ready'/.test(gate));
+  check('hand-off is memory only (no browser storage)', !/localStorage|sessionStorage|indexedDB/.test(read('src/v2/auth/signUpNameHandoff.ts').replace(/\/\*[\s\S]*?\*\//g, '')));
+  check('sign-up name input has no HTML maxLength (UTF-16 semantics)', !/maxLength/.test(signUp));
   console.log('V1 freeze');
   const v1Signup = read('src/features/Auth/SignupScreen.tsx');
   check('archived V1 SignupScreen carries no MC-1 behaviour',

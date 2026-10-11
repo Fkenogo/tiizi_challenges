@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../lib/firebaseAuth';
 import { normalizeFirebaseAuthError } from '../../utils/firebaseAuthErrors';
 import { persistV2SignUpName } from './persistV2SignUpName';
-import { normalizeV2DisplayName } from './v2DisplayName';
+import { isV2DisplayNameTooLong, normalizeV2DisplayName } from './v2DisplayName';
 import { resolveV2NextPath, v2NextQuery } from './v2NextPath';
 import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2AuthLayout';
 
@@ -102,7 +102,6 @@ export function V2SignUpPage() {
         <V2AuthField
           label="Your name"
           type="text"
-          maxLength={120}
           autoComplete="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -132,6 +131,9 @@ export function V2SignUpPage() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Repeat your password"
         />
+        {isV2DisplayNameTooLong(name) && (
+          <p className="text-xs font-bold text-red-600">Please use 120 characters or fewer for your name.</p>
+        )}
         {password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword && (
           <p className="text-xs font-bold text-red-600">Passwords do not match yet.</p>
         )}

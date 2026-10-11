@@ -2,10 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoadingSpinner } from '../../components/Mobile';
 import { useAuth } from '../../hooks/useAuth';
 import { bootstrapMember } from '../../api/memberBootstrapApi';
-import { createMemberBootstrapSession } from './memberBootstrapSession';
-import { normalizeV2DisplayName } from './v2DisplayName';
+import {
+  bootstrapGateStatus,
+  createMemberBootstrapSession,
+  type BootstrapOutcome,
+} from './memberBootstrapSession';
+import { resolveBootstrapDisplayName, v2SignUpNameHandoff } from './signUpNameHandoff';
 
-const v2MemberBootstrapSession = createMemberBootstrapSession(bootstrapMember);
+// The transient sign-up name is cleared as soon as that uid's bootstrap succeeds.
+const v2MemberBootstrapSession = createMemberBootstrapSession(
+  bootstrapMember,
+  (uid) => v2SignUpNameHandoff.clear(uid),
+);
 
 /**
  * MC-1 — V2 member session establishment.
@@ -19,34 +27,34 @@ const v2MemberBootstrapSession = createMemberBootstrapSession(bootstrapMember);
  * user-initiated "Try again" and "Sign out". Nothing retries automatically and
  * no other API call provisions a member.
  */
-type GateState = 'working' | 'ready' | 'failed';
-
 export function V2MemberBootstrapGate({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const uid = user?.uid ?? null;
-  // The Firebase user's actual displayName only (never the localStorage
-  // fallback profile, never an email-derived value). Read at call time.
-  const displayNameRef = useRef<string | null>(null);
-  // Unusable values are omitted so they can never block the bootstrap.
-  displayNameRef.current = normalizeV2DisplayName(user?.displayName);
-  const [state, setState] = useState<GateState>('working');
+  // The Firebase user's actual displayName (never the localStorage fallback
+  // profile, never email-derived); read at call time, not render time.
+  const firebaseNameRef = useRef<string | null | undefined>(null);
+  firebaseNameRef.current = user?.displayName;
+  // Outcome is bound to the uid it was produced for (see bootstrapGateStatus).
+  const [outcome, setOutcome] = useState<BootstrapOutcome | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!uid) return;
     let cancelled = false;
-    setState('working');
-    v2MemberBootstrapSession.ensure(uid, displayNameRef.current).then(
-      () => { if (!cancelled) setState('ready'); },
-      () => { if (!cancelled) setState('failed'); },
+    setOutcome(null);
+    const name = resolveBootstrapDisplayName(v2SignUpNameHandoff, uid, firebaseNameRef.current);
+    v2MemberBootstrapSession.ensure(uid, name).then(
+      () => { if (!cancelled) setOutcome({ uid, status: 'ready' }); },
+      () => { if (!cancelled) setOutcome({ uid, status: 'failed' }); },
     );
     return () => { cancelled = true; };
   }, [uid, attempt]);
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
-  if (state === 'ready') return <>{children}</>;
-  if (state === 'working') return <LoadingSpinner fullScreen label="Setting up your account..." />;
+  const status = bootstrapGateStatus(outcome, uid);
+  if (status === 'ready') return <>{children}</>;
+  if (status === 'working') return <LoadingSpinner fullScreen label="Setting up your account..." />;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
@@ -64,7 +72,7 @@ export function V2MemberBootstrapGate({ children }: { children: React.ReactNode 
         </button>
         <button
           type="button"
-          onClick={() => void logout()}
+          onClick={() => { v2SignUpNameHandoff.clearAll(); void logout(); }}
           className="mt-2 w-full rounded-2xl px-4 py-3 text-sm font-bold text-slate-600"
         >
           Sign out

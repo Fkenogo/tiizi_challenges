@@ -2,7 +2,7 @@
 
 **Document type:** Governed programme-management roadmap
 
-**Version:** 2.63
+**Version:** 2.64
 
 **Status:** Approved programme baseline
 
@@ -1100,6 +1100,7 @@ These rules apply throughout the Version 2 programme and may be changed only thr
 
 ## 23. Programme Change Log
 
+| 2.64 | 2026-10-11 | **MC-1 CORRECTION 003 — RELIABLE SIGN-UP NAME HANDOFF / UID-BOUND GATE / UNICODE LIMIT ALIGNMENT** | Code + tests + docs; migration 026 and shared `AuthContext`/V1 unchanged; NOT deployed | Resolves three Codex findings on 8ea1f4c: the entered V2 sign-up name now reaches the first bootstrap through a V2-only, in-memory, UID-keyed hand-off even if Firebase `updateProfile` fails (cleared after successful bootstrap/sign-out); the bootstrap gate renders children only when the ready outcome's uid equals the current uid (direct A→B switch fails closed); the sign-up name limit is enforced in Unicode code points (HTML `maxLength` removed). MC-1 remains IMPLEMENTED CANDIDATE / NOT FOUNDER ACCEPTED; MC-2 not started. | Awaiting current-head review + CI. |
 | 2.63 | 2026-10-11 | **MC-1 CORRECTION 002 — V2-ONLY DISPLAY-NAME CARRIER / V1 FREEZE PRESERVED** | Code + tests + docs; migration 026 unchanged; NOT deployed | Removes the Correction 001 `updateProfile` from the shared `AuthContext` (it also served archived V1 signup); the V2 sign-up name is carried to the Firebase user by a V2-only helper. Also resolves a Codex P1: unusable Firebase display names are omitted client-side so they cannot block bootstrap. Adds V1-freeze guard checks. MC-1 remains IMPLEMENTED CANDIDATE / NOT FOUNDER ACCEPTED; MC-2 not started. | Awaiting current-head review + CI. |
 | 2.62 | 2026-10-11 | **MC-1 CORRECTION 001 — CANONICAL FIRST-CREATE DISPLAY NAME PERSISTED** | Code + migration 026 (code-authorised only, NOT deployed) + tests + docs | Resolves PR #91 Codex P1: nullable `members.display_name`; optional insert-only `displayName` on `POST /api/members/bootstrap`; email sign-up writes the entered name to the Firebase user; Google/restored sessions may seed first creation; existing names never overwritten; no email-prefix derivation. MC-2 not started. MC-1 remains IMPLEMENTED CANDIDATE / TECHNICALLY VALIDATED / NOT FOUNDER ACCEPTED. | Awaiting current-head review + CI. |
 | 2.61 | 2026-10-11 | **MC-1 V2 MEMBER BOOTSTRAP — IMPLEMENTED CANDIDATE / TECHNICALLY VALIDATED / AWAITING TECHNICAL + FOUNDER REVIEW** | Application code + tests + docs; no migration, no deployment, no production access | Adds explicit `POST /api/members/bootstrap` (idempotent, race-safe via the existing unique constraint, ordinary `member` role only, actor from verified token only) and the V2 client bootstrap gate; strict `unknown_member` auth unchanged elsewhere. Display name NOT persisted: no authorised storage exists (schema gap reported; not invented). MC-2/MC-3/MC-4, MEDIA, REC-1, LIFE-1, STEW-1, CF-2+, BG-1 not started. Not Founder accepted. Record: [`TIIZI-MC-1-MEMBER-BOOTSTRAP-IMPLEMENTATION-001.md`](TIIZI-MC-1-MEMBER-BOOTSTRAP-IMPLEMENTATION-001.md). | Awaiting technical + Founder review. |
