@@ -218,9 +218,12 @@ MC-2 governed later behavior (within FD-MC-03 + Disposition §7; no new Product 
    3. validate the candidate (trimmed, NFC, 1–120 code points, no controls) → `400
       invalid_display_name` on failure (same shape as MC-1);
    4. if the new name equals the locked current value, treat as a **no-op**: return the
-      current read model and append **no** history row (documented here, not invented later);
+      current read model and append **no** history row, alter **no** canonical value, and
+      advance **no** timestamp (documented here, not invented later);
    5. append the history row using the locked current value as `old_display_name`;
-   6. update `members.display_name`;
+   6. update `members.display_name` and set `members.updated_at = now()` (same transaction;
+      the operator-console member read exposes `updatedAt`, so the modification timestamp
+      must not go stale on Profile edits);
    7. `COMMIT`.
    A plain READ COMMITTED read-then-write without the lock is NOT sufficient: it can record
    false before/after transitions under concurrent edits. Last-writer-wins describes only the
@@ -285,7 +288,8 @@ is the smallest conventional own-member resource; it avoids inventing a versione
   Notes: `displayName === null` means no canonical display name — there is deliberately NO
   `hasDisplayName` boolean, so no second truth can drift or be consumed incorrectly by MC-3.
   `profileImage` is the slot projection only (`not_configured` until MEDIA-2b; §8). `groups` /
-  `challenges` are composed summaries (§9). NO email key (presented client-side from raw
+  `challenges` are composed summaries (§9); each challenge item carries a derived
+  `bucket: 'active' | 'history'` per the §9 predicate (never stored). NO email key (presented client-side from raw
   Firebase `user.email`; §6). NO legal URLs (application routing/presentation config, not
   member domain truth; §11). No Interests/Goals keys. No other member's data.
   Errors: `401` (missing/invalid/unknown); `500` unexpected only.
@@ -371,9 +375,16 @@ Meaning (Profile presentation of Participation Authority truth, never a new sour
     (`challenge_participations` for the caller joined to `challenges`, caller-scoped, no
     cross-member rows) instead of reusing `GET /api/challenges`. This is a Profile-read
     requirement, not LIFE-1 implementation.
-- **Shape:** `{ activeCount, historyCount, items: compact[] }` where each item is
-  `{ id, name/title, role/status }` already available from the source reads — no new fields,
-  no duplicated lifecycle state. Item cap is a presentation decision (MC-2C), not Truth.
+- **Shape (CORR-003):** `{ activeCount, historyCount, items: compact[] }` where each item is
+  `{ id, name/title, role/status, bucket: 'active' | 'history' }`. `bucket` is derived per
+  item from the governing predicate above (`active` only when status is active AND the
+  Challenge is not finalized; withdrawn, removed, and active-in-finalized Challenges are
+  `history`) — never stored as independent bucket state, so the raw preserved status cannot
+  mislead presentation. The flat `items` array is preserved. `activeCount + historyCount`
+  equals the total number of qualifying participation episodes returned by the query; if
+  `items` is capped by pagination/limit semantics, MC-2B states that explicitly and counts
+  always reflect the full sets, never just the page. Composite-liveness authority and existing
+  business rules are preserved. Item cap is a presentation decision (MC-2C), not Truth.
 - **Empty states:** genuine-empty ("You haven't joined a Group yet" with Create/Join/Discover
   actions, per S1/S2-G vocabulary) — never a placeholder that implies data.
 - **Filtering:** lifecycle filtering follows the source authorities (e.g. finalized Challenge
@@ -510,7 +521,7 @@ Proposed smallest sequence (fits Disposition §13 serial constraints MC-1 → MC
   participation episodes (§9 — bounded member-owned participation-summary query if current APIs
   cannot serve it safely); API tests (authz, validation, serialized history incl. concurrent
    edits, unknown-member strictness, extra-key rejection incl. `email`, NULL handling,
-   disjoint active/history classification per the §9 predicate);
+   disjoint active/history classification and bucket/count consistency per the §9 predicate);
   no email key, no `hasDisplayName`, no legal URLs in the domain response; no UI, no consumer
   migration, no media, no consent. Exit: technical review + Founder authorization to proceed
   (merge per normal gates; migration code-authorized, NOT deployed until the governed
@@ -569,7 +580,9 @@ their own authorizations.
    contract, no MC-2B media dependency, revised GET/PATCH shapes;
    CORR-002: Founder legal disposition recorded (§11 — MC-2 owns surfaces, completion dependency,
    no-close rule), disjoint active/history predicate (§9), PR #90 MERGED correction carried in
-   Master Programme 2.70, §3 media-slot reword).
+   Master Programme 2.70, §3 media-slot reword;
+   CORR-003: derived per-item `bucket: 'active' | 'history'` with count-consistency rule (§§7/9/14),
+   `updated_at = now()` in the name-change transaction with no-op exclusion (§5)).
 - Updated: `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` — version 2.67 → 2.68 (MC-2A) →
   2.69 (CORR-001) → 2.70 (CORR-002); PR #90 recorded MERGED (2026-10-11) in Current Focus;
   records MC-2A readiness/awaiting-Founder-review; MC-2 implementation still NOT STARTED /
