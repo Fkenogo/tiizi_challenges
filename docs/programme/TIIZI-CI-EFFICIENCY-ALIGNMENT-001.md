@@ -118,3 +118,30 @@ runners, paid infrastructure: all unchanged.
   `boundary` guard set + `api` contract test remain byte-identical in what
   they execute.
 - Final diff: 8-line `concurrency` block in `ci.yml` + this record.
+
+## 9. Founder final disposition (PR #94 — OPEN, DO NOT MERGE)
+
+Accepted, subject to final verification:
+
+1. Tiizi-specific local-first verification approach (§3).
+2. PR-only cancellation of superseded CI runs (§5.1).
+3. Preservation of all six mandatory CI jobs (§2).
+4. Preservation of push-to-main verification.
+5. Existing independent review and merge requirements.
+
+No additional CI architecture changes are authorised.
+
+DEFERRED — NOT AUTHORISED (do not implement):
+
+- `api-contract` removal or folding (§7.1).
+- Documentation-only `paths-ignore` (§7.2).
+- Docker layer caching (§7.3).
+- CI job consolidation (§7.4).
+- Alternative CI providers or self-hosted runners.
+
+GitHub Actions is blocked by an account billing lock (PR #94 run
+`38527626958`: all six jobs never started). No workflow retries, no check
+removal or bypass, no billing/provider/runner changes. Exact-head CI
+verification stays required and PENDING until the account is unlocked; PR #94
+remains on hold and MUST NOT be merged until exact-head CI passes plus
+existing independent review completes.
