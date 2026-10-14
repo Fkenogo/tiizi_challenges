@@ -123,7 +123,8 @@ In scope (all require MC-1, which is closed):
 6. Editable approved base Profile fields (non-preference only; §7 — in practice: display name;
    any further field needs its own authority and is NOT assumed).
 7. Sign out (V2 member surface; the account-sheet "arrives with the next slices" gap closes).
-8. Terms presentation + Privacy presentation (links/surfaces; §11).
+8. Terms presentation + Privacy presentation through V2-owned surfaces or approved external
+   legal URLs — never archived V1 screens (§11).
 9. Migration of appropriate V2 own-member name consumers off the legacy local profile cache
    onto the governed read model (§10).
 10. Display-only honest empty states for everything deferred; no control that implies an
@@ -203,39 +204,53 @@ MC-2 governed later behavior (within FD-MC-03 + Disposition §7; no new Product 
 7. **NULL remains possible** until the MC-3 completion gate. A member with NULL has a governed
    Profile with an empty name state; nothing derives a placeholder identity (no email prefix,
    no "Tiizi User", no V1 import); nothing empty flows into MC-4 (Disposition §4).
-8. **Write semantics:** member-scoped update; last-writer-wins at the row is acceptable for v1
-   (single-owner field); history insert + row update must be atomic; invalid input → `400`
-   (same `invalid_display_name` shape as MC-1); unauthenticated → `401`; cross-member write
-   impossible by construction (no member-id input accepted).
-9. **Concurrency/idempotency:** no client-supplied idempotency key required for v1 (each PATCH is
-   an explicit user intent; retries naturally converge on the same value; history may record
-   duplicate-intent retries as separate audit rows — acceptable and truthful). If a future
-   client needs exactly-once across retries, it is a later additive contract, not assumed.
+8. **Write semantics (serialized, CORR-001):** member-scoped update in one transaction with
+   a row lock, so concurrent edits serialize and history stays truthful:
+   1. `BEGIN`;
+   2. `SELECT display_name FROM members WHERE member_id = $1 FOR UPDATE`;
+   3. validate the candidate (trimmed, NFC, 1–120 code points, no controls) → `400
+      invalid_display_name` on failure (same shape as MC-1);
+   4. if the new name equals the locked current value, treat as a **no-op**: return the
+      current read model and append **no** history row (documented here, not invented later);
+   5. append the history row using the locked current value as `old_display_name`;
+   6. update `members.display_name`;
+   7. `COMMIT`.
+   A plain READ COMMITTED read-then-write without the lock is NOT sufficient: it can record
+   false before/after transitions under concurrent edits. Last-writer-wins describes only the
+   row outcome, never the audit truth.
+9. **Concurrency/idempotency:** no client-supplied idempotency key required for v1 (each PATCH
+   is an explicit user intent; retries converge on the same value and repeat submissions are
+   no-ops by rule 8.4). MC-2B implementation tests MUST prove: two concurrent edits serialize;
+   recorded history transitions match the actual committed sequence; old/new values are
+   truthful; no lost or false audit transition.
 
 ## 6. Email authority disposition
 
 Determination (from Disposition §7 "email shown to self", CIC §4.1 privileged-operational,
 IDP-01 minimal disclosure, assessment §A.3/A.5, and code facts):
 
-1. **Firebase Auth is the identity/email source.** The V2 client already holds the Firebase
-   user's email (`AuthContext.profile.email`; `V2TodayScreen` does not consume it; sign-up page
-   collects it). No evidence authorizes a second canonical email.
+1. **Firebase Auth is the identity/email source.** The canonical email is the raw Firebase
+   user address (`user.email`, which may be null) and, server-side, the verified Firebase
+   token/auth identity claims. No evidence authorizes a second canonical email.
 2. **PostgreSQL MUST NOT duplicate email in MC-2.** No `members.email` column, no email table,
    no email sync job. Rationale: duplicate canonical email state creates reconciliation,
-   staleness, and disclosure risk for zero MC-2 purpose (the read model only presents the
-   caller's own address, which the caller already holds from Firebase).
-3. **Profile read-model behavior:** the API MAY echo the caller's own email as a read-only
-   convenience derived per-request from the verified Firebase token (never from PG, never stored,
-   never editable), OR the client continues to read it from Firebase directly. Either is
-   compliant; the readiness recommendation is **server-echo as a convenience field**
-   (`email` in `GET /api/me`, read-only, no PATCH path) to give one governed own-Profile shape,
-   with Firebase remaining the source.
-4. **Email mutation does NOT belong to MC-2.** Email change (if ever) stays in Firebase account
-   management under the auth lifecycle. `PATCH /api/me` MUST NOT accept email. No email history
-   in MC-2.
-5. **No other member receives another member's email.** Email is Private/self-only and
+   staleness, and disclosure risk for zero MC-2 purpose.
+3. **Recommended implementation path (explicit, CORR-001): `GET /api/me` carries domain
+   Profile truth only and contains NO email.** The V2 Profile UI presents email directly from
+   the raw Firebase `user.email` (read-only, may be null). Email stays outside PostgreSQL and
+   outside PATCH. If server-side email becomes necessary later, it is added deliberately from
+   verified token claims — never backfilled from a client cache.
+4. **The shared `AuthContext.profile.email` MUST NEVER be used as authoritative email.**
+   `profileFromFirebaseUser` fabricates the fallback `user@tiizi.app` when Firebase email is
+   absent (`src/context/AuthContext.tsx`), so that value is not truth. No fabricated/fallback
+   email is ever presented as the member's address, and no email-prefix derivation is permitted
+   anywhere in the MC-2 path.
+5. **Email mutation does NOT belong to MC-2.** Email change (if ever) stays in Firebase account
+   management under the auth lifecycle. `PATCH /api/me` MUST NOT accept email (unknown-key
+   `400`). No email history in MC-2.
+6. **No other member receives another member's email.** Email is Private/self-only and
    privileged-operational; shared-context identity (MC-4) MUST NOT expose email (§12).
-6. If a future package needs server-side email (e.g. LIFE-1 auth-severance design, operational
+7. If a future package needs server-side email (e.g. LIFE-1 auth-severance design, operational
    notices), that package seeks its own authority. MC-2 creates no email persistence to "help".
 
 ## 7. Profile read / self-edit contract (proposed, implementation-ready)
@@ -250,38 +265,42 @@ is the smallest conventional own-member resource; it avoids inventing a versione
   unknown subject → strict `401 unknown_member`, unchanged). Actor derived **solely** from the
   token. The request MUST NOT accept any member id, subject, uid, role, or email input; any
   such field is ignored (MC-1 precedent) or rejected with `400`.
-- **GET /api/me → 200** (own member only):
+- **GET /api/me → 200** (own member only; domain truth only):
   ```json
   {
     "memberId": "<uuid>",
     "displayName": "<string | null>",
-    "email": "<own email, read-only echo of Firebase source | null>",
-    "hasDisplayName": true,
-    "profileImage": { "assetId": null, "status": "unavailable_deferred_to_media" },
+    "profileImage": { "status": "not_configured" },
     "groups": { "count": 0, "items": [] },
-    "challenges": { "count": 0, "items": [] },
-    "termsPrivacy": { "termsUrl": "/terms", "privacyUrl": "/privacy" }
+    "challenges": { "activeCount": 0, "historyCount": 0, "items": [] }
   }
   ```
-  Notes: `profileImage.assetId` is NULL in MC-2 (slot only; §8). `groups`/`challenges` are
-  composed summaries (count + compact items; §9). `termsPrivacy` carries links/surfaces only,
-  never acceptance state invented by MC-2 (MC-3 owns consent; §11). No Interests/Goals keys.
-  No other member's data. Errors: `401` (missing/invalid/unknown); `500` unexpected only.
+  Notes: `displayName === null` means no canonical display name — there is deliberately NO
+  `hasDisplayName` boolean, so no second truth can drift or be consumed incorrectly by MC-3.
+  `profileImage` is the slot projection only (`not_configured` until MEDIA-2b; §8). `groups` /
+  `challenges` are composed summaries (§9). NO email key (presented client-side from raw
+  Firebase `user.email`; §6). NO legal URLs (application routing/presentation config, not
+  member domain truth; §11). No Interests/Goals keys. No other member's data.
+  Errors: `401` (missing/invalid/unknown); `500` unexpected only.
 - **PATCH /api/me** — explicit allowlist: **`displayName` only**.
   ```json
   { "displayName": "<1..120 code points, trimmed, NFC, no controls>" }
   ```
-  - Unknown/extra keys: reject `400` (fail closed; prevents silent scope creep).
+  - Unknown/extra keys (including `email`): reject `400` (fail closed; prevents silent scope creep).
   - Empty-string after trim: `400 invalid_display_name` (clearing to NULL is NOT authorized;
     NULL arises only from pre-MC-2 history / first-create without a name).
-  - Success → `200` with the GET shape (updated `displayName`) + history row committed atomically.
-  - Auth errors mirror GET. Concurrency: single-owner last-writer-wins; no ETag required v1
-    (a `409`/`412` scheme may be added later without breaking this contract).
+  - Equal-to-current value: no-op success, no history row (§5.8).
+  - Success → `200` with the GET shape (updated `displayName`) + history row committed atomically
+    under the §5 row-lock protocol.
+  - Auth errors mirror GET.
 - **Audit:** server-side history append per accepted change (actor, before/after, timestamp,
-  source `profile_self_edit`). No client-supplied audit input.
-- **Rate limiting / abuse:** bounded per-member rate limit on PATCH (exact values are MC-2B
-  design within existing API conventions; authority to limit is inherent in FD-MC-03
-  accountability + API safety posture — no new Truth needed).
+  source `profile_self_edit`), serialized per §5. No client-supplied audit input.
+- **Abuse/rate limiting (CORR-001 scope correction):** NOT part of the MC-2 Product/Profile
+  contract. The repository has no shared limiter and no current authority requires a specific
+  MC-2 rate-limit mechanism, so none is specified here — no values, no mechanism. Abuse control
+  is implementation hardening / operational control that may be added under general API security
+  policy; if ever enforced in a multi-instance runtime it must use a shared enforcement
+  mechanism, and in-memory per-instance semantics must never be misrepresented as a global bound.
 - **What is NOT in this contract:** signup/bootstrap (MC-1, unchanged), onboarding gate (MC-3),
   other-member reads (MC-4), media upload (MEDIA-2b), consent records (MC-3), preferences.
 
@@ -289,12 +308,19 @@ is the smallest conventional own-member resource; it avoids inventing a versione
 
 - MEDIA-1 (decision) → MEDIA-2a (core port/adapter + `media_assets`) → **MEDIA-2b (profile
   image, needs MC-2)** → MEDIA-3 (preview). MC-2 is the "needs" dependency, not the implementer.
-- MC-2 establishes ONLY: a **nullable profile-image asset reference** on the Profile side
-  (conceptually `profile_image_asset_id → media_assets.asset_id | NULL`; no table created in
-  MC-2A; the column/reference itself is MC-2B storage design consuming MEDIA-2a's table), an
-  **initials fallback** (derived from current display name; purely presentational, never stored),
-  and the **future projection rule** (image visible only where the member identity itself is
-  authorized; never anonymously public — Disposition §8.3 / Media Assessment §4).
+- MC-2 establishes ONLY: Profile UI/image **slot semantics**, an **initials fallback**
+  (derived from the current display name; purely presentational, never stored), a nullable /
+  unavailable image **projection state** (`{ "status": "not_configured" }` until MEDIA-2b), and
+  the **future attachment point** plus the **projection rule** (image visible only where the
+  member identity itself is authorized; never anonymously public — Disposition §8.3 / Media
+  Assessment §4).
+- **MC-2B MUST NOT require `media_assets` or a media FK to implement base Profile** (CORR-001
+  sequencing correction). MEDIA-2a owns the `media_assets` model and may not exist when MC-2B
+  begins; making MC-2 depend on it would create a circular/false dependency. No media column
+  or FK is created in MC-2B.
+- The actual persistent media reference is added in **MEDIA-2b**, after both prerequisites
+  exist: the MEDIA-2a core media model AND the MC-2 Profile. This preserves both chains —
+  MEDIA-2a → MEDIA-2b and MC-2 → MEDIA-2b — without MC-2 depending on MEDIA.
 - MC-2 MUST NOT select or implement: R2 buckets/credentials, upload endpoints (API-mediated or
   direct-grant), signed URLs, decode/re-encode/EXIF strip, size/pixel limits, variants,
   `media_assets` DDL, delivery/CDN, Cloudflare Images, moderation/takedown, cost/budget, or any
@@ -313,13 +339,30 @@ Meaning (Profile presentation of Participation Authority truth, never a new sour
   existing authority (`GET /api/memberships/me` — same read the Challenge journey consumes;
   S2-G). Counts are current-membership counts; pending/rejected/left are NOT counted as "mine"
   (pending visibility is a separate experience concern, not Profile truth).
-- **My Challenges:** challenges the caller is entitled to see/participate in through the
-  existing Challenge visibility + participation reads (`GET /api/challenges*`, join/withdraw
-  episodes, Today projection's active count). No new lifecycle or participation authority is
-  created; the Profile composes existing reads.
-- **Shape:** `{ count, items: compact[] }` where each item is `{ id, name/title, role/status }`
-  already available from the source reads — no new fields, no duplicated lifecycle state.
-  Item cap is a presentation decision (MC-2C), not Truth.
+- **My Challenges (CORR-001 — actual participation only):** "mine" means Challenges for which
+  the member holds an actual participation episode / governed participation relationship in
+  `challenge_participations` — NEVER merely visible, eligible, or discoverable Challenges.
+  `GET /api/challenges` is a visibility/entitlement read (it includes Challenges visible
+  through Group membership the member never joined) and MUST NOT be reused blindly as the
+  "mine" source.
+  - **Active set:** participation rows with `status = 'active'` (the schema's one-active-row
+    per (challenge, member) invariant makes each row a real episode). An active row in an
+    unfinalized ended/window-expired Challenge remains live/current per the recorded
+    LIFE-1/composite-liveness authority (Disposition §10.2) — projection exclusion is never a
+    substitute for closure, and this rule is carried, not reimplemented, here.
+  - **History set:** rows with `status IN ('withdrawn', 'removed')`, plus active rows whose
+    governing Challenge is canonically **finalized** (historical by lifecycle context; the
+    stored row is preserved unchanged).
+  - **Lifecycle filtering** respects the governing Challenge state; finalized participation may
+    be historical; no new participation truth is created by Profile.
+  - **Implementation consequence:** if the current APIs cannot serve this member-scoped
+    episode join safely, **MC-2B must add a bounded member-owned participation-summary query**
+    (`challenge_participations` for the caller joined to `challenges`, caller-scoped, no
+    cross-member rows) instead of reusing `GET /api/challenges`. This is a Profile-read
+    requirement, not LIFE-1 implementation.
+- **Shape:** `{ activeCount, historyCount, items: compact[] }` where each item is
+  `{ id, name/title, role/status }` already available from the source reads — no new fields,
+  no duplicated lifecycle state. Item cap is a presentation decision (MC-2C), not Truth.
 - **Empty states:** genuine-empty ("You haven't joined a Group yet" with Create/Join/Discover
   actions, per S1/S2-G vocabulary) — never a placeholder that implies data.
 - **Filtering:** lifecycle filtering follows the source authorities (e.g. finalized Challenge
@@ -354,15 +397,23 @@ governed read provides the value. Shared-context and operator paths are explicit
 
 ## 11. Terms / Privacy boundary (MC-2 vs MC-3)
 
-- **MC-2 includes:** Profile links/surfaces to the existing `/terms` and `/privacy` routes
-  (already linked from sign-up); presentation of Terms + Privacy as Profile capabilities
-  (FD-MC-02 "Terms, Privacy" in the pilot Profile). Current acceptance state is included
-  **only if already governed and available** — it is not (no consent store exists in V2), so
-  MC-2 ships links + honest state ("acceptance tracking arrives with Onboarding + Consent").
+- **V2-boundary rule (CORR-001, P1):** the current `/terms` and `/privacy` routes resolve to
+  archived V1-owned legal screens (`src/features/Legal/*`), which navigate back into `/app/*`.
+  **MC-2 MUST NOT depend on archived V1 legal screens, routes, or components.** Reusing them
+  would route the V2 Profile back into the frozen V1 product and violate the V2 boundary
+  (MC-1 V1-freeze preserved).
+- **MC-2 includes:** Profile Terms/Privacy surfaces through **V2-owned legal presentation**
+  (e.g. `/v2/terms`, `/v2/privacy`) **or approved external legal-document URLs**. If
+  repository-approved legal text exists and can be consumed through a neutral/shared content
+  source, MC-2B/C may propose that consumption — but V2 routing and presentation stay under
+  V2 ownership. No legal wording is invented; no V1 implementation is copied into V2 as
+  Product Truth; legal copy/version ownership remains outside MC-2.
 - **MC-3 owns:** the returning-member completion gate + consent enforcement (independent
   current-Terms + current-Privacy checks, versioned consent record with version/timestamp/
   source/actor per IDP-02/FD-MC-05/Disposition §6), onboarding selection, and all consent
-  retention policy.
+  retention policy. Current acceptance state appears in Profile **only if already governed
+  and available** — it is not (no consent store exists in V2), so MC-2 ships the surfaces
+  with honest state ("acceptance tracking arrives with Onboarding + Consent").
 - **MC-2 MUST NOT invent:** legal wording, legal version identifiers, re-acceptance policy,
   retention periods, deletion SLA, or any onboarding/completion enforcement. The legal text
   owner and version ids remain genuine MC-3 inputs (Disposition §14.1, carried).
@@ -376,12 +427,12 @@ history required.
 | Field / capability | Canonical source | Authority / owner | Self-visible? | Shared-context visible? | Globally visible? | Editable in MC-2? | Audit/history? | Work package |
 |---|---|---|---|---|---|---|---|---|
 | Display name | `members.display_name` (+ MC-2B history table) | Member (Participant Authority for expression; Identity Authority for state) | Yes | **No in MC-2** (MC-4 projection only) | No | **Yes** (sole PATCH field) | **Yes** (server-side, actor=member) | MC-2 |
-| Email (own) | Firebase Auth (source); PG stores nothing | Identity/auth lifecycle | Yes (read-only) | No | No | **No** (stays in Firebase mgmt) | No (auth-side) | MC-2 presents; MC-3+ may consume |
-| Profile-image reference | Profile-side slot → `media_assets` (MEDIA-2a table; NULL until MEDIA-2b) | Member (own image) | Yes (own slot; initials until MEDIA-2b) | Only where MC-4 identity authorized (future) | No | **No** (no upload in MC-2) | Media lifecycle audit lives in MEDIA-2 | MC-2 slot; MEDIA-2b image |
+| Email (own) | Firebase Auth: raw `user.email` / verified token claims (may be null); never `AuthContext.profile.email` (fabricated fallback); PG stores nothing | Identity/auth lifecycle | Yes (read-only, client-direct) | No | No | **No** (stays in Firebase mgmt) | No (auth-side) | MC-2 presents; MC-3+ may consume |
+| Profile-image reference | None in MC-2 (slot semantics + `not_configured` projection; persistent reference added in MEDIA-2b after MEDIA-2a + MC-2 exist) | Member (own image) | Yes (own slot; initials until MEDIA-2b) | Only where MC-4 identity authorized (future) | No | **No** (no upload in MC-2) | Media lifecycle audit lives in MEDIA-2 | MC-2 slot; MEDIA-2b image |
 | Own Groups summary | `GET /api/memberships/me` (governed membership) | Participation Authority (Group domain) | Yes (composed) | n/a (own view) | No | No (managed via Group journeys) | No (source-domain audit) | MC-2 composes |
-| Own Challenges summary | `GET /api/challenges*` + participation episodes + Today projection predicates | Participation Authority (Challenge domain) | Yes (composed) | n/a (own view) | No | No | No | MC-2 composes |
-| Terms presentation | Existing `/terms` route (legal owner) | Legal text owner; Profile presents | Yes (link/surface) | n/a | Route-visibility as today | No | No (MC-3 consent record later) | MC-2 links; MC-3 enforcement |
-| Privacy presentation | Existing `/privacy` route (legal owner) | Legal text owner; Profile presents | Yes (link/surface) | n/a | Route-visibility as today | No | No | MC-2 links; MC-3 enforcement |
+| Own Challenges summary | `challenge_participations` episodes for the caller (active vs history per §9); bounded member-owned summary query if current APIs cannot serve it | Participation Authority (Challenge domain) | Yes (composed) | n/a (own view) | No | No | No | MC-2 composes |
+| Terms presentation | V2-owned surface (`/v2/terms`) or approved external legal URL; never archived V1 screens | Legal text owner; Profile presents | Yes (surface) | n/a | Route-visibility as decided | No | No (MC-3 consent record later) | MC-2 surfaces; MC-3 enforcement |
+| Privacy presentation | V2-owned surface (`/v2/privacy`) or approved external legal URL; never archived V1 screens | Legal text owner; Profile presents | Yes (surface) | n/a | Route-visibility as decided | No | No | MC-2 surfaces; MC-3 enforcement |
 | Sign out | Firebase sign-out via V2 surface | Member session | n/a (action) | n/a | n/a | n/a (action, not field) | Session-level (existing) | MC-2 |
 | Future Interests | MC-3 canonical store (stable Focus Area IDs; Disposition §5.3) | Member (private preference) | Yes (MC-3 UI) | **Never** (REC-1 relevance only, never exposed per §5.6) | No | **No** | Yes (every change audited, actor=member; MC-3) | **MC-3** |
 | Future Goals | MC-3 canonical store (governed Goal IDs) | Member (private preference) | Yes (MC-3 UI) | **Never** | No | **No** | Yes (MC-3) | **MC-3** |
@@ -405,17 +456,16 @@ Minimum future MC-2 data model (for MC-2B design; NOT created here):
    `history_id (UUID PK) | member_id (FK → members, indexed) | old_display_name (nullable) |
    new_display_name | changed_by_member_id (= member_id; explicit actor column for audit clarity) |
    source (e.g. `profile_self_edit`) | created_at`. Append-only (no update/delete by application
-   role); row update + history insert in one transaction. This satisfies FD-MC-03 + Standard §4.9
-   with the smallest possible schema.
+   role); the row update + history insert run in the §5 `SELECT ... FOR UPDATE` transaction so
+   concurrent edits serialize with truthful before/after values. This satisfies FD-MC-03 +
+   Standard §4.9 with the smallest possible schema.
 2. **Approved base-Profile fields:** none beyond `members.display_name` require storage in MC-2.
    If MC-2B finds a genuinely approved non-preference field (e.g. a region/language with a
    stated product purpose per Disposition §7), it is a bounded additive column with its own
    authority citation — NOT assumed here.
-3. **Optional media reference boundary:** a nullable `profile_image_asset_id` reference
-   (FK → MEDIA-2a `media_assets`, NULL-able, NULL default) — added in MC-2B **only** against
-   the MEDIA-2a table definition once MEDIA-1/2a fixes it; otherwise MC-2B ships with the slot
-   modeled as "no column yet, API returns null" and adds the FK in MEDIA-2b. Either order is
-   compliant; the FK direction (Profile → media_assets) and NULL-always-valid invariant are fixed.
+3. **Media reference boundary (CORR-001):** NO media column or FK in MC-2B. The persistent
+   profile-image reference is added in MEDIA-2b, after the MEDIA-2a core media model and the
+   MC-2 Profile both exist (§8).
 4. **Explicitly NOT created:** Interests/Goals tables (MC-3), consent tables (MC-3), identity
    projection tables/views (MC-4), media tables (MEDIA-2a), lifecycle tables (LIFE-1), and any
    of: DOB, sex/gender, weight, height, phone, address, health status, biography, occupation,
@@ -432,13 +482,17 @@ Proposed smallest sequence (fits Disposition §13 serial constraints MC-1 → MC
 
 - **MC-2A — authority reconciliation / readiness (this document).** Docs only. Exit: Founder
   acceptance of this record + Master Programme 2.68 recording MC-2A.
-- **MC-2B — Profile storage + API / read-self-edit.** Bounded implementation: history table +
-  optional media-slot reference DDL (next free migration number(s)); `GET/PATCH /api/me`
-  per §7 (actor token-only, displayName-only PATCH, atomic history); API tests (authz, validation,
-  insert/history atomicity, unknown-member strictness, extra-key rejection, NULL handling);
-  no UI, no consumer migration, no media, no consent. Exit: technical review + Founder
-  authorization to proceed (merge per normal gates; migration code-authorized, NOT deployed
-  until the governed deployment step).
+- **MC-2B — Profile storage + API / read-self-edit.** Bounded implementation: history table
+  DDL (next free migration number; NO media column/FK); `GET/PATCH /api/me` per §7
+  (actor token-only, displayName-only PATCH, unknown keys → 400, §5 row-lock + no-op protocol);
+  own Groups summary via `GET /api/memberships/me`; own Challenges summary via actual
+  participation episodes (§9 — bounded member-owned participation-summary query if current APIs
+  cannot serve it safely); API tests (authz, validation, serialized history incl. concurrent
+  edits, unknown-member strictness, extra-key rejection incl. `email`, NULL handling);
+  no email key, no `hasDisplayName`, no legal URLs in the domain response; no UI, no consumer
+  migration, no media, no consent. Exit: technical review + Founder authorization to proceed
+  (merge per normal gates; migration code-authorized, NOT deployed until the governed
+  deployment step).
 - **MC-2C — V2 Profile UI + own-name consumer migration.** `/v2/profile` base UI (name, own
   email read-only, initials avatar + honest media empty state, Groups/Challenges summaries from
   §9 composition, sign-out, Terms/Privacy links, honest deferred states); Today greeting +
@@ -468,10 +522,12 @@ their own authorizations.
    ended-not-finalized participation closure; consumer audit; Disposition §14.11). LIFE-1 scope.
 5. **CF/Streak/announcement/Kudos details** (Disposition §14.4/5/9). CF scope.
 6. **BG-1 technology/hosting choice** (Disposition §14.7). BG-1 scope.
-7. **MC-2B design choices (not Founder decisions):** history-table column naming; media-slot FK
-   now vs in MEDIA-2b; PATCH rate-limit values; Groups/Challenges item caps; server-echo of
-   email vs Firebase-direct. Each is resolved inside given authority during MC-2B/C design and
-   recorded there — no governance loop required.
+7. **MC-2B design choices (not Founder decisions):** history-table column naming;
+   Groups/Challenges item caps; V2-owned legal surface vs approved external URL. Each is
+   resolved inside given authority during MC-2B/C design and recorded there — no governance
+   loop required. Decided in CORR-001 (not open): no `hasDisplayName`; no email in
+   `GET /api/me` (raw Firebase `user.email` client-direct); no rate-limit contract; row-lock
+   history protocol with documented no-op; no media FK in MC-2B.
 8. **Deployment sequencing:** migration 026 + MC-2B migration(s) each need their own governed
    deployment steps (none authorized here). Not a readiness blocker.
 9. **Review tooling:** Codex usage quota was previously exhausted (MC-1 waiver precedent). If
@@ -480,7 +536,10 @@ their own authorizations.
 
 ## 16. Files touched by this readiness pass (docs only)
 
-- Created: `docs/programme/TIIZI-MC-2-PROFILE-FOUNDATION-READINESS-001.md` (this record).
+- Created: `docs/programme/TIIZI-MC-2-PROFILE-FOUNDATION-READINESS-001.md` (this record;
+  includes CORR-001 contract hardening: V2-owned legal boundary, participation-based My
+  Challenges, no `hasDisplayName`, raw-Firebase email, serialized history, no rate-limit
+  contract, no MC-2B media dependency, revised GET/PATCH shapes).
 - Updated: `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` — version 2.67 → 2.68; records MC-2A
   readiness/awaiting-Founder-review; MC-2 implementation still NOT STARTED / NOT AUTHORIZED.
 - Annotated: `docs/programme/TIIZI-MEMBER-COMPLETION-ASSESSMENT-001.md` — minimal
