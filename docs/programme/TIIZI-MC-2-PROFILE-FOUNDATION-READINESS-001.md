@@ -2,14 +2,16 @@
 
 **Package:** MC-2A — authority reconciliation / readiness (docs only)
 **Date:** 2026-10-14
-**Base:** `a358b308ee583c2dfc2715668b4a1be8eda714e0` (canonical `origin/main`; Master Programme 2.67)
+**Base:** `a358b308ee583c2dfc2715668b4a1be8eda714e0` (canonical `origin/main`; Master Programme 2.67 → 2.70 across MC-2A/CORR-001/CORR-002)
 **Branch:** `docs/mc2-profile-foundation-readiness`
 **Status:** READINESS ONLY / NO IMPLEMENTATION AUTHORIZED. STOP FOR FOUNDER REVIEW.
 **Boundaries:** No code. No migration. No deployment. No production access. Archived V1 untouched.
 
 ## 0. Verdict (read first)
 
-**A. READY FOR FOUNDER AUTHORIZATION OF MC-2 IMPLEMENTATION**
+**A. READY FOR FOUNDER AUTHORIZATION OF MC-2 IMPLEMENTATION,
+subject to the explicit legal-completion dependency in §11 —
+NOT YET READY TO CLOSE MC-2 LEGAL PRESENTATION**
 
 MC-2 (base Profile only, as defined by the Founder Disposition) is authority-complete and
 implementation-ready to be authorized as bounded work packages (MC-2B/C/D proposed in §14).
@@ -17,6 +19,10 @@ No genuine Founder/product decision blocks MC-2 itself. The open items in §15 b
 MC-3, MEDIA-1/2, LIFE-1, or later design choice inside already-given authority — none of them
 requires answering before MC-2B may begin. Authorizing this readiness record does not authorize
 any MC-2 implementation; each implementation package still needs its own Founder authorization.
+Legal presentation is the one bounded exception to "nothing blocks": per the Founder legal
+disposition (CORR-002, §11), independent MC-2B functionality may proceed without approved legal
+content, but approved legal content or URLs are mandatory before MC-2 legal presentation is
+accepted as complete, and MC-2 cannot close while its required legal presentation is unresolved.
 
 ## 1. Authority trace
 
@@ -118,7 +124,8 @@ In scope (all require MC-1, which is closed):
 2. Canonical member display name read + member-controlled edit with accountable server-side
    change history (§5).
 3. Own/self-visible email presentation (read-only; Firebase-sourced; §6).
-4. Profile-image **slot/reference boundary only** (nullable reference + initials fallback; §8).
+4. Profile-image **slot semantics only** — initials fallback + explicit `not_configured`
+   projection state (§8). No media reference, column, or FK in MC-2; persistence is MEDIA-2b.
 5. Own Groups summary + own Challenges summary composed from existing governed reads (§9).
 6. Editable approved base Profile fields (non-preference only; §7 — in practice: display name;
    any further field needs its own authority and is NOT assumed).
@@ -309,8 +316,8 @@ is the smallest conventional own-member resource; it avoids inventing a versione
 - MEDIA-1 (decision) → MEDIA-2a (core port/adapter + `media_assets`) → **MEDIA-2b (profile
   image, needs MC-2)** → MEDIA-3 (preview). MC-2 is the "needs" dependency, not the implementer.
 - MC-2 establishes ONLY: Profile UI/image **slot semantics**, an **initials fallback**
-  (derived from the current display name; purely presentational, never stored), a nullable /
-  unavailable image **projection state** (`{ "status": "not_configured" }` until MEDIA-2b), and
+  (derived from the current display name; purely presentational, never stored), an unavailable
+  image **projection state** (`{ "status": "not_configured" }` until MEDIA-2b), and
   the **future attachment point** plus the **projection rule** (image visible only where the
   member identity itself is authorized; never anonymously public — Disposition §8.3 / Media
   Assessment §4).
@@ -345,16 +352,20 @@ Meaning (Profile presentation of Participation Authority truth, never a new sour
   `GET /api/challenges` is a visibility/entitlement read (it includes Challenges visible
   through Group membership the member never joined) and MUST NOT be reused blindly as the
   "mine" source.
-  - **Active set:** participation rows with `status = 'active'` (the schema's one-active-row
-    per (challenge, member) invariant makes each row a real episode). An active row in an
-    unfinalized ended/window-expired Challenge remains live/current per the recorded
-    LIFE-1/composite-liveness authority (Disposition §10.2) — projection exclusion is never a
-    substitute for closure, and this rule is carried, not reimplemented, here.
-  - **History set:** rows with `status IN ('withdrawn', 'removed')`, plus active rows whose
-    governing Challenge is canonically **finalized** (historical by lifecycle context; the
-    stored row is preserved unchanged).
-  - **Lifecycle filtering** respects the governing Challenge state; finalized participation may
-    be historical; no new participation truth is created by Profile.
+  - **Governing classification predicate (CORR-002 — mutually exclusive; no episode is ever
+    counted in both sets):**
+    - **Active:** `participation.status = 'active' AND governing Challenge NOT finalized
+      (finalized_at IS NULL)`. An active row in an unfinalized ended/window-expired Challenge
+      remains live/current per the recorded LIFE-1/composite-liveness authority
+      (Disposition §10.2) — projection exclusion is never a substitute for closure, and this
+      rule is carried, not reimplemented, here.
+    - **History:** `participation.status IN ('withdrawn', 'removed')` OR (`status = 'active'`
+      AND governing Challenge canonically **finalized** — historical by lifecycle context; the
+      stored row is preserved unchanged, never rewritten to manufacture a terminal status).
+    - The schema's one-active-row per (challenge, member) invariant keeps each row a real
+      episode; `activeCount + historyCount` equals the member's total real episodes.
+  - **Lifecycle filtering** respects the governing Challenge state; no new participation truth
+    is created by Profile; participation business rules are not rewritten here.
   - **Implementation consequence:** if the current APIs cannot serve this member-scoped
     episode join safely, **MC-2B must add a bounded member-owned participation-summary query**
     (`challenge_participations` for the caller joined to `challenges`, caller-scoped, no
@@ -402,12 +413,22 @@ governed read provides the value. Shared-context and operator paths are explicit
   **MC-2 MUST NOT depend on archived V1 legal screens, routes, or components.** Reusing them
   would route the V2 Profile back into the frozen V1 product and violate the V2 boundary
   (MC-1 V1-freeze preserved).
-- **MC-2 includes:** Profile Terms/Privacy surfaces through **V2-owned legal presentation**
-  (e.g. `/v2/terms`, `/v2/privacy`) **or approved external legal-document URLs**. If
-  repository-approved legal text exists and can be consumed through a neutral/shared content
-  source, MC-2B/C may propose that consumption — but V2 routing and presentation stay under
-  V2 ownership. No legal wording is invented; no V1 implementation is copied into V2 as
-  Product Truth; legal copy/version ownership remains outside MC-2.
+- **Founder legal disposition (CORR-002 — EFFECTIVE, governs the P1 thread):**
+  1. Legal presentation remains an **MC-2** Profile Foundation responsibility; it is NOT
+     reassigned to MC-3. MC-3 retains authority over onboarding consent and consent recording.
+  2. V1 `/terms` and `/privacy` are not acceptable dependencies for MC-2 (§V2-boundary rule above).
+  3. The absence of approved V2 legal content or external legal URLs does **not** prevent
+     implementation of independent MC-2B functionality (storage, API, name/history, summaries,
+     consumer migration).
+  4. Approved legal content or URLs are **mandatory before MC-2 legal presentation can be
+     accepted as complete**, and **MC-2 cannot close while its required legal presentation
+     remains unresolved** (enforced at MC-2D acceptance).
+  5. No placeholder text, copied V1 wording, broken links, or fabricated legal URLs may be
+     introduced at any point. Until approved content exists, the legal surfaces render an
+     honest deferred state — never a control or link that implies content that does not exist
+     (IDP-02 truth-in-UI rule).
+  6. Any legal presentation work must use V2-owned surfaces or explicitly approved external URLs.
+  7. No legal wording is generated here.
 - **MC-3 owns:** the returning-member completion gate + consent enforcement (independent
   current-Terms + current-Privacy checks, versioned consent record with version/timestamp/
   source/actor per IDP-02/FD-MC-05/Disposition §6), onboarding selection, and all consent
@@ -481,27 +502,30 @@ Minimum future MC-2 data model (for MC-2B design; NOT created here):
 Proposed smallest sequence (fits Disposition §13 serial constraints MC-1 → MC-2 → {MC-3 ∥ MC-4}):
 
 - **MC-2A — authority reconciliation / readiness (this document).** Docs only. Exit: Founder
-  acceptance of this record + Master Programme 2.68 recording MC-2A.
+  acceptance of this record + Master Programme 2.70 recording MC-2A.
 - **MC-2B — Profile storage + API / read-self-edit.** Bounded implementation: history table
   DDL (next free migration number; NO media column/FK); `GET/PATCH /api/me` per §7
   (actor token-only, displayName-only PATCH, unknown keys → 400, §5 row-lock + no-op protocol);
   own Groups summary via `GET /api/memberships/me`; own Challenges summary via actual
   participation episodes (§9 — bounded member-owned participation-summary query if current APIs
   cannot serve it safely); API tests (authz, validation, serialized history incl. concurrent
-  edits, unknown-member strictness, extra-key rejection incl. `email`, NULL handling);
+   edits, unknown-member strictness, extra-key rejection incl. `email`, NULL handling,
+   disjoint active/history classification per the §9 predicate);
   no email key, no `hasDisplayName`, no legal URLs in the domain response; no UI, no consumer
   migration, no media, no consent. Exit: technical review + Founder authorization to proceed
   (merge per normal gates; migration code-authorized, NOT deployed until the governed
   deployment step).
 - **MC-2C — V2 Profile UI + own-name consumer migration.** `/v2/profile` base UI (name, own
   email read-only, initials avatar + honest media empty state, Groups/Challenges summaries from
-  §9 composition, sign-out, Terms/Privacy links, honest deferred states); Today greeting +
+   §9 composition, sign-out, Terms/Privacy surfaces per §11 (V2-owned; honest deferred state
+   until approved content exists), honest deferred states); Today greeting +
   MemberShell header + account-sheet migration per §10 table (A-items only); legacy-cache
   demotion for own-member path; no prefix derivation anywhere in the migrated path; V1
   untouched. Exit: preview-verified UI + migration inventory signed off.
 - **MC-2D — Founder preview / acceptance.** Bounded preview of MC-2B+C against acceptance
-  criteria (own read/edit/history, summaries, sign-out, Terms/Privacy surfaces, no Interests/
-  Goals/media/lifecycle behavior, V1 freeze, no deployment). Exit: Founder-accepted merge +
+   criteria (own read/edit/history, summaries, sign-out, Terms/Privacy surfaces, no Interests/
+   Goals/media/lifecycle behavior, V1 freeze, no deployment; enforces the §11 legal-completion
+   rule — no close while legal presentation is unresolved). Exit: Founder-accepted merge +
   closure record (MC-1 pattern), Master Programme update.
 
 Kept separate (not MC-2, must not be folded in): MEDIA-2b (profile image implementation),
@@ -512,8 +536,11 @@ their own authorizations.
 
 ## 15. Risks / open decisions (genuine only; none blocks MC-2B)
 
-1. **MC-3 legal inputs** (owner + Terms/Privacy version ids + re-acceptance policy; Disposition
-   §14.1). Needed by MC-3, not MC-2. MC-2 ships links only.
+1. **Legal content for MC-2 presentation** (Founder disposition CORR-002, §11): approved V2
+   legal content or external URLs are mandatory before MC-2 legal presentation is accepted
+   complete, and MC-2 cannot close while it is unresolved. Does not block independent MC-2B
+   functionality. MC-3 consent inputs (owner + version ids + re-acceptance policy; Disposition
+   §14.1) remain MC-3 scope.
 2. **Stable Focus Area IDs + vocabulary normalization** (Disposition §5.3/§5.7). Prerequisite to
    MC-3/REC-1 persistence, not to MC-2 (MC-2 persists no preferences).
 3. **MEDIA-1 specifics** (upload mode, limits, variants, delivery, takedown, cost/budget owner,
@@ -539,9 +566,14 @@ their own authorizations.
 - Created: `docs/programme/TIIZI-MC-2-PROFILE-FOUNDATION-READINESS-001.md` (this record;
   includes CORR-001 contract hardening: V2-owned legal boundary, participation-based My
   Challenges, no `hasDisplayName`, raw-Firebase email, serialized history, no rate-limit
-  contract, no MC-2B media dependency, revised GET/PATCH shapes).
-- Updated: `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` — version 2.67 → 2.68; records MC-2A
-  readiness/awaiting-Founder-review; MC-2 implementation still NOT STARTED / NOT AUTHORIZED.
+   contract, no MC-2B media dependency, revised GET/PATCH shapes;
+   CORR-002: Founder legal disposition recorded (§11 — MC-2 owns surfaces, completion dependency,
+   no-close rule), disjoint active/history predicate (§9), PR #90 MERGED correction carried in
+   Master Programme 2.70, §3 media-slot reword).
+- Updated: `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` — version 2.67 → 2.68 (MC-2A) →
+  2.69 (CORR-001) → 2.70 (CORR-002); PR #90 recorded MERGED (2026-10-11) in Current Focus;
+  records MC-2A readiness/awaiting-Founder-review; MC-2 implementation still NOT STARTED /
+  NOT AUTHORIZED.
 - Annotated: `docs/programme/TIIZI-MEMBER-COMPLETION-ASSESSMENT-001.md` — minimal
   numbering-supersession note pointing at Assessment §F (original content untouched).
 
