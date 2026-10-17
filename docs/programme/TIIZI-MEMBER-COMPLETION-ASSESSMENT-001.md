@@ -20,6 +20,7 @@ This assessment is preserved as written (commit `0ee5da0`). The Founder has sinc
 | §C.6 migration 025 and outbox | **Stands.** 025 stays Group-Feed-specific; a Challenge Feed uses its own tables |
 | §B.7 / FD-MC-04 authority basis | **Corrected and resolved** (`TIIZI-INTEREST-GOAL-FOCUS-AREA-RECOMMENDATION-AUTHORITY-RECONCILIATION-001.md` §12): interest-based discovery/recommendation was already authorized by Stage F Product Truth (FR-V2-053; T1 §S); REC-1 operationalizes it. Goal-based relevance is a new narrow relationship, **approved by FD-MC-04d**; the pilot vocabularies are fixed by **FD-MC-04e** (KNW-04 resolved for the bounded V2 pilot scope). Assessment §A.4's "recommendation authority explicitly not conferred" referred only to the S4 Group metadata boundary, whose historical meaning is preserved |
 | §C.4 event matrix | Retained as the first-pass analysis; the revised proposal is CF-01 §4 |
+| §F work-package numbering (MC-2 = contract / MC-3 = read-self-edit) | **SUPERSEDED for numbering only (MC-2A, 2026-10-14).** Effective split is Founder Disposition §13: MC-2 = Profile Foundation base Profile only; MC-3 = Onboarding + Consent (owns Interests/Goals + gate); MC-4 = Member Identity Projection. Follow the Disposition; see `TIIZI-MC-2-PROFILE-FOUNDATION-READINESS-001.md` §2. Original §F text below is preserved unchanged as history. |
 
 The factual findings (§A–§C evidence, including the member-provisioning gap, the lost sign-up name, and the absence of recommendation logic noted in the Disposition) are unchanged.
 
