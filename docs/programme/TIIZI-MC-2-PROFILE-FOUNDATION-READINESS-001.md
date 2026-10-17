@@ -4,10 +4,12 @@
 **Date:** 2026-10-14
 **Base:** `a358b308ee583c2dfc2715668b4a1be8eda714e0` (canonical `origin/main`; Master Programme 2.67 → 2.70 across MC-2A/CORR-001/CORR-002)
 **Branch:** `docs/mc2-profile-foundation-readiness`
-**Status:** READINESS ONLY / NO IMPLEMENTATION AUTHORIZED. STOP FOR FOUNDER REVIEW.
+**Status:** MC-2A SUBSTANTIVELY ACCEPTED — IMPLEMENTATION REQUIREMENTS CARRIED FORWARD — MERGE HELD PENDING CI. MC-2B/C/D NOT STARTED / NOT AUTHORIZED.
 **Boundaries:** No code. No migration. No deployment. No production access. Archived V1 untouched.
 
-## 0. Verdict (read first)
+## 0. MC-2A readiness finding and current Founder disposition (read first)
+
+**Current disposition (2026-10-17): MC-2A SUBSTANTIVELY ACCEPTED — IMPLEMENTATION REQUIREMENTS CARRIED FORWARD — MERGE HELD PENDING CI.** The readiness finding below records the 2026-10-14 assessment; §17 records the current disposition and implementation gates.
 
 **A. READY FOR FOUNDER AUTHORIZATION OF MC-2 IMPLEMENTATION,
 subject to the explicit legal-completion dependency in §11 —
@@ -594,5 +596,39 @@ No source, migration, config, V1, deployment, or production change.
 
 ---
 
-**STOP: MC-2A — PROFILE FOUNDATION AUTHORITY RECONCILED / IMPLEMENTATION READINESS ASSESSED /
-AWAITING FOUNDER REVIEW.**
+**MC-2A disposition recorded: substantively accepted; merge held pending exact-final-head GitHub Actions and independent-review gates. MC-2B implementation remains unauthorized.**
+
+## 17. Founder disposition and implementation entry (2026-10-17)
+
+**Authority:** Founder MC-2A CORR-003 Disposition; V2 Master Programme v2.70.
+**Disposition:** MC-2A SUBSTANTIVELY ACCEPTED — IMPLEMENTATION REQUIREMENTS CARRIED FORWARD — MERGE HELD PENDING CI.
+
+This disposition accepts the bounded MC-2A readiness record. It does not authorize implementation or close the open independent-review findings. No CORR-004 documentation cycle is authorized. The three unresolved P2 review findings are retained as mandatory implementation acceptance requirements:
+
+### MC-2B acceptance requirements
+
+1. Every member-owned Challenge participation-summary item exposes both challengeId and participationId. Preserve distinct participation episodes, including withdrawal and rejoin.
+2. The API defines deterministic ordering, bounded page limits, and explicit pagination semantics. activeCount and historyCount cover the complete qualifying participation set, independent of the returned page. Preserve the approved disjoint active/history classification and derived per-item bucket.
+### MC-2C acceptance requirement
+
+3. Use UID-scoped member caching, invalidate affected member views after successful display-name changes, and prevent stale member data across account switches.
+
+Separately, preserve the existing MC-2B display-name self-edit transaction, append-only update history, row-lock serialization, updated_at behavior, validation, no-op, and authorization contracts.
+
+These three criteria carry forward the existing review threads as implementation follow-ups; none is represented as technically resolved by this disposition or this documentation change.
+
+### MC-2B implementation entry brief
+
+- **Database:** Use the next free migration number when MC-2B is authorized. Add the append-only display-name history table keyed to the member, with actor/source and before/after values. Keep the existing SELECT FOR UPDATE transaction and no-op behavior. Migration 026 remains merged code and not deployed.
+- **API:** Implement GET/PATCH /api/me. Bind the member to the authenticated token UID. GET returns governed profile truth; PATCH remains displayName-only, strictly validated, rejects unknown fields, and cannot mutate email or another member.
+- **Summaries:** Source the member-owned Groups summary from GET /api/memberships/me. Include the Challenge summary in GET /api/me using actual participation episodes, not Group visibility; add a bounded caller-scoped query if existing reads cannot serve it. Return both IDs and the derived bucket for each episode.
+- **Ordering and pagination:** Select and document a stable API-level order with a unique tie-breaker, bounded maximum page size, and explicit continuation behavior. Compute both counts over the full caller-scoped qualifying set before applying pagination.
+- **Authentication and authorization:** Bind the authenticated token UID to the caller’s member. Scope every summary query to that member; PATCH is self-only. Never return another member’s rows.
+- **Required tests:** Authentication and cross-member denial; missing/unknown member; strict request validation; name history and updated_at transactionality; no-op and concurrent edits; separate IDs across withdrawal/rejoin; disjoint active/history classification and bucket correctness; deterministic order, page boundaries, invalid continuation, and full-set counts across pages; and UID cache isolation, account-switch clearing, and invalidation of affected member views after successful edits.
+- **Deployment and exclusions:** No migration deployment, production access, or release is authorized. Exclude UI/cache implementation (MC-2C), MC-3 onboarding/interests/goals/consent, persistent media references (MEDIA-2b), V1 legal surfaces, V1 compatibility, new Product Truth, and unrelated architecture changes. Approved legal content or URLs remain required before MC-2 completion; do not invent or reuse V1 legal content.
+
+### Exact-head CI evidence and route
+
+At inspection, PR #93 remained open at 9b188119dfff6c09ebb5305bed78b1b22d4d5284. Its latest retrieved Actions run was run 272 (38528899580), completed with failure status for all six jobs. The job-step list was empty and the job-log endpoint returned 404, so available evidence does not confirm that runners started or classify the failure as infrastructure or test-related. No workflow or retry was initiated. The existing pull_request trigger is the smallest exact-head route: after Founder-authorized publication of the required documentation update to PR #93, let the existing workflow run at the resulting head SHA. Do not add a CI-only commit or retry without separate authorization.
+
+**Sequence:** MC-2A Founder disposition → exact-final-head GitHub Actions and review gates → separately Founder-authorized PR #93 merge → separate Founder authorization for MC-2B → MC-2B → MC-2C → MC-2D. MC-2B/C/D remain NOT STARTED / NOT AUTHORIZED.
