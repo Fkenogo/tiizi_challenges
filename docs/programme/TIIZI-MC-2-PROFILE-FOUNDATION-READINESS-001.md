@@ -605,13 +605,15 @@ No source, migration, config, V1, deployment, or production change.
 
 This disposition accepts the bounded MC-2A readiness record. It does not authorize implementation or close the open independent-review findings. No CORR-004 documentation cycle is authorized. The three unresolved P2 review findings are retained as mandatory implementation acceptance requirements:
 
+**Additional P2 disposition (2026-10-19):** The Founder accepts the new “Move cache acceptance tests to MC-2C” finding. This bounded clarification assigns UID-cache isolation, account-switch clearing, and post-edit cache-invalidation tests to MC-2C. It changes no API contract, domain semantics, or implementation sequence; no architectural or Product Truth assessment is authorized.
+
 ### MC-2B acceptance requirements
 
 1. Every member-owned Challenge participation-summary item exposes both challengeId and participationId. Preserve distinct participation episodes, including withdrawal and rejoin.
 2. The API defines deterministic ordering, bounded page limits, and explicit pagination semantics. activeCount and historyCount cover the complete qualifying participation set, independent of the returned page. Preserve the approved disjoint active/history classification and derived per-item bucket.
 ### MC-2C acceptance requirement
 
-3. Use UID-scoped member caching, invalidate affected member views after successful display-name changes, and prevent stale member data across account switches.
+3. Use UID-scoped member caching, invalidate affected member views after successful display-name changes, and prevent stale member data across account switches. MC-2C cannot be accepted until UID-isolation, account-switch-clearing, and post-edit cache-invalidation tests pass.
 
 Separately, preserve the existing MC-2B display-name self-edit transaction, append-only update history, row-lock serialization, updated_at behavior, validation, no-op, and authorization contracts.
 
@@ -624,7 +626,8 @@ These three criteria carry forward the existing review threads as implementation
 - **Summaries:** Source the member-owned Groups summary from GET /api/memberships/me. Include the Challenge summary in GET /api/me using actual participation episodes, not Group visibility; add a bounded caller-scoped query if existing reads cannot serve it. Return both IDs and the derived bucket for each episode.
 - **Ordering and pagination:** Select and document a stable API-level order with a unique tie-breaker, bounded maximum page size, and explicit continuation behavior. Compute both counts over the full caller-scoped qualifying set before applying pagination.
 - **Authentication and authorization:** Bind the authenticated token UID to the caller’s member. Scope every summary query to that member; PATCH is self-only. Never return another member’s rows.
-- **Required tests:** Authentication and cross-member denial; missing/unknown member; strict request validation; name history and updated_at transactionality; no-op and concurrent edits; separate IDs across withdrawal/rejoin; disjoint active/history classification and bucket correctness; deterministic order, page boundaries, invalid continuation, and full-set counts across pages; and UID cache isolation, account-switch clearing, and invalidation of affected member views after successful edits.
+- **MC-2B required tests:** Authentication and cross-member denial; missing/unknown member; strict request validation; name history and updated_at transactionality; no-op and concurrent edits; separate challenge and participation IDs across withdrawal/rejoin; disjoint active/history classification and bucket correctness; deterministic order, page boundaries, invalid continuation, and full-set counts across pages.
+- **MC-2C required tests:** UID-cache isolation, account-switch clearing, and invalidation of affected member views after successful display-name edits.
 - **Deployment and exclusions:** No migration deployment, production access, or release is authorized. Exclude UI/cache implementation (MC-2C), MC-3 onboarding/interests/goals/consent, persistent media references (MEDIA-2b), V1 legal surfaces, V1 compatibility, new Product Truth, and unrelated architecture changes. Approved legal content or URLs remain required before MC-2 completion; do not invent or reuse V1 legal content.
 
 ### Exact-head CI evidence and route
