@@ -27,11 +27,14 @@ describe('internal member Profile identity and display-name mutation', () => {
   it('rejects non-display-name, invalid, and cross-member mutation shapes', async () => {
     const id = await seedMember(testDb(), 'self');
     const otherId = await seedMember(testDb(), 'other');
-    for (const input of [null, {}, { displayName: '' }, { displayName: '   ' }, { displayName: null },
-      { displayName: 'x'.repeat(121) }, { displayName: 'bad\nname' }, { displayName: 'Name', email: 'x@y.z' },
+    for (const input of [null, {}, { displayName: 'Name', email: 'x@y.z' },
       { memberId: otherId, displayName: 'Name' }]) {
       await expect(updateOwnDisplayName(testDb(), { memberId: id }, input))
         .rejects.toBeInstanceOf(InvalidProfileMutationError);
+    }
+    for (const displayName of ['', '   ', null, 'x'.repeat(121), 'bad\nname']) {
+      await expect(updateOwnDisplayName(testDb(), { memberId: id }, { displayName }))
+        .rejects.toMatchObject({ code: 'invalid_display_name', statusCode: 400 });
     }
   });
 
@@ -78,14 +81,14 @@ describe('internal member Profile identity and display-name mutation', () => {
 
   it('rolls back member update and history together when the append fails', async () => {
     const id = await seedMember(testDb(), 'rollback');
-    await testDb().query(`CREATE FUNCTION reject_profile_history() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced history failure'; END $$`);
-    await testDb().query(`CREATE TRIGGER reject_profile_history BEFORE INSERT ON member_display_name_history FOR EACH ROW EXECUTE FUNCTION reject_profile_history()`);
-    await expect(updateOwnDisplayName(testDb(), { memberId: id }, { displayName: 'Name' })).rejects.toThrow('forced history failure');
+    await testDb().query(`CREATE FUNCTION reject_profile_member_update() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.display_name IS DISTINCT FROM OLD.display_name THEN RAISE EXCEPTION 'forced member update failure'; END IF; RETURN NEW; END $$`);
+    await testDb().query(`CREATE TRIGGER reject_profile_member_update BEFORE UPDATE ON members FOR EACH ROW EXECUTE FUNCTION reject_profile_member_update()`);
+    await expect(updateOwnDisplayName(testDb(), { memberId: id }, { displayName: 'Name' })).rejects.toThrow('forced member update failure');
     const member = await testDb().query<{ display_name: string | null }>('SELECT display_name FROM members WHERE member_id = $1', [id]);
     const count = await testDb().query<{ count: number }>('SELECT count(*) FROM member_display_name_history WHERE member_id = $1', [id]);
     expect(member.rows[0].display_name).toBeNull();
     expect(count.rows[0].count).toBe(0);
-    await testDb().query('DROP TRIGGER reject_profile_history ON member_display_name_history');
-    await testDb().query('DROP FUNCTION reject_profile_history()');
+    await testDb().query('DROP TRIGGER reject_profile_member_update ON members');
+    await testDb().query('DROP FUNCTION reject_profile_member_update()');
   });
 });

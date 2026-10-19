@@ -1,6 +1,6 @@
 import { AuthError, type RequestMember } from './auth.js';
 import type { Db } from './db.js';
-import { DISPLAY_NAME_MAX_LENGTH } from './memberBootstrap.js';
+import { DISPLAY_NAME_MAX_LENGTH, InvalidDisplayNameError } from './memberBootstrap.js';
 import { findMemberByAuth } from './members.js';
 
 export interface MemberProfileIdentity {
@@ -28,12 +28,13 @@ export function parseProfileDisplayName(input: unknown): string {
     throw new InvalidProfileMutationError();
   }
   const body = input as Record<string, unknown>;
-  if (Object.keys(body).length !== 1 || !Object.hasOwn(body, 'displayName') || typeof body.displayName !== 'string') {
+  if (Object.keys(body).length !== 1 || !Object.hasOwn(body, 'displayName')) {
     throw new InvalidProfileMutationError();
   }
+  if (typeof body.displayName !== 'string') throw new InvalidDisplayNameError();
   const name = body.displayName.trim().normalize('NFC');
   if (name.length === 0 || [...name].length > DISPLAY_NAME_MAX_LENGTH || /\p{Cc}/u.test(name)) {
-    throw new InvalidProfileMutationError();
+    throw new InvalidDisplayNameError();
   }
   return name;
 }
