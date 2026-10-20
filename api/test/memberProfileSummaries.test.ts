@@ -389,12 +389,26 @@ describe('member-owned Challenge participation summaries', () => {
       encodeCursor({ ...original, ordering: 'joined_at_desc_group_id_desc' }),
       encodeCursor({ ...original, id: 'not-a-uuid' }),
       encodeCursor({ ...original, joinedAt: 'not-a-date' }),
+      encodeCursor({ ...original, joinedAt: '2026-99-01T00:00:00.000000Z' }),
+      encodeCursor({ ...original, joinedAt: '2026-01-01T00:00:00.000Z' }),
       'A'.repeat(2049),
     ];
     for (const cursor of malformed) {
       await expect(listMemberChallengeSummaries(testDb(), { memberId }, { limit: 1, cursor }))
         .rejects.toMatchObject({ code: 'invalid_cursor', statusCode: 400 });
     }
+
+    const groupCursor = encodeCursor({
+      v: 1,
+      type: 'groups',
+      memberId,
+      limit: 1,
+      ordering: 'joined_at_desc_group_id_desc',
+      joinedAt: '2026-99-01T00:00:00.000000Z',
+      id: '00000000-0000-4000-8000-000000000000',
+    });
+    await expect(listMemberGroupSummaries(testDb(), { memberId }, { limit: 1, cursor: groupCursor }))
+      .rejects.toMatchObject({ code: 'invalid_cursor', statusCode: 400 });
   });
 
   it('cannot widen authorization through a forged continuation token', async () => {

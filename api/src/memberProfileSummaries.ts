@@ -243,7 +243,9 @@ function decodeCursor(raw: unknown, scope: CursorScope): SummaryCursorPayload | 
 function isCanonicalCursorTimestamp(value: unknown): value is string {
   if (typeof value !== 'string' || !CURSOR_TIMESTAMP_RE.test(value)) return false;
   const millisecondIso = `${value.slice(0, 23)}Z`;
-  return new Date(millisecondIso).toISOString() === millisecondIso;
+  const parsed = new Date(millisecondIso);
+  if (!Number.isFinite(parsed.getTime())) return false;
+  return parsed.toISOString() === millisecondIso;
 }
 
 function toCursorTimestamp(value: string | Date): string {
