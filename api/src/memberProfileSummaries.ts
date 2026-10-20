@@ -66,6 +66,7 @@ const ORDERINGS = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BASE64URL_RE = /^[A-Za-z0-9_-]+$/;
+const CURSOR_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 const MAX_CURSOR_LENGTH = 2048;
 const PARTICIPATION_STATUSES: readonly string[] = ['active', 'withdrawn', 'removed'];
 
@@ -151,6 +152,7 @@ interface ChallengeSummaryRow {
   status: string | null;
   challenge_title: string | null;
   joined_at: string | Date | null;
+  joined_at_cursor: string | null;
   exited_at: string | Date | null;
   finalized_at: string | Date | null;
   bucket: string | null;
@@ -225,15 +227,27 @@ function decodeCursor(raw: unknown, scope: CursorScope): SummaryCursorPayload | 
   const payload = parsed as Partial<SummaryCursorPayload>;
   if (payload.v !== 1 || payload.type !== scope.type || payload.memberId !== scope.memberId
       || payload.limit !== scope.limit || payload.ordering !== ORDERINGS[scope.type]
-      || typeof payload.joinedAt !== 'string' || typeof payload.id !== 'string'
-      || !UUID_RE.test(payload.id)) {
+      || typeof payload.id !== 'string' || !UUID_RE.test(payload.id)) {
     invalidCursor();
   }
-  const joinedAtMs = Date.parse(payload.joinedAt);
-  if (!Number.isFinite(joinedAtMs) || new Date(joinedAtMs).toISOString() !== payload.joinedAt) {
-    invalidCursor();
-  }
+  if (!isCanonicalCursorTimestamp(payload.joinedAt)) invalidCursor();
   return payload as SummaryCursorPayload;
+}
+
+/**
+ * Cursors carry the authority timestamp at the database's full microsecond
+ * precision. Truncating to milliseconds would let a page boundary inside one
+ * millisecond skip later episodes. Group timestamps are millisecond values
+ * normalized to the same canonical shape.
+ */
+function isCanonicalCursorTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string' || !CURSOR_TIMESTAMP_RE.test(value)) return false;
+  const millisecondIso = `${value.slice(0, 23)}Z`;
+  return new Date(millisecondIso).toISOString() === millisecondIso;
+}
+
+function toCursorTimestamp(value: string | Date): string {
+  return `${toIso(value).slice(0, 23)}000Z`;
 }
 
 function classifyOrFail(
@@ -281,7 +295,7 @@ function nextGroupCursor(
     memberId: scope.memberId,
     limit: scope.limit,
     ordering: ORDERINGS[scope.type],
-    joinedAt,
+    joinedAt: toCursorTimestamp(joinedAt),
     id: groupId,
   });
 }
@@ -367,6 +381,8 @@ export async function listMemberChallengeSummaries(
   const result = await db.query<ChallengeSummaryRow>(
     `WITH qualifying AS (
        SELECT p.participation_id, p.challenge_id, p.status, p.joined_at, p.exited_at,
+              to_char(p.joined_at AT TIME ZONE 'UTC',
+                      'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS joined_at_cursor,
               c.title AS challenge_title, c.finalized_at,
               CASE
                 WHEN p.status = 'active' AND c.finalized_at IS NULL THEN 'active'
@@ -410,7 +426,7 @@ export async function listMemberChallengeSummaries(
   }
 
   const rows = result.rows.filter((row) => row.participation_id !== null);
-  const mapped = rows.map((row): MemberChallengeSummaryItem => {
+  const prepared = rows.map((row): { item: MemberChallengeSummaryItem; cursorJoinedAt: string } => {
     const finalized = row.finalized_at != null;
     const bucket = classifyOrFail(row.status, finalized);
     if (row.bucket !== bucket) return summaryUnavailable();
@@ -418,21 +434,25 @@ export async function listMemberChallengeSummaries(
         || row.joined_at === null || row.participation_id === null) {
       return summaryUnavailable();
     }
+    if (!isCanonicalCursorTimestamp(row.joined_at_cursor)) return summaryUnavailable();
     return {
-      challengeId: String(row.challenge_id),
-      participationId: String(row.participation_id),
-      title: String(row.challenge_title),
-      status: row.status as ParticipationStatus,
-      bucket,
-      joinedAt: toIso(row.joined_at),
-      exitedAt: row.exited_at == null ? null : toIso(row.exited_at),
+      cursorJoinedAt: row.joined_at_cursor,
+      item: {
+        challengeId: String(row.challenge_id),
+        participationId: String(row.participation_id),
+        title: String(row.challenge_title),
+        status: row.status as ParticipationStatus,
+        bucket,
+        joinedAt: toIso(row.joined_at),
+        exitedAt: row.exited_at == null ? null : toIso(row.exited_at),
+      },
     };
   });
 
-  const items = mapped.slice(0, limit);
-  const last = items[items.length - 1];
-  const nextCursor = mapped.length > limit && last
-    ? nextChallengeCursor(last.joinedAt, last.participationId, scope)
+  const items = prepared.slice(0, limit).map((entry) => entry.item);
+  const last = prepared[items.length - 1];
+  const nextCursor = prepared.length > limit && last
+    ? nextChallengeCursor(last.cursorJoinedAt, last.item.participationId, scope)
     : null;
 
   return { activeCount, historyCount, totalCount, items, nextCursor };

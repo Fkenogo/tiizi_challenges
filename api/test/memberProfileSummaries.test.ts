@@ -54,7 +54,7 @@ async function newParticipation(
   memberId: string,
   options: {
     status?: ParticipationStatus;
-    joinedAt?: Date;
+    joinedAt?: Date | string;
     exitedAt?: Date;
   } = {},
 ): Promise<string> {
@@ -413,7 +413,7 @@ describe('member-owned Challenge participation summaries', () => {
       memberId,
       limit: 20,
       ordering: 'joined_at_desc_participation_id_desc',
-      joinedAt: '2099-01-01T00:00:00.000Z',
+      joinedAt: '2099-01-01T00:00:00.000000Z',
       id: '00000000-0000-4000-8000-000000000000',
     });
     const page = await listMemberChallengeSummaries(testDb(), { memberId }, { cursor: forged });
@@ -439,6 +439,37 @@ describe('member-owned Challenge participation summaries', () => {
     expect(pages.every((page) => page.totalCount === 4)).toBe(true);
     expect(items).toHaveLength(4);
     expect(new Set(items.map((item) => item.participationId)).size).toBe(4);
+
+    const expected = await testDb().query<{ participation_id: string }>(
+      `SELECT participation_id FROM challenge_participations
+       WHERE member_id = $1
+       ORDER BY joined_at DESC, participation_id DESC`,
+      [memberId],
+    );
+    expect(items.map((item) => item.participationId)).toEqual(
+      expected.rows.map((row) => String(row.participation_id)),
+    );
+  });
+
+  it('preserves microsecond precision across challenge page boundaries', async () => {
+    const memberId = await newMember('cursor-micros');
+    const creatorId = await newMember('cursor-micros-creator');
+    const groupId = await newGroup('Cursor micros group');
+    const joinedAt = [
+      '2026-05-01T09:00:00.123900Z',
+      '2026-05-01T09:00:00.123800Z',
+      '2026-05-01T09:00:00.123700Z',
+    ];
+    for (let i = 0; i < joinedAt.length; i += 1) {
+      const challengeId = await newChallenge(groupId, creatorId, { title: `Micros ${i}` });
+      await newParticipation(challengeId, memberId, { joinedAt: joinedAt[i] });
+    }
+
+    const { pages, items } = await allChallengePages(memberId, 1);
+    expect(pages.every((page) => page.totalCount === 3)).toBe(true);
+    expect(items).toHaveLength(3);
+    expect(new Set(items.map((item) => item.participationId)).size).toBe(3);
+    expect(items.map((item) => item.challengeId)).toHaveLength(3);
 
     const expected = await testDb().query<{ participation_id: string }>(
       `SELECT participation_id FROM challenge_participations
