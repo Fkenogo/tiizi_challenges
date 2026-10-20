@@ -9,14 +9,42 @@ import type { TokenVerifier } from '../src/auth.js';
 import type { Db } from '../src/db.js';
 import type { GroupMembershipAuthority } from '../src/groupMembershipAuthority.js';
 import { listMigrationFiles, runMigrations, splitStatements } from '../src/migrate.js';
-import { ensurePostgresExtension, withMigrationLock } from './postgresTestSupport.js';
+import { ensurePostgresExtension } from './postgresTestSupport.js';
 
 const databaseUrl = process.env.TIIZI_TEST_DATABASE_URL;
-const postgresDescribe = databaseUrl ? describe : describe.skip;
+const adminDatabaseUrl = process.env.TIIZI_TEST_ADMIN_DATABASE_URL ?? databaseUrl;
+
+// Each suite migrates a disposable database, because migrations 007 and 008
+// inspect pg_constraint by conname without a schema filter: sharing one
+// database would let a second suite skip constraints the first already created.
+// The suite runs only when the admin URL's role can create databases, so an
+// ordinary application URL never silently gains that requirement.
+let canCreateDatabase = false;
+if (adminDatabaseUrl) {
+  const probe = new Pool({ connectionString: adminDatabaseUrl, max: 1 });
+  try {
+    const { rows } = await probe.query<{ can_create: boolean }>(
+      'SELECT rolcreatedb OR rolsuper AS can_create FROM pg_roles WHERE rolname = current_user',
+    );
+    canCreateDatabase = rows[0]?.can_create === true;
+  } catch {
+    canCreateDatabase = false;
+  } finally {
+    await probe.end();
+  }
+}
+if (databaseUrl && !canCreateDatabase) {
+  console.warn(
+    'MC-2B-4 PostgreSQL integration suite skipped: the TIIZI_TEST_DATABASE_URL role cannot create databases. ' +
+      'Set TIIZI_TEST_ADMIN_DATABASE_URL to a role with CREATEDB to run it.',
+  );
+}
+const postgresDescribe = canCreateDatabase ? describe : describe.skip;
 const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
 
 interface SchemaHarness {
-  schema: string;
+  databaseName: string;
+  admin: Pool;
   pool: Pool;
   db: Db;
 }
@@ -58,8 +86,7 @@ function quoteIdentifier(value: string): string {
   return `"${value}"`;
 }
 
-function wrapSchema(pool: Pool, schema: string): Db {
-  const searchPath = `SET search_path TO ${quoteIdentifier(schema)}`;
+function wrapPool(pool: Pool): Db {
   const run = async <T>(client: PoolClient, text: string, params?: unknown[]) => {
     const result = await client.query(text, params);
     return { rows: result.rows as T[] };
@@ -68,7 +95,6 @@ function wrapSchema(pool: Pool, schema: string): Db {
     async query<T>(text: string, params?: unknown[]) {
       const client = await pool.connect();
       try {
-        await client.query(searchPath);
         return await run<T>(client, text, params);
       } finally {
         client.release();
@@ -77,7 +103,6 @@ function wrapSchema(pool: Pool, schema: string): Db {
     async transaction<T>(fn: (tx: Db) => Promise<T>): Promise<T> {
       const client = await pool.connect();
       try {
-        await client.query(searchPath);
         await client.query('BEGIN');
         const tx: Db = {
           query: <R>(text: string, params?: unknown[]) => run<R>(client, text, params),
@@ -100,31 +125,20 @@ function wrapSchema(pool: Pool, schema: string): Db {
   };
 }
 
-// Each suite isolates itself in a dedicated schema of the configured database,
-// so TIIZI_TEST_DATABASE_URL only needs CREATE on that database, not CREATEDB.
-// pgcrypto is installed once in public under the migration lock; the schema pins
-// search_path to itself and provides a schema-local gen_random_uuid() so an
-// un-upgraded schema can never see 027 objects that exist in public.
 async function createHarness(): Promise<SchemaHarness> {
-  const schema = `mc2b4_${randomUUID().replaceAll('-', '')}`;
-  const pool = new Pool({ connectionString: databaseUrl, max: 6 });
-  return { schema, pool, db: wrapSchema(pool, schema) };
-}
-
-async function prepareSchema(harness: SchemaHarness): Promise<void> {
-  await withMigrationLock(harness.pool, async () => {
-    await ensurePostgresExtension(harness.pool);
-    await harness.pool.query(`CREATE SCHEMA ${quoteIdentifier(harness.schema)}`);
-    await harness.pool.query(
-      `CREATE FUNCTION ${quoteIdentifier(harness.schema)}.gen_random_uuid()
-       RETURNS uuid LANGUAGE sql AS $func$ SELECT public.gen_random_uuid() $func$`,
-    );
-  });
+  const databaseName = `mc2b4_${randomUUID().replaceAll('-', '')}`;
+  const admin = new Pool({ connectionString: adminDatabaseUrl!, max: 1 });
+  await admin.query(`CREATE DATABASE ${quoteIdentifier(databaseName)}`);
+  const url = new URL(adminDatabaseUrl!);
+  url.pathname = `/${databaseName}`;
+  const pool = new Pool({ connectionString: url.toString(), max: 6 });
+  return { databaseName, admin, pool, db: wrapPool(pool) };
 }
 
 async function destroyHarness(harness: SchemaHarness): Promise<void> {
-  await harness.pool.query(`DROP SCHEMA IF EXISTS ${quoteIdentifier(harness.schema)} CASCADE`);
   await harness.pool.end();
+  await harness.admin.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(harness.databaseName)}`);
+  await harness.admin.end();
 }
 
 function stubVerifier(uidByToken: Record<string, string>): TokenVerifier {
@@ -386,8 +400,8 @@ postgresDescribe('MC-2B-4 real PostgreSQL integration', () => {
 
   beforeAll(async () => {
     harness = await createHarness();
-    await prepareSchema(harness);
-    await withMigrationLock(harness.pool, () => runMigrations(harness.db));
+    await ensurePostgresExtension(harness.pool);
+    await runMigrations(harness.db);
   }, 60000);
 
   afterAll(async () => {
@@ -464,7 +478,7 @@ postgresDescribe('MC-2B-4 real PostgreSQL integration', () => {
     const rejoinedParticipation = await seedParticipation(db, {
       challengeId: rejoinChallenge,
       memberId,
-      joinedAt: '2026-05-01T09:00:00.000000Z',
+      joinedAt: '2026-05-02T11:00:00.000000Z',
     });
     const visibleOnly = await seedChallenge(db, {
       groupId: publicGroup,
@@ -722,11 +736,8 @@ postgresDescribe('MC-2B-4 migration 027 acceptance', () => {
 
   beforeAll(async () => {
     harness = await createHarness();
-    await prepareSchema(harness);
-    await withMigrationLock(
-      harness.pool,
-      () => applyMigrationsThrough(harness.db, '026_member_canonical_display_name.sql'),
-    );
+    await ensurePostgresExtension(harness.pool);
+    await applyMigrationsThrough(harness.db, '026_member_canonical_display_name.sql');
   }, 60000);
 
   afterAll(async () => {
@@ -754,7 +765,7 @@ postgresDescribe('MC-2B-4 migration 027 acceptance', () => {
     );
     expect(unchanged.rows[0].display_name).toBe('Existing Name');
 
-    const pending = await withMigrationLock(harness.pool, () => runMigrations(db));
+    const pending = await runMigrations(db);
     expect(pending).toContain('027_member_display_name_history.sql');
     expect(pending.filter((file) => file < '027_')).toEqual([]);
 
