@@ -39,6 +39,19 @@ export function parseProfileDisplayName(input: unknown): string {
   return name;
 }
 
+/** Read the governed identity projection for an already-authenticated member. */
+export async function getMemberProfileIdentityById(
+  db: Db,
+  memberId: string,
+): Promise<MemberProfileIdentity> {
+  const result = await db.query<{ display_name: string | null }>(
+    'SELECT display_name FROM members WHERE member_id = $1', [memberId],
+  );
+  const row = result.rows[0];
+  if (!row) throw new AuthError(401, 'unknown_member', 'Authenticated member is not registered');
+  return { memberId, displayName: row.display_name };
+}
+
 /** Resolve a verified authentication identity through the sole canonical member map. */
 export async function getMemberProfileIdentity(
   db: Db,
@@ -46,12 +59,7 @@ export async function getMemberProfileIdentity(
 ): Promise<MemberProfileIdentity> {
   const member = await findMemberByAuth(db, verifiedIdentity.provider, verifiedIdentity.subject);
   if (!member) throw new AuthError(401, 'unknown_member', 'Authenticated member is not registered');
-  const result = await db.query<{ display_name: string | null }>(
-    'SELECT display_name FROM members WHERE member_id = $1', [member.memberId],
-  );
-  const row = result.rows[0];
-  if (!row) throw new AuthError(401, 'unknown_member', 'Authenticated member is not registered');
-  return { memberId: member.memberId, displayName: row.display_name };
+  return getMemberProfileIdentityById(db, member.memberId);
 }
 
 /**
