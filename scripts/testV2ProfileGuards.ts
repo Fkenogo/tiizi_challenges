@@ -213,6 +213,11 @@ check(
   'page reads are superseded by reloads and saves',
   (hook.match(/requestSeq\.current !== seq/g) ?? []).length >= 6,
 );
+check(
+  'stale page reads cannot release a newer account lock',
+  (hook.match(/if \(activeUid\.current === uid\) \{\s*groupsInFlight\.current = false;/g) ?? []).length === 1
+    && (hook.match(/if \(activeUid\.current === uid\) \{\s*challengesInFlight\.current = false;/g) ?? []).length === 1,
+);
 
 // ─── G. Route wiring ──────────────────────────────────────────────────────
 console.log('route wiring');

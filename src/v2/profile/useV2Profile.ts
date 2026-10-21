@@ -153,8 +153,12 @@ export function useV2Profile() {
       }
       setPageError({ section: 'groups', error: pageReadError });
     } finally {
-      groupsInFlight.current = false;
-      if (activeUid.current === uid) setIsLoadingGroups(false);
+      // The identity effect already reset the shared lock for a new account.
+      // A stale request must not clear the lock owned by that new account.
+      if (activeUid.current === uid) {
+        groupsInFlight.current = false;
+        setIsLoadingGroups(false);
+      }
     }
   }, [profile?.groups.nextCursor, reload, uid]);
 
@@ -190,8 +194,10 @@ export function useV2Profile() {
       }
       setPageError({ section: 'challenges', error: pageReadError });
     } finally {
-      challengesInFlight.current = false;
-      if (activeUid.current === uid) setIsLoadingChallenges(false);
+      if (activeUid.current === uid) {
+        challengesInFlight.current = false;
+        setIsLoadingChallenges(false);
+      }
     }
   }, [profile?.challenges.nextCursor, reload, uid]);
 
