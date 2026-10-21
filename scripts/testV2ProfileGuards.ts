@@ -15,8 +15,8 @@
  *      carries no email, legal URLs, V1 path, or media/upload capability;
  *   E. the screen reads email from Firebase `user.email` only — never from
  *      `AuthContext.profile` and never from the API response;
- *   F. Profile state is not persisted and this slice introduces no shared
- *      React Query cache (UID-scoped caching is MC-2C-2);
+ *   F. Profile state is not persisted. MC-2C-2 shares only a UID-scoped
+ *      identity projection and reconciles an uncertain save from the server;
  *   G. `/v2/profile` is wired to the real screen, not the placeholder.
  */
 import { readFileSync } from 'node:fs';
@@ -206,7 +206,15 @@ check('name length is enforced in code points', screen.includes('displayNameLeng
 console.log('cache and persistence boundary');
 const hook = code(read('src/v2/profile/useV2Profile.ts'));
 check('no localStorage/sessionStorage/IndexedDB', !/localStorage|sessionStorage|indexedDB/i.test(hook + screen));
-check('no React Query cache in MC-2C-1', !/tanstack\/react-query/.test(hook + screen));
+check(
+  'name saves project through the UID-scoped identity cache',
+  hook.includes('writeOwnedV2MemberIdentity') && hook.includes('invalidateV2MemberIdentity'),
+);
+check(
+  'uncertain saves reconcile from a canonical read',
+  hook.includes('isUncertainProfileWriteFailure') && hook.includes('reconcileProfileIdentity')
+    && hook.includes('ProfileSaveUncertainError'),
+);
 check('resets identity-scoped state on uid change', hook.includes('[uid]') && hook.includes('activeUid'));
 check('discards late reads from a previous identity', hook.includes('requestSeq'));
 check(

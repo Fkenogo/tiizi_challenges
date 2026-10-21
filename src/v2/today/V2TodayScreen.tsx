@@ -14,7 +14,7 @@ import {
   V2LoadingState,
   V2Page,
 } from '../components/V2Primitives';
-import { useAuth } from '../../hooks/useAuth';
+import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
 import { useV2Today } from './useV2Today';
 import {
   challengeTypeLabel,
@@ -56,7 +56,7 @@ import {
  */
 export function V2TodayScreen() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const identity = useV2MemberIdentity();
   const today = useV2Today();
   // Progressive disclosure is local presentation state only: each growing
   // section initially presents the first TODAY_SECTION_LIMIT served items in
@@ -98,7 +98,7 @@ export function V2TodayScreen() {
     );
   }
 
-  const displayName = profile?.displayName ?? null;
+  const displayName = identity.displayName;
   const timezone = projection.todayContext.timezoneContexts[0]?.timezone ?? null;
   const governingDay = governingDayFor(projection);
   // Presentation deduplication: Challenges already represented in Do today

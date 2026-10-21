@@ -3,17 +3,8 @@ import {
   resolveKnowledgeAuthorityMode,
   type KnowledgeAuthorityMode,
 } from './knowledgeAuthorityMode';
-
-export class ApiError extends Error {
-  readonly status: number;
-  readonly code: string;
-
-  constructor(status: number, code: string, message: string) {
-    super(message);
-    this.status = status;
-    this.code = code;
-  }
-}
+import { ApiError } from './apiError';
+export { ApiError } from './apiError';
 
 /**
  * Canonical active API namespace prefix — the single client-side source of
