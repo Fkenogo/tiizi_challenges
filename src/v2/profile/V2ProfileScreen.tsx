@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
 import type { V2ProfileChallengeItem } from '../../api/profileApi';
@@ -14,6 +14,7 @@ import {
 } from '../components/V2Primitives';
 import { useAuth } from '../../hooks/useAuth';
 import { useV2Profile } from './useV2Profile';
+import { ProfileSaveUncertainError } from './profileWriteState';
 import {
   bucketProfileChallenges,
   challengeStatusLabel,
@@ -61,6 +62,19 @@ export function V2ProfileScreen() {
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const uid = user?.uid ?? null;
+  const uidRef = useRef(uid);
+
+  // An account switch must not leave one member's editor, draft or feedback
+  // on screen for the next member.
+  useEffect(() => {
+    uidRef.current = uid;
+    setEditing(false);
+    setDraft('');
+    setFieldError(null);
+    setSaveError(null);
+    setSaved(false);
+  }, [uid]);
 
   if (isLoading && !profile) {
     return (
@@ -118,13 +132,16 @@ export function V2ProfileScreen() {
       setFieldError(validation.message);
       return;
     }
+    const uidAtSubmit = uidRef.current;
     setFieldError(null);
     setSaveError(null);
     try {
       await saveDisplayName(validation.value);
+      if (uidRef.current !== uidAtSubmit) return;
       setEditing(false);
       setSaved(true);
     } catch (saveFailure) {
+      if (uidRef.current !== uidAtSubmit) return;
       setSaveError(writeErrorMessage(saveFailure));
     }
   };
@@ -430,6 +447,11 @@ function readErrorMessage(error: unknown): string {
  * server can fail after committing the name when a post-commit read fails.
  */
 function writeErrorMessage(error: unknown): string {
+  if (error instanceof ProfileSaveUncertainError) {
+    return error.reconciled
+      ? 'We refreshed your profile from Tiizi. If your name changed, it is shown above; if not, you can try saving again.'
+      : "We couldn't confirm that change. Your name may already be updated — reload to check.";
+  }
   if (error instanceof ApiError) {
     if (error.status === 400) return "That display name can't be saved. Check it and try again.";
     if (error.status === 401) return 'Your session has expired. Sign in again, then retry.';

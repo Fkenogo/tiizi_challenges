@@ -159,15 +159,7 @@ export function V2SignUpPage() {
       </V2ProviderButton>
 
       <p className="mt-5 text-center text-xs leading-5 text-slate-400">
-        By creating an account you agree to our{' '}
-        <Link to="/terms" className="font-bold text-slate-600 underline">
-          Terms
-        </Link>{' '}
-        and{' '}
-        <Link to="/privacy" className="font-bold text-slate-600 underline">
-          Privacy Policy
-        </Link>
-        .
+        Terms and Privacy are not published yet.
       </p>
     </V2AuthLayout>
   );

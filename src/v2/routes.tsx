@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { removeV2GroupFeed } from './groups/groupFeedQueryKeys';
+import { removeV2MemberIdentity } from './profile/memberIdentityQuery';
 import { V2LocaleProvider } from './i18n/V2Locale';
 import { V2GroupScope } from './group/V2GroupScope';
 import { V2Authenticated } from './auth/V2AuthGuard';
@@ -46,7 +47,11 @@ function V2ProtectedScope() {
   const queryClient = useQueryClient();
   const previousUid = useRef(user?.uid);
   useEffect(() => {
-    if (previousUid.current !== user?.uid) void removeV2GroupFeed(queryClient);
+    const priorUid = previousUid.current;
+    if (priorUid !== user?.uid) {
+      void removeV2MemberIdentity(queryClient, priorUid);
+      void removeV2GroupFeed(queryClient);
+    }
     previousUid.current = user?.uid;
   }, [queryClient, user?.uid]);
   return (
