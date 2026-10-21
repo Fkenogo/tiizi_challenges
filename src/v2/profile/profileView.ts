@@ -27,9 +27,16 @@ export function initialsFor(displayName: string | null | undefined): string {
   return `${first}${last}`.toUpperCase();
 }
 
+/** Code-point length as the server counts it (trimmed + NFC-normalised). */
+export function displayNameLength(raw: string): number {
+  return Array.from(raw.trim().normalize('NFC')).length;
+}
+
 /** Client-side mirror of the server bound (trimmed, 1–120 code points). */
 export function validateDisplayName(raw: string): DisplayNameValidation {
-  const value = raw.trim();
+  // Match the server: trim, NFC-normalise, then count code points. Counting
+  // raw input would reject canonically equivalent names the API accepts.
+  const value = raw.trim().normalize('NFC');
   const length = Array.from(value).length;
   if (length === 0) {
     return { ok: false, value, message: 'Enter a display name.' };

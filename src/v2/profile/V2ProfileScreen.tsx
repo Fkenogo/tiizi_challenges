@@ -17,6 +17,7 @@ import { useV2Profile } from './useV2Profile';
 import {
   bucketProfileChallenges,
   challengeStatusLabel,
+  displayNameLength,
   groupRoleLabel,
   initialsFor,
   PROFILE_DISPLAY_NAME_MAX,
@@ -90,7 +91,7 @@ export function V2ProfileScreen() {
   }
 
   const displayName = profile.displayName;
-  const draftLength = Array.from(draft).length;
+  const draftLength = displayNameLength(draft);
   const draftOverLimit = draftLength > PROFILE_DISPLAY_NAME_MAX;
   const imageNotConfigured = profile.profileImage.status === 'not_configured';
   const email = user?.email ?? null;
@@ -204,7 +205,7 @@ export function V2ProfileScreen() {
                   onChange={(value) => {
                     setDraft(value);
                     setFieldError(
-                      Array.from(value).length > PROFILE_DISPLAY_NAME_MAX
+                      displayNameLength(value) > PROFILE_DISPLAY_NAME_MAX
                         ? `Use ${PROFILE_DISPLAY_NAME_MAX} characters or fewer.`
                         : null,
                     );

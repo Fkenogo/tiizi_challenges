@@ -26,6 +26,7 @@ import type { V2Profile, V2ProfileChallengeItem } from '../src/api/profileApi.js
 import {
   bucketProfileChallenges,
   challengeStatusLabel,
+  displayNameLength,
   groupRoleLabel,
   initialsFor,
   mergeProfileIdentity,
@@ -110,6 +111,14 @@ check(
   validateDisplayName('😀'.repeat(PROFILE_DISPLAY_NAME_MAX + 1)).ok === false,
 );
 check('no invented content policy beyond controls', validateDisplayName('Ada_99!').ok === true);
+const decomposed = 'e\u0301'.repeat(120);
+const normalisedName = validateDisplayName(decomposed);
+check(
+  'NFC-normalises before counting (canonically equivalent name accepted)',
+  normalisedName.ok && Array.from(normalisedName.value).length === 120,
+);
+check('returns the normalised value for submission', normalisedName.value === 'é'.repeat(120));
+check('length helper uses the same normalisation', displayNameLength(decomposed) === 120);
 
 // ─── C. Participation identity + buckets ──────────────────────────────────
 console.log('participation identity and buckets');
@@ -191,7 +200,7 @@ check('challenge rows keyed by participationId', screen.includes('key={item.part
 check('name edits submit through the hook', screen.includes('saveDisplayName'));
 check('does not claim a failed save means nothing changed', /may already be updated/.test(screen));
 check('name input has no UTF-16 maxLength attribute', !/maxLength=/.test(screen));
-check('name length is enforced in code points', screen.includes('Array.from(value).length > PROFILE_DISPLAY_NAME_MAX'));
+check('name length is enforced in code points', screen.includes('displayNameLength(value) > PROFILE_DISPLAY_NAME_MAX'));
 
 // ─── F. No persistence / no shared cache in this slice ────────────────────
 console.log('cache and persistence boundary');
