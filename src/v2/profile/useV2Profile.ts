@@ -122,12 +122,13 @@ export function useV2Profile() {
   const loadMoreGroups = useCallback(async () => {
     const cursor = profile?.groups.nextCursor;
     if (!cursor || groupsInFlight.current) return;
+    const seq = requestSeq.current;
     groupsInFlight.current = true;
     setIsLoadingGroups(true);
     setPageError((current) => (current?.section === 'groups' ? null : current));
     try {
       const next = await fetchV2Profile({ groupsCursor: cursor });
-      if (activeUid.current !== uid) return;
+      if (activeUid.current !== uid || requestSeq.current !== seq) return;
       setLoaded((current) =>
         current && current.uid === uid
           ? {
@@ -143,7 +144,7 @@ export function useV2Profile() {
           : current,
       );
     } catch (pageReadError) {
-      if (activeUid.current !== uid) return;
+      if (activeUid.current !== uid || requestSeq.current !== seq) return;
       if (pageReadError instanceof ApiError && pageReadError.status === 400) {
         // A continuation the server no longer accepts is never retried: fall
         // back to the first page rather than looping on the same cursor.
@@ -160,12 +161,13 @@ export function useV2Profile() {
   const loadMoreChallenges = useCallback(async () => {
     const cursor = profile?.challenges.nextCursor;
     if (!cursor || challengesInFlight.current) return;
+    const seq = requestSeq.current;
     challengesInFlight.current = true;
     setIsLoadingChallenges(true);
     setPageError((current) => (current?.section === 'challenges' ? null : current));
     try {
       const next = await fetchV2Profile({ challengesCursor: cursor });
-      if (activeUid.current !== uid) return;
+      if (activeUid.current !== uid || requestSeq.current !== seq) return;
       setLoaded((current) =>
         current && current.uid === uid
           ? {
@@ -181,7 +183,7 @@ export function useV2Profile() {
           : current,
       );
     } catch (pageReadError) {
-      if (activeUid.current !== uid) return;
+      if (activeUid.current !== uid || requestSeq.current !== seq) return;
       if (pageReadError instanceof ApiError && pageReadError.status === 400) {
         await reload();
         return;

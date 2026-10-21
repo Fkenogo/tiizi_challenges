@@ -209,6 +209,10 @@ check('no localStorage/sessionStorage/IndexedDB', !/localStorage|sessionStorage|
 check('no React Query cache in MC-2C-1', !/tanstack\/react-query/.test(hook + screen));
 check('resets identity-scoped state on uid change', hook.includes('[uid]') && hook.includes('activeUid'));
 check('discards late reads from a previous identity', hook.includes('requestSeq'));
+check(
+  'page reads are superseded by reloads and saves',
+  (hook.match(/requestSeq\.current !== seq/g) ?? []).length >= 6,
+);
 
 // ─── G. Route wiring ──────────────────────────────────────────────────────
 console.log('route wiring');
