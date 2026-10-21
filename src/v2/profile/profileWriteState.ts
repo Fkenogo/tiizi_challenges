@@ -35,6 +35,9 @@ export function profileResponseIsCurrent(owner: ProfileResponseOwner): boolean {
  */
 export function isUncertainProfileWriteFailure(error: unknown): boolean {
   if (error instanceof ApiError) {
+    // A malformed/truncated 2xx body is reported by the transport as an
+    // ApiError carrying the successful status. The write may have committed.
+    if (error.status >= 200 && error.status < 300) return true;
     return error.status >= 500 || error.status === 408;
   }
   return true;

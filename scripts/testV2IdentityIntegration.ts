@@ -202,6 +202,10 @@ check('save invalidates the identity slot', client.getQueryState(v2MemberIdentit
 console.log('uncertain write reconciliation');
 check('500 is uncertain', isUncertainProfileWriteFailure(new ApiError(500, 'profile_summary_unavailable', 'x')));
 check('503 is uncertain', isUncertainProfileWriteFailure(new ApiError(503, 'api_unreachable', 'x')));
+check(
+  'malformed 2xx body is uncertain',
+  isUncertainProfileWriteFailure(new ApiError(200, 'invalid_response', 'x')),
+);
 check('408 is uncertain', isUncertainProfileWriteFailure(new ApiError(408, 'timeout', 'x')));
 check('network failure is uncertain', isUncertainProfileWriteFailure(new TypeError('Failed to fetch')));
 check('400 is definitive', !isUncertainProfileWriteFailure(new ApiError(400, 'invalid_display_name', 'x')));
@@ -258,10 +262,11 @@ const routes = code(read('src/v2/routes.tsx'));
 check('route scope clears the previous member identity', routes.includes('removeV2MemberIdentity') && routes.includes('priorUid'));
 
 const signOut = code(read('src/v2/profile/useV2SignOut.ts'));
-const clearIndex = signOut.indexOf('clearV2MemberIdentity');
+const clearIndex = signOut.indexOf('queryClient.clear()');
 const logoutIndex = signOut.indexOf('await logout()');
-check('sign-out clears identity before Firebase sign-out', clearIndex >= 0 && logoutIndex > clearIndex);
-check('sign-out also drops Today', signOut.includes('V2_TODAY_SCOPE'));
+check('sign-out clears every authenticated cache', clearIndex >= 0 && signOut.includes('cancelQueries()'));
+check('sign-out clears caches before Firebase sign-out', clearIndex >= 0 && logoutIndex > clearIndex);
+check('sign-out is not limited to identity/Today families', !signOut.includes('V2_TODAY_SCOPE'));
 
 const profileHook = code(read('src/v2/profile/useV2Profile.ts'));
 check('save goes through owned identity writes', profileHook.includes('writeOwnedV2MemberIdentity'));
