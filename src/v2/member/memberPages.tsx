@@ -9,7 +9,9 @@ import { V2Placeholder } from '../components/V2Placeholder';
  *
  * Today is no longer a placeholder: S5b binds the real member Today
  * experience (`src/v2/today/**`) to the server-composed `GET /api/today`
- * projection. The route lives in routes.tsx.
+ * projection. Profile is no longer a placeholder either: MC-2C-1 binds
+ * `/v2/profile` to the governed `GET /api/me` read
+ * (`src/v2/profile/**`). Both routes live in routes.tsx.
  */
 
 /**
@@ -23,19 +25,6 @@ import { V2Placeholder } from '../components/V2Placeholder';
  * and the minimum Create Group journey (see src/v2/groups/**). The routes
  * live in routes.tsx.
  */
-
-export function V2ProfilePage() {
-  return (
-    <V2Placeholder
-      eyebrow="Profile"
-      title="Your profile"
-      explanation="Your story on Tiizi — your movement, your groups, and the recognition you have earned."
-      emptyTitle="Your profile is just getting started"
-      emptyMessage="Finish a challenge to start filling your profile with achievements worth celebrating."
-      nextSlice="Profile, recognition & notifications (S8)"
-    />
-  );
-}
 
 export function V2NotificationsPage() {
   return (

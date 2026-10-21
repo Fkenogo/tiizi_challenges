@@ -9,10 +9,8 @@ import { V2Authenticated } from './auth/V2AuthGuard';
 import { V2SignInPage } from './auth/V2SignInPage';
 import { V2SignUpPage } from './auth/V2SignUpPage';
 import { V2MemberShell } from './member/MemberShell';
-import {
-  V2NotificationsPage,
-  V2ProfilePage,
-} from './member/memberPages';
+import { V2NotificationsPage } from './member/memberPages';
+import { V2ProfileScreen } from './profile/V2ProfileScreen';
 import { V2TodayScreen } from './today/V2TodayScreen';
 import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
@@ -99,7 +97,7 @@ export function V2Routes() {
             <Route path="groups/:groupId/settings" element={<V2GroupHomeRouteSettings />} />
             <Route path="guide" element={<V2ActivityLibraryScreen />} />
             <Route path="guide/:activityId" element={<V2ActivityGuideDetailScreen />} />
-            <Route path="profile" element={<V2ProfilePage />} />
+            <Route path="profile" element={<V2ProfileScreen />} />
             <Route path="notifications" element={<V2NotificationsPage />} />
           </Route>
           <Route path="operator" element={<V2OperatorShell />}>

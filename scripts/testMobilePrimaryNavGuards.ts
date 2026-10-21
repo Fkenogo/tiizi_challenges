@@ -131,7 +131,7 @@ const expectedMember = [
   'groups/:groupId/settings:V2GroupHomeRouteSettings',
   'guide:V2ActivityLibraryScreen',
   'guide/:activityId:V2ActivityGuideDetailScreen',
-  'profile:V2ProfilePage',
+  'profile:V2ProfileScreen',
   'notifications:V2NotificationsPage',
 ];
 check('member routes are exactly the approved set including S4d settings, S6 Guide and the GF-04 Group Feed',
