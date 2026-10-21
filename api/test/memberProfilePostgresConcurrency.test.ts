@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Db } from '../src/db.js';
 import { runMigrations } from '../src/migrate.js';
 import { updateOwnDisplayName } from '../src/memberProfileIdentity.js';
+import { ensurePostgresExtension, withMigrationLock } from './postgresTestSupport.js';
 
 const databaseUrl = process.env.TIIZI_TEST_DATABASE_URL;
 const postgresDescribe = databaseUrl ? describe : describe.skip;
@@ -49,7 +50,10 @@ postgresDescribe('display-name row locking on independent PostgreSQL connections
   beforeAll(async () => {
     pool = new Pool({ connectionString: databaseUrl, max: 2 });
     db = createDb(pool);
-    await runMigrations(db);
+    await withMigrationLock(pool, async () => {
+      await ensurePostgresExtension(pool);
+      await runMigrations(db);
+    });
   });
 
   afterAll(async () => {
