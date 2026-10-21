@@ -8,7 +8,7 @@
  * - the active/history split comes from the server's derived `bucket`. No
  *   lifecycle, finalization, participation or progress truth is computed here.
  */
-import type { V2ProfileChallengeItem } from '../../api/profileApi';
+import type { V2Profile, V2ProfileChallengeItem } from '../../api/profileApi';
 
 export const PROFILE_DISPLAY_NAME_MAX = 120;
 
@@ -79,6 +79,21 @@ export function challengeStatusLabel(item: V2ProfileChallengeItem): string {
   if (item.status === 'removed') return 'Removed';
   if (item.bucket === 'history') return 'Finished';
   return 'Active';
+}
+
+/**
+ * Merge the identity fields returned by a name save into the profile already
+ * on screen. Loaded summary pages and their continuation cursors are kept:
+ * a name edit does not invalidate them, and the PATCH response only carries
+ * the default first page.
+ */
+export function mergeProfileIdentity(current: V2Profile, next: V2Profile): V2Profile {
+  return {
+    ...current,
+    memberId: next.memberId,
+    displayName: next.displayName,
+    profileImage: next.profileImage,
+  };
 }
 
 /** Presented Group role; the canonical role value stays untouched. */

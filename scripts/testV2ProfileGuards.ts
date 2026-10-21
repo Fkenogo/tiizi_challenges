@@ -22,12 +22,13 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { V2ProfileChallengeItem } from '../src/api/profileApi.js';
+import type { V2Profile, V2ProfileChallengeItem } from '../src/api/profileApi.js';
 import {
   bucketProfileChallenges,
   challengeStatusLabel,
   groupRoleLabel,
   initialsFor,
+  mergeProfileIdentity,
   PROFILE_DISPLAY_NAME_MAX,
   validateDisplayName,
 } from '../src/v2/profile/profileView.js';
@@ -58,6 +59,30 @@ function challenge(overrides: Partial<V2ProfileChallengeItem> = {}): V2ProfileCh
     bucket: 'active',
     joinedAt: '2026-10-01T08:00:00.000000Z',
     exitedAt: null,
+    ...overrides,
+  };
+}
+
+function profile(overrides: Partial<V2Profile> = {}): V2Profile {
+  return {
+    memberId: 'm-1',
+    displayName: 'Ada Lovelace',
+    profileImage: { status: 'not_configured' },
+    groups: {
+      count: 3,
+      items: [
+        { groupId: 'g-1', name: 'Sunrise Circle', role: 'owner', status: 'active', joinedAt: '2026-10-01T08:00:00.000000Z' },
+        { groupId: 'g-2', name: 'Evening Walkers', role: 'member', status: 'active', joinedAt: '2026-10-02T08:00:00.000000Z' },
+      ],
+      nextCursor: 'groups-page-2',
+    },
+    challenges: {
+      activeCount: 2,
+      historyCount: 1,
+      totalCount: 3,
+      items: [challenge(), challenge({ participationId: 'p-2', bucket: 'history', status: 'withdrawn' })],
+      nextCursor: 'challenges-page-2',
+    },
     ...overrides,
   };
 }
@@ -125,6 +150,20 @@ check('owner is presented as Steward', groupRoleLabel('owner') === 'Steward');
 check('admin is presented as Admin', groupRoleLabel('admin') === 'Admin');
 check('member is presented as Member', groupRoleLabel('member') === 'Member');
 
+console.log('identity merge preserves loaded pages');
+const beforeEdit = profile();
+const afterEdit = profile({
+  displayName: 'Ada B Lovelace',
+  groups: { count: 3, items: [beforeEdit.groups.items[0]], nextCursor: null },
+  challenges: { activeCount: 2, historyCount: 1, totalCount: 3, items: [], nextCursor: null },
+});
+const merged = mergeProfileIdentity(beforeEdit, afterEdit);
+check('canonical server name wins', merged.displayName === 'Ada B Lovelace');
+check('loaded Group rows are preserved', merged.groups.items.length === 2);
+check('Group continuation is preserved', merged.groups.nextCursor === 'groups-page-2');
+check('loaded Challenge episodes are preserved', merged.challenges.items.length === 2);
+check('Challenge continuation is preserved', merged.challenges.nextCursor === 'challenges-page-2');
+
 // ─── D. API client boundaries ─────────────────────────────────────────────
 console.log('api client boundaries');
 const api = code(read('src/api/profileApi.ts'));
@@ -151,6 +190,8 @@ check('no V1 or legal routes', !/\/app\/|\/v1|\/terms|\/privacy/i.test(screen));
 check('challenge rows keyed by participationId', screen.includes('key={item.participationId}'));
 check('name edits submit through the hook', screen.includes('saveDisplayName'));
 check('does not claim a failed save means nothing changed', /may already be updated/.test(screen));
+check('name input has no UTF-16 maxLength attribute', !/maxLength=/.test(screen));
+check('name length is enforced in code points', screen.includes('Array.from(value).length > PROFILE_DISPLAY_NAME_MAX'));
 
 // ─── F. No persistence / no shared cache in this slice ────────────────────
 console.log('cache and persistence boundary');

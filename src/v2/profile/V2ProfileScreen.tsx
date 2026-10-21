@@ -90,6 +90,8 @@ export function V2ProfileScreen() {
   }
 
   const displayName = profile.displayName;
+  const draftLength = Array.from(draft).length;
+  const draftOverLimit = draftLength > PROFILE_DISPLAY_NAME_MAX;
   const imageNotConfigured = profile.profileImage.status === 'not_configured';
   const email = user?.email ?? null;
   const buckets = bucketProfileChallenges(profile.challenges.items);
@@ -201,14 +203,21 @@ export function V2ProfileScreen() {
                   value={draft}
                   onChange={(value) => {
                     setDraft(value);
-                    setFieldError(null);
+                    setFieldError(
+                      Array.from(value).length > PROFILE_DISPLAY_NAME_MAX
+                        ? `Use ${PROFILE_DISPLAY_NAME_MAX} characters or fewer.`
+                        : null,
+                    );
                   }}
                   placeholder="Your name"
-                  maxLength={PROFILE_DISPLAY_NAME_MAX}
                 />
               </V2Field>
-              <p className="text-right text-[11px] font-bold text-slate-400">
-                {Array.from(draft).length}/{PROFILE_DISPLAY_NAME_MAX}
+              <p
+                className={`text-right text-[11px] font-bold ${
+                  draftOverLimit ? 'text-red-600' : 'text-slate-400'
+                }`}
+              >
+                {draftLength}/{PROFILE_DISPLAY_NAME_MAX}
               </p>
               {fieldError && (
                 <p role="alert" className="text-sm font-medium text-red-700">
@@ -272,7 +281,7 @@ export function V2ProfileScreen() {
                 className="mt-3"
                 onClick={() => navigate('/v2/groups')}
               >
-                Explore Groups
+                Go to Groups
               </V2Button>
             </div>
           ) : (
