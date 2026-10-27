@@ -131,3 +131,24 @@ The guard is defined in `scripts/boundaryGuard/`. It proves, mechanically:
 A change that violates these rules fails CI. Do not weaken, skip, or delete the
 guard to make a change pass. If the guard is wrong, correct it with evidence
 and record why.
+
+---
+
+## 4. Engineering-team coordination (FEF-TLC-001)
+
+The proposed team-working implementation is in
+`docs/programme/TIIZI-FEF-TLC-001-TEAM-ACTIVATION.md`.
+Once that candidate is Founder-approved and merged, treat its execution-role
+separation as binding alongside — not above — the V2 exclusions and architecture
+rules in §§1–3. The Technical Lead coordinates, Programme Controller tracks,
+Architecture & Decision Controller protects decisions, Coding Agent implements,
+and independent Code Reviewer verifies. The Chief of Staff is a portfolio role,
+not the Tiizi Technical Lead. No agent may self-merge or claim its own changes
+were independently reviewed. Existing Founder decisions and Master Programme
+continue to control scope and authority.
+
+Protect the assembled volunteer experience: first reproduce the affected
+member/steward journey against the adopted V2 Experience Reference, then show
+founder-visible behavior and test evidence for any correction. Avoid layering
+unapproved interaction restrictions onto the product. Local preview is a regular
+engineering activity; no production deploy is implied.
