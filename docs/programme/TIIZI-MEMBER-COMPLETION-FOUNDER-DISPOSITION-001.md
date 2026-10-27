@@ -6,6 +6,7 @@
 **Provenance (programme version chain represented by this document):** v2.51 revised disposition (media pre-pilot, Challenge Feed authorized in principle) → v2.52 finalization pass (no-skip onboarding, R2, CF-01 v0.2, BG-1, migration rule) → v2.53 Interest/Goal/Focus-Area Recommendation Authority Reconciliation 001 (§5 authority basis) → v2.54 FD-MC-04d / FD-MC-04e bounded pilot resolution (§5 now carries the final vocabularies, stable-ID requirement, custom-text rule and pre-existing-member rule) → v2.55 stewardship precondition for account deletion (§10) → v2.56 stewardship precondition keyed to any Group that still requires an Accountable Steward, STEW-1 Accountable Steward Transfer as a pre-pilot requirement (§10.1), and scope-based media ownership (§8.5) → v2.57 live-relationship closure before account deletion (§10.2), Feed-audience-bound Kudos mutation (§9.3), and current-authority-bound Challenge-cover mutation (§8.3 / §8.6) → v2.58 canonical relationship closure (no projection-only substitute; deletion pending until closure, §10.2), STEW-1 member-facing dependency on MC-4 (§10.1, §13), and required one-time display-name capture for nameless pre-existing members (§4, §7) → v2.59 composite participation liveness (own state plus governing Challenge lifecycle; finalized participation is historical; LIFE-1 consumer audit, §10.2) and FR-V2-129 trace alignment → v2.60 participation terminality clarified (unfinalized ended/window-expired participation stays live until finalization, §10.2), returning-member gate checks Terms/Privacy consent independently (§4), Race Share bound to the governed member result (CF-01 §4.2 S3), and Preference-ID sequencing with MC-2 base-Profile-only / MC-3 owning Interests-Goals persistence (§5.3, §13). **This document contains the decisions of all of these versions.**
 **Companion records:** `docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md` (v0.2); `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md`
 **Status:** **FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED. PR #90 — OPEN / UNDER REVIEW / UNMERGED.**
+**Addendum:** §16 FD-PILOT-01 (Limited Kenya Pilot) is **PROPOSED — NOT EFFECTIVE** pending explicit Founder approval; §§1–15 are unchanged.
 **Nature:** Documentation, Product Truth and programme alignment only. **No implementation is authorized.** Each work package below still needs its own Founder authorization before it starts. This record is carried by PR #90, which is open, under review and unmerged; the PR is documentation only and authorizes no implementation.
 
 ## 1. How to read this record
@@ -326,3 +327,152 @@ Migration 025 remains Group-Feed-specific and unchanged and is not deployed. **I
 GF-01/02/03/04 behaviour, the four Group Feed families, and migration 025 are unchanged. No migration created or reserved. No scheduler, media upload, Kudos, Share, announcement or recommendation code. No application code. No deployment, no production access. V1 not consulted for design. Miledge authority not copied into Tiizi. **PR #90 is open, under review and unmerged (documentation only).**
 
 **Disposition:** TIIZI MEMBER COMPLETION FOUNDER DISPOSITION 001 — FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED / PR #90 OPEN, UNDER REVIEW, UNMERGED.
+
+---
+
+## 16. FD-PILOT-01 — Limited Kenya Pilot Amendment (addendum)
+
+**STATUS: PROPOSED — NOT EFFECTIVE. Founder approval PENDING.** Prepared for final Founder approval. Until the Founder approves and this status line is changed to EFFECTIVE in the governing programme, **§§1–15 govern unchanged** and nothing below alters any gate, Product Truth or authorization.
+
+### 16.1 Rules for reading this addendum
+
+1. **Scope.** If approved, this addendum amends **pilot sequencing only**, by defining a separate **Limited Kenya Pilot** milestone distinct from **Wider Public Launch**. It deletes and supersedes no other decision, requirement or Product Truth in this record or elsewhere.
+2. **Wider-launch obligations are preserved.** Every item deferred below remains an approved requirement. It moves from "required before pilot" to "required before Wider Public Launch" only for the Limited Kenya Pilot, and only if this addendum is approved.
+3. **No legal waiver.** No legal, privacy or data-protection obligation is waived by sequencing (§16.11).
+4. **No authorization.** This addendum authorizes no code, schema, migration, deployment, public onboarding or pilot launch. Each work package still needs its own Founder authorization (§15). Migration numbers are assigned only when a package begins; none is reserved or invented here.
+5. **Precedence.** If approved, the existing Disposition remains authoritative except where §16.4 explicitly changes the Limited Kenya Pilot milestone.
+
+### 16.2 Milestone definitions
+
+| Milestone | Meaning |
+|---|---|
+| **MC-2C legal publication** | Approved Terms/Privacy content (or approved external URLs) presented on V2-owned surfaces. |
+| **MC-2D Founder preview** | Founder preview/acceptance of MC-2B+C (§13, Readiness §14, §17). MC-2 cannot close while legal presentation is unresolved. |
+| **Limited Kenya Pilot** | Invitation-only pilot of invited adults aged 18+, up to a Founder-approved participant cap, on existing Group, Challenge, activity and participation capabilities. No live payment processing. Existing gradients and initials only (no user-uploaded images). |
+| **Wider Public Launch** | Any availability beyond the Limited Kenya Pilot. All requirements in §§1–15 apply unless separately amended. |
+
+Tiizi is an adult (18+) voluntary fitness and wellness community. Participation is optional, and financial contributions are not required for membership, participation or performance outcomes.
+
+### 16.3 Limited pilot boundary
+
+The Limited Kenya Pilot shall:
+
+- admit only invited adults aged 18 or older, up to a Founder-approved cap;
+- use the existing Group, Challenge, activity and participation capabilities, including the existing Group Feed (§16.7);
+- provide approved Terms and Privacy information and a minimal record of Terms/Privacy acknowledgement and age declaration (§16.5), with any additional processing consent handled where legally required;
+- make no live payment-processing facility available, and apply the contributions rule (§16.8);
+- use existing gradients and initials rather than user-uploaded images;
+- provide an operational support and privacy-request channel;
+- have a documented mechanism for stopping or suspending the pilot (§16.10).
+
+### 16.4 Traceability table — existing gates moved or retained
+
+| # | Existing gate / source | Limited Kenya Pilot disposition | Wider Public Launch |
+|---|---|---|---|
+| 1 | MC-1 Member Bootstrap (FD-MC-01; §13) | **Retained** (complete as code; migration 026 not deployed) | Unchanged |
+| 2 | MC-2 Profile Foundation incl. legal presentation and Founder acceptance (FD-MC-02; §13; Readiness §11, §17) | **Retained.** MC-2C approved legal presentation and MC-2D acceptance remain prerequisites. Profile image slot stays initials-only | Unchanged; profile image per MEDIA (row 8) |
+| 3 | MC-3 Onboarding + Consent — consent and returning-member gate (FD-MC-05; §4 items 1 and 4; §6) | **Retained, reduced** to the pilot gate in §16.5 | Full gate applies |
+| 4 | MC-3 Interests and Goals onboarding, no skip (FD-MC-04/04a; §4 items 2–3) | **Deferred** | Required before Wider Public Launch |
+| 5 | REC-1 Relevance Recommendations (FD-MC-04b–e; §5) | **Deferred** | Required before Wider Public Launch |
+| 6 | MC-4 Member Identity Projection (§13) | **Retained, minimum** per §16.6 | Full projection applies |
+| 7 | LIFE-1 Account Lifecycle pilot minimum (FD-MC-06a; §10, §10.2) | **Retained** — practical account-closure and privacy-request arrangement with verified treatment of retained records, per §16.9 | Full lifecycle applies |
+| 8 | MEDIA-1/2/3 incl. profile image, Group/Challenge covers (FD-MC-07/07a; §8) | **Deferred.** Pilot uses curated gradients and initials | Required before Wider Public Launch |
+| 9 | Challenge-specific Feed, Kudos, Share, steward announcements (FD-MC-09/09a/09b/09d; §9; CF-1…CF-6) | **Deferred** | Required before Wider Public Launch |
+| 10 | Group Feed (GF-01 v1.1/GF-02/GF-03/GF-04) | **In pilot scope** under §16.7 | Unchanged |
+| 11 | STEW-1 Accountable Steward Transfer (§10.1) | **Interim model** per §16.9; **minimum STEW-1 retained** if the interim sufficiency test is not met | Full STEW-1 required |
+| 12 | BG-1 Background Processing (FD-MC-10; §11) | **Retained** in the verified form of §16.10 | Full BG-1 applies |
+| 13 | Payments and related financial capabilities | **Not available.** Contributions rule in §16.8 | Separate authorization required |
+| 14 | Deployment migrations and operational verification (§12, §15; Master Programme) | **Retained** — see §16.12 | Unchanged |
+| 15 | Legal and data-protection obligations | **Retained, not waived** — §16.11 | Unchanged |
+
+Enhanced community engagement and recognition capabilities, and automated account-lifecycle conveniences beyond the verified pilot minimum (including self-service export and fully automated deletion, already "post-pilot" in §10), are likewise deferred to Wider Public Launch.
+
+### 16.5 Reduced MC-3 pilot gate
+
+For the Limited Kenya Pilot only, the returning-member/entry gate (§4) is reduced to the following, each checked independently and requested only where missing or outdated:
+
+1. **Display name** where missing (§4 item 1; §7 — unchanged).
+2. **18+ self-declaration.** This is a member declaration, not identity verification. No identity documents are collected. Whether a self-declaration is legally sufficient is a question for counsel (§16.11).
+3. **Recorded acknowledgement of the approved Terms and of the approved Privacy Policy**, independently versioned where required, preserving the FD-MC-05 / §6 record contents (member identity, Terms version, Privacy version, timestamp, source/context, accountable actor). Version identifiers and wording come from the legal text owner; engineering does not invent them.
+4. **Separate processing consent**, only where applicable and approved by Founder and counsel.
+
+**Not part of the pilot gate:** Interests (min 1, max 5) and Goals (min 1, max 3). No schema, storage design or migration number is specified here; those belong to the separately authorized implementation package.
+
+### 16.6 Minimum member identity projection (MC-4)
+
+The Limited Kenya Pilot retains a **minimum** MC-4 projection: a member's governed display name is shown **only within authorized shared Group and Challenge contexts**, consistent with FD-MC-03 and §7. There is no general or public member directory; email, authentication identifiers and private Profile data are not disclosed; previous names are not shown in ordinary presentation; the generic "Tiizi member" placeholder remains only where identity is not authorized.
+
+### 16.7 Group Feed in pilot scope
+
+The existing Group Feed (GF-01 v1.1, GF-02, GF-03, GF-04; exactly four automatic families) is in pilot scope, **unchanged**. Conditions before production deployment:
+
+1. **Migration 025's known event-type CHECK gap must be reconciled before migration 025 is deployed to production** (existing requirement; not resolved here).
+2. A **verified publication-processing arrangement** must exist (today publication runs through the manual `feed:process` command). It may be satisfied by the BG-1 form in §16.10.
+
+The Challenge-specific Feed, Kudos, Share and steward announcements remain out of the pilot (row 9).
+
+### 16.8 Contributions rule for pilot Challenges
+
+For Limited Kenya Pilot Challenges:
+
+- "Support a Cause" and "Support Tiizi" configuration is **disabled**;
+- payment execution is **disabled** (no payment-processing capability exists or is authorized);
+- no unnecessary payment-destination references are collected.
+
+*Current state (verified at `origin/main` `5a6228c`):* Challenge creation still exposes the two optional-support controls and the Social Cause approval path, and a Social Cause stores a payment-destination reference. Until enforcement exists, the rule is a **procedural pilot rule** that pilot Challenges do not enable either option, and the Platform Operator approves no pilot Cause.
+
+*Smallest later implementation needed to enforce the rule (not implemented now; needs its own authorization):* a bounded change that (a) hides the two controls in the V2 Challenge creation wizard and (b) rejects the support-Tiizi and Social Cause configuration server-side in the Challenge-creation and Social Cause endpoints while a pilot setting is on, with tests. No migration is expected; this must be confirmed when that package is authorized.
+
+### 16.9 Interim stewardship and account-lifecycle model
+
+Full STEW-1 need not automatically precede the Limited Kenya Pilot. **An interim model applies, and is accepted only if it passes the sufficiency test below; otherwise a minimum STEW-1 is retained as a pilot gate.**
+
+**Interim model:**
+
+1. **Designated, consenting Accountable Stewards.** Every pilot Group's Accountable Steward is a member the Founder has designated from invited participants, who has agreed in advance to the role.
+2. **Documented responsibilities**, acknowledged before designation, including: keeping the Group active; handling join requests; notifying the Founder/operations owner **before** leaving, requesting account closure, or becoming unavailable; and cooperating with escalation.
+3. **Manual escalation.** Stewards, members and the Founder/operations owner use the support channel; a named owner and cadence are launch gates (§16.10).
+4. **Workable account-closure and privacy-request process (LIFE-1 pilot minimum, §10).** A durable, auditable request; manual Operator fulfilment is acceptable; live relationships close before deletion/auth severance (§10.2, including its recorded prerequisites); verified treatment of retained historical records; no hard deletion of immutable history.
+5. **Canonical constraints are not bypassed.** There is exactly one Accountable Steward at all times; no auto-selected successor, silent transfer, Group dissolution or authentication-first severance (§10, §10.1). Operator/emergency reassignment remains **not authorized** unless the Founder separately approves it as recovery governance.
+
+**A request left indefinitely PENDING is not, on its own, sufficient.** The interim model is sufficient for the pilot only if **all** of the following are true and recorded before launch:
+
+- (a) counsel confirms that the manual process, including its treatment of a request by an Accountable Steward, is adequate for the applicable obligations;
+- (b) every pilot Group has a designated, consenting steward who has acknowledged the responsibilities in item 2;
+- (c) a named owner, escalation route and cadence exist (§16.10);
+- (d) a defined, time-bounded resolution path exists for a steward who must leave or close their account — a request is never left without an owner and next step.
+
+**If any condition cannot be met, a minimum STEW-1 becomes a retained pilot gate:** steward-initiated transfer to an eligible current member who affirmatively accepts, atomic (one before, one after), durably audited, no auto-selection, no dissolution (§10.1 clauses 1–10), with its member-facing interaction depending on the minimum identity projection (§16.6). This addendum does not implement transfers.
+
+**Unresolved risks (must be carried into pilot readiness verification):**
+
+1. A steward who becomes unreachable or leaves unannounced cannot be replaced without STEW-1 or approved recovery governance.
+2. A steward's own account-closure or privacy request cannot be fulfilled while they remain required steward.
+3. Whether a manual process with a stewardship exception satisfies statutory request obligations is a legal question, not an engineering fact.
+4. Retained history (for example, name-change history and Challenge records) and the "Former member" anonymization have no implementation today.
+5. Consumers that treat `participation.status = active` as current must be audited and corrected before LIFE-1 acceptance (§10.2).
+6. There is no in-product member suspension or removal path today.
+
+### 16.10 Operational launch gates
+
+These values are **not prerequisites for documenting** the pilot milestone, but remain **launch gates**: the Founder must approve each before actual pilot launch.
+
+1. **Invited participant cap.**
+2. **Support/privacy mailbox owner and monitoring cadence** (`support@tiizichallenges.com` is the designated contact; actual mailbox delivery and handling remain to be confirmed). No public response deadline is set by this addendum.
+3. **Background-processing owner and verified runbook or scheduler** (BG-1 pilot form): either an approved automation, or a verified manual process with a named owner, cadence, documented procedure for the existing expiry, finalization, scheduled-start and Group Feed publication seams, and evidence of runs. This does not complete or authorize S9.
+4. **Pilot-stop/suspension mechanism.** None exists in-product today (the Operator console is read-only except Social Cause decisions; no code writes a Group deactivation flag). A mechanism must be defined and verified before launch.
+5. **Confirmed hosting, privacy processing and applicable legal arrangements** (§16.11).
+
+### 16.11 Legal and data-protection obligations (not waived)
+
+No obligation is waived by this addendum. Before any real participant is onboarded, the Founder must obtain counsel's determinations on: whether and on what basis controller registration applies; lawful processing conditions for ordinary and wellness information; handling and statutory timing of access, correction and erasure requests; breach response; cross-border transfer conditions once actual providers and locations are confirmed; the adequacy of a self-declared 18+ rule and of the acknowledgement mechanism; and the controller/contracting entity. Engineering does not decide these questions.
+
+### 16.12 Engineering sequence and deployment restrictions
+
+**MC-2C approved legal presentation → MC-2D Founder preview/acceptance → separately authorized remaining Limited Kenya Pilot packages (reduced MC-3 gate; minimum MC-4; LIFE-1 pilot minimum; minimum STEW-1 if §16.9 requires it; BG-1 pilot form; contributions-rule enforcement; deployment and migration packages) → pilot readiness verification → Founder pilot-launch authorization.**
+
+Migrations 026 and 027 remain code-authorized and **NOT production deployed**; migration 025 remains Group-Feed-specific and NOT deployed. **No production migration, production deployment, public onboarding or pilot launch is authorized.**
+
+### 16.13 Approval
+
+**Founder approval of FD-PILOT-01: PENDING.** This addendum is effective only after explicit Founder approval and recording of that approval in this section and in the Master Programme.
