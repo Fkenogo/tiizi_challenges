@@ -26,9 +26,9 @@ Give accurate information, keep your sign-in details safe, and tell us through t
 ## 4. Groups and Challenges are voluntary
 
 - You choose whether to create or join a Group and which Challenges to join. Nobody has to take part in any Activity or Challenge.
-- You may leave a Group or withdraw from a Challenge. If you later rejoin a Challenge, Tiizi records it as a new period of participation; earlier records may remain part of that Challenge's history.
+- You can generally leave a Group or withdraw from a Challenge, with two limits: the Accountable Steward of a Group cannot leave while responsible for it, and once a Challenge has ended you can no longer join or withdraw. If you later rejoin a Challenge, Tiizi records a new period of participation. Earlier records of your participation can remain in that Challenge's and Group's history after you leave. Leaving or withdrawing is not the same as deleting your account or erasing those records.
 - Read a Group's or Challenge's details before you join. Do only what is safe and suitable for you.
-- Group owners and admins can currently create and edit their Group, and approve or decline requests to join where approval is needed. They have no other powers on Tiizi today.
+- Any member can create a Group. The creator becomes the Group's **Accountable Steward**, the member responsible for the Group. Today only the Accountable Steward can change the Group's settings and approve or decline requests to join. A member's role label in a Group (such as owner, admin or member) does not by itself give these powers. There are no other Group management powers on Tiizi today.
 - Tiizi does not guarantee any result, rank or outcome from taking part.
 
 ## 5. Optional contributions
@@ -79,7 +79,7 @@ You are responsible for your own choices and conduct. Tiizi is not a party to ar
 
 - Confirm the contracting party and registration status; do not assume Miledge Ventures is a registered Kenyan legal person.
 - Decide whether to add sign-up age self-declaration before launch (recommended; separate bounded implementation).
-- Confirm that the Group owner/admin description still matches the product when published.
+- Confirm that the Accountable Steward description and the exit limits in §4 still match the product when published.
 - Keep §5 and §8 consistent with what is actually live at publication; update them if payments or recognition launch.
 - Approve governing law, dispute process, notices, address and contact.
 - Approve effective date and version convention.

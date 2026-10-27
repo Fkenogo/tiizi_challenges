@@ -21,7 +21,7 @@ Tiizi is for adults aged 18 and over. We do not intend to provide accounts to ch
 
 **Profile name and name changes.** Your display name is stored in your member record. Each change is saved in a name-change history showing the previous name, the new name and the time. This history is kept.
 
-**Groups.** Which Groups you have joined or asked to join, your role in each (owner, admin or member), and when. If you create a Group, its name, description, goals and norms, and whether it is private or public.
+**Groups.** Which Groups you have joined or asked to join, your membership role in each, and when. If you create a Group, its name, description, goals and norms, and whether it is private or public.
 
 **Challenges and participation.** Challenges you create or join, the dates you joined, withdrew or rejoined, and your results. Each period of participation is a separate record. If you create a Challenge, its title, description and any optional cause details you enter, including how supporters would reach the cause (a payment destination reference).
 
@@ -36,7 +36,7 @@ To sign you in and keep your account secure; to show your Profile; to run Groups
 ## 4. Who can see what
 
 - Your Profile and account email are visible to you.
-- Information inside a Group or Challenge can be seen by other members, owners and admins according to the Group's or Challenge's visibility and their role. This can include your participation and the results of your logged activity.
+- Information inside a Group or Challenge can be seen by other members and by the Group's Accountable Steward according to the Group's or Challenge's visibility and their role. This can include your participation and the results of your logged activity.
 - In the current version, other members do not see your display name; they see a generic label. This may change in a future release, and this policy will be updated first.
 - Tiizi platform operators can see limited administrative information, such as member IDs, roles, Group memberships and activity counts, to run and support the service.
 - Private Groups are not listed in public Group discovery.
@@ -53,7 +53,7 @@ Tiizi **cannot yet** delete an account or erase personal information on request.
 
 **Retention periods, deletion and anonymization procedures, backup lifetimes and response times are not yet decided.** The final policy will describe them accurately and will not promise immediate deletion or a fixed deadline that Tiizi cannot meet.
 
-You can leave Groups and withdraw from Challenges at any time; this ends your participation but does not by itself remove earlier records.
+You can generally leave Groups and withdraw from Challenges. The Accountable Steward of a Group cannot leave while responsible for it, and you cannot withdraw from a Challenge that has ended. Leaving or withdrawing ends your participation but is not account deletion, and earlier participation records can remain afterwards.
 
 ## 7. Your rights and requests
 
