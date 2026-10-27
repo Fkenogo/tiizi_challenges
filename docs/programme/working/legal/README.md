@@ -39,7 +39,8 @@ Lightweight revision based on the Legal Draft Factual Alignment Review 001. Word
 
 ## Unresolved before publication
 
-1. Identify actual contracting legal entity and data controller, verified privacy contact, Kenya principal operating address, and the applicable statutory (e.g. ODPC) registration determination.
+1. Identify actual contracting legal entity and data controller, Kenya principal operating address, and the applicable statutory (e.g. ODPC) registration determination.
+   - **Contact (LEGAL-002):** the Founder has supplied **support@tiizichallenges.com** for support, legal enquiries, community concerns and privacy requests. Actual mailbox delivery and operational handling remain to be confirmed.
 2. Verify platform product statements and deployment-specific data practices.
 3. Set approved lawful bases, processor disclosures, hosting/cross-border transfers and retention approach.
 4. Decide on published effective dates and version identifiers.

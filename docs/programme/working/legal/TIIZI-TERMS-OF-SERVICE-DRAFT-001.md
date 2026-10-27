@@ -5,7 +5,7 @@
 > **Document status:** Discussion draft (revision LEGAL-001) for Founder and qualified Kenyan legal review.
 > **Effective date:** NOT SET. **Version:** Draft 0.2 (internal review label only; not a published legal version).
 > **Operating brand:** Tiizi, under Miledge Ventures. **Intended principal operating base:** Kenya.
-> **Legal contracting party, registered address and contact email:** TO BE CONFIRMED before approval. Miledge Ventures' registrations are in progress; do not portray it as an incorporated Kenyan entity.
+> **Legal contracting party and registered address:** TO BE CONFIRMED before approval. Contact email: support@tiizichallenges.com (Founder-supplied; mailbox handling to be confirmed). Miledge Ventures' registrations are in progress; do not portray it as an incorporated Kenyan entity.
 
 ## 1. About Tiizi
 
@@ -69,7 +69,7 @@ You are responsible for your own choices and conduct. Tiizi is not a party to ar
 
 **Principal office / address:** [PENDING CONFIRMATION — KENYA INTENDED]
 
-**Support and legal contact:** [FOUNDER TO SUPPLY VERIFIED CONTACT]
+**Support and legal contact:** [support@tiizichallenges.com](mailto:support@tiizichallenges.com) — for support, legal enquiries and community concerns. *(Founder-supplied; actual mailbox delivery and handling to be confirmed before publication.)*
 
 **Effective date and published version:** [TO BE APPROVED]
 
@@ -81,5 +81,5 @@ You are responsible for your own choices and conduct. Tiizi is not a party to ar
 - Decide whether to add sign-up age self-declaration before launch (recommended; separate bounded implementation).
 - Confirm that the Accountable Steward description and the exit limits in §4 still match the product when published.
 - Keep §5 and §8 consistent with what is actually live at publication; update them if payments or recognition launch.
-- Approve governing law, dispute process, notices, address and contact.
+- Approve governing law, dispute process, notices and address. Confirm the support mailbox is live and monitored.
 - Approve effective date and version convention.

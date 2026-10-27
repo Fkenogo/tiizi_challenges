@@ -5,7 +5,7 @@
 > **Document status:** Discussion draft (revision LEGAL-001) for Founder, operational confirmation and qualified Kenyan privacy/legal review.
 > **Effective date:** NOT SET. **Version:** Draft 0.2 (internal review label only).
 > **Operating brand:** Tiizi under Miledge Ventures; intended principal operating base in Kenya.
-> **Responsible legal person/entity (data controller), verified contact and address:** TO BE CONFIRMED before publication.
+> **Responsible legal person/entity (data controller) and address:** TO BE CONFIRMED before publication. Privacy contact email: support@tiizichallenges.com (Founder-supplied; mailbox handling to be confirmed).
 
 ## 1. About this policy
 
@@ -59,7 +59,7 @@ You can generally leave Groups and withdraw from Challenges. The Accountable Ste
 
 Subject to the law, you may ask to see the personal information Tiizi holds about you, to correct inaccurate information, to object to certain uses, and to ask for deletion where the law applies. You can change your display name yourself in your Profile.
 
-For other requests, the final policy will give a verified privacy contact and a simple process. We may need to confirm your identity first, and some information may need to be kept for legal or record-keeping reasons. Tiizi has no dedicated request tool yet, so this section depends on the contact below being confirmed.
+To make a privacy request or ask a question, email **support@tiizichallenges.com** and say what you would like. Tiizi has no in-app request tool yet, so requests are handled by email. We may need to confirm your identity before sharing or changing account information, and some information may need to be kept for legal or record-keeping reasons. Tiizi cannot yet delete an account on request (see section 6), and this policy sets no response deadline.
 
 You may also contact Kenya's Office of the Data Protection Commissioner if you have a concern.
 
@@ -75,7 +75,7 @@ We may update this policy as Tiizi changes and will tell members appropriately a
 
 **Principal operating location:** [KENYA INTENDED — ADDRESS TO BE CONFIRMED]
 
-**Privacy contact:** [FOUNDER TO SUPPLY VERIFIED EMAIL OR CONTACT CHANNEL]
+**Privacy contact:** [support@tiizichallenges.com](mailto:support@tiizichallenges.com) — for privacy enquiries and requests. *(Founder-supplied; actual mailbox delivery and handling to be confirmed before publication.)*
 
 **Statutory registration determination (e.g. Kenya ODPC):** [TO BE DETERMINED]
 
@@ -85,7 +85,7 @@ We may update this policy as Tiizi changes and will tell members appropriately a
 
 ## Founder/privacy review checklist (not part of published policy)
 
-- Confirm controller, contact, Kenya address and whether ODPC registration applies.
+- Confirm controller, Kenya address and whether ODPC registration applies. Confirm the support mailbox is live and who handles privacy requests.
 - Confirm actual providers, processing locations, transfer safeguards and processor terms from the live deployment.
 - Decide retention, deletion/anonymization and backup approach; revise §6 only to what Tiizi can truthfully deliver.
 - Decide how legacy (older-version) data and screens are treated; this policy covers Version 2 only.
