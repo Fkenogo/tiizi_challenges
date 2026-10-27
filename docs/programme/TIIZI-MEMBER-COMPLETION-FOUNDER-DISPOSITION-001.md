@@ -6,7 +6,8 @@
 **Provenance (programme version chain represented by this document):** v2.51 revised disposition (media pre-pilot, Challenge Feed authorized in principle) → v2.52 finalization pass (no-skip onboarding, R2, CF-01 v0.2, BG-1, migration rule) → v2.53 Interest/Goal/Focus-Area Recommendation Authority Reconciliation 001 (§5 authority basis) → v2.54 FD-MC-04d / FD-MC-04e bounded pilot resolution (§5 now carries the final vocabularies, stable-ID requirement, custom-text rule and pre-existing-member rule) → v2.55 stewardship precondition for account deletion (§10) → v2.56 stewardship precondition keyed to any Group that still requires an Accountable Steward, STEW-1 Accountable Steward Transfer as a pre-pilot requirement (§10.1), and scope-based media ownership (§8.5) → v2.57 live-relationship closure before account deletion (§10.2), Feed-audience-bound Kudos mutation (§9.3), and current-authority-bound Challenge-cover mutation (§8.3 / §8.6) → v2.58 canonical relationship closure (no projection-only substitute; deletion pending until closure, §10.2), STEW-1 member-facing dependency on MC-4 (§10.1, §13), and required one-time display-name capture for nameless pre-existing members (§4, §7) → v2.59 composite participation liveness (own state plus governing Challenge lifecycle; finalized participation is historical; LIFE-1 consumer audit, §10.2) and FR-V2-129 trace alignment → v2.60 participation terminality clarified (unfinalized ended/window-expired participation stays live until finalization, §10.2), returning-member gate checks Terms/Privacy consent independently (§4), Race Share bound to the governed member result (CF-01 §4.2 S3), and Preference-ID sequencing with MC-2 base-Profile-only / MC-3 owning Interests-Goals persistence (§5.3, §13). **This document contains the decisions of all of these versions.**
 **Companion records:** `docs/product-truth/TIIZI-CF-01-CHALLENGE-FEED-PRODUCT-TRUTH.md` (v0.2); `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md`
 **Status:** **FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED. PR #90 — OPEN / UNDER REVIEW / UNMERGED.**
-**Addendum:** §16 FD-PILOT-01 (Limited Kenya Pilot) is **PROPOSED — NOT EFFECTIVE** pending explicit Founder approval; §§1–15 are unchanged.
+**Provenance note (added with PR #104):** references in this record to PR #90 being open, under review or unmerged describe the state when this Disposition was prepared. PR #90 was subsequently **MERGED** (2026-10-11, merge `250facf`; see the Master Programme). Those historical statements are retained unchanged.
+**Addendum:** §16 FD-PILOT-01 (Limited Kenya Pilot) is **FOUNDER APPROVED / EFFECTIVE UPON MERGE of PR #104 into `main`**; §§1–15 are unchanged.
 **Nature:** Documentation, Product Truth and programme alignment only. **No implementation is authorized.** Each work package below still needs its own Founder authorization before it starts. This record is carried by PR #90, which is open, under review and unmerged; the PR is documentation only and authorizes no implementation.
 
 ## 1. How to read this record
@@ -332,7 +333,7 @@ GF-01/02/03/04 behaviour, the four Group Feed families, and migration 025 are un
 
 ## 16. FD-PILOT-01 — Limited Kenya Pilot Amendment (addendum)
 
-**STATUS: PROPOSED — NOT EFFECTIVE. Founder approval PENDING.** Prepared for final Founder approval. Until the Founder approves and this status line is changed to EFFECTIVE in the governing programme, **§§1–15 govern unchanged** and nothing below alters any gate, Product Truth or authorization.
+**STATUS: FOUNDER APPROVED / EFFECTIVE UPON MERGE of PR #104 into `main`.** Until that merge, **§§1–15 govern unchanged**, Master Programme 2.79 remains the effective `main` baseline, and nothing below alters any gate, Product Truth or authorization. Approval of this addendum does not authorize implementation, migrations, deployment, public onboarding or the start of the pilot.
 
 ### 16.1 Rules for reading this addendum
 
@@ -475,4 +476,4 @@ Migrations 026 and 027 remain code-authorized and **NOT production deployed**; m
 
 ### 16.13 Approval
 
-**Founder approval of FD-PILOT-01: PENDING.** This addendum is effective only after explicit Founder approval and recording of that approval in this section and in the Master Programme.
+**Founder disposition: APPROVED IN SUBSTANCE.** The Founder accepts FD-PILOT-01 as the governing distinction between the Limited Kenya Pilot and Wider Public Launch, including the retained, reduced and deferred gates in §16. **Effective upon approved merge of PR #104 into `main`**; until then Master Programme 2.79 remains the effective `main` baseline. This approval does **not** authorize engineering implementation, migrations, deployment, public onboarding or the start of the pilot; each remaining package and the pilot launch require separate Founder authorization (§§15, 16.1, 16.12).
