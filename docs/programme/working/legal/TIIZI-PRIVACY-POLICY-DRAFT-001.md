@@ -2,84 +2,74 @@
 
 > **DRAFT — NOT APPROVED — NOT FOR PUBLICATION OR IN-APP USE**
 >
-> **Document status:** Discussion draft for Founder, engineering fact-check and qualified Kenyan privacy/legal review.
-> **Effective date:** NOT SET. **Version:** Draft 0.1 (internal review label only).
+> **Document status:** Discussion draft (revision LEGAL-001) for Founder, operational confirmation and qualified Kenyan privacy/legal review.
+> **Effective date:** NOT SET. **Version:** Draft 0.2 (internal review label only).
 > **Operating brand:** Tiizi under Miledge Ventures; intended principal operating base in Kenya.
-> **Responsible legal person/entity, verified contact and address:** TO BE CONFIRMED before publication.
+> **Responsible legal person/entity (data controller), verified contact and address:** TO BE CONFIRMED before publication.
 
 ## 1. About this policy
 
-Tiizi is a platform for participating in Groups and Challenges. This draft explains, in plain language, how the service may process personal information as members create accounts, join communities and record activity. The final policy must reflect verified production operations and the actual legal data controller or controllers. **This draft is not a published privacy notice.**
+This policy explains in plain language what personal information Tiizi handles. It covers the current Tiizi experience (Version 2). It does not cover older, retired versions of Tiizi, which are separate and are not described here. **This draft is not a published privacy notice.**
 
-Tiizi is intended for **adults aged 18 and above only**. We do not intend to provide accounts to children. Any age checks or handling of information received from an underage person must be verified and documented before launch.
+Tiizi is for adults aged 18 and over. We do not intend to provide accounts to children.
 
-## 2. Information relevant to Tiizi
+*Drafting note (not part of the published policy):* the current sign-up does not ask for age confirmation. Age self-declaration at sign-up is a recommended future requirement, not existing functionality.
 
-Depending on the features a member uses, information may include:
+## 2. Information we handle
 
-- **Account and identity:** authentication identifiers and account email obtained through the sign-in provider, canonical member ID and display name.
-- **Profile information:** member-selected name and its change history; a profile-image slot may exist before actual image uploads are supported.
-- **Group and Challenge activity:** Group memberships and roles, Challenge participation episodes, timestamps, status, recorded activity, progress and community interactions made available through the relevant feature.
-- **Support and integrity information:** communications sent to support and records reasonably needed to diagnose errors, prevent abuse or protect accounts.
-- **Technical information:** service requests and security/diagnostic information generated when using the service, to the extent actually collected.
+**Sign-in and account.** Tiizi uses Firebase (Google) to sign you in with email and password or with Google. Firebase holds your sign-in details and account email. Tiizi's own member record holds an internal member ID linked to your sign-in, and does not store your email address. Your email is shown back to you in your Profile.
 
-**Engineering fact-check required:** confirm each category against the deployed system. This draft does not assert that device-location tracking, analytics cookies, marketing profiles, biometric processing, payments or image uploads are currently active. Such practices must be separately verified and disclosed if introduced.
+**Profile name and name changes.** Your display name is stored in your member record. Each change is saved in a name-change history showing the previous name, the new name and the time. This history is kept.
 
-## 3. Why information is used
+**Groups.** Which Groups you have joined or asked to join, your membership role in each, and when. If you create a Group, its name, description, goals and norms, and whether it is private or public.
 
-Tiizi may process information as reasonably needed to:
+**Challenges and participation.** Challenges you create or join, the dates you joined, withdrew or rejoined, and your results. Each period of participation is a separate record. If you create a Challenge, its title, description and any optional cause details you enter, including how supporters would reach the cause (a payment destination reference).
 
-- authenticate members and maintain secure accounts;
-- create and display member Profiles;
-- administer Group membership and Challenge participation;
-- compute and show activity, histories and governed Challenge outcomes;
-- show information to members with the appropriate visibility permissions;
-- provide support, troubleshoot reliability issues and protect the service from misuse;
-- meet applicable legal obligations and respond to lawful requests.
+**Activity measurements.** When you log an activity, Tiizi records what you did, the measurement (such as distance, time, repetitions or weight), and when. **Some of this information may reveal things about your health, fitness or wellbeing.** Log only what you are comfortable recording on Tiizi.
 
-The final policy must identify the applicable lawful grounds for each material processing purpose, including performance of a service agreement, legal obligations, legitimate interests or consent where genuinely required. **Use of this service must not be represented as blanket consent to all data processing.**
+**Technical information.** Tiizi's own service does not currently run analytics, advertising or tracking tools, and does not use device location. The infrastructure providers in section 5 may keep standard technical logs of their own. Your browser may keep a small amount of data to run the app (for example while signing up).
 
-## 4. Who can see information
+## 3. Why we use it
 
-A member's own Profile and certain account information are subject to authenticated access controls. Information within Groups and Challenges may be visible to other authorized participants, organizers or administrators according to their roles and the specific feature's permissions.
+To sign you in and keep your account secure; to show your Profile; to run Groups, Challenges and participation; to calculate and show progress and results; to keep the service working and protect it from misuse; and to meet legal obligations. Using Tiizi does not mean you agree to all other uses of your information. The final policy will name the legal basis for each purpose.
 
-Participation histories may represent separate episodes—for example, joining, withdrawing and later rejoining a Challenge—and may be retained as part of governed activity records.
+## 4. Who can see what
 
-Tiizi should not describe all Group information as either universally public or uniformly private: actual visibility depends on the implemented permissions. Members should avoid sharing unnecessary sensitive information in Group content or interactions.
+- Your Profile and account email are visible to you.
+- Information inside a Group or Challenge can be seen by other members and by the Group's Accountable Steward according to the Group's or Challenge's visibility and their role. This can include your participation and the results of your logged activity.
+- In the current version, other members do not see your display name; they see a generic label. This may change in a future release, and this policy will be updated first.
+- Tiizi platform operators can see limited administrative information, such as member IDs, roles, Group memberships and activity counts, to run and support the service.
+- Private Groups are not listed in public Group discovery.
 
-## 5. Service providers and transfers
+## 5. Providers and where data is held
 
-Tiizi uses software infrastructure and may rely on third-party providers for authentication, hosting, databases, delivery, security and operations. Provider categories, actual providers, processing locations and data-transfer safeguards must be verified against the deployment architecture before the policy is approved.
+Tiizi relies on outside providers to operate, including Firebase/Google for sign-in, and a PostgreSQL database service and application hosting for member, Group and Challenge records *(provider names to be confirmed from the live deployment)*. **The specific providers, the countries where data is processed and stored, and the safeguards for any transfers abroad are to be confirmed before publication. This draft does not state or promise a location.**
 
-**Known implementation context, subject to production confirmation:** Firebase-based authentication and PostgreSQL-backed member/participation authority. This draft does not claim a particular storage country or promise Kenya-only hosting.
+We do not sell your personal information. *(Founder to confirm before publication.)*
 
-If personal data is transferred across borders, the final policy and underlying operations must comply with the safeguards required by applicable law, including Kenyan data protection requirements.
+## 6. Keeping and deleting information
 
-Tiizi does not propose to sell members' personal information to advertisers. This statement must be confirmed against actual commercial practices before publication.
+Tiizi **cannot yet** delete an account or erase personal information on request. Group and Challenge records are designed to be kept so that results and histories stay accurate, and the name-change history is permanent. Records are linked to your member ID.
 
-## 6. Retention and deletion
+**Retention periods, deletion and anonymization procedures, backup lifetimes and response times are not yet decided.** The final policy will describe them accurately and will not promise immediate deletion or a fixed deadline that Tiizi cannot meet.
 
-Tiizi needs some information for ongoing accounts and the integrity of Group and Challenge histories. Different categories may need different retention periods depending on operational needs, legal obligations and legitimate recordkeeping.
+You can generally leave Groups and withdraw from Challenges. The Accountable Steward of a Group cannot leave while responsible for it, and you cannot withdraw from a Challenge that has ended. Leaving or withdrawing ends your participation but is not account deletion, and earlier participation records can remain afterwards.
 
-**Retention schedules, deletion/anonymization procedures, backup lifetimes and response timelines are NOT YET CONFIRMED.** The final policy must explain these accurately rather than promise immediate deletion or a fixed deadline that the platform cannot yet meet.
+## 7. Your rights and requests
 
-## 7. Member privacy rights
+Subject to the law, you may ask to see the personal information Tiizi holds about you, to correct inaccurate information, to object to certain uses, and to ask for deletion where the law applies. You can change your display name yourself in your Profile.
 
-Subject to applicable law, members may have rights to be informed about personal-data use, request access, seek correction of inaccurate data, object to certain processing and request deletion where legally applicable.
+For other requests, the final policy will give a verified privacy contact and a simple process. We may need to confirm your identity first, and some information may need to be kept for legal or record-keeping reasons. Tiizi has no dedicated request tool yet, so this section depends on the contact below being confirmed.
 
-The final published policy must provide a verified contact and workable process for submitting and handling these requests. Some requests may require identity verification or may be subject to lawful retention exceptions.
-
-Members may also contact the relevant supervisory authority, including Kenya's Office of the Data Protection Commissioner where applicable.
+You may also contact Kenya's Office of the Data Protection Commissioner if you have a concern.
 
 ## 8. Security
 
-Tiizi is designed with authenticated access and role-based data boundaries. We seek to use reasonable organizational and technical measures appropriate to the information processed. No online system can guarantee absolute security.
+Access to member data requires you to be signed in and is limited by role. No online service can promise perfect security. This policy makes no claims about certifications, audits or response times.
 
-Do not publish claims about encryption, audits, monitoring, breach-notification SLAs or certifications until engineering and operational evidence supports them.
+## 9. Changes and contact
 
-## 9. Updates and contact
-
-The final policy may be updated as the product, providers or legal obligations change. Material changes should be communicated in an appropriate way as required by applicable law.
+We may update this policy as Tiizi changes and will tell members appropriately as the law requires.
 
 **Responsible operator/data controller:** [CONFIRM LEGAL NAME AND STATUS]
 
@@ -87,18 +77,18 @@ The final policy may be updated as the product, providers or legal obligations c
 
 **Privacy contact:** [FOUNDER TO SUPPLY VERIFIED EMAIL OR CONTACT CHANNEL]
 
+**Statutory registration determination (e.g. Kenya ODPC):** [TO BE DETERMINED]
+
 **Effective date and published version:** [TO BE APPROVED]
 
 ---
 
-## Founder/privacy/engineering review checklist (not part of published policy)
+## Founder/privacy review checklist (not part of published policy)
 
-- Confirm the legal controller(s), ODPC registration/applicability and actual Kenyan office/contact details.
-- Verify all data collected in current deployed flows, including authentication, logs, telemetry, cookies, message content and any third-party SDKs.
-- Identify each processing purpose and lawful basis; distinguish optional consent-based processing from essential service operations.
-- Inventory live processors, hosting countries and cross-border transfer safeguards.
-- Document actual visibility rules for public/private Groups, Challenge history and user-generated content.
-- Establish defensible retention schedules, account closure/deletion handling, access/correction/request workflow and security notices.
-- Ensure the 18+ policy matches signup eligibility enforcement; no unimplemented parental-consent mechanism should be claimed.
-- Confirm whether marketing, payments, donations or media uploads are actually live before making any related statements.
-- Obtain Kenyan legal/privacy review and Founder approval, effective date, version and final authorized publication copy.
+- Confirm controller, contact, Kenya address and whether ODPC registration applies.
+- Confirm actual providers, processing locations, transfer safeguards and processor terms from the live deployment.
+- Decide retention, deletion/anonymization and backup approach; revise §6 only to what Tiizi can truthfully deliver.
+- Decide how legacy (older-version) data and screens are treated; this policy covers Version 2 only.
+- Confirm lawful bases, including for activity measurements that may reveal health information.
+- Re-check §2 and §4 against the product at publication (technical logging, name visibility, Group visibility).
+- Obtain Kenyan legal review, an effective date and a version, and Founder approval.

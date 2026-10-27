@@ -2,62 +2,68 @@
 
 > **DRAFT — NOT APPROVED — NOT FOR PUBLICATION OR IN-APP USE**
 >
-> **Document status:** Discussion draft for Founder and qualified Kenyan legal review.
-> **Effective date:** NOT SET. **Version:** Draft 0.1 (internal review label only; not a published legal version).
+> **Document status:** Discussion draft (revision LEGAL-001) for Founder and qualified Kenyan legal review.
+> **Effective date:** NOT SET. **Version:** Draft 0.2 (internal review label only; not a published legal version).
 > **Operating brand:** Tiizi, under Miledge Ventures. **Intended principal operating base:** Kenya.
 > **Legal contracting party, registered address and contact email:** TO BE CONFIRMED before approval. Miledge Ventures' registrations are in progress; do not portray it as an incorporated Kenyan entity.
 
-## 1. About Tiizi and these terms
+## 1. About Tiizi
 
-Tiizi is a digital platform for creating, joining and participating in Groups and Challenges. It supports the recording and presentation of participation, contributions, progress and community activity according to the rules and permissions applicable to each Group or Challenge.
+Tiizi is a voluntary fitness and wellness community. Members create and join Groups, join Challenges, log activity and see their progress.
 
-These Terms describe the proposed conditions for using Tiizi. The final agreement will identify the legal person or entity responsible for operating Tiizi once confirmed. **This draft does not yet form published terms or an agreement offered to users.**
+These Terms apply to the current Tiizi experience (Version 2). They do not describe features that are not yet available. **This draft is not yet an agreement offered to anyone.**
 
-## 2. Eligibility and accounts
+## 2. Adults only (18+)
 
-Tiizi is intended **only for people aged 18 or older**. You must not create or use an account if you are under 18. You are responsible for providing accurate account information, safeguarding access to your account, and promptly reporting suspected unauthorized access through the contact method published by Tiizi.
+Tiizi is for people aged **18 or older**. Do not create or use an account if you are under 18.
 
-Do not impersonate another person or use another person's account without authorization. Tiizi may require reasonable account checks where necessary to protect members and the platform.
+*Drafting note (not part of the published Terms):* the current sign-up does not ask for age confirmation. Age self-declaration at sign-up is a recommended future requirement and is **not** existing functionality. Do not publish wording that suggests Tiizi checks age until it does.
 
-## 3. Groups, Challenges and participation
+## 3. Your account
 
-Group administrators and Challenge organizers may establish participation requirements, activities, deadlines, moderation expectations and eligibility conditions consistent with Tiizi's governing platform rules. Review the information presented for a Group or Challenge before participating.
+Give accurate information, keep your sign-in details safe, and tell us through the published contact if you think someone else has used your account. Do not pretend to be another person or use someone else's account.
 
-Tiizi may record separate participation episodes, including when a member leaves and later rejoins a Challenge. Activity records and history may remain relevant to the integrity of Challenge outcomes and Group records.
+## 4. Groups and Challenges are voluntary
 
-Progress indicators, acknowledgements and platform recognition are governed by applicable Challenge rules and platform policies. A community reaction or encouragement is not necessarily an official Tiizi recognition. Tiizi does not guarantee a particular result, reward, rank, outcome or benefit from participation.
+- You choose whether to create or join a Group and which Challenges to join. Nobody has to take part in any Activity or Challenge.
+- You can generally leave a Group or withdraw from a Challenge, with two limits: the Accountable Steward of a Group cannot leave while responsible for it, and once a Challenge has ended you can no longer join or withdraw. If you later rejoin a Challenge, Tiizi records a new period of participation. Earlier records of your participation can remain in that Challenge's and Group's history after you leave. Leaving or withdrawing is not the same as deleting your account or erasing those records.
+- Read a Group's or Challenge's details before you join. Do only what is safe and suitable for you.
+- Any member can create a Group. The creator becomes the Group's **Accountable Steward**, the member responsible for the Group. Today only the Accountable Steward can change the Group's settings and approve or decline requests to join. A member's role label in a Group (such as owner, admin or member) does not by itself give these powers. There are no other Group management powers on Tiizi today.
+- Tiizi does not guarantee any result, rank or outcome from taking part.
 
-Where an organizer independently offers a prize, gift or other benefit, the organizer's conditions and responsibility must be made clear; Tiizi does not promise to fund, verify, deliver or guarantee such benefits merely by displaying a Challenge. **Any future payments, donations or rewards features require separate product and legal review and are not created by these Terms.**
+## 5. Optional contributions
 
-## 4. Community standards
+- Some Challenges may offer an optional way to support a cause or to support Tiizi. Contributing is **entirely optional**.
+- A contribution does **not** buy participation, progress, ranking, results, recognition or any preferential treatment. Not contributing never affects any of these.
+- **Payment features are not available in the current Tiizi experience.** These Terms do not set up any payment, custody or fund-holding arrangement. Any such feature will need its own terms before it is offered.
+- A cause listed by a Challenge creator is that creator's choice. Tiizi does not promise to deliver, verify or guarantee what a cause does with support.
+- Tiizi does not currently offer prizes or rewards. If a Group or Challenge creator independently offers one, that offer is theirs alone.
 
-Use Tiizi respectfully and lawfully. Do not harass, threaten, discriminate against, defraud or impersonate others; post unlawful, misleading or infringing material; manipulate Challenge activity or results; interfere with platform security; scrape restricted member information; or use Tiizi to exploit or endanger others.
+## 6. Respect and safety
 
-Do not post another person's sensitive or private information without a lawful basis and appropriate permission. Organizers are responsible for the rules and communications they create, subject to Tiizi's platform oversight and applicable law.
+Treat other members with respect. Do not harass, threaten, discriminate against, defraud or impersonate others. Do not try to cheat, manipulate Challenge results or interfere with the security of Tiizi. Do not collect other members' information without permission.
 
-## 5. Member content and permissions
+Tiizi may take reasonable action, including limiting access, where needed to keep the service and its members safe or to comply with the law. Tiizi does not yet provide in-app reporting or automated enforcement tools; contact details for concerns will be published once confirmed.
 
-You retain ownership of content you lawfully create, subject to the rights of others. By submitting content to a Group, Challenge or other Tiizi space, you permit Tiizi to host, process and display it as needed to operate the feature and according to the visibility and permission settings of that space.
+## 7. What you share
 
-You are responsible for having the rights needed to submit your content. Other participants may see content and activity made accessible to them through the Group or Challenge. Avoid posting information you do not want shared within the relevant audience.
+You are responsible for what you choose to share, including activity you log and details you put in a Group or Challenge. Other members may see what the Group or Challenge makes visible to them. Share only what you are comfortable with others seeing. Tiizi is not for medical advice; check with a health professional if you have concerns about a particular activity.
 
-## 6. Safety, moderation and availability
+You keep ownership of what you provide. You allow Tiizi to store and show it as needed to run the features you use.
 
-Tiizi may restrict content or access where reasonably necessary for platform integrity, safety, legal compliance or enforcement of published rules, subject to applicable law. Group organizers may have separate, limited moderation powers within their Groups or Challenges.
+## 8. Recognition
 
-We aim to provide a reliable service, but availability, particular features and uninterrupted operation cannot be guaranteed. Features may change as Tiizi develops. Material changes to these Terms should be communicated through appropriate platform notices before taking effect where required by law.
+Challenge progress and results are shown according to each Challenge's rules. Recognition features, such as awards or community reactions, are not available yet and are not promised by these Terms.
 
-## 7. Privacy
+## 9. The service
 
-How personal information is handled is described in the separate **Tiizi Privacy Policy**. The final published policy should be accessible alongside these Terms. These Terms do not establish a consent-collection or re-acceptance feature; such controls are governed separately.
+We aim to keep Tiizi reliable but cannot promise uninterrupted service. Features may change. We will give appropriate notice of material changes to these Terms where the law requires it. How Tiizi handles personal information is described in the separate Tiizi Privacy Policy.
 
-## 8. Responsibility and disputes
+## 10. Responsibility
 
-Members remain responsible for their conduct and for decisions they make based on Group or Challenge activity. Tiizi is not a party to independent promises or arrangements between members or organizers unless expressly stated in a separate approved agreement.
+You are responsible for your own choices and conduct. Tiizi is not a party to arrangements between members. Nothing in these Terms limits any right that the law does not allow to be limited. Governing law and dispute provisions will be added once the contracting entity is confirmed.
 
-Nothing in these Terms excludes rights, consumer protections or liabilities that applicable law does not permit to be excluded. The final dispute, governing-law and legal-entity provisions must be reviewed in light of Tiizi's actual contracting entity, Kenyan operations and any cross-border availability.
-
-## 9. Questions and contact
+## 11. Contact
 
 **Operator legal name:** [PENDING REGISTRATION / CONFIRMATION]
 
@@ -71,9 +77,9 @@ Nothing in these Terms excludes rights, consumer protections or liabilities that
 
 ## Founder/legal review checklist (not part of published Terms)
 
-- Confirm the actual contracting party and its registration status before publication; do not assume “Miledge Ventures” is already a registered Kenyan legal person.
-- Confirm age-gating implementation and whether an age-declaration mechanism is needed before opening registrations to users.
-- Validate organizer responsibilities, any contribution/payment flows actually live, and recognition/reward boundaries against current Product Truth.
-- Confirm moderation, reporting, account restriction and customer-support operations that can actually be delivered.
-- Approve governing law, dispute process, required notices, office and email; review for Kenyan law and target markets.
-- Approve an effective date, published version convention (or explicit decision not to show one) and final legal text.
+- Confirm the contracting party and registration status; do not assume Miledge Ventures is a registered Kenyan legal person.
+- Decide whether to add sign-up age self-declaration before launch (recommended; separate bounded implementation).
+- Confirm that the Accountable Steward description and the exit limits in §4 still match the product when published.
+- Keep §5 and §8 consistent with what is actually live at publication; update them if payments or recognition launch.
+- Approve governing law, dispute process, notices, address and contact.
+- Approve effective date and version convention.
