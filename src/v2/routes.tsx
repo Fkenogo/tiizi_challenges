@@ -25,6 +25,9 @@ import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
 import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
 import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
+import { V2FirstRunGate } from './onboarding/V2FirstRunGate';
+import { V2OrientationScreen } from './onboarding/V2OrientationScreen';
+import { V2SupportTiiziScreen } from './support/V2SupportTiiziScreen';
 
 /**
  * TIIZI S1 — V2 composition root (CORR-001: V2 owns its auth entry).
@@ -64,6 +67,19 @@ function V2ProtectedScope() {
 }
 
 /**
+ * V2 Experience Recovery 001 — first-run gate for the default landing only.
+ * A pathless layout route around `today`, so the Today route itself is
+ * unchanged and no other route is ever gated.
+ */
+function V2TodayGate() {
+  return (
+    <V2FirstRunGate>
+      <Outlet />
+    </V2FirstRunGate>
+  );
+}
+
+/**
  * TIIZI S4a — Group Home route. The id comes from the route params into the
  * contextual scope (no global active-group state); the screen re-proves the
  * Group from the server read on every entry.
@@ -89,9 +105,12 @@ export function V2Routes() {
         <Route path="sign-in" element={<V2SignInPage />} />
         <Route path="sign-up" element={<V2SignUpPage />} />
         <Route element={<V2ProtectedScope />}>
+          <Route path="welcome" element={<V2OrientationScreen />} />
           <Route element={<V2MemberShell />}>
             <Route index element={<Navigate to="today" replace />} />
-            <Route path="today" element={<V2TodayScreen />} />
+            <Route element={<V2TodayGate />}>
+              <Route path="today" element={<V2TodayScreen />} />
+            </Route>
             <Route path="challenges" element={<V2ChallengeListScreen />} />
             <Route path="challenges/new" element={<V2ChallengeCreationWizard />} />
             <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
@@ -103,6 +122,7 @@ export function V2Routes() {
             <Route path="guide" element={<V2ActivityLibraryScreen />} />
             <Route path="guide/:activityId" element={<V2ActivityGuideDetailScreen />} />
             <Route path="profile" element={<V2ProfileScreen />} />
+            <Route path="support" element={<V2SupportTiiziScreen />} />
             <Route path="notifications" element={<V2NotificationsPage />} />
           </Route>
           <Route path="operator" element={<V2OperatorShell />}>

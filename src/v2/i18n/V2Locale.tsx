@@ -19,6 +19,8 @@ const EN: V2Strings = {
   'shell.groups': 'Groups',
   'shell.guide': 'Activity Guide',
   'shell.profile': 'Profile',
+  'shell.support': 'Support Tiizi',
+  'shell.howItWorks': 'How Tiizi works',
   'shell.notifications': 'Notifications',
   'shell.operator': 'Operator',
   'shell.exitToMember': 'Exit to Member experience',

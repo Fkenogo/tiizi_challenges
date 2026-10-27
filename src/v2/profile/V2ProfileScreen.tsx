@@ -13,6 +13,7 @@ import {
   V2TextInput,
 } from '../components/V2Primitives';
 import { useAuth } from '../../hooks/useAuth';
+import { V2SupportTiiziCard } from '../support/V2SupportTiiziCard';
 import { useV2Profile } from './useV2Profile';
 import { ProfileSaveUncertainError } from './profileWriteState';
 import {
@@ -281,6 +282,8 @@ export function V2ProfileScreen() {
             Email comes from your sign-in and can&apos;t be changed here.
           </p>
         </V2Card>
+
+        <V2SupportTiiziCard />
 
         <V2Card>
           <div className="flex items-baseline justify-between gap-3">
