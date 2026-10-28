@@ -95,6 +95,7 @@
     "test:s5b-today": "tsx scripts/testS5bTodayGuards.ts",
     "test:v2-profile": "tsx scripts/testV2ProfileGuards.ts",
     "test:v2-identity": "tsx scripts/testV2IdentityIntegration.ts",
+    "test:v2-welcome": "tsx scripts/testV2WelcomeGuards.ts",
     "preview:s5b:seed": "tsx scripts/previewS5bSeed.ts",
     "preview:s5b:empty": "tsx scripts/previewS5bEmpty.ts"
   },

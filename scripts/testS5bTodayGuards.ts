@@ -463,7 +463,7 @@ check(
 );
 check(
   'H13 unrelated V2Sheet consumers do not opt into logging-specific focused presentation',
-  (nonLoggingSheets.match(/<V2Sheet/g) ?? []).length === 6
+  (nonLoggingSheets.match(/<V2Sheet/g) ?? []).length === 5 // P1a removed the member-shell account sheet (6 -> 5)
     && !nonLoggingSheets.includes('variant="focused"'),
 );
 check(

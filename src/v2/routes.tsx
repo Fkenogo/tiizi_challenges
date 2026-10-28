@@ -9,6 +9,7 @@ import { V2GroupScope } from './group/V2GroupScope';
 import { V2Authenticated } from './auth/V2AuthGuard';
 import { V2SignInPage } from './auth/V2SignInPage';
 import { V2SignUpPage } from './auth/V2SignUpPage';
+import { V2WelcomeSlides } from './welcome/V2WelcomeSlides';
 import { V2MemberShell } from './member/MemberShell';
 import { V2NotificationsPage } from './member/memberPages';
 import { V2ProfileScreen } from './profile/V2ProfileScreen';
@@ -88,6 +89,7 @@ export function V2Routes() {
       <Routes>
         <Route path="sign-in" element={<V2SignInPage />} />
         <Route path="sign-up" element={<V2SignUpPage />} />
+        <Route path="welcome" element={<V2WelcomeSlides />} />
         <Route element={<V2ProtectedScope />}>
           <Route element={<V2MemberShell />}>
             <Route index element={<Navigate to="today" replace />} />

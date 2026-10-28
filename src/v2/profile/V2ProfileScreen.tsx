@@ -14,6 +14,8 @@ import {
 } from '../components/V2Primitives';
 import { useAuth } from '../../hooks/useAuth';
 import { useV2Profile } from './useV2Profile';
+import { useV2SignOut } from './useV2SignOut';
+import { WELCOME_PATH } from '../welcome/welcomeContent';
 import { ProfileSaveUncertainError } from './profileWriteState';
 import {
   bucketProfileChallenges,
@@ -62,6 +64,9 @@ export function V2ProfileScreen() {
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const signOut = useV2SignOut();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const uid = user?.uid ?? null;
   const uidRef = useRef(uid);
 
@@ -107,7 +112,6 @@ export function V2ProfileScreen() {
   const displayName = profile.displayName;
   const draftLength = displayNameLength(draft);
   const draftOverLimit = draftLength > PROFILE_DISPLAY_NAME_MAX;
-  const imageNotConfigured = profile.profileImage.status === 'not_configured';
   const email = user?.email ?? null;
   const buckets = bucketProfileChallenges(profile.challenges.items);
 
@@ -124,6 +128,18 @@ export function V2ProfileScreen() {
     setFieldError(null);
     setSaveError(null);
     setDraft('');
+  };
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    setSignOutError(null);
+    try {
+      await signOut();
+    } catch {
+      setSignOutError("We couldn't sign you out. Please try again.");
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   const submitName = async () => {
@@ -151,7 +167,7 @@ export function V2ProfileScreen() {
       <V2SectionHeader
         eyebrow="Profile"
         title="Your profile"
-        description="Your name and the Groups and Challenges you have taken part in."
+        description="Your name, your Tiizi journey and your account."
       />
 
       {saved && (
@@ -197,12 +213,6 @@ export function V2ProfileScreen() {
               </V2Button>
             )}
           </div>
-
-          {imageNotConfigured && (
-            <p className="mt-4 text-xs leading-5 text-slate-500">
-              A profile photo arrives with a later update. For now your initials stand in for it.
-            </p>
-          )}
 
           {editing && (
             <form
@@ -282,9 +292,17 @@ export function V2ProfileScreen() {
           </p>
         </V2Card>
 
+        {/* Final section order is preserved. Interests & Goals (P1b) and Support Tiizi
+            (P8a/P8b) render for members only once implemented; until then these slots
+            show a development-only marker and nothing in production. */}
+        <DevPackageStatus slot="interests-goals" label="Interests & Goals" owner="P1b" />
+        <DevPackageStatus slot="support-tiizi" label="Support Tiizi" owner="P8a / P8b" />
+
+        <SectionLabel>My Tiizi Journey</SectionLabel>
+
         <V2Card>
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-base font-black text-slate-900">Groups</h2>
+            <h3 className="text-base font-black text-slate-900">Groups</h3>
             <p className="text-xs font-bold text-slate-500">
               {profile.groups.count} {profile.groups.count === 1 ? 'group' : 'groups'}
             </p>
@@ -334,7 +352,7 @@ export function V2ProfileScreen() {
 
         <V2Card>
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-base font-black text-slate-900">Challenges</h2>
+            <h3 className="text-base font-black text-slate-900">Challenges</h3>
             <p className="text-xs font-bold text-slate-500">
               {profile.challenges.activeCount} active · {profile.challenges.historyCount} in history
             </p>
@@ -373,8 +391,82 @@ export function V2ProfileScreen() {
             <PageError onRetry={() => void loadMoreChallenges()} />
           )}
         </V2Card>
+
+        <SectionLabel>Account &amp; preferences</SectionLabel>
+
+        <V2Card>
+          <V2Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => void handleSignOut()}
+            disabled={signingOut}
+          >
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </V2Button>
+          {signOutError && (
+            <p role="alert" className="mt-2 px-1 text-xs leading-5 text-red-700">
+              {signOutError}
+            </p>
+          )}
+        </V2Card>
+
+        <SectionLabel>Help &amp; guide</SectionLabel>
+
+        <V2Card>
+          <ul className="divide-y divide-slate-100">
+            <li>
+              <HelpRow label="Activity Guide" hint="How each activity works and is recorded" onClick={() => navigate('/v2/guide')} />
+            </li>
+            <li>
+              <HelpRow label="How Tiizi works" hint="Replay the quick welcome" onClick={() => navigate(WELCOME_PATH)} />
+            </li>
+          </ul>
+        </V2Card>
       </div>
     </V2Page>
+  );
+}
+
+/**
+ * Development-only review marker for a Profile section whose package is not
+ * implemented yet. `import.meta.env.DEV` is false in production builds, so
+ * members never see it; it has no actions and makes no product promise.
+ */
+function DevPackageStatus({ slot, label, owner }: { slot: string; label: string; owner: string }) {
+  if (!import.meta.env.DEV) return null;
+  return (
+    <div
+      role="note"
+      data-dev-review-only={slot}
+      className="rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900"
+    >
+      <p className="font-black uppercase tracking-wider">Development review only</p>
+      <p>
+        {label}: not implemented in this package (owner: {owner}). Not shown to members.
+      </p>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="px-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">{children}</h2>
+  );
+}
+
+function HelpRow({ label, hint, onClick }: { label: string; hint: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-slate-900">{label}</span>
+        <span className="block text-xs leading-5 text-slate-500">{hint}</span>
+      </span>
+      <span className="shrink-0 text-lg leading-none text-slate-300" aria-hidden="true">›</span>
+    </button>
   );
 }
 
