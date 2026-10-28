@@ -247,8 +247,11 @@ const shell = code(read('src/v2/member/MemberShell.tsx'));
 check('member shell reads the canonical identity', shell.includes('useV2MemberIdentity'));
 check('member shell presents the canonical name', shell.includes('identity.displayName'));
 check('member shell no longer hardcodes the trigger name', !/name="Member"/.test(shell));
-check('member shell reads email from Firebase user', shell.includes('user?.email'));
-check('member shell offers sign-out', shell.includes('Sign out') && shell.includes('useV2SignOut'));
+// P1a: the account sheet is gone; the avatar opens the full Profile page,
+// which owns the read-only email and Sign out.
+check('member shell has no account sheet (avatar opens Profile)', !shell.includes('V2Sheet') && /navigate\('\/v2\/profile'\)/.test(shell));
+check('member shell no longer reads email or signs out itself', !shell.includes('user?.email') && !shell.includes('useV2SignOut'));
+check('Profile reads email from Firebase user and offers sign-out', code(read('src/v2/profile/V2ProfileScreen.tsx')).includes('user?.email') && code(read('src/v2/profile/V2ProfileScreen.tsx')).includes('Sign out') && code(read('src/v2/profile/V2ProfileScreen.tsx')).includes('useV2SignOut'));
 check('member shell does not read the legacy cache', !/tiizi_profile/.test(shell));
 
 const profileScreen = code(read('src/v2/profile/V2ProfileScreen.tsx'));

@@ -10,14 +10,17 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
+import { clearChallengeDraft } from '../challenges/challengeDraftSession';
 
 export function useV2SignOut() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const queryClient = useQueryClient();
 
   return useCallback(async () => {
+    // Signing out ends this member's Challenge-draft session backup too.
+    if (user?.uid) clearChallengeDraft(user.uid);
     await queryClient.cancelQueries();
     queryClient.clear();
     await logout();
-  }, [logout, queryClient]);
+  }, [logout, queryClient, user?.uid]);
 }

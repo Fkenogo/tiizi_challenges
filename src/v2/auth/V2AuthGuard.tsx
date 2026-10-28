@@ -1,6 +1,8 @@
+import { useLocation } from 'react-router-dom';
 import { ProtectedRoute } from '../../components/Auth/ProtectedRoute';
 import { V2MemberBootstrapGate } from './V2MemberBootstrapGate';
 import { v2AuthEntryHints } from './v2NextPath';
+import { hasSeenWelcome } from '../welcome/welcomeState';
 
 /**
  * TIIZI S1 CORR-001 — V2 authentication boundary.
@@ -17,11 +19,20 @@ import { v2AuthEntryHints } from './v2NextPath';
  */
 
 export const V2_SIGN_IN_PATH = '/v2/sign-in';
+export const V2_WELCOME_PATH = '/v2/welcome';
 
 export function V2Authenticated({ children }: { children: React.ReactNode }) {
+  // P1a: a visitor who has never seen the public welcome on this device lands
+  // there first (device-scoped flag; it only chooses WHICH public screen comes
+  // first and never gates sign-in, sign-up or any member feature).
+  // The Operator review handoff keeps its direct sign-in entry.
+  const location = useLocation();
+  const entryPath = hasSeenWelcome() || location.pathname.startsWith('/v2/operator')
+    ? V2_SIGN_IN_PATH
+    : V2_WELCOME_PATH;
   return (
     <ProtectedRoute
-      loginPath={V2_SIGN_IN_PATH}
+      loginPath={entryPath}
       loginQuery={(requestedPath) => v2AuthEntryHints(requestedPath, import.meta.env.DEV)}
     >
       <V2MemberBootstrapGate>{children}</V2MemberBootstrapGate>

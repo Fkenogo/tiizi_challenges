@@ -140,6 +140,8 @@ jobs:
         run: npm run test:v2-profile
       - name: MC-2C-2 identity integration guards
         run: npm run test:v2-identity
+      - name: P1a public welcome and Profile guards
+        run: npm run test:v2-welcome
 
   # API contract verification through the canonical /api namespace. Proves
   # representative authenticated READ and WRITE operations work on /api and

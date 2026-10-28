@@ -47,6 +47,7 @@ function check(name: string, condition: boolean, detail = ''): void {
 const shell = read('src/v2/member/MemberShell.tsx');
 const primitives = read('src/v2/components/V2Primitives.tsx');
 const routes = read('src/v2/routes.tsx');
+const profileScreen = read('src/v2/profile/V2ProfileScreen.tsx');
 const emulators = read('src/lib/firebaseEmulators.ts');
 const listScreen = read('src/v2/challenges/V2ChallengeListScreen.tsx');
 const wizard = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
@@ -96,9 +97,10 @@ check('Challenges screen exposes a contextual Activity Guide entry', /navigate\(
 check('Challenges entry is visually subordinate to Create Challenge',
   listScreen.indexOf('Create Challenge') < listScreen.indexOf('/v2/guide'));
 check('creation activity step links to the Activity Guide', /to="\/v2\/guide"/.test(wizard));
-check('Activity Guide + Profile stay reachable from the member shell (account sheet)',
-  /const ACCOUNT = \[([\s\S]*?)\] as const;/.test(shell)
-  && ['/v2/guide', '/v2/profile'].every((to) => shell.includes(`'${to}'`)));
+check('Activity Guide stays reachable: Profile → Help & guide row',
+  /navigate\('\/v2\/guide'\)/.test(profileScreen) && /Activity Guide/.test(profileScreen));
+check('Profile stays reachable from the member shell: the header avatar navigates to /v2/profile',
+  /<V2AccountTrigger[^>]*onOpen=\{\(\) => navigate\('\/v2\/profile'\)\}/.test(shell));
 
 // ─── E. No public/Cloudflare dependency in the shell ──────────────────────
 console.log('E. no public URL dependency');
@@ -144,31 +146,14 @@ console.log('H. root cause (emulator banner) closed');
 check('connectAuthEmulator disables the SDK warning banner',
   /connectAuthEmulator\(\s*auth,\s*emulatorUrl,\s*\{\s*disableWarnings:\s*true\s*\}\s*\)/.test(emulators));
 
-// ─── I. Account sheet = exactly Activity Guide / Profile ─────────────────
-console.log('I. account sheet contents');
-const sheetStart = shell.indexOf('<V2Sheet');
-const sheetEnd = shell.indexOf('</V2Sheet>', sheetStart);
-const accountSheet = sheetStart >= 0 && sheetEnd >= 0
-  ? shell.slice(sheetStart, sheetEnd + '</V2Sheet>'.length)
-  : '';
-const accountConst = (shell.match(/const ACCOUNT = \[([\s\S]*?)\] as const;/) ?? [])[1] ?? '';
-const accountTos = [...accountConst.matchAll(/to: '([^']+)'/g)].map((m) => m[1]);
-check('account sheet exists', accountSheet !== '');
-check('account sheet uses the bounded member variant', /variant="member"/.test(accountSheet));
-check('member sheet panel remains max-w-md and bottom anchored at desktop widths',
-  /variant === 'default' \? 'max-w-3xl' : 'max-w-md'/.test(primitives)
-  && /variant === 'member' \? 'sm:bottom-0 sm:rounded-b-none'/.test(primitives));
-check('ACCOUNT destinations are exactly Activity Guide + Profile',
-  JSON.stringify(accountTos) === JSON.stringify(['/v2/guide', '/v2/profile']), JSON.stringify(accountTos));
-check('account sheet renders the ACCOUNT destinations', /ACCOUNT\.map/.test(accountSheet));
-const accountLabelKeys = [...accountConst.matchAll(/labelKey: '([^']+)'/g)].map((m) => m[1]);
-check('account sheet labels are exactly Activity Guide + Profile',
-  JSON.stringify(accountLabelKeys) === JSON.stringify(['shell.guide', 'shell.profile']),
-  JSON.stringify(accountLabelKeys));
-check('account sheet renders those labels', /t\(item\.labelKey\)/.test(accountSheet));
-check('account sheet has NO Notifications entry',
-  !/shell\.notifications/.test(accountSheet) && !/v2\/notifications/.test(accountSheet));
-check('account sheet has NO Operator entry', !/operator/i.test(accountSheet));
+// ─── I. P1a: no fragmented account sheet; Profile is the destination ─────
+console.log('I. avatar opens the full Profile page');
+check('member shell has no account sheet', !/<V2Sheet/.test(shell) && !/const ACCOUNT =/.test(shell));
+check('member shell does not own sign-out', !/useV2SignOut|Sign out/.test(shell));
+check('Profile owns Sign out through the shared sign-out hook', /useV2SignOut/.test(profileScreen) && /Sign out/.test(profileScreen));
+check('Profile Help offers How Tiizi works (public welcome replay)', /How Tiizi works/.test(profileScreen) && /WELCOME_PATH/.test(profileScreen));
+check('avatar trigger label names the Profile', /Open profile for/.test(primitives));
+check('Profile has no Notifications or Operator entry', !/v2\/notifications|\/v2\/operator/.test(profileScreen));
 
 // ─── J. Notifications reachable only through the header bell ──────────────
 console.log('J. notification bell ownership');
@@ -176,7 +161,7 @@ check('notification trigger remains in the header', /<V2NotificationTrigger/.tes
 check('bell navigates to /v2/notifications',
   /<V2NotificationTrigger[^>]*onOpen=\{\(\) => navigate\('\/v2\/notifications'\)\}/s.test(shell)
   || /onOpen=\{\(\) => navigate\('\/v2\/notifications'\)\}/.test(shell));
-check('bell is not part of the account sheet', !/V2NotificationTrigger/.test(accountSheet));
+check('bell is not part of the Profile page', !/V2NotificationTrigger/.test(profileScreen));
 
 // ─── K. No duplicate/desktop navigation row ──────────────────────────────
 console.log('K. no secondary navigation row');
