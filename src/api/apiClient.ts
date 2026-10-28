@@ -55,7 +55,7 @@ function apiBaseUrl(): string {
  * callers never know the token provider's internals.
  */
 export interface ApiRequestInit {
-  method?: 'GET' | 'POST' | 'PATCH';
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT';
   body?: unknown;
   /**
    * Explicit bearer token for this one request. When supplied the transport

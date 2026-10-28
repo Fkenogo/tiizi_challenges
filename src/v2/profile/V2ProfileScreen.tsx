@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useV2Profile } from './useV2Profile';
 import { useV2SignOut } from './useV2SignOut';
+import { ProfilePreferencesSection } from '../preferences/ProfilePreferencesSection';
 import { WELCOME_PATH } from '../welcome/welcomeContent';
 import { ProfileSaveUncertainError } from './profileWriteState';
 import {
@@ -292,10 +293,10 @@ export function V2ProfileScreen() {
           </p>
         </V2Card>
 
-        {/* Final section order is preserved. Interests & Goals (P1b) and Support Tiizi
-            (P8a/P8b) render for members only once implemented; until then these slots
-            show a development-only marker and nothing in production. */}
-        <DevPackageStatus slot="interests-goals" label="Interests & Goals" owner="P1b" />
+        {/* Final section order is preserved. Interests & Goals is live (P1b). Support Tiizi
+            (P8a/P8b) renders for members only once implemented; until then its slot
+            shows a development-only marker and nothing in production. */}
+        <ProfilePreferencesSection uid={uid} />
         <DevPackageStatus slot="support-tiizi" label="Support Tiizi" owner="P8a / P8b" />
 
         <SectionLabel>My Tiizi Journey</SectionLabel>
