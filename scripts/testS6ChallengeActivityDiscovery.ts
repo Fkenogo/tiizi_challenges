@@ -10,6 +10,9 @@ import {
 import {
   CHALLENGE_DRAFT_TTL_MS,
   clearChallengeDraft,
+  disarmChallengeDraft,
+  peekChallengeDraft,
+  releaseAbandonedChallengeDraft,
   clearOtherMembersChallengeDrafts,
   markChallengeGuideJourney,
   recoverChallengeDraft,
@@ -68,18 +71,22 @@ assert.match(wizard, /fetchActivityOptions\(item\.id\)/, 'add still uses the gov
 
 // P0-A: EVERY wizard -> Guide entry carries the draft (previously the intro
 // "Activity Guide" link was stateless and "Use in Challenge" restarted at Step 1).
-const guideLinks = [...stepThree.matchAll(/<Link\b[\s\S]*?>/g)].map((m) => m[0]).filter((tag) => /\/v2\/guide/.test(tag));
+const guideLinks = [...stepThree.matchAll(/<Link\b[\s\S]*?className=/g)].map((m) => m[0]).filter((tag) => /\/v2\/guide/.test(tag));
 assert.equal(guideLinks.length, 2, 'Step 4 has exactly two Guide entries (intro link and result rows)');
 for (const tag of guideLinks) {
   assert.match(tag, /state=\{createChallengeWizardRouteState\(state, stepIndex, \{ fromChallengeDraft: true \}\)\}/, 'each Guide entry carries the draft and step');
-  assert.match(tag, /onClick=\{onGuideTrip\}/, 'each Guide entry arms the session backup');
+  assert.match(tag, /onClick=\{\(\) => onGuideTrip\(\)\}/, 'each Guide entry arms the session backup (never passes the click event as the draft)');
 }
 const libraryList = guide.split('export function V2ActivityLibraryScreen()')[1]?.split('function ActivityCard(')[0] ?? '';
 assert.match(libraryList, /restoreChallengeWizardRouteState\(location\.state\)/, 'Guide list reads the wizard draft context');
 assert.match(libraryList, /<ActivityCard key=\{item\.id\} item=\{item\} linkState=\{draftContext\} \/>/, 'Guide list forwards the draft to Activity details');
 assert.match(libraryList, /Back to this Challenge/, 'Guide list offers a way back to the same draft');
 assert.match(guide, /state=\{linkState \?\? undefined\}/, 'Activity cards forward the draft');
-assert.match(wizard, /recoverChallengeDraft\(uid\)/, 'wizard recovers a dropped draft after a Guide trip');
+assert.match(wizard, /peekChallengeDraft\(uid\)/, 'wizard recovers a dropped draft after a Guide trip without mutating storage in render');
+assert.doesNotMatch(wizard, /recoverChallengeDraft\(/, 'no side-effecting recovery during render (StrictMode double-invocation)');
+assert.match(wizard, /disarmChallengeDraft\(uid\)/, 'disarm happens in an effect');
+assert.match(wizard, /function handleGuideTrip\(\) \{/, 'Guide-trip handler takes no event/draft argument');
+assert.match(guide, /releaseAbandonedChallengeDraft\(uid, window\.location\.pathname\)/, 'abandoned Guide trips release the armed backup');
 assert.match(wizard, /clearChallengeDraft\(uid\);\s*navigate\(`\/v2\/challenges\/\$\{established\.challengeId\}`/, 'established Challenge clears the session draft');
 assert.doesNotMatch(wizard + guide, /firestore|collection\(|setDoc/i, 'no Firestore draft persistence');
 
@@ -98,6 +105,24 @@ saveChallengeDraft('uid-a', draft, stepThreeIndex, { storage: mem, now: t0 });
 assert.equal(recoverChallengeDraft('uid-a', { storage: mem, now: t0 + 1 }), null, 'a backup is never recovered without an explicit Guide trip');
 markChallengeGuideJourney('uid-a', draft, stepThreeIndex, { storage: mem, now: t0 + 2 });
 assert.equal(recoverChallengeDraft('uid-b', { storage: mem, now: t0 + 3 }), null, 'another account never reads this draft');
+markChallengeGuideJourney('uid-p', draft, stepThreeIndex, { storage: mem, now: t0 + 3 });
+const peekA = peekChallengeDraft('uid-p', { storage: mem, now: t0 + 3 });
+const peekB = peekChallengeDraft('uid-p', { storage: mem, now: t0 + 3 });
+assert.deepEqual(peekA, peekB, 'peek is repeatable (render-safe: StrictMode may initialise twice)');
+assert.deepEqual(peekA?.draft, draft, 'peek returns the draft without disarming it');
+disarmChallengeDraft('uid-p', { storage: mem, now: t0 + 3 });
+assert.equal(peekChallengeDraft('uid-p', { storage: mem, now: t0 + 3 }), null, 'disarm (effect) makes later visits ignore the backup');
+// Regression: a click event object must never be treated as the draft.
+markChallengeGuideJourney('uid-e', { nativeEvent: {}, type: 'click' } as never, 0, { storage: mem, now: t0 + 3 });
+assert.equal(peekChallengeDraft('uid-e', { storage: mem, now: t0 + 3 }), null, 'a non-draft payload never arms recovery');
+markChallengeGuideJourney('uid-a', draft, stepThreeIndex, { storage: mem, now: t0 + 3 });
+releaseAbandonedChallengeDraft('uid-a', '/v2/guide/abc', { storage: mem });
+assert.notEqual(peekChallengeDraft('uid-a', { storage: mem, now: t0 + 3 }), null, 'moving within the Guide keeps the backup');
+releaseAbandonedChallengeDraft('uid-a', '/v2/challenges/new', { storage: mem });
+assert.notEqual(peekChallengeDraft('uid-a', { storage: mem, now: t0 + 3 }), null, 'entering the wizard keeps the backup until it disarms');
+releaseAbandonedChallengeDraft('uid-a', '/v2/today', { storage: mem });
+assert.equal(peekChallengeDraft('uid-a', { storage: mem, now: t0 + 3 }), null, 'abandoning the Guide trip clears the armed backup');
+markChallengeGuideJourney('uid-a', draft, stepThreeIndex, { storage: mem, now: t0 + 3 });
 const recovered = recoverChallengeDraft('uid-a', { storage: mem, now: t0 + 3 });
 assert.deepEqual(recovered?.draft, draft, 'recovery returns the complete draft');
 assert.equal(recovered?.stepIndex, stepThreeIndex, 'recovery returns the same step');

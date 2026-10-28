@@ -45,9 +45,15 @@ async function main(): Promise<void> {
     process.stdout.write(`${JSON.stringify({ import: importSummary }, null, 2)}\n`);
     if (!imported.readyForIngestion) { process.exitCode = 1; return; }
     const codes = new Set<string>((candidate.records as Array<{ activityCode: string }>).map((r) => r.activityCode));
+    if (mode === 'dry-run' && imported.created + imported.updated > 0) {
+      // Publication can only be planned once the catalogue exists; the apply
+      // run imports first and then publishes in the same invocation.
+      process.stdout.write(`${JSON.stringify({ publication: { note: 'dry-run: publication is planned after import; re-run --dry-run after --apply for a full plan' } }, null, 2)}\n`);
+      return;
+    }
     const published = await publishDevCatalogue(db, codes, mode);
     process.stdout.write(`${JSON.stringify({ publication: published }, null, 2)}\n`);
-    if (published.errors.length > 0 && !(mode === 'dry-run' && published.errors.every((e) => e.includes('missing')))) process.exitCode = 1;
+    if (published.errors.length > 0) process.exitCode = 1;
   } finally {
     await db.close();
   }

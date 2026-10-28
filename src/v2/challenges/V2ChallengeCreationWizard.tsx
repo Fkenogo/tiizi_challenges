@@ -13,7 +13,8 @@ import {
   clearChallengeDraft,
   clearOtherMembersChallengeDrafts,
   markChallengeGuideJourney,
-  recoverChallengeDraft,
+  disarmChallengeDraft,
+  peekChallengeDraft,
   saveChallengeDraft,
 } from './challengeDraftSession';
 import type { ApiKnowledgeItem } from '../../api/knowledgeApi';
@@ -151,7 +152,7 @@ export function V2ChallengeCreationWizard() {
   // (armed only by an explicit Guide trip) recovers the same draft instead of
   // silently restarting at Step 1.
   const [recovered] = useState(() =>
-    restoreChallengeWizardRouteState(location.state).draft ? null : recoverChallengeDraft(uid),
+    restoreChallengeWizardRouteState(location.state).draft ? null : peekChallengeDraft(uid),
   );
   const [state, setState] = useState<WizardState>(() =>
     restoreChallengeWizardRouteState(location.state).draft ?? recovered?.draft ?? createInitialWizardState(),
@@ -177,15 +178,20 @@ export function V2ChallengeCreationWizard() {
   useEffect(() => {
     clearOtherMembersChallengeDrafts(uid);
   }, [uid]);
+  // Recovery is read-only during render; disarm here (idempotent) so the
+  // backup cannot resurrect on a later, unrelated visit.
+  useEffect(() => {
+    if (recovered) disarmChallengeDraft(uid);
+  }, [recovered, uid]);
   useEffect(() => {
     saveChallengeDraft(uid, state, stepIndex);
   }, [uid, state, stepIndex]);
   useEffect(() => () => {
     if (!leavingForGuide.current) clearChallengeDraft(uid);
   }, [uid]);
-  function handleGuideTrip(trip: WizardState = state) {
+  function handleGuideTrip() {
     leavingForGuide.current = true;
-    markChallengeGuideJourney(uid, trip, stepIndex);
+    markChallengeGuideJourney(uid, state, stepIndex);
   }
 
   // Keep the current draft on the wizard's history entry. The detail screen
@@ -642,7 +648,7 @@ function StepActivities({
         <Link
           to="/v2/guide"
           state={createChallengeWizardRouteState(state, stepIndex, { fromChallengeDraft: true })}
-          onClick={onGuideTrip}
+          onClick={() => onGuideTrip()}
           className="font-bold text-primary underline underline-offset-2"
         >
           Activity Guide
@@ -711,7 +717,7 @@ function StepActivities({
               <Link
                 to={`/v2/guide/${encodeURIComponent(item.id)}`}
                 state={createChallengeWizardRouteState(state, stepIndex, { fromChallengeDraft: true })}
-                onClick={onGuideTrip}
+                onClick={() => onGuideTrip()}
                 aria-label={`Open ${item.name}, ${item.kind === 'wellness' ? 'Wellness' : 'Fitness'}, ${item.category}${item.subcategory ? `, ${item.subcategory}` : ''}`}
                 className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 outline-none transition-colors hover:bg-orange-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >

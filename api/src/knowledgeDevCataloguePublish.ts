@@ -44,7 +44,17 @@ export function validateDisposableTargetUrl(rawUrl: string, targetDb: string): T
     throw new Error('target refused: DATABASE_URL is not a valid URL');
   }
   if (process.env.NODE_ENV === 'production') throw new Error('target refused: NODE_ENV=production');
-  const host = url.hostname;
+  if (url.protocol !== 'postgres:' && url.protocol !== 'postgresql:') {
+    throw new Error(`target refused: unsupported protocol '${url.protocol}'`);
+  }
+  // pg-connection-string lets query parameters override the URL authority
+  // (e.g. `?host=other`), so none of the connection-shaping ones may appear.
+  for (const key of url.searchParams.keys()) {
+    if (/^(host|hostaddr|port|dbname|database|db|user|service|options)$/i.test(key)) {
+      throw new Error(`target refused: connection override '${key}' is not allowed`);
+    }
+  }
+  const host = url.hostname.toLowerCase();
   if (!LOOPBACK_HOSTS.has(host)) throw new Error(`target refused: host '${host}' is not loopback`);
   const database = decodeURIComponent(url.pathname.replace(/^\//, ''));
   if (database !== targetDb) {

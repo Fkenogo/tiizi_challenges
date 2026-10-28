@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Search } from 'lucide-react';
 import { fetchKnowledgeById, fetchPublishedActivities, type ApiKnowledgeItem } from '../../api/knowledgeApi';
 import { fetchComposerSelectableKnowledge } from '../../api/challengeCreationApi';
 import { createChallengeWizardRouteState, restoreChallengeWizardRouteState } from '../challenges/challengeCreationDraft';
+import { releaseAbandonedChallengeDraft } from '../challenges/challengeDraftSession';
 import { guideCategories, nextGuideSelection, resolveGuideCategory, type GuideDomain } from './activityGuideFilters';
 import { useAuth } from '../../hooks/useAuth';
 import { ActivityThumbnail } from '../components/ActivityThumbnail';
@@ -21,6 +22,13 @@ import {
 
 const ACTIVITY_CODE = /^[A-Z]{3}-[A-Z]{3}-\d{3}$/;
 
+/** A Guide trip that ends anywhere but the Guide or the wizard is abandoned: drop the armed draft backup. */
+function useReleaseAbandonedChallengeDraft(uid: string | undefined) {
+  useEffect(() => () => {
+    if (uid) releaseAbandonedChallengeDraft(uid, window.location.pathname);
+  }, [uid]);
+}
+
 const DOMAIN_OPTIONS: ReadonlyArray<{ value: Exclude<GuideDomain, ''>; label: string }> = [
   { value: 'fitness', label: 'Fitness' },
   { value: 'wellness', label: 'Wellness' },
@@ -33,6 +41,7 @@ function apiConfigured() {
 
 export function V2ActivityLibraryScreen() {
   const { user } = useAuth();
+  useReleaseAbandonedChallengeDraft(user?.uid);
   const navigate = useNavigate();
   const location = useLocation();
   // Opened from the Challenge wizard: keep the draft on every hop so the
@@ -206,6 +215,7 @@ function GuideSection({ title, show, children }: { title: string; show: boolean;
 
 export function V2ActivityGuideDetailScreen() {
   const { user } = useAuth();
+  useReleaseAbandonedChallengeDraft(user?.uid);
   const { activityId = '' } = useParams();
   const navigate = useNavigate();
   const location = useLocation();

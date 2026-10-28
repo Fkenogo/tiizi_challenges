@@ -102,7 +102,45 @@ export function markChallengeGuideJourney(
   saveChallengeDraft(uid, draft, stepIndex, { ...options, inGuide: true });
 }
 
-/** Recover the backed-up draft after a Guide trip, then disarm so it cannot resurrect later. */
+/**
+ * Read (never mutate) the draft armed by a Guide trip. Safe to call during
+ * render: React may invoke state initializers more than once (StrictMode,
+ * discarded renders), so recovery itself must have no side effects.
+ */
+export function peekChallengeDraft(
+  uid: string,
+  options: { storage?: DraftStorage | null; now?: number } = {},
+): { draft: WizardState; stepIndex: number } | null {
+  const storage = options.storage === undefined ? browserStorage() : options.storage;
+  const stored = read(uid, storage, options.now ?? Date.now());
+  return stored && stored.inGuide ? { draft: stored.draft, stepIndex: stored.stepIndex } : null;
+}
+
+/** Disarm after the wizard has consumed the recovered draft (call from an effect; idempotent). */
+export function disarmChallengeDraft(
+  uid: string,
+  options: { storage?: DraftStorage | null; now?: number } = {},
+): void {
+  const storage = options.storage === undefined ? browserStorage() : options.storage;
+  const stored = read(uid, storage, options.now ?? Date.now());
+  if (stored?.inGuide) write(uid, { ...stored, inGuide: false }, storage);
+}
+
+/**
+ * Called when an Activity Guide screen unmounts: if the member went anywhere
+ * other than the Guide or the wizard, the Guide trip was abandoned, so the
+ * armed backup must not survive to resurrect on a later fresh visit.
+ */
+export function releaseAbandonedChallengeDraft(
+  uid: string,
+  pathname: string,
+  options: { storage?: DraftStorage | null } = {},
+): void {
+  if (pathname.startsWith('/v2/guide') || pathname.startsWith('/v2/challenges/new')) return;
+  clearChallengeDraft(uid, options);
+}
+
+/** Recover the backed-up draft after a Guide trip, then disarm (non-render callers/tests). */
 export function recoverChallengeDraft(
   uid: string,
   options: { storage?: DraftStorage | null; now?: number } = {},
