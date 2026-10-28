@@ -50,6 +50,20 @@ export function v2GroupPendingKey(groupId: string | undefined, uid: string | und
   return [V2_GROUP_PENDING_SCOPE, groupId, uid];
 }
 
+/** Roster reads are keyed `['v2-group-roster', groupId, uid]`; stale-mark every viewer's roster of this Group. */
+export const V2_GROUP_ROSTER_SCOPE = 'v2-group-roster';
+
+export function v2GroupRosterKey(groupId: string | null | undefined, uid?: string): readonly unknown[] {
+  return [V2_GROUP_ROSTER_SCOPE, groupId ?? null, uid];
+}
+
+/** Mark the Group member roster stale after any membership-changing success (join, leave, Steward review). */
+export async function invalidateV2GroupRoster(queryClient: QueryClient, groupId?: string | null): Promise<void> {
+  await queryClient.invalidateQueries({
+    queryKey: groupId === undefined || groupId === null ? [V2_GROUP_ROSTER_SCOPE] : [V2_GROUP_ROSTER_SCOPE, groupId],
+  });
+}
+
 /**
  * S4a success boundary: mark the Group Home reads stale (and the
  * memberships family, whose relationship projection they share) so the

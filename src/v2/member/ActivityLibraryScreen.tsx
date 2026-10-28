@@ -33,6 +33,14 @@ function apiConfigured() {
 
 export function V2ActivityLibraryScreen() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Opened from the Challenge wizard: keep the draft on every hop so the
+  // member can open Activity details and return to the same step.
+  const challengeContext = restoreChallengeWizardRouteState(location.state);
+  const draftContext = challengeContext.routeState.fromChallengeDraft === true && challengeContext.draft
+    ? createChallengeWizardRouteState(challengeContext.draft, challengeContext.stepIndex, { fromChallengeDraft: true })
+    : null;
   const [search, setSearch] = useState('');
   const [domain, setDomain] = useState<GuideDomain>('');
   const [category, setCategory] = useState('');
@@ -63,6 +71,15 @@ export function V2ActivityLibraryScreen() {
   return (
     <V2Page wide>
       <div className="min-w-0 max-w-full overflow-x-clip">
+      {draftContext ? (
+        <button
+          type="button"
+          onClick={() => navigate('/v2/challenges/new', { replace: true, state: draftContext })}
+          className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <ArrowLeft size={16} /> Back to this Challenge
+        </button>
+      ) : null}
       <V2SectionHeader
         eyebrow="Activity Guide"
         title="Explore activities"
@@ -140,7 +157,7 @@ export function V2ActivityLibraryScreen() {
 
       {results.data && results.data.length > 0 ? (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100" aria-label="Activity results">
-          {results.data.map((item) => <ActivityCard key={item.id} item={item} />)}
+          {results.data.map((item) => <ActivityCard key={item.id} item={item} linkState={draftContext} />)}
         </div>
       ) : null}
       </div>
@@ -148,11 +165,12 @@ export function V2ActivityLibraryScreen() {
   );
 }
 
-function ActivityCard({ item }: { item: ApiKnowledgeItem }) {
+function ActivityCard({ item, linkState }: { item: ApiKnowledgeItem; linkState: ReturnType<typeof createChallengeWizardRouteState> | null }) {
   const domain = item.kind === 'wellness' ? 'Wellness' : 'Fitness';
   return (
     <Link
       to={`/v2/guide/${encodeURIComponent(item.id)}`}
+      state={linkState ?? undefined}
       aria-label={`Open ${item.name}, ${domain}, ${item.category}${item.subcategory ? `, ${item.subcategory}` : ''}`}
       className="group flex min-h-[68px] items-center gap-3 px-3 py-2.5 outline-none transition-colors hover:bg-orange-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:gap-4 sm:px-4"
     >
