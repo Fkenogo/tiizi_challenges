@@ -716,7 +716,7 @@ export async function listVisibleChallenges(
  * unfiltered list and the S4a governed `groupId` filter alike, so both
  * project the SAME truth through the SAME code — no second read model.
  */
-async function assembleChallengeSummaries(
+export async function assembleChallengeSummaries(
   db: Db,
   ids: string[],
   episodesByChallenge: Map<string, ParticipationRow[]>,

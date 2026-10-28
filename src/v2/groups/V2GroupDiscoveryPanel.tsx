@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ApiError } from '../../api/apiClient';
-import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
+import { V2Button, V2Chip, V2EmptyState, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
+import { Link } from 'react-router-dom';
+import { discoveryCaption, relevanceBadges } from '../challenges/discoveryRelevance';
 import { useJoinGroup, useV2GroupDiscovery } from './useV2Groups';
 import type { V2DiscoverableGroup } from '../../api/groupsApi';
 import { coverFor, coverGradientFor } from './groupCovers';
@@ -8,8 +10,12 @@ import { V2GroupInvitePanel } from './V2GroupInvitePanel';
 
 export function V2GroupDiscoveryPanel({ onOpen }: { onOpen: (id: string) => void }) {
   const [showInviteCode, setShowInviteCode] = useState(false);
-  const discovery = useV2GroupDiscovery('');
+  const [ordering, setOrdering] = useState<'relevance' | 'general'>('relevance');
+  const discovery = useV2GroupDiscovery('', ordering);
   const groups = discovery.data?.pages.flatMap((page) => page.groups) ?? [];
+  const caption = discovery.isSuccess
+    ? discoveryCaption(ordering, discovery.data.pages[0]?.ranking?.applied, groups, 'Groups')
+    : null;
   return <section aria-label="Discover Groups" className="space-y-3">
     <div>
       <button type="button" aria-expanded={showInviteCode} onClick={() => setShowInviteCode((value) => !value)} className="min-h-10 rounded-lg px-2 text-sm font-bold text-primary hover:bg-orange-50">
@@ -17,6 +23,13 @@ export function V2GroupDiscoveryPanel({ onOpen }: { onOpen: (id: string) => void
       </button>
       {showInviteCode && <div className="mt-2"><V2GroupInvitePanel onOpen={onOpen} /></div>}
     </div>
+    <div role="group" aria-label="Order Groups" className="flex flex-wrap gap-1.5">
+      <V2Chip selected={ordering === 'relevance'} onClick={() => setOrdering('relevance')}>Relevant to me</V2Chip>
+      <V2Chip selected={ordering === 'general'} onClick={() => setOrdering('general')}>Browse all</V2Chip>
+    </div>
+    {caption && <p role="status" data-discovery-caption={caption.kind} className="text-xs text-slate-600">
+      {caption.text}{caption.kind === 'no-preferences' && <> <Link to="/v2/preferences" className="font-bold text-primary underline">Choose interests and goals</Link></>}
+    </p>}
     {discovery.isLoading && <V2LoadingState label="Finding Groups…" />}
     {discovery.isError && <V2ErrorState title="Discovery is unavailable" message="We could not load Groups. Please try again." onRetry={() => void discovery.refetch()} />}
     {discovery.isSuccess && groups.length === 0 && <V2EmptyState title="No Groups found" message="Try another search, or come back as more Groups become discoverable." />}
@@ -39,6 +52,7 @@ function DiscoverRow({ group, onOpen }: { group: V2DiscoverableGroup; onOpen: (i
         <span className="mt-0.5 block truncate text-xs text-slate-600">{group.tagline || group.description || 'Tiizi Group'}</span>
         {group.focusTags.length > 0 && <span className="mt-1.5 flex flex-wrap gap-1">{group.focusTags.slice(0, 3).map((tag) => <span key={tag} className="max-w-full truncate rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>)}</span>}
         {group.goals.length > 0 && <span className="mt-1 block truncate text-[11px] text-slate-500">Goals: {group.goals.slice(0, 2).join(' · ')}</span>}
+        {relevanceBadges(group.relevance).map((badge) => <span key={badge} className="mt-1 block truncate text-[11px] font-bold text-emerald-800">{badge}</span>)}
         <span className="mt-1 block text-xs text-slate-500">{group.memberCount} {group.memberCount === 1 ? 'member' : 'members'} · {group.admissionMode === 'approval' ? 'Request to join' : 'Open to join'}</span>
       </span>
     </button>

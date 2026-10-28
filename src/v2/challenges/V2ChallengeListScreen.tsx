@@ -9,6 +9,8 @@ import {
 import { endStateFor, statusLabelForEndState, type V2ChallengeEndState } from './challengeEndState';
 import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import { challengeCoverGradient } from './challengeCovers';
+import { V2ExploreChallenges } from './V2ExploreChallenges';
+import { V2ChallengeIntentBanner } from './V2ChallengeIntentBanner';
 import { filterChallengeDiscovery, type ChallengeDomainFilter, type ChallengeLifecycleFilter, type ChallengeTypeFilter } from './challengeDiscovery';
 
 const INITIAL_RESULTS = 8;
@@ -86,6 +88,8 @@ export function V2ChallengeListScreen() {
         action={createAction}
       />
 
+      <V2ChallengeIntentBanner ownChallenges={challenges.data?.challenges} />
+
       {challenges.isLoading && <V2LoadingState label="Loading your Challenges…" />}
 
       {challenges.isError && (
@@ -154,6 +158,8 @@ export function V2ChallengeListScreen() {
           {filtered.length > visible.length && <div className="flex justify-center"><V2Button variant="secondary" onClick={() => setVisibleCount((count) => count + INITIAL_RESULTS)}>View more Challenges</V2Button></div>}
         </section>;
       })()}
+
+      <V2ExploreChallenges />
     </V2Page>
   );
 }

@@ -210,7 +210,10 @@ describe('GET/PUT /api/me/preferences', () => {
     await put(viewer.app, viewer.token, { interestIds: ids(5), goalIds: goals(3) });
     const after = await viewer.app.inject({ method: 'GET', url: '/api/groups/discover', headers: authHeaders(viewer.token) });
     expect(before.statusCode).toBe(200);
-    expect(after.json()).toEqual(before.json());
+    // P2: saved preferences may ORDER discovery (and annotate relevance) but the
+    // authorized set itself is exactly the same.
+    const idsOf = (res: { json(): { groups: Array<{ id: string }> } }) => res.json().groups.map((g) => g.id).sort();
+    expect(idsOf(after)).toEqual(idsOf(before));
     // and no membership or participation is created by saving preferences
     const m = await testDb().query('SELECT 1 FROM group_memberships WHERE member_id = $1', [viewer.memberId]);
     const p = await testDb().query('SELECT 1 FROM challenge_participations WHERE member_id = $1', [viewer.memberId]);

@@ -34,6 +34,7 @@ import {
 import type { GroupMutationStore } from './groupMutations.js';
 import { GroupMutationError } from './groupErrors.js';
 import { listDiscoverableGroups } from './groupDiscovery.js';
+import { getMemberPreferenceIds } from './memberPreferences.js';
 import { GROUP_COMMUNITY_NORMS, GROUP_FOCUS_AREAS, GROUP_GOALS, labelsForIds } from './groupVocabulary.js';
 
 const UUID_RE =
@@ -413,9 +414,14 @@ export function registerGroupReadRoutes(
 
   app.get('/api/groups/discover', async (request) => {
     const member = authenticatedMember(request);
-    const query = request.query as { q?: string; limit?: string; cursor?: string };
+    const query = request.query as { q?: string; limit?: string; cursor?: string; rank?: string };
     try {
-      return await listDiscoverableGroups(db, member.memberId, query);
+      // P2: preferences only ORDER the authorized set. A failed preference
+      // read must never block discovery — it falls back to general ordering.
+      const preferences = query.rank === 'general'
+        ? null
+        : await getMemberPreferenceIds(db, member.memberId).catch(() => null);
+      return await listDiscoverableGroups(db, member.memberId, query, preferences);
     } catch (error) {
       if (error instanceof GroupMutationError) throw error;
       throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group discovery authority unavailable');

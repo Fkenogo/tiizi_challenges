@@ -42,8 +42,8 @@ export function v2GroupChallengesKey(
   return [V2_GROUP_CHALLENGES_SCOPE, groupId, uid];
 }
 
-export function v2GroupDiscoveryKey(q: string, uid: string | undefined): [string, string, string | undefined] {
-  return [V2_GROUP_DISCOVERY_SCOPE, q, uid];
+export function v2GroupDiscoveryKey(q: string, uid: string | undefined, rank: 'relevance' | 'general' = 'relevance'): [string, string, string | undefined, string] {
+  return [V2_GROUP_DISCOVERY_SCOPE, q, uid, rank];
 }
 
 export function v2GroupPendingKey(groupId: string | undefined, uid: string | undefined): [string, string | undefined, string | undefined] {
