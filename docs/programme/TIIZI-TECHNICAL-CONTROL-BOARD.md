@@ -1,6 +1,6 @@
 # Tiizi — Technical Control Board (derived, non-authoritative)
 
-**As observed:** 29 October 2026 (P0 closure). **Read first:** `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` v2.82 (merged `main` `8c69381`), Disposition §17 and `TIIZI-FER-001-A/B/C`. Refresh before any implementation assignment. This board is derived from the Master Programme; it is not a roadmap, decision register or permission to implement.
+**As observed:** 28 October 2026 (P0 closure). **Read first:** `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` v2.82 (merged `main` `8c69381`), Disposition §17 and `TIIZI-FER-001-A/B/C`. Refresh before any implementation assignment. This board is derived from the Master Programme; it is not a roadmap, decision register or permission to implement.
 
 | Item | Evidence / current disposition | Action |
 | --- | --- | --- |
