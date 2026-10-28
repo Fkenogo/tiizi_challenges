@@ -54,6 +54,7 @@ export function validateDisposableTargetUrl(rawUrl: string, targetDb: string): T
       throw new Error(`target refused: connection override '${key}' is not allowed`);
     }
   }
+  if (!url.port) throw new Error('target refused: an explicit port is required (PGPORT must not decide the target)');
   const host = url.hostname.toLowerCase();
   if (!LOOPBACK_HOSTS.has(host)) throw new Error(`target refused: host '${host}' is not loopback`);
   const database = decodeURIComponent(url.pathname.replace(/^\//, ''));
@@ -66,7 +67,7 @@ export function validateDisposableTargetUrl(rawUrl: string, targetDb: string): T
   if (!DISPOSABLE_NAME_PATTERN.test(database)) {
     throw new Error(`target refused: database '${database}' does not match the disposable naming pattern`);
   }
-  return { host, port: url.port || '5432', database };
+  return { host, port: url.port, database };
 }
 
 export interface TargetIdentity extends TargetUrlParts {

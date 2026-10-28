@@ -28,12 +28,15 @@ export interface DraftStorage {
 
 const PREFIX = 'tiizi.v2.challengeDraft.v1:';
 export const CHALLENGE_DRAFT_TTL_MS = 6 * 60 * 60 * 1000;
+/** An armed (Guide-trip) backup is honoured only briefly; a full page load or closed tab must not leave it resurrectable. */
+export const CHALLENGE_GUIDE_ARM_WINDOW_MS = 30 * 60 * 1000;
 
 interface StoredDraft {
   draft: WizardState;
   stepIndex: number;
   savedAt: number;
   inGuide: boolean;
+  armedAt: number;
 }
 
 function browserStorage(): DraftStorage | null {
@@ -64,7 +67,10 @@ function read(uid: string, storage: DraftStorage | null, now: number): StoredDra
       storage.removeItem(keyFor(uid));
       return null;
     }
-    return { draft: restored.draft, stepIndex: restored.stepIndex, savedAt: parsed.savedAt, inGuide: parsed.inGuide === true };
+    const armedAt = typeof parsed.armedAt === 'number' ? parsed.armedAt : 0;
+    // An arm older than the window is treated as disarmed.
+    const inGuide = parsed.inGuide === true && now - armedAt <= CHALLENGE_GUIDE_ARM_WINDOW_MS;
+    return { draft: restored.draft, stepIndex: restored.stepIndex, savedAt: parsed.savedAt, inGuide, armedAt };
   } catch {
     return null;
   }
@@ -89,7 +95,9 @@ export function saveChallengeDraft(
   const storage = options.storage === undefined ? browserStorage() : options.storage;
   const now = options.now ?? Date.now();
   const existing = read(uid, storage, now);
-  write(uid, { draft, stepIndex, savedAt: now, inGuide: options.inGuide ?? existing?.inGuide ?? false }, storage);
+  const inGuide = options.inGuide ?? existing?.inGuide ?? false;
+  const armedAt = options.inGuide === true ? now : existing?.armedAt ?? 0;
+  write(uid, { draft, stepIndex, savedAt: now, inGuide, armedAt }, storage);
 }
 
 /** Arm recovery: the member is leaving the wizard for the Activity Guide. */

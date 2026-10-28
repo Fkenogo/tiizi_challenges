@@ -9,6 +9,7 @@ import {
 } from '../src/v2/challenges/challengeCreationDraft';
 import {
   CHALLENGE_DRAFT_TTL_MS,
+  CHALLENGE_GUIDE_ARM_WINDOW_MS,
   clearChallengeDraft,
   disarmChallengeDraft,
   peekChallengeDraft,
@@ -75,7 +76,7 @@ const guideLinks = [...stepThree.matchAll(/<Link\b[\s\S]*?className=/g)].map((m)
 assert.equal(guideLinks.length, 2, 'Step 4 has exactly two Guide entries (intro link and result rows)');
 for (const tag of guideLinks) {
   assert.match(tag, /state=\{createChallengeWizardRouteState\(state, stepIndex, \{ fromChallengeDraft: true \}\)\}/, 'each Guide entry carries the draft and step');
-  assert.match(tag, /onClick=\{\(\) => onGuideTrip\(\)\}/, 'each Guide entry arms the session backup (never passes the click event as the draft)');
+  assert.match(tag, /onClick=\{\(event\) => \{ if \(isPlainPrimaryClick\(event\)\) onGuideTrip\(\); \}\}/, 'each Guide entry arms the backup only on a plain primary click, and never passes the event as the draft');
 }
 const libraryList = guide.split('export function V2ActivityLibraryScreen()')[1]?.split('function ActivityCard(')[0] ?? '';
 assert.match(libraryList, /restoreChallengeWizardRouteState\(location\.state\)/, 'Guide list reads the wizard draft context');
@@ -132,6 +133,12 @@ assert.equal(recovered?.stepIndex, stepThreeIndex, 'recovery returns the same st
 assert.equal(recoverChallengeDraft('uid-a', { storage: mem, now: t0 + 4 }), null, 'recovery disarms: the draft cannot resurrect on a later visit');
 markChallengeGuideJourney('uid-a', draft, stepThreeIndex, { storage: mem, now: t0 + 5 });
 assert.equal(recoverChallengeDraft('uid-a', { storage: mem, now: t0 + 5 + CHALLENGE_DRAFT_TTL_MS + 1 }), null, 'expired backups are discarded');
+markChallengeGuideJourney('uid-w', draft, stepThreeIndex, { storage: mem, now: t0 });
+assert.notEqual(peekChallengeDraft('uid-w', { storage: mem, now: t0 + CHALLENGE_GUIDE_ARM_WINDOW_MS }), null, 'an arm inside the window is honoured');
+assert.equal(peekChallengeDraft('uid-w', { storage: mem, now: t0 + CHALLENGE_GUIDE_ARM_WINDOW_MS + 1 }), null, 'a stale arm (hard navigation, closed tab) is not honoured');
+saveChallengeDraft('uid-w', draft, stepThreeIndex, { storage: mem, now: t0 + CHALLENGE_GUIDE_ARM_WINDOW_MS + 5 });
+assert.equal(peekChallengeDraft('uid-w', { storage: mem, now: t0 + CHALLENGE_GUIDE_ARM_WINDOW_MS + 6 }), null, 'routine saves never re-arm an expired arm');
+assert.match(wizard, /function isPlainPrimaryClick/, 'modified/middle clicks never arm recovery');
 markChallengeGuideJourney('uid-a', draft, stepThreeIndex, { storage: mem, now: t0 + 6 });
 clearChallengeDraft('uid-a', { storage: mem });
 assert.equal(recoverChallengeDraft('uid-a', { storage: mem, now: t0 + 7 }), null, 'cleared (established/abandoned) drafts are gone');

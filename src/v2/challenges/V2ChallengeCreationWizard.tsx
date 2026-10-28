@@ -587,6 +587,11 @@ function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdat
   </div>;
 }
 
+/** Only a plain primary click navigates in this tab; modified/middle clicks open elsewhere and must not arm recovery. */
+function isPlainPrimaryClick(event: React.MouseEvent): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.defaultPrevented;
+}
+
 function StepActivities({
   state,
   preselectedIdentity,
@@ -648,7 +653,7 @@ function StepActivities({
         <Link
           to="/v2/guide"
           state={createChallengeWizardRouteState(state, stepIndex, { fromChallengeDraft: true })}
-          onClick={() => onGuideTrip()}
+          onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip(); }}
           className="font-bold text-primary underline underline-offset-2"
         >
           Activity Guide
@@ -717,7 +722,7 @@ function StepActivities({
               <Link
                 to={`/v2/guide/${encodeURIComponent(item.id)}`}
                 state={createChallengeWizardRouteState(state, stepIndex, { fromChallengeDraft: true })}
-                onClick={() => onGuideTrip()}
+                onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip(); }}
                 aria-label={`Open ${item.name}, ${item.kind === 'wellness' ? 'Wellness' : 'Fitness'}, ${item.category}${item.subcategory ? `, ${item.subcategory}` : ''}`}
                 className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 outline-none transition-colors hover:bg-orange-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >
