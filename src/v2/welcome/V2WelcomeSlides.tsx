@@ -52,14 +52,21 @@ export function V2WelcomeSlides() {
     track?.scrollTo({ left: clamped * track.clientWidth, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }
 
+  /** Move relative to where the track really is, so rapid taps during a smooth scroll never use a stale index. */
+  function step(delta: number) {
+    const track = trackRef.current;
+    const here = track ? slideFromScroll(track.scrollLeft, track.clientWidth, SLIDE_COUNT) : index;
+    goTo(here + delta);
+  }
+
   function onScroll() {
     const track = trackRef.current;
     if (track) setIndex(slideFromScroll(track.scrollLeft, track.clientWidth, SLIDE_COUNT));
   }
 
   function onKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'ArrowRight') { event.preventDefault(); goTo(index + 1); }
-    else if (event.key === 'ArrowLeft') { event.preventDefault(); goTo(index - 1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); step(1); }
+    else if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1); }
     else if (event.key === 'Home') { event.preventDefault(); goTo(0); }
     else if (event.key === 'End') { event.preventDefault(); goTo(SLIDE_COUNT - 1); }
   }
@@ -163,7 +170,7 @@ export function V2WelcomeSlides() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => goTo(index - 1)}
+                onClick={() => step(-1)}
                 disabled={index === 0}
                 className="h-12 flex-1 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 disabled:opacity-40"
               >
@@ -171,7 +178,7 @@ export function V2WelcomeSlides() {
               </button>
               <button
                 type="button"
-                onClick={() => goTo(index + 1)}
+                onClick={() => step(1)}
                 className="h-12 flex-1 rounded-xl bg-primary text-sm font-bold text-white shadow-sm hover:bg-primary-dark"
               >
                 Next
