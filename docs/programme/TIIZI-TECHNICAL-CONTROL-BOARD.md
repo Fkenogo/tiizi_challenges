@@ -1,6 +1,6 @@
 # Tiizi — Technical Control Board (derived, non-authoritative)
 
-**As observed:** 28 October 2026 (Gate 0). **Read first:** `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` v2.81 (assigned against merged `main` `a618d61`), Disposition §17 and `TIIZI-FER-001-A/B/C`. Refresh before any implementation assignment. This board is derived from the Master Programme; it is not a roadmap, decision register or permission to implement.
+**As observed:** 28 October 2026 (P0 closure). **Read first:** `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` v2.82 (merged `main` `8c69381`), Disposition §17 and `TIIZI-FER-001-A/B/C`. Refresh before any implementation assignment. This board is derived from the Master Programme; it is not a roadmap, decision register or permission to implement.
 
 | Item | Evidence / current disposition | Action |
 | --- | --- | --- |
@@ -22,12 +22,12 @@ Historical technical completion is **preserved and shown separately** from curre
 | Registration / account / legal acknowledgement, 18+ | 1, 11 | Sign-up + MC-1 bootstrap complete (migration 026 not deployed); legal pending | Correction required (no acknowledgement; "not published yet") | P1d (Q8) | — |
 | Interests (0–5) / Goals (0–3), skippable, editable | 2, 3 | none (no storage/API/UI) | Implementation missing | P1b | — |
 | Discovery + preference relevance + join-return | 3, 4 | S4c complete | Correction required (chronological only; Challenge→Group join dead-ends) | P2 | — |
-| 118-Activity catalogue in V2 experience | 5 | S6 complete (development: 118 published) | Fixture defect in preview (2 Activities) | P0 | — |
+| 118-Activity catalogue in V2 experience | 5 | S6 complete (development: 118 published) | **P0 technically complete / merged (PR #110)**: disposable-DB dev import+publish utility; 118 Published / 84 Fitness / 34 Wellness verified in an isolated database and the mobile preview. Local evidence done; **Founder acceptance pending** | P0 | — |
 | Today / Streak / logging | 9 | S5, S3b/c complete | Correction required (reminder, ordering, empty states, in-context logging) | P3 | — |
 | Groups list / Home / wizard | 4 | S4a–d complete | Preserve/verified | — | — |
-| Group Details / Settings | 4, 7 | S4 complete | Correction required; creator provenance missing | P4, P4a | — |
+| Group Details / Settings | 4, 7 | S4 complete | Correction required; creator provenance missing. (Roster refresh after Steward approval: **P0 technically complete / merged**, local evidence done, Founder acceptance pending) | P0 (roster), P4, P4a | — |
 | Member identities (authorized contexts) | 7 | MC-4 not started | Implementation missing | P1c | — |
-| Challenges list / detail / wizard | 4 | S3, S6, Challenge Page review complete | Preserve; Activity Guide return **critical defect**; labels/layout corrections | P0, P5 | — |
+| Challenges list / detail / wizard | 4 | S3, S6, Challenge Page review complete | Preserve; Activity Guide return defect: **P0 technically complete / merged**, local mobile evidence done, **Founder acceptance pending**; labels/layout corrections remain (P5) | P0, P5 | — |
 | Profile (full page, order per baseline) | 7, 11 | MC-2 profile exists; MC-2C conditional, MC-2D not started | Correction required (avatar opens sheet; sections missing) | P1a, P1b, P1d | — |
 | Images (Profile, Group, Challenge) | 6 | none (gradients/initials work) | Implementation missing | P6 | — |
 | Challenge Feed, Share, Kudos, announcements | 8 | CF-01 contract approved; no code | Implementation missing; Q3 bounds affected components | P7 | — |
@@ -36,4 +36,6 @@ Historical technical completion is **preserved and shown separately** from curre
 | **CPE gate** | all | — | **Not started** — all rows above accepted with approved SHA | — | — |
 | **Controlled Pilot entry** | — | — | After CPE + P8b + operational gates; separate Founder authorization | — | — |
 
-**Next exercise:** Technical Lead, after Founder approval of Gate 0, authorizes **P0** (Activity Guide state preservation; 118-Activity preview catalogue; roster refresh) with a named Coding Agent and independent reviewer, local mobile-preview evidence and a single consolidated report.
+**Residual (P1d):** sign-out does not yet clear an outstanding Challenge-draft session backup (LOW; member-scoped isolation holds). Owned by P1d (Account section / sign-out), not a new workstream.
+
+**Next exercise:** Founder reviews the P0 local evidence for the affected pages; Technical Lead then authorizes **P1a** (four public welcome slides before registration; full Profile page; avatar → Profile) per FER-001-B with a named Coding Agent and independent reviewer, local mobile-preview evidence and a single consolidated report.
