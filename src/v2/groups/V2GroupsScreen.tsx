@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState, V2Page, V2SectionHeader, V2TextInput } from '../components/V2Primitives';
 import type { ApiMembership } from '../../api/membershipsApi';
 import { coverFor, coverGradientFor } from './groupCovers';
@@ -13,7 +13,9 @@ const INITIAL_GROUP_COUNT = 6;
 
 export function V2GroupsScreen() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<'mine' | 'discover'>('mine');
+  const [searchParams] = useSearchParams();
+  // `?tab=discover` lets personalization hand the member straight to discovery.
+  const [tab, setTab] = useState<'mine' | 'discover'>(searchParams.get('tab') === 'discover' ? 'discover' : 'mine');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllGroups, setShowAllGroups] = useState(false);
   const groups = useV2Groups();

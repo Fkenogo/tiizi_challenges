@@ -10,6 +10,9 @@ import { V2Authenticated } from './auth/V2AuthGuard';
 import { V2SignInPage } from './auth/V2SignInPage';
 import { V2SignUpPage } from './auth/V2SignUpPage';
 import { V2WelcomeSlides } from './welcome/V2WelcomeSlides';
+import { V2PreferencesSetupScreen } from './preferences/V2PreferencesSetupScreen';
+import { V2PreferencesPrompt } from './preferences/V2PreferencesPrompt';
+import { removeV2MemberPreferences } from './preferences/preferencesQuery';
 import { V2MemberShell } from './member/MemberShell';
 import { V2NotificationsPage } from './member/memberPages';
 import { V2ProfileScreen } from './profile/V2ProfileScreen';
@@ -51,6 +54,7 @@ function V2ProtectedScope() {
     const priorUid = previousUid.current;
     if (priorUid !== user?.uid) {
       void removeV2MemberIdentity(queryClient, priorUid);
+      void removeV2MemberPreferences(queryClient, priorUid);
       void removeV2GroupFeed(queryClient);
     }
     previousUid.current = user?.uid;
@@ -58,6 +62,7 @@ function V2ProtectedScope() {
   return (
     <V2Authenticated>
       <V2GroupScope groupId={null}>
+        <V2PreferencesPrompt />
         <Outlet />
       </V2GroupScope>
     </V2Authenticated>
@@ -105,6 +110,7 @@ export function V2Routes() {
             <Route path="guide" element={<V2ActivityLibraryScreen />} />
             <Route path="guide/:activityId" element={<V2ActivityGuideDetailScreen />} />
             <Route path="profile" element={<V2ProfileScreen />} />
+            <Route path="preferences" element={<V2PreferencesSetupScreen />} />
             <Route path="notifications" element={<V2NotificationsPage />} />
           </Route>
           <Route path="operator" element={<V2OperatorShell />}>
