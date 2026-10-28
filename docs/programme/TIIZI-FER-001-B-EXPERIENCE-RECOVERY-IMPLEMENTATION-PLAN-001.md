@@ -4,6 +4,7 @@
 **Source baseline:** `origin/main` `542052c12ca7910a297da89f28ae01120b220980`; Master Programme v2.80; PR #107 open at `9e5477b`. Code facts below were read at that commit (`file:line` references are to it) and must be re-verified when a package starts.
 **Depends on:** [A — Founder Decision Reconciliation 001](TIIZI-FER-001-A-FOUNDER-DECISION-RECONCILIATION-001.md) (FDR-00…06; decision register §5: Q1 and Q6 resolved, Q2 resolved as a requirement, Q3/Q4/Q5/Q7/Q8 open and bounded). **Companion:** [C — Current Work Reconciliation](TIIZI-FER-001-C-CURRENT-WORK-RECONCILIATION.md). **Principal reference:** [Founder Experience Recovery Baseline 001](../reports/TIIZI-V2-FOUNDER-EXPERIENCE-RECOVERY-BASELINE-001.md).
 **Scope rule (binding, Founder):** all complete-experience packages below precede integrated acceptance (the **Complete Product Experience gate**, §3 end); Controlled Pilot entry follows it. The pilot limits users, not features. Full scope is delivered **incrementally, one independently reviewed package at a time — never as a single large rewrite.**
+**Amendment 002 (TIIZI-FER-TPL-001, Founder direction 28 Oct 2026, proposed):** adds package **P5T — Challenge Template Authoring and Adoption** as required for CPE (capability 12). Additive only; no earlier text in this plan is rewritten. Authority and detail: [TIIZI-FER-TPL-001](TIIZI-FER-TPL-001-CHALLENGE-TEMPLATE-CAPABILITY-ALIGNMENT.md). Source baseline for the amendment: `origin/main` `d5e1ed4`.
 **This is not a roadmap.** It is a page-by-page work breakdown inside the existing Master Programme; sequence and status remain the Programme's.
 
 ## 1. Programme reconciliation (Programme Controller)
@@ -52,7 +53,9 @@ Preserve: creation engines; `cover_id` gradients as media fallback; `focus_tags`
 
 ## 3. Sequence
 
-`Gate 0 → P0 → P1a → P8a → P1b → P1c → P1d → P2 → P3 → P4a → P4 → P5 → P6 → P7 → CPE acceptance gate → P8b → Controlled Pilot entry → Wider Launch`
+`Gate 0 → P0 → P1a → P8a → P1b → P1c → P1d → P2 → P3 → P4a → P4 → P5 → P5T → P6 → P7 → CPE acceptance gate → P8b → Controlled Pilot entry → Wider Launch`
+
+*Amendment 002:* **P5T** is inserted after P5 (it adopts into the Wizard P5 corrects) and before P6 (both own migrations and must not run concurrently; P5T uses allowlisted `cover_id` and does not depend on P6 media).
 
 Every package before the **CPE acceptance gate** is required for Complete Product Experience. **P8b** (real mobile-money details) and the operational pilot conditions follow CPE and precede exposure to pilot users. **Controlled Pilot** and **Wider Launch** each need their own Founder authorization.
 
@@ -169,6 +172,16 @@ Founder approves A (incl. FDR-00). Technical Lead adds the A §8 programme row, 
 **Dependencies:** P0 for the Guide fix. **Risk:** Low (R1). **Tests:** extend wizard/draft guards (label, reps, focus-list), hero layout guard, S3 result tests unchanged. **Mobile scenarios:** long description expand/collapse; actions below text; focus search shows eligible Groups; review shows "reps"; run one Challenge of each type through logging to result.
 **Founder gate:** Challenge detail + wizard walkthrough for all three types.
 
+### P5T — Challenge Template Authoring and Adoption *(Amendment 002; proposed; implementation NOT AUTHORIZED)*
+**Outcome:** authorized Platform Operators build, preview, publish, revise and retire reusable Challenge Templates through the **existing Challenge Wizard** (`TEMPLATE_AUTHORING` mode, PF-04); members choose **Start from scratch** or **Use a template**, and a selected Template only pre-populates an editable Wizard draft that the member reviews and establishes through the existing PF-04/PF-03 and `POST /api/challenges` paths. A Template never creates a Challenge, membership or participation.
+**Existing (verified at `d5e1ed4`):** PF-04 reserves `TEMPLATE_AUTHORING` and the draft codec (`challengeComposer.ts:17-23,57,739-752`); `/v2/operator/templates` is a deferred placeholder (`operatorPages.tsx:228`); Operator Console authority is read-only (migration 024); Wizard step 1 states "Templates are not available yet" (`V2ChallengeCreationWizard.tsx:497`); no Template table, route or code exists; legacy Firestore templates are V1 and are not read.
+**Preserve:** Wizard and seven steps, Composer, PF-03 validator, establishment path and hosting authority, draft preservation/Activity Guide round trip, canonical Activity definitions, engine rules. **Add no:** second Template form, second validator, second creation or establishment API, scoring/recognition, auto-enrolment, payment/Social Cause/Support Tiizi fields, media beyond the approved architecture.
+**Scope:** slices P5T-1 Template authority (**migration**: Templates + immutable versions, narrow template-author roster, Operator write routes, member published-read routes, publish-time PF-03 validation) → P5T-2 Operator authoring, desktop-first (behaviour-preserving Wizard step extraction, then Template list/edit/preview/publish/revise/retire) → P5T-3 Member adoption, mobile-first (entry choice, browse, preview, hydrate draft, relative duration → concrete dates, stale-Template handling, optional provenance) → P5T-4 integrated preview. States draft/published/retired; published versions immutable; existing Challenges unaffected by later edits or retirement.
+**Dependencies:** P0 (merged), P5 (Wizard corrections). Independent of P6, P7, P1c, P2. **Risk:** High for P5T-1 (new write authority, migration) → **R2**; P5T-2/3 Medium → R1 (R2 for the extraction or any touch of the establishment contract). Must not run concurrently with another migration-owning package (P6, P7).
+**Tests:** the fifteen planned tests in TPL-001 §7 (operator-only authoring; draft/publish/retire authorization; invalid-template rejection; catalogue visibility; version immutability; prefill fidelity; editable customization; Group required and authorized; relative-duration resolution; draft preservation and Guide round trip; Together/Race/Streak creation; no change to existing Challenges; no auto-membership/participation/scoring bypass).
+**Mobile / desktop scenarios:** *Operator (desktop):* author, preview, publish, revise, retire one Template per type. *Member (mobile, 360×640 and 390×844):* from scratch unchanged; browse, preview, use a Template, edit, pick Group, establish; Activity Guide round trip with a hydrated draft; continue/replace an existing draft.
+**Founder gate:** two separate journeys accepted on non-production data, for all three Challenge types, with the TPL-001 §6 evidence. Open Founder decisions: TPL-001 §5.
+
 ### P6 — Shared media (profile image, Group cover, Challenge cover)
 **Outcome:** optional uploads with gradient/initials fallback; one capability, three consumers.
 **Existing:** no media code, table, route or bucket; profile image `{status:'not_configured'}` (`memberProfileRoutes.ts:56,76`); covers are allowlisted ids (migrations 018, 022); legacy V1 storage code is excluded and **not** reused.
@@ -192,7 +205,7 @@ Founder approves A (incl. FDR-00). Technical Lead adds the A §8 programme row, 
 **Risk:** Medium operational/trust (R1 code, Founder sign-off on data). **Founder gate:** explicit activation approval recorded with approved SHA.
 
 ### CPE acceptance gate — Complete Product Experience (Founder)
-A single mobile-preview session over the whole member journey on coherent disposable data, plus per-page evidence. **All eleven Founder-listed capabilities must be accepted** (A §3.2):
+A single mobile-preview session over the whole member journey on coherent disposable data, plus per-page evidence. **All eleven Founder-listed capabilities (A §3.2) and, by Amendment 002, capability 12 must be accepted:**
 
 | # | Capability | Delivered by | Evidence |
 |---|---|---|---|
@@ -207,6 +220,7 @@ A single mobile-preview session over the whole member journey on coherent dispos
 | 9 | Complete Today, Streak and logging | P3 | reminder, ordering, empty states, in-context logging |
 | 10 | Functional Support Tiizi manual journey | P8a | placeholder-complete, no payable action |
 | 11 | Account, Privacy and Help | P1d | acknowledgement, Help, honest Account section |
+| 12 | Operator-created Challenge Templates and member adoption *(Amendment 002, Founder 28 Oct 2026)* | P5T | Operator authoring journey (desktop) and member adoption journey (mobile) accepted separately for Together, Race and Streak; TPL-001 §6 evidence |
 
 Output: page-by-page acceptance table (§1.2) with approved SHA and open dependencies. **CI-green or package-complete never equals CPE acceptance or pilot-ready.**
 
@@ -229,6 +243,7 @@ Entry conditions: CPE accepted; **P8b done (verified manual mobile-money journey
 | P4a | Original-creator provenance | **yes** | Med–High / **R2** | P1c |
 | P4 | Group Details/Settings | no | Low–Med / R1 | P1c, P4a, Q7 (culture step) |
 | P5 | Challenge corrections | no | Low / R1 | P0 |
+| P5T | Challenge Template authoring + adoption *(Amendment 002)* | **yes** | High (P5T-1) / **R2**; P5T-2/3 R1 | P5; TPL-001 §5 decisions |
 | P6 | Shared media | **yes** | High / **R2** | MEDIA-1, R2 account |
 | P7 | Challenge Feed | **yes** | High / **R2** | Q3 (affected components), P1c |
 | *CPE gate* | Complete Product Experience acceptance | — | Founder | all packages above except P8b |
@@ -244,4 +259,5 @@ Two R1 document reviews were performed by separate agent sessions (not the autho
 
 **Review 1 — original head `fc073da`: PASS WITH FIXES, 8 required fixes applied** (Q-range references; recommendations not silent defaults; SUP-01/02 and T1 §V.6 gap in FDR-04; FDR-03 relabelled; 18+ declaration kept in the gate; Support-cause vs Support-Tiizi copy; five line-reference corrections; preference-edit audit). 20+ `file:line` claims spot-checked at `542052c`; MC statuses confirmed against v2.80.
 **Review 2 — Correction 001 (separate agent session, R1): PASS WITH FIXES.** Alignment table checked against Disposition §16 (rows 2–5, 8, 9, §16.2, §16.3, §16.5, §16.7, §16.12, §16.13 all present and correctly cited); Q status, sequence and exceptions consistent; baseline file byte-identical; no stale Q1/pilot-deferral authority. Fixes applied: summary-table order, §16.7(2) retention, P4/P4a mapped to capability 4, P1d scope narrowed to implemented capabilities, extra alignment rows (§16.5 lead-in, §16.8/16.9 wording, "Wider Public Launch" column), Q2 "not recorded" outcome. The reviewer did not re-verify PR #107 file counts.
+**Amendment 002 (TIIZI-FER-TPL-001): review recorded in the PR; Technical Lead review PENDING; Founder acceptance PENDING.**
 **Technical Lead review: PENDING. Founder acceptance: PENDING.** Review of documents, not approval to implement.

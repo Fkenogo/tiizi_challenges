@@ -10,6 +10,7 @@
 | Legal content | PR #105 merged 27 Oct; publication candidates only (Q8 open) | Do not publish until separate acceptance |
 | Open PRs | #107 (experience-recovery candidate, unmerged, unmodified); #94 (CI efficiency, unrelated) | Do not merge incidentally; #107 handled per FER-001-C §6 |
 | Support Tiizi | P8a placeholders acceptable for CPE page acceptance; **P8b activation required before Controlled Pilot entry**; Q5 facts and SUP-01/02 allocation open | No payment configuration or activation authorized |
+| Challenge Templates (P5T) | Founder direction 28 Oct 2026: Operator-created Templates + member adoption **required for CPE** (capability 12). Architecture already fixed by PF-04 (`TEMPLATE_AUTHORING`, same Wizard, no second form); no implementation exists. Proposal: [TIIZI-FER-TPL-001](TIIZI-FER-TPL-001-CHALLENGE-TEMPLATE-CAPABILITY-ALIGNMENT.md), FER-001-B Amendment 002. Master Programme entry deliberately deferred (next free version, after rebase on then-current `main`) | Technical Lead + Founder review; P5T not authorized; three Founder decisions open (TPL-001 §5) |
 | Local worktree and unmerged coding work | Not visible from GitHub snapshot | Programme Controller verify with working agent; do not assume idle/complete |
 
 ## Integrated-experience acceptance register (derived)
@@ -31,6 +32,7 @@ Historical technical completion is **preserved and shown separately** from curre
 | Profile (full page, order per baseline) | 7, 11 | MC-2 profile exists; MC-2C conditional, MC-2D not started | Correction required (avatar opens sheet; sections missing) | P1a, P1b, P1d | — |
 | Images (Profile, Group, Challenge) | 6 | none (gradients/initials work) | Implementation missing | P6 | — |
 | Challenge Feed, Share, Kudos, announcements | 8 | CF-01 contract approved; no code | Implementation missing; Q3 bounds affected components | P7 | — |
+| Challenge Templates: Operator authoring (desktop) and member adoption (mobile) | 12 | PF-04 Composer `TEMPLATE_AUTHORING` mode and draft codec only; no Template store, route or UI | Implementation missing (Operator Console `templates` page is a deferred placeholder; Wizard says Templates unavailable). Two separate journeys; evidence for Together, Race and Streak | P5T (after P5, before P6) | — |
 | Support Tiizi (manual mobile money) | 10 | none | Implementation missing (P8a); activation (P8b) required before pilot entry | P8a, P8b | — |
 | Account, Privacy, Help | 11 | none | Implementation missing | P1d | — |
 | **CPE gate** | all | — | **Not started** — all rows above accepted with approved SHA | — | — |
