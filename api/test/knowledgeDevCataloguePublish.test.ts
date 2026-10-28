@@ -32,6 +32,10 @@ describe('dev catalogue publication — target safety', () => {
       ['postgresql://u@127.0.0.1/tiizi_p0_preview?port=6543', 'tiizi_p0_preview', 'override'],
       ['postgresql://u@127.0.0.1/tiizi_p0_preview?DBNAME=tiizi', 'tiizi_p0_preview', 'override'],
       ['mysql://u@127.0.0.1/tiizi_p0_preview', 'tiizi_p0_preview', 'protocol'],
+      ['postgresql://u@127.0.0.1/tiizi_p0_preview?hostaddr=10.0.0.5', 'tiizi_p0_preview', 'override'],
+      ['postgresql://u@127.0.0.1/tiizi_p0_preview?user=admin', 'tiizi_p0_preview', 'override'],
+      ['postgresql://u@127.0.0.1/tiizi_p0_preview?options=-c%20search_path%3Dx', 'tiizi_p0_preview', 'override'],
+      ['postgresql://u@127.0.0.1/tiizi_p0_preview?database=tiizi', 'tiizi_p0_preview', 'override'],
     ] as const) {
       expect(() => validateDisposableTargetUrl(url, db), `${url}`).toThrow(msg);
     }

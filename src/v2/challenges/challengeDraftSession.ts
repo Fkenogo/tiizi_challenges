@@ -136,7 +136,7 @@ export function releaseAbandonedChallengeDraft(
   pathname: string,
   options: { storage?: DraftStorage | null } = {},
 ): void {
-  if (pathname.startsWith('/v2/guide') || pathname.startsWith('/v2/challenges/new')) return;
+  if (/^\/v2\/(guide|challenges\/new)(\/|\?|$)/.test(pathname)) return;
   clearChallengeDraft(uid, options);
 }
 
