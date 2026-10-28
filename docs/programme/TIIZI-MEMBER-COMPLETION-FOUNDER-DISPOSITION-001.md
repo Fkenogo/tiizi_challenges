@@ -8,6 +8,7 @@
 **Status:** **FOUNDER DECISIONS RESOLVED / PRE-PILOT PROGRAMME DEFINED. PR #90 — OPEN / UNDER REVIEW / UNMERGED.**
 **Provenance note (added with PR #104):** references in this record to PR #90 being open, under review or unmerged describe the state when this Disposition was prepared. PR #90 was subsequently **MERGED** (2026-10-11, merge `250facf`; see the Master Programme). Those historical statements are retained unchanged.
 **Addendum:** §16 FD-PILOT-01 (Limited Kenya Pilot) is **FOUNDER APPROVED / EFFECTIVE UPON MERGE of PR #104 into `main`**; §§1–15 are unchanged.
+**Addendum 2 (FER-001 alignment):** §17 records the Founder's *Complete Experience, Controlled Pilot* direction (28 October 2026) and supersedes, **for sequencing only**, the feature deferrals of §16; §§1–16 are preserved as historical text. See §17.
 **Nature:** Documentation, Product Truth and programme alignment only. **No implementation is authorized.** Each work package below still needs its own Founder authorization before it starts. This record is carried by PR #90, which is open, under review and unmerged; the PR is documentation only and authorizes no implementation.
 
 ## 1. How to read this record
@@ -477,3 +478,46 @@ Migrations 026 and 027 remain code-authorized and **NOT production deployed**; m
 ### 16.13 Approval
 
 **Founder disposition: APPROVED IN SUBSTANCE.** The Founder accepts FD-PILOT-01 as the governing distinction between the Limited Kenya Pilot and Wider Public Launch, including the retained, reduced and deferred gates in §16. **Effective upon approved merge of PR #104 into `main`**; until then Master Programme 2.79 remains the effective `main` baseline. This approval does **not** authorize engineering implementation, migrations, deployment, public onboarding or the start of the pilot; each remaining package and the pilot launch require separate Founder authorization (§§15, 16.1, 16.12).
+
+## 17. FER-001 Alignment — Complete Experience, Controlled Pilot (addendum 2)
+
+**STATUS: Founder direction recorded (28 October 2026); this Gate 0 PR is for Founder confirmation. Effective only upon merge of the Gate 0 PR into `main`.** Sources: [`TIIZI-FER-001-A-FOUNDER-DECISION-RECONCILIATION-001.md`](TIIZI-FER-001-A-FOUNDER-DECISION-RECONCILIATION-001.md) (FDR-00…FDR-06, decision register), [`TIIZI-FER-001-B-EXPERIENCE-RECOVERY-IMPLEMENTATION-PLAN-001.md`](TIIZI-FER-001-B-EXPERIENCE-RECOVERY-IMPLEMENTATION-PLAN-001.md), [Founder Experience Recovery Baseline 001](../reports/TIIZI-V2-FOUNDER-EXPERIENCE-RECOVERY-BASELINE-001.md). Historical decisions in §§1–16 are **not deleted or rewritten**; where §17 differs, §17 governs.
+
+### 17.1 Binding direction
+Tiizi V2 must deliver the **complete Founder-approved product experience before pilot acceptance**. The pilot limits the **number of users**, not the experience, features or functionality available to them. The Limited-Pilot-versus-Wider-Public-Launch distinction **must not be used to defer essential product capabilities.** FD-PILOT-01 is **no longer authority to deliver a reduced product experience.**
+
+### 17.2 Milestones (replace the §16.2 milestone meanings for sequencing)
+| Milestone | Meaning |
+|---|---|
+| **Complete Product Experience (CPE)** | Founder functional acceptance of the full agreed V2 product (the eleven capabilities in FER-001-A §3.2), page by page, with recorded evidence. **The acceptance gate.** |
+| **Controlled Pilot** | The complete product exposed to a **limited approved user population** (invitation-only, adults 18+, Founder-approved cap). Restricted-user launch of the complete product. |
+| **Wider Launch** | Expansion of access, capacity and operations after pilot evidence and a **separate Founder authorization**. Not the milestone where missing core functionality is first introduced. |
+
+### 17.3 Alignment of superseded FD-PILOT-01 references
+| §16 reference | Disposition under §17 |
+|---|---|
+| §16.1 items 1–2, 5 ("pilot sequencing only"; items move to "required before Wider Public Launch") | Superseded for the items below: they are **required for CPE**. |
+| §16.2 rows "Limited Kenya Pilot", "Wider Public Launch" | Replaced for sequencing by the §17.2 definitions; "existing capabilities only" and "no user-uploaded images" no longer limit the pilot. |
+| §16.3 bullets "existing … capabilities" and "gradients and initials rather than user-uploaded images" | Superseded. "No live payment-processing facility" **retained** as *no in-app payment processing*. |
+| §16.4 row 2 (profile image initials-only) | Limit lifted; initials/gradients remain the fallback. |
+| §16.4 row 3 (reduced MC-3 gate) | Consent items unchanged (§16.5 items 1–4); the Interests/Goals omission is superseded by FDR-01 (optional, skippable, in CPE). |
+| §16.4 rows 4, 5, 8, 9 and their "Wider Public Launch" column | **Required for CPE.** Row 4 as *optional and independently skippable* (Interests 0–5, Goals 0–3; FD-MC-04/04a **superseded** by FDR-01); row 5 REC-1 in the minimal relevance-only form; row 8 optional uploads; row 9 Challenge Feed per CF-01 v0.2. |
+| §16.4 closing sentence (deferred "enhanced community engagement and recognition") | Superseded **only** for the CPE capabilities. Recognition issuance and other unlisted engagement features remain unapproved/deferred. |
+| §16.5 heading/lead-in and "Not part of the pilot gate: Interests…" | Retained as the **Controlled Pilot entry** consent gate (milestone renamed); the Interests/Goals sentence is superseded. |
+| §16.7 closing sentence (Challenge Feed etc. "out of the pilot") | Superseded: in CPE. |
+| §16.8, §16.9 "Limited Kenya Pilot" wording | Rules retained; read as **Controlled Pilot**. §16.8 (no Challenge-level Support a Cause/Support Tiizi) is **unchanged**. |
+| §16.12 sequence | **CPE acceptance** is inserted before "pilot readiness verification → Founder pilot-launch authorization". |
+| §16 heading, status line, §16.13 | Pointer supplied by the Addendum 2 line at the top of this record; §16 text is unedited. |
+Rows 1, 6, 7, 10–15 are unchanged.
+
+### 17.4 Retained (not weakened)
+Invitation-only/18+/cap pilot population; consent items (§16.5 1–4); minimum MC-4 identity rules (§16.6); LIFE-1 pilot minimum and interim stewardship with its sufficiency test (§16.9); operational launch gates (§16.10); legal and data-protection obligations (§16.11); migration/deployment restrictions incl. the migration 025 CHECK-gap and verified publication processing before Group Feed production deployment (§16.7(1)–(2), §16.12); no in-app payment processing; all original safety, privacy, eligibility, access-control and domain invariants.
+
+### 17.5 Support Tiizi — pilot-entry clarification
+The manual mobile-money Support Tiizi journey is part of CPE. **P8a** (the journey complete with **non-payable development placeholders**) is acceptable for **CPE page acceptance**. **P8b — activation of the verified manual mobile-money support journey — is required before Controlled Pilot entry.** Activation requires Founder verification of recipient number, registered account holder, support contact and operating/reconciliation arrangements, legal/privacy approval, and the SUP-01/02 / T1 §V.6 authority allocation (FER-001-A FDR-04, Q5). **This clarification does not authorize payment configuration or activation.** Paystack remains a future gateway candidate only; frequency selection never implies a subscription.
+
+### 17.6 Decision register and what remains open
+FDR-00…FDR-06 are recorded in FER-001-A. **Resolved:** Q1 (all CPE items required for CPE), Q6 (four public welcome slides before registration), Q2 as a requirement (original Group creator preserved distinct from the Steward; canonical provenance without invented history). **Open and bounded:** Q3 (CF-01 Streak-milestone schedule, Kudos on system cards, announcement-author rule/length — before the affected components only), Q4 (external share; outside CPE), Q5 (Support Tiizi activation facts; gates P8b), Q7 (culture "what we avoid" wording), Q8 (approved legal text and versions).
+
+### 17.7 Not authorized
+This addendum authorizes no code, schema, migration, media or payment configuration, deployment, production access, public onboarding or pilot launch. Each package (FER-001-B) needs its own authorization; CPE acceptance and Controlled Pilot entry each need explicit Founder decisions. General member comments/replies and external social sharing remain outside the approved initial scope.

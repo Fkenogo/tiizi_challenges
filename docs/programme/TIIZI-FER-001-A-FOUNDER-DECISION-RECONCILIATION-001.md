@@ -70,13 +70,13 @@ The earlier **feature-deferral interpretation** of FD-PILOT-01 is corrected. FD-
 
 ### 3.4 Controlled Pilot entry conditions (beyond CPE; unchanged FD-PILOT-01 operational gates)
 
-CPE accepted by the Founder; approved legal presentation and recorded acknowledgement (MC-2C/§16.5); §16.9–§16.10 arrangements verified; migrations/deployment separately authorized; real Support Tiizi details verified if the journey is to be actionable (§3.5); explicit Founder pilot-launch authorization. **CI-green or package-complete never equals pilot-ready.**
+CPE accepted by the Founder; approved legal presentation and recorded acknowledgement (MC-2C/§16.5); §16.9–§16.10 arrangements verified; migrations/deployment separately authorized; **P8b activation of the verified manual mobile-money Support Tiizi journey (§3.5; required — P8a placeholders suffice only for CPE page acceptance)**; explicit Founder pilot-launch authorization. **CI-green or package-complete never equals pilot-ready.**
 
 ### 3.5 Separately agreed exceptions preserved
 
 - **Paystack** is a future gateway candidate only; the **manual mobile-money journey** is the initial supported experience.
 - **Dummy recipient information** is permitted only in development and **must not enable payment actions**.
-- **Actual mobile-money activation** requires Founder verification of recipient, account holder, contact and operating arrangements. CPE accepts the *functional journey with development placeholders*; activation is an additional condition before the journey is actionable for pilot users (P8b).
+- **Actual mobile-money activation** requires Founder verification of recipient, account holder, contact and operating arrangements. CPE accepts the *functional journey with development placeholders*; **P8b activation is required before Controlled Pilot entry** (Gate 0 clarification); it does not authorize payment configuration or activation.
 - **General member comments/replies** remain outside the approved initial Challenge Feed.
 - **External social sharing** remains subject to the separate visibility/scope decision (Q4); it is not the internal Share and is not in CPE.
 
@@ -129,7 +129,7 @@ Seeded Challenge title/unit inconsistencies and the "2 Activities" preview are *
 | **Q2** | Original Group creator | **RESOLVED as a requirement** (Correction 001): original creator is **distinct from the Steward** and must be preserved. Canonical provenance is planned in B (P4a): record creator at establishment, backfill **only** where an existing authoritative record proves it, otherwise leave unrecorded; the Founder-visible outcome is "not recorded" (or nothing shown) — **never infer from the current Steward, never invent history**. Technical detail (verify which records exist) is a P4a start-up step; no further Founder decision is needed unless that check finds no authoritative source for existing Groups. |
 | **Q3** | CF-01 outstanding details: Streak milestone schedule; Kudos on system cards; announcement-author rule and length bound | **OPEN — bounded.** Must be resolved before the affected components (CF-2 S2 family; CF-5) are implemented; does not block unrelated work. |
 | **Q4** | External social sharing (native/Copy Link): visibility, preview, scope | **OPEN — separate decision; outside CPE.** |
-| **Q5** | Support Tiizi activation facts and SUP-01/02 / T1 §V.6 allocation; recipient, holder name, WhatsApp contact, reconciliation, legal/privacy | **OPEN.** Does not block the placeholder journey (P8a); blocks activation (P8b) and therefore Controlled Pilot exposure of an actionable payment method. |
+| **Q5** | Support Tiizi activation facts and SUP-01/02 / T1 §V.6 allocation; recipient, holder name, WhatsApp contact, reconciliation, legal/privacy | **OPEN.** Does not block the placeholder journey (P8a); blocks activation (P8b), which is therefore a Controlled Pilot **entry requirement**. |
 | **Q6** | Welcome placement | **RESOLVED** (Founder decided): four slides, **public, before registration**; pure static content, no data calls. |
 | **Q7** | "What we avoid" culture choices and bounded creator expectation length | **OPEN — bounded.** Wording needed before the Culture-step component (P4); does not block other work. |
 | **Q8** *(existing input, not new)* | Approved legal Terms/Privacy text, version identifiers, 18+ acknowledgement design | **OPEN (existing MC-2C / baseline §G).** Gates P1d legal gate and Controlled Pilot entry. |

@@ -187,8 +187,8 @@ Founder approves A (incl. FDR-00). Technical Lead adds the A §8 programme row, 
 **Founder gate:** CF-6 preview.
 
 ### P8b — Support Tiizi activation
-**Outcome:** actionable manual mobile-money guidance (copy recipient number, clear instructions, support WhatsApp) once real details exist.
-**Position:** follows the CPE gate; a precondition for exposing an *actionable* payment method to pilot users, not for CPE (CPE accepts the placeholder journey). **Preconditions (all required, Founder-verified):** A §Q5 facts including the SUP-01/02 / T1 §V.6 allocation; reconciliation/accounting handling; legal/privacy approval; disclosure that the Founder/operator collects on behalf of Tiizi. **Scope:** replace placeholder config and flip the `activated` guard — nothing else; no in-app confirmation of payment. **Paystack is not in scope** and needs a separate authorization (merchant eligibility, methods, settlement, reconciliation, recurring support) — frequency selection never implies a subscription.
+**Outcome:** actionable manual mobile-money guidance (copy recipient number, clear instructions, support WhatsApp) once real details exist; **required before Controlled Pilot entry**.
+**Position:** follows the CPE gate; **required before Controlled Pilot entry** (CPE accepts the placeholder journey; pilot entry requires the verified, activated journey). Does not authorize payment configuration or activation. **Preconditions (all required, Founder-verified):** A §Q5 facts including the SUP-01/02 / T1 §V.6 allocation; reconciliation/accounting handling; legal/privacy approval; disclosure that the Founder/operator collects on behalf of Tiizi. **Scope:** replace placeholder config and flip the `activated` guard — nothing else; no in-app confirmation of payment. **Paystack is not in scope** and needs a separate authorization (merchant eligibility, methods, settlement, reconciliation, recurring support) — frequency selection never implies a subscription.
 **Risk:** Medium operational/trust (R1 code, Founder sign-off on data). **Founder gate:** explicit activation approval recorded with approved SHA.
 
 ### CPE acceptance gate — Complete Product Experience (Founder)
@@ -211,7 +211,7 @@ A single mobile-preview session over the whole member journey on coherent dispos
 Output: page-by-page acceptance table (§1.2) with approved SHA and open dependencies. **CI-green or package-complete never equals CPE acceptance or pilot-ready.**
 
 ### Controlled Pilot entry (after CPE; separate Founder authorization)
-Entry conditions: CPE accepted; P8b done **if** an actionable payment method is to be offered; approved legal presentation and acknowledgement (Q8); Disposition §16.9–§16.10 operational gates verified (cap, mailbox owner, background processing/BG-1 form, stop mechanism, hosting/privacy/legal, LIFE-1 pilot minimum, interim stewardship sufficiency); migrations and deployment separately authorized (incl. migration 025 CHECK-gap before Group Feed production deployment); explicit Founder pilot-launch authorization. **Wider Launch** follows pilot evidence and a further authorization; no core functionality may first appear there.
+Entry conditions: CPE accepted; **P8b done (verified manual mobile-money journey activated)**; approved legal presentation and acknowledgement (Q8); Disposition §16.9–§16.10 operational gates verified (cap, mailbox owner, background processing/BG-1 form, stop mechanism, hosting/privacy/legal, LIFE-1 pilot minimum, interim stewardship sufficiency); migrations and deployment separately authorized (incl. migration 025 CHECK-gap before Group Feed production deployment); explicit Founder pilot-launch authorization. **Wider Launch** follows pilot evidence and a further authorization; no core functionality may first appear there.
 
 ## 4. Package summary
 

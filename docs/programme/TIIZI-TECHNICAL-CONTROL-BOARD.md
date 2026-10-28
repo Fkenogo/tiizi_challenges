@@ -1,15 +1,39 @@
 # Tiizi — Technical Control Board (derived, non-authoritative)
 
-**As observed:** 27 October 2026. **Read first:** `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` v2.80 and recent Founder feedback. Refresh before any implementation assignment.
+**As observed:** 28 October 2026 (Gate 0). **Read first:** `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` v2.81 (assigned against merged `main` `a618d61`), Disposition §17 and `TIIZI-FER-001-A/B/C`. Refresh before any implementation assignment. This board is derived from the Master Programme; it is not a roadmap, decision register or permission to implement.
 
 | Item | Evidence / current disposition | Action |
 | --- | --- | --- |
-| V2 authority | Master Programme v2.80; Founder-approved FD-PILOT-01 limited Kenya pilot amendment | Preserve approved sequence and all conditions; no launch implied |
+| V2 authority | Master Programme v2.81; Disposition §17 *Complete Experience, Controlled Pilot* (Founder direction 28 Oct 2026; effective upon Gate 0 merge) | Acceptance gate = **Complete Product Experience (CPE)**; Controlled Pilot = restricted-user launch of the complete product; Wider Launch separately authorized. No launch implied |
+| FD-PILOT-01 | Feature deferrals superseded for sequencing (Disposition §17.3); operational, privacy, legal, eligibility, access-control and deployment gates retained | Apply §17.4 gates at Controlled Pilot entry |
 | V2 repository boundaries | Root `AGENTS.md`; PostgreSQL domain, Firebase Auth identity; no V1 reuse | Enforce `npm run test:boundary` |
-| Legal content | PR #105 merged 27 Oct; publication candidates only | Do not publish until separate acceptance |
-| Open stale CI work | PR #94 open (created 14 Oct) | Assess separately; do not merge as a team-activation side effect |
-| Founder experience issue | Recent reported steward/member journey regression; independent current reproduction pending | Prioritize real screen/flow comparison and bounded fix over new rulemaking |
-| Team activation | Proposed adoption document and root pointer on this review branch | Founder review, then assign explicit owner/reviewer |
+| Legal content | PR #105 merged 27 Oct; publication candidates only (Q8 open) | Do not publish until separate acceptance |
+| Open PRs | #107 (experience-recovery candidate, unmerged, unmodified); #94 (CI efficiency, unrelated) | Do not merge incidentally; #107 handled per FER-001-C §6 |
+| Support Tiizi | P8a placeholders acceptable for CPE page acceptance; **P8b activation required before Controlled Pilot entry**; Q5 facts and SUP-01/02 allocation open | No payment configuration or activation authorized |
 | Local worktree and unmerged coding work | Not visible from GitHub snapshot | Programme Controller verify with working agent; do not assume idle/complete |
 
-**Next exercise:** Technical Lead chooses one currently approved product-experience correction after a brief baseline/authority check, names Coding Agent and independent reviewer, requests local preview evidence, and reports an integrated result. This board is not a separate programme, decision register or permission to implement outside current authority.
+## Integrated-experience acceptance register (derived)
+
+Historical technical completion is **preserved and shown separately** from current integrated acceptance. States: *preserve/verified · correction required · implementation missing · deferred by decision · needs Founder decision*. Observed at `a618d61`/code `542052c`. Package ids are FER-001-B. **Founder acceptance column is blank until the Founder records an outcome and approved SHA.** CPE # = capability in FER-001-A §3.2.
+
+| Page / capability | CPE # | Historical technical completion | Current integrated acceptance | Package(s) | Founder acceptance |
+| --- | --- | --- | --- | --- | --- |
+| Welcome (4 public slides, before registration) | 1 | none | Implementation missing | P1a | — |
+| Registration / account / legal acknowledgement, 18+ | 1, 11 | Sign-up + MC-1 bootstrap complete (migration 026 not deployed); legal pending | Correction required (no acknowledgement; "not published yet") | P1d (Q8) | — |
+| Interests (0–5) / Goals (0–3), skippable, editable | 2, 3 | none (no storage/API/UI) | Implementation missing | P1b | — |
+| Discovery + preference relevance + join-return | 3, 4 | S4c complete | Correction required (chronological only; Challenge→Group join dead-ends) | P2 | — |
+| 118-Activity catalogue in V2 experience | 5 | S6 complete (development: 118 published) | Fixture defect in preview (2 Activities) | P0 | — |
+| Today / Streak / logging | 9 | S5, S3b/c complete | Correction required (reminder, ordering, empty states, in-context logging) | P3 | — |
+| Groups list / Home / wizard | 4 | S4a–d complete | Preserve/verified | — | — |
+| Group Details / Settings | 4, 7 | S4 complete | Correction required; creator provenance missing | P4, P4a | — |
+| Member identities (authorized contexts) | 7 | MC-4 not started | Implementation missing | P1c | — |
+| Challenges list / detail / wizard | 4 | S3, S6, Challenge Page review complete | Preserve; Activity Guide return **critical defect**; labels/layout corrections | P0, P5 | — |
+| Profile (full page, order per baseline) | 7, 11 | MC-2 profile exists; MC-2C conditional, MC-2D not started | Correction required (avatar opens sheet; sections missing) | P1a, P1b, P1d | — |
+| Images (Profile, Group, Challenge) | 6 | none (gradients/initials work) | Implementation missing | P6 | — |
+| Challenge Feed, Share, Kudos, announcements | 8 | CF-01 contract approved; no code | Implementation missing; Q3 bounds affected components | P7 | — |
+| Support Tiizi (manual mobile money) | 10 | none | Implementation missing (P8a); activation (P8b) required before pilot entry | P8a, P8b | — |
+| Account, Privacy, Help | 11 | none | Implementation missing | P1d | — |
+| **CPE gate** | all | — | **Not started** — all rows above accepted with approved SHA | — | — |
+| **Controlled Pilot entry** | — | — | After CPE + P8b + operational gates; separate Founder authorization | — | — |
+
+**Next exercise:** Technical Lead, after Founder approval of Gate 0, authorizes **P0** (Activity Guide state preservation; 118-Activity preview catalogue; roster refresh) with a named Coding Agent and independent reviewer, local mobile-preview evidence and a single consolidated report.

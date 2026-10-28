@@ -45,3 +45,22 @@
 - PR #94 is open and unrelated; do not merge incidentally.
 
 **Disposition:** PROPOSED. No merge, close, code or deployment action taken or implied.
+
+## 6. Exact reusable PR #107 components (for P1a / P8a) — Gate 0 record
+
+PR #107 is **unmerged and untouched** (head `9e5477b`); nothing is cherry-picked, closed or modified. Paths are in `origin/feat/v2-experience-recovery-001` and were read-only inspected.
+
+| Component | Package | Reuse | Required adaptation |
+|---|---|---|---|
+| `src/v2/onboarding/orientationState.ts` — `hasSeenOrientation`/`markOrientationSeen`, storage-error-safe `localStorage` helper, `ORIENTATION_VERSION` | P1a | **Reuse pattern** | Key is `tiizi.v2.orientation.v1.seen:<uid>` (member-scoped). The welcome is **public, before registration**, so a device-scoped key (no uid) is needed. |
+| `src/v2/onboarding/V2OrientationScreen.tsx` — skippable slide layout, "Skip intro", single exit helper | P1a | **Reuse layout** | Uses `useAuth()`/member uid and member-only exits; rebuild for four slides on a public route with exits to sign-up/sign-in. |
+| `src/v2/onboarding/orientationContent.ts` — slide copy | P1a | **Partial** | Five slides, not four. "community" and "challenges" copy is close to baseline slides 2–3; slides 1 and 4 must be rewritten (4 must include encouraging one another); drop slide 5 "Ready to begin?". No WhatsApp/migration wording to carry over. |
+| `public/onboarding/{welcome,community,challenges,activity,begin}.jpg` | P1a | **Hold** | Provenance/rights unconfirmed (PR cites `stitch_tiizi_revamp/` exports); confirm before reuse. |
+| `src/v2/groups/V2GroupsScreen.tsx` — `?tab=discover` search param (+7 lines) | P1a/P2 | **Reuse** | None; useful for welcome→Discover exit. |
+| `src/v2/support/V2SupportTiiziScreen.tsx` — information-only layout (no payment controls, no network call) | P8a | **Reuse layout** | Remove `mailto:` (`SUPPORT_CONTACT_EMAIL = support@tiizichallenges.com`, unverified); add KES amounts, frequency intention, recipient/holder/WhatsApp **non-payable placeholders**, `activated:false` guard. |
+| `src/v2/support/supportContent.ts` — section/headline/status structure, `SUPPORT_PATH` | P8a | **Reuse structure** | Replace content; delete the email constant; copy must make no claim of payment received. |
+| `src/v2/support/V2SupportTiiziCard.tsx` and the Profile card slot | P8a | **Reuse** | Place per baseline B.5 order on the full Profile page (P1a), not after the identity card of the current sheet-style profile. |
+| `scripts/testV2OrientationGuards.ts`, `package.json` script, CI step | P1a/P8a | **Reuse wiring only** | Assertions pin five slides and information-only copy; rewrite for four slides, public route, placeholders. |
+
+**Not reusable:** `V2FirstRunGate.tsx` (post-auth gate for zero-Group members on the Today route) and the `welcome` route inside the protected scope; `MemberShell.tsx` account-sheet entries and `V2Locale` keys that extend the avatar sheet (baseline B.5 replaces it with a full Profile page); the `V2TodayScreen.tsx` empty-state button (superseded by P3); the PR's Disposition §17 and Master Programme 2.81 edits (superseded by this Gate 0: Disposition §17 and v2.81 are now assigned from merged `main`; #107's would collide).
+
