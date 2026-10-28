@@ -1,8 +1,9 @@
 # TIIZI-FER-001-B — Experience Recovery Implementation Plan 001
 
-**Status:** PROPOSED PLAN — planning only. **Implementation NOT AUTHORIZED.** Each package below needs its own Founder/Technical Lead authorization. No migration, media/payment configuration, deployment, production access or pilot launch is authorized by this document.
+**Status:** PROPOSED PLAN, **as corrected by PR #108 Correction 001 (Founder direction: Complete Experience, Controlled Pilot)** — planning only. **Implementation NOT AUTHORIZED.** Each package below needs its own Founder/Technical Lead authorization. No migration, media/payment configuration, deployment, production access or pilot launch is authorized by this document.
 **Source baseline:** `origin/main` `542052c12ca7910a297da89f28ae01120b220980`; Master Programme v2.80; PR #107 open at `9e5477b`. Code facts below were read at that commit (`file:line` references are to it) and must be re-verified when a package starts.
-**Depends on:** [A — Founder Decision Reconciliation 001](TIIZI-FER-001-A-FOUNDER-DECISION-RECONCILIATION-001.md) (FDR-01…06, Q1–Q7). **Companion:** [C — Current Work Reconciliation](TIIZI-FER-001-C-CURRENT-WORK-RECONCILIATION.md). **Principal reference:** [Founder Experience Recovery Baseline 001](../reports/TIIZI-V2-FOUNDER-EXPERIENCE-RECOVERY-BASELINE-001.md).
+**Depends on:** [A — Founder Decision Reconciliation 001](TIIZI-FER-001-A-FOUNDER-DECISION-RECONCILIATION-001.md) (FDR-00…06; decision register §5: Q1 and Q6 resolved, Q2 resolved as a requirement, Q3/Q4/Q5/Q7/Q8 open and bounded). **Companion:** [C — Current Work Reconciliation](TIIZI-FER-001-C-CURRENT-WORK-RECONCILIATION.md). **Principal reference:** [Founder Experience Recovery Baseline 001](../reports/TIIZI-V2-FOUNDER-EXPERIENCE-RECOVERY-BASELINE-001.md).
+**Scope rule (binding, Founder):** all complete-experience packages below precede integrated acceptance (the **Complete Product Experience gate**, §3 end); Controlled Pilot entry follows it. The pilot limits users, not features. Full scope is delivered **incrementally, one independently reviewed package at a time — never as a single large rewrite.**
 **This is not a roadmap.** It is a page-by-page work breakdown inside the existing Master Programme; sequence and status remain the Programme's.
 
 ## 1. Programme reconciliation (Programme Controller)
@@ -27,7 +28,7 @@ Per baseline §A, historical package acceptance is **not** current integrated-jo
 | Page | Integrated acceptance now | Basis |
 |---|---|---|
 | Welcome / registration | **Implementation missing** (welcome); registration exists, no legal line (`V2SignUpPage.tsx:162` "not published yet") | no slides in `src/v2` |
-| Personalization (Interests/Goals) | **Implementation missing**; Q1 | no storage/API/UI |
+| Personalization (Interests/Goals) | **Implementation missing**; required for CPE | no storage/API/UI |
 | Discovery | **Correction required**: chronological only (`groupDiscovery.ts:120`); Challenge→Group join dead-ends | `V2ParticipationSection.tsx` copy only |
 | Today | **Correction required**: no reminder, no pending-first, one generic empty state; logging navigates away | `todayView.ts` preserves server order; `V2TodayScreen.tsx:159,359` |
 | Groups list/Home/wizard | **Preserve/verified**; Details **correction required**; Settings selector **correction required** | `V2GroupHomeScreen.tsx:433-497`; `V2GroupSettingsScreen.tsx` free-text |
@@ -41,9 +42,9 @@ Per baseline §A, historical package acceptance is **not** current integrated-jo
 
 ### 1.3 Dependencies and Founder approvals still required
 
-- Technical: stable IDs for the 12 Interests (Disposition §5.3) → Interests persistence → ranking; MC-4 name projection → roster, pending list, race/collective, Feed name items; MEDIA-1 → MEDIA-2; CF open items (A §Q3) → CF-2/5; BG-1 only for *production* Feed draining.
+- Technical: stable IDs for the 12 Interests (Disposition §5.3) → Interests persistence → ranking; MC-4 name projection → roster, pending list, race/collective, Feed name items; MEDIA-1 → MEDIA-2; CF open items (A §Q3) gate only the affected components (CF-2 Streak-milestone Share; CF-5 Kudos/announcements); BG-1 only for *production* Feed draining.
 - Legal/ops: MC-2C approved legal text → acknowledgement record/18+ gate (nothing here approves legal copy).
-- Founder: A §Q1–Q7; written authorization per package; Founder acceptance per page (section 4).
+- Founder: open bounded decisions A §5 (Q3, Q4, Q5, Q7, Q8) before the components they gate; written authorization per package; Founder acceptance per page; CPE acceptance; separate Controlled Pilot authorization.
 
 ## 2. Architecture checks (summary)
 
@@ -51,12 +52,14 @@ Preserve: creation engines; `cover_id` gradients as media fallback; `focus_tags`
 
 ## 3. Sequence
 
-`Gate 0 → P0 → P1a → P8a → P1b → P1c → P2 → P3 → P4 → P5 → P6 → P7 → P8b → Integrated walkthrough`
+`Gate 0 → P0 → P1a → P8a → P1b → P1c → P1d → P2 → P3 → P4a → P4 → P5 → P6 → P7 → CPE acceptance gate → P8b → Controlled Pilot entry → Wider Launch`
 
-Rationale (differs from the baseline's numeric order only where noted: P0 is added, P8 is split into P8a/P8b and moved earlier): **P0** is a small set of independent, dependency-free defect fixes that unblock Founder walkthroughs of everything else (critical Activity Guide bug; 118 fixture). **P8a** (visually complete Support Tiizi with placeholders) moves up because it needs only the Profile shell (P1a) and no backend. **P1b/P1c** carry migrations and privacy risk and are not rushed ahead of visible fixes. P6 media precedes P7 only for Challenge covers; **P7 does not depend on media** (no media in the Feed). Nothing runs in large parallel rewrites; packages P1c, P6 and P7 must not run concurrently with another migration-owning package.
+Every package before the **CPE acceptance gate** is required for Complete Product Experience. **P8b** (real mobile-money details) and the operational pilot conditions follow CPE and precede exposure to pilot users. **Controlled Pilot** and **Wider Launch** each need their own Founder authorization.
+
+Rationale (differs from the baseline's numeric order only where noted: P0 is added, P8 is split into P8a/P8b and moved earlier; P1d and P4a are added to cover Account/Privacy/Help and Group-creator provenance, which the Founder direction makes required): **P0** is a small set of independent, dependency-free defect fixes that unblock Founder walkthroughs of everything else (critical Activity Guide bug; 118 fixture). **P8a** (visually complete Support Tiizi with placeholders) moves up because it needs only the Profile shell (P1a) and no backend. **P1b/P1c** carry migrations and privacy risk and are not rushed ahead of visible fixes. P6 media precedes P7 only for Challenge covers; **P7 does not depend on media** (no media in the Feed). Nothing runs in large parallel rewrites; packages P1c, P6 and P7 must not run concurrently with another migration-owning package.
 
 ### Gate 0 — Record the disposition (documentation only)
-Founder approves A. Technical Lead adds the A §7 programme row and the register in §1.2 to the Technical Control Board. Review PR #107 per C. Reviewer: R0. Acceptance gate: Founder approval of A.
+Founder approves A (incl. FDR-00). Technical Lead adds the A §8 programme row, aligns the Disposition §16 / Master Programme references listed in A §3.3, adds the register in §1.2 to the Technical Control Board, Review PR #107 per C. Reviewer: R0. Acceptance gate: Founder approval of A.
 
 ---
 
@@ -81,7 +84,7 @@ Founder approves A. Technical Lead adds the A §7 programme row and the register
 **Existing:** no slides anywhere; avatar → bottom sheet listing Activity Guide / Profile (`MemberShell.tsx` ~:35-39, :94, :125-164); routes public only for `sign-in`/`sign-up` (`routes.tsx:89-90`).
 **Scope:** new public `welcome` route with the four baseline slides (no WhatsApp/migration wording); skip, resume and "seen" flag (device-local acceptable as interim; no schema); avatar → `/v2/profile`; Profile section order scaffold per B.5 (placeholders only for sections whose capability is not yet present — never promise notification preferences, recognition or account actions not implemented). Registration unchanged (no questionnaire).
 **Files:** `routes.tsx`, new `src/v2/onboarding/*`, `MemberShell.tsx`, `V2ProfileScreen.tsx`, `V2Locale.tsx`, boundary/route guards.
-**Dependencies:** Q6 (public welcome route). **PR #107:** reusable only `orientationState.ts` seen-flag pattern and skippable layout; its slides are five (not four) and post-sign-in; do not merge wholesale (C).
+**Dependencies:** none open — Q6 is **resolved** (four public slides before registration; static content, no data calls). **PR #107:** reusable only `orientationState.ts` seen-flag pattern and skippable layout; its slides are five (not four) and post-sign-in; do not merge wholesale (C).
 **Tests:** welcome guard (four slides, skip, pre-auth reachable, no data calls); `testV2AuthReturnPaths.ts` regression; `testMobilePrimaryNavGuards.ts`; `testV2ProfileGuards.ts`; `npm run test:boundary`.
 **Mobile scenarios:** new visitor sees 4 slides, skips from any slide, lands on sign-up; returning user not re-shown; avatar tap opens Profile page; Sign out and Activity Guide reachable.
 **Risk:** Low–Medium (R1; touches shell routes).  **Reviewer:** R1.  **Founder gate:** welcome + Profile shell on mobile.
@@ -100,7 +103,7 @@ Founder approves A. Technical Lead adds the A §7 programme row and the register
 **Outcome:** After account creation, two independent skippable steps (Interests 0–5, Goals 0–3), editable/clearable in Profile.
 **Existing:** no member storage/API/UI; 9 Goals have IDs (`groupVocabulary.ts:17-27`); 12 Focus Areas are labels only (`groupVocabulary.ts:2-15`, `groupFocusAreas.ts:7-20`).
 **Scope:** mint stable Interest IDs (additive, same 12 concepts; no Group data rewrite); member storage (**migration — number assigned at start**); extend `GET/PATCH /api/me` or sibling route (no second profile API); onboarding steps + Profile section; allow empty selections; each change audited with the member as actor (Disposition §4); explanatory copy that preferences never gate anything.
-**Dependencies:** A FDR-01; Q1; MC-1/MC-2 present. **Risk:** Medium–High (migration, personal data) → **R2**, distinct reviewer.
+**Dependencies:** A FDR-01/02 (required for CPE); MC-1/MC-2 present. **Risk:** Medium–High (migration, personal data) → **R2**, distinct reviewer.
 **Tests:** `api/test` for bounds (0–5/0–3), clear, idempotent PATCH, owner-only visibility, unknown-ID rejection; UI guard for independent skip; migration test per existing pattern.
 **Mobile scenarios:** skip both; choose 3 + skip goals; choose 5 (6th blocked); edit/clear in Profile; browse Groups/Challenges afterwards unaffected.
 **Founder gate:** walkthrough of skip/edit/clear paths. **No deployment of the migration.**
@@ -113,6 +116,15 @@ Founder approves A. Technical Lead adds the A §7 programme row and the register
 **Tests:** `api/test` authorization matrix (member, non-member, pending, exited, discoverable-only); no-leak assertions; fallback for NULL names; UI guards.
 **Mobile scenarios:** two disposable members in one Group see each other's names; a non-member sees none; steward sees applicant names; Race/Together/Streak views.
 **Founder gate:** names visible exactly where authorized.
+
+### P1d — Account, Privacy and Help
+**Outcome:** the Account, Privacy and Help parts of the recovery baseline work and promise nothing unimplemented: Terms/Privacy presentation and versioned acknowledgement with 18+ self-declaration (§16.5); Profile "Account" section limited to implemented capabilities (name, email, sign out, privacy/consent view); the closure/privacy-request path is shown only as far as the LIFE-1 pilot minimum is separately authorized, otherwise described honestly as not yet self-service; "Help & Guide" (How Tiizi works, Activity Guide; **no live support-contact action until the support address is Founder-confirmed, A §Q5**).
+**Existing:** sign-up shows "Terms and Privacy are not published yet" (`V2SignUpPage.tsx:162`); no acknowledgement or 18+ field/record; Activity Guide exists; `V2ProfileScreen.tsx` has no Account/Help sections; no legal pages.
+**Scope:** acknowledgement record (**migration**), consent/age gate on first entry and for returning members with missing/outdated versions; legal text and version ids come only from the legal text owner (engineering invents none); no notification-preference or recognition controls unless actually implemented.
+**Dependencies:** **Q8** (approved legal text/versions; MC-2C); P1a (Profile page). Component-level: UI and Help can proceed while legal text is pending, but the gate cannot be marked complete. **Risk:** High (legal/consent record, migration) → **R2**.
+**Tests:** acknowledgement persistence and versioning; returning-member re-prompt; 18+ declaration recorded not verified; no-invented-copy guard; Help links resolve; no active support-contact action.
+**Mobile scenarios:** new sign-up with acknowledgement; returning member with outdated version re-prompted; Help reachable from Profile; closure/privacy-request wording accurate.
+**Founder gate:** Account/Privacy/Help walkthrough; legal presentation per MC-2C/2D.
 
 ### P2 — Discovery and relevance
 **Outcome:** Groups + Challenges discovery after optional personalization; suggestions ranked by current Interests/Goals **inside the existing discoverable set**; always a general fallback; invite-code entry; Challenge→host Group join/approval→return to the Challenge's own Join.
@@ -132,11 +144,20 @@ Founder approves A. Technical Lead adds the A §7 programme row and the register
 **Mobile scenarios:** 0/1/3 Streaks due; one completed; no Group; Group no Challenge; participating; log from Today and see authoritative refresh.
 **Founder gate:** Today walkthrough with all three Challenge types.
 
+### P4a — Original Group creator provenance
+**Outcome:** the original creator of a Group is preserved as a canonical fact **distinct from the current Steward**, and shown in Group Details to viewers already authorized to see that Group's details.
+**Existing:** `groups.steward_member_id` is the only owner reference (migration 019); no creator column; no steward-transfer mutation yet (STEW-1); Group establishment already knows the creating member (`postgresGroupAuthority.ts:147`).
+**Scope:** record the creator at establishment going forward (**migration**, nullable; number assigned at start); **backfill only where an existing authoritative record proves the creator** (to be verified read-only at package start); otherwise leave unrecorded and display nothing or "not recorded". **Never infer from the current Steward; never invent history.** Respect member-identity rules (display name only in authorized contexts; deleted/anonymized members rendered per the identity lifecycle).
+**Dependencies:** P1c (names). **Risk:** Medium–High (migration, provenance) → **R2**.
+**Tests:** establishment records creator; existing Groups unchanged/unrecorded where unprovable; Steward change leaves creator intact; authorization of display; former-member rendering.
+**Mobile scenarios:** new Group shows creator ≠ later Steward after transfer (disposable data); legacy Group shows no invented creator.
+**Founder gate:** Group Details acceptance includes creator semantics.
+
 ### P4 — Groups targeted corrections
-**Outcome:** About Group shows description, established date, member count, Steward (and creator only per Q2), Group Interests, Goals, culture, joining/discoverability, permissions — no fabricated values; sheet fits mobile with inner scroll and always-reachable Close; Settings uses the same selectable vocabulary; culture step gains optional "what we avoid" plus one bounded creator-defined expectation (**no automatic sanctions**); "Focus Areas" → "Group Interests" in member copy.
+**Outcome:** About Group shows description, established date, member count, Steward (distinct from the original creator), Group Interests, Goals, culture, joining/discoverability, permissions, and the **original creator once P4a provides canonical provenance** — no fabricated values; sheet fits mobile with inner scroll and always-reachable Close; Settings uses the same selectable vocabulary; culture step gains optional "what we avoid" plus one bounded creator-defined expectation (**no automatic sanctions**); "Focus Areas" → "Group Interests" in member copy.
 **Existing:** sheet `V2GroupHomeScreen.tsx:433-497` does not render `createdAt` (available, `groupsApi.ts:112`, null on discoverable subset) or count/steward name; nested `max-h-[72dvh]` (`V2GroupHomeScreen.tsx:434`) inside the outer panel `max-h-[92dvh]` (`V2Primitives.tsx:547`); Close not sticky; `focused` variant exists with scroll lock; Settings Focus Areas is comma-separated text (`V2GroupSettingsScreen.tsx:18-40`), Goals/norms not editable in Settings; no creator column; norms are six positive canonical items (`groupVocabulary.ts:29-36`).
-**Scope:** read-only content additions from existing fields; sheet sizing via existing `V2Sheet` variants; Settings chip selector reusing `fetchGroupOptions` and existing caps; "what we avoid" vocabulary **needs Founder-approved wording (A §Q7)**; keep `focus_tags`, `goal_ids`, custom handling.
-**Dependencies:** P1c for Steward name; Q2 (creator); Q7 (wording). **Risk:** Low–Medium (R1); R2 if a creator column/migration is approved.
+**Scope:** read-only content additions from existing fields; sheet sizing via existing `V2Sheet` variants; Settings chip selector reusing `fetchGroupOptions` and existing caps; "what we avoid" vocabulary **needs Founder-approved wording (A §Q7) before this component only**; keep `focus_tags`, `goal_ids`, custom handling.
+**Dependencies:** P1c for Steward name; P4a for creator display; Q7 (wording, culture step only). **Risk:** Low–Medium (R1).
 **Tests:** `testS4aGroupHomeGuards.ts` additions (created date, count, no null labels); sizing guard; settings selector parity with wizard; `s4dGroupSettings.test.ts` regression.
 **Mobile scenarios:** About on 360×640 and 390×844: scroll, Close visible; Group with/without optional fields; Steward edits Interests via chips.
 **Founder gate:** Group Details + Settings on mobile.
@@ -160,18 +181,37 @@ Founder approves A. Technical Lead adds the A §7 programme row and the register
 ### P7 — Challenge Feed and engagement (CF-2…CF-6)
 **Outcome:** Challenge-local Feed per CF-01 v0.2: automatic A1–A6, explicit Share (preview, self-only, withdrawable), one Kudos, authorized announcements; no comments/replies.
 **Existing:** none implemented. Reusable *patterns* only from Group Feed (outbox→projection→suppression; signed keyset cursor; per-request authorization recheck); tables, tuple and tests are **not** reusable and must not be touched.
-**Dependencies:** FDR-05; Q3 answers before CF-2/CF-5; P1c (names); operator suppression capability; BG-1 for *production* draining. External share excluded (Q4). **Risk:** High → **R2**, slice by slice (CF-2 publication → CF-3 read API → CF-4 mobile → CF-5 engagement → CF-6 preview).
+**Dependencies:** FDR-05 (required for CPE); Q3 answers needed **only** before the affected components — Streak-milestone Share (CF-2 S2 family) and Kudos/announcements (CF-5); A1–A6, S1, S3 and read/preview work proceed meanwhile; P1c (names); operator suppression capability; BG-1 for *production* draining. External share excluded (Q4). **Risk:** High → **R2**, slice by slice (CF-2 publication → CF-3 read API → CF-4 mobile → CF-5 engagement → CF-6 preview).
 **Tests:** invariants from CF-01 §3 (Feed never alters Challenge truth; idempotent publication; audience recheck); Kudos audience equals read audience; no self-Kudos; Group Feed invariant test unchanged and passing.
 **Mobile scenarios:** join → A1 card; Together 25/50/75; Share preview/publish/withdraw; Kudos toggle; Steward announcement; non-member sees nothing.
 **Founder gate:** CF-6 preview.
 
 ### P8b — Support Tiizi activation
 **Outcome:** actionable manual mobile-money guidance (copy recipient number, clear instructions, support WhatsApp) once real details exist.
-**Preconditions (all required, Founder-verified):** A §Q5 facts; reconciliation/accounting handling; legal/privacy approval; disclosure that the Founder/operator collects on behalf of Tiizi. **Scope:** replace placeholder config and flip the `activated` guard — nothing else; no in-app confirmation of payment. **Paystack is not in scope** and needs a separate authorization (merchant eligibility, methods, settlement, reconciliation, recurring support) — frequency selection never implies a subscription.
+**Position:** follows the CPE gate; a precondition for exposing an *actionable* payment method to pilot users, not for CPE (CPE accepts the placeholder journey). **Preconditions (all required, Founder-verified):** A §Q5 facts including the SUP-01/02 / T1 §V.6 allocation; reconciliation/accounting handling; legal/privacy approval; disclosure that the Founder/operator collects on behalf of Tiizi. **Scope:** replace placeholder config and flip the `activated` guard — nothing else; no in-app confirmation of payment. **Paystack is not in scope** and needs a separate authorization (merchant eligibility, methods, settlement, reconciliation, recurring support) — frequency selection never implies a subscription.
 **Risk:** Medium operational/trust (R1 code, Founder sign-off on data). **Founder gate:** explicit activation approval recorded with approved SHA.
 
-### Integrated Founder walkthrough
-A single mobile-preview session over the whole member journey on coherent disposable data: welcome → registration → optional preferences → discovery → join/approval → Challenge join → log from Today → Feed → Profile → Support. Output: page-by-page acceptance table (§1.2) with approved SHA and open dependencies. **CI-green or package-complete never equals "pilot-ready"**; legal, migration deployment, hosting and launch authorization remain separate.
+### CPE acceptance gate — Complete Product Experience (Founder)
+A single mobile-preview session over the whole member journey on coherent disposable data, plus per-page evidence. **All eleven Founder-listed capabilities must be accepted** (A §3.2):
+
+| # | Capability | Delivered by | Evidence |
+|---|---|---|---|
+| 1 | Four-slide public welcome + complete onboarding | P1a, P1b, P1d | pre-auth slides, skip, sign-up, acknowledgement |
+| 2 | Optional skippable Interests (0–5) / Goals (0–3) | P1b | skip both, set, clear |
+| 3 | Profile editing + preference-based recommendations | P1b, P2 | ranking inside authorized set; general fallback |
+| 4 | Group + Challenge discovery and participation | P2, P4, P4a, P5 | join/approval/return; Group Details incl. creator ≠ Steward; all three Challenge types |
+| 5 | 118-Activity development catalogue in V2 experience | P0, P5 | 118 selectable (84/34), Guide round trip |
+| 6 | Optional Profile / Group / Challenge images | P6 | upload, replace, remove, fallback (non-production) |
+| 7 | Full Profile + authorized member identities | P1a, P1c | Profile order per baseline; names only where authorized |
+| 8 | Challenge Feed, internal Share, Kudos, announcements | P7 | CF-01 v0.2 contract incl. resolved Q3 items |
+| 9 | Complete Today, Streak and logging | P3 | reminder, ordering, empty states, in-context logging |
+| 10 | Functional Support Tiizi manual journey | P8a | placeholder-complete, no payable action |
+| 11 | Account, Privacy and Help | P1d | acknowledgement, Help, honest Account section |
+
+Output: page-by-page acceptance table (§1.2) with approved SHA and open dependencies. **CI-green or package-complete never equals CPE acceptance or pilot-ready.**
+
+### Controlled Pilot entry (after CPE; separate Founder authorization)
+Entry conditions: CPE accepted; P8b done **if** an actionable payment method is to be offered; approved legal presentation and acknowledgement (Q8); Disposition §16.9–§16.10 operational gates verified (cap, mailbox owner, background processing/BG-1 form, stop mechanism, hosting/privacy/legal, LIFE-1 pilot minimum, interim stewardship sufficiency); migrations and deployment separately authorized (incl. migration 025 CHECK-gap before Group Feed production deployment); explicit Founder pilot-launch authorization. **Wider Launch** follows pilot evidence and a further authorization; no core functionality may first appear there.
 
 ## 4. Package summary
 
@@ -179,26 +219,29 @@ A single mobile-preview session over the whole member journey on coherent dispos
 |---|---|---|---|---|
 | Gate 0 | Disposition recorded | — | R0 | Founder approval of A |
 | P0 | Guide return path; 118 preview; roster refresh | no | Low / R1 | — |
-| P1a | Welcome + Profile page | no | Low–Med / R1 | Q6 |
+| P1a | Welcome + Profile page | no | Low–Med / R1 | — (Q6 resolved) |
 | P8a | Support screen (placeholders) | no | Low / R1 | P1a |
-| P1b | Optional Interests/Goals | **yes** | Med–High / **R2** | Q1, IDs |
+| P1b | Optional Interests/Goals | **yes** | Med–High / **R2** | stable Interest IDs |
 | P1c | Display names (MC-4 min.) | no (read projection) | High / **R2** | — |
+| P1d | Account, Privacy, Help | **yes** | High / **R2** | Q8, P1a |
 | P2 | Discovery + join-return | no | Med / R1–R2 | P1b |
 | P3 | Today recovery | no | Med / R1 | — |
-| P4 | Group Details/Settings | maybe (Q2) | Low–Med / R1 | P1c, Q2 |
+| P4a | Original-creator provenance | **yes** | Med–High / **R2** | P1c |
+| P4 | Group Details/Settings | no | Low–Med / R1 | P1c, P4a, Q7 (culture step) |
 | P5 | Challenge corrections | no | Low / R1 | P0 |
 | P6 | Shared media | **yes** | High / **R2** | MEDIA-1, R2 account |
-| P7 | Challenge Feed | **yes** | High / **R2** | Q3, P1c |
-| P8b | Support activation | no | Med / R1 + Founder | Q5 |
+| P7 | Challenge Feed | **yes** | High / **R2** | Q3 (affected components), P1c |
+| *CPE gate* | Complete Product Experience acceptance | — | Founder | all packages above except P8b |
+| P8b | Support activation (pre-pilot) | no | Med / R1 + Founder | Q5 |
 
 Migration numbers are assigned only when the owning package starts (Disposition §12). No package deploys anything; hosted deployment is a separate authorization.
 
 ## 5. Independent review (Independent Code Reviewer)
 
-An R1 review was performed by a separate agent session (not the author) and its findings were applied; it is summarized in §6. It is not a substitute for Technical Lead review or Founder acceptance. Where a review is absent or not independent the status is **PENDING** and no approval is claimed.
+Two R1 document reviews were performed by separate agent sessions (not the author): the first on the original head `fc073da` (PASS WITH FIXES, 8 fixes applied); the second on Correction 001 (result recorded in §6). Neither is a substitute for Technical Lead review or Founder acceptance. Where a review is absent or not independent the status is **PENDING** and no approval is claimed.
 
 ## 6. Review record
 
-**Independent R1 review (separate agent session): PASS WITH FIXES — 8 required fixes applied** (Q-range references; decisions presented as recommendations not silent defaults; SUP-01/02 and T1 §V.6 authority gap added to FDR-04/Q5; FDR-03 relabelled "Restores (optional)"; 18+ declaration retained in the completion gate; Support-cause vs Support-Tiizi wizard copy added to P5; five line-reference corrections; Interests/Goals audit requirement added to P1b). The reviewer spot-checked 20+ `file:line` claims against `542052c` and confirmed MC package statuses against Master Programme v2.80. **Technical Lead review: PENDING. Founder acceptance: PENDING.** This is review of documents, not approval to implement.
-
-**Disposition:** PROPOSED. STOP for Technical Lead and Founder review.
+**Review 1 — original head `fc073da`: PASS WITH FIXES, 8 required fixes applied** (Q-range references; recommendations not silent defaults; SUP-01/02 and T1 §V.6 gap in FDR-04; FDR-03 relabelled; 18+ declaration kept in the gate; Support-cause vs Support-Tiizi copy; five line-reference corrections; preference-edit audit). 20+ `file:line` claims spot-checked at `542052c`; MC statuses confirmed against v2.80.
+**Review 2 — Correction 001 (separate agent session, R1): PASS WITH FIXES.** Alignment table checked against Disposition §16 (rows 2–5, 8, 9, §16.2, §16.3, §16.5, §16.7, §16.12, §16.13 all present and correctly cited); Q status, sequence and exceptions consistent; baseline file byte-identical; no stale Q1/pilot-deferral authority. Fixes applied: summary-table order, §16.7(2) retention, P4/P4a mapped to capability 4, P1d scope narrowed to implemented capabilities, extra alignment rows (§16.5 lead-in, §16.8/16.9 wording, "Wider Public Launch" column), Q2 "not recorded" outcome. The reviewer did not re-verify PR #107 file counts.
+**Technical Lead review: PENDING. Founder acceptance: PENDING.** Review of documents, not approval to implement.
