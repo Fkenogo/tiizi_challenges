@@ -8,6 +8,15 @@ import {
   type ComposerChallengeType,
 } from '../../api/challengeCreationApi';
 import { ApiError } from '../../api/apiClient';
+import { useAuth } from '../../hooks/useAuth';
+import {
+  clearChallengeDraft,
+  clearOtherMembersChallengeDrafts,
+  markChallengeGuideJourney,
+  disarmChallengeDraft,
+  peekChallengeDraft,
+  saveChallengeDraft,
+} from './challengeDraftSession';
 import type { ApiKnowledgeItem } from '../../api/knowledgeApi';
 import { ActivityThumbnail } from '../components/ActivityThumbnail';
 import {
@@ -136,10 +145,23 @@ export function V2ChallengeCreationWizard() {
   const memberships = useV2Memberships();
   const establish = useEstablishChallenge();
 
-  const [state, setState] = useState<WizardState>(() =>
-    restoreChallengeWizardRouteState(location.state).draft ?? createInitialWizardState(),
+  const { user } = useAuth();
+  const uid = user?.uid ?? '';
+  // Router history state is the primary draft carrier. If it was dropped on
+  // the way back from the Activity Guide, the uid-scoped session backup
+  // (armed only by an explicit Guide trip) recovers the same draft instead of
+  // silently restarting at Step 1.
+  const [recovered] = useState(() =>
+    restoreChallengeWizardRouteState(location.state).draft ? null : peekChallengeDraft(uid),
   );
-  const [stepIndex, setStepIndex] = useState(() => restoreChallengeWizardRouteState(location.state).stepIndex);
+  const [state, setState] = useState<WizardState>(() =>
+    restoreChallengeWizardRouteState(location.state).draft ?? recovered?.draft ?? createInitialWizardState(),
+  );
+  const [stepIndex, setStepIndex] = useState(() =>
+    restoreChallengeWizardRouteState(location.state).draft
+      ? restoreChallengeWizardRouteState(location.state).stepIndex
+      : recovered?.stepIndex ?? restoreChallengeWizardRouteState(location.state).stepIndex);
+  const leavingForGuide = useRef(false);
   const [previewState, setPreviewState] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
   const [previewIssues, setPreviewIssues] = useState<MappedPreviewIssue[] | null>(null);
   const [submitError, setSubmitError] = useState('');
@@ -150,6 +172,27 @@ export function V2ChallengeCreationWizard() {
   const preselected = useRef(false);
 
   const currentStep = VISIBLE_STEPS[stepIndex];
+
+  // Session backup of the draft (this tab, this member). Cleared on successful
+  // establishment and when the wizard is left for anywhere but the Guide.
+  useEffect(() => {
+    clearOtherMembersChallengeDrafts(uid);
+  }, [uid]);
+  // Recovery is read-only during render; disarm here (idempotent) so the
+  // backup cannot resurrect on a later, unrelated visit.
+  useEffect(() => {
+    if (recovered) disarmChallengeDraft(uid);
+  }, [recovered, uid]);
+  useEffect(() => {
+    saveChallengeDraft(uid, state, stepIndex);
+  }, [uid, state, stepIndex]);
+  useEffect(() => () => {
+    if (!leavingForGuide.current) clearChallengeDraft(uid);
+  }, [uid]);
+  function handleGuideTrip() {
+    leavingForGuide.current = true;
+    markChallengeGuideJourney(uid, state, stepIndex);
+  }
 
   // Keep the current draft on the wizard's history entry. The detail screen
   // can then be opened as a normal route, and browser Back restores this exact
@@ -280,6 +323,7 @@ export function V2ChallengeCreationWizard() {
           idempotencyKey: keyRef.current,
         }),
       );
+      clearChallengeDraft(uid);
       navigate(`/v2/challenges/${established.challengeId}`, { replace: true });
     } catch (error) {
       setSubmitError(creationErrorMessage(error instanceof ApiError ? error.code : null));
@@ -347,6 +391,8 @@ export function V2ChallengeCreationWizard() {
           addingId={addingId}
           addError={addError}
           onAdd={handleAddActivity}
+          stepIndex={stepIndex}
+          onGuideTrip={handleGuideTrip}
           onRemove={(activityId) => update({ activities: state.activities.filter((activity) => activity.activity !== activityId) })}
           onHandoffConsumed={(updatedDraft) => {
             const { activityId: _activityId, activityCode: _activityCode, addToDraft: _addToDraft, ...extras } = restoreChallengeWizardRouteState(location.state).routeState;
@@ -541,6 +587,11 @@ function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdat
   </div>;
 }
 
+/** Only a plain primary click navigates in this tab; modified/middle clicks open elsewhere and must not arm recovery. */
+function isPlainPrimaryClick(event: React.MouseEvent): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.defaultPrevented;
+}
+
 function StepActivities({
   state,
   preselectedIdentity,
@@ -550,6 +601,8 @@ function StepActivities({
   onAdd,
   onRemove,
   onHandoffConsumed,
+  stepIndex,
+  onGuideTrip,
 }: {
   state: WizardState;
   preselectedIdentity: string;
@@ -559,6 +612,8 @@ function StepActivities({
   onAdd: (item: ApiKnowledgeItemLike) => Promise<WizardState | null>;
   onRemove: (activityId: string) => void;
   onHandoffConsumed: (updatedDraft?: WizardState | null) => void;
+  stepIndex: number;
+  onGuideTrip: () => void;
 }) {
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -595,7 +650,12 @@ function StepActivities({
     <div className="space-y-4">
       <p className="text-sm leading-6 text-slate-600">
         Choose from the{' '}
-        <Link to="/v2/guide" className="font-bold text-primary underline underline-offset-2">
+        <Link
+          to="/v2/guide"
+          state={createChallengeWizardRouteState(state, stepIndex, { fromChallengeDraft: true })}
+          onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip(); }}
+          className="font-bold text-primary underline underline-offset-2"
+        >
           Activity Guide
         </Link>
         .{' '}
@@ -661,7 +721,8 @@ function StepActivities({
               <li key={item.id}>
               <Link
                 to={`/v2/guide/${encodeURIComponent(item.id)}`}
-                state={createChallengeWizardRouteState(state, VISIBLE_STEPS.indexOf('WHAT_ARE_WE_DOING'), { fromChallengeDraft: true })}
+                state={createChallengeWizardRouteState(state, stepIndex, { fromChallengeDraft: true })}
+                onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip(); }}
                 aria-label={`Open ${item.name}, ${item.kind === 'wellness' ? 'Wellness' : 'Fitness'}, ${item.category}${item.subcategory ? `, ${item.subcategory}` : ''}`}
                 className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 outline-none transition-colors hover:bg-orange-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >

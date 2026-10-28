@@ -48,6 +48,8 @@ import {
 } from '../src/v2/groups/groupCovers.js';
 import { stewardBadgeFor } from '../src/v2/groups/groupDraft.js';
 import type { V2GroupDetail } from '../src/api/groupsApi.js';
+import { QueryClient } from '@tanstack/react-query';
+import { invalidateV2GroupRoster, v2GroupRosterKey } from '../src/v2/groups/groupQueryKeys.js';
 import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from '../src/v2/groups/groupFocusAreas.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -363,6 +365,29 @@ check('no V1 experience in Group surfaces',
     hostedChallengeCtaLabel(variant({ myParticipation: null })) === 'View');
   check('helper composes the canonical gates (status active + live end state)',
     challengeLoggingOpen(base) && !challengeLoggingOpen(variant({ status: 'ended' })));
+}
+
+
+// ---------------------------------------------------------------------------
+// P0-C. Steward approval refreshes the roster without a browser reload
+// ---------------------------------------------------------------------------
+console.log('\nP0-C. roster refresh after Steward review');
+{
+  const qc = new QueryClient();
+  qc.setQueryData(v2GroupRosterKey('group-a', 'steward-uid'), { members: ['steward'] });
+  qc.setQueryData(v2GroupRosterKey('group-a', 'other-uid'), { members: ['steward'] });
+  qc.setQueryData(v2GroupRosterKey('group-b', 'steward-uid'), { members: ['someone'] });
+  await invalidateV2GroupRoster(qc, 'group-a');
+  const state = (g: string, u: string) => qc.getQueryState(v2GroupRosterKey(g, u))?.isInvalidated;
+  check('roster of the reviewed Group is marked stale for every viewer', state('group-a', 'steward-uid') === true && state('group-a', 'other-uid') === true);
+  check('other Groups\' rosters are untouched', state('group-b', 'steward-uid') === false);
+  const hooks = stripComments(read('src/v2/groups/useV2Groups.ts'));
+  const review = hooks.split('export function useReviewGroupApplication')[1]?.split('export function useLeaveV2Group')[0] ?? '';
+  check('Steward review invalidates the roster', /invalidateV2GroupRoster\(queryClient, groupId\)/.test(review));
+  check('Steward review still refreshes pending list and Group reads', /v2GroupPendingKey/.test(review) && /invalidateV2GroupReads/.test(review));
+  check('Join and Leave still invalidate the roster', (hooks.match(/invalidateV2GroupRoster\(queryClient, groupId\)/g) ?? []).length >= 3);
+  check('the roster query uses the shared key (no hand-written duplicate)', /queryKey: v2GroupRosterKey\(groupId, user\?\.uid\)/.test(hooks) && !/'v2-group-roster'/.test(hooks));
+  check('no client-side roster injection (server stays the membership authority)', !/setQueryData\(\s*v2GroupRosterKey/.test(hooks));
 }
 
 if (failures > 0) {

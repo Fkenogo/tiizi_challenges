@@ -30,6 +30,8 @@ import { listGroupChallengesV2, type V2ChallengeSummary } from '../../api/v2Chal
 import { removeV2GroupFeed } from './groupFeedQueryKeys';
 import {
   invalidateV2GroupReads,
+  invalidateV2GroupRoster,
+  v2GroupRosterKey,
   v2GroupChallengesKey,
   v2GroupDetailKey,
   v2GroupDiscoveryKey,
@@ -117,7 +119,7 @@ export function usePendingGroupApplications(groupId: string | null, enabled = tr
 export function useV2GroupRoster(groupId: string | null) {
   const { user } = useAuth();
   return useQuery<V2GroupRoster>({
-    queryKey: ['v2-group-roster', groupId, user?.uid],
+    queryKey: v2GroupRosterKey(groupId, user?.uid),
     queryFn: () => fetchGroupRoster(groupId as string),
     enabled: !!user && !!groupId,
   });
@@ -136,6 +138,9 @@ export function useReviewGroupApplication(groupId: string | null) {
     onSuccess: async () => {
       await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
       await queryClient.invalidateQueries({ queryKey: v2GroupPendingKey(groupId ?? undefined, user?.uid) });
+      // Approval changes who is on the roster; rejection leaves it untouched
+      // but a re-read is harmless and the server remains the only authority.
+      await invalidateV2GroupRoster(queryClient, groupId);
       await queryClient.invalidateQueries({ queryKey: ['v2-group-discovery'] });
     },
   });
@@ -150,7 +155,7 @@ export function useLeaveV2Group(groupId: string | null) {
       await removeV2GroupFeed(queryClient, groupId ?? undefined, user?.uid);
       await invalidateV2Memberships(queryClient);
       await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
-      await queryClient.invalidateQueries({ queryKey: ['v2-group-roster', groupId] });
+      await invalidateV2GroupRoster(queryClient, groupId);
     },
   });
 }
@@ -184,7 +189,7 @@ export function useJoinGroup(groupId: string | null) {
     onSuccess: async () => {
       await invalidateV2Memberships(queryClient);
       await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
-      await queryClient.invalidateQueries({ queryKey: ['v2-group-roster', groupId] });
+      await invalidateV2GroupRoster(queryClient, groupId);
     },
   });
 }

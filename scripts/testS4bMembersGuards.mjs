@@ -24,7 +24,11 @@ assert.match(ui, /cannot leave while responsible/);
 assert.match(ui, /grid grid-cols-1 gap-2/);
 assert.doesNotMatch(ui, /aria-label="Members"[^]*?grid-cols-2/);
 assert.match(hooks, /invalidateV2Memberships/);
-assert.match(hooks, /v2-group-roster/);
+assert.match(hooks, /v2GroupRosterKey\(groupId, user\?\.uid\)/, 'roster query uses the shared roster key');
+assert.match(await read('src/v2/groups/groupQueryKeys.ts'), /'v2-group-roster'/, 'shared roster key is defined once');
+// P0-C: Steward approval/rejection refreshes the roster as join/leave already do.
+const reviewHook = hooks.split('export function useReviewGroupApplication')[1]?.split('export function useLeaveV2Group')[0] ?? '';
+assert.match(reviewHook, /invalidateV2GroupRoster\(queryClient, groupId\)/, 'review hook invalidates the roster');
 assert.match(client, /\$\{API_PREFIX\}\/groups\/\$\{groupId\}\/members/);
 assert.match(client, /\$\{API_PREFIX\}\/groups\/\$\{groupId\}\/leave/);
 assert.match(mutation, /cannot leave while responsible for this Group/);
