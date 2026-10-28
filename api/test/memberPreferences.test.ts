@@ -22,8 +22,9 @@ const put = (app: ReturnType<typeof buildTestApp>, token: string, payload: unkno
   app.inject({ method: 'PUT', url: '/api/me/preferences', headers: { ...authHeaders(token), 'content-type': 'application/json' }, payload: payload as Record<string, unknown> });
 const get = (app: ReturnType<typeof buildTestApp>, token: string) =>
   app.inject({ method: 'GET', url: '/api/me/preferences', headers: authHeaders(token) });
-const ids = (n: number) => MEMBER_INTEREST_OPTIONS.slice(0, n).map((o) => o.id);
-const goals = (n: number) => MEMBER_GOAL_OPTIONS.slice(0, n).map((o) => o.id);
+// Selections are stored as a canonical sorted set (order is not meaningful).
+const ids = (n: number) => MEMBER_INTEREST_OPTIONS.slice(0, n).map((o) => o.id).sort();
+const goals = (n: number) => MEMBER_GOAL_OPTIONS.slice(0, n).map((o) => o.id).sort();
 async function events(memberId: string) {
   const r = await testDb().query<{ field: string; old_ids: string[]; new_ids: string[]; decision_only: boolean; actor_member_id: string }>(
     'SELECT field, old_ids, new_ids, decision_only, actor_member_id FROM member_preference_events WHERE member_id = $1 ORDER BY event_id', [memberId]);
@@ -113,6 +114,26 @@ describe('GET/PUT /api/me/preferences', () => {
     expect(skipGoals.json()).toMatchObject({ goalIds: [], interestsDecided: true, goalsDecided: true });
     const log = await events(memberId);
     expect(log.map((e) => [e.field, e.decision_only])).toEqual([['interests', true], ['goals', true]]);
+  });
+
+  it('treats a re-ordered repeat as a true no-op and caps absurd array sizes cheaply', async () => {
+    const { app, token, memberId } = await member();
+    await put(app, token, { interestIds: ['strength', 'sleep_rest'] });
+    const again = await put(app, token, { interestIds: ['sleep_rest', 'strength'] });
+    expect(again.json().interestIds).toEqual(['sleep_rest', 'strength']);
+    expect((await events(memberId)).length).toBe(1);
+    const huge = await put(app, token, { goalIds: Array.from({ length: 5000 }, () => 'manage_weight') });
+    expect(huge.statusCode).toBe(400);
+  });
+
+  it('concurrent saves of different sides for a brand-new member both land (no lost update)', async () => {
+    const { app, token, memberId } = await member();
+    const [a, b] = await Promise.all([
+      put(app, token, { interestIds: ids(2) }),
+      put(app, token, { goalIds: goals(2) }),
+    ]);
+    expect([a.statusCode, b.statusCode]).toEqual([200, 200]);
+    expect(await getMemberPreferenceIds(testDb(), memberId)).toEqual({ interestIds: ids(2), goalIds: goals(2) });
   });
 
   it('rejects unknown IDs, labels, wrong types, extra keys and empty bodies', async () => {

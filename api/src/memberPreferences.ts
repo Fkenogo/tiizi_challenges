@@ -89,7 +89,13 @@ function parseIds(
   if (!Array.isArray(value) || value.some((v) => typeof v !== 'string')) {
     throw new InvalidPreferencesError('invalid_preferences', `${field} must be an array of IDs`);
   }
-  const unique = [...new Set(value as string[])];
+  // Cheap bound before any set work: no valid request is longer than this.
+  if (value.length > 64) {
+    throw new InvalidPreferencesError('preference_limit_exceeded', `Choose at most ${max} ${field}`);
+  }
+  // Selection order is not meaningful: store a canonical (sorted) set so a
+  // re-ordered repeat of the same selection is a true no-op.
+  const unique = [...new Set(value as string[])].sort();
   const unknown = unique.find((id) => !allowed.has(id));
   if (unknown !== undefined) {
     throw new InvalidPreferencesError('unknown_preference_id', `Unknown ${field} ID`);

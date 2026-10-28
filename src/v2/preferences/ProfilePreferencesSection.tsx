@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { V2Button, V2Card, V2ErrorState } from '../components/V2Primitives';
 import { GoalsPicker, InterestsPicker } from './PreferencePickers';
 import { sameSelection } from './preferencesView';
@@ -18,11 +18,17 @@ export function ProfilePreferencesSection({ uid }: { uid: string | null }) {
   const [goals, setGoals] = useState<string[]>([]);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
-  // (Re)seed the editor from server truth whenever the member or saved state changes.
+  // Seed the editor from server truth ONCE per member (first load or account
+  // switch). Later server changes never overwrite unsaved local edits, and a
+  // successful save never wipes its own confirmation message.
+  const seededFor = useRef<string | null>(null);
   useEffect(() => {
-    if (data) { setInterests(data.interestIds); setGoals(data.goalIds); }
+    if (!data || !uid || seededFor.current === uid) return;
+    seededFor.current = uid;
+    setInterests(data.interestIds);
+    setGoals(data.goalIds);
     setMessage(null);
-  }, [uid, data?.interestIds.join(','), data?.goalIds.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [uid, data]);
 
   if (prefs.isLoading) return <V2Card><p className="text-sm text-slate-500">Loading your interests and goals…</p></V2Card>;
   if (prefs.isError || !data) {
@@ -37,7 +43,13 @@ export function ProfilePreferencesSection({ uid }: { uid: string | null }) {
   const anySelected = interests.length > 0 || goals.length > 0;
   const submit = (nextInterests: string[], nextGoals: string[], okText: string) => {
     setMessage(null);
-    save.mutate({ interestIds: nextInterests, goalIds: nextGoals }, {
+    // Send only the side(s) that actually changed, so editing one side never
+    // records a decision for the other (which would suppress its onboarding step).
+    const change: { interestIds?: string[]; goalIds?: string[] } = {};
+    if (!sameSelection(nextInterests, data.interestIds)) change.interestIds = nextInterests;
+    if (!sameSelection(nextGoals, data.goalIds)) change.goalIds = nextGoals;
+    if (Object.keys(change).length === 0) { setMessage({ kind: 'ok', text: okText }); return; }
+    save.mutate(change, {
       onSuccess: () => setMessage({ kind: 'ok', text: okText }),
       onError: () => setMessage({ kind: 'error', text: "We couldn't save your changes. Please try again." }),
     });

@@ -88,6 +88,8 @@ check('no preference value is read by any eligibility, join or participation cod
 console.log('F. Profile editing');
 const section = read('src/v2/preferences/ProfilePreferencesSection.tsx');
 check('Profile can save, clear all, and re-edit from server state', /Save/.test(section) && /Clear all/.test(section) && /setInterests\(data\.interestIds\)/.test(section));
+check('Profile seeds the editor once per member and never wipes a save confirmation or unsaved edits', /seededFor\.current === uid/.test(section) && !/setMessage\(null\);\s*\}, \[uid, data\?/.test(section) && !/eslint-disable/.test(section));
+check('Profile saves only the side(s) that changed (never records an untouched side as decided)', /change\.interestIds = nextInterests/.test(section) && /change\.goalIds = nextGoals/.test(section) && /!sameSelection\(nextInterests, data\.interestIds\)/.test(section));
 check('Profile uses the same pickers as onboarding', /InterestsPicker/.test(section) && /GoalsPicker/.test(section) && /InterestsPicker/.test(setup));
 const profile = read('src/v2/profile/V2ProfileScreen.tsx');
 check('Profile renders the section in its agreed slot (before Support Tiizi and the journey)',
