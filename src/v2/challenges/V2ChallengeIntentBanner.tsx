@@ -24,6 +24,11 @@ export function V2ChallengeIntentBanner({ ownChallenges }: { ownChallenges: V2Ch
   if (!intent || !ownChallenges) return null;
   const available = ownChallenges.find((challenge) => challenge.challengeId === intent.challengeId);
   if (!available) return null;
+  // Already taking part (joined by another path): the return context is spent.
+  if (available.myParticipation) {
+    clearChallengeIntent(uid);
+    return null;
+  }
 
   const dismiss = () => {
     clearChallengeIntent(uid);

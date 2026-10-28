@@ -112,7 +112,7 @@ function ExploreRow({ challenge }: { challenge: V2DiscoverableChallenge }) {
         ) : (
           <>
             <V2Button disabled={join.isPending} onClick={requestJoin}>
-              {join.isPending ? 'Sending…' : requiresApproval ? `Request to join ${groupName}` : `Join ${groupName} to take part`}
+              {join.isPending ? 'Sending…' : requiresApproval ? `Request to join ${groupName}` : endState === 'live' ? `Join ${groupName} to take part` : `Join ${groupName}`}
             </V2Button>
             <V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${challenge.host.groupId}`)}>View Group</V2Button>
           </>
@@ -122,7 +122,9 @@ function ExploreRow({ challenge }: { challenge: V2DiscoverableChallenge }) {
         <p className="mt-1.5 text-[11px] text-slate-500">
           {requiresApproval
             ? 'This Group reviews requests. You will not be added to the Challenge automatically.'
-            : 'Joining the Group does not enroll you in the Challenge — you choose that separately.'}
+            : endState === 'live'
+              ? 'Joining the Group does not enroll you in the Challenge — you choose that separately.'
+              : 'This Challenge has finished. Joining the Group does not enroll you in anything.'}
         </p>
       )}
       {join.isError && <p role="alert" className="mt-1 text-[11px] text-red-700">{error}</p>}

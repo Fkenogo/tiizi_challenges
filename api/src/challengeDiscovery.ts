@@ -76,21 +76,40 @@ export async function listDiscoverableChallenges(
   }
   const match = options.rank === 'general' ? null : preferenceMatchFor(preferences);
 
+  // The relevance score is computed in SQL and orders BEFORE the cap, so a
+  // strongly relevant Challenge is never cut off by recency. With no preference
+  // every score is 0 and the order is plain newest-first.
+  const preferredDomains = new Set(
+    match
+      ? MEMBER_INTEREST_OPTIONS
+        .filter((o) => match.interestLabels.includes(o.label))
+        .map((o) => (o.domain === 'Fitness' ? 'fitness' : 'wellness'))
+      : [],
+  );
   const hosts = await db.query<HostRow>(
-    `SELECT c.challenge_id, g.group_id, g.name AS group_name, g.focus_tags, g.goal_ids,
-            g.require_admin_approval, gm.status AS viewer_status,
-            (g.steward_member_id = $1) AS viewer_is_steward
-     FROM challenges c
-     JOIN groups g ON g.group_id = c.group_id
-     LEFT JOIN group_memberships gm ON gm.group_id = g.group_id AND gm.member_id = $1
-     WHERE g.status = 'active' AND g.is_private = false
-       AND g.steward_member_id IS DISTINCT FROM $1
-       AND COALESCE(gm.status, '') NOT IN ('active', 'joined')
-       AND NOT EXISTS (SELECT 1 FROM challenge_participations p
-                       WHERE p.challenge_id = c.challenge_id AND p.member_id = $1)
-     ORDER BY c.created_at DESC, c.challenge_id DESC
+    `SELECT * FROM (
+       SELECT c.challenge_id, c.created_at, g.group_id, g.name AS group_name, g.focus_tags, g.goal_ids,
+              g.require_admin_approval, gm.status AS viewer_status,
+              (g.steward_member_id = $1) AS viewer_is_steward,
+              (${GROUP_INTEREST_WEIGHT} * (SELECT count(*) FROM unnest(COALESCE(g.focus_tags, ARRAY[]::text[])) tag WHERE tag = ANY($2::text[]))
+               + ${GROUP_GOAL_WEIGHT} * (SELECT count(*) FROM unnest(COALESCE(g.goal_ids, ARRAY[]::text[])) gid WHERE gid = ANY($3::text[]))
+               + CASE WHEN EXISTS (
+                   SELECT 1 FROM challenge_activity_configs ac
+                   JOIN knowledge_items ki ON ki.knowledge_id = ac.knowledge_id
+                   WHERE ac.challenge_id = c.challenge_id AND ac.version = c.current_config_version
+                     AND ki.kind = ANY($4::text[])) THEN ${CHALLENGE_DOMAIN_WEIGHT} ELSE 0 END)::int AS relevance_score
+       FROM challenges c
+       JOIN groups g ON g.group_id = c.group_id
+       LEFT JOIN group_memberships gm ON gm.group_id = g.group_id AND gm.member_id = $1
+       WHERE g.status = 'active' AND g.is_private = false
+         AND g.steward_member_id IS DISTINCT FROM $1
+         AND COALESCE(gm.status, '') NOT IN ('active', 'joined')
+         AND NOT EXISTS (SELECT 1 FROM challenge_participations p
+                         WHERE p.challenge_id = c.challenge_id AND p.member_id = $1)
+     ) discoverable
+     ORDER BY relevance_score DESC, created_at DESC, challenge_id DESC
      LIMIT ${CHALLENGE_DISCOVERY_LIMIT}`,
-    [memberId],
+    [memberId, match?.interestLabels ?? [], match?.goalIds ?? [], [...preferredDomains]],
   );
   const hostById = new Map(hosts.rows.map((row) => [String(row.challenge_id), row]));
   const ids = [...hostById.keys()];
@@ -99,13 +118,6 @@ export async function listDiscoverableChallenges(
     ? []
     : await assembleChallengeSummaries(db, ids, noEpisodes, new Date());
 
-  const preferredDomains = new Set(
-    match
-      ? MEMBER_INTEREST_OPTIONS
-        .filter((o) => match.interestLabels.includes(o.label))
-        .map((o) => (o.domain === 'Fitness' ? 'fitness' : 'wellness'))
-      : [],
-  );
 
   // Deterministic base order: the existing list order (start date, newest first),
   // then the hosted Challenge's creation order from the authorized query.

@@ -348,6 +348,22 @@ describe('P2 Challenge discovery and the Group-join journey', () => {
     await app.close();
   });
 
+  it('ranks before the cap: a relevant older Challenge is never cut off by 60 newer ones', async () => {
+    const db = testDb();
+    const steward = await seedMember(db, 'p2c-steward');
+    await seedMember(db, 'p2c-viewer');
+    const relevant = await makeGroup(db, 'Relevant Group', { focusTags: ['Strength'], stewardId: steward });
+    const noise = await makeGroup(db, 'Noise Group', { stewardId: steward });
+    const target = await makeChallenge(db, relevant, steward, 'fitness', 'Older relevant');
+    for (let i = 0; i < 61; i += 1) await makeChallenge(db, noise, steward, 'fitness', `Noise ${i}`);
+    const app = appFor({ viewer: 'p2c-viewer' });
+    await putPrefs(app, 'viewer', { interestIds: [idFor('Strength')], goalIds: [] });
+    const ranked = await challenges(app, 'viewer');
+    expect(ranked.challenges).toHaveLength(60);
+    expect(ranked.challenges[0].challengeId).toBe(target);
+    await app.close();
+  }, 60000);
+
   it('requires authentication', async () => {
     const app = appFor({});
     expect((await app.inject({ method: 'GET', url: '/api/challenges/discover' })).statusCode).toBe(401);
