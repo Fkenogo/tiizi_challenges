@@ -116,16 +116,22 @@ const shell = read('src/v2/member/MemberShell.tsx');
 const profile = read('src/v2/profile/V2ProfileScreen.tsx');
 check('avatar navigates straight to /v2/profile', /onOpen=\{\(\) => navigate\('\/v2\/profile'\)\}/.test(shell));
 check('the fragmented account sheet is gone', !/<V2Sheet|ACCOUNT\b/.test(shell));
-const order = ['Display name', 'Email', 'Interests &amp; Goals', 'Support Tiizi', 'My Tiizi Journey', 'Account &amp; preferences', 'Help &amp; guide']
+const order = ['Display name', 'Email', 'slot="interests-goals"', 'slot="support-tiizi"', 'My Tiizi Journey', 'Account &amp; preferences', 'Help &amp; guide']
   .map((label) => profile.indexOf(label));
-check('Profile sections are in the accepted member-first order', order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), JSON.stringify(order));
+check('Profile keeps the agreed section order (incomplete sections hold their final slots)', order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), JSON.stringify(order));
 check('Profile keeps display-name edit, read-only email, Groups and Challenges',
   /startEditing/.test(profile) && /saveDisplayName/.test(profile) && /user\?\.email/.test(profile) && /Show more Groups/.test(profile) && /ChallengeGroup/.test(profile));
 check('Profile offers Sign out, Activity Guide and How Tiizi works', /Sign out/.test(profile) && /navigate\('\/v2\/guide'\)/.test(profile) && /How Tiizi works/.test(profile) && /WELCOME_PATH/.test(profile));
 check('no downstream functionality leaked into P1a (no upload, payment, preference controls)',
   !/type="file"|mailto:|tel:|wa\.me|paystack|<select|type="checkbox"/i.test(profile));
-check('Interests/Goals and Support entries are honest text, not actions',
-  !/Interests &amp; Goals<\/h2>[\s\S]{0,400}<(button|V2Button|Link)/.test(profile.slice(profile.indexOf('Interests &amp; Goals'), profile.indexOf('My Tiizi Journey'))));
+check('no member-facing "coming soon" / later-availability wording on Profile or welcome',
+  !/coming soon|arrives with a later|later update|wider launch/i.test(profile + page + read('src/v2/welcome/welcomeContent.ts')));
+check('unimplemented sections render nothing to members: dev-only marker gated by import.meta.env.DEV',
+  /function DevPackageStatus[\s\S]*?if \(!import\.meta\.env\.DEV\) return null;/.test(profile));
+check('dev marker has no actions or inputs (no fake editing, donation, upload or payment)',
+  !/<(button|V2Button|Link|input|form|a)\b/.test(profile.slice(profile.indexOf('function DevPackageStatus'), profile.indexOf('function SectionLabel'))));
+check('no member-facing Interests/Goals or Support heading until implemented',
+  !/<h2[^>]*>\s*(Interests|Support Tiizi)/.test(profile));
 
 console.log('F. sign-out clears the draft backup');
 const signOut = read('src/v2/profile/useV2SignOut.ts');

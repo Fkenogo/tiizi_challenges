@@ -112,7 +112,6 @@ export function V2ProfileScreen() {
   const displayName = profile.displayName;
   const draftLength = displayNameLength(draft);
   const draftOverLimit = draftLength > PROFILE_DISPLAY_NAME_MAX;
-  const imageNotConfigured = profile.profileImage.status === 'not_configured';
   const email = user?.email ?? null;
   const buckets = bucketProfileChallenges(profile.challenges.items);
 
@@ -215,12 +214,6 @@ export function V2ProfileScreen() {
             )}
           </div>
 
-          {imageNotConfigured && (
-            <p className="mt-4 text-xs leading-5 text-slate-500">
-              A profile photo arrives with a later update. For now your initials stand in for it.
-            </p>
-          )}
-
           {editing && (
             <form
               className="mt-4 space-y-3 border-t border-slate-200 pt-4"
@@ -299,19 +292,11 @@ export function V2ProfileScreen() {
           </p>
         </V2Card>
 
-        <V2Card>
-          <h2 className="text-base font-black text-slate-900">Interests &amp; Goals</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            Choosing your interests and goals is coming soon.
-          </p>
-        </V2Card>
-
-        <V2Card>
-          <h2 className="text-base font-black text-slate-900">Support Tiizi</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            Ways to support Tiizi are coming soon.
-          </p>
-        </V2Card>
+        {/* Final section order is preserved. Interests & Goals (P1b) and Support Tiizi
+            (P8a/P8b) render for members only once implemented; until then these slots
+            show a development-only marker and nothing in production. */}
+        <DevPackageStatus slot="interests-goals" label="Interests & Goals" owner="P1b" />
+        <DevPackageStatus slot="support-tiizi" label="Support Tiizi" owner="P8a / P8b" />
 
         <SectionLabel>My Tiizi Journey</SectionLabel>
 
@@ -439,6 +424,27 @@ export function V2ProfileScreen() {
         </V2Card>
       </div>
     </V2Page>
+  );
+}
+
+/**
+ * Development-only review marker for a Profile section whose package is not
+ * implemented yet. `import.meta.env.DEV` is false in production builds, so
+ * members never see it; it has no actions and makes no product promise.
+ */
+function DevPackageStatus({ slot, label, owner }: { slot: string; label: string; owner: string }) {
+  if (!import.meta.env.DEV) return null;
+  return (
+    <div
+      role="note"
+      data-dev-review-only={slot}
+      className="rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900"
+    >
+      <p className="font-black uppercase tracking-wider">Development review only</p>
+      <p>
+        {label}: not implemented in this package (owner: {owner}). Not shown to members.
+      </p>
+    </div>
   );
 }
 
