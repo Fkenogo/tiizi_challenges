@@ -140,6 +140,9 @@ export function V2TodayScreen() {
               <V2Button variant="secondary" onClick={() => navigate('/v2/groups')}>
                 Find a Group
               </V2Button>
+              <V2Button variant="ghost" onClick={() => navigate('/v2/welcome')}>
+                How Tiizi works
+              </V2Button>
             </div>
           }
         />

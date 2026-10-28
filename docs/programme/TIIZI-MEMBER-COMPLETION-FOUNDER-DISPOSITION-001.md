@@ -477,3 +477,24 @@ Migrations 026 and 027 remain code-authorized and **NOT production deployed**; m
 ### 16.13 Approval
 
 **Founder disposition: APPROVED IN SUBSTANCE.** The Founder accepts FD-PILOT-01 as the governing distinction between the Limited Kenya Pilot and Wider Public Launch, including the retained, reduced and deferred gates in §16. **Effective upon approved merge of PR #104 into `main`**; until then Master Programme 2.79 remains the effective `main` baseline. This approval does **not** authorize engineering implementation, migrations, deployment, public onboarding or the start of the pilot; each remaining package and the pilot launch require separate Founder authorization (§§15, 16.1, 16.12).
+
+---
+
+## 17. V2 Founder Experience Recovery 001 (record)
+
+**Status: IMPLEMENTED CANDIDATE — AWAITING FOUNDER EXPERIENCE REVIEW.** This is not Founder experience acceptance, and it does not amend §16.
+
+**Founder direction (2026-10-27).** The Founder reviewed the running V2 mobile preview and **rejected** the current first-time member experience as pilot-ready. Engineering completion is not Founder experience acceptance. The pilot must test Tiizi's essential voluntary fitness and wellness community experience, including progressive onboarding, Profile-building and Support Tiizi. The Founder authorized a **bounded** experience-recovery implementation.
+
+**Delivered in this candidate (UI and copy only; no backend model, schema or migration):**
+
+1. **First-run orientation (`/v2/welcome`).** Five skippable steps recovered from the committed onboarding design exports (Welcome to Tiizi, Join a Community, Join Challenges, Log Every Activity, Ready to Begin?). The final step shows the existing invite-code entry for the existing community, plus Find a Group, Create a Group and Go to Today. It is offered once, on the default landing, to a member who has seen no orientation and belongs to no Group. The seen-state is a per-device flag only. Returning members and explicit return paths are not interrupted, and the orientation can be replayed from the account sheet and the Today empty state.
+2. **Support Tiizi presence.** A permanent Support Tiizi card on the Profile (Product Truth T1 §V.3, FR-V2-155), an account-sheet entry, and an information screen (`/v2/support`) stating that Tiizi is free, support is voluntary, support never affects Group membership, Challenge participation, progress, ranking or results, and supporting the platform is separate from supporting a cause. It states that contributions are not open yet and gives an email next step. It carries no amount, destination, provider, total, meter or payment control.
+
+**Explicitly NOT done and NOT authorized by this record:**
+
+- **Contribution execution** (amounts, destination, payment provider, recording, receipts). It requires a separate Founder decision on donation authority (EA-01 FD-2 / EOG-05 SUP-01/02) plus legal, privacy and Terms work. The information-only screen is not Founder acceptance of voluntary-contribution functionality.
+- **Interests and Goals onboarding, Profile editing of them, REC-1.** §16 (FD-PILOT-01) defers them and remains unchanged. A proposed pilot-scope amendment restoring them was presented to the Founder and is **not approved or recorded**.
+- The reduced MC-3 gate (18+ declaration, recorded acknowledgement), minimum MC-4 identity, LIFE-1, BG-1 and every other §16 package remain separately gated.
+
+**Remaining dependencies for the full core experience:** an approved pilot-scope amendment; stable Focus Area IDs; Interests and Goals persistence with audit history (migration); the onboarding gate and Profile editing; the 18+ and acknowledgement records (approved legal text and version identifiers); minimum member identity; and, only if separately decided, contribution execution.

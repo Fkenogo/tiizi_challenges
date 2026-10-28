@@ -21,7 +21,7 @@ import { useV2SignOut } from '../profile/useV2SignOut';
  *
  * Navigation ownership:
  * - PRIMARY (Today / Challenges / Groups) — bottom bar at every width;
- * - ACCOUNT (Activity Guide / Profile) — account sheet only;
+ * - ACCOUNT (Activity Guide / Profile / Support Tiizi / How Tiizi works) — account sheet only;
  * - Notifications — the header bell only;
  * - Operator — not member navigation; its route tree stays outside this shell.
  */
@@ -36,6 +36,8 @@ const PRIMARY = [
 const ACCOUNT = [
   { to: '/v2/guide', key: 'guide', labelKey: 'shell.guide' },
   { to: '/v2/profile', key: 'profile', labelKey: 'shell.profile' },
+  { to: '/v2/support', key: 'support', labelKey: 'shell.support' },
+  { to: '/v2/welcome', key: 'howItWorks', labelKey: 'shell.howItWorks' },
 ] as const;
 
 function navClass(active: boolean) {
