@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import { useAuth } from '../../hooks/useAuth';
 import { V2Button } from '../components/V2Primitives';
-import { clearChallengeIntent, readChallengeIntent, type ChallengeIntent } from './challengeIntent';
+import { clearChallengeIntent, readChallengeIntent } from './challengeIntent';
 
 /**
  * TIIZI-FER-P2-001 — return to the Challenge the member was exploring.
@@ -16,8 +16,10 @@ export function V2ChallengeIntentBanner({ ownChallenges }: { ownChallenges: V2Ch
   const { user } = useAuth();
   const navigate = useNavigate();
   const uid = user?.uid;
-  const [intent, setIntent] = useState<ChallengeIntent | null>(() => readChallengeIntent(uid));
-  useEffect(() => setIntent(readChallengeIntent(uid)), [uid]);
+  // Read on every render: the intent is saved by the Explore list on the same
+  // screen AFTER this component mounted. `dismissals` only forces a re-read.
+  const [, setDismissals] = useState(0);
+  const intent = readChallengeIntent(uid);
 
   if (!intent || !ownChallenges) return null;
   const available = ownChallenges.find((challenge) => challenge.challengeId === intent.challengeId);
@@ -25,7 +27,7 @@ export function V2ChallengeIntentBanner({ ownChallenges }: { ownChallenges: V2Ch
 
   const dismiss = () => {
     clearChallengeIntent(uid);
-    setIntent(null);
+    setDismissals((count) => count + 1);
   };
   return (
     <section aria-label="Continue to your Challenge" className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">

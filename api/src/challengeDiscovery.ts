@@ -107,7 +107,11 @@ export async function listDiscoverableChallenges(
       : [],
   );
 
-  const scored = summaries.map((summary, index) => {
+  // Deterministic base order: the existing list order (start date, newest first),
+  // then the hosted Challenge's creation order from the authorized query.
+  const baseIndex = new Map(ids.map((id, index) => [id, index]));
+  const scored = summaries.map((summary) => {
+    const index = baseIndex.get(summary.challengeId) ?? 0;
     const host = hostById.get(summary.challengeId)!;
     const focusTags = Array.isArray(host.focus_tags) ? host.focus_tags.filter((t): t is string => typeof t === 'string') : [];
     const goalLabels = labelsForIds(host.goal_ids, GROUP_GOALS);
@@ -128,8 +132,9 @@ export async function listDiscoverableChallenges(
     };
     return { challenge, score, index };
   });
-  // Stable: ties keep the existing (assembled) order.
-  scored.sort((a, b) => b.score - a.score || a.index - b.index);
+  scored.sort((a, b) => b.score - a.score
+    || (a.challenge.startDate < b.challenge.startDate ? 1 : a.challenge.startDate > b.challenge.startDate ? -1 : 0)
+    || a.index - b.index);
   return { challenges: scored.map((entry) => entry.challenge), ranking: { applied: match !== null } };
 }
 
