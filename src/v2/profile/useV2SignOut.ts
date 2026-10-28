@@ -17,10 +17,13 @@ export function useV2SignOut() {
   const queryClient = useQueryClient();
 
   return useCallback(async () => {
-    // Signing out ends this member's Challenge-draft session backup too.
-    if (user?.uid) clearChallengeDraft(user.uid);
+    const uid = user?.uid;
     await queryClient.cancelQueries();
     queryClient.clear();
     await logout();
+    // Signing out ends this member's Challenge-draft session backup too —
+    // only once sign-out has actually succeeded (a failed sign-out keeps the
+    // member signed in with their draft).
+    if (uid) clearChallengeDraft(uid);
   }, [logout, queryClient, user?.uid]);
 }

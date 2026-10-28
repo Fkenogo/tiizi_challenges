@@ -36,6 +36,12 @@ export function V2WelcomeSlides() {
   const member = isReady && isAuthenticated;
   const [index, setIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
+  const primaryExitRef = useRef<HTMLAnchorElement>(null);
+  // Programmatic scroll in flight: ignore intermediate scroll positions so the
+  // active dot, last-slide actions and live announcement never flicker.
+  const scrollTarget = useRef<number | null>(null);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interacted = useRef(false);
   const last = index === SLIDE_COUNT - 1;
   const signUpPath = `/v2/sign-up${v2NextQuery(next)}`;
   const signInPath = `/v2/sign-in${v2NextQuery(next)}`;
@@ -45,11 +51,31 @@ export function V2WelcomeSlides() {
     if (last) markWelcomeSeen();
   }, [last]);
 
+  // Keyboard focus must survive Next being replaced by the exit actions.
+  useEffect(() => {
+    if (last && interacted.current) primaryExitRef.current?.focus();
+  }, [last]);
+
+  useEffect(() => () => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+  }, []);
+
+  function releaseScrollTarget() {
+    scrollTarget.current = null;
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = null;
+  }
+
   function goTo(target: number) {
     const track = trackRef.current;
     const clamped = clampSlide(target, SLIDE_COUNT);
+    interacted.current = true;
     setIndex(clamped);
-    track?.scrollTo({ left: clamped * track.clientWidth, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    if (!track) return;
+    scrollTarget.current = clamped;
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(releaseScrollTarget, 900); // safety net if the target is never reached
+    track.scrollTo({ left: clamped * track.clientWidth, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }
 
   /** Move relative to where the track really is, so rapid taps during a smooth scroll never use a stale index. */
@@ -61,7 +87,13 @@ export function V2WelcomeSlides() {
 
   function onScroll() {
     const track = trackRef.current;
-    if (track) setIndex(slideFromScroll(track.scrollLeft, track.clientWidth, SLIDE_COUNT));
+    if (!track) return;
+    const here = slideFromScroll(track.scrollLeft, track.clientWidth, SLIDE_COUNT);
+    if (scrollTarget.current !== null) {
+      if (here !== scrollTarget.current) return; // still travelling
+      releaseScrollTarget();
+    }
+    setIndex(here);
   }
 
   function onKeyDown(event: React.KeyboardEvent) {
@@ -75,6 +107,9 @@ export function V2WelcomeSlides() {
     markWelcomeSeen();
     navigate(member ? '/v2/profile' : signUpPath);
   }
+
+  // Wait for the local session check so a signed-in replay never flashes the visitor exits.
+  if (!isReady) return <div className="min-h-screen bg-slate-50" aria-busy="true" />;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -93,6 +128,7 @@ export function V2WelcomeSlides() {
           </button>
         </header>
 
+        <h1 className="sr-only">Welcome to Tiizi</h1>
         <section
           aria-roledescription="carousel"
           aria-label="Welcome to Tiizi"
@@ -100,7 +136,11 @@ export function V2WelcomeSlides() {
         >
           <div
             ref={trackRef}
+            role="group"
+            aria-label="Welcome slides. Use the arrow keys or swipe."
             onScroll={onScroll}
+            onPointerDown={releaseScrollTarget}
+            onWheel={releaseScrollTarget}
             onKeyDown={onKeyDown}
             tabIndex={0}
             className="flex flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-scrollbar]:hidden"
@@ -116,7 +156,7 @@ export function V2WelcomeSlides() {
                 <div className="h-44 w-full max-w-xs">
                   <WelcomeArt id={slide.id} />
                 </div>
-                <h1 className="mt-8 text-2xl font-black tracking-tight">{slide.title}</h1>
+                <h2 className="mt-8 text-2xl font-black tracking-tight">{slide.title}</h2>
                 <p className="mt-3 max-w-xs text-base leading-7 text-slate-600">{slide.body}</p>
               </div>
             ))}
@@ -143,6 +183,7 @@ export function V2WelcomeSlides() {
           {last ? (
             member ? (
               <Link
+                ref={primaryExitRef}
                 to="/v2/profile"
                 className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-sm hover:bg-primary-dark"
               >
@@ -151,6 +192,7 @@ export function V2WelcomeSlides() {
             ) : (
               <>
                 <Link
+                  ref={primaryExitRef}
                   to={signUpPath}
                   onClick={() => markWelcomeSeen()}
                   className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-sm hover:bg-primary-dark"

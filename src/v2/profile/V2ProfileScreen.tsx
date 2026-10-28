@@ -302,16 +302,14 @@ export function V2ProfileScreen() {
         <V2Card>
           <h2 className="text-base font-black text-slate-900">Interests &amp; Goals</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            Choosing what you&apos;re into and what you&apos;re working towards is coming soon. It will
-            only ever tune your suggestions — never limit what you can join.
+            Choosing your interests and goals is coming soon.
           </p>
         </V2Card>
 
         <V2Card>
           <h2 className="text-base font-black text-slate-900">Support Tiizi</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            Tiizi is free to use and always will be. Ways to support it, if you&apos;d like to, are
-            coming soon.
+            Ways to support Tiizi are coming soon.
           </p>
         </V2Card>
 

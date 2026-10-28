@@ -92,6 +92,12 @@ check('swipe is native scroll-snap', /snap-x/.test(page) && /snap-mandatory/.tes
 check('keyboard: arrows/Home/End', /ArrowRight/.test(page) && /ArrowLeft/.test(page) && /Home/.test(page) && /End/.test(page));
 check('reduced motion respected', /prefers-reduced-motion/.test(page) && /motion-safe:/.test(page));
 check('accessible carousel semantics + live region', /aria-roledescription="carousel"/.test(page) && /aria-live="polite"/.test(page) && /aria-current/.test(page));
+check('no permanent product promises in Profile entry cards', !/always will be|only ever|never limit/i.test(read('src/v2/profile/V2ProfileScreen.tsx')));
+check('single page h1; slide titles are h2', (page.match(/<h1/g) ?? []).length === 1 && /<h2[^>]*>\{slide\.title\}/.test(page));
+check('scroller is a named group', /role="group"\s+aria-label="Welcome slides/.test(page));
+check('programmatic scroll ignores intermediate positions', /scrollTarget/.test(page) && /releaseScrollTarget/.test(page) && /if \(here !== scrollTarget\.current\) return;/.test(page));
+check('focus moves to the primary exit when Next is replaced', /primaryExitRef\.current\?\.focus\(\)/.test(page));
+check('neutral state until the local session check is ready (no visitor-exit flash for members)', /if \(!isReady\) return/.test(page));
 check('seen state recorded on exits', (page.match(/markWelcomeSeen\(/g) ?? []).length >= 4);
 check('artwork is inline SVG authored in-repo (no image files, no new dependency)',
   !/<img\b|\.jpg|\.png|\.webp/.test(page + read('src/v2/welcome/WelcomeArt.tsx')) && /<svg/.test(read('src/v2/welcome/WelcomeArt.tsx')));
@@ -123,8 +129,8 @@ check('Interests/Goals and Support entries are honest text, not actions',
 
 console.log('F. sign-out clears the draft backup');
 const signOut = read('src/v2/profile/useV2SignOut.ts');
-check('sign-out clears this member\'s Challenge draft before logout',
-  /clearChallengeDraft\(user\.uid\)/.test(signOut) && signOut.indexOf('clearChallengeDraft') < signOut.indexOf('await logout()'));
+check('sign-out clears this member\'s Challenge draft only after logout succeeds',
+  /clearChallengeDraft\(uid\)/.test(signOut) && signOut.indexOf('await logout()') < signOut.indexOf('clearChallengeDraft(uid)') && /const uid = user\?\.uid/.test(signOut));
 check('shared query cache is still cleared', /queryClient\.clear\(\)/.test(signOut));
 
 console.log('G. nothing imported from unmerged PR #107');
