@@ -1,3 +1,4 @@
+import { memberLabel } from '../members/memberLabel';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { V2Card, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
 import { formatDayRange } from './challengeCreationDraft';
@@ -116,7 +117,7 @@ export function V2FinalizedCollectiveResult({ detail }: { detail: V2ChallengeDet
                     own ? 'bg-emerald-50 font-bold text-emerald-900' : 'bg-slate-50 text-slate-700'
                   }`}
                 >
-                  <span>{own ? 'You' : 'A fellow participant'}</span>
+                  <span>{own ? 'You' : memberLabel(entry.displayName, 'A fellow participant')}</span>
                   <span className="font-bold">
                     {entry.contributionTotal.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}
                     {entry.share !== null && (

@@ -23,6 +23,7 @@
  * Firebase is used only at the authentication boundary.
  */
 
+import { readDisplayNames } from './memberDisplayNames.js';
 import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
@@ -85,7 +86,7 @@ function missingStore(): GroupReadStore {
   return { getGroup: unavailable, getMembership: unavailable, listMemberships: unavailable };
 }
 
-export interface ApiGroupMember { memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null }
+export interface ApiGroupMember { memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null; displayName: string | null }
 export interface ApiGroupRoster { groupId: string; members: ApiGroupMember[] }
 export interface ApiPendingApplication { memberId: string; requestedAt: string; displayName: string | null }
 
@@ -126,9 +127,13 @@ export async function getGroupRoster(db: Db, store: GroupReadStore, memberId: st
     const uid = typeof row.userId === 'string' ? row.userId : null;
     const mappedId = uid ? memberByUid.get(uid) : null;
     if (!mappedId) readFail(503, 'roster_unavailable', 'Group membership information is incomplete');
-    members.push({ memberId: mappedId, relationship: mappedId === stewardMemberId ? 'steward' : 'member', joinedAt: typeof row.createdAt === 'string' ? row.createdAt : typeof row.approvedAt === 'string' ? row.approvedAt : null });
+    members.push({ memberId: mappedId, relationship: mappedId === stewardMemberId ? 'steward' : 'member', displayName: null, joinedAt: typeof row.createdAt === 'string' ? row.createdAt : typeof row.approvedAt === 'string' ? row.approvedAt : null });
   }
   if (!members.some((row) => row.relationship === 'steward')) readFail(503, 'roster_unavailable', 'Group membership information is incomplete');
+  // P1c: the viewer is an ACTIVE member of this Group (enforced above), so the
+  // roster they may already see carries each listed member's display name.
+  const names = await readDisplayNames(db, members.map((row) => row.memberId));
+  for (const row of members) row.displayName = names.get(row.memberId) ?? null;
   members.sort((a, b) => Number(b.relationship === 'steward') - Number(a.relationship === 'steward'));
   return { groupId, members };
 }
@@ -477,7 +482,7 @@ export function registerGroupReadRoutes(
   app.get('/api/groups/:groupId/members', {
     validatorCompiler: groupMutationEmptyValidatorCompiler,
     schema: { params: groupIdParamsSchema, response: { 200: { type: 'object', required: ['groupId', 'members'], properties: {
-      groupId: { type: 'string', format: 'uuid' }, members: { type: 'array', items: { type: 'object', required: ['memberId', 'relationship', 'joinedAt'], properties: { memberId: { type: 'string', format: 'uuid' }, relationship: { type: 'string', enum: ['steward', 'member'] }, joinedAt: { anyOf: [{ type: 'string' }, { type: 'null' }] } } } },
+      groupId: { type: 'string', format: 'uuid' }, members: { type: 'array', items: { type: 'object', required: ['memberId', 'relationship', 'joinedAt', 'displayName'], properties: { memberId: { type: 'string', format: 'uuid' }, relationship: { type: 'string', enum: ['steward', 'member'] }, joinedAt: { anyOf: [{ type: 'string' }, { type: 'null' }] }, displayName: { anyOf: [{ type: 'string' }, { type: 'null' }] } } } },
     } } } },
   }, async (request) => {
     const member = authenticatedMember(request);

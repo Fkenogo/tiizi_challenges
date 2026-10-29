@@ -1,3 +1,4 @@
+import { memberLabel } from '../members/memberLabel';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { V2Card, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
 import { formatResultDay } from './resultsFormat';
@@ -98,7 +99,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
                       >
                         <span>
                           <span className="mr-2 inline-block w-7 font-black">#{entry.position}</span>
-                          {own ? 'You' : 'A fellow participant'}
+                          {own ? 'You' : memberLabel(entry.displayName, 'A fellow participant')}
                         </span>
                         <span className="font-bold">
                           {entry.cumulativeTotal.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}
@@ -122,7 +123,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
                           own ? 'bg-sky-50 font-bold text-sky-900' : 'bg-slate-50 text-slate-700'
                         }`}
                       >
-                        <span>{own ? 'You' : 'A fellow participant'}</span>
+                        <span>{own ? 'You' : memberLabel(entry.displayName, 'A fellow participant')}</span>
                         <span className="font-bold">
                           {entry.cumulativeTotal.toLocaleString()}{view.unit ? ` ${view.unit}` : ''}
                         </span>

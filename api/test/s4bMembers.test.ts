@@ -27,7 +27,9 @@ describe('S4b governed member roster', () => {
     const encoded = JSON.stringify(body);
     expect(encoded).not.toContain(ownerUid); expect(encoded).not.toContain(memberUid);
     expect(body.groupId).toBe(created.id); expect(encoded).not.toContain('role');
-    expect(encoded).not.toMatch(/email|phone|displayName|photo|profile|avatar|participation/i);
+    // P1c: only the governed display name is added to the roster; nothing else identifying.
+    expect(encoded).not.toMatch(/email|phone|photo|profile|avatar|participation/i);
+    expect(Object.keys(body.members[0]).sort()).toEqual(['displayName', 'joinedAt', 'memberId', 'relationship']);
   });
 
   it('denies outsiders, pending applicants, and ended members without leaking private Group existence', async () => {

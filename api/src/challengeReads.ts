@@ -31,6 +31,7 @@
  * No streak leaderboard (no ranking semantics for streaks).
  */
 
+import { readDisplayNames } from './memberDisplayNames.js';
 import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import { dayInTimezone } from './activityEvents.js';
@@ -248,6 +249,8 @@ export interface ApiChallengeDetail extends ApiChallengeSummary {
 
 export interface ApiLeaderboardEntry {
   memberId: string;
+  /** P1c: governed display name for a viewer currently entitled to names; otherwise null. */
+  displayName: string | null;
   participationId: string;
   totalPoints: number;
   cumulativeTotal: number;
@@ -267,6 +270,8 @@ export interface ApiLeaderboardEntry {
  */
 export interface ApiContributorEntry {
   memberId: string;
+  /** P1c: governed display name for a viewer currently entitled to names; otherwise null. */
+  displayName: string | null;
   /**
    * CORR-001: the member's current episode (active, else latest joined) —
    * identity for "You"/current-participation behaviour. History stays on
@@ -461,6 +466,24 @@ async function liveEligibility(
     );
   }
   return result?.eligible === true;
+}
+
+/**
+ * P1c — names are shown only to a viewer who is CURRENTLY eligible in the
+ * Challenge's Group under live authority. A member who only retains their own
+ * participation history (exited, removed) keeps the existing visibility of
+ * the Challenge but sees no other member's name. Ids passed in are already
+ * part of the authorized read.
+ */
+async function namesForViewer(
+  db: Db,
+  challenge: ChallengeRow,
+  viewerMemberId: string,
+  authority: GroupMembershipAuthority,
+  memberIds: readonly string[],
+): Promise<Map<string, string | null>> {
+  if (!(await liveEligibility(authority, challenge.group_id, viewerMemberId))) return new Map();
+  return readDisplayNames(db, memberIds);
 }
 
 async function readChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {
@@ -1142,6 +1165,7 @@ export async function getChallengeLeaderboard(
       : (livePositions[governing.participation_id] ?? null);
     return {
       memberId: governing.member_id,
+      displayName: null,
       participationId: current.participation_id,
       totalPoints: progress.totalPoints,
       cumulativeTotal: progress.cumulativeTotal,
@@ -1151,6 +1175,8 @@ export async function getChallengeLeaderboard(
       position,
     };
   });
+  const names = await namesForViewer(db, challenge, memberId, deps.groupMembershipAuthority, entries.map((entry) => entry.memberId));
+  for (const entry of entries) entry.displayName = names.get(entry.memberId) ?? null;
   entries.sort((a, b) => {
     if (a.position != null || b.position != null) {
       if (a.position == null) return 1;
@@ -1255,6 +1281,7 @@ export async function getChallengeContributors(
     const current = memberEpisodes.find((e) => e.status === 'active') ?? memberEpisodes[0];
     return {
       memberId: member,
+      displayName: null,
       participationId: current.participation_id,
       participationStatus: current.status,
       contributionTotal,
@@ -1262,6 +1289,8 @@ export async function getChallengeContributors(
       logsAccepted,
     };
   });
+  const names = await namesForViewer(db, challenge, memberId, deps.groupMembershipAuthority, contributors.map((entry) => entry.memberId));
+  for (const entry of contributors) entry.displayName = names.get(entry.memberId) ?? null;
   // Display convenience only (largest contribution first, stable by member):
   // carries no rank semantics — there is no position field by design.
   contributors.sort((a, b) => {

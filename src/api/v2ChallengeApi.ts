@@ -158,6 +158,8 @@ export interface V2ChallengeDetail extends V2ChallengeSummary {
 
 export interface V2LeaderboardEntry {
   memberId: string;
+  /** P1c: present only for a viewer currently entitled to names; otherwise null. */
+  displayName?: string | null;
   participationId: string;
   totalPoints: number;
   cumulativeTotal: number;
@@ -176,6 +178,8 @@ export interface V2LeaderboardEntry {
  */
 export interface V2ContributorEntry {
   memberId: string;
+  /** P1c: present only for a viewer currently entitled to names; otherwise null. */
+  displayName?: string | null;
   participationId: string;
   participationStatus: V2ParticipationStatus;
   contributionTotal: number;
