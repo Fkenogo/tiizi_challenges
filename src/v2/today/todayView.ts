@@ -274,31 +274,61 @@ export type NoParticipationKind =
   | 'joined-not-live'
   | 'no-group'
   | 'group-with-challenges'
-  | 'group-without-challenges';
+  | 'group-without-challenges'
+  | 'no-live-challenges';
+
+/** Facts the empty states may rest on. Anything not known is `null`/`undefined` — never guessed. */
+export interface NoParticipationFacts {
+  /** Real Group membership count (existing memberships read); null while unknown. */
+  groupCount: number | null;
+  /**
+   * The member's Challenge list (existing authorized read: every Challenge in
+   * their eligible Groups, in any state, plus their own history); undefined
+   * while loading or when the read failed.
+   */
+  challengeList: ReadonlyArray<{ myParticipation: { status: string } | null }> | undefined;
+  /** Served Group opportunities (open, not joined, not ended). */
+  hasOpportunities: boolean;
+  hasPendingGroupApplication: boolean;
+  /** The Today projection itself shows participation (joined-upcoming or finalized). */
+  projectionShowsParticipation: boolean;
+}
 
 /**
- * `groupCount` is the member's real Group membership count (null while it is
- * not known — the caller then shows the generic zero state, never a guess).
- * `hasChallengesInGroups` comes from the served Group opportunities.
- * `joinsAny` is true when the member already takes part in a Challenge that is
- * simply not live today, and null while that is unknown.
+ * Today's opportunities are NOT evidence that a Group has no Challenges (they
+ * exclude joined, ended, finalized and beyond-horizon Challenges). The absence
+ * claim "no Challenges in your Groups" therefore rests only on the authorized
+ * Challenge list read being loaded and empty; an unknown or failed read gives
+ * the neutral generic state.
  */
-export function noParticipationKind(
-  groupCount: number | null,
-  hasChallengesInGroups: boolean,
-  hasPendingGroupApplication = false,
-  joinsAny: boolean | null = false,
-): NoParticipationKind {
-  if (joinsAny === true) return 'joined-not-live';
-  if (joinsAny === null) return 'unknown';
-  if (groupCount === null) return 'unknown';
+export function noParticipationKind(facts: NoParticipationFacts): NoParticipationKind {
+  if (facts.projectionShowsParticipation) return 'joined-not-live';
+  if (!facts.challengeList) return 'unknown';
+  if (joinsAnyChallenge(facts.challengeList) === true) return 'joined-not-live';
+  if (facts.groupCount === null) return 'unknown';
   // A pending Group application is a real fact: do not tell that member to "start with a Group".
-  if (groupCount === 0) return hasPendingGroupApplication ? 'unknown' : 'no-group';
-  return hasChallengesInGroups ? 'group-with-challenges' : 'group-without-challenges';
+  if (facts.groupCount === 0) return facts.hasPendingGroupApplication ? 'unknown' : 'no-group';
+  if (facts.hasOpportunities) return 'group-with-challenges';
+  // Challenges exist in the member's Groups but none is open to join (ended, finalized, not open):
+  // neutral wording, no absence claim. Only a genuinely empty list asserts "no Challenges".
+  return facts.challengeList.length === 0 ? 'group-without-challenges' : 'no-live-challenges';
+}
+
+/**
+ * The blocking "we couldn't load your day" state applies ONLY when there is no
+ * projection to show. A failed background refresh keeps the last projection on
+ * screen (and any open logging sheet mounted) with a separate refresh notice.
+ */
+export function todayBlockingError(state: { isError: boolean; data: unknown }): boolean {
+  return state.isError && state.data === undefined;
 }
 
 /** PROPOSED wording (pending Founder copy review) for the differentiated empty states. */
 export const NO_PARTICIPATION_COPY: Record<Exclude<NoParticipationKind, 'unknown'>, { title: string; message: string }> = {
+  'no-live-challenges': {
+    title: "You're not in a Challenge right now",
+    message: 'Open Challenges to see what your Groups have.',
+  },
   'joined-not-live': {
     title: 'Nothing to log today',
     message: "Your Challenges aren't running today. Open one to see where it stands.",

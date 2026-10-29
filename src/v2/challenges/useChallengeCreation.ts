@@ -10,7 +10,7 @@ import {
   type EstablishChallengeBody,
   type EstablishChallengeResponse,
 } from '../../api/challengeCreationApi';
-import { invalidateV2Today } from '../today/todayQueryKeys';
+import { refreshAfterAcceptedLog } from './refreshAfterAcceptedLog';
 import { fetchMyMemberships, type MyMembershipsResponse } from '../../api/membershipsApi';
 import { v2MembershipsKey } from '../memberships/membershipQueryKeys';
 import {
@@ -179,13 +179,12 @@ export function useLogActivityV2() {
   const { user } = useAuth();
   return useMutation<V2ActivityResult, Error, { challengeId: string; payload: V2ActivityPayload }>({
     mutationFn: (variables) => logChallengeActivityV2(variables.challengeId, variables.payload),
-    onSuccess: async (_result, variables) => {
-      // P3: Today is composed from the same Challenge reads; mark it stale so the
-      // server re-proves it (never patched client-side) after an accepted log.
-      await Promise.all([
-        invalidateV2ChallengeReads(queryClient, user?.uid, variables.challengeId),
-        invalidateV2Today(queryClient, user?.uid),
-      ]);
+    onSuccess: (_result, variables) => {
+      // The server accepted the activity: report it NOW. Refreshing the reads
+      // that show it (Challenge reads and Today) runs in the background and can
+      // neither delay nor fail the accepted outcome (a slow or failing Today
+      // read must not keep the sheet on "Recording…" or hide the confirmation).
+      void refreshAfterAcceptedLog(queryClient, user?.uid, variables.challengeId);
     },
   });
 }

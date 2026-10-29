@@ -18,8 +18,7 @@ import {
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
 import { useChallengeDetailV2, useChallengeListV2, useV2Memberships } from '../challenges/useChallengeCreation';
 import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
-import { endStateFor, loggingAvailableForEndState } from '../challenges/challengeEndState';
-import { loggingViewFor } from '../challenges/loggingView';
+import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
 import {
   challengeTypeLabel,
@@ -29,7 +28,6 @@ import {
   greetingFor,
   hasOtherParticipation,
   isTodayEmpty,
-  joinsAnyChallenge,
   NO_PARTICIPATION_COPY,
   noParticipationKind,
   orderRequiredToday,
@@ -38,6 +36,7 @@ import {
   raceActivitySummary,
   requirementProgress,
   streakReminder,
+  todayBlockingError,
   TODAY_SECTION_LIMIT,
   togetherSummary,
   upcomingSummary,
@@ -88,7 +87,9 @@ export function V2TodayScreen() {
     );
   }
 
-  if (today.isError) {
+  // A failed REFRESH with a projection on screen is not a blocking error (it would
+  // unmount an open logging sheet and its accepted result); see the notice below.
+  if (todayBlockingError(today)) {
     return (
       <V2Page>
         <V2ErrorState
@@ -124,15 +125,13 @@ export function V2TodayScreen() {
   // P3: pending Streak actions first (engine states, server order within each group).
   const requiredOrdered = orderRequiredToday(projection.requiredToday);
   const reminder = streakReminder(projection.requiredToday);
-  const noParticipation = noParticipationKind(
-    memberships.data ? memberships.data.memberships.length : null,
-    projection.groupChallengeOpportunities.length > 0,
-    (memberships.data?.pendingMemberships?.length ?? 0) > 0,
-    // Participation that Today does not list (starts beyond the horizon; ended
-    // but not finalized; joined and upcoming) comes from the member's own
-    // Challenge list; unknown (null) falls back to the generic state.
-    hasOtherParticipation(projection) ? true : joinsAnyChallenge(challengeList.data?.challenges),
-  );
+  const noParticipation = noParticipationKind({
+    groupCount: memberships.data ? memberships.data.memberships.length : null,
+    challengeList: challengeList.data?.challenges,
+    hasOpportunities: projection.groupChallengeOpportunities.length > 0,
+    hasPendingGroupApplication: (memberships.data?.pendingMemberships?.length ?? 0) > 0,
+    projectionShowsParticipation: hasOtherParticipation(projection),
+  });
   const notParticipating = projection.requiredToday.length === 0
     && projection.joinedChallengeProgress.length === 0;
 
@@ -170,6 +169,16 @@ export function V2TodayScreen() {
           </p>
         )}
       </header>
+
+      {today.isError && (
+        <div
+          role="alert"
+          className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+        >
+          <span>We couldn&apos;t refresh your day. This is what we last loaded.</span>
+          <V2Button variant="secondary" onClick={() => void today.refetch()}>Try again</V2Button>
+        </div>
+      )}
 
       {isTodayEmpty(projection) ? (
         <NoParticipationState kind={noParticipation} onNavigate={navigate} />
@@ -339,7 +348,7 @@ function TodayLogActivity({ challengeId, onClose }: { challengeId: string; onClo
   // background) decides. Once the form has been offered it stays for the life
   // of the sheet, so an accepted result is never unmounted by a later refetch.
   const offered = useRef(false);
-  const loggable = !!data && loggingAvailableForEndState(endStateFor(data)) && loggingViewFor(data).kind === 'loggable';
+  const loggable = !!data && todayLoggingOpen(data);
   if (loggable) offered.current = true;
   if (data && (loggable || offered.current)) return <V2LogActivityDialog detail={data} open onClose={onClose} />;
   return (
