@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
 import type {
@@ -16,7 +16,7 @@ import {
   V2Sheet,
 } from '../components/V2Primitives';
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
-import { useChallengeDetailV2, useV2Memberships } from '../challenges/useChallengeCreation';
+import { useChallengeDetailV2, useChallengeListV2, useV2Memberships } from '../challenges/useChallengeCreation';
 import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
 import { endStateFor, loggingAvailableForEndState } from '../challenges/challengeEndState';
 import { loggingViewFor } from '../challenges/loggingView';
@@ -29,6 +29,7 @@ import {
   greetingFor,
   hasOtherParticipation,
   isTodayEmpty,
+  joinsAnyChallenge,
   NO_PARTICIPATION_COPY,
   noParticipationKind,
   orderRequiredToday,
@@ -69,6 +70,7 @@ export function V2TodayScreen() {
   const identity = useV2MemberIdentity();
   const today = useV2Today();
   const memberships = useV2Memberships();
+  const challengeList = useChallengeListV2();
   // P3: the Challenge whose existing Log Activity sheet is open from Today.
   const [loggingChallengeId, setLoggingChallengeId] = useState<string | null>(null);
   // Progressive disclosure is local presentation state only: each growing
@@ -126,10 +128,13 @@ export function V2TodayScreen() {
     memberships.data ? memberships.data.memberships.length : null,
     projection.groupChallengeOpportunities.length > 0,
     (memberships.data?.pendingMemberships?.length ?? 0) > 0,
+    // Participation that Today does not list (starts beyond the horizon; ended
+    // but not finalized; joined and upcoming) comes from the member's own
+    // Challenge list; unknown (null) falls back to the generic state.
+    hasOtherParticipation(projection) ? true : joinsAnyChallenge(challengeList.data?.challenges),
   );
   const notParticipating = projection.requiredToday.length === 0
-    && projection.joinedChallengeProgress.length === 0
-    && !hasOtherParticipation(projection);
+    && projection.joinedChallengeProgress.length === 0;
 
   return (
     <V2Page>
@@ -328,11 +333,15 @@ function TodayLogActivity({ challengeId, onClose }: { challengeId: string; onClo
   const detail = useChallengeDetailV2(challengeId);
   const data = detail.data;
   // The same gate as the Challenge page: logging only while the Challenge is
-  // live AND the member's current server read says a new entry is possible.
-  // Today's button came from a projection that may be a moment old, so the
-  // fresh detail decides.
+  // live AND the member's server read says a new entry is possible. Today's
+  // button came from a projection that may be a moment old, so the Challenge
+  // detail (cached for at most its short staleTime, refetched in the
+  // background) decides. Once the form has been offered it stays for the life
+  // of the sheet, so an accepted result is never unmounted by a later refetch.
+  const offered = useRef(false);
   const loggable = !!data && loggingAvailableForEndState(endStateFor(data)) && loggingViewFor(data).kind === 'loggable';
-  if (data && loggable) return <V2LogActivityDialog detail={data} open onClose={onClose} />;
+  if (loggable) offered.current = true;
+  if (data && (loggable || offered.current)) return <V2LogActivityDialog detail={data} open onClose={onClose} />;
   return (
     <V2Sheet open onClose={onClose} title="Log activity" variant="focused">
       {detail.isError ? (
@@ -390,6 +399,9 @@ function NoParticipationState({
         <div className="flex flex-wrap items-center justify-center gap-2">
           {kind === 'no-group' && (
             <V2Button onClick={() => onNavigate('/v2/groups')}>Find a Group</V2Button>
+          )}
+          {kind === 'joined-not-live' && (
+            <V2Button onClick={() => onNavigate('/v2/challenges')}>View Challenges</V2Button>
           )}
           {kind === 'group-with-challenges' && (
             <V2Button onClick={() => onNavigate('/v2/challenges')}>Find a Challenge</V2Button>

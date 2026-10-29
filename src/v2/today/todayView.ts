@@ -240,7 +240,6 @@ export function streakReminder(required: readonly V2TodayRequiredChallenge[]): S
   return { tone: 'pending', text: `${pending} of ${required.length} Streaks need you today.` };
 }
 
-/** Which "nothing to log yet" situation a member is in (membership + participation facts only). */
 /**
  * True when the member already takes part in something Today shows outside the
  * live lists: a joined Challenge that has not started yet (served only under
@@ -255,18 +254,43 @@ export function hasOtherParticipation(
     || projection.upcoming.some((item) => !opportunityIds.has(item.challengeId));
 }
 
-export type NoParticipationKind = 'unknown' | 'no-group' | 'group-with-challenges' | 'group-without-challenges';
+/**
+ * Whether the member takes part in any Challenge, from their own Challenge list
+ * (existing read): true when any row has an active participation — including a
+ * Challenge that starts beyond the Today horizon or has ended but is not yet
+ * finalized, neither of which the Today projection lists. `null` while the list
+ * is not known (loading/error): the caller must then not guess.
+ */
+export function joinsAnyChallenge(
+  challenges: ReadonlyArray<{ myParticipation: { status: string } | null }> | undefined,
+): boolean | null {
+  if (!challenges) return null;
+  return challenges.some((row) => row.myParticipation?.status === 'active');
+}
+
+/** Which "nothing to log yet" situation a member is in (membership + participation facts only). */
+export type NoParticipationKind =
+  | 'unknown'
+  | 'joined-not-live'
+  | 'no-group'
+  | 'group-with-challenges'
+  | 'group-without-challenges';
 
 /**
  * `groupCount` is the member's real Group membership count (null while it is
  * not known — the caller then shows the generic zero state, never a guess).
  * `hasChallengesInGroups` comes from the served Group opportunities.
+ * `joinsAny` is true when the member already takes part in a Challenge that is
+ * simply not live today, and null while that is unknown.
  */
 export function noParticipationKind(
   groupCount: number | null,
   hasChallengesInGroups: boolean,
   hasPendingGroupApplication = false,
+  joinsAny: boolean | null = false,
 ): NoParticipationKind {
+  if (joinsAny === true) return 'joined-not-live';
+  if (joinsAny === null) return 'unknown';
   if (groupCount === null) return 'unknown';
   // A pending Group application is a real fact: do not tell that member to "start with a Group".
   if (groupCount === 0) return hasPendingGroupApplication ? 'unknown' : 'no-group';
@@ -275,6 +299,10 @@ export function noParticipationKind(
 
 /** PROPOSED wording (pending Founder copy review) for the differentiated empty states. */
 export const NO_PARTICIPATION_COPY: Record<Exclude<NoParticipationKind, 'unknown'>, { title: string; message: string }> = {
+  'joined-not-live': {
+    title: 'Nothing to log today',
+    message: "Your Challenges aren't running today. Open one to see where it stands.",
+  },
   'no-group': {
     title: 'Start with a Group',
     message: 'Challenges belong to Groups. Join or create a Group to take part.',

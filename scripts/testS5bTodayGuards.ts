@@ -35,6 +35,7 @@ import {
   greetingFor,
   isTodayEmpty,
   hasOtherParticipation,
+  joinsAnyChallenge,
   NO_PARTICIPATION_COPY,
   noParticipationKind,
   opportunityAction,
@@ -601,8 +602,8 @@ check('K7 all Streaks completed today: completion acknowledgement',
 check('K8 empty-state kind follows real membership and participation facts only',
   noParticipationKind(null, false) === 'unknown' && noParticipationKind(0, false) === 'no-group' && noParticipationKind(0, true) === 'no-group'
   && noParticipationKind(2, true) === 'group-with-challenges' && noParticipationKind(1, false) === 'group-without-challenges');
-check('K9 the three differentiated empty states have distinct copy and never promise payment or recommendations',
-  new Set(Object.values(NO_PARTICIPATION_COPY).map((c) => c.title)).size === 3
+check('K9 the differentiated states (three empty + joined-not-live) have distinct copy and never promise payment or recommendations',
+  new Set(Object.values(NO_PARTICIPATION_COPY).map((c) => c.title)).size === 4
   && !/recommended|suggested|payment|donat|coming soon/i.test(JSON.stringify(NO_PARTICIPATION_COPY)));
 check('K10 an unknown membership count shows the generic Founder-approved zero state, never a guess', screen.includes("kind === 'unknown'") && screen.includes('Ready to get moving?'));
 
@@ -636,7 +637,21 @@ check('K20 a pending Group application is not reported as "no Group"', noPartici
 check('K21 Today offers the logging form only when the fresh detail is live and loggable (same gate as the Challenge page), otherwise a read-only message',
   /loggingAvailableForEndState\(endStateFor\(data\)\)/.test(screen) && /loggingViewFor\(data\)\.kind === 'loggable'/.test(screen)
   && screen.includes("Logging isn&apos;t open for this Challenge right now"));
-check('K22 the not-participating decision also respects joined-upcoming and finalized participation', /!hasOtherParticipation\(projection\)/.test(screen));
+check('K22 participation unseen by the projection (joined-upcoming, finalized) is counted before any "no Challenges" message', /hasOtherParticipation\(projection\) \? true : joinsAnyChallenge/.test(screen));
+
+
+check('K23 a Challenge that starts beyond the horizon or ended-not-finalized still counts as participation (own Challenge list, active participation)',
+  joinsAnyChallenge([{ myParticipation: { status: 'active' } }]) === true
+  && joinsAnyChallenge([{ myParticipation: null }, { myParticipation: { status: 'withdrawn' } }]) === false
+  && joinsAnyChallenge([]) === false);
+check('K24 an unknown Challenge list never produces a guess: generic state', joinsAnyChallenge(undefined) === null
+  && noParticipationKind(2, false, false, null) === 'unknown' && noParticipationKind(0, false, false, null) === 'unknown');
+check('K25 a member who joins a Challenge that is not live today is told so, never "no Challenges"',
+  noParticipationKind(1, false, false, true) === 'joined-not-live' && noParticipationKind(0, false, false, true) === 'joined-not-live'
+  && !/No Challenges/.test(NO_PARTICIPATION_COPY['joined-not-live'].title));
+check('K26 Today reads participation from the existing own-Challenge list and keeps the opened logging form for the life of the sheet',
+  /useChallengeListV2\(\)/.test(screen) && /joinsAnyChallenge\(challengeList\.data\?\.challenges\)/.test(screen)
+  && /offered\.current = true/.test(screen) && /loggable \|\| offered\.current/.test(screen));
 
 if (failures > 0) {
   console.error(`\nS5b Today experience guards: ${failures} failure(s).`);
