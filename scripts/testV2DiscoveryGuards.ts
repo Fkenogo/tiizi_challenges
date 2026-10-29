@@ -71,6 +71,7 @@ check('ranking orders BEFORE the window (no LIMIT on an unranked set)', /ORDER B
 check('response order is the SQL order (no JS re-sort that desynchronises cursors)', !/scored\.sort|\.sort\(/.test(discoverySrc));
 const clientApi = read('src/api/challengeDiscoveryApi.ts');
 check('client composes the path through apiPath and carries the cursor', /apiPath\(/.test(clientApi) && /params\.set\('cursor'/.test(clientApi));
+check('client does not depend on URLSearchParams.size (older Safari/Chrome would drop the cursor)', !/params\.size/.test(clientApi));
 check('Explore pages with a cursor and offers Load more', /Load more Challenges/.test(explore) && /fetchNextPage/.test(explore) && /useInfiniteQuery/.test(read('src/v2/challenges/useChallengeDiscovery.ts')));
 check('Explore uses the refreshed server relationship, not a permanent mutation override', /effectiveRelationship\(/.test(explore) && !/join\.isSuccess \? \(join\.data\.status/.test(explore));
 const pend = { status: 'success', submittedAt: 1000, resultStatus: 'pending' };

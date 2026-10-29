@@ -35,6 +35,7 @@ export function fetchDiscoverableChallenges(
   if (options.rank === 'general') params.set('rank', 'general');
   if (options.cursor) params.set('cursor', options.cursor);
   if (options.limit !== undefined) params.set('limit', String(options.limit));
-  const query = params.size > 0 ? `?${params.toString()}` : '';
+  const queryString = params.toString();
+  const query = queryString ? `?${queryString}` : '';
   return apiFetch<V2ChallengeDiscovery>(apiPath(`/challenges/discover${query}`));
 }
