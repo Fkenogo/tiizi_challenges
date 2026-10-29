@@ -29,6 +29,7 @@ import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
 import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
 import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
+import { V2SupportTiiziScreen } from './support/V2SupportTiiziScreen';
 
 /**
  * TIIZI S1 — V2 composition root (CORR-001: V2 owns its auth entry).
@@ -111,6 +112,7 @@ export function V2Routes() {
             <Route path="guide/:activityId" element={<V2ActivityGuideDetailScreen />} />
             <Route path="profile" element={<V2ProfileScreen />} />
             <Route path="preferences" element={<V2PreferencesSetupScreen />} />
+            <Route path="support" element={<V2SupportTiiziScreen />} />
             <Route path="notifications" element={<V2NotificationsPage />} />
           </Route>
           <Route path="operator" element={<V2OperatorShell />}>

@@ -116,9 +116,9 @@ const shell = read('src/v2/member/MemberShell.tsx');
 const profile = read('src/v2/profile/V2ProfileScreen.tsx');
 check('avatar navigates straight to /v2/profile', /onOpen=\{\(\) => navigate\('\/v2\/profile'\)\}/.test(shell));
 check('the fragmented account sheet is gone', !/<V2Sheet|ACCOUNT\b/.test(shell));
-const order = ['Display name', 'Email', '<ProfilePreferencesSection', 'slot="support-tiizi"', 'My Tiizi Journey', 'Account &amp; preferences', 'Help &amp; guide']
+const order = ['Display name', 'Email', '<ProfilePreferencesSection', 'data-profile-slot="support-tiizi"', 'My Tiizi Journey', 'Account &amp; preferences', 'Help &amp; guide']
   .map((label) => profile.indexOf(label));
-check('Profile keeps the agreed section order (Interests & Goals live; Support Tiizi holds its final slot)', order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), JSON.stringify(order));
+check('Profile keeps the agreed section order (Interests & Goals live; Support Tiizi holds its slot)', order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])), JSON.stringify(order));
 check('Profile keeps display-name edit, read-only email, Groups and Challenges',
   /startEditing/.test(profile) && /saveDisplayName/.test(profile) && /user\?\.email/.test(profile) && /Show more Groups/.test(profile) && /ChallengeGroup/.test(profile));
 check('Profile offers Sign out, Activity Guide and How Tiizi works', /Sign out/.test(profile) && /navigate\('\/v2\/guide'\)/.test(profile) && /How Tiizi works/.test(profile) && /WELCOME_PATH/.test(profile));
@@ -126,12 +126,8 @@ check('no downstream functionality leaked into P1a (no upload, payment, preferen
   !/type="file"|mailto:|tel:|wa\.me|paystack|<select|type="checkbox"/i.test(profile));
 check('no member-facing "coming soon" / later-availability wording on Profile or welcome',
   !/coming soon|arrives with a later|later update|wider launch/i.test(profile + page + read('src/v2/welcome/welcomeContent.ts')));
-check('unimplemented sections render nothing to members: dev-only marker gated by import.meta.env.DEV',
-  /function DevPackageStatus[\s\S]*?if \(!import\.meta\.env\.DEV\) return null;/.test(profile));
-check('dev marker has no actions or inputs (no fake editing, donation, upload or payment)',
-  !/<(button|V2Button|Link|input|form|a)\b/.test(profile.slice(profile.indexOf('function DevPackageStatus'), profile.indexOf('function SectionLabel'))));
-check('no member-facing Support Tiizi heading until P8a is implemented',
-  !/<h2[^>]*>\s*Support Tiizi/.test(profile));
+check('Support Tiizi is a navigation-only Profile card (P8a); no dev-only placeholder marker remains',
+  /<V2SupportTiiziCard \/>/.test(profile) && !/DevPackageStatus/.test(profile));
 
 console.log('F. sign-out clears the draft backup');
 const signOut = read('src/v2/profile/useV2SignOut.ts');
