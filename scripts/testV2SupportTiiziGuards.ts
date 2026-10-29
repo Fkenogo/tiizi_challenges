@@ -6,7 +6,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SUPPORT_TIIZI } from '../src/v2/support/supportTiiziContent';
+import { FOUNDER_APPROVED, FOUNDER_SUPPLIED_PENDING, SUPPORT_TIIZI } from '../src/v2/support/supportTiiziContent';
+import { supportBackTarget } from '../src/v2/support/supportBackTarget';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => readFileSync(join(root, rel), 'utf8');
@@ -31,9 +32,11 @@ check('no copy control (clipboard, onCopy, execCommand)', !/onCopy|execCommand|c
 check('no fetch, API, storage, clipboard, window.open or location navigation',
   !/\bfetch\(|apiFetch|axios|XMLHttpRequest|localStorage|sessionStorage|indexedDB|navigator\.clipboard|window\.open|location\.(href|assign)|sendBeacon/.test(all));
 check('no form, submit, anchor, text input or payment-provider code', !/<form|type="submit"|<a\b|<input|<textarea|V2TextInput|paystack|stripe|mpesa|m-pesa|daraja/i.test(all));
-const navCalls = [...(card + screen).matchAll(/navigate\(([^)]*)\)/g)].map((m) => m[1]).sort();
-check('only navigation: the card routes to /v2/support, the screen goes back or to Profile (no other navigate target)',
-  navCalls.join('|') === ["'/v2/profile'", "'/v2/support'", '-1'].sort().join('|'), navCalls.join('|'));
+const cardNav = [...card.matchAll(/navigate\(([^,)]*)/g)].map((m) => m[1].trim());
+const screenNav = [...screen.matchAll(/navigate\(([^,)]*)/g)].map((m) => m[1].trim());
+check('the card navigates only to /v2/support, passing its own origin as state', cardNav.join('|') === "'/v2/support'" && /state: \{ from: '\/v2\/profile' \}/.test(card), cardNav.join('|'));
+check('the screen navigates only through supportBackTarget (no history, no location.key)',
+  screenNav.join('|') === 'supportBackTarget(location.state' && !/navigate\(-\d|history\.|location\.key|document\.referrer/.test(screen), screenNav.join('|'));
 check('no state is persisted or sent: selections are local React state only', /useState/.test(screen) && !/mutate|useMutation|useQuery/.test(all));
 
 console.log('B. honest copy');
@@ -50,7 +53,23 @@ check('recipient, holder and WhatsApp are each marked "Placeholder – not payab
   && /SUPPORT_TIIZI\.placeholderMark/.test(screen) && /<dl/.test(screen) && !/<button/.test(screen.slice(screen.indexOf('<dl'), screen.indexOf('</dl>'))));
 check('platform support is distinguished from Group and Challenge contributions', /separate from any Group or Challenge/.test(SUPPORT_TIIZI.about));
 check('Tiizi stays free and results never depend on supporting', /never depend on supporting Tiizi/.test(SUPPORT_TIIZI.lead));
-check('wording is flagged as proposed and unapproved in the content module', /PROPOSED and UNAPPROVED/.test(content));
+check('content module separates Founder-approved constants, pending Founder-supplied details and proposed wording',
+  /FOUNDER-APPROVED/.test(content) && /FOUNDER-SUPPLIED/.test(content) && /PROPOSED/.test(content));
+
+console.log('A2. Founder-approved constants and pending details');
+check('KES, exactly four suggested amounts, custom option, manual mobile-money model',
+  FOUNDER_APPROVED.currency === 'KES' && FOUNDER_APPROVED.suggestedAmounts.join(',') === '500,1000,2000,5000'
+  && FOUNDER_APPROVED.customAmount === true && FOUNDER_APPROVED.operatingModel === 'manual-mobile-money');
+check('the three Founder-supplied details stay null placeholders that no screen reads',
+  FOUNDER_SUPPLIED_PENDING.map((p) => p.id).join('|') === 'recipient|holder|whatsapp' && FOUNDER_SUPPLIED_PENDING.every((p) => p.value === null)
+  && !/\.value\b/.test(screen) && SUPPORT_TIIZI.activated === false);
+
+console.log('C0. Back never relies on browser history');
+const fallback = '/v2/profile';
+check('no state, null, or non-object state falls back to Profile', supportBackTarget(undefined) === fallback && supportBackTarget(null) === fallback && supportBackTarget('x') === fallback);
+check('the Profile origin goes back to Profile; another safe in-app origin is honoured', supportBackTarget({ from: '/v2/profile' }) === fallback && supportBackTarget({ from: '/v2/groups' }) === '/v2/groups');
+check('external, protocol-relative, odd or self origins fall back to Profile',
+  ['https://evil.example', '//evil.example', 'javascript:alert(1)', '/app/home', '/v2/../x', '/v2/support', '/v2/support/x', '/v2/', 42, {}].every((from) => supportBackTarget({ from }) === fallback));
 
 console.log('C. mobile, accessibility and navigation');
 check('choices are toggle buttons with a 44px minimum touch target and a visible focus ring',

@@ -1,23 +1,62 @@
 /**
- * TIIZI-FER-P8A-001 — Support Tiizi content (PLACEHOLDER-COMPLETE, NOT PAYABLE).
+ * TIIZI-FER-P8A — Support Tiizi content (PLACEHOLDER-COMPLETE, NOT PAYABLE).
  *
- * Single source for everything the Support Tiizi screen says. The wording is
- * PROPOSED and UNAPPROVED: it is drafted for Founder review (FDR-04, Q5) and
- * must not be treated as approved copy.
+ * Three tiers, kept apart on purpose:
  *
- * Boundaries (FDR-04 / FD-PILOT-01 §16.3, §16.8):
- * - the Tiizi application processes nothing: no charge, pledge, subscription,
- *   receipt, total or confirmation, and nothing here is sent anywhere;
- * - recipient number, holder name and support WhatsApp contact are explicit
- *   non-payable placeholders. Real details may only be supplied by a later,
- *   separately authorized package (P8b) that also flips `activated`;
- * - this is a platform-level Profile journey, never a Challenge or Group
- *   setting and never a Cause.
+ * 1. FOUNDER-APPROVED constants (recorded in TIIZI-FER-P8A-CORR-002): KES, the
+ *    four suggested amounts, a custom amount option, the four frequency
+ *    choices and the manual mobile-money operating model. Changing these needs
+ *    a Founder decision.
+ * 2. FOUNDER-SUPPLIED details, PENDING: recipient number, account-holder name
+ *    and support WhatsApp contact. The Founder supplies them separately. They
+ *    are not invented or inferred here; each stays an explicit non-payable
+ *    placeholder with a `null` value that no screen reads. Real values may only
+ *    arrive with the separately authorized, independently verified P8b
+ *    activation, which also flips `activated`.
+ * 3. PROPOSED explanatory wording (everything under `copy`): still subject to
+ *    Founder experience review; not approved copy.
+ *
+ * Boundaries (FDR-04 / FD-PILOT-01 §16.3, §16.8): the Tiizi application
+ * processes nothing; no charge, pledge, subscription, recurring transfer,
+ * receipt, total or confirmation; this is a platform-level Profile journey,
+ * never a Group or Challenge setting and never a Cause.
  */
+
+/** 1. Founder-approved constants. */
+export const FOUNDER_APPROVED = {
+  currency: 'KES',
+  suggestedAmounts: [500, 1000, 2000, 5000],
+  customAmount: true,
+  frequencies: [
+    { id: 'once', label: 'Just once' },
+    { id: 'occasionally', label: 'Occasionally, whenever able' },
+    { id: 'monthly', label: 'Monthly' },
+    { id: 'annually', label: 'Annually' },
+  ],
+  operatingModel: 'manual-mobile-money',
+} as const;
+
+/** 2. Founder-supplied details, pending. `value` stays null until P8b; no screen reads it. */
+export const FOUNDER_SUPPLIED_PENDING: ReadonlyArray<{ id: string; label: string; value: null }> = [
+  { id: 'recipient', label: 'Recipient number', value: null },
+  { id: 'holder', label: 'Account holder name', value: null },
+  { id: 'whatsapp', label: 'Support WhatsApp', value: null },
+];
+
+const amountLabel = (amount: number) => `${FOUNDER_APPROVED.currency} ${amount.toLocaleString('en-US')}`;
+
 export const SUPPORT_TIIZI = {
   /** P8b flips this with Founder-verified details; until then nothing is actionable. */
   activated: false,
   title: 'Support Tiizi',
+  amounts: [
+    ...FOUNDER_APPROVED.suggestedAmounts.map((amount) => ({ id: String(amount), label: amountLabel(amount) })),
+    ...(FOUNDER_APPROVED.customAmount ? [{ id: 'custom', label: 'Custom amount' }] : []),
+  ],
+  frequencies: FOUNDER_APPROVED.frequencies,
+  placeholderMark: 'Placeholder – not payable',
+  placeholders: FOUNDER_SUPPLIED_PENDING,
+  /** 3. Proposed wording, pending Founder experience review. */
   profileCard: {
     heading: 'Support Tiizi',
     body: 'Tiizi is free to use. See how you can choose to support the platform.',
@@ -28,29 +67,10 @@ export const SUPPORT_TIIZI = {
   status: "Supporting Tiizi isn't open yet. You can look at the choices below, but nothing can be sent, charged or recorded here.",
   amountsHeading: 'Suggested amounts',
   amountsHint: 'These are suggestions only. Choose any amount you are comfortable with.',
-  amounts: [
-    { id: '500', label: 'KES 500' },
-    { id: '1000', label: 'KES 1,000' },
-    { id: '2000', label: 'KES 2,000' },
-    { id: '5000', label: 'KES 5,000' },
-    { id: 'custom', label: 'Custom amount' },
-  ],
   frequencyHeading: 'How often?',
   frequencyHint: 'Only a preference. This is not a subscription, and nothing repeats.',
-  frequencies: [
-    { id: 'once', label: 'Just once' },
-    { id: 'occasionally', label: 'Occasionally, whenever able' },
-    { id: 'monthly', label: 'Monthly' },
-    { id: 'annually', label: 'Annually' },
-  ],
   previewNote: 'This is only a preview of the choices. Nothing is saved, charged or sent.',
   detailsHeading: 'Mobile-money details',
   detailsIntro: 'These details are placeholders and cannot be used to send support.',
-  placeholderMark: 'Placeholder – not payable',
-  placeholders: [
-    { id: 'recipient', label: 'Recipient number' },
-    { id: 'holder', label: 'Account holder name' },
-    { id: 'whatsapp', label: 'Support WhatsApp' },
-  ],
   back: 'Back',
 } as const;

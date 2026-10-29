@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { V2Card, V2Page, V2SectionHeader } from '../components/V2Primitives';
 import { SUPPORT_TIIZI } from './supportTiiziContent';
+import { supportBackTarget } from './supportBackTarget';
 
 /**
  * TIIZI-FER-P8A-001 — Support Tiizi (placeholder-complete, non-transactional).
@@ -63,8 +64,10 @@ export function V2SupportTiiziScreen() {
     SUPPORT_TIIZI.frequencies.find((f) => f.id === frequency)?.label.toLowerCase(),
   ].filter(Boolean);
 
-  // Back returns to wherever the member came from; a direct visit falls back to Profile.
-  const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/v2/profile'));
+  // Back goes to an explicit in-app origin (never browser history, which the
+  // preferences redirects rewrite and which may lead outside Tiizi), falling
+  // back to Profile. `replace` keeps the Support entry from becoming a loop.
+  const goBack = () => navigate(supportBackTarget(location.state), { replace: true });
 
   return (
     <V2Page>
