@@ -41,11 +41,16 @@ export async function runV2EmailSignUp<U extends { uid: string }>(
   return user;
 }
 
-/** Sign out first; clear the hand-off ONLY if sign-out succeeded. */
+/**
+ * Sign out first; clear the hand-off (and run `afterSignOut`, e.g. clearing the
+ * signed-out member's own browser-stored context) ONLY if sign-out succeeded.
+ */
 export async function signOutThenClearHandoff(
   logout: () => Promise<void>,
   handoff: SignUpNameHandoff,
+  afterSignOut?: () => void,
 ): Promise<void> {
   await logout(); // a rejection propagates and the hand-off is retained
   handoff.clearAll();
+  afterSignOut?.();
 }

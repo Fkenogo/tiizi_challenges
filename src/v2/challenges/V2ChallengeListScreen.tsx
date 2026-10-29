@@ -101,10 +101,12 @@ export function V2ChallengeListScreen() {
       )}
 
       {challenges.isSuccess && challenges.data.challenges.length === 0 && (
+        // Compact and without a second Create Challenge: the header already
+        // offers it, and Explore below must stay on the first screen.
         <V2EmptyState
+          compact
           title="No Challenges yet"
-          message="Start one with a Group you belong to. You decide how it works, what counts, and when it runs."
-          action={createAction}
+          message="Explore Challenges below, or start one with a Group you belong to."
         />
       )}
 

@@ -116,7 +116,11 @@ describe('S4c steward admission review', () => {
     expect((await app.inject({ method: 'POST', url: `/api/groups/${group.id}/join`, headers: authHeaders('applicant'), payload: {} })).json().status).toBe('pending');
     const pendingForSteward = await app.inject({ method: 'GET', url: `/api/groups/${group.id}/members/pending`, headers: authHeaders('steward') });
     expect(pendingForSteward.statusCode).toBe(200);
-    expect(pendingForSteward.json().applicants).toEqual([{ memberId: applicant, requestedAt: expect.any(String) }]);
+    expect(pendingForSteward.json().applicants).toEqual([{ memberId: applicant, requestedAt: expect.any(String), displayName: null }]);
+    // The steward sees the requester's name from the member identity projection (nothing else).
+    await db.query(`UPDATE members SET display_name = 'Amani Applicant' WHERE member_id = $1`, [applicant]);
+    const named = (await app.inject({ method: 'GET', url: `/api/groups/${group.id}/members/pending`, headers: authHeaders('steward') })).json().applicants;
+    expect(named).toEqual([{ memberId: applicant, requestedAt: expect.any(String), displayName: 'Amani Applicant' }]);
     for (const token of ['member', 'applicant', 'admin']) {
       expect((await app.inject({ method: 'GET', url: `/api/groups/${group.id}/members/pending`, headers: authHeaders(token) })).statusCode).toBe(403);
       expect((await app.inject({ method: 'POST', url: `/api/groups/${group.id}/applications/${applicant}/approve`, headers: authHeaders(token), payload: {} })).statusCode).toBe(403);

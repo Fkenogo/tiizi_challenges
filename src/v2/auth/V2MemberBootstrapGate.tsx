@@ -11,6 +11,7 @@ import {
 } from './memberBootstrapSession';
 import { v2SignUpNameHandoff } from './signUpNameHandoff';
 import { signOutThenClearHandoff } from './v2SignUpFlow';
+import { clearChallengeIntent } from '../challenges/challengeIntent';
 
 // The transient sign-up name is cleared as soon as that uid's bootstrap succeeds.
 const v2MemberBootstrapSession = createMemberBootstrapSession((uid) => v2SignUpNameHandoff.clear(uid));
@@ -61,8 +62,8 @@ export function V2MemberBootstrapGate({ children }: { children: React.ReactNode 
   // Clear the sign-up hand-off only after sign-out actually succeeds.
   const signOut = useCallback(() => {
     setSignOutFailed(false);
-    signOutThenClearHandoff(logout, v2SignUpNameHandoff).catch(() => setSignOutFailed(true));
-  }, [logout]);
+    signOutThenClearHandoff(logout, v2SignUpNameHandoff, () => clearChallengeIntent(uid ?? undefined)).catch(() => setSignOutFailed(true));
+  }, [logout, uid]);
 
   const status = bootstrapGateStatus(outcome, uid);
   if (status === 'ready') return <>{children}</>;

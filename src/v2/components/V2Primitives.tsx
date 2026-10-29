@@ -112,18 +112,23 @@ export function V2EmptyState({
   message,
   nextSlice,
   action,
+  compact = false,
 }: {
   title: string;
   message: string;
   nextSlice?: string;
   action?: React.ReactNode;
+  /** Short variant for screens where other content must stay on the first screen. */
+  compact?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-xl" aria-hidden>
-        <span className="font-black text-primary">t</span>
-      </div>
-      <h2 className="mt-3 text-base font-black text-slate-900">{title}</h2>
+    <div className={`flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 text-center ${compact ? 'py-5' : 'py-12'}`}>
+      {!compact && (
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-xl" aria-hidden>
+          <span className="font-black text-primary">t</span>
+        </div>
+      )}
+      <h2 className={`${compact ? '' : 'mt-3 '}text-base font-black text-slate-900`}>{title}</h2>
       <p className="mt-1 max-w-sm text-sm leading-6 text-slate-600">{message}</p>
       {nextSlice && (
         <p className="mt-3 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
