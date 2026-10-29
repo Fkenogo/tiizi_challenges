@@ -189,7 +189,7 @@ export function fetchGroupDetail(groupId: string): Promise<V2GroupDetail> {
   return apiFetch<V2GroupDetail>(`${API_PREFIX}/groups/${groupId}`);
 }
 
-export interface V2GroupRoster { groupId: string; members: Array<{ memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null }> }
+export interface V2GroupRoster { groupId: string; members: Array<{ memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null; displayName: string | null }> }
 export function fetchGroupRoster(groupId: string): Promise<V2GroupRoster> {
   return apiFetch<V2GroupRoster>(`${API_PREFIX}/groups/${groupId}/members`);
 }

@@ -14,7 +14,11 @@ assert.match(api, /store\.listMemberships!\(legacyId\)/);
 assert.match(api, /status !== 'active' && status !== 'joined'/);
 assert.match(api, /relationship: mappedId === stewardMemberId \? 'steward' : 'member'/);
 assert.match(api, /ownerId/);
-assert.doesNotMatch(api.slice(api.indexOf('export async function getGroupRoster')), /challenge_particip|challengeMember|displayName|email|phone|firebaseUid/);
+// P1c: the governed display name is the only identity field added to the roster;
+// the roster function itself must never select or return email, phone or provider ids.
+const rosterFn = api.slice(api.indexOf('export async function getGroupRoster'), api.indexOf('export async function listPendingApplications'));
+assert.doesNotMatch(rosterFn, /challenge_particip|challengeMember|m\.email|\bphone\b|firebaseUid|photo/i);
+assert.match(rosterFn, /readDisplayNames/);
 assert.match(ui, /aria-label="Members"/);
 assert.match(ui, /Accountable Steward/);
 assert.match(ui, /Tiizi member/);

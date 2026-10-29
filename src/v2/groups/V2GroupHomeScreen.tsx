@@ -1,3 +1,4 @@
+import { memberLabel } from '../members/memberLabel';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../api/apiClient';
@@ -421,7 +422,7 @@ function GroupHomeBody({
               const isViewer = member.memberId === viewerMemberId;
               const isSteward = member.relationship === 'steward';
               return <li key={member.memberId} className={`flex min-w-0 items-center justify-between gap-3 rounded-xl border px-4 py-3 ${isSteward ? 'border-orange-200 bg-orange-50/60' : 'border-slate-200 bg-white'}`}>
-                <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{isViewer ? 'You' : 'Tiizi member'}</p><p className="text-xs text-slate-500">{isSteward ? 'Accountable Steward' : 'Member'}{isViewer && !isSteward ? ' · you' : ''}</p></div>
+                <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{isViewer ? 'You' : memberLabel(member.displayName, 'Tiizi member')}</p><p className="text-xs text-slate-500">{isSteward ? 'Accountable Steward' : 'Member'}{isViewer && !isSteward ? ' · you' : ''}</p></div>
                 {isSteward && <span className="shrink-0 rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-orange-900">Accountable Steward</span>}
               </li>;
             })}
