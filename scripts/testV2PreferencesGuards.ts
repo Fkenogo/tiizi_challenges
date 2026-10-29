@@ -93,8 +93,8 @@ check('Profile saves only the side(s) that changed (never records an untouched s
 check('Profile uses the same pickers as onboarding', /InterestsPicker/.test(section) && /GoalsPicker/.test(section) && /InterestsPicker/.test(setup));
 const profile = read('src/v2/profile/V2ProfileScreen.tsx');
 check('Profile renders the section in its agreed slot (before Support Tiizi and the journey)',
-  profile.indexOf('<ProfilePreferencesSection') > 0 && profile.indexOf('<ProfilePreferencesSection') < profile.indexOf('slot="support-tiizi"') && profile.indexOf('slot="support-tiizi"') < profile.indexOf('My Tiizi Journey'));
-check('Support Tiizi stays a development-only marker until P8a', /slot="support-tiizi"/.test(profile) && !/slot="interests-goals"/.test(profile));
+  profile.indexOf('<ProfilePreferencesSection') > 0 && profile.indexOf('<ProfilePreferencesSection') < profile.indexOf('data-profile-slot="support-tiizi"') && profile.indexOf('data-profile-slot="support-tiizi"') < profile.indexOf('My Tiizi Journey'));
+check('Support Tiizi is the P8a navigation card; no Interests & Goals dev marker remains', /data-profile-slot="support-tiizi"/.test(profile) && /<V2SupportTiiziCard \/>/.test(profile) && !/slot="interests-goals"/.test(profile));
 check('no member-facing "coming soon" wording', !/coming soon/i.test(prefFiles + profile));
 const pickers = read('src/v2/preferences/PreferencePickers.tsx');
 check('chips are accessible toggle buttons and the limit is explained', /aria-pressed/.test(pickers) && /remove one to choose another/.test(pickers) && /aria-live="polite"/.test(pickers));

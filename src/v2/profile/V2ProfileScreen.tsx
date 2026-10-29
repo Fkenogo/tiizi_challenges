@@ -16,6 +16,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useV2Profile } from './useV2Profile';
 import { useV2SignOut } from './useV2SignOut';
 import { ProfilePreferencesSection } from '../preferences/ProfilePreferencesSection';
+import { V2SupportTiiziCard } from '../support/V2SupportTiiziCard';
 import { WELCOME_PATH } from '../welcome/welcomeContent';
 import { ProfileSaveUncertainError } from './profileWriteState';
 import {
@@ -293,11 +294,12 @@ export function V2ProfileScreen() {
           </p>
         </V2Card>
 
-        {/* Final section order is preserved. Interests & Goals is live (P1b). Support Tiizi
-            (P8a/P8b) renders for members only once implemented; until then its slot
-            shows a development-only marker and nothing in production. */}
+        {/* Final section order is preserved. Interests & Goals is live (P1b); Support Tiizi
+            is live as a placeholder-complete, non-payable screen (P8a; activation is P8b). */}
         <ProfilePreferencesSection uid={uid} />
-        <DevPackageStatus slot="support-tiizi" label="Support Tiizi" owner="P8a / P8b" />
+        <div data-profile-slot="support-tiizi">
+          <V2SupportTiiziCard />
+        </div>
 
         <SectionLabel>My Tiizi Journey</SectionLabel>
 
@@ -425,27 +427,6 @@ export function V2ProfileScreen() {
         </V2Card>
       </div>
     </V2Page>
-  );
-}
-
-/**
- * Development-only review marker for a Profile section whose package is not
- * implemented yet. `import.meta.env.DEV` is false in production builds, so
- * members never see it; it has no actions and makes no product promise.
- */
-function DevPackageStatus({ slot, label, owner }: { slot: string; label: string; owner: string }) {
-  if (!import.meta.env.DEV) return null;
-  return (
-    <div
-      role="note"
-      data-dev-review-only={slot}
-      className="rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900"
-    >
-      <p className="font-black uppercase tracking-wider">Development review only</p>
-      <p>
-        {label}: not implemented in this package (owner: {owner}). Not shown to members.
-      </p>
-    </div>
   );
 }
 
