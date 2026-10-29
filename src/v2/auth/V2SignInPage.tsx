@@ -10,6 +10,7 @@ import {
 } from '../../utils/firebaseAuthErrors';
 import { v2SignUpNameHandoff } from './signUpNameHandoff';
 import { signOutThenClearHandoff } from './v2SignUpFlow';
+import { clearChallengeIntent } from '../challenges/challengeIntent';
 import { resolveV2NextPath, v2NextQuery } from './v2NextPath';
 import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2AuthLayout';
 
@@ -118,7 +119,7 @@ function V2ForgotPasswordDialog({
 export function V2SignInPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { login, loginWithGoogle, logout, isAuthenticated, isReady } = useAuth();
+  const { login, loginWithGoogle, logout, isAuthenticated, isReady, user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -173,7 +174,7 @@ export function V2SignInPage() {
     setError('');
     setWorking(true);
     try {
-      await signOutThenClearHandoff(logout, v2SignUpNameHandoff);
+      await signOutThenClearHandoff(logout, v2SignUpNameHandoff, () => clearChallengeIntent(user?.uid));
     } catch (err) {
       setError(normalizeFirebaseAuthError(err));
     } finally {

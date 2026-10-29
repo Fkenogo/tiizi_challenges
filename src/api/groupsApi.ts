@@ -175,7 +175,7 @@ export function updateGroupSettings(groupId: string, patch: V2GroupSettingsPatch
   return apiFetch(`${API_PREFIX}/groups/${groupId}`, { method: 'PATCH', body: patch });
 }
 
-export interface V2PendingApplications { groupId: string; applicants: Array<{ memberId: string; requestedAt: string }> }
+export interface V2PendingApplications { groupId: string; applicants: Array<{ memberId: string; requestedAt: string; displayName: string | null }> }
 export function fetchPendingGroupApplications(groupId: string): Promise<V2PendingApplications> {
   return apiFetch<V2PendingApplications>(`${API_PREFIX}/groups/${groupId}/members/pending`);
 }

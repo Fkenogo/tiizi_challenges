@@ -326,7 +326,7 @@ function App() {
                 {/* TIIZI S1 — V2 experience entry. Sibling of /app/*; authenticated V2 entry lands in the new shell. */}
                 <Route path="/v2/*" element={<V2Routes />} />
 
-                <Route path="/" element={<Navigate to="/app/welcome" replace />} />
+                <Route path="/" element={<Navigate to="/v2" replace />} />
                 <Route path="*" element={<NotFoundScreen />} />
               </Routes>
             </Suspense>

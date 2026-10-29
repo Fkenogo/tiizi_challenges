@@ -165,6 +165,11 @@ async function main() {
     const sentNames: Array<string | null> = [];
     const userU: CapturedFirebaseUser = { uid: 'U', displayName: null, getIdToken: async () => 'token-U' };
     await bootstrapCapturedUser({ user: userU, expectedUid: 'U', currentUid: () => 'U', handoff, send: async (_t, n) => { sentNames.push(n); return { memberId: 'm', created: true }; } });
+    let ran = 0;
+    await signOutThenClearHandoff(async () => {}, handoff, () => { ran += 1; });
+    await signOutThenClearHandoff(async () => { throw new Error('network'); }, handoff, () => { ran += 1; }).catch(() => undefined);
+    check('after-sign-out cleanup runs on successful logout only', ran === 1);
+    handoff.set('U', 'Keep Until Signed Out');
     check('retry after failed logout still resends the same name', sentNames[0] === 'Keep Until Signed Out');
   }
 
@@ -218,7 +223,7 @@ async function main() {
   check('captured-user bootstrap gets the token from the captured user only',
     /user\.getIdToken\(\)/.test(read('src/v2/auth/bootstrapCapturedUser.ts')) && !/auth\.currentUser/.test(stripComments(read('src/v2/auth/bootstrapCapturedUser.ts'))));
   check('gate sign-out and switch-account clear the hand-off only via signOutThenClearHandoff',
-    /signOutThenClearHandoff\(logout, v2SignUpNameHandoff\)/.test(gate) && /signOutThenClearHandoff\(logout, v2SignUpNameHandoff\)/.test(signIn)
+    /signOutThenClearHandoff\(logout, v2SignUpNameHandoff[,)]/.test(gate) && /signOutThenClearHandoff\(logout, v2SignUpNameHandoff[,)]/.test(signIn)
     && !/clearAll\(\); *(void )?logout|clearAll\(\);\s*await logout/.test(gate + signIn));
   check('gate offers a user-initiated retry and sign-out; no automatic retry timers',
     /Try again/.test(gate) && /Sign out/.test(gate) && !/setTimeout|setInterval/.test(gate));

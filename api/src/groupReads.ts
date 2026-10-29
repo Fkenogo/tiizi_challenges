@@ -87,7 +87,7 @@ function missingStore(): GroupReadStore {
 
 export interface ApiGroupMember { memberId: string; relationship: 'steward' | 'member'; joinedAt: string | null }
 export interface ApiGroupRoster { groupId: string; members: ApiGroupMember[] }
-export interface ApiPendingApplication { memberId: string; requestedAt: string }
+export interface ApiPendingApplication { memberId: string; requestedAt: string; displayName: string | null }
 
 /** S4b roster: authorize and enumerate only from live membership authority. */
 export async function getGroupRoster(db: Db, store: GroupReadStore, memberId: string, groupId: string): Promise<ApiGroupRoster> {
@@ -337,16 +337,23 @@ export async function listPendingApplications(db: Db, actorMemberId: string, gro
   const group = groupResult.rows[0];
   if (!group || group.status !== 'active') readFail(404, 'unknown_group', 'Group not found');
   if (group.steward_member_id !== actorMemberId) readFail(403, 'steward_required', 'Only the Accountable Steward may review admission requests');
-  const result = await db.query<{ member_id: string; requested_at: string | Date | null; created_at: string | Date }>(
-    `SELECT member_id, requested_at, created_at FROM group_memberships
-     WHERE group_id=$1 AND status='pending'
-     ORDER BY COALESCE(requested_at,created_at) ASC, member_id ASC`, [groupId],
+  // The requester's name comes from the governed member identity projection
+  // (members.display_name); only the Accountable Steward of this Group reaches
+  // here and only pending applicants of this Group are read. No email or
+  // other member field is exposed.
+  const result = await db.query<{ member_id: string; requested_at: string | Date | null; created_at: string | Date; display_name: string | null }>(
+    `SELECT gm.member_id, gm.requested_at, gm.created_at, m.display_name
+     FROM group_memberships gm
+     JOIN members m ON m.member_id = gm.member_id
+     WHERE gm.group_id=$1 AND gm.status='pending'
+     ORDER BY COALESCE(gm.requested_at,gm.created_at) ASC, gm.member_id ASC`, [groupId],
   );
   return {
     groupId,
     applicants: result.rows.map((row) => ({
       memberId: String(row.member_id),
       requestedAt: new Date(row.requested_at ?? row.created_at).toISOString(),
+      displayName: row.display_name,
     })),
   };
 }
