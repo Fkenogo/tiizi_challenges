@@ -85,9 +85,11 @@ describe('P1c Group roster names', () => {
     const steward = await seedMember(db, next('p1c-ds')); const viewer = await seedMember(db, next('p1c-dv'));
     await setName(db, steward, 'Discoverable Steward Name');
     const app = buildTestApp({ steward: await subject(db, steward), viewer: await subject(db, viewer) });
-    await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('steward'), payload: { name: 'Open for discovery' } });
+    const created = (await app.inject({ method: 'POST', url: '/api/groups', headers: authHeaders('steward'), payload: { name: 'Open for discovery' } })).json() as { id: string };
     for (const url of ['/api/groups/discover', '/api/challenges/discover']) {
       const response = await app.inject({ method: 'GET', url, headers: authHeaders('viewer') });
+      expect(response.statusCode).toBe(200);
+      if (url.includes('groups')) expect(response.body).toContain(created.id); // the read really returned the Group
       expect(response.body).not.toContain('Discoverable Steward Name');
       expect(response.body).not.toContain('displayName');
     }
@@ -106,6 +108,7 @@ async function fixture(type: 'collective' | 'competitive') {
   };
   await setName(db, people.viewer, 'Viewer Vee'); await setName(db, people.named, 'Nia Named'); await setName(db, people.exited, 'Exit Ed');
   for (const id of [people.viewer, people.named, people.unnamed]) await seedMembership(db, groupId, id, { status: 'active' });
+  await seedMembership(db, groupId, people.exited, { status: 'left' }); // joined, then left the Group
   const kn = await db.query<{ knowledge_id: string; current_version: number }>(`INSERT INTO knowledge_items (kind, name, lifecycle) VALUES ('fitness', $1, 'published') RETURNING knowledge_id, current_version`, [`push-up-${tag}`]);
   const pin: Pin = { knowledge_id: String(kn.rows[0].knowledge_id), current_version: Number(kn.rows[0].current_version) };
   const resolvers: ChallengeCreationResolvers = {
@@ -120,14 +123,19 @@ async function fixture(type: 'collective' | 'competitive') {
   await activateChallenge(db, challenge.challenge_id);
   const eligible = new Set([people.viewer, people.named, people.unnamed]);
   for (const id of [people.viewer, people.named, people.unnamed, people.exited]) {
-    await db.query(`INSERT INTO challenge_participations (challenge_id, member_id, status, joined_at, joined_config_version) VALUES ($1,$2,$3,'2026-06-01T00:00:00Z',1)`, [challenge.challenge_id, id, id === people.exited ? 'withdrawn' : 'active']);
+    const exited = id === people.exited;
+    await db.query(
+      `INSERT INTO challenge_participations (challenge_id, member_id, status, joined_at, joined_config_version, exited_at, exit_reason)
+       VALUES ($1,$2,$3,'2026-06-01T00:00:00Z',1,$4,$5)`,
+      [challenge.challenge_id, id, exited ? 'withdrawn' : 'active', exited ? '2026-06-05T00:00:00Z' : null, exited ? 'withdrawn' : null],
+    );
   }
   let n = 0;
   for (const id of [people.viewer, people.named, people.unnamed]) {
     n += 1;
     const occurred = new Date(`2026-06-1${n}T12:00:00Z`);
     await applyChallengeActivity(db, id, challenge.challenge_id,
-      { activity_kind: 'fitness', canonical_key: 'push-up', value: 50, unit: 'reps', occurred_at: occurred, client_key: next('k') },
+      { activity_kind: 'fitness', canonical_key: 'push-up', value: type === 'collective' ? 20 : 50, unit: 'reps', occurred_at: occurred, client_key: next('k') },
       { resolveKnowledgePin: async () => pin, resolveGroupMembershipAuthority: async () => ({ status: 'active', eligible: true }) }, { now: occurred });
   }
   const authority: GroupMembershipAuthority = {
@@ -168,6 +176,16 @@ describe('P1c Together / Race participant names', () => {
     it(`${type}: an outsider with no history is refused and no name is disclosed`, async () => {
       const fx = await fixture(type);
       await expect(read(fx, fx.people.outsider)).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it(`${type}: when live Group authority is unavailable, a viewer with history still reads entries, with no names`, async () => {
+      const fx = await fixture(type);
+      const down: GroupMembershipAuthority = { resolveGroupMembershipAuthority: async () => { throw new Error('authority down'); } };
+      const readDown = type === 'collective'
+        ? (await getChallengeContributors(fx.db, fx.people.exited, fx.challengeId, { groupMembershipAuthority: down })).contributors
+        : (await getChallengeLeaderboard(fx.db, fx.people.exited, fx.challengeId, { groupMembershipAuthority: down })).entries;
+      expect(readDown.length).toBeGreaterThan(0);
+      for (const entry of readDown) expect(entry.displayName).toBeNull();
     });
 
     it(`${type}: finalized results keep names for eligible viewers and withhold them otherwise; a cleared (anonymized) name falls back`, async () => {

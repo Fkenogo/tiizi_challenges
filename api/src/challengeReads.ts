@@ -482,7 +482,16 @@ async function namesForViewer(
   authority: GroupMembershipAuthority,
   memberIds: readonly string[],
 ): Promise<Map<string, string | null>> {
-  if (!(await liveEligibility(authority, challenge.group_id, viewerMemberId))) return new Map();
+  // Names are an enhancement: if live authority cannot confirm the viewer
+  // (outage), show no names rather than failing a read that never needed the
+  // authority for a viewer with their own history.
+  let eligible = false;
+  try {
+    eligible = await liveEligibility(authority, challenge.group_id, viewerMemberId);
+  } catch {
+    eligible = false;
+  }
+  if (!eligible) return new Map();
   return readDisplayNames(db, memberIds);
 }
 
