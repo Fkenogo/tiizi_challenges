@@ -144,6 +144,8 @@ jobs:
         run: npm run test:v2-welcome
       - name: P1b Interests and Goals guards
         run: npm run test:v2-preferences
+      - name: P2 preference-based discovery guards
+        run: npm run test:v2-discovery
 
   # API contract verification through the canonical /api namespace. Proves
   # representative authenticated READ and WRITE operations work on /api and

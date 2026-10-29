@@ -1,3 +1,4 @@
+import { invalidateV2DiscoveryReads } from '../challenges/challengeQueryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchV2Preferences, saveV2Preferences, type V2PreferenceChange } from '../../api/preferencesApi';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,6 +24,8 @@ export function useSaveV2Preferences() {
     onSuccess: (saved) => {
       // Never write another member's response into this member's slot.
       if (uid) queryClient.setQueryData(v2MemberPreferencesKey(uid), saved);
+      // Ranking depends on the saved IDs: re-read both discovery lists.
+      void invalidateV2DiscoveryReads(queryClient);
     },
   });
 }

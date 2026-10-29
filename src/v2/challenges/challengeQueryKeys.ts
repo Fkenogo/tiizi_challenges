@@ -50,6 +50,27 @@ export const V2_CHALLENGE_CONTRIBUTORS_SCOPE = 'v2-challenge-contributors';
  */
 export const V2_CHALLENGE_LEADERBOARD_SCOPE = 'v2-challenge-leaderboard';
 
+/** P2 — cross-Group Challenge discovery (`GET /api/challenges/discover`). */
+export const V2_CHALLENGE_DISCOVERY_SCOPE = 'v2-challenge-discovery';
+
+export function v2ChallengeDiscoveryKey(
+  uid: string | undefined,
+  rank: 'relevance' | 'general' = 'relevance',
+): [string, string | undefined, string] {
+  return [V2_CHALLENGE_DISCOVERY_SCOPE, uid, rank];
+}
+
+/**
+ * P2 — mark both discovery lists stale (Group join/approval/leave, preference
+ * save). Invalidation only: relationship and ordering are re-read from the server.
+ */
+export async function invalidateV2DiscoveryReads(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: [V2_CHALLENGE_DISCOVERY_SCOPE] }),
+    queryClient.invalidateQueries({ queryKey: ['v2-group-discovery'] }),
+  ]);
+}
+
 /** Legacy family scopes (V1-shell hooks). Deprecated — invalidated only. */
 export const V2_LEGACY_CHALLENGE_LIST_SCOPE = 'v2-challenges';
 export const V2_LEGACY_CHALLENGE_SCOPE = 'v2-challenge';

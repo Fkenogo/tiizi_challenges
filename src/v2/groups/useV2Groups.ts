@@ -28,6 +28,7 @@ import {
 } from '../../api/groupsApi';
 import { listGroupChallengesV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import { removeV2GroupFeed } from './groupFeedQueryKeys';
+import { invalidateV2DiscoveryReads, invalidateV2ChallengeReads } from '../challenges/challengeQueryKeys';
 import {
   invalidateV2GroupReads,
   invalidateV2GroupRoster,
@@ -86,12 +87,12 @@ export function useV2GroupChallenges(groupId: string | null, enabled = true) {
   });
 }
 
-export function useV2GroupDiscovery(q: string) {
+export function useV2GroupDiscovery(q: string, rank: 'relevance' | 'general' = 'relevance') {
   const { user } = useAuth();
   return useInfiniteQuery({
-    queryKey: v2GroupDiscoveryKey(q, user?.uid),
+    queryKey: v2GroupDiscoveryKey(q, user?.uid, rank),
     initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => fetchDiscoverableGroups({ q, cursor: pageParam, limit: 12 }),
+    queryFn: ({ pageParam }) => fetchDiscoverableGroups({ q, cursor: pageParam, limit: 12, rank }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!user,
   });
@@ -141,7 +142,7 @@ export function useReviewGroupApplication(groupId: string | null) {
       // Approval changes who is on the roster; rejection leaves it untouched
       // but a re-read is harmless and the server remains the only authority.
       await invalidateV2GroupRoster(queryClient, groupId);
-      await queryClient.invalidateQueries({ queryKey: ['v2-group-discovery'] });
+      await invalidateV2DiscoveryReads(queryClient);
     },
   });
 }
@@ -156,6 +157,10 @@ export function useLeaveV2Group(groupId: string | null) {
       await invalidateV2Memberships(queryClient);
       await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
       await invalidateV2GroupRoster(queryClient, groupId);
+      // P2: leaving changes the Group relationship and the member's own
+      // Challenge list; both discovery lists are re-read.
+      await invalidateV2DiscoveryReads(queryClient);
+      await invalidateV2ChallengeReads(queryClient, user?.uid);
     },
   });
 }
@@ -190,6 +195,10 @@ export function useJoinGroup(groupId: string | null) {
       await invalidateV2Memberships(queryClient);
       await invalidateV2GroupReads(queryClient, user?.uid, groupId ?? undefined);
       await invalidateV2GroupRoster(queryClient, groupId);
+      // P2: a join (or request) changes the Group relationship and which
+      // Challenges are in the member's own list; discovery is re-read.
+      await invalidateV2DiscoveryReads(queryClient);
+      await invalidateV2ChallengeReads(queryClient, user?.uid);
     },
   });
 }

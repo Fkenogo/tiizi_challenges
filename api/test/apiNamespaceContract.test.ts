@@ -374,6 +374,7 @@ const RETIRED_V1_ROUTES: Array<[string, string]> = [
   ['GET', '/v1/groups'],
   ['POST', '/v1/groups'],
   ['GET', '/v1/groups/discover'],
+  ['GET', '/v1/challenges/discover'],
   ['GET', '/v1/groups/options'],
   ['GET', '/v1/groups/resolve-invite'],
   ['POST', '/v1/groups/resolve-invite'],
@@ -454,7 +455,7 @@ describe('retired /v1 namespace is not an active API surface', () => {
 describe('authentication boundary and infrastructure routes', () => {
   it('every /api domain route requires authentication', async () => {
     const app = buildApp({ db, verifier: stubVerifier({ legit: 'contract-ghost' }) });
-    for (const url of ['/api/memberships/me', '/api/groups/discover', '/api/challenges', '/api/knowledge', '/api/operator/console/overview', '/api/today']) {
+    for (const url of ['/api/memberships/me', '/api/groups/discover', '/api/challenges/discover', '/api/challenges', '/api/knowledge', '/api/operator/console/overview', '/api/today']) {
       expect((await app.inject({ method: 'GET', url })).statusCode).toBe(401);
     }
   });

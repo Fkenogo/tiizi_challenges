@@ -139,6 +139,8 @@ export interface V2DiscoverableGroup {
   memberCount: number;
   admissionMode: V2AdmissionMode;
   viewerRelationship: V2ViewerRelationship;
+  /** P2: the member's saved Interests/Goals this Group matches (labels). Absent on invite resolution. */
+  relevance?: { interests: string[]; goals: string[] };
 }
 
 export interface V2GroupOptions {
@@ -150,9 +152,12 @@ export interface V2GroupOptions {
 export function fetchGroupOptions(): Promise<V2GroupOptions> {
   return apiFetch<V2GroupOptions>(`${API_PREFIX}/groups/options`);
 }
-export interface V2GroupDiscoveryPage { groups: V2DiscoverableGroup[]; nextCursor: string | null }
-export function fetchDiscoverableGroups(options: { q?: string; cursor?: string; limit?: number } = {}): Promise<V2GroupDiscoveryPage> {
+/** `relevance` orders by saved preferences (default); `general` is plain newest-first browsing. */
+export type V2DiscoveryRank = 'relevance' | 'general';
+export interface V2GroupDiscoveryPage { groups: V2DiscoverableGroup[]; nextCursor: string | null; ranking?: { applied: boolean } }
+export function fetchDiscoverableGroups(options: { q?: string; cursor?: string; limit?: number; rank?: V2DiscoveryRank } = {}): Promise<V2GroupDiscoveryPage> {
   const params = new URLSearchParams();
+  if (options.rank === 'general') params.set('rank', 'general');
   if (options.q?.trim()) params.set('q', options.q.trim());
   if (options.cursor) params.set('cursor', options.cursor);
   if (options.limit !== undefined) params.set('limit', String(options.limit));
