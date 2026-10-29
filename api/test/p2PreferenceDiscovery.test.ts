@@ -348,21 +348,125 @@ describe('P2 Challenge discovery and the Group-join journey', () => {
     await app.close();
   });
 
-  it('ranks before the cap: a relevant older Challenge is never cut off by 60 newer ones', async () => {
+  type Page = { challenges: C[]; nextCursor: string | null; ranking: { applied: boolean } };
+  const page = async (app: ReturnType<typeof appFor>, token: string, qs: string) => {
+    const res = await app.inject({ method: 'GET', url: `/api/challenges/discover${qs}`, headers: authHeaders(token) });
+    expect(res.statusCode).toBe(200);
+    return res.json() as Page;
+  };
+  const walk = async (app: ReturnType<typeof appFor>, token: string, limit: number, extra = '') => {
+    const ids: string[] = [];
+    let cursor: string | null = null;
+    let pages = 0;
+    do {
+      const qs: string = `?limit=${limit}${extra}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+      const p: Page = await page(app, token, qs);
+      ids.push(...p.challenges.map((x) => x.challengeId));
+      cursor = p.nextCursor;
+      pages += 1;
+    } while (cursor && pages < 200);
+    return ids;
+  };
+
+  it('ranks before the window: a relevant older Challenge leads, and Browse all reaches it on page 2', async () => {
     const db = testDb();
     const steward = await seedMember(db, 'p2c-steward');
     await seedMember(db, 'p2c-viewer');
     const relevant = await makeGroup(db, 'Relevant Group', { focusTags: ['Strength'], stewardId: steward });
     const noise = await makeGroup(db, 'Noise Group', { stewardId: steward });
     const target = await makeChallenge(db, relevant, steward, 'fitness', 'Older relevant');
-    for (let i = 0; i < 61; i += 1) await makeChallenge(db, noise, steward, 'fitness', `Noise ${i}`);
+    const newer: string[] = [];
+    for (let i = 0; i < 61; i += 1) newer.push(await makeChallenge(db, noise, steward, 'fitness', `Noise ${i}`));
     const app = appFor({ viewer: 'p2c-viewer' });
     await putPrefs(app, 'viewer', { interestIds: [idFor('Strength')], goalIds: [] });
-    const ranked = await challenges(app, 'viewer');
+
+    // Relevance orders BEFORE the 60-row window: the older match leads page 1.
+    const ranked = await page(app, 'viewer', '');
     expect(ranked.challenges).toHaveLength(60);
     expect(ranked.challenges[0].challengeId).toBe(target);
+    expect(ranked.nextCursor).not.toBeNull();
+    const rankedRest = await page(app, 'viewer', `?cursor=${encodeURIComponent(ranked.nextCursor!)}`);
+    expect(rankedRest.challenges).toHaveLength(2);
+    expect(rankedRest.nextCursor).toBeNull();
+    const rankedAll = [...ranked.challenges, ...rankedRest.challenges].map((x) => x.challengeId);
+    expect(new Set(rankedAll).size).toBe(62);
+    expect([...rankedAll].sort()).toEqual([target, ...newer].sort());
+
+    // Browse all: plain newest-first; the oldest eligible Challenge is NOT in
+    // the first window but IS reachable through the cursor (no permanent limit).
+    const general = await page(app, 'viewer', '?rank=general');
+    expect(general.challenges.map((x) => x.challengeId)).not.toContain(target);
+    expect(general.nextCursor).not.toBeNull();
+    const generalRest = await page(app, 'viewer', `?rank=general&cursor=${encodeURIComponent(general.nextCursor!)}`);
+    expect(generalRest.challenges.map((x) => x.challengeId)).toContain(target);
+    expect(generalRest.nextCursor).toBeNull();
+    expect(general.challenges.length + generalRest.challenges.length).toBe(62);
     await app.close();
-  }, 60000);
+  }, 120000);
+
+  it('paginates with a stable cursor: no gaps or duplicates across ties and sub-millisecond timestamps', async () => {
+    const db = testDb();
+    const steward = await seedMember(db, 'p2c-steward');
+    const viewer = await seedMember(db, 'p2c-viewer');
+    await seedMember(db, 'p2c-other');
+    const strength = await makeGroup(db, 'Strength Group', { focusTags: ['Strength'], stewardId: steward });
+    const plain = await makeGroup(db, 'Plain Group', { stewardId: steward });
+    const privateGroup = await makeGroup(db, 'Private Group', { isPrivate: true, focusTags: ['Strength'], stewardId: steward });
+    const joinedGroup = await makeGroup(db, 'Joined Group', { stewardId: steward });
+    const made: string[] = [];
+    for (let i = 0; i < 4; i += 1) made.push(await makeChallenge(db, strength, steward, 'fitness', `S${i}`));
+    for (let i = 0; i < 6; i += 1) made.push(await makeChallenge(db, plain, steward, 'wellness', `P${i}`));
+    const hidden = await makeChallenge(db, privateGroup, steward, 'fitness', 'Hidden');
+    const joined = await makeChallenge(db, joinedGroup, steward, 'fitness', 'Joined');
+    await seedMembership(db, joinedGroup, viewer, { role: 'member', status: 'active' });
+    // Force ties (identical created_at) and sub-millisecond neighbours.
+    // created_at is immutable by trigger; the fixture bypasses it for this statement only.
+    await db.query(`SET session_replication_role = replica`);
+    await db.query(
+      `UPDATE challenges SET created_at = timestamptz '2026-01-01 00:00:00.000100' + (n * interval '1 microsecond') / 3
+         FROM (SELECT challenge_id, (row_number() OVER (ORDER BY challenge_id))::int % 3 AS n FROM challenges) t
+        WHERE challenges.challenge_id = t.challenge_id`,
+    );
+    await db.query(`SET session_replication_role = origin`);
+    const app = appFor({ viewer: 'p2c-viewer' });
+    await putPrefs(app, 'viewer', { interestIds: [idFor('Strength')], goalIds: [] });
+
+    for (const extra of ['', '&rank=general']) {
+      const full = (await page(app, 'viewer', `?limit=60${extra}`)).challenges.map((x) => x.challengeId);
+      expect(full).toHaveLength(10);
+      for (const size of [1, 2, 3, 7]) {
+        const walked = await walk(app, 'viewer', size, extra);
+        expect(walked).toEqual(full); // same order, nothing skipped, nothing repeated
+        expect(new Set(walked).size).toBe(walked.length);
+      }
+      // Authorization is unchanged by paging.
+      expect(full).not.toContain(hidden);
+      expect(full).not.toContain(joined);
+      expect([...full].sort()).toEqual([...made].sort());
+    }
+    // Ranked: the four Strength-hosted Challenges lead every window.
+    const rankedWalk = await walk(app, 'viewer', 3);
+    expect(rankedWalk.slice(0, 4).sort()).toEqual(made.slice(0, 4).sort());
+    // Reading creates no participation or membership.
+    expect(((await db.query(`SELECT count(*)::int AS n FROM challenge_participations`)).rows[0] as { n: number }).n).toBe(0);
+    await app.close();
+  }, 120000);
+
+  it('rejects malformed cursors and limits, and the cursor cannot widen authorization', async () => {
+    const { app, c } = await fixture();
+    for (const qs of ['?limit=0', '?limit=61', '?limit=abc', '?cursor=%%%', `?cursor=${Buffer.from('{"score":1}').toString('base64url')}`,
+      `?cursor=${Buffer.from(JSON.stringify({ score: 0, createdAt: "2026-01-01T00:00:00.000000Z'; --", challengeId: '11111111-1111-4111-8111-111111111111' })).toString('base64url')}`]) {
+      const res = await app.inject({ method: 'GET', url: `/api/challenges/discover${qs}`, headers: authHeaders('viewer') });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toBe('invalid_discovery_query');
+    }
+    // A syntactically valid cursor at the far past still only walks the authorized set.
+    const far = Buffer.from(JSON.stringify({ score: 1000, createdAt: '2999-01-01T00:00:00.000000Z', challengeId: 'ffffffff-ffff-4fff-8fff-ffffffffffff' })).toString('base64url');
+    const res = await page(app, 'viewer', `?cursor=${far}`);
+    expect(res.challenges.map((x) => x.challengeId)).not.toContain(c.cPrivate);
+    expect(res.challenges.map((x) => x.challengeId).sort()).toEqual([c.cStrength, c.cGoal, c.cWellness].sort());
+    await app.close();
+  });
 
   it('requires authentication', async () => {
     const app = appFor({});

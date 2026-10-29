@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { fetchDiscoverableChallenges, type V2ChallengeDiscovery } from '../../api/challengeDiscoveryApi';
+import { fetchDiscoverableChallenges } from '../../api/challengeDiscoveryApi';
 import type { V2DiscoveryRank } from '../../api/groupsApi';
 import { v2ChallengeDiscoveryKey } from './challengeQueryKeys';
 
@@ -9,12 +9,17 @@ function apiConfigured(): boolean {
   return typeof base === 'string' && base.trim().length > 0;
 }
 
-/** Cross-Group Challenge discovery; preferences only order it. */
+/** Challenges per Load more window (server maximum is 60). */
+export const CHALLENGE_DISCOVERY_PAGE_SIZE = 20;
+
+/** Cross-Group Challenge discovery; preferences only order it. Cursor-paged: Load more reaches every eligible Challenge. */
 export function useV2ChallengeDiscovery(rank: V2DiscoveryRank = 'relevance') {
   const { user } = useAuth();
-  return useQuery<V2ChallengeDiscovery>({
+  return useInfiniteQuery({
     queryKey: v2ChallengeDiscoveryKey(user?.uid, rank),
-    queryFn: () => fetchDiscoverableChallenges(rank),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchDiscoverableChallenges({ rank, cursor: pageParam, limit: CHALLENGE_DISCOVERY_PAGE_SIZE }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!user?.uid && apiConfigured(),
     staleTime: 30 * 1000,
   });

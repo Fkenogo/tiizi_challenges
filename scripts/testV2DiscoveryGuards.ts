@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { discoveryCaption, hasRelevance, relevanceBadges } from '../src/v2/challenges/discoveryRelevance';
+import { discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, hasRelevance, relevanceBadges } from '../src/v2/challenges/discoveryRelevance';
 import { parseChallengeIntent } from '../src/v2/challenges/challengeIntent';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -63,6 +63,27 @@ check('ranking only reads preference IDs through the P1b contract', /getMemberPr
 check('preference failures fail open (general ordering)', (read('api/src/challengeDiscovery.ts').match(/\.catch\(\(\) => null\)/g) ?? []).length >= 1 && /\.catch\(\(\) => null\)/.test(read('api/src/groupReads.ts')));
 check('no new preference or recommendation store', !/CREATE TABLE/i.test(read('api/src/challengeDiscovery.ts')));
 check('preference save re-reads both discovery lists', /invalidateV2DiscoveryReads/.test(read('src/v2/preferences/usePreferences.ts')));
+
+console.log('E. corrections: canonical prefix, stale pending state, bounded pagination');
+const discoverySrc = read('api/src/challengeDiscovery.ts');
+check('discovery route registers through apiPath, never a literal /api', /apiPath\('\/challenges\/discover'\)/.test(discoverySrc) && !/'\/api\//.test(discoverySrc));
+check('ranking orders BEFORE the window (no LIMIT on an unranked set)', /ORDER BY relevance_score DESC, created_at DESC, challenge_id DESC\s+LIMIT \$8/.test(discoverySrc));
+check('response order is the SQL order (no JS re-sort that desynchronises cursors)', !/scored\.sort|\.sort\(/.test(discoverySrc));
+const clientApi = read('src/api/challengeDiscoveryApi.ts');
+check('client composes the path through apiPath and carries the cursor', /apiPath\(/.test(clientApi) && /params\.set\('cursor'/.test(clientApi));
+check('Explore pages with a cursor and offers Load more', /Load more Challenges/.test(explore) && /fetchNextPage/.test(explore) && /useInfiniteQuery/.test(read('src/v2/challenges/useChallengeDiscovery.ts')));
+check('Explore uses the refreshed server relationship, not a permanent mutation override', /effectiveRelationship\(/.test(explore) && !/join\.isSuccess \? \(join\.data\.status/.test(explore));
+const pend = { status: 'success', submittedAt: 1000, resultStatus: 'pending' };
+check('before any refresh, the join response stands in (pending)', effectiveRelationship('none', pend, 900) === 'pending');
+check('before any refresh, an immediate join shows member', effectiveRelationship('none', { status: 'success', submittedAt: 1000, resultStatus: 'active' }, 900) === 'member');
+check('a newer read saying pending stays pending', effectiveRelationship('pending', pend, 1500) === 'pending');
+check('REJECTED: a newer read saying none supersedes the earlier pending response', effectiveRelationship('none', pend, 1500) === 'none');
+check('approved: a newer read saying member is member', effectiveRelationship('member', pend, 1500) === 'member');
+check('a failed or idle mutation never overrides the server', effectiveRelationship('none', { status: 'error', submittedAt: 1000 }, 0) === 'none' && effectiveRelationship('pending', null, 0) === 'pending');
+const p1 = { challenges: [{ challengeId: 'a' }, { challengeId: 'b' }] };
+const p2 = { challenges: [{ challengeId: 'b' }, { challengeId: 'c' }] };
+check('pages flatten in order without repeating an id', flattenDiscoveryPages([p1, p2]).map((x) => x.challengeId).join('') === 'abc' && flattenDiscoveryPages(undefined).length === 0);
+check('window note appears only when more remain and names the real count', discoveryWindowNote(20, true, 'Challenges') === 'Showing the first 20 Challenges. Load more to see the rest.' && discoveryWindowNote(20, false, 'Challenges') === null);
 
 if (failures > 0) { console.error(`\nP2 discovery guards: ${failures} failing.`); process.exit(1); }
 console.log('\nP2 discovery guards: all passing.');

@@ -51,3 +51,43 @@ export function relevanceBadges(relevance: DiscoveryRelevance | undefined): stri
   }
   return badges;
 }
+
+export type DiscoveryRelationship = 'steward' | 'member' | 'pending' | 'none';
+
+/**
+ * The member's relationship to the hosting Group for one row.
+ *
+ * The server read is the authority. A join mutation's own response is shown
+ * ONLY until a discovery read newer than that submission has landed; after
+ * that, fresh server state (e.g. a steward rejected the request → 'none')
+ * always supersedes it, so the member can ask again.
+ */
+export function effectiveRelationship(
+  server: DiscoveryRelationship,
+  mutation: { status: string; submittedAt: number; resultStatus?: string } | null,
+  discoveryUpdatedAt: number,
+): DiscoveryRelationship {
+  if (!mutation || mutation.status !== 'success') return server;
+  if (discoveryUpdatedAt >= mutation.submittedAt) return server;
+  return mutation.resultStatus === 'pending' ? 'pending' : 'member';
+}
+
+/** Flatten cursor pages, keeping the first occurrence of any id (defensive; the server never repeats one). */
+export function flattenDiscoveryPages<T extends { challengeId: string }>(pages: Array<{ challenges: T[] }> | undefined): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const page of pages ?? []) {
+    for (const item of page.challenges) {
+      if (seen.has(item.challengeId)) continue;
+      seen.add(item.challengeId);
+      out.push(item);
+    }
+  }
+  return out;
+}
+
+/** Honest note about the returned window; empty when everything reachable is already shown. */
+export function discoveryWindowNote(count: number, hasMore: boolean, noun: 'Groups' | 'Challenges'): string | null {
+  if (!hasMore) return null;
+  return `Showing the first ${count} ${noun}. Load more to see the rest.`;
+}

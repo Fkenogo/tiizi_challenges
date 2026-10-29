@@ -10,7 +10,7 @@ import { challengeTypeLabel, formatDayRange } from './challengeCreationDraft';
 import { endStateFor, statusLabelForEndState } from './challengeEndState';
 import { statusTone } from './V2ChallengeListScreen';
 import { saveChallengeIntent } from './challengeIntent';
-import { discoveryCaption, relevanceBadges } from './discoveryRelevance';
+import { discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, relevanceBadges } from './discoveryRelevance';
 import { useV2ChallengeDiscovery } from './useChallengeDiscovery';
 
 /**
@@ -26,10 +26,11 @@ import { useV2ChallengeDiscovery } from './useChallengeDiscovery';
 export function V2ExploreChallenges() {
   const [ordering, setOrdering] = useState<V2DiscoveryRank>('relevance');
   const discovery = useV2ChallengeDiscovery(ordering);
-  const challenges = discovery.data?.challenges ?? [];
+  const challenges = flattenDiscoveryPages(discovery.data?.pages);
   const caption = discovery.isSuccess
-    ? discoveryCaption(ordering, discovery.data.ranking.applied, challenges, 'Challenges')
+    ? discoveryCaption(ordering, discovery.data.pages[0]?.ranking.applied, challenges, 'Challenges')
     : null;
+  const windowNote = discovery.isSuccess ? discoveryWindowNote(challenges.length, discovery.hasNextPage, 'Challenges') : null;
 
   return (
     <section aria-label="Explore Challenges" className="mt-8 space-y-3">
@@ -44,9 +45,10 @@ export function V2ExploreChallenges() {
         <V2Chip selected={ordering === 'general'} onClick={() => setOrdering('general')}>Browse all</V2Chip>
       </div>
       {caption && <p role="status" data-discovery-caption={caption.kind} className="text-xs text-slate-600">{caption.text}</p>}
+      {windowNote && <p data-discovery-window className="text-xs text-slate-500">{windowNote}</p>}
 
       {discovery.isLoading && <V2LoadingState label="Finding Challenges…" />}
-      {discovery.isError && (
+      {discovery.isError && !discovery.isFetchNextPageError && (
         <V2ErrorState
           title="Discovery is unavailable"
           message="We could not load more Challenges to explore. Your own Challenges above are not affected."
@@ -57,18 +59,34 @@ export function V2ExploreChallenges() {
         <V2EmptyState title="Nothing to explore yet" message="When open Groups host Challenges, they will appear here." />
       )}
       <ul aria-label="Challenges to explore" className="space-y-2">
-        {challenges.map((challenge) => <ExploreRow key={challenge.challengeId} challenge={challenge} />)}
+        {challenges.map((challenge) => <ExploreRow key={challenge.challengeId} challenge={challenge} discoveryUpdatedAt={discovery.dataUpdatedAt} />)}
       </ul>
+      {discovery.isFetchNextPageError && (
+        <V2ErrorState title="We could not load more Challenges" message="Please try again." onRetry={() => void discovery.fetchNextPage()} />
+      )}
+      {discovery.hasNextPage && !discovery.isFetchNextPageError && (
+        <div className="flex justify-center pt-1">
+          <V2Button variant="secondary" className="min-h-11" disabled={discovery.isFetchingNextPage} onClick={() => void discovery.fetchNextPage()}>
+            {discovery.isFetchingNextPage ? 'Loading…' : 'Load more Challenges'}
+          </V2Button>
+        </div>
+      )}
     </section>
   );
 }
 
-function ExploreRow({ challenge }: { challenge: V2DiscoverableChallenge }) {
+function ExploreRow({ challenge, discoveryUpdatedAt }: { challenge: V2DiscoverableChallenge; discoveryUpdatedAt: number }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const join = useJoinGroup(challenge.host.groupId);
   const groupName = challenge.host.groupName ?? challenge.groupName ?? 'the hosting Group';
-  const relation = join.isSuccess ? (join.data.status === 'pending' ? 'pending' : 'member') : challenge.host.viewerRelationship;
+  // Server state is the authority: the join response only stands in until a
+  // newer discovery read lands (a steward may have rejected the request since).
+  const relation = effectiveRelationship(
+    challenge.host.viewerRelationship,
+    join.isSuccess ? { status: join.status, submittedAt: join.submittedAt, resultStatus: join.data.status } : null,
+    discoveryUpdatedAt,
+  );
   const pending = relation === 'pending';
   const requiresApproval = challenge.host.admissionMode === 'approval';
   const endState = endStateFor(challenge);

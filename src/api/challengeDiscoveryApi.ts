@@ -23,9 +23,18 @@ export interface V2DiscoverableChallenge extends V2ChallengeSummary {
 
 export interface V2ChallengeDiscovery {
   challenges: V2DiscoverableChallenge[];
+  /** Opaque keyset cursor for the next window; null on the last window. */
+  nextCursor: string | null;
   ranking: { applied: boolean };
 }
 
-export function fetchDiscoverableChallenges(rank: V2DiscoveryRank = 'relevance'): Promise<V2ChallengeDiscovery> {
-  return apiFetch<V2ChallengeDiscovery>(apiPath(`/challenges/discover${rank === 'general' ? '?rank=general' : ''}`));
+export function fetchDiscoverableChallenges(
+  options: { rank?: V2DiscoveryRank; cursor?: string; limit?: number } = {},
+): Promise<V2ChallengeDiscovery> {
+  const params = new URLSearchParams();
+  if (options.rank === 'general') params.set('rank', 'general');
+  if (options.cursor) params.set('cursor', options.cursor);
+  if (options.limit !== undefined) params.set('limit', String(options.limit));
+  const query = params.size > 0 ? `?${params.toString()}` : '';
+  return apiFetch<V2ChallengeDiscovery>(apiPath(`/challenges/discover${query}`));
 }
