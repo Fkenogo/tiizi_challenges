@@ -23,7 +23,7 @@ const all = Object.values(sources).join('\n');
 const screen = sources['src/v2/support/V2SupportTiiziScreen.tsx'];
 const card = sources['src/v2/support/V2SupportTiiziCard.tsx'];
 const content = sources['src/v2/support/supportTiiziContent.ts'];
-const visible = JSON.stringify(SUPPORT_TIIZI).replace(SUPPORT_TIIZI.placeholderMark, '');
+const visible = JSON.stringify(SUPPORT_TIIZI).replace(SUPPORT_TIIZI.copy.placeholderMark, '');
 
 console.log('A. nothing can initiate a transaction, copy, message or network call');
 check('activation guard is off (real details need a later authorized package)', SUPPORT_TIIZI.activated === false);
@@ -43,18 +43,22 @@ console.log('B. honest copy');
 check('no number-like strings (7+ digits or a + prefix) in members\' text', !/\d{7,}|\+\d/.test(visible));
 check('no paid/received/total/receipt/pledge/donation/thank-you claims', !/\bpaid\b|\breceived\b|\btotal\b|receipt|pledg|donat|thank you|raised|goal reached/i.test(visible));
 check('no "coming soon" or later-availability promises', !/coming soon|later update|will be available|will appear|once .{0,40}confirmed|launching|\bsoon\b/i.test(visible));
-check('status says nothing can be sent, charged or recorded', /nothing can be sent, charged or recorded/.test(SUPPORT_TIIZI.status));
+check('status says nothing can be sent, charged or recorded', /nothing can be sent, charged or recorded/.test(SUPPORT_TIIZI.copy.status));
 check('suggested amounts are exactly KES 500 / 1,000 / 2,000 / 5,000 / Custom',
   SUPPORT_TIIZI.amounts.map((a) => a.label).join('|') === 'KES 500|KES 1,000|KES 2,000|KES 5,000|Custom amount');
 check('frequencies are just once / occasionally / monthly / annually and are not a subscription',
-  SUPPORT_TIIZI.frequencies.map((f) => f.id).join('|') === 'once|occasionally|monthly|annually' && /not a subscription/.test(SUPPORT_TIIZI.frequencyHint));
+  SUPPORT_TIIZI.frequencies.map((f) => f.id).join('|') === 'once|occasionally|monthly|annually' && /not a subscription/.test(SUPPORT_TIIZI.copy.frequencyHint));
 check('recipient, holder and WhatsApp are each marked "Placeholder – not payable"',
-  SUPPORT_TIIZI.placeholders.length === 3 && SUPPORT_TIIZI.placeholderMark === 'Placeholder – not payable'
-  && /SUPPORT_TIIZI\.placeholderMark/.test(screen) && /<dl/.test(screen) && !/<button/.test(screen.slice(screen.indexOf('<dl'), screen.indexOf('</dl>'))));
-check('platform support is distinguished from Group and Challenge contributions', /separate from any Group or Challenge/.test(SUPPORT_TIIZI.about));
-check('Tiizi stays free and results never depend on supporting', /never depend on supporting Tiizi/.test(SUPPORT_TIIZI.lead));
-check('content module separates Founder-approved constants, pending Founder-supplied details and proposed wording',
-  /FOUNDER-APPROVED/.test(content) && /FOUNDER-SUPPLIED/.test(content) && /PROPOSED/.test(content));
+  SUPPORT_TIIZI.placeholders.length === 3 && SUPPORT_TIIZI.copy.placeholderMark === 'Placeholder – not payable'
+  && /SUPPORT_TIIZI\.copy\.placeholderMark/.test(screen) && /<dl/.test(screen) && !/<button/.test(screen.slice(screen.indexOf('<dl'), screen.indexOf('</dl>'))));
+check('platform support is distinguished from Group and Challenge contributions', /separate from any Group or Challenge/.test(SUPPORT_TIIZI.copy.about));
+check('Tiizi stays free and results never depend on supporting', /never depend on supporting Tiizi/.test(SUPPORT_TIIZI.copy.lead));
+check('content tiers are structurally separate: approved constants, pending details, and all proposed strings under copy',
+  Object.keys(SUPPORT_TIIZI).sort().join('|') === 'activated|amounts|copy|frequencies|placeholders'
+  && Object.keys(FOUNDER_APPROVED).sort().join('|') === 'currency|customAmount|frequencies|operatingModel|suggestedAmounts'
+  && Object.values(SUPPORT_TIIZI.copy).every((v) => typeof v === 'string' || typeof v === 'object')
+  && /FOUNDER-APPROVED/.test(content) && /FOUNDER-SUPPLIED/.test(content) && /PROPOSED/.test(content));
+check('Founder-approved frequency choices and labels', FOUNDER_APPROVED.frequencies.map((f) => f.label).join('|') === 'Just once|Occasionally, whenever able|Monthly|Annually');
 
 console.log('A2. Founder-approved constants and pending details');
 check('KES, exactly four suggested amounts, custom option, manual mobile-money model',
@@ -67,18 +71,18 @@ check('the three Founder-supplied details stay null placeholders that no screen 
 console.log('C0. Back never relies on browser history');
 const fallback = '/v2/profile';
 check('no state, null, or non-object state falls back to Profile', supportBackTarget(undefined) === fallback && supportBackTarget(null) === fallback && supportBackTarget('x') === fallback);
-check('the Profile origin goes back to Profile; another safe in-app origin is honoured', supportBackTarget({ from: '/v2/profile' }) === fallback && supportBackTarget({ from: '/v2/groups' }) === '/v2/groups');
+check('the Profile origin goes back to Profile; another safe in-app origin is honoured', supportBackTarget({ from: '/v2/profile' }) === fallback && supportBackTarget({ from: '/v2/groups' }) === '/v2/groups' && supportBackTarget({ from: '/v2/groups/AbC_12' }) === '/v2/groups/AbC_12');
 check('external, protocol-relative, odd or self origins fall back to Profile',
-  ['https://evil.example', '//evil.example', 'javascript:alert(1)', '/app/home', '/v2/../x', '/v2/support', '/v2/support/x', '/v2/', 42, {}].every((from) => supportBackTarget({ from }) === fallback));
+  [ 'https://evil.example', '//evil.example', 'javascript:alert(1)', '/app/home', '/v2/../x', '/v2/support', '/v2/support/x', '/v2/', 42, {}].every((from) => supportBackTarget({ from }) === fallback));
 
 console.log('C. mobile, accessibility and navigation');
 check('choices are toggle buttons with a 44px minimum touch target and a visible focus ring',
   /aria-pressed/.test(screen) && /min-h-11/.test(screen) && /focus-visible:ring-2/.test(screen));
 check('amounts and frequency are each a fieldset/legend group; status and preview are announced',
-  (screen.match(/<ChoiceGroup/g) ?? []).length === 2 && /<fieldset/.test(screen) && /<legend/.test(screen) && /label=\{SUPPORT_TIIZI\.amountsHeading\}/.test(screen) && /label=\{SUPPORT_TIIZI\.frequencyHeading\}/.test(screen)
+  (screen.match(/<ChoiceGroup/g) ?? []).length === 2 && /<fieldset/.test(screen) && /<legend/.test(screen) && /label=\{SUPPORT_TIIZI\.copy\.amountsHeading\}/.test(screen) && /label=\{SUPPORT_TIIZI\.copy\.frequencyHeading\}/.test(screen)
   && /role="status"/.test(screen) && /aria-live="polite"/.test(screen));
 check('Profile card heading is a section-level h2, like Interests & Goals', /<h2 /.test(card) && !/<h3/.test(card));
-check('back control is a 44px button with text', /min-h-11[^"]*"[\s\S]{0,160}ArrowLeft/.test(screen) && /SUPPORT_TIIZI\.back/.test(screen));
+check('back control is a 44px button with text', /min-h-11[^"]*"[\s\S]{0,160}ArrowLeft/.test(screen) && /SUPPORT_TIIZI\.copy\.back/.test(screen));
 check('the Profile card is a full-width 44px entry', /min-h-11 w-full/.test(card));
 
 console.log('D. integration');
