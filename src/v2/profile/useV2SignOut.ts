@@ -11,6 +11,7 @@ import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { clearChallengeDraft } from '../challenges/challengeDraftSession';
+import { clearChallengeIntent } from '../challenges/challengeIntent';
 
 export function useV2SignOut() {
   const { logout, user } = useAuth();
@@ -24,6 +25,11 @@ export function useV2SignOut() {
     // Signing out ends this member's Challenge-draft session backup too —
     // only once sign-out has actually succeeded (a failed sign-out keeps the
     // member signed in with their draft).
-    if (uid) clearChallengeDraft(uid);
+    // The same holds for this member's Challenge return context (only this
+    // uid's key; other members' stored context is left alone).
+    if (uid) {
+      clearChallengeDraft(uid);
+      clearChallengeIntent(uid);
+    }
   }, [logout, queryClient, user?.uid]);
 }
