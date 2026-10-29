@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { InfiniteQueryObserver, QueryClient } from '@tanstack/react-query';
 import { createRefreshTracker, discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, hasRelevance, relevanceBadges } from '../src/v2/challenges/discoveryRelevance';
-import { parseChallengeIntent } from '../src/v2/challenges/challengeIntent';
+import { clearChallengeIntent, parseChallengeIntent, readChallengeIntent, saveChallengeIntent } from '../src/v2/challenges/challengeIntent';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string) => readFileSync(join(root, rel), 'utf8');
@@ -38,6 +38,31 @@ check('valid intent parses', parseChallengeIntent(JSON.stringify({ challengeId: 
 check('malformed or non-UUID intents are rejected', parseChallengeIntent('{"challengeId":"../x","groupId":"y","title":"t","groupName":"g"}') === null && parseChallengeIntent('nope') === null && parseChallengeIntent(null) === null);
 const intentSrc = read('src/v2/challenges/challengeIntent.ts');
 check('intent is stored per member and best-effort', /KEY_PREFIX\}\$\{uid\}/.test(intentSrc) && (intentSrc.match(/catch/g) ?? []).length >= 3);
+
+console.log('B2. sign-out clears only the signed-out member\'s return context');
+{
+  const store = new Map<string, string>();
+  (globalThis as unknown as { window: unknown }).window = {
+    localStorage: {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k),
+    },
+  };
+  const intent = { challengeId: uuid, groupId: uuid, title: 'T', groupName: 'G' };
+  saveChallengeIntent('member-a', intent);
+  saveChallengeIntent('member-b', intent);
+  check('ordinary Challenge -> Group -> Challenge context is stored and read back', readChallengeIntent('member-a')?.challengeId === uuid);
+  clearChallengeIntent('member-a');
+  check('clearing removes the signed-out member\'s context', readChallengeIntent('member-a') === null);
+  check('another member\'s stored context is preserved', readChallengeIntent('member-b')?.challengeId === uuid);
+  clearChallengeIntent(undefined);
+  check('clearing without a uid erases nothing', store.size === 1);
+  delete (globalThis as unknown as { window?: unknown }).window;
+}
+const signOutSrc = read('src/v2/profile/useV2SignOut.ts');
+check('sign-out clears this member\'s return context only after logout succeeds',
+  /clearChallengeIntent\(uid\)/.test(signOutSrc) && signOutSrc.indexOf('await logout()') < signOutSrc.indexOf('clearChallengeIntent(uid)'));
 
 console.log('C. the Challenge -> Group -> Challenge journey keeps its explicit steps');
 const explore = read('src/v2/challenges/V2ExploreChallenges.tsx');
