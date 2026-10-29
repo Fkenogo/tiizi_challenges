@@ -13,11 +13,13 @@ import {
   V2ErrorState,
   V2LoadingState,
   V2Page,
+  V2Sheet,
 } from '../components/V2Primitives';
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
 import { useChallengeDetailV2, useV2Memberships } from '../challenges/useChallengeCreation';
 import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
-import { V2Sheet } from '../components/V2Primitives';
+import { endStateFor, loggingAvailableForEndState } from '../challenges/challengeEndState';
+import { loggingViewFor } from '../challenges/loggingView';
 import { useV2Today } from './useV2Today';
 import {
   challengeTypeLabel,
@@ -25,6 +27,7 @@ import {
   formatGoverningDay,
   governingDayFor,
   greetingFor,
+  hasOtherParticipation,
   isTodayEmpty,
   NO_PARTICIPATION_COPY,
   noParticipationKind,
@@ -122,8 +125,11 @@ export function V2TodayScreen() {
   const noParticipation = noParticipationKind(
     memberships.data ? memberships.data.memberships.length : null,
     projection.groupChallengeOpportunities.length > 0,
+    (memberships.data?.pendingMemberships?.length ?? 0) > 0,
   );
-  const notParticipating = projection.requiredToday.length === 0 && projection.joinedChallengeProgress.length === 0;
+  const notParticipating = projection.requiredToday.length === 0
+    && projection.joinedChallengeProgress.length === 0
+    && !hasOtherParticipation(projection);
 
   return (
     <V2Page>
@@ -320,7 +326,13 @@ export function V2TodayScreen() {
  */
 function TodayLogActivity({ challengeId, onClose }: { challengeId: string; onClose: () => void }) {
   const detail = useChallengeDetailV2(challengeId);
-  if (detail.data) return <V2LogActivityDialog detail={detail.data} open onClose={onClose} />;
+  const data = detail.data;
+  // The same gate as the Challenge page: logging only while the Challenge is
+  // live AND the member's current server read says a new entry is possible.
+  // Today's button came from a projection that may be a moment old, so the
+  // fresh detail decides.
+  const loggable = !!data && loggingAvailableForEndState(endStateFor(data)) && loggingViewFor(data).kind === 'loggable';
+  if (data && loggable) return <V2LogActivityDialog detail={data} open onClose={onClose} />;
   return (
     <V2Sheet open onClose={onClose} title="Log activity" variant="focused">
       {detail.isError ? (
@@ -329,6 +341,13 @@ function TodayLogActivity({ challengeId, onClose }: { challengeId: string; onClo
           message="Please try again."
           onRetry={() => void detail.refetch()}
         />
+      ) : data ? (
+        <div className="space-y-3">
+          <p className="text-sm leading-6 text-slate-600">
+            Logging isn&apos;t open for this Challenge right now. Its page shows where it stands.
+          </p>
+          <V2Button onClick={onClose}>Close</V2Button>
+        </div>
       ) : (
         <V2LoadingState label="Opening Challenge…" />
       )}

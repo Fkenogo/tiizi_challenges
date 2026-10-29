@@ -241,6 +241,20 @@ export function streakReminder(required: readonly V2TodayRequiredChallenge[]): S
 }
 
 /** Which "nothing to log yet" situation a member is in (membership + participation facts only). */
+/**
+ * True when the member already takes part in something Today shows outside the
+ * live lists: a joined Challenge that has not started yet (served only under
+ * `upcoming`, never as an opportunity) or a finalized result. Such a member
+ * must never be told they have no Challenges.
+ */
+export function hasOtherParticipation(
+  projection: Pick<V2TodayProjection, 'upcoming' | 'finalizedResults' | 'groupChallengeOpportunities'>,
+): boolean {
+  const opportunityIds = new Set(projection.groupChallengeOpportunities.map((item) => item.challengeId));
+  return projection.finalizedResults.length > 0
+    || projection.upcoming.some((item) => !opportunityIds.has(item.challengeId));
+}
+
 export type NoParticipationKind = 'unknown' | 'no-group' | 'group-with-challenges' | 'group-without-challenges';
 
 /**
@@ -248,9 +262,14 @@ export type NoParticipationKind = 'unknown' | 'no-group' | 'group-with-challenge
  * not known — the caller then shows the generic zero state, never a guess).
  * `hasChallengesInGroups` comes from the served Group opportunities.
  */
-export function noParticipationKind(groupCount: number | null, hasChallengesInGroups: boolean): NoParticipationKind {
+export function noParticipationKind(
+  groupCount: number | null,
+  hasChallengesInGroups: boolean,
+  hasPendingGroupApplication = false,
+): NoParticipationKind {
   if (groupCount === null) return 'unknown';
-  if (groupCount === 0) return 'no-group';
+  // A pending Group application is a real fact: do not tell that member to "start with a Group".
+  if (groupCount === 0) return hasPendingGroupApplication ? 'unknown' : 'no-group';
   return hasChallengesInGroups ? 'group-with-challenges' : 'group-without-challenges';
 }
 

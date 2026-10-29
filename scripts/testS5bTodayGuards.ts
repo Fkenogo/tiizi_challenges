@@ -34,6 +34,7 @@ import {
   governingDayFor,
   greetingFor,
   isTodayEmpty,
+  hasOtherParticipation,
   NO_PARTICIPATION_COPY,
   noParticipationKind,
   opportunityAction,
@@ -609,10 +610,10 @@ const loggingHook = read('src/v2/challenges/useChallengeCreation.ts');
 const logHookBody = loggingHook.slice(loggingHook.indexOf('export function useLogActivityV2'), loggingHook.indexOf('export function useChallengeContributorsV2'));
 check('K11 Today reuses the existing Log Activity dialog and the existing Challenge detail read (no second logging path)',
   screen.includes("import { V2LogActivityDialog } from '../challenges/V2LoggingSection'")
-  && screen.includes('useChallengeDetailV2(challengeId)') && /<V2LogActivityDialog detail=\{detail\.data\}/.test(screen)
+  && screen.includes('useChallengeDetailV2(challengeId)') && /<V2LogActivityDialog detail=\{data\}/.test(screen)
   && !/logChallengeActivityV2|useLogActivityV2|buildS3bActivityPayload|newClientKey|loggingIntent|\/activity`/.test(screen));
 check('K12 an accepted log marks Today stale so the server re-proves it (no client patching)',
-  /await invalidateV2ChallengeReads\(/.test(logHookBody) && /await invalidateV2Today\(queryClient, user\?\.uid\)/.test(logHookBody) && !/setQueryData/.test(logHookBody));
+  /invalidateV2ChallengeReads\(queryClient/.test(logHookBody) && /invalidateV2Today\(queryClient, user\?\.uid\)/.test(logHookBody) && /Promise\.all/.test(logHookBody) && !/setQueryData/.test(logHookBody));
 check('K13 Log activity is offered for pending Streaks and ongoing Together/Race/Streak cards; completed Streaks acknowledge instead',
   /allComplete \? \([\s\S]*?View Challenge[\s\S]*?\) : \([\s\S]*?onClick=\{onLog\}>Log activity/.test(screen)
   && /<V2Button onClick=\{onLog\}>Log activity<\/V2Button>/.test(screen) && screen.includes('✓ Done for today'));
@@ -621,6 +622,21 @@ check('K15 the existing logging form still guards double submission (disabled wh
   /disabled=\{pending\}/.test(read('src/v2/challenges/V2LoggingSection.tsx')) && /pending=\{log\.isPending\}/.test(read('src/v2/challenges/V2LoggingSection.tsx')));
 check('K16 the Today screen derives no due/missed/completed state of its own',
   !/dayState|lastCompletedDay|completionStatus\s*===\s*'(due|missed)'/.test(screen.slice(screen.indexOf('export function V2TodayScreen'), screen.indexOf('function TodayLogActivity'))));
+
+
+const upcomingItem = (id: string) => ({ challengeId: id, title: 'Starts tomorrow', kind: 'starts' as const, lifecycleDate: '2026-09-16', timezone: 'Africa/Nairobi', detailPath: `/v2/challenges/${id}` });
+check('K17 a member who joined a not-yet-started Challenge (only under upcoming) counts as participating — never told they have none',
+  hasOtherParticipation({ upcoming: [upcomingItem('u1')], finalizedResults: [], groupChallengeOpportunities: [] }) === true);
+check('K18 an upcoming item that is merely a Group opportunity is not participation',
+  hasOtherParticipation({ upcoming: [upcomingItem('o1')], finalizedResults: [], groupChallengeOpportunities: [{ challengeId: 'o1' } as never] }) === false);
+check('K19 finalized results count as participation; an empty projection does not',
+  hasOtherParticipation({ upcoming: [], finalizedResults: [{ challengeId: 'f', title: 'T', finalized: true, detailPath: '/v2/challenges/f' }], groupChallengeOpportunities: [] }) === true
+  && hasOtherParticipation({ upcoming: [], finalizedResults: [], groupChallengeOpportunities: [] }) === false);
+check('K20 a pending Group application is not reported as "no Group"', noParticipationKind(0, false, true) === 'unknown' && noParticipationKind(0, false, false) === 'no-group');
+check('K21 Today offers the logging form only when the fresh detail is live and loggable (same gate as the Challenge page), otherwise a read-only message',
+  /loggingAvailableForEndState\(endStateFor\(data\)\)/.test(screen) && /loggingViewFor\(data\)\.kind === 'loggable'/.test(screen)
+  && screen.includes("Logging isn&apos;t open for this Challenge right now"));
+check('K22 the not-participating decision also respects joined-upcoming and finalized participation', /!hasOtherParticipation\(projection\)/.test(screen));
 
 if (failures > 0) {
   console.error(`\nS5b Today experience guards: ${failures} failure(s).`);
