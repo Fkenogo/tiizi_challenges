@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
 import type { V2DiscoverableChallenge } from '../../api/challengeDiscoveryApi';
@@ -10,7 +10,7 @@ import { challengeTypeLabel, formatDayRange } from './challengeCreationDraft';
 import { endStateFor, statusLabelForEndState } from './challengeEndState';
 import { statusTone } from './V2ChallengeListScreen';
 import { saveChallengeIntent } from './challengeIntent';
-import { discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, relevanceBadges } from './discoveryRelevance';
+import { discoveryCaption, createRefreshTracker, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, relevanceBadges } from './discoveryRelevance';
 import { useV2ChallengeDiscovery } from './useChallengeDiscovery';
 
 /**
@@ -26,6 +26,9 @@ import { useV2ChallengeDiscovery } from './useChallengeDiscovery';
 export function V2ExploreChallenges() {
   const [ordering, setOrdering] = useState<V2DiscoveryRank>('relevance');
   const discovery = useV2ChallengeDiscovery(ordering);
+  // Load more appends pages; only a real refresh may supersede a join response.
+  const refreshTracker = useRef(createRefreshTracker());
+  const refreshedAt = refreshTracker.current.observe(discovery.dataUpdatedAt, discovery.isFetchingNextPage);
   const challenges = flattenDiscoveryPages(discovery.data?.pages);
   const caption = discovery.isSuccess
     ? discoveryCaption(ordering, discovery.data.pages[0]?.ranking.applied, challenges, 'Challenges')
@@ -59,7 +62,7 @@ export function V2ExploreChallenges() {
         <V2EmptyState title="Nothing to explore yet" message="When open Groups host Challenges, they will appear here." />
       )}
       <ul aria-label="Challenges to explore" className="space-y-2">
-        {challenges.map((challenge) => <ExploreRow key={challenge.challengeId} challenge={challenge} discoveryUpdatedAt={discovery.dataUpdatedAt} />)}
+        {challenges.map((challenge) => <ExploreRow key={challenge.challengeId} challenge={challenge} discoveryUpdatedAt={refreshedAt} />)}
       </ul>
       {discovery.isFetchNextPageError && (
         <V2ErrorState title="We could not load more Challenges" message="Please try again." onRetry={() => void discovery.fetchNextPage()} />

@@ -72,6 +72,33 @@ export function effectiveRelationship(
   return mutation.resultStatus === 'pending' ? 'pending' : 'member';
 }
 
+/**
+ * When did a discovery read last REFRESH what the member's rows say?
+ *
+ * `dataUpdatedAt` of a cursor-paged query also moves when Load more appends a
+ * page, but appending never re-reads an earlier row's relationship. Treating it
+ * as a refresh would let a failed post-join refetch be "papered over" by Load
+ * more, reverting a pending row to an actionable Join. Feed this every render;
+ * an update that arrives after a next-page fetch was in flight is an append and
+ * does not advance the refresh time. Idempotent per input.
+ */
+export function createRefreshTracker() {
+  let lastUpdatedAt = 0;
+  let sawNextPage = false;
+  let refreshedAt = 0;
+  return {
+    observe(dataUpdatedAt: number, isFetchingNextPage: boolean): number {
+      if (isFetchingNextPage) sawNextPage = true;
+      if (dataUpdatedAt !== lastUpdatedAt) {
+        if (!sawNextPage) refreshedAt = dataUpdatedAt;
+        sawNextPage = false;
+        lastUpdatedAt = dataUpdatedAt;
+      }
+      return refreshedAt;
+    },
+  };
+}
+
 /** Flatten cursor pages, keeping the first occurrence of any id (defensive; the server never repeats one). */
 export function flattenDiscoveryPages<T extends { challengeId: string }>(pages: Array<{ challenges: T[] }> | undefined): T[] {
   const seen = new Set<string>();

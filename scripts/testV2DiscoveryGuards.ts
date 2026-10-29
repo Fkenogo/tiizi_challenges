@@ -6,7 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, hasRelevance, relevanceBadges } from '../src/v2/challenges/discoveryRelevance';
+import { InfiniteQueryObserver, QueryClient } from '@tanstack/react-query';
+import { createRefreshTracker, discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, hasRelevance, relevanceBadges } from '../src/v2/challenges/discoveryRelevance';
 import { parseChallengeIntent } from '../src/v2/challenges/challengeIntent';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -85,6 +86,56 @@ const p1 = { challenges: [{ challengeId: 'a' }, { challengeId: 'b' }] };
 const p2 = { challenges: [{ challengeId: 'b' }, { challengeId: 'c' }] };
 check('pages flatten in order without repeating an id', flattenDiscoveryPages([p1, p2]).map((x) => x.challengeId).join('') === 'abc' && flattenDiscoveryPages(undefined).length === 0);
 check('window note appears only when more remain and names the real count', discoveryWindowNote(20, true, 'Challenges') === 'Showing the first 20 Challenges. Load more to see the rest.' && discoveryWindowNote(20, false, 'Challenges') === null);
+
+console.log('F. join -> failed refetch -> Load more -> rejection -> recovery (real React Query semantics)');
+{
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  type EdgePage = { challenges: Array<{ challengeId: string; rel?: 'none' | 'pending' }>; nextCursor: string | null };
+  let serverRel: 'none' | 'pending' = 'none';
+  let failRefetch = false;
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const observer = new InfiniteQueryObserver(client, {
+    queryKey: ['p2-edge'],
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<EdgePage> => {
+      if (failRefetch) throw new Error('discovery unavailable');
+      return pageParam
+        ? { challenges: [{ challengeId: 'p2' }], nextCursor: null }
+        : { challenges: [{ challengeId: 'p1', rel: serverRel }], nextCursor: 'c2' };
+    },
+    getNextPageParam: (last: EdgePage) => last.nextCursor ?? undefined,
+  });
+  const tracker = createRefreshTracker();
+  const unsubscribe = observer.subscribe((r) => { tracker.observe(r.dataUpdatedAt, r.isFetchingNextPage); });
+  const view = (mutation: { status: string; submittedAt: number; resultStatus?: string } | null) => {
+    const r = observer.getCurrentResult();
+    const row = r.data?.pages[0].challenges[0].rel ?? 'none';
+    return { fixed: effectiveRelationship(row, mutation, tracker.observe(r.dataUpdatedAt, r.isFetchingNextPage)), naive: effectiveRelationship(row, mutation, r.dataUpdatedAt) };
+  };
+  await observer.refetch();
+  await sleep(5);
+  const submittedAt = Date.now(); // member requests admission; response says pending
+  const joined = { status: 'success', submittedAt, resultStatus: 'pending' };
+  serverRel = 'pending';
+  await sleep(5);
+  failRefetch = true; await observer.refetch(); // the post-join refetch FAILS; row data is still the old 'none'
+  check('failed refetch keeps pending provisionally', view(joined).fixed === 'pending');
+  failRefetch = false; await sleep(5);
+  await observer.fetchNextPage(); // Load more succeeds and advances dataUpdatedAt
+  const afterMore = view(joined);
+  check('Load more does not revert the row to an actionable Join', afterMore.fixed === 'pending');
+  check('(the dataUpdatedAt-only check WOULD have reverted it — the defect this guards)', afterMore.naive === 'none');
+  await sleep(5);
+  serverRel = 'none'; // steward rejects
+  await observer.refetch();
+  check('a real refresh after rejection supersedes the provisional pending', view(joined).fixed === 'none');
+  await sleep(5);
+  const again = { status: 'success', submittedAt: Date.now(), resultStatus: 'pending' };
+  check('member can request again: the new response is provisional until the next refresh', view(again).fixed === 'pending');
+  serverRel = 'pending'; await sleep(5); await observer.refetch();
+  check('and a later refresh saying pending keeps it pending', view(again).fixed === 'pending');
+  unsubscribe(); client.clear();
+}
 
 if (failures > 0) { console.error(`\nP2 discovery guards: ${failures} failing.`); process.exit(1); }
 console.log('\nP2 discovery guards: all passing.');
