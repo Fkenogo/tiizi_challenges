@@ -10,6 +10,7 @@ import {
   type EstablishChallengeBody,
   type EstablishChallengeResponse,
 } from '../../api/challengeCreationApi';
+import { invalidateV2Today } from '../today/todayQueryKeys';
 import { fetchMyMemberships, type MyMembershipsResponse } from '../../api/membershipsApi';
 import { v2MembershipsKey } from '../memberships/membershipQueryKeys';
 import {
@@ -180,6 +181,9 @@ export function useLogActivityV2() {
     mutationFn: (variables) => logChallengeActivityV2(variables.challengeId, variables.payload),
     onSuccess: async (_result, variables) => {
       await invalidateV2ChallengeReads(queryClient, user?.uid, variables.challengeId);
+      // P3: Today is composed from the same Challenge reads; mark it stale so the
+      // server re-proves it (never patched client-side) after an accepted log.
+      await invalidateV2Today(queryClient, user?.uid);
     },
   });
 }

@@ -205,3 +205,67 @@ export function upcomingSummary(item: { kind: 'starts' | 'ends'; lifecycleDate: 
   const when = formatLifecycleDate(item.lifecycleDate);
   return item.kind === 'starts' ? `Starts ${when}` : `Ends ${when}`;
 }
+
+/**
+ * TIIZI-FER-P3-001 — Streak actions due today: pending first, completed after.
+ * A stable partition of ENGINE-provided requirement states: the server order
+ * is kept within each group, nothing is re-sorted by any client rule, and no
+ * due/missed/completed state is derived here (it is read from `requirements`).
+ */
+export function orderRequiredToday(required: readonly V2TodayRequiredChallenge[]): V2TodayRequiredChallenge[] {
+  const pending: V2TodayRequiredChallenge[] = [];
+  const done: V2TodayRequiredChallenge[] = [];
+  for (const challenge of required) (requirementProgress(challenge).allComplete ? done : pending).push(challenge);
+  return [...pending, ...done];
+}
+
+export interface StreakReminder {
+  tone: 'pending' | 'done';
+  text: string;
+}
+
+/**
+ * Compact Streak reminder shown under the greeting. Counts come only from the
+ * served requirement states; with no Streak Challenge there is no reminder.
+ */
+export function streakReminder(required: readonly V2TodayRequiredChallenge[]): StreakReminder | null {
+  if (required.length === 0) return null;
+  const pending = required.filter((challenge) => !requirementProgress(challenge).allComplete).length;
+  if (pending === 0) {
+    return { tone: 'done', text: required.length === 1 ? 'Your Streak is done for today.' : `All ${required.length} Streaks are done for today.` };
+  }
+  if (pending === required.length) {
+    return { tone: 'pending', text: pending === 1 ? '1 Streak needs you today.' : `${pending} Streaks need you today.` };
+  }
+  return { tone: 'pending', text: `${pending} of ${required.length} Streaks need you today.` };
+}
+
+/** Which "nothing to log yet" situation a member is in (membership + participation facts only). */
+export type NoParticipationKind = 'unknown' | 'no-group' | 'group-with-challenges' | 'group-without-challenges';
+
+/**
+ * `groupCount` is the member's real Group membership count (null while it is
+ * not known — the caller then shows the generic zero state, never a guess).
+ * `hasChallengesInGroups` comes from the served Group opportunities.
+ */
+export function noParticipationKind(groupCount: number | null, hasChallengesInGroups: boolean): NoParticipationKind {
+  if (groupCount === null) return 'unknown';
+  if (groupCount === 0) return 'no-group';
+  return hasChallengesInGroups ? 'group-with-challenges' : 'group-without-challenges';
+}
+
+/** PROPOSED wording (pending Founder copy review) for the differentiated empty states. */
+export const NO_PARTICIPATION_COPY: Record<Exclude<NoParticipationKind, 'unknown'>, { title: string; message: string }> = {
+  'no-group': {
+    title: 'Start with a Group',
+    message: 'Challenges belong to Groups. Join or create a Group to take part.',
+  },
+  'group-with-challenges': {
+    title: 'Pick a Challenge to join',
+    message: "Your Groups have Challenges you can join. Being in a Group doesn't enroll you in its Challenges — you choose which ones.",
+  },
+  'group-without-challenges': {
+    title: 'No Challenges in your Groups yet',
+    message: 'Start one with a Group you belong to.',
+  },
+};

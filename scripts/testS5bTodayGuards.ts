@@ -34,12 +34,16 @@ import {
   governingDayFor,
   greetingFor,
   isTodayEmpty,
+  NO_PARTICIPATION_COPY,
+  noParticipationKind,
   opportunityAction,
+  orderRequiredToday,
   presentedJoinedChallenges,
   progressPercent,
   raceActivitySummary,
   requirementProgress,
   serverHour,
+  streakReminder,
   togetherSummary,
   TODAY_SECTION_LIMIT,
   upcomingSummary,
@@ -322,7 +326,7 @@ check(
   'E9 the zero state uses product copy and routes to the real Challenges surface',
   screen.includes('Ready to get moving?')
     && screen.includes('Join a Challenge to start tracking activities and progress here.')
-    && screen.includes("navigate('/v2/challenges')"),
+    && screen.includes("onNavigate('/v2/challenges')"),
 );
 check(
   'F1 only current V2 routes are navigated to',
@@ -368,7 +372,9 @@ check(
   screen.includes('visibleSectionItems(presentedChallenges')
     && screen.includes('visibleSectionItems(projection.groupChallengeOpportunities')
     && screen.includes('visibleSectionItems(projection.upcoming')
-    && screen.includes('projection.requiredToday.map')
+    && screen.includes('requiredOrdered.map')
+    && screen.includes('orderRequiredToday(projection.requiredToday)')
+    && !/visibleSectionItems\(requiredOrdered/.test(screen)
     && !/visibleSectionItems\(projection\.requiredToday/.test(screen)
     && !/visibleSectionItems\(projection\.joinedChallengeProgress/.test(screen),
 );
@@ -479,7 +485,7 @@ check(
 
 check(
   'I1 the zero state keeps Find a Challenge and adds Find a Group on real routes',
-  screen.includes("navigate('/v2/challenges')") && screen.includes("navigate('/v2/groups')")
+  screen.includes("onNavigate('/v2/challenges')") && screen.includes("onNavigate('/v2/groups')")
     && screen.includes('Find a Challenge') && screen.includes('Find a Group'),
 );
 check(
@@ -498,7 +504,8 @@ const emptyStateBranch = screen.slice(emptyStateStart, emptyStateEnd);
 check(
   'I4 the empty branch contains only truthful copy and discovery actions, with no projected activity content',
   emptyStateStart >= 0 && emptyStateEnd > emptyStateStart
-    && emptyStateBranch.includes('<V2EmptyState')
+    && emptyStateBranch.includes('<NoParticipationState')
+    && /function NoParticipationState[\s\S]*?<V2EmptyState/.test(screen)
     && !/projection\.(requiredToday|joinedChallengeProgress|groupChallengeOpportunities|upcoming|finalizedResults)/.test(emptyStateBranch)
     && !/recommended|suggested|sample Challenge|fake progress/i.test(emptyStateBranch),
 );
@@ -565,6 +572,55 @@ check(
     return JSON.stringify(dedupFixture) === before;
   })(),
 );
+
+
+// ---------------------------------------------------------------------------
+// K. TIIZI-FER-P3-001 — Today recovery
+// ---------------------------------------------------------------------------
+const allDone = (id: string) => requiredChallenge({ challengeId: id, requirements: [
+  { activity: 'wellness:a', label: 'A', targetValue: 1, unit: 'completion', state: 'completed' },
+] });
+const pendingOne = (id: string) => requiredChallenge({ challengeId: id });
+const ids = (list: readonly V2TodayRequiredChallenge[]) => list.map((c) => c.challengeId).join(',');
+
+check('K1 pending Streak actions come first; completed after; server order kept within each group',
+  ids(orderRequiredToday([allDone('d1'), pendingOne('p1'), allDone('d2'), pendingOne('p2')])) === 'p1,p2,d1,d2');
+check('K2 zero, one and three Streaks due order without loss or invention',
+  ids(orderRequiredToday([])) === '' && ids(orderRequiredToday([pendingOne('p1')])) === 'p1'
+  && ids(orderRequiredToday([pendingOne('a'), pendingOne('b'), pendingOne('c')])) === 'a,b,c');
+check('K3 ordering never mutates the served projection',
+  (() => { const input = [allDone('d'), pendingOne('p')]; const before = JSON.stringify(input); orderRequiredToday(input); return JSON.stringify(input) === before; })());
+check('K4 no Streak means no reminder', streakReminder([]) === null);
+check('K5 one pending Streak: compact "needs you" reminder', streakReminder([pendingOne('p')])?.text === '1 Streak needs you today.' && streakReminder([pendingOne('p')])?.tone === 'pending');
+check('K6a every Streak pending reads plainly (no "3 of 3")', streakReminder([pendingOne('a'), pendingOne('b'), pendingOne('c')])?.text === '3 Streaks need you today.');
+check('K6 three Streaks, one done: concise summary from served states only',
+  streakReminder([pendingOne('p1'), allDone('d'), pendingOne('p2')])?.text === '2 of 3 Streaks need you today.');
+check('K7 all Streaks completed today: completion acknowledgement',
+  streakReminder([allDone('d1')])?.tone === 'done' && streakReminder([allDone('d1'), allDone('d2')])?.text === 'All 2 Streaks are done for today.');
+check('K8 empty-state kind follows real membership and participation facts only',
+  noParticipationKind(null, false) === 'unknown' && noParticipationKind(0, false) === 'no-group' && noParticipationKind(0, true) === 'no-group'
+  && noParticipationKind(2, true) === 'group-with-challenges' && noParticipationKind(1, false) === 'group-without-challenges');
+check('K9 the three differentiated empty states have distinct copy and never promise payment or recommendations',
+  new Set(Object.values(NO_PARTICIPATION_COPY).map((c) => c.title)).size === 3
+  && !/recommended|suggested|payment|donat|coming soon/i.test(JSON.stringify(NO_PARTICIPATION_COPY)));
+check('K10 an unknown membership count shows the generic Founder-approved zero state, never a guess', screen.includes("kind === 'unknown'") && screen.includes('Ready to get moving?'));
+
+const loggingHook = read('src/v2/challenges/useChallengeCreation.ts');
+const logHookBody = loggingHook.slice(loggingHook.indexOf('export function useLogActivityV2'), loggingHook.indexOf('export function useChallengeContributorsV2'));
+check('K11 Today reuses the existing Log Activity dialog and the existing Challenge detail read (no second logging path)',
+  screen.includes("import { V2LogActivityDialog } from '../challenges/V2LoggingSection'")
+  && screen.includes('useChallengeDetailV2(challengeId)') && /<V2LogActivityDialog detail=\{detail\.data\}/.test(screen)
+  && !/logChallengeActivityV2|useLogActivityV2|buildS3bActivityPayload|newClientKey|loggingIntent|\/activity`/.test(screen));
+check('K12 an accepted log marks Today stale so the server re-proves it (no client patching)',
+  /await invalidateV2ChallengeReads\(/.test(logHookBody) && /await invalidateV2Today\(queryClient, user\?\.uid\)/.test(logHookBody) && !/setQueryData/.test(logHookBody));
+check('K13 Log activity is offered for pending Streaks and ongoing Together/Race/Streak cards; completed Streaks acknowledge instead',
+  /allComplete \? \([\s\S]*?View Challenge[\s\S]*?\) : \([\s\S]*?onClick=\{onLog\}>Log activity/.test(screen)
+  && /<V2Button onClick=\{onLog\}>Log activity<\/V2Button>/.test(screen) && screen.includes('✓ Done for today'));
+check('K14 the ongoing section is titled "Your Ongoing Challenges" and keeps its own empty state', (screen.match(/Your Ongoing Challenges/g) ?? []).length === 2 && !/>\s*Your Challenges\s*</.test(screen));
+check('K15 the existing logging form still guards double submission (disabled while pending, same-facts retry reuses the key)',
+  /disabled=\{pending\}/.test(read('src/v2/challenges/V2LoggingSection.tsx')) && /pending=\{log\.isPending\}/.test(read('src/v2/challenges/V2LoggingSection.tsx')));
+check('K16 the Today screen derives no due/missed/completed state of its own',
+  !/dayState|lastCompletedDay|completionStatus\s*===\s*'(due|missed)'/.test(screen.slice(screen.indexOf('export function V2TodayScreen'), screen.indexOf('function TodayLogActivity'))));
 
 if (failures > 0) {
   console.error(`\nS5b Today experience guards: ${failures} failure(s).`);
