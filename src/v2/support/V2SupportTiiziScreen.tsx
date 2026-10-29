@@ -20,16 +20,18 @@ function ChoiceGroup({
   options,
   value,
   onChange,
+  first = false,
 }: {
   label: string;
   hint: string;
   options: ReadonlyArray<{ id: string; label: string }>;
   value: string | null;
   onChange: (id: string | null) => void;
+  first?: boolean;
 }) {
   return (
-    <fieldset className="mt-5">
-      <legend className="text-sm font-black text-slate-900">{label}</legend>
+    <fieldset className={first ? '' : 'mt-5'}>
+      <legend className="text-base font-black text-slate-900">{label}</legend>
       <p className="mt-0.5 text-xs leading-5 text-slate-500">{hint}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {options.map((option) => {
@@ -85,24 +87,14 @@ export function V2SupportTiiziScreen() {
         </div>
 
         <V2Card>
-          <h2 className="text-base font-black text-slate-900">{SUPPORT_TIIZI.amountsHeading}</h2>
-          <p className="mt-0.5 text-xs leading-5 text-slate-500">{SUPPORT_TIIZI.amountsHint}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {SUPPORT_TIIZI.amounts.map((option) => {
-              const on = amount === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setAmount(on ? null : option.id)}
-                  className={`${CHOICE} ${on ? 'border-primary bg-primary text-white' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
+          <ChoiceGroup
+            label={SUPPORT_TIIZI.amountsHeading}
+            hint={SUPPORT_TIIZI.amountsHint}
+            options={SUPPORT_TIIZI.amounts}
+            value={amount}
+            onChange={setAmount}
+            first
+          />
           <ChoiceGroup
             label={SUPPORT_TIIZI.frequencyHeading}
             hint={SUPPORT_TIIZI.frequencyHint}

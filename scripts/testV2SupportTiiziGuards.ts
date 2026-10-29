@@ -26,18 +26,20 @@ const visible = JSON.stringify(SUPPORT_TIIZI).replace(SUPPORT_TIIZI.placeholderM
 
 console.log('A. nothing can initiate a transaction, copy, message or network call');
 check('activation guard is off (real details need a later authorized package)', SUPPORT_TIIZI.activated === false);
-check('no tel:, mailto:, wa.me, whatsapp links or URLs', !/tel:|mailto:|wa\.me|whatsapp\.com|https?:\/\//i.test(all));
+check('no tel:, mailto:, sms:, wa.me, whatsapp links, URLs or href/Link', !/tel:|mailto:|sms:|wa\.me|whatsapp\.com|https?:\/\/|href=|<Link\b/i.test(all));
+check('no copy control (clipboard, onCopy, execCommand)', !/onCopy|execCommand|clipboard/i.test(all));
 check('no fetch, API, storage, clipboard, window.open or location navigation',
   !/\bfetch\(|apiFetch|axios|XMLHttpRequest|localStorage|sessionStorage|indexedDB|navigator\.clipboard|window\.open|location\.(href|assign)|sendBeacon/.test(all));
 check('no form, submit, anchor, text input or payment-provider code', !/<form|type="submit"|<a\b|<input|<textarea|V2TextInput|paystack|stripe|mpesa|m-pesa|daraja/i.test(all));
-check('only navigation hooks: the card routes to /v2/support, the screen goes back or to Profile',
-  /navigate\('\/v2\/support'\)/.test(card) && /navigate\(-1\)/.test(screen) && /navigate\('\/v2\/profile'\)/.test(screen));
+const navCalls = [...(card + screen).matchAll(/navigate\(([^)]*)\)/g)].map((m) => m[1]).sort();
+check('only navigation: the card routes to /v2/support, the screen goes back or to Profile (no other navigate target)',
+  navCalls.join('|') === ["'/v2/profile'", "'/v2/support'", '-1'].sort().join('|'), navCalls.join('|'));
 check('no state is persisted or sent: selections are local React state only', /useState/.test(screen) && !/mutate|useMutation|useQuery/.test(all));
 
 console.log('B. honest copy');
 check('no number-like strings (7+ digits or a + prefix) in members\' text', !/\d{7,}|\+\d/.test(visible));
 check('no paid/received/total/receipt/pledge/donation/thank-you claims', !/\bpaid\b|\breceived\b|\btotal\b|receipt|pledg|donat|thank you|raised|goal reached/i.test(visible));
-check('no "coming soon" or later-availability promises', !/coming soon|later update|will be available|launching/i.test(visible));
+check('no "coming soon" or later-availability promises', !/coming soon|later update|will be available|will appear|once .{0,40}confirmed|launching|\bsoon\b/i.test(visible));
 check('status says nothing can be sent, charged or recorded', /nothing can be sent, charged or recorded/.test(SUPPORT_TIIZI.status));
 check('suggested amounts are exactly KES 500 / 1,000 / 2,000 / 5,000 / Custom',
   SUPPORT_TIIZI.amounts.map((a) => a.label).join('|') === 'KES 500|KES 1,000|KES 2,000|KES 5,000|Custom amount');
@@ -53,7 +55,10 @@ check('wording is flagged as proposed and unapproved in the content module', /PR
 console.log('C. mobile, accessibility and navigation');
 check('choices are toggle buttons with a 44px minimum touch target and a visible focus ring',
   /aria-pressed/.test(screen) && /min-h-11/.test(screen) && /focus-visible:ring-2/.test(screen));
-check('amounts and frequency are grouped with fieldset/legend; status and preview are announced', /<fieldset/.test(screen) && /<legend/.test(screen) && /role="status"/.test(screen) && /aria-live="polite"/.test(screen));
+check('amounts and frequency are each a fieldset/legend group; status and preview are announced',
+  (screen.match(/<ChoiceGroup/g) ?? []).length === 2 && /<fieldset/.test(screen) && /<legend/.test(screen) && /label=\{SUPPORT_TIIZI\.amountsHeading\}/.test(screen) && /label=\{SUPPORT_TIIZI\.frequencyHeading\}/.test(screen)
+  && /role="status"/.test(screen) && /aria-live="polite"/.test(screen));
+check('Profile card heading is a section-level h2, like Interests & Goals', /<h2 /.test(card) && !/<h3/.test(card));
 check('back control is a 44px button with text', /min-h-11[^"]*"[\s\S]{0,160}ArrowLeft/.test(screen) && /SUPPORT_TIIZI\.back/.test(screen));
 check('the Profile card is a full-width 44px entry', /min-h-11 w-full/.test(card));
 

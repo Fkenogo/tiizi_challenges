@@ -44,8 +44,8 @@ export const SUPPORT_TIIZI = {
     { id: 'annually', label: 'Annually' },
   ],
   previewNote: 'This is only a preview of the choices. Nothing is saved, charged or sent.',
-  detailsHeading: 'How to send support',
-  detailsIntro: 'Mobile-money details will appear here once they have been confirmed.',
+  detailsHeading: 'Mobile-money details',
+  detailsIntro: 'These details are placeholders and cannot be used to send support.',
   placeholderMark: 'Placeholder – not payable',
   placeholders: [
     { id: 'recipient', label: 'Recipient number' },
