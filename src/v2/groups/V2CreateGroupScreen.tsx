@@ -90,9 +90,9 @@ function issueFor(issues: GroupDraftIssue[], field: GroupDraftIssue['field']): s
     case 'location_too_long':
       return `Keep the location under ${GROUP_LOCATION_MAX_LENGTH} characters.`;
     case 'too_many_focus_tags':
-      return `Select canonical Focus Areas, with up to one other area.`;
+      return `Select Group Interests from the list, with up to one other Interest.`;
     case 'focus_tag_too_long':
-      return `Keep each focus area under ${GROUP_FOCUS_TAG_MAX_LENGTH} characters.`;
+      return `Keep each Group Interest under ${GROUP_FOCUS_TAG_MAX_LENGTH} characters.`;
     case 'norm_too_long':
       return `Keep the norm under ${GROUP_NORM_MAX_LENGTH} characters.`;
   }
@@ -255,9 +255,9 @@ export function V2CreateGroupScreen() {
           )}
           <div>
             <fieldset>
-              <legend className="text-sm font-black text-slate-900">Focus areas (optional)</legend>
+              <legend className="text-sm font-black text-slate-900">Group Interests (optional)</legend>
               <p className="mt-1 text-xs leading-5 text-slate-500">What this Group is interested in. Select any that fit.</p>
-              <label className="mt-3 block text-xs font-bold text-slate-700">Search focus areas<V2TextInput value={focusSearch} onChange={setFocusSearch} placeholder="Search categories" maxLength={60} /></label>
+              <label className="mt-3 block text-xs font-bold text-slate-700">Search Group Interests<V2TextInput value={focusSearch} onChange={setFocusSearch} placeholder="Search categories" maxLength={60} /></label>
               <div className="mt-3 space-y-3">
                 {(['Fitness', 'Wellness'] as const).map((domain) => {
                   const options = GROUP_FOCUS_AREAS.filter((area) => area.domain === domain && focusAreaMatchesSearch(area.category, focusSearch));
@@ -269,13 +269,13 @@ export function V2CreateGroupScreen() {
                 })}
               </div>
               <div className="mt-3 rounded-xl border border-dashed border-slate-300 p-3">
-                <p className="text-xs font-bold text-slate-700">Other focus area (optional)</p>
-                <p className="mt-1 text-[11px] text-slate-500">Add one area that is not listed.</p>
-                <div className="mt-2 flex gap-2"><V2TextInput value={tagInput} onChange={setTagInput} placeholder="Add one other area" maxLength={GROUP_FOCUS_TAG_MAX_LENGTH} /><V2Button variant="secondary" disabled={!tagInput.trim() || draft.focusTags.some((tag) => !GROUP_FOCUS_AREA_LABELS.includes(tag))} onClick={addTag}>Add</V2Button></div>
+                <p className="text-xs font-bold text-slate-700">Other Group Interest (optional)</p>
+                <p className="mt-1 text-[11px] text-slate-500">Add one Interest that is not listed.</p>
+                <div className="mt-2 flex gap-2"><V2TextInput value={tagInput} onChange={setTagInput} placeholder="Add one other Interest" maxLength={GROUP_FOCUS_TAG_MAX_LENGTH} /><V2Button variant="secondary" disabled={!tagInput.trim() || draft.focusTags.some((tag) => !GROUP_FOCUS_AREA_LABELS.includes(tag))} onClick={addTag}>Add</V2Button></div>
               </div>
             </fieldset>
             {draft.focusTags.length > 0 && (
-              <div aria-label="Selected focus areas" className="mt-3 flex flex-wrap gap-1.5">
+              <div aria-label="Selected Group Interests" className="mt-3 flex flex-wrap gap-1.5">
                 {draft.focusTags.map((tag) => (
                   <span
                     key={tag}

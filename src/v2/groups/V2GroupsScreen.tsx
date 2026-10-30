@@ -42,7 +42,7 @@ export function V2GroupsScreen() {
       <div className="mb-4">
         <label className="mb-1 block text-sm font-bold text-slate-800" htmlFor="groups-global-search">Search all Groups</label>
         <div className="flex items-center gap-2">
-          <V2TextInput id="groups-global-search" value={searchQuery} onChange={setSearchQuery} placeholder="Name, purpose, Focus Area, or Goal" maxLength={100} />
+          <V2TextInput id="groups-global-search" value={searchQuery} onChange={setSearchQuery} placeholder="Name, purpose, Group Interest, or Goal" maxLength={100} />
           {searchQuery.length > 0 && <button type="button" onClick={() => setSearchQuery('')} className="min-h-11 shrink-0 rounded-lg px-2 text-xs font-bold text-primary" aria-label="Clear Group search">Clear</button>}
         </div>
       </div>

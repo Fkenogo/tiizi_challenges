@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { V2Button, V2Page } from '../components/V2Primitives';
-import { useV2GroupDetail, useUpdateV2GroupSettings } from './useV2Groups';
+import { useV2GroupDetail, useUpdateV2GroupSettings, useV2GroupOptions } from './useV2Groups';
 import { useV2GroupId } from '../group/V2GroupScope';
 import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor } from './groupCovers';
-import { GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
+import { GroupInterestsPicker } from './GroupInterestsPicker';
+import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet } from './groupInterests';
 
 export function V2GroupSettingsScreen() {
   const groupId = useV2GroupId();
@@ -15,7 +16,8 @@ export function V2GroupSettingsScreen() {
   const [description, setDescription] = useState('');
   const [tagline, setTagline] = useState('');
   const [location, setLocation] = useState('');
-  const [focusTags, setFocusTags] = useState('');
+  const options = useV2GroupOptions();
+  const [focusTags, setFocusTags] = useState<string[]>([]);
   const [coverId, setCoverId] = useState<string | null>(null);
   const [isPrivate, setIsPrivate] = useState(false);
   const [requireAdminApproval, setRequireAdminApproval] = useState(false);
@@ -24,7 +26,7 @@ export function V2GroupSettingsScreen() {
     const group = detail.data;
     if (!group) return;
     setName(group.name); setDescription(group.description); setTagline(group.tagline);
-    setLocation(group.location); setFocusTags(group.focusTags.join(', ')); setCoverId(group.coverId);
+    setLocation(group.location); setFocusTags(group.focusTags); setCoverId(group.coverId);
     setIsPrivate(group.isPrivate); setRequireAdminApproval(group.requireAdminApproval ?? false);
     setAllowMemberChallenges(group.allowMemberChallenges ?? true);
   }, [detail.data]);
@@ -32,17 +34,14 @@ export function V2GroupSettingsScreen() {
   if (detail.isLoading) return <V2Page><p className="text-sm text-slate-600">Loading Group settings…</p></V2Page>;
   if (!detail.data || detail.data.viewerRelationship !== 'steward') return <V2Page><h1 className="text-lg font-black">Settings unavailable</h1><p className="mt-2 text-sm text-slate-600">These settings are available to the Accountable Steward.</p></V2Page>;
   const group = detail.data;
-  const normalizedFocusTags = focusTags.split(',').map(tag => tag.trim()).filter(Boolean);
-  const unchangedLegacyFocus = JSON.stringify(normalizedFocusTags) === JSON.stringify(group.focusTags);
-  const customFocusCount = normalizedFocusTags.filter(tag => !GROUP_FOCUS_AREA_LABELS.includes(tag)).length;
-  const focusTagsValid = unchangedLegacyFocus || (normalizedFocusTags.length <= 13 && customFocusCount <= 1
-    && normalizedFocusTags.every(tag => tag.length <= 30)
-    && new Set(normalizedFocusTags).size === normalizedFocusTags.length);
+  const vocabulary = interestVocabulary(options.data?.focusAreas);
+  const focusIssue = interestIssue(focusTags, group.focusTags, vocabulary);
+  const focusTagsValid = focusIssue === null;
   const hasChanges = name !== group.name
     || description !== group.description
     || tagline !== group.tagline
     || location !== group.location
-    || JSON.stringify(normalizedFocusTags) !== JSON.stringify(group.focusTags)
+    || !sameInterestSet(focusTags, group.focusTags)
     || coverId !== group.coverId
     || isPrivate !== group.isPrivate
     || requireAdminApproval !== (group.requireAdminApproval ?? false)
@@ -50,7 +49,7 @@ export function V2GroupSettingsScreen() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!focusTagsValid) return;
-    update.mutate({ name, description, tagline, location, focusTags: normalizedFocusTags, coverId, isPrivate, requireAdminApproval, allowMemberChallenges }, { onSuccess: () => navigate(`/v2/groups/${group.id}`) });
+    update.mutate({ name, description, tagline, location, focusTags: sameInterestSet(focusTags, group.focusTags) ? group.focusTags : focusTags, coverId, isPrivate, requireAdminApproval, allowMemberChallenges }, { onSuccess: () => navigate(`/v2/groups/${group.id}`) });
   };
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900';
   const label = 'block text-sm font-bold text-slate-800';
@@ -63,13 +62,13 @@ export function V2GroupSettingsScreen() {
       <h1 className="mt-1 text-2xl font-black text-slate-900">Manage Group</h1>
       <p className="mt-1 text-sm leading-6 text-slate-600">Update how people understand, find, and join your Group.</p>
       <form className="mt-6 space-y-7" onSubmit={submit}>
-        <section className="space-y-4"><div><h2 className="text-base font-black">Group identity</h2><p className="text-xs text-slate-500">Focus tags can affect text search. Location is descriptive only.</p></div>
+        <section className="space-y-4"><div><h2 className="text-base font-black">Group identity</h2><p className="text-xs text-slate-500">Group Interests can affect text search. Location is descriptive only.</p></div>
           <label className={label}>Name<input className={field} required maxLength={200} value={name} onChange={e => setName(e.target.value)} /></label>
           <label className={label}>Description<textarea className={field} rows={4} maxLength={2000} value={description} onChange={e => setDescription(e.target.value)} /></label>
           <label className={label}>Tagline<input className={field} maxLength={140} value={tagline} onChange={e => setTagline(e.target.value)} /></label>
           <label className={label}>Location<input className={field} maxLength={120} value={location} onChange={e => setLocation(e.target.value)} /><span className="mt-1 block text-xs font-normal text-slate-500">A short description. It does not affect search or access.</span></label>
-          <label className={label}>Focus Areas<input className={field} maxLength={389} value={focusTags} onChange={e => setFocusTags(e.target.value)} placeholder="Strength, Sleep & Rest" /><span className="mt-1 block text-xs font-normal text-slate-500">Use the canonical Fitness and Wellness category labels. One additional descriptive area is allowed.</span></label>
-          {!focusTagsValid && <p role="alert" className="text-xs font-bold text-red-700">Choose distinct canonical Focus Areas and at most one additional area up to 30 characters.</p>}
+          <GroupInterestsPicker value={focusTags} onChange={setFocusTags} vocabulary={vocabulary} />
+          {focusIssue && <p role="alert" className="text-xs font-bold text-red-700">{INTEREST_ISSUE_COPY[focusIssue]}</p>}
           <fieldset><legend className={label}>Group cover</legend><div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div><p className="mt-1 text-xs text-slate-500">Choose from the existing covers. No image upload.</p></fieldset>
         </section>
         <section className="space-y-3"><h2 className="text-base font-black">Privacy & joining</h2>{choice('Private Group', isPrivate, setIsPrivate, 'People outside the Group cannot discover it normally. A valid invite code may still resolve it. Existing members are unaffected.')}{choice('Require approval to join', requireAdminApproval, setRequireAdminApproval, 'New join attempts require Steward approval. Existing pending requests remain pending until explicitly decided.')}</section>

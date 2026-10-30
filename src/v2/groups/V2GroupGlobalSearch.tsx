@@ -102,7 +102,7 @@ export function V2GroupGlobalSearch({
       )}
       {!discovery.isLoading && !discovery.isError && results.length === 0 && (
         <p className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-600">
-          No Groups found. Try another name, Focus Area, or Goal.
+          No Groups found. Try another name, Group Interest, or Goal.
         </p>
       )}
       <ul aria-label="Matching Groups" className="space-y-2">

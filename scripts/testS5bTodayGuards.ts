@@ -478,7 +478,9 @@ check(
 check(
   'H13 unrelated V2Sheet consumers do not opt into logging-specific focused presentation',
   (nonLoggingSheets.match(/<V2Sheet/g) ?? []).length === 5 // P1a removed the member-shell account sheet (6 -> 5)
-    && !nonLoggingSheets.includes('variant="focused"'),
+    // P4: only the Group About sheet (long, scrolling reference content needing a fixed Close) opts in.
+    && (nonLoggingSheets.match(/variant="focused"/g) ?? []).length === 1
+    && code(read('src/v2/groups/V2GroupHomeScreen.tsx')).includes('title="About this Group" variant="focused"'),
 );
 check(
   'H14 focused sheets keep Close visible while their content scrolls independently',
