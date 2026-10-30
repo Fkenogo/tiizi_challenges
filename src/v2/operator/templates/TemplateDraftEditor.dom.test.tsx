@@ -338,6 +338,44 @@ describe('conflict reconciliation', () => {
   });
 });
 
+describe('account isolation and create resilience (R1 M1, M4)', () => {
+  it('an in-place account switch never carries one account\'s work into another', async () => {
+    const user = userEvent.setup();
+    const view = mount();
+    await step(/Template details/);
+    await user.type(await screen.findByLabelText('Template summary'), ' A-SECRET');
+    await waitFor(() => expect(readRecovery('author-1', { templateId: TEMPLATE_ID, version: 1 })).not.toBeNull());
+    h.user = { uid: 'author-2' };
+    h.capabilities.mockResolvedValue({ canAuthor: true, canRead: true });
+    view.rerender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter initialEntries={[EDIT]}><Routes><Route path="/v2/operator/templates/:templateId/edit" element={<TemplateDraftEditor />} /></Routes></MemoryRouter></QueryClientProvider>);
+    await step(/Template details/);
+    expect((await screen.findByLabelText('Template summary') as HTMLTextAreaElement).value).toBe('A short race.');
+    expect(readRecovery('author-2', { templateId: TEMPLATE_ID, version: 1 })).toBeNull();
+    expect(JSON.stringify({ ...sessionStorage })).not.toContain('A-SECRET');
+  });
+
+  it('a failed read-back after create never lets a retry create a second Template', async () => {
+    const user = userEvent.setup();
+    h.create.mockImplementation(async (body: ReturnType<typeof bodyFromContent>) => {
+      h.detail.mockRejectedValueOnce(new ApiError(503, 'api_unreachable', 'down'));
+      h.detail.mockResolvedValue(serverDraft(TOKEN_A, body as unknown as ReturnType<typeof contentOf>));
+      return { templateId: TEMPLATE_ID, version: 1 };
+    });
+    mount('/v2/operator/templates/new');
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await user.click(screen.getAllByRole('button', { name: /Race/ })[0]);
+    await user.click(screen.getByRole('button', { name: /5\. Template details/ }));
+    await user.type(screen.getByLabelText('Template summary'), 'Once only');
+    await user.click(save());
+    expect(await screen.findByText(/We could not open the editor/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByRole('button', { name: 'Save draft' })).toBeTruthy();
+    expect(h.create).toHaveBeenCalledTimes(1);
+    await step(/Template details/);
+    expect((screen.getByLabelText('Template summary') as HTMLTextAreaElement).value).toBe('Once only');
+  });
+});
+
 describe('Activity versions', () => {
   it('shows the mismatch, changes nothing on its own, and refreshes only on request', async () => {
     const user = userEvent.setup();
@@ -437,21 +475,5 @@ describe('session recovery', () => {
     await step(/Template details/);
     expect((screen.getByLabelText('Template summary') as HTMLTextAreaElement).value).toBe('A short race.');
     expect(sessionStorage.length).toBe(0);
-  });
-
-  it('clears the account\'s recovery on sign-out', async () => {
-    const view = mount();
-    await screen.findByRole('navigation', { name: 'Editor steps' });
-    writeRecovery('author-1', identity, { baseToken: TOKEN_A, baseBody: mine(), body: mine('Left behind') });
-    h.user = null;
-    view.rerender(<div />);
-    cleanup();
-    h.user = { uid: 'author-1' };
-    const second = mount();
-    await screen.findByRole('navigation', { name: 'Editor steps' });
-    second.unmount();
-    h.user = null;
-    mount();
-    await screen.findByText(/Sign in required/);
   });
 });

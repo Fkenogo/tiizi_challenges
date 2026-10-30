@@ -38,8 +38,14 @@ export const PROHIBITED_COMPOSER_FIELDS = ['startDate', 'endDate', 'timezone', '
 /** An Activity as the editor holds it: the Wizard shape plus the Template-only identity details. */
 export interface TemplateActivity extends WizardActivity {
   activityVariant?: string | null;
-  /** Stored Component ids, used only when the governed options could not be loaded. */
+  /**
+   * The Component ids the draft carries. Present for every hydrated Activity (empty = none stored) and
+   * authoritative: they change only when the author adds the Activity or explicitly refreshes its version.
+   * Absent for a newly added Activity, whose Components come from the governed options.
+   */
   storedComponentIds?: string[];
+  /** False when the stored config carried no `kind`; the editor then does not invent one. */
+  kindStored?: boolean;
 }
 
 export interface TemplateAuthoringState {
@@ -73,13 +79,11 @@ function numeric(value: string): number | null {
 
 export function wireActivity(activity: TemplateActivity, index: number): TemplateActivityConfig {
   const target = numeric(activity.targetValue);
-  const componentIds = activity.options.components.length > 0
-    ? requiredComponentIds(activity.options)
-    : (activity.storedComponentIds ?? []);
+  const componentIds = activity.storedComponentIds ?? requiredComponentIds(activity.options);
   return {
     activity: activity.activity,
     observedVersion: activity.observedVersion,
-    kind: activity.kind,
+    ...(activity.kindStored === false ? {} : { kind: activity.kind }),
     ...(activity.metric ? { metric: activity.metric } : {}),
     ...(activity.unit ? { unit: activity.unit } : {}),
     ...(target !== null ? { targetValue: target } : {}),
@@ -249,8 +253,16 @@ export function refreshActivityVersion(
     dropped.push('How the weight is reported is no longer supported; choose it again.');
     loadBasis = '';
   }
+  const nextComponents = requiredComponentIds(options);
+  const storedComponents = activity.storedComponentIds ?? nextComponents;
+  if (JSON.stringify([...storedComponents].sort()) !== JSON.stringify([...nextComponents].sort())) {
+    dropped.push(`The required parts changed from ${storedComponents.length ? storedComponents.join(', ') : 'none'} to ${nextComponents.length ? nextComponents.join(', ') : 'none'}; review them.`);
+  }
   return {
-    activity: { ...activity, observedVersion: options.currentVersion, metric, unit, targetValue, durationMode, completionOccurrence, loadBasis },
+    activity: {
+      ...activity, observedVersion: options.currentVersion, metric, unit, targetValue, durationMode, completionOccurrence, loadBasis,
+      storedComponentIds: nextComponents, kindStored: true,
+    },
     dropped,
   };
 }
@@ -300,7 +312,8 @@ export async function hydrateAuthoringState(body: TemplateDraftBody, lookup: Act
       completionOccurrence: config.completionOccurrence ?? '',
       loadBasis: config.loadBasis ?? '',
       ...(config.activityVariant !== undefined ? { activityVariant: config.activityVariant } : {}),
-      ...(config.componentIds ? { storedComponentIds: config.componentIds } : {}),
+      storedComponentIds: config.componentIds ?? [],
+      kindStored: config.kind !== undefined,
     };
   }));
   return {

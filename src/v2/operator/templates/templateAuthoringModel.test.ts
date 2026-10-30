@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   applyReconciliation, bodyFromContent, canonicalBody, classifySaveFailure, createEmptyAuthoringState, hydrateAuthoringState,
   reconcile, refreshActivityVersion, sideFor, toTemplateBody, unresolvedItems, validateAuthoring, activityStaleness,
-  PROHIBITED_COMPOSER_FIELDS, type TemplateAuthoringState,
+  PROHIBITED_COMPOSER_FIELDS, wireActivity, type TemplateAuthoringState,
 } from './templateAuthoringModel';
 import { ApiError } from '../../../api/apiError';
 import { activityConfig, contentOf, lookupWith, optionsFor } from './testing/fixtures';
 
+const wireOf = (activity: Parameters<typeof wireActivity>[0]) => wireActivity(activity, 0);
 const body = (over = {}, activities = [activityConfig('act-1')]) => bodyFromContent(contentOf(over, activities));
 
 describe('toTemplateBody', () => {
@@ -91,6 +92,48 @@ describe('hydration and Activity versions', () => {
     expect(dropped.join(' ')).toMatch(/Distance|no longer offered/);
     expect(activity.metric).toBe('repetitions');
     expect(activity.observedVersion).toBe(5);
+  });
+});
+
+describe('Component sets and kind are never changed silently (R1 M3)', () => {
+  const withComponents = (ids: string[], version: number) => ({
+    options: async (id: string) => ({ ...optionsFor(id, version), components: ids.map((componentId) => ({ componentId, displayName: componentId, relationship: 'required' })) }),
+    item: lookupWith().item,
+  });
+
+  it('keeps the stored Component set and version for a stale Activity, so a loaded draft is not dirty', async () => {
+    const server = body({}, [activityConfig('act-1', { observedVersion: 2, componentIds: ['OLD'] })]);
+    const { state } = await hydrateAuthoringState(server, withComponents(['NEW'], 5));
+    const sent = toTemplateBody(state).composer.activities[0];
+    expect(sent).toMatchObject({ observedVersion: 2, componentIds: ['OLD'] });
+    expect(canonicalBody(toTemplateBody(state))).toBe(canonicalBody(server));
+  });
+
+  it('keeps a stored subset of Components unchanged', async () => {
+    const server = body({}, [activityConfig('act-1', { componentIds: ['LEFT'] })]);
+    const { state } = await hydrateAuthoringState(server, withComponents(['LEFT', 'RIGHT'], 3));
+    expect(canonicalBody(toTemplateBody(state))).toBe(canonicalBody(server));
+  });
+
+  it('changes the Component set only on explicit refresh, and says so', async () => {
+    const { state } = await hydrateAuthoringState(body({}, [activityConfig('act-1', { observedVersion: 2, componentIds: ['OLD'] })]), withComponents(['NEW'], 5));
+    const { activity, dropped } = refreshActivityVersion(state.activities[0], 'competitive');
+    expect(dropped.join(' ')).toMatch(/required parts changed from OLD to NEW/);
+    expect(wireOf(activity)).toMatchObject({ observedVersion: 5, componentIds: ['NEW'] });
+  });
+
+  it('does not invent a kind the stored draft did not carry, and round-trips as clean', async () => {
+    const { kind: _kind, ...noKind } = activityConfig('act-1');
+    const server = body({}, [noKind]);
+    const { state } = await hydrateAuthoringState(server, lookupWith());
+    expect('kind' in toTemplateBody(state).composer.activities[0]).toBe(false);
+    expect(canonicalBody(toTemplateBody(state))).toBe(canonicalBody(server));
+  });
+
+  it('does not send a guessed kind when the governed options could not be loaded', async () => {
+    const { kind: _kind, ...noKind } = activityConfig('act-1');
+    const { state } = await hydrateAuthoringState(body({}, [noKind]), lookupWith({}, ['act-1']));
+    expect('kind' in toTemplateBody(state).composer.activities[0]).toBe(false);
   });
 });
 

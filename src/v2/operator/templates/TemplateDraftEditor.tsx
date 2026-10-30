@@ -187,7 +187,13 @@ function TemplateDetailsStep({
   );
 }
 
+/** Remounts per account so one account's in-memory work can never be written under another account. */
 export function TemplateDraftEditor() {
+  const { user } = useAuth();
+  return <TemplateDraftEditorInner key={user?.uid ?? ''} />;
+}
+
+function TemplateDraftEditorInner() {
   const { templateId: routeTemplateId } = useParams<{ templateId: string }>();
   const { user } = useAuth();
   const uid = user?.uid ?? '';
@@ -230,7 +236,8 @@ export function TemplateDraftEditor() {
   ), []);
 
   const canAuthor = capabilities.data?.canAuthor === true;
-  const capabilityKnown = capabilities.isSuccess || capabilities.isError;
+  const capabilityKnown = capabilities.isSuccess;
+  const capabilityFailed = capabilities.isError;
 
   /** Start reconciliation of the author's work against a newer server draft. */
   const beginConflict = useCallback(async (args: {
@@ -254,6 +261,7 @@ export function TemplateDraftEditor() {
   /* ---------------------------- load / restore ---------------------------- */
   useEffect(() => {
     if (!uid) { setPhase('signin'); return; }
+    if (capabilityFailed) { setLoadMessage('We could not confirm your Template authoring access. Check your connection and retry.'); setPhase('error'); return; }
     if (!capabilityKnown) { setPhase('loading'); return; }
     if (!canAuthor) {
       // Authority withdrawn after the editor opened: keep the author's work visible but read-only.
@@ -262,6 +270,7 @@ export function TemplateDraftEditor() {
     }
     let cancelled = false;
     purgeOtherAccountsRecovery(uid);
+    setRevoked(false); setFlags({}); setProblems({});
     setPhase('loading');
     (async () => {
       try {
@@ -320,7 +329,7 @@ export function TemplateDraftEditor() {
       }
     })();
     return () => { cancelled = true; };
-  }, [uid, routeTemplateId, capabilityKnown, canAuthor, reloadNonce, lookup, beginConflict]);
+  }, [uid, routeTemplateId, capabilityKnown, capabilityFailed, canAuthor, reloadNonce, lookup, beginConflict]);
 
   /* ----------------------------- derived state ---------------------------- */
   const issues = useMemo(() => validateAuthoring(current), [current]);
@@ -328,6 +337,7 @@ export function TemplateDraftEditor() {
   const baseCanonical = useMemo(() => canonicalBody(session.baseBody ?? EMPTY_BODY), [session.baseBody]);
   const dirty = currentCanonical !== baseCanonical;
   const readOnly = revoked || immutable || conflict !== null;
+  const locked = readOnly || saving;
 
   /* ------------------------ temporary session recovery -------------------- */
   useEffect(() => {
@@ -346,7 +356,7 @@ export function TemplateDraftEditor() {
 
   useEffect(() => {
     if (!dirty) return undefined;
-    const handler = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    const handler = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [dirty]);
@@ -427,17 +437,16 @@ export function TemplateDraftEditor() {
       const sess = sessionRef.current;
       if (sess.templateId === null || sess.version === null) {
         const created = await createTemplateDraft(body);
-        // The create response carries no revision token: read the detail once to obtain it.
-        const detail = await fetchOperatorTemplate(created.templateId);
-        const draft = detail.versions.find((version) => version.version === created.version);
-        if (!draft?.revisionToken) throw new Error('The new draft could not be read back.');
+        // Record the new identity before anything else can fail: a retry must never create a second Template.
+        // The edit route's load reads the draft back for its first revision token (create returns none).
+        writeRecovery(uid, { templateId: created.templateId, version: created.version }, { baseToken: null, baseBody: body, body });
         clearRecovery(uid, 'new');
-        setSession({ templateId: created.templateId, version: created.version, token: draft.revisionToken, baseBody: bodyFromContent(draft.content) });
         void queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
         setBanner({ tone: 'info', text: 'Draft created. You can keep editing and saving.' });
-        navigate(`/v2/operator/templates/${created.templateId}/edit`, { replace: true });
+        navigate(`/v2/operator/templates/${encodeURIComponent(created.templateId)}/edit`, { replace: true });
       } else {
-        const result = await saveTemplateDraft(sess.templateId, sess.version, body, sess.token as string);
+        if (sess.token === null) { setReloadNonce((n) => n + 1); return; }
+        const result = await saveTemplateDraft(sess.templateId, sess.version, body, sess.token);
         setSession({ ...sess, token: result.revisionToken, baseBody: body });
         setBanner({ tone: 'info', text: 'Draft saved.' });
         void queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
@@ -496,7 +505,7 @@ export function TemplateDraftEditor() {
         <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5">
           <p className="text-sm font-black text-red-800">We could not open the editor</p>
           <p className="mt-1 text-sm text-red-800">{loadMessage}</p>
-          <button type="button" onClick={() => setReloadNonce((n) => n + 1)} className="mt-3 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white">Retry</button>
+          <button type="button" onClick={() => { void capabilities.refetch(); setReloadNonce((n) => n + 1); }} className="mt-3 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white">Retry</button>
         </div>
       </V2Page>
     );
@@ -554,7 +563,7 @@ export function TemplateDraftEditor() {
       </nav>
 
       <V2Card>
-        <fieldset disabled={readOnly} className="min-w-0 space-y-4 border-0 p-0">
+        <fieldset disabled={locked} className="min-w-0 space-y-4 border-0 p-0">
           <legend className="sr-only">{STEPS[stepIndex].label}</legend>
           {step === 'type' ? <ChallengeTypeStep selected={current.challengeType} onSelect={(challengeType) => patch({ challengeType })} /> : null}
           {step === 'name' ? (
