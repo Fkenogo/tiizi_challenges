@@ -158,6 +158,8 @@ jobs:
         run: npm run test:v2-challenge-corrections
       - name: P5T-2 S1 Wizard step extraction guards
         run: npm run test:v2-wizard-steps
+      - name: P5T-2 S2 Operator Template Library guards
+        run: npm run test:v2-operator-templates
 
   # API contract verification through the canonical /api namespace. Proves
   # representative authenticated READ and WRITE operations work on /api and

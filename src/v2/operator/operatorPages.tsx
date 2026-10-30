@@ -10,6 +10,7 @@ import {
 } from '../../api/operatorConsoleApi';
 import { useAuth } from '../../hooks/useAuth';
 import { V2Card, V2ErrorState, V2LoadingState, V2Page, V2SectionHeader } from '../components/V2Primitives';
+import { OperatorTemplateLibrary } from './templates/OperatorTemplateLibrary';
 
 type Section = 'overview' | 'users' | 'groups' | 'activities' | 'challenges' | 'templates' | 'access' | 'support' | 'content' | 'health' | 'audit' | 'settings';
 type Item = Record<string, any>;
@@ -225,7 +226,7 @@ function OperatorAudit() {
   </ShellPage>;
 }
 
-function OperatorTemplates() { return <CompactDeferred section="templates" reason="Challenge templates remain authoritative in the separate Firestore challengeTemplates / wellnessTemplates collections. The current Fred Platform Operator identity has no governed read path to those collections; the existing Firestore admin surface is a distinct role model. No cross-store bypass or speculative template authority is introduced." />; }
+function OperatorTemplates() { return <OperatorTemplateLibrary />; }
 function OperatorSettings() { return <CompactDeferred section="settings" reason="No authoritative Platform Operator settings model or governed settings API exists in the current Product Truth." />; }
 
 export function V2OperatorPage({ section }: { section: Section }) {
