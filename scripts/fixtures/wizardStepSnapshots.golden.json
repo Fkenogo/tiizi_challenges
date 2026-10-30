@@ -541,7 +541,25 @@
    "on": "click"
   },
   {
+   "select": "collective"
+  },
+  {
+   "on": "click"
+  },
+  {
    "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "streak"
   },
   {
    "on": "click"
@@ -603,6 +621,330 @@
   {
    "patch": {
     "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
    }
   },
   {
@@ -930,6 +1272,276 @@
   {
    "activity": 0,
    "patch": {
+    "metric": "alpha",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "kilometres",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "kilometres",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "kilometres",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
     "unit": "alpha"
    }
   },
@@ -981,6 +1593,1206 @@
    "activity": 0,
    "patch": {
     "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "kilometres",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "kilometres",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "kilometres",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "kilometres",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "kilometres",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
    }
   },
   {
@@ -1118,7 +2930,25 @@
    "on": "click"
   },
   {
+   "select": "collective"
+  },
+  {
+   "on": "click"
+  },
+  {
    "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "streak"
   },
   {
    "on": "click"
@@ -1180,6 +3010,330 @@
   {
    "patch": {
     "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
    }
   },
   {
@@ -1507,6 +3661,276 @@
   {
    "activity": 0,
    "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
     "unit": "alpha"
    }
   },
@@ -1558,6 +3982,1206 @@
    "activity": 0,
    "patch": {
     "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
    }
   },
   {
@@ -1708,7 +5332,25 @@
    "on": "click"
   },
   {
+   "select": "collective"
+  },
+  {
+   "on": "click"
+  },
+  {
    "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "streak"
   },
   {
    "on": "click"
@@ -1770,6 +5412,330 @@
   {
    "patch": {
     "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
    }
   },
   {
@@ -2007,6 +5973,282 @@
    "remove": 0
   },
   {
+   "on": "click"
+  },
+  {
+   "remove": 0
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
    "on": "change",
    "seed": "alpha"
   },
@@ -2163,6 +6405,366 @@
   {
    "activity": 0,
    "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
     "targetValue": "alpha"
    }
   },
@@ -2277,10 +6879,1558 @@
    }
   },
   {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "7"
+   }
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 0
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 0
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "durationMode": "7"
+   }
+  },
+  {
    "on": "click"
   },
   {
    "remove": 1
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 1
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "one guided breathing session",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "one guided breathing session",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "one guided breathing session",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
   },
   {
    "on": "change",
@@ -2439,6 +8589,366 @@
   {
    "activity": 1,
    "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
     "targetValue": "alpha"
    }
   },
@@ -2553,10 +9063,1558 @@
    }
   },
   {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "7"
+   }
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 1
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 1
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "one guided breathing session",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "one guided breathing session",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "one guided breathing session",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "one guided breathing session",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 1,
+   "patch": {
+    "completionOccurrence": "7"
+   }
+  },
+  {
    "on": "click"
   },
   {
    "remove": 2
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 2
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "TOTAL_LOAD",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "TOTAL_LOAD",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "TOTAL_LOAD",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
   },
   {
    "on": "change",
@@ -2715,6 +10773,186 @@
   {
    "activity": 2,
    "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
     "targetValue": "alpha"
    }
   },
@@ -2766,6 +11004,1458 @@
    "activity": 2,
    "patch": {
     "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "7"
+   }
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 2
+  },
+  {
+   "on": "click"
+  },
+  {
+   "remove": 2
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "TOTAL_LOAD",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "TOTAL_LOAD",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "TOTAL_LOAD",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "alpha",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "weight",
+    "unit": "kilograms",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "TOTAL_LOAD",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "minutes",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "metric": "7",
+    "unit": "minutes",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 2,
+   "patch": {
+    "loadBasis": "7"
    }
   },
   {
@@ -3047,7 +12737,25 @@
    "on": "click"
   },
   {
+   "select": "collective"
+  },
+  {
+   "on": "click"
+  },
+  {
    "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "competitive"
+  },
+  {
+   "on": "click"
+  },
+  {
+   "select": "streak"
   },
   {
    "on": "click"
@@ -3109,6 +12817,330 @@
   {
    "patch": {
     "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "title": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "title": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "title": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "title": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "title": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "title": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "description": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "description": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "description": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "description": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "description": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "description": "7"
    }
   },
   {
@@ -3343,6 +13375,330 @@
   },
   {
    "patch": {
+    "socialCauseTitle": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseTitle": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseDescription": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
     "socialCauseDescription": "alpha"
    }
   },
@@ -3451,6 +13807,168 @@
   },
   {
    "patch": {
+    "socialCausePurpose": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCausePurpose": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
     "socialCauseBeneficiary": "alpha"
    }
   },
@@ -3497,6 +14015,330 @@
   {
    "patch": {
     "socialCauseBeneficiary": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseBeneficiary": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "patch": {
+    "socialCauseDestination": "7"
    }
   },
   {
@@ -3706,6 +14548,276 @@
   {
    "activity": 0,
    "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
     "unit": "alpha"
    }
   },
@@ -3757,6 +14869,1206 @@
    "activity": 0,
    "patch": {
     "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "alpha",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "duration",
+    "unit": "minutes",
+    "durationMode": "CONTINUOUS",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "60"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "completion",
+    "unit": "completion",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "1"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "weight",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "20"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "minutes",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "metric": "7",
+    "unit": "reps",
+    "durationMode": "",
+    "completionOccurrence": "",
+    "loadBasis": "",
+    "targetValue": "10"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "unit": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "alpha"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "alpha"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "duration"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "duration"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "completion"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "completion"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "weight"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "weight"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "minutes"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "minutes"
+   }
+  },
+  {
+   "on": "change",
+   "seed": "7"
+  },
+  {
+   "activity": 0,
+   "patch": {
+    "targetValue": "7"
    }
   },
   {

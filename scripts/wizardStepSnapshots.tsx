@@ -155,6 +155,12 @@ function propsBags(node: ReactNode, into: Array<Record<string, unknown>> = []): 
   const props = { ...(node.props as Record<string, unknown>), __native: typeof node.type === 'string' };
   into.push(props);
   propsBags(props.children as ReactNode, into);
+  // Expand hook-free function components so wrapper layers (member wrapper ->
+  // reusable step) cannot hide handlers; components that use hooks throw
+  // outside a render and are skipped.
+  if (typeof node.type === 'function') {
+    try { propsBags((node.type as (p: unknown) => ReactNode)(node.props), into); } catch { /* hook component */ }
+  }
   return into;
 }
 
