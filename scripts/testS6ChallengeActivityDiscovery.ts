@@ -25,7 +25,9 @@ const wizardPath = new URL('../src/v2/challenges/V2ChallengeCreationWizard.tsx',
 const guidePath = new URL('../src/v2/member/ActivityLibraryScreen.tsx', import.meta.url);
 const wizard = readFileSync(wizardPath, 'utf8');
 const guide = readFileSync(guidePath, 'utf8');
-const stepThree = wizard.split('function StepActivities(')[1]?.split('function StepWhatCounts(')[0] ?? '';
+// P5T-2 S1: Step 3 is the member wrapper (draft handoff) plus the reusable ActivitiesStep.
+const stepThree = (wizard.split('function StepActivities(')[1]?.split('function StepWhatCounts(')[0] ?? '')
+  + readFileSync('src/v2/challenges/wizardSteps/ActivitiesStep.tsx', 'utf8');
 const challengeDetail = guide.split('export function V2ActivityGuideDetailScreen()')[1] ?? '';
 
 const draft = {
@@ -60,6 +62,8 @@ assert.equal(allowsMultipleActivities('collective'), false, 'other Challenge typ
 
 assert.match(stepThree, /to=\{`\/v2\/guide\/\$\{encodeURIComponent\(item\.id\)\}`\}/, 'discovery row opens canonical Activity detail');
 assert.match(stepThree, /createChallengeWizardRouteState\(state, stepIndex, \{ fromChallengeDraft: true \}\)/, 'discovery passes draft context without selection identity');
+assert.match(stepThree, /state=\{guideLinkState\}/, 'reusable Activities step links carry the caller draft context');
+assert.match(stepThree, /guideLinkState=\{createChallengeWizardRouteState\(state, stepIndex, \{ fromChallengeDraft: true \}\)\}/, 'the member wrapper supplies the full draft and step as the Guide link state');
 assert.match(stepThree, /Selected activities/, 'Step 3 separates selected Activities from discovery');
 assert.match(stepThree, /onRemove\(activity\.activity\)/, 'selected Activities expose explicit removal');
 assert.match(stepThree, /Adding this Activity to your Challenge/, 'explicit handoff exposes its loading state');
@@ -75,7 +79,7 @@ assert.match(wizard, /fetchActivityOptions\(item\.id\)/, 'add still uses the gov
 const guideLinks = [...stepThree.matchAll(/<Link\b[\s\S]*?className=/g)].map((m) => m[0]).filter((tag) => /\/v2\/guide/.test(tag));
 assert.equal(guideLinks.length, 2, 'Step 4 has exactly two Guide entries (intro link and result rows)');
 for (const tag of guideLinks) {
-  assert.match(tag, /state=\{createChallengeWizardRouteState\(state, stepIndex, \{ fromChallengeDraft: true \}\)\}/, 'each Guide entry carries the draft and step');
+  assert.match(tag, /state=\{guideLinkState\}/, 'each Guide entry carries the caller-supplied draft and step state');
   assert.match(tag, /onClick=\{\(event\) => \{ if \(isPlainPrimaryClick\(event\)\) onGuideTrip\(\); \}\}/, 'each Guide entry arms the backup only on a plain primary click, and never passes the event as the draft');
 }
 const libraryList = guide.split('export function V2ActivityLibraryScreen()')[1]?.split('function ActivityCard(')[0] ?? '';
@@ -138,7 +142,7 @@ assert.notEqual(peekChallengeDraft('uid-w', { storage: mem, now: t0 + CHALLENGE_
 assert.equal(peekChallengeDraft('uid-w', { storage: mem, now: t0 + CHALLENGE_GUIDE_ARM_WINDOW_MS + 1 }), null, 'a stale arm (hard navigation, closed tab) is not honoured');
 saveChallengeDraft('uid-w', draft, stepThreeIndex, { storage: mem, now: t0 + CHALLENGE_GUIDE_ARM_WINDOW_MS + 5 });
 assert.equal(peekChallengeDraft('uid-w', { storage: mem, now: t0 + CHALLENGE_GUIDE_ARM_WINDOW_MS + 6 }), null, 'routine saves never re-arm an expired arm');
-assert.match(wizard, /function isPlainPrimaryClick/, 'modified/middle clicks never arm recovery');
+assert.match(stepThree, /function isPlainPrimaryClick/, 'modified/middle clicks never arm recovery');
 markChallengeGuideJourney('uid-a', draft, stepThreeIndex, { storage: mem, now: t0 + 6 });
 clearChallengeDraft('uid-a', { storage: mem });
 assert.equal(recoverChallengeDraft('uid-a', { storage: mem, now: t0 + 7 }), null, 'cleared (established/abandoned) drafts are gone');

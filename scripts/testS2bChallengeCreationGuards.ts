@@ -150,6 +150,9 @@ try {
 check('no standalone Challenge: establishment requires a host Group', threw === true);
 
 const wizardSource = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
+// P5T-2 S1: reusable steps live in wizardSteps/; assertions about them follow the code.
+const wizardStepsSource = ['ActivitiesStep', 'WhatCountsStep', 'NameAppearanceFields', 'ChallengeTypeStep', 'ReviewParts']
+  .map((name) => read(`src/v2/challenges/wizardSteps/${name}.tsx`)).join('\n');
 check('host picker binds the member real memberships', wizardSource.includes('useV2Memberships'));
 check('no hardcoded Group list in the wizard', !/Nairobi Morning Movers|INITIAL_GROUPS|mockGroups/.test(wizardSource));
 const membershipsApi = read('src/api/membershipsApi.ts');
@@ -166,7 +169,7 @@ const apiSource = read('src/api/challengeCreationApi.ts');
 check('catalogue requests composerSelectable=true', apiSource.includes("composerSelectable: 'true'"));
 check('catalogue calls GET /api/knowledge',
   apiSource.includes('API_PREFIX') && apiSource.includes('${API_PREFIX}/knowledge?'));
-check('wizard uses the composer catalogue hook', wizardSource.includes('useComposerCatalogue'));
+check('wizard uses the composer catalogue hook', wizardStepsSource.includes('useComposerCatalogue') && wizardSource.includes('ActivitiesStep'));
 
 // ─── Options binding + progressive disclosure ───────────────────────────────
 console.log('options binding and progressive disclosure');
@@ -221,7 +224,7 @@ check('completion step gates without an occurrence', assessVisibleStep(
   baseState({ activities: [activity({ metric: 'completion', unit: 'completion', targetValue: '1', completionOccurrence: '' })] }),
   'WHAT_COUNTS',
 ).complete === false);
-check('weight select renders natural labels', wizardSource.includes('loadBasisLabel'));
+check('weight select renders natural labels', wizardStepsSource.includes('loadBasisLabel') && wizardSource.includes('WhatCountsStep'));
 check('client never invents compatibility (no metricForUnit client-side)', !wizardSource.includes('metricForUnit')
   && !read('src/v2/challenges/challengeCreationDraft.ts').includes('metricForUnit'));
 

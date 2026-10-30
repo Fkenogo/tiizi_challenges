@@ -33,10 +33,13 @@ check('custom date duration is inclusive and date-only', inclusiveDurationDays('
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const list = read('src/v2/challenges/V2ChallengeListScreen.tsx');
 const wizard = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
+// P5T-2 S1: reusable steps live in wizardSteps/; assertions about them follow the code.
+const nameAppearance = read('src/v2/challenges/wizardSteps/NameAppearanceFields.tsx');
+const whatCountsStep = read('src/v2/challenges/wizardSteps/WhatCountsStep.tsx');
 const detail = read('src/v2/challenges/V2CreatedChallengeScreen.tsx');
 const draft = read('src/v2/challenges/challengeCreationDraft.ts');
 const members = read('api/src/memberships.ts');
-const review = wizard.slice(wizard.indexOf('function StepReview'), wizard.indexOf('function ReviewCard'));
+const review = wizard.slice(wizard.indexOf('function StepReview'), wizard.indexOf('function CreatorParticipation'));
 check('list search and clear field filters are present with progressive expansion', list.includes('Search Challenges')
   && list.includes('Active / Ongoing') && list.includes('Scheduled / Upcoming') && list.includes('Completed')
   && list.includes('View more Challenges') && list.includes('INITIAL_RESULTS = 8'));
@@ -45,12 +48,12 @@ check('Challenge result rows remain single-column and omit full descriptions', l
 check('host selector is searchable and excludes restricted non-steward memberships', wizard.includes('Search Groups')
   && wizard.includes('allowMemberChallenges !== false') && wizard.includes("membership.role.toLowerCase()"));
 const hostStep = wizard.slice(wizard.indexOf('function StepHosting'), wizard.indexOf('function StepChallengeDetails'));
-const detailsStep = wizard.slice(wizard.indexOf('function StepChallengeDetails'), wizard.indexOf('function StepActivities'));
+const detailsStep = wizard.slice(wizard.indexOf('function StepChallengeDetails'), wizard.indexOf('function StepActivities')) + nameAppearance;
 check('Challenge title/description have their own third wizard step', draft.includes("'CHALLENGE_DETAILS'")
   && wizard.includes('StepChallengeDetails') && !hostStep.includes('Challenge title')
   && detailsStep.includes('Challenge title') && detailsStep.includes('Description'));
 check('What Counts copy is schedule-independent and Together uses the Shared goal label', !draft.includes('over ${duration}')
-  && !draft.includes('before the day ends in ${timezone}') && wizard.includes("type === 'collective' ? 'Shared goal'"));
+  && !draft.includes('before the day ends in ${timezone}') && whatCountsStep.includes("type === 'collective' ? 'Shared goal'"));
 check('Review avoids duplicating the persistent Challenge summary', !review.includes('summarize(state)'));
 check('preset and custom dates set inclusive end/duration, with no timezone selector', wizard.includes('Custom')
   && wizard.includes('inclusiveDurationDays') && !wizard.includes('Time setting')
