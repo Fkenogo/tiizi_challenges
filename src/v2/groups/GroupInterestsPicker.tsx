@@ -24,6 +24,11 @@ export function GroupInterestsPicker({
 }) {
   const [otherInput, setOtherInput] = useState('');
   const others = customInterests(value, vocabulary);
+  const addOther = () => {
+    if (!otherInput.trim() || others.length > 0) return;
+    onChange(addCustomInterest(value, otherInput, vocabulary));
+    setOtherInput('');
+  };
   const atCap = value.length >= GROUP_FOCUS_TAGS_MAX_COUNT;
   return (
     <fieldset>
@@ -58,7 +63,7 @@ export function GroupInterestsPicker({
         })}
       </div>
       {others.length > 0 && (
-        <div className="mt-3" aria-label="Other Group Interests">
+        <div className="mt-3" role="group" aria-label="Other Group Interests">
           <p className="mb-1 text-xs font-bold text-slate-500">Other</p>
           <div className="flex flex-wrap gap-2">
             {others.map((tag) => (
@@ -73,12 +78,19 @@ export function GroupInterestsPicker({
       <div className="mt-3 rounded-xl border border-dashed border-slate-300 p-3">
         <p className="text-xs font-bold text-slate-700">Other Group Interest (optional)</p>
         <p className="mt-1 text-[11px] text-slate-500">Add one Interest that is not listed.</p>
-        <div className="mt-2 flex gap-2">
+        <div
+          className="mt-2 flex gap-2"
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return;
+            event.preventDefault();
+            addOther();
+          }}
+        >
           <V2TextInput value={otherInput} onChange={setOtherInput} placeholder="Add one other Interest" maxLength={GROUP_FOCUS_TAG_MAX_LENGTH} />
           <V2Button
             variant="secondary"
             disabled={!otherInput.trim() || others.length > 0 || atCap}
-            onClick={() => { onChange(addCustomInterest(value, otherInput, vocabulary)); setOtherInput(''); }}
+            onClick={addOther}
           >
             Add
           </V2Button>

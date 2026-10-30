@@ -5,7 +5,7 @@ import { useV2GroupDetail, useUpdateV2GroupSettings, useV2GroupOptions } from '.
 import { useV2GroupId } from '../group/V2GroupScope';
 import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor } from './groupCovers';
 import { GroupInterestsPicker } from './GroupInterestsPicker';
-import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary } from './groupInterests';
+import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet } from './groupInterests';
 
 export function V2GroupSettingsScreen() {
   const groupId = useV2GroupId();
@@ -41,7 +41,7 @@ export function V2GroupSettingsScreen() {
     || description !== group.description
     || tagline !== group.tagline
     || location !== group.location
-    || JSON.stringify(focusTags) !== JSON.stringify(group.focusTags)
+    || !sameInterestSet(focusTags, group.focusTags)
     || coverId !== group.coverId
     || isPrivate !== group.isPrivate
     || requireAdminApproval !== (group.requireAdminApproval ?? false)
@@ -49,7 +49,7 @@ export function V2GroupSettingsScreen() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!focusTagsValid) return;
-    update.mutate({ name, description, tagline, location, focusTags, coverId, isPrivate, requireAdminApproval, allowMemberChallenges }, { onSuccess: () => navigate(`/v2/groups/${group.id}`) });
+    update.mutate({ name, description, tagline, location, focusTags: sameInterestSet(focusTags, group.focusTags) ? group.focusTags : focusTags, coverId, isPrivate, requireAdminApproval, allowMemberChallenges }, { onSuccess: () => navigate(`/v2/groups/${group.id}`) });
   };
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900';
   const label = 'block text-sm font-bold text-slate-800';

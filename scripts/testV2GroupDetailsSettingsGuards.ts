@@ -49,6 +49,11 @@ check('only one other Interest, case-insensitive duplicates ignored, trimmed to 
   && addCustomInterest(['Strength'], 'strength', vocab).length === 1
   && addCustomInterest([], '  Hiking  ', vocab)[0] === 'Hiking'
   && addCustomInterest([], 'x'.repeat(50), vocab)[0].length === 30);
+check('typing a listed Interest in any case selects the listed one, not a custom copy',
+  JSON.stringify(addCustomInterest([], 'strength', vocab)) === '["Strength"]' && customInterests(addCustomInterest([], 'strength', vocab), vocab).length === 0);
+check('re-toggling a chip (new order) is not a change; legacy stays savable',
+  interestIssue(['b', 'a'], ['a', 'b'], vocab) === null);
+check('Enter in the Other input adds it instead of submitting the form', read('src/v2/groups/GroupInterestsPicker.tsx').includes("event.key !== 'Enter'"));
 check('untouched legacy selection stays savable (even >1 custom)', interestIssue(['a', 'b'], ['a', 'b'], vocab) === null);
 check('changed selection enforces 13 cap, one custom, 30 chars, distinct',
   interestIssue(Array.from({ length: 14 }, (_, i) => `t${i}`), [], vocab) !== null

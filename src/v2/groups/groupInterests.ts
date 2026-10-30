@@ -22,7 +22,8 @@ export function interestVocabulary(options?: V2GroupOptions['focusAreas'] | null
 
 export type InterestIssue = 'too_many' | 'too_long' | 'too_many_custom' | 'duplicate';
 
-const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+/** Same selection regardless of order (re-toggling a chip must not read as an edit). */
+export const sameInterestSet = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((v) => b.includes(v));
 
 export function customInterests(tags: readonly string[], vocabulary: readonly GroupInterestOption[]): string[] {
   const labels = new Set(vocabulary.map((option) => option.label));
@@ -35,7 +36,7 @@ export function interestIssue(
   stored: readonly string[],
   vocabulary: readonly GroupInterestOption[],
 ): InterestIssue | null {
-  if (sameList(tags, stored)) return null;
+  if (sameInterestSet(tags, stored)) return null;
   if (tags.length > GROUP_FOCUS_TAGS_MAX_COUNT) return 'too_many';
   if (tags.some((tag) => tag.length > GROUP_FOCUS_TAG_MAX_LENGTH)) return 'too_long';
   if (new Set(tags.map((tag) => tag.toLocaleLowerCase())).size !== tags.length) return 'duplicate';
@@ -45,7 +46,7 @@ export function interestIssue(
 
 export const INTEREST_ISSUE_COPY: Record<InterestIssue, string> = {
   too_many: 'Choose up to 13 Group Interests.',
-  too_long: 'Keep each Group Interest under 30 characters.',
+  too_long: 'Each Group Interest can be up to 30 characters.',
   duplicate: 'Each Group Interest can only be chosen once.',
   too_many_custom: 'Choose listed Group Interests, with at most one other Interest.',
 };
@@ -62,6 +63,8 @@ export function addCustomInterest(
 ): string[] {
   const value = input.trim().slice(0, GROUP_FOCUS_TAG_MAX_LENGTH);
   if (!value) return [...tags];
+  const listed = vocabulary.find((option) => option.label.toLocaleLowerCase() === value.toLocaleLowerCase());
+  if (listed) return tags.includes(listed.label) ? [...tags] : [...tags, listed.label];
   if (customInterests(tags, vocabulary).length > 0) return [...tags];
   if (tags.some((tag) => tag.toLocaleLowerCase() === value.toLocaleLowerCase())) return [...tags];
   return [...tags, value];
