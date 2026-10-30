@@ -40,7 +40,7 @@ export type VisibleStep = (typeof VISIBLE_STEPS)[number];
 export const VISIBLE_STEP_META: Record<VisibleStep, { eyebrow: string; title: string }> = {
   HOW_IT_WORKS: { eyebrow: 'Challenge type', title: 'Choose a Challenge type' },
   WHO_IS_HOSTING: { eyebrow: 'Who is hosting', title: 'Who is hosting this Challenge?' },
-  CHALLENGE_DETAILS: { eyebrow: 'Challenge details', title: 'Name and describe this Challenge' },
+  CHALLENGE_DETAILS: { eyebrow: 'Name & Appearance', title: 'Name and describe this Challenge' },
   WHAT_ARE_WE_DOING: { eyebrow: 'What are we doing', title: 'What activities count toward this Challenge?' },
   WHAT_COUNTS: { eyebrow: 'What counts', title: 'Set goals and how they are measured' },
   WHEN_DOES_IT_RUN: { eyebrow: 'When does it run', title: 'When does this Challenge take place?' },
@@ -98,7 +98,7 @@ export function allowsMultipleActivities(type: ComposerChallengeType | null): bo
 
 const METRIC_LABELS: Record<string, string> = {
   completion: 'Completion',
-  repetitions: 'Repetitions',
+  repetitions: 'Reps',
   duration: 'Time',
   distance: 'Distance',
   weight: 'Weight',
@@ -112,8 +112,8 @@ export function metricLabel(metric: string | null | undefined): string {
 
 const UNIT_LABELS: Record<string, string> = {
   completion: 'completion',
-  reps: 'repetitions',
-  repetitions: 'repetitions',
+  reps: 'reps',
+  repetitions: 'reps',
   seconds: 'seconds',
   minutes: 'minutes',
   hours: 'hours',

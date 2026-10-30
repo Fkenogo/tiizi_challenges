@@ -511,6 +511,8 @@ function StepHosting({
 }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  // P5: eligible Groups show as soon as the search field is focused, then refine as the member types.
+  const [listOpen, setListOpen] = useState(false);
   if (memberships.isLoading) return <V2LoadingState label="Loading your Groups…" />;
   if (memberships.isError) {
     return (
@@ -548,13 +550,13 @@ function StepHosting({
       </p>
       <div>
         <V2Field label="Search Groups">
-          <V2TextInput value={search} onChange={setSearch} placeholder="Find a Group you can host in…" />
+          <V2TextInput value={search} onChange={(value) => { setSearch(value); setListOpen(true); }} onFocus={() => setListOpen(true)} placeholder="Find a Group you can host in…" />
         </V2Field>
-        {search.trim() !== '' && <ul aria-label="Matching host Groups" className="mt-3 space-y-2">
+        {(listOpen || search.trim() !== '') && <ul aria-label="Matching host Groups" className="mt-3 space-y-2">
           {filtered.map((membership) => (
             <li key={membership.groupId}>
               <button type="button" aria-pressed={state.groupId === membership.groupId}
-                onClick={() => onSelectGroup(membership)}
+                onClick={() => { onSelectGroup(membership); setListOpen(false); setSearch(''); }}
                 className={`flex min-h-[84px] w-full items-center gap-3 rounded-xl border p-3 text-left ${state.groupId === membership.groupId ? 'border-orange-400 bg-orange-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
                 <span className={`h-14 w-14 shrink-0 rounded-lg bg-gradient-to-br ${coverGradientFor(coverFor(membership.group.coverId, membership.groupId))}`} aria-hidden="true" />
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold text-slate-900">{membership.group.name}</span><span className="block truncate text-xs text-slate-500">{roleLabel(membership.role)}</span>
@@ -566,9 +568,9 @@ function StepHosting({
             </li>
           ))}
         </ul>}
-        {search.trim() === '' && <p className="mt-3 text-sm text-slate-500">Search by Group name to see Groups you can host in.</p>}
-        {search.trim() !== '' && filtered.length === 0 && <p className="mt-3 text-sm text-slate-500">No host Groups match that search.</p>}
-        {state.groupId && <p className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-bold text-slate-800">Selected Group: {state.groupName}. Search again to change your selection.</p>}
+        {!listOpen && search.trim() === '' && <p className="mt-3 text-sm text-slate-500">Select the search box to see the Groups you can host in.</p>}
+        {(listOpen || search.trim() !== '') && filtered.length === 0 && <p className="mt-3 text-sm text-slate-500">No host Groups match that search.</p>}
+        {state.groupId && <p className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-bold text-slate-800">Selected Group: {state.groupName}. Select the search box to change your selection.</p>}
       </div>
     </div>
   );
@@ -580,7 +582,7 @@ function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdat
     <V2Field label="Challenge title"><V2TextInput value={state.title} onChange={(title) => onUpdate({ title })} placeholder="e.g. Sunrise walking streak" /></V2Field>
     <V2Field label="Description" hint="Optional. Explain what this Challenge means to your Group."><V2TextArea value={state.description} onChange={(description) => onUpdate({ description })} placeholder="Add a short description…" /></V2Field>
     <fieldset><legend className="mb-2 text-sm font-bold text-slate-900">Challenge background</legend><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{CHALLENGE_COVER_IDS.map((cover) => <button key={cover} type="button" aria-pressed={state.coverId === cover} onClick={() => onUpdate({ coverId: cover })} className={`overflow-hidden rounded-xl border text-left ${state.coverId === cover ? 'border-orange-500 ring-2 ring-orange-300' : 'border-slate-200'}`}><span className={`block h-16 bg-gradient-to-br ${challengeCoverGradient(cover)}`} /><span className="block px-2 py-1.5 text-xs font-bold">{challengeCoverLabel(cover)}</span></button>)}</div></fieldset>
-    <section className="rounded-2xl border border-slate-200 p-4"><h3 className="text-sm font-black">Optional support</h3><label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.socialCauseEnabled} onChange={(event) => onUpdate({ socialCauseEnabled: event.target.checked })} />Support a Cause</label>
+    <section className="rounded-2xl border border-slate-200 p-4"><h3 className="text-sm font-black">Optional support</h3><p className="mt-1 text-xs text-slate-600">Support a Cause is for a cause this Challenge raises support for. Support Tiizi is separate: voluntary support for the Tiizi platform itself.</p><label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.socialCauseEnabled} onChange={(event) => onUpdate({ socialCauseEnabled: event.target.checked })} />Support a Cause</label>
       {state.socialCauseEnabled && <div className="mt-2 grid gap-3 rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-600">A Platform Operator must approve this Cause before the Challenge can go live. Tiizi does not hold Cause funds.</p><V2Field label="Cause title"><V2TextInput value={state.socialCauseTitle} onChange={(socialCauseTitle) => onUpdate({ socialCauseTitle })} /></V2Field><V2Field label="Description"><V2TextArea value={state.socialCauseDescription} onChange={(socialCauseDescription) => onUpdate({ socialCauseDescription })} /></V2Field><V2Field label="Purpose"><V2TextInput value={state.socialCausePurpose} onChange={(socialCausePurpose) => onUpdate({ socialCausePurpose })} /></V2Field><V2Field label="Beneficiary"><V2TextInput value={state.socialCauseBeneficiary} onChange={(socialCauseBeneficiary) => onUpdate({ socialCauseBeneficiary })} /></V2Field><V2Field label="External payment destination reference" hint="This destination belongs to the beneficiary."><V2TextInput value={state.socialCauseDestination} onChange={(socialCauseDestination) => onUpdate({ socialCauseDestination })} /></V2Field></div>}
       <label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.supportTiiziEnabled} onChange={(event) => onUpdate({ supportTiiziEnabled: event.target.checked })} />Support Tiizi</label>{state.supportTiiziEnabled && <p className="ml-7 text-xs text-slate-600">Voluntary support for Tiizi. Participation never depends on financial support. The platform controls its payment destination.</p>}
     </section>

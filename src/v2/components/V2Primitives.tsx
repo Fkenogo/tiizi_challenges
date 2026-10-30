@@ -285,6 +285,7 @@ export function V2TextInput({
   type = 'text',
   maxLength,
   min,
+  onFocus,
 }: {
   id?: string;
   value: string;
@@ -293,6 +294,7 @@ export function V2TextInput({
   type?: 'text' | 'number' | 'date';
   maxLength?: number;
   min?: string;
+  onFocus?: () => void;
 }) {
   return (
     <input
@@ -301,6 +303,7 @@ export function V2TextInput({
       value={value}
       maxLength={maxLength}
       min={min}
+      onFocus={onFocus}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       className={V2_INPUT_CLASS}
