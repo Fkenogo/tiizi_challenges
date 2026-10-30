@@ -27,6 +27,7 @@
  *      deduplication, projection never mutated).
  */
 import { readFileSync } from 'node:fs';
+import { QueryClient, QueryObserver } from '@tanstack/react-query';
 import {
   challengeTypeLabel,
   formatAmount,
@@ -34,17 +35,28 @@ import {
   governingDayFor,
   greetingFor,
   isTodayEmpty,
+  hasOtherParticipation,
+  joinsAnyChallenge,
+  NO_PARTICIPATION_COPY,
+  noParticipationKind,
   opportunityAction,
+  orderRequiredToday,
   presentedJoinedChallenges,
   progressPercent,
   raceActivitySummary,
   requirementProgress,
   serverHour,
+  streakReminder,
+  todayBlockingError,
   togetherSummary,
   TODAY_SECTION_LIMIT,
   upcomingSummary,
   visibleSectionItems,
 } from '../src/v2/today/todayView.js';
+import { todayLoggingOpen } from '../src/v2/today/todayLogging.js';
+import { refreshAfterAcceptedLog } from '../src/v2/challenges/refreshAfterAcceptedLog.js';
+import { v2TodayKey } from '../src/v2/today/todayQueryKeys.js';
+import type { V2ChallengeDetail } from '../src/api/v2ChallengeApi.js';
 import type {
   V2TodayJoinedChallenge,
   V2TodayProjection,
@@ -322,7 +334,7 @@ check(
   'E9 the zero state uses product copy and routes to the real Challenges surface',
   screen.includes('Ready to get moving?')
     && screen.includes('Join a Challenge to start tracking activities and progress here.')
-    && screen.includes("navigate('/v2/challenges')"),
+    && screen.includes("onNavigate('/v2/challenges')"),
 );
 check(
   'F1 only current V2 routes are navigated to',
@@ -368,7 +380,9 @@ check(
   screen.includes('visibleSectionItems(presentedChallenges')
     && screen.includes('visibleSectionItems(projection.groupChallengeOpportunities')
     && screen.includes('visibleSectionItems(projection.upcoming')
-    && screen.includes('projection.requiredToday.map')
+    && screen.includes('requiredOrdered.map')
+    && screen.includes('orderRequiredToday(projection.requiredToday)')
+    && !/visibleSectionItems\(requiredOrdered/.test(screen)
     && !/visibleSectionItems\(projection\.requiredToday/.test(screen)
     && !/visibleSectionItems\(projection\.joinedChallengeProgress/.test(screen),
 );
@@ -479,7 +493,7 @@ check(
 
 check(
   'I1 the zero state keeps Find a Challenge and adds Find a Group on real routes',
-  screen.includes("navigate('/v2/challenges')") && screen.includes("navigate('/v2/groups')")
+  screen.includes("onNavigate('/v2/challenges')") && screen.includes("onNavigate('/v2/groups')")
     && screen.includes('Find a Challenge') && screen.includes('Find a Group'),
 );
 check(
@@ -498,7 +512,8 @@ const emptyStateBranch = screen.slice(emptyStateStart, emptyStateEnd);
 check(
   'I4 the empty branch contains only truthful copy and discovery actions, with no projected activity content',
   emptyStateStart >= 0 && emptyStateEnd > emptyStateStart
-    && emptyStateBranch.includes('<V2EmptyState')
+    && emptyStateBranch.includes('<NoParticipationState')
+    && /function NoParticipationState[\s\S]*?<V2EmptyState/.test(screen)
     && !/projection\.(requiredToday|joinedChallengeProgress|groupChallengeOpportunities|upcoming|finalizedResults)/.test(emptyStateBranch)
     && !/recommended|suggested|sample Challenge|fake progress/i.test(emptyStateBranch),
 );
@@ -565,6 +580,163 @@ check(
     return JSON.stringify(dedupFixture) === before;
   })(),
 );
+
+
+// ---------------------------------------------------------------------------
+// K. TIIZI-FER-P3-001 — Today recovery
+// ---------------------------------------------------------------------------
+const allDone = (id: string) => requiredChallenge({ challengeId: id, requirements: [
+  { activity: 'wellness:a', label: 'A', targetValue: 1, unit: 'completion', state: 'completed' },
+] });
+const pendingOne = (id: string) => requiredChallenge({ challengeId: id });
+const ids = (list: readonly V2TodayRequiredChallenge[]) => list.map((c) => c.challengeId).join(',');
+
+check('K1 pending Streak actions come first; completed after; server order kept within each group',
+  ids(orderRequiredToday([allDone('d1'), pendingOne('p1'), allDone('d2'), pendingOne('p2')])) === 'p1,p2,d1,d2');
+check('K2 zero, one and three Streaks due order without loss or invention',
+  ids(orderRequiredToday([])) === '' && ids(orderRequiredToday([pendingOne('p1')])) === 'p1'
+  && ids(orderRequiredToday([pendingOne('a'), pendingOne('b'), pendingOne('c')])) === 'a,b,c');
+check('K3 ordering never mutates the served projection',
+  (() => { const input = [allDone('d'), pendingOne('p')]; const before = JSON.stringify(input); orderRequiredToday(input); return JSON.stringify(input) === before; })());
+check('K4 no Streak means no reminder', streakReminder([]) === null);
+check('K5 one pending Streak: compact "needs you" reminder', streakReminder([pendingOne('p')])?.text === '1 Streak needs you today.' && streakReminder([pendingOne('p')])?.tone === 'pending');
+check('K6a every Streak pending reads plainly (no "3 of 3")', streakReminder([pendingOne('a'), pendingOne('b'), pendingOne('c')])?.text === '3 Streaks need you today.');
+check('K6 three Streaks, one done: concise summary from served states only',
+  streakReminder([pendingOne('p1'), allDone('d'), pendingOne('p2')])?.text === '2 of 3 Streaks need you today.');
+check('K7 all Streaks completed today: completion acknowledgement',
+  streakReminder([allDone('d1')])?.tone === 'done' && streakReminder([allDone('d1'), allDone('d2')])?.text === 'All 2 Streaks are done for today.');
+const facts = (over: Partial<Parameters<typeof noParticipationKind>[0]> = {}) => ({
+  groupCount: 1, challengeList: [] as Array<{ myParticipation: { status: string } | null }>, hasOpportunities: false,
+  hasPendingGroupApplication: false, projectionShowsParticipation: false, ...over,
+});
+const notJoined = { myParticipation: null };
+const joinedActive = { myParticipation: { status: 'active' } };
+check('K8 empty-state kind follows real membership and Challenge facts only',
+  noParticipationKind(facts({ groupCount: null })) === 'unknown'
+  && noParticipationKind(facts({ groupCount: 0 })) === 'no-group'
+  && noParticipationKind(facts({ groupCount: 2, hasOpportunities: true, challengeList: [notJoined] })) === 'group-with-challenges'
+  && noParticipationKind(facts()) === 'group-without-challenges');
+check('K9 the differentiated states (three empty + joined-not-live + no-live-challenges) have distinct copy and never promise payment or recommendations',
+  new Set(Object.values(NO_PARTICIPATION_COPY).map((c) => c.title)).size === 5
+  && !/recommended|suggested|payment|donat|coming soon/i.test(JSON.stringify(NO_PARTICIPATION_COPY)));
+check('K10 an unknown membership count shows the generic Founder-approved zero state, never a guess', screen.includes("kind === 'unknown'") && screen.includes('Ready to get moving?'));
+
+const loggingHook = read('src/v2/challenges/useChallengeCreation.ts');
+const logHookBody = loggingHook.slice(loggingHook.indexOf('export function useLogActivityV2'), loggingHook.indexOf('export function useChallengeContributorsV2'));
+check('K11 Today reuses the existing Log Activity dialog and the existing Challenge detail read (no second logging path)',
+  screen.includes("import { V2LogActivityDialog } from '../challenges/V2LoggingSection'")
+  && screen.includes('useChallengeDetailV2(challengeId)') && /<V2LogActivityDialog detail=\{data\}/.test(screen)
+  && !/logChallengeActivityV2|useLogActivityV2|buildS3bActivityPayload|newClientKey|loggingIntent|\/activity`/.test(screen));
+check('K12 an accepted log refreshes Challenge reads and Today through the non-throwing helper (no client patching)',
+  /refreshAfterAcceptedLog\(queryClient, user\?\.uid, variables\.challengeId\)/.test(logHookBody) && !/setQueryData/.test(logHookBody)
+  && !/Promise\.all\(/.test(logHookBody));
+check('K13 Log activity is offered for pending Streaks and ongoing Together/Race/Streak cards; completed Streaks acknowledge instead',
+  /allComplete \? \([\s\S]*?View Challenge[\s\S]*?\) : \([\s\S]*?onClick=\{onLog\}>Log activity/.test(screen)
+  && /<V2Button onClick=\{onLog\}>Log activity<\/V2Button>/.test(screen) && screen.includes('✓ Done for today'));
+check('K14 the ongoing section is titled "Your Ongoing Challenges" and keeps its own empty state', (screen.match(/Your Ongoing Challenges/g) ?? []).length === 2 && !/>\s*Your Challenges\s*</.test(screen));
+check('K15 the existing logging form still guards double submission (disabled while pending, same-facts retry reuses the key)',
+  /disabled=\{pending\}/.test(read('src/v2/challenges/V2LoggingSection.tsx')) && /pending=\{log\.isPending\}/.test(read('src/v2/challenges/V2LoggingSection.tsx')));
+check('K16 the Today screen derives no due/missed/completed state of its own',
+  !/dayState|lastCompletedDay|completionStatus\s*===\s*'(due|missed)'/.test(screen.slice(screen.indexOf('export function V2TodayScreen'), screen.indexOf('function TodayLogActivity'))));
+
+
+const upcomingItem = (id: string) => ({ challengeId: id, title: 'Starts tomorrow', kind: 'starts' as const, lifecycleDate: '2026-09-16', timezone: 'Africa/Nairobi', detailPath: `/v2/challenges/${id}` });
+check('K17 a member who joined a not-yet-started Challenge (only under upcoming) counts as participating — never told they have none',
+  hasOtherParticipation({ upcoming: [upcomingItem('u1')], finalizedResults: [], groupChallengeOpportunities: [] }) === true);
+check('K18 an upcoming item that is merely a Group opportunity is not participation',
+  hasOtherParticipation({ upcoming: [upcomingItem('o1')], finalizedResults: [], groupChallengeOpportunities: [{ challengeId: 'o1' } as never] }) === false);
+check('K19 finalized results count as participation; an empty projection does not',
+  hasOtherParticipation({ upcoming: [], finalizedResults: [{ challengeId: 'f', title: 'T', finalized: true, detailPath: '/v2/challenges/f' }], groupChallengeOpportunities: [] }) === true
+  && hasOtherParticipation({ upcoming: [], finalizedResults: [], groupChallengeOpportunities: [] }) === false);
+check('K20 a pending Group application is not reported as "no Group"',
+  noParticipationKind(facts({ groupCount: 0, hasPendingGroupApplication: true })) === 'unknown');
+check('K21 Today offers the logging form only when the fresh detail passes the shared gate, otherwise a read-only message',
+  /todayLoggingOpen\(data\)/.test(screen) && screen.includes("Logging isn&apos;t open for this Challenge right now"));
+check('K22 participation unseen by the projection (joined-upcoming, finalized) is counted before any "no Challenges" message',
+  noParticipationKind(facts({ projectionShowsParticipation: true, challengeList: [] })) === 'joined-not-live' && /projectionShowsParticipation: hasOtherParticipation\(projection\)/.test(screen));
+check('K23 a Challenge beyond the horizon or ended-not-finalized still counts as participation (own list, active participation)',
+  joinsAnyChallenge([joinedActive]) === true && joinsAnyChallenge([notJoined, { myParticipation: { status: 'withdrawn' } }]) === false && joinsAnyChallenge([]) === false);
+check('K26 Today reads Challenge facts from the existing authorized list and keeps the opened logging form for the life of the sheet',
+  /useChallengeListV2\(\)/.test(screen) && /challengeList: challengeList\.data\?\.challenges/.test(screen)
+  && /offered\.current = true/.test(screen) && /loggable \|\| offered\.current/.test(screen));
+
+// ---------------------------------------------------------------------------
+// L. TIIZI-FER-P3-CORR-001 — CORR-A: Challenge absence is established only by the authorized Challenge read
+// ---------------------------------------------------------------------------
+check('L1 a Group with only future (not joined) Challenges is "Pick a Challenge", never "no Challenges"',
+  noParticipationKind(facts({ hasOpportunities: true, challengeList: [notJoined] })) === 'group-with-challenges');
+check('L2 a Group with only finalized/ended Challenges (none joined, none open) gets neutral wording, never an absence claim',
+  noParticipationKind(facts({ hasOpportunities: false, challengeList: [notJoined, notJoined] })) === 'no-live-challenges'
+  && !/no Challenges/i.test(NO_PARTICIPATION_COPY['no-live-challenges'].title + NO_PARTICIPATION_COPY['no-live-challenges'].message));
+check('L3 a Group with a joined Challenge that is not live today is "Nothing to log today"',
+  noParticipationKind(facts({ challengeList: [joinedActive] })) === 'joined-not-live');
+check('L4 a Group genuinely without Challenges (authorized list loaded and empty) asserts the absence',
+  noParticipationKind(facts({ groupCount: 2, challengeList: [] })) === 'group-without-challenges');
+check('L5 a Group with available Challenges not joined offers to pick one',
+  noParticipationKind(facts({ hasOpportunities: true, challengeList: [notJoined, joinedActive].slice(0, 1) })) === 'group-with-challenges');
+check('L6 an unknown or failed Challenge read (undefined) never produces a false absence claim — generic state',
+  noParticipationKind(facts({ challengeList: undefined })) === 'unknown' && noParticipationKind(facts({ challengeList: undefined, groupCount: 0 })) === 'unknown'
+  && !/No Challenges/.test(JSON.stringify(Object.entries(NO_PARTICIPATION_COPY).filter(([k]) => k !== 'group-without-challenges'))));
+check('L7 the absence copy is used for no other kind', Object.entries(NO_PARTICIPATION_COPY).filter(([, c]) => /No Challenges/.test(c.title)).map(([k]) => k).join() === 'group-without-challenges');
+
+// ---------------------------------------------------------------------------
+// M. CORR-B — an accepted log is never undone by a failing read-model refresh
+// ---------------------------------------------------------------------------
+const failingToday = async () => { throw new Error('Today refresh failed'); };
+{
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const key = v2TodayKey('u1');
+  qc.setQueryData(key, { projection: 'last-good' });
+  const observer = new QueryObserver(qc, { queryKey: key, queryFn: failingToday, retry: false, staleTime: 0 });
+  const unsubscribe = observer.subscribe(() => undefined);
+  await new Promise((resolve) => setTimeout(resolve, 20)); // the initial (stale) fetch fails once
+  const outcome = await refreshAfterAcceptedLog(qc, 'u1', '11111111-1111-4111-8111-111111111111').then((r) => ({ threw: false, ...r }), () => ({ threw: true, refreshed: false }));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  const state = observer.getCurrentResult();
+  unsubscribe();
+  check('M1 accepted POST then FAILING Today refetch: the post-accept refresh never throws (the accepted outcome stays accepted)', outcome.threw === false);
+  check('M2 the failed refresh leaves Today in error WITH the last projection retained', state.isError === true && (state.data as { projection: string } | undefined)?.projection === 'last-good');
+  check('M3 that state is NOT a blocking error, so the screen (and any open logging sheet with its accepted result and key) stays mounted',
+    todayBlockingError({ isError: state.isError, data: state.data }) === false && todayBlockingError({ isError: true, data: undefined }) === true && todayBlockingError({ isError: false, data: undefined }) === false);
+}
+{
+  const throwing = { invalidateQueries: async () => { throw new Error('invalidate rejected'); } } as unknown as QueryClient;
+  const r = await refreshAfterAcceptedLog(throwing, 'u1', '11111111-1111-4111-8111-111111111111').then((x) => ({ threw: false, refreshed: x.refreshed }), () => ({ threw: true, refreshed: true }));
+  check('M4 even a REJECTING invalidation cannot fail an accepted log; it only reports refreshed:false', r.threw === false && r.refreshed === false);
+}
+check('M5 the screen shows a separate refresh notice whose retry RE-READS Today (refetch), not the submission',
+  /today\.isError && \(/.test(screen) && /We couldn&apos;t refresh your day/.test(screen) && /onClick=\{\(\) => void today\.refetch\(\)\}/.test(screen) && /todayBlockingError\(today\)/.test(screen)
+  && !/mutate|mutateAsync|useLogActivityV2/.test(screen));
+check('M7 the accepted outcome is reported immediately: the mutation never awaits the read-model refresh',
+  /void refreshAfterAcceptedLog\(/.test(logHookBody) && !/await refreshAfterAcceptedLog/.test(logHookBody) && !/onSuccess: async/.test(logHookBody));
+check('M6 refresh code patches nothing and creates no second mutation or submission key',
+  !/setQueryData|useMutation|newClientKey|clientKey/.test(read('src/v2/challenges/refreshAfterAcceptedLog.ts')));
+
+// ---------------------------------------------------------------------------
+// N. CORR-C — a fresh detail that no longer permits logging never opens a blank form
+// ---------------------------------------------------------------------------
+const baseDetail = (over: Partial<V2ChallengeDetail>): V2ChallengeDetail => ({
+  challengeId: '11111111-1111-4111-8111-111111111111', groupId: '22222222-2222-4222-8222-222222222222', title: 'T', description: '',
+  challengeType: 'collective', status: 'active', startDate: '2026-09-10', endDate: '2026-09-30', timezone: 'Africa/Nairobi',
+  governingToday: '2026-09-15', finalized: false, currentConfigVersion: 1, goalValue: null, goalUnit: null, collectiveTotal: 0,
+  collectiveGoalReached: false, completionsCount: 0, instructions: '', activatedAt: null, endedAt: null,
+  myParticipation: { participationId: 'p1', status: 'active', joinedAt: '2026-09-11T00:00:00.000Z', joinedConfigVersion: 1, progress: {} },
+  config: { version: 1, period: { startDate: '2026-09-10', endDate: '2026-09-30' }, requiredConsecutiveDays: null, activities: [
+    { canonicalKey: 'push-up', activityVariant: null, activityKind: 'fitness', metric: 'COUNT', targetValue: 20, unit: 'reps' },
+  ] },
+  ...over,
+} as unknown as V2ChallengeDetail);
+check('N1 a live Challenge with an active participation and configured activities opens the form', todayLoggingOpen(baseDetail({})) === true);
+check('N2 an ended Challenge does not', todayLoggingOpen(baseDetail({ status: 'ended' })) === false);
+check('N3 a window-expired but unprocessed Challenge (governing day past the end) does not', todayLoggingOpen(baseDetail({ governingToday: '2026-10-02' })) === false);
+check('N4 a finalized Challenge does not', todayLoggingOpen(baseDetail({ finalized: true })) === false);
+check('N5 a withdrawn member does not', todayLoggingOpen(baseDetail({ myParticipation: { participationId: 'p1', status: 'withdrawn', joinedAt: '2026-09-11T00:00:00.000Z', joinedConfigVersion: 1, progress: {} } as never })) === false);
+check('N6 a member with no participation (or removed) does not',
+  todayLoggingOpen(baseDetail({ myParticipation: null })) === false
+  && todayLoggingOpen(baseDetail({ myParticipation: { participationId: 'p1', status: 'removed', joinedAt: '2026-09-11T00:00:00.000Z', joinedConfigVersion: 1, progress: {} } as never })) === false);
+check('N7 the read-only branch submits nothing and keeps the Challenge reachable (Close; the card still links to the Challenge)',
+  /Logging isn&apos;t open for this Challenge right now/.test(screen) && /<V2Button onClick=\{onClose\}>Close<\/V2Button>/.test(screen)
+  && !/useLogActivityV2|mutateAsync/.test(screen.slice(screen.indexOf('function TodayLogActivity'), screen.indexOf('/** The three differentiated'))));
 
 if (failures > 0) {
   console.error(`\nS5b Today experience guards: ${failures} failure(s).`);

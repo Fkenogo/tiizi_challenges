@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
 import type {
@@ -13,8 +13,12 @@ import {
   V2ErrorState,
   V2LoadingState,
   V2Page,
+  V2Sheet,
 } from '../components/V2Primitives';
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
+import { useChallengeDetailV2, useChallengeListV2, useV2Memberships } from '../challenges/useChallengeCreation';
+import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
+import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
 import {
   challengeTypeLabel,
@@ -22,11 +26,17 @@ import {
   formatGoverningDay,
   governingDayFor,
   greetingFor,
+  hasOtherParticipation,
   isTodayEmpty,
+  NO_PARTICIPATION_COPY,
+  noParticipationKind,
+  orderRequiredToday,
   presentedJoinedChallenges,
   progressPercent,
   raceActivitySummary,
   requirementProgress,
+  streakReminder,
+  todayBlockingError,
   TODAY_SECTION_LIMIT,
   togetherSummary,
   upcomingSummary,
@@ -58,6 +68,10 @@ export function V2TodayScreen() {
   const navigate = useNavigate();
   const identity = useV2MemberIdentity();
   const today = useV2Today();
+  const memberships = useV2Memberships();
+  const challengeList = useChallengeListV2();
+  // P3: the Challenge whose existing Log Activity sheet is open from Today.
+  const [loggingChallengeId, setLoggingChallengeId] = useState<string | null>(null);
   // Progressive disclosure is local presentation state only: each growing
   // section initially presents the first TODAY_SECTION_LIMIT served items in
   // server order, expanding inline on request. `Do today` is never limited.
@@ -73,7 +87,9 @@ export function V2TodayScreen() {
     );
   }
 
-  if (today.isError) {
+  // A failed REFRESH with a projection on screen is not a blocking error (it would
+  // unmount an open logging sheet and its accepted result); see the notice below.
+  if (todayBlockingError(today)) {
     return (
       <V2Page>
         <V2ErrorState
@@ -106,6 +122,18 @@ export function V2TodayScreen() {
   // the projection is established — the loading/error flow above is
   // untouched. Server order preserved; the projection is never mutated.
   const presentedChallenges = presentedJoinedChallenges(projection);
+  // P3: pending Streak actions first (engine states, server order within each group).
+  const requiredOrdered = orderRequiredToday(projection.requiredToday);
+  const reminder = streakReminder(projection.requiredToday);
+  const noParticipation = noParticipationKind({
+    groupCount: memberships.data ? memberships.data.memberships.length : null,
+    challengeList: challengeList.data?.challenges,
+    hasOpportunities: projection.groupChallengeOpportunities.length > 0,
+    hasPendingGroupApplication: (memberships.data?.pendingMemberships?.length ?? 0) > 0,
+    projectionShowsParticipation: hasOtherParticipation(projection),
+  });
+  const notParticipating = projection.requiredToday.length === 0
+    && projection.joinedChallengeProgress.length === 0;
 
   return (
     <V2Page>
@@ -128,21 +156,32 @@ export function V2TodayScreen() {
               : `${projection.todayContext.activeChallengeCount} active Challenges`}
           </span>
         </div>
+        {reminder && (
+          <p
+            role="status"
+            data-streak-reminder={reminder.tone}
+            className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${
+              reminder.tone === 'done' ? 'bg-emerald-50 text-emerald-800' : 'bg-orange-50 text-primary'
+            }`}
+          >
+            <span aria-hidden>{reminder.tone === 'done' ? '✓' : '•'}</span>
+            {reminder.text}
+          </p>
+        )}
       </header>
 
+      {today.isError && (
+        <div
+          role="alert"
+          className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+        >
+          <span>We couldn&apos;t refresh your day. This is what we last loaded.</span>
+          <V2Button variant="secondary" onClick={() => void today.refetch()}>Try again</V2Button>
+        </div>
+      )}
+
       {isTodayEmpty(projection) ? (
-        <V2EmptyState
-          title="Ready to get moving?"
-          message="Join a Challenge to start tracking activities and progress here."
-          action={
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <V2Button onClick={() => navigate('/v2/challenges')}>Find a Challenge</V2Button>
-              <V2Button variant="secondary" onClick={() => navigate('/v2/groups')}>
-                Find a Group
-              </V2Button>
-            </div>
-          }
-        />
+        <NoParticipationState kind={noParticipation} onNavigate={navigate} />
       ) : (
         <div className="space-y-6">
           {/* 2. Required today — Streak Challenges with governed requirements. */}
@@ -152,11 +191,12 @@ export function V2TodayScreen() {
                 Do today
               </h2>
               <div className="space-y-3">
-                {projection.requiredToday.map((challenge) => (
+                {requiredOrdered.map((challenge) => (
                   <RequiredTodayCard
                     key={challenge.challengeId}
                     challenge={challenge}
                     onOpen={() => navigate(challenge.detailPath)}
+                    onLog={() => setLoggingChallengeId(challenge.challengeId)}
                   />
                 ))}
               </div>
@@ -166,10 +206,18 @@ export function V2TodayScreen() {
           {/* 3. Active Challenge progress, progressively disclosed, deduplicated
               against Do today (a Challenge already represented above is not
               immediately repeated here). */}
+          {notParticipating && (
+            <section aria-labelledby="today-progress">
+              <h2 id="today-progress" className="mb-3 text-base font-black text-slate-900">
+                Your Ongoing Challenges
+              </h2>
+              <NoParticipationState kind={noParticipation} onNavigate={navigate} compact />
+            </section>
+          )}
           {presentedChallenges.length > 0 && (
             <section aria-labelledby="today-progress">
               <h2 id="today-progress" className="mb-3 text-base font-black text-slate-900">
-                Your Challenges
+                Your Ongoing Challenges
               </h2>
               <div className="space-y-3">
                 {visibleSectionItems(presentedChallenges, showAllChallenges).map((challenge) => (
@@ -177,6 +225,7 @@ export function V2TodayScreen() {
                     key={challenge.challengeId}
                     challenge={challenge}
                     onOpen={() => navigate(challenge.detailPath)}
+                    onLog={() => setLoggingChallengeId(challenge.challengeId)}
                   />
                 ))}
               </div>
@@ -275,7 +324,106 @@ export function V2TodayScreen() {
           )}
         </div>
       )}
+      {loggingChallengeId && (
+        <TodayLogActivity challengeId={loggingChallengeId} onClose={() => setLoggingChallengeId(null)} />
+      )}
     </V2Page>
+  );
+}
+
+/**
+ * P3 — the EXISTING Log Activity sheet, opened in the context of one Challenge.
+ * The Challenge detail is fetched on demand through the existing governed read;
+ * the unchanged `V2LogActivityDialog` owns the form, `loggingIntent`
+ * idempotency, double-submit protection and the activity API path. Today is
+ * re-read from the server after an accepted log (see `useLogActivityV2`).
+ */
+function TodayLogActivity({ challengeId, onClose }: { challengeId: string; onClose: () => void }) {
+  const detail = useChallengeDetailV2(challengeId);
+  const data = detail.data;
+  // The same gate as the Challenge page: logging only while the Challenge is
+  // live AND the member's server read says a new entry is possible. Today's
+  // button came from a projection that may be a moment old, so the Challenge
+  // detail (cached for at most its short staleTime, refetched in the
+  // background) decides. Once the form has been offered it stays for the life
+  // of the sheet, so an accepted result is never unmounted by a later refetch.
+  const offered = useRef(false);
+  const loggable = !!data && todayLoggingOpen(data);
+  if (loggable) offered.current = true;
+  if (data && (loggable || offered.current)) return <V2LogActivityDialog detail={data} open onClose={onClose} />;
+  return (
+    <V2Sheet open onClose={onClose} title="Log activity" variant="focused">
+      {detail.isError ? (
+        <V2ErrorState
+          title="We couldn't open this Challenge"
+          message="Please try again."
+          onRetry={() => void detail.refetch()}
+        />
+      ) : data ? (
+        <div className="space-y-3">
+          <p className="text-sm leading-6 text-slate-600">
+            Logging isn&apos;t open for this Challenge right now. Its page shows where it stands.
+          </p>
+          <V2Button onClick={onClose}>Close</V2Button>
+        </div>
+      ) : (
+        <V2LoadingState label="Opening Challenge…" />
+      )}
+    </V2Sheet>
+  );
+}
+
+/** The three differentiated "nothing to log yet" states (membership + participation facts). */
+function NoParticipationState({
+  kind,
+  onNavigate,
+  compact = false,
+}: {
+  kind: ReturnType<typeof noParticipationKind>;
+  onNavigate: (path: string) => void;
+  compact?: boolean;
+}) {
+  if (kind === 'unknown') {
+    return (
+      <V2EmptyState
+        compact={compact}
+        title="Ready to get moving?"
+        message="Join a Challenge to start tracking activities and progress here."
+        action={
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <V2Button onClick={() => onNavigate('/v2/challenges')}>Find a Challenge</V2Button>
+            <V2Button variant="secondary" onClick={() => onNavigate('/v2/groups')}>Find a Group</V2Button>
+          </div>
+        }
+      />
+    );
+  }
+  const copy = NO_PARTICIPATION_COPY[kind];
+  return (
+    <V2EmptyState
+      compact={compact}
+      title={copy.title}
+      message={copy.message}
+      action={
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {kind === 'no-group' && (
+            <V2Button onClick={() => onNavigate('/v2/groups')}>Find a Group</V2Button>
+          )}
+          {kind === 'joined-not-live' && (
+            <V2Button onClick={() => onNavigate('/v2/challenges')}>View Challenges</V2Button>
+          )}
+          {kind === 'group-with-challenges' && (
+            <V2Button onClick={() => onNavigate('/v2/challenges')}>Find a Challenge</V2Button>
+          )}
+          {kind === 'group-without-challenges' && (
+            <>
+              <V2Button onClick={() => onNavigate('/v2/challenges/new')}>Create a Challenge</V2Button>
+              <V2Button variant="secondary" onClick={() => onNavigate('/v2/challenges')}>Find a Challenge</V2Button>
+            </>
+          )}
+        </div>
+      }
+    />
   );
 }
 
@@ -283,9 +431,11 @@ export function V2TodayScreen() {
 function RequiredTodayCard({
   challenge,
   onOpen,
+  onLog,
 }: {
   challenge: V2TodayRequiredChallenge;
   onOpen: () => void;
+  onLog: () => void;
 }) {
   const { completed, total, allComplete } = requirementProgress(challenge);
   return (
@@ -303,7 +453,7 @@ function RequiredTodayCard({
             allComplete ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-primary'
           }`}
         >
-          {completed}/{total} done
+          {allComplete ? '✓ Done for today' : `${completed}/${total} done`}
         </span>
       </div>
 
@@ -355,9 +505,14 @@ function RequiredTodayCard({
       </ul>
 
       <div className="mt-4 flex items-center gap-2">
-        <V2Button onClick={onOpen}>
-          {allComplete ? 'View Challenge' : 'Log activity'}
-        </V2Button>
+        {allComplete ? (
+          <V2Button variant="secondary" onClick={onOpen}>View Challenge</V2Button>
+        ) : (
+          <>
+            <V2Button onClick={onLog}>Log activity</V2Button>
+            <V2Button variant="secondary" onClick={onOpen}>View Challenge</V2Button>
+          </>
+        )}
       </div>
     </V2Card>
   );
@@ -367,9 +522,11 @@ function RequiredTodayCard({
 function ActiveChallengeCard({
   challenge,
   onOpen,
+  onLog,
 }: {
   challenge: V2TodayJoinedChallenge;
   onOpen: () => void;
+  onLog: () => void;
 }) {
   return (
     <V2Card>
@@ -443,7 +600,8 @@ function ActiveChallengeCard({
         </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-4 flex items-center gap-2">
+        <V2Button onClick={onLog}>Log activity</V2Button>
         <V2Button variant="secondary" onClick={onOpen}>
           View Challenge
         </V2Button>

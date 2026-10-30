@@ -205,3 +205,144 @@ export function upcomingSummary(item: { kind: 'starts' | 'ends'; lifecycleDate: 
   const when = formatLifecycleDate(item.lifecycleDate);
   return item.kind === 'starts' ? `Starts ${when}` : `Ends ${when}`;
 }
+
+/**
+ * TIIZI-FER-P3-001 — Streak actions due today: pending first, completed after.
+ * A stable partition of ENGINE-provided requirement states: the server order
+ * is kept within each group, nothing is re-sorted by any client rule, and no
+ * due/missed/completed state is derived here (it is read from `requirements`).
+ */
+export function orderRequiredToday(required: readonly V2TodayRequiredChallenge[]): V2TodayRequiredChallenge[] {
+  const pending: V2TodayRequiredChallenge[] = [];
+  const done: V2TodayRequiredChallenge[] = [];
+  for (const challenge of required) (requirementProgress(challenge).allComplete ? done : pending).push(challenge);
+  return [...pending, ...done];
+}
+
+export interface StreakReminder {
+  tone: 'pending' | 'done';
+  text: string;
+}
+
+/**
+ * Compact Streak reminder shown under the greeting. Counts come only from the
+ * served requirement states; with no Streak Challenge there is no reminder.
+ */
+export function streakReminder(required: readonly V2TodayRequiredChallenge[]): StreakReminder | null {
+  if (required.length === 0) return null;
+  const pending = required.filter((challenge) => !requirementProgress(challenge).allComplete).length;
+  if (pending === 0) {
+    return { tone: 'done', text: required.length === 1 ? 'Your Streak is done for today.' : `All ${required.length} Streaks are done for today.` };
+  }
+  if (pending === required.length) {
+    return { tone: 'pending', text: pending === 1 ? '1 Streak needs you today.' : `${pending} Streaks need you today.` };
+  }
+  return { tone: 'pending', text: `${pending} of ${required.length} Streaks need you today.` };
+}
+
+/**
+ * True when the member already takes part in something Today shows outside the
+ * live lists: a joined Challenge that has not started yet (served only under
+ * `upcoming`, never as an opportunity) or a finalized result. Such a member
+ * must never be told they have no Challenges.
+ */
+export function hasOtherParticipation(
+  projection: Pick<V2TodayProjection, 'upcoming' | 'finalizedResults' | 'groupChallengeOpportunities'>,
+): boolean {
+  const opportunityIds = new Set(projection.groupChallengeOpportunities.map((item) => item.challengeId));
+  return projection.finalizedResults.length > 0
+    || projection.upcoming.some((item) => !opportunityIds.has(item.challengeId));
+}
+
+/**
+ * Whether the member takes part in any Challenge, from their own Challenge list
+ * (existing read): true when any row has an active participation — including a
+ * Challenge that starts beyond the Today horizon or has ended but is not yet
+ * finalized, neither of which the Today projection lists. `null` while the list
+ * is not known (loading/error): the caller must then not guess.
+ */
+export function joinsAnyChallenge(
+  challenges: ReadonlyArray<{ myParticipation: { status: string } | null }> | undefined,
+): boolean | null {
+  if (!challenges) return null;
+  return challenges.some((row) => row.myParticipation?.status === 'active');
+}
+
+/** Which "nothing to log yet" situation a member is in (membership + participation facts only). */
+export type NoParticipationKind =
+  | 'unknown'
+  | 'joined-not-live'
+  | 'no-group'
+  | 'group-with-challenges'
+  | 'group-without-challenges'
+  | 'no-live-challenges';
+
+/** Facts the empty states may rest on. Anything not known is `null`/`undefined` — never guessed. */
+export interface NoParticipationFacts {
+  /** Real Group membership count (existing memberships read); null while unknown. */
+  groupCount: number | null;
+  /**
+   * The member's Challenge list (existing authorized read: every Challenge in
+   * their eligible Groups, in any state, plus their own history); undefined
+   * while loading or when the read failed.
+   */
+  challengeList: ReadonlyArray<{ myParticipation: { status: string } | null }> | undefined;
+  /** Served Group opportunities (open, not joined, not ended). */
+  hasOpportunities: boolean;
+  hasPendingGroupApplication: boolean;
+  /** The Today projection itself shows participation (joined-upcoming or finalized). */
+  projectionShowsParticipation: boolean;
+}
+
+/**
+ * Today's opportunities are NOT evidence that a Group has no Challenges (they
+ * exclude joined, ended, finalized and beyond-horizon Challenges). The absence
+ * claim "no Challenges in your Groups" therefore rests only on the authorized
+ * Challenge list read being loaded and empty; an unknown or failed read gives
+ * the neutral generic state.
+ */
+export function noParticipationKind(facts: NoParticipationFacts): NoParticipationKind {
+  if (facts.projectionShowsParticipation) return 'joined-not-live';
+  if (!facts.challengeList) return 'unknown';
+  if (joinsAnyChallenge(facts.challengeList) === true) return 'joined-not-live';
+  if (facts.groupCount === null) return 'unknown';
+  // A pending Group application is a real fact: do not tell that member to "start with a Group".
+  if (facts.groupCount === 0) return facts.hasPendingGroupApplication ? 'unknown' : 'no-group';
+  if (facts.hasOpportunities) return 'group-with-challenges';
+  // Challenges exist in the member's Groups but none is open to join (ended, finalized, not open):
+  // neutral wording, no absence claim. Only a genuinely empty list asserts "no Challenges".
+  return facts.challengeList.length === 0 ? 'group-without-challenges' : 'no-live-challenges';
+}
+
+/**
+ * The blocking "we couldn't load your day" state applies ONLY when there is no
+ * projection to show. A failed background refresh keeps the last projection on
+ * screen (and any open logging sheet mounted) with a separate refresh notice.
+ */
+export function todayBlockingError(state: { isError: boolean; data: unknown }): boolean {
+  return state.isError && state.data === undefined;
+}
+
+/** PROPOSED wording (pending Founder copy review) for the differentiated empty states. */
+export const NO_PARTICIPATION_COPY: Record<Exclude<NoParticipationKind, 'unknown'>, { title: string; message: string }> = {
+  'no-live-challenges': {
+    title: "You're not in a Challenge right now",
+    message: 'Open Challenges to see what your Groups have.',
+  },
+  'joined-not-live': {
+    title: 'Nothing to log today',
+    message: "Your Challenges aren't running today. Open one to see where it stands.",
+  },
+  'no-group': {
+    title: 'Start with a Group',
+    message: 'Challenges belong to Groups. Join or create a Group to take part.',
+  },
+  'group-with-challenges': {
+    title: 'Pick a Challenge to join',
+    message: "Your Groups have Challenges you can join. Being in a Group doesn't enroll you in its Challenges — you choose which ones.",
+  },
+  'group-without-challenges': {
+    title: 'No Challenges in your Groups yet',
+    message: 'Start one with a Group you belong to.',
+  },
+};
