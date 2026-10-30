@@ -28,6 +28,7 @@ import {
   listTemplateAudit,
   normalizeTemplateContent,
   pageLimit,
+  REVISION_TOKEN_PATTERN,
   publishTemplateVersion,
   retireTemplate,
   reviseTemplate,
@@ -51,6 +52,24 @@ function versionParam(request: FastifyRequest): number {
   const parsed = Number(version);
   if (!/^\d{1,9}$/.test(version) || parsed < 1) throw new TemplateError(400, 'invalid_template_version', 'version must be an integer >= 1');
   return parsed;
+}
+
+/**
+ * `If-Match: "<revisionToken>"` is REQUIRED to save a draft. Absent: 428.
+ * Present but not a single strong quoted token (including `*` and weak
+ * validators): 400, so a wildcard can never defeat the lost-update guard.
+ */
+function ifMatchToken(request: FastifyRequest): string {
+  const raw = request.headers['if-match'];
+  if (raw === undefined) {
+    throw new TemplateError(428, 'precondition_required', 'If-Match with the draft revisionToken is required to save a Template draft');
+  }
+  const value = (Array.isArray(raw) ? raw.join(',') : raw).trim();
+  const match = /^"([0-9a-f]{64})"$/.exec(value);
+  if (!match || !REVISION_TOKEN_PATTERN.test(match[1])) {
+    throw new TemplateError(400, 'invalid_precondition', 'If-Match must be a single quoted revisionToken');
+  }
+  return match[1];
 }
 
 /** Backstop for database-boundary refusals (roster/immutability triggers). */
@@ -113,9 +132,10 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
     if (!actor) return;
     const templateId = templateIdParam(request);
     const version = versionParam(request);
+    const expectedToken = ifMatchToken(request);
     const content = normalizeTemplateContent(request.body ?? {});
-    await guarded(() => updateTemplateDraft(db, actor, templateId, version, content));
-    return reply.code(200).send({ templateId, version });
+    const saved = await guarded(() => updateTemplateDraft(db, actor, templateId, version, content, expectedToken));
+    return reply.code(200).send({ templateId, version, revisionToken: saved.revisionToken });
   });
 
   app.post(apiPath('/operator/templates/:templateId/versions/:version/validate'), async (request, reply) => {
@@ -166,7 +186,19 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
     return reply.code(200).send(result);
   });
 
-  // Static segment: registered before the :templateId parameter route.
+  // Static segments: registered before the :templateId parameter route.
+  /**
+   * Caller-scoped, read-only. Reports only the AUTHENTICATED caller's own
+   * effective standing (existing roster / Console-reader authority); grants
+   * nothing and reveals nothing about anyone else.
+   */
+  app.get(apiPath('/operator/templates/capabilities'), async (request, reply) => {
+    const member = authenticatedMember(request);
+    const canAuthor = await authors.canAuthorTemplates(member.memberId);
+    const canRead = canAuthor || await readers.canReadOperatorConsole(member.memberId);
+    return reply.code(200).send({ canAuthor, canRead });
+  });
+
   app.get(apiPath('/operator/templates/adoption'), async (request, reply) => {
     if (!await requireOperatorRead(request, reply)) return;
     const templateId = query(request, 'templateId') ?? null;
