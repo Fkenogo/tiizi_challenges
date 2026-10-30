@@ -17,7 +17,10 @@ const summaries: OperatorTemplateSummary[] = [
 const version = (n: number, state: 'draft' | 'published', title: string) => ({
   version: n, state,
   content: { summary: 'A short race to a hundred reps.', focusTags: ['Strength'], sortOrder: 0, coverId: 'challenge-2', durationDays: 14, durationPresetDays: [7, 14],
-    composer: { title, description: 'Race to one hundred.', challengeType: 'competitive', activities: [{ activity: 'FIT-TST-001', observedVersion: 3, metric: 'repetitions', unit: 'reps', targetValue: 100 }] } },
+    composer: { title, description: 'Race to one hundred.', challengeType: 'competitive', activities: [{ activity: 'FIT-TST-001', observedVersion: 3, metric: 'repetitions', unit: 'reps', targetValue: 100 },
+      { activity: 'FIT-TST-002', observedVersion: 1, metric: 'duration', unit: 'minutes', targetValue: 20, durationMode: 'ACCUMULATED' },
+      { activity: 'WEL-TST-003', observedVersion: 2, metric: 'completion', unit: 'completion', targetValue: 1, completionOccurrence: 'one guided breathing session' },
+      { activity: 'FIT-TST-004', observedVersion: 1, metric: 'weight', unit: 'kilograms', targetValue: 20, loadBasis: 'TOTAL_LOAD', componentIds: ['LEFT', 'RIGHT'] }] } },
   authoredByMemberId: M, authoredAt: '2026-10-30T08:00:00Z', lastEditedByMemberId: M, lastEditedAt: '2026-10-30T08:00:00Z',
   publishedByMemberId: state === 'published' ? M : null, publishedAt: state === 'published' ? '2026-10-30T08:30:00Z' : null,
 });

@@ -10,6 +10,7 @@ import { ApiError } from '../src/api/apiError';
 import {
   EMPTY_FILTERS,
   MAX_AUTO_EMPTY_PAGES,
+  activitySettings,
   classifyLibraryError,
   flattenPages,
   hasActiveFilters,
@@ -113,6 +114,16 @@ check('Library follows the cursor through useInfiniteQuery with the active filte
 check('free-text filters (search and Activity) are debounced', /setActivityInput/.test(library) && /setTimeout\(\(\) => setFilters/.test(library) && !/setFilter\('activity'/.test(library));
 check('a paused/offline query cannot fall through to a crash or a blank page', /!detail\.data/.test(library) && /list\.isPending/.test(library) && !/detail\.data as /.test(library));
 check('inline retry re-runs the failed request kind (refetch vs next page)', /isFetchNextPageError/.test(library));
+
+run('Activity counting settings are surfaced so versions differing only there never look identical', () => {
+  assert.deepEqual(activitySettings({}), []);
+  assert.deepEqual(activitySettings({ durationMode: 'CONTINUOUS' }), ['Time counts: All at once']);
+  assert.deepEqual(activitySettings({ durationMode: 'ACCUMULATED' }), ['Time counts: Added up across the day']);
+  assert.deepEqual(activitySettings({ completionOccurrence: 'one session' }), ['Counts when: one session']);
+  assert.deepEqual(activitySettings({ loadBasis: 'PER_SIDE', componentIds: ['A', 'B'] }), ['Weight reported as: Per side', 'Required parts: A, B']);
+  assert.notDeepEqual(activitySettings({ durationMode: 'CONTINUOUS' }), activitySettings({ durationMode: 'ACCUMULATED' }));
+});
+check('Library renders the Activity settings for every configured Activity', /activitySettings\(activity\)\.map/.test(library));
 
 console.log('D. vocabulary and presentation');
 const apiVocab = read('api/src/groupVocabulary.ts');

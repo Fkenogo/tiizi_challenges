@@ -25,7 +25,8 @@ const versionRow = (n) => versionsTable.match(new RegExp(`<tr[^>]*>(?:(?!</tr>).
 check('an unpublished draft version shows no adoption number', />—<\/td><\/tr>$/.test(versionRow(3)) && !/<td[^>]*>\d+<\/td><\/tr>$/.test(versionRow(3)));
 check('published versions show their adoption counts in the Versions table', />3<\/td><\/tr>$/.test(versionRow(1)) && />0<\/td><\/tr>$/.test(versionRow(2)));
 check('detail shows the selected version configuration and Activities', t.includes('Version 3 configuration'));
-check('more-available is offered with an explicit control, never a total', t.includes('Load more') && !/of\s+\d+\s+Templates|total/i.test(t));
+check('detail shows the settings that determine counting (time mode, completion, load basis, parts)', t.includes('Time counts: Added up across the day') && t.includes('Counts when: one guided breathing session') && t.includes('Weight reported as: Total load') && t.includes('Required parts: LEFT, RIGHT'));
+check('more-available is offered with an explicit control, never a total', t.includes('Load more') && !/of\s+\d+\s+Templates|\d+\s+total|total (count|templates?)/i.test(t));
 check('read-only: no authoring controls are rendered', !/\b(Publish|Revise|Retire|Save draft)\b|New Template|Create Template/i.test(t));
 check('no Firestore / deferred-capability copy remains', !/Firestore|not available in the current Product Truth/.test(t));
 

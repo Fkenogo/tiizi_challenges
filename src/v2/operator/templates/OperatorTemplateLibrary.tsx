@@ -15,6 +15,7 @@ import {
   EMPTY_FILTERS,
   LIFECYCLE_LABELS,
   TYPE_LABELS,
+  activitySettings,
   classifyLibraryError,
   flattenPages,
   formatWhen,
@@ -306,6 +307,7 @@ function TemplateDetailPanel({ templateId }: { templateId: string }) {
                     <span className="font-bold" title={activity.activity}>{activity.activity.length > 14 ? shortId(activity.activity) : activity.activity}</span>
                     {activity.observedVersion ? <span className="text-slate-500"> · v{activity.observedVersion}</span> : null}
                     <span className="text-slate-600"> · {activity.targetValue ?? '—'} {activity.unit ?? ''}{activity.metric ? ` (${activity.metric})` : ''}</span>
+                    {activitySettings(activity).map((line) => <span key={line} className="block text-[11px] text-slate-500">{line}</span>)}
                   </li>
                 ))}
               </ul>
