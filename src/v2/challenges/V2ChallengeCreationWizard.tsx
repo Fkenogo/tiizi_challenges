@@ -468,7 +468,7 @@ export function V2ChallengeCreationWizard() {
   );
 }
 
-function StepHowItWorks({
+export function StepHowItWorks({
   selected,
   onSelect,
 }: {
@@ -576,7 +576,7 @@ function StepHosting({
   );
 }
 
-function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void }) {
+export function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void }) {
   return <div className="space-y-4">
     <p className="text-sm leading-6 text-slate-600">Give the Challenge a clear name and a short description for your Group.</p>
     <V2Field label="Challenge title"><V2TextInput value={state.title} onChange={(title) => onUpdate({ title })} placeholder="e.g. Sunrise walking streak" /></V2Field>
@@ -594,7 +594,7 @@ function isPlainPrimaryClick(event: React.MouseEvent): boolean {
   return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.defaultPrevented;
 }
 
-function StepActivities({
+export function StepActivities({
   state,
   preselectedIdentity,
   addToDraft,
@@ -744,7 +744,7 @@ function StepActivities({
   );
 }
 
-function StepWhatCounts({
+export function StepWhatCounts({
   state,
   onUpdateActivity,
   onRemove,
@@ -888,7 +888,7 @@ function StepWhatCounts({
   );
 }
 
-function StepSchedule({
+export function StepSchedule({
   state,
   onUpdate,
 }: {
@@ -937,7 +937,7 @@ function StepSchedule({
   );
 }
 
-function StepReview({
+export function StepReview({
   state,
   previewState,
   previewIssues,
