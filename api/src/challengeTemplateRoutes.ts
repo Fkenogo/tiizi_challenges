@@ -11,6 +11,7 @@
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { apiPath } from './apiPrefix.js';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 import { createPostgresOperatorConsoleReaderAuthority } from './operatorConsoleAuthority.js';
@@ -99,7 +100,7 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
 
   /* ---------------- Operator writes ---------------- */
 
-  app.post('/api/operator/templates', async (request, reply) => {
+  app.post(apiPath('/operator/templates'), async (request, reply) => {
     const actor = await requireAuthor(request, reply);
     if (!actor) return;
     const content = normalizeTemplateContent(request.body ?? {});
@@ -107,7 +108,7 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
     return reply.code(201).send(created);
   });
 
-  app.put('/api/operator/templates/:templateId/versions/:version', async (request, reply) => {
+  app.put(apiPath('/operator/templates/:templateId/versions/:version'), async (request, reply) => {
     const actor = await requireAuthor(request, reply);
     if (!actor) return;
     const templateId = templateIdParam(request);
@@ -117,28 +118,28 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
     return reply.code(200).send({ templateId, version });
   });
 
-  app.post('/api/operator/templates/:templateId/versions/:version/validate', async (request, reply) => {
+  app.post(apiPath('/operator/templates/:templateId/versions/:version/validate'), async (request, reply) => {
     const actor = await requireAuthor(request, reply);
     if (!actor) return;
     const result = await guarded(() => validateTemplateVersion(db, templateIdParam(request), versionParam(request)));
     return reply.code(200).send(result);
   });
 
-  app.post('/api/operator/templates/:templateId/versions/:version/publish', async (request, reply) => {
+  app.post(apiPath('/operator/templates/:templateId/versions/:version/publish'), async (request, reply) => {
     const actor = await requireAuthor(request, reply);
     if (!actor) return;
     const published = await guarded(() => publishTemplateVersion(db, actor, templateIdParam(request), versionParam(request)));
     return reply.code(200).send(published);
   });
 
-  app.post('/api/operator/templates/:templateId/revisions', async (request, reply) => {
+  app.post(apiPath('/operator/templates/:templateId/revisions'), async (request, reply) => {
     const actor = await requireAuthor(request, reply);
     if (!actor) return;
     const revised = await guarded(() => reviseTemplate(db, actor, templateIdParam(request)));
     return reply.code(201).send(revised);
   });
 
-  app.post('/api/operator/templates/:templateId/retire', async (request, reply) => {
+  app.post(apiPath('/operator/templates/:templateId/retire'), async (request, reply) => {
     const actor = await requireAuthor(request, reply);
     if (!actor) return;
     const body = (request.body ?? {}) as Record<string, unknown>;
@@ -156,7 +157,7 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
 
   /* ---------------- Operator reads ---------------- */
 
-  app.get('/api/operator/templates', async (request, reply) => {
+  app.get(apiPath('/operator/templates'), async (request, reply) => {
     if (!await requireOperatorRead(request, reply)) return;
     const result = await guarded(() => listOperatorTemplates(db, {
       q: query(request, 'q'), type: query(request, 'type'), activity: query(request, 'activity'),
@@ -166,7 +167,7 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
   });
 
   // Static segment: registered before the :templateId parameter route.
-  app.get('/api/operator/templates/adoption', async (request, reply) => {
+  app.get(apiPath('/operator/templates/adoption'), async (request, reply) => {
     if (!await requireOperatorRead(request, reply)) return;
     const templateId = query(request, 'templateId') ?? null;
     if (templateId !== null && !isTemplateUuid(templateId)) {
@@ -176,12 +177,12 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
     return reply.code(200).send(result);
   });
 
-  app.get('/api/operator/templates/:templateId', async (request, reply) => {
+  app.get(apiPath('/operator/templates/:templateId'), async (request, reply) => {
     if (!await requireOperatorRead(request, reply)) return;
     return reply.code(200).send(await guarded(() => getOperatorTemplate(db, templateIdParam(request))));
   });
 
-  app.get('/api/operator/templates/:templateId/audit', async (request, reply) => {
+  app.get(apiPath('/operator/templates/:templateId/audit'), async (request, reply) => {
     if (!await requireOperatorRead(request, reply)) return;
     const result = await guarded(() => listTemplateAudit(db, templateIdParam(request), pageLimit(query(request, 'limit')), query(request, 'cursor')));
     return reply.code(200).send(result);
@@ -189,7 +190,7 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
 
   /* ---------------- Member published reads ---------------- */
 
-  app.get('/api/challenge-templates', async (request, reply) => {
+  app.get(apiPath('/challenge-templates'), async (request, reply) => {
     authenticatedMember(request);
     const result = await guarded(() => listMemberTemplates(db, {
       q: query(request, 'q'), type: query(request, 'type'), activity: query(request, 'activity'), tag: query(request, 'tag'),
@@ -197,12 +198,12 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
     return reply.code(200).send(result);
   });
 
-  app.get('/api/challenge-templates/:templateId', async (request, reply) => {
+  app.get(apiPath('/challenge-templates/:templateId'), async (request, reply) => {
     authenticatedMember(request);
     return reply.code(200).send(await guarded(() => getMemberTemplate(db, templateIdParam(request))));
   });
 
-  app.get('/api/challenge-templates/:templateId/versions/:version', async (request, reply) => {
+  app.get(apiPath('/challenge-templates/:templateId/versions/:version'), async (request, reply) => {
     authenticatedMember(request);
     return reply.code(200).send(await guarded(() => getMemberTemplate(db, templateIdParam(request), versionParam(request))));
   });

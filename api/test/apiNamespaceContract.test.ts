@@ -16,7 +16,9 @@
  * `docs/architecture/TIIZI-API-NAMESPACE-CORRECTION-001.md` and `AGENTS.md`.
  */
 
+import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { API_PREFIX, apiPath } from '../src/apiPrefix.js';
 import { buildApp } from '../src/app.js';
 import { activateChallenge, createChallenge, type ChallengeCreationResolvers } from '../src/challenges.js';
 import type { Db } from '../src/db.js';
@@ -482,5 +484,43 @@ describe('authentication boundary and infrastructure routes', () => {
     // asserted here is that the route resolves without credentials.
     const response = await app.inject({ method: 'GET', url: '/ready' });
     expect(response.statusCode).toBe(200);
+  });
+});
+
+describe('P5T-1 Template routes use the canonical API namespace', () => {
+  const TEMPLATE_ID = '00000000-0000-4000-8000-000000000001';
+  const routes: Array<['GET' | 'POST' | 'PUT', string]> = [
+    ['POST', '/operator/templates'],
+    ['PUT', `/operator/templates/${TEMPLATE_ID}/versions/1`],
+    ['POST', `/operator/templates/${TEMPLATE_ID}/versions/1/validate`],
+    ['POST', `/operator/templates/${TEMPLATE_ID}/versions/1/publish`],
+    ['POST', `/operator/templates/${TEMPLATE_ID}/revisions`],
+    ['POST', `/operator/templates/${TEMPLATE_ID}/retire`],
+    ['GET', '/operator/templates'],
+    ['GET', '/operator/templates/adoption'],
+    ['GET', `/operator/templates/${TEMPLATE_ID}`],
+    ['GET', `/operator/templates/${TEMPLATE_ID}/audit`],
+    ['GET', '/challenge-templates'],
+    ['GET', `/challenge-templates/${TEMPLATE_ID}`],
+    ['GET', `/challenge-templates/${TEMPLATE_ID}/versions/1`],
+  ];
+
+  it('registers every Template route through apiPath and never inlines the prefix', () => {
+    const source = readFileSync(new URL('../src/challengeTemplateRoutes.ts', import.meta.url), 'utf8');
+    expect(source).toContain("from './apiPrefix.js'");
+    expect([...source.matchAll(/app\.(get|post|put|patch|delete)\(/g)]).toHaveLength(routes.length);
+    expect([...source.matchAll(/app\.(get|post|put|patch|delete)\(\s*apiPath\(/g)]).toHaveLength(routes.length);
+    expect(source).not.toMatch(/app\.(get|post|put|patch|delete)\(\s*['"`]\/api/);
+  });
+
+  it('serves each route only under the canonical prefix, authenticated, and never under /v1', async () => {
+    const app = buildApp({ db, verifier: stubVerifier({ legit: 'contract-ghost' }) });
+    for (const [method, path] of routes) {
+      expect(apiPath(path).startsWith(`${API_PREFIX}/`)).toBe(true);
+      const unauthenticated = await app.inject({ method, url: apiPath(path), ...(method === 'GET' ? {} : { payload: {} }) });
+      expect(unauthenticated.statusCode, `${method} ${apiPath(path)}`).toBe(401);
+      const retired = await app.inject({ method, url: `/v1${path}`, ...(method === 'GET' ? {} : { payload: {} }) });
+      expect(retired.statusCode, `${method} /v1${path}`).toBe(404);
+    }
   });
 });
