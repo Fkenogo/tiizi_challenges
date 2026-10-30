@@ -1,6 +1,6 @@
 /** TIIZI-FER-P5T-2-S2 render harness: the Library over seeded, deterministic read data. */
 import { renderToStaticMarkup } from 'react-dom/server';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { OperatorTemplateLibrary } from '../src/v2/operator/templates/OperatorTemplateLibrary';
 import { EMPTY_FILTERS } from '../src/v2/operator/templates/templateLibraryModel';
 import type { OperatorTemplateDetail, OperatorTemplateSummary } from '../src/api/operatorTemplatesApi';
@@ -34,8 +34,18 @@ function render(seed: (client: QueryClient) => void): string {
   return renderToStaticMarkup(<QueryClientProvider client={client}><OperatorTemplateLibrary /></QueryClientProvider>);
 }
 
+function renderOffline(seed: (client: QueryClient) => void): string {
+  onlineManager.setOnline(false);
+  try { return render(seed); } finally { onlineManager.setOnline(true); }
+}
+
 export function renderCases(): Record<string, string> {
   return {
+    // A paused (offline) query is pending with no data: it must render a state, never crash or go blank.
+    offlineDetail: renderOffline((client) => {
+      client.setQueryData(['operator-templates', 'list', EMPTY_FILTERS], { pages: [{ templates: summaries, nextCursor: null }], pageParams: [null] });
+    }),
+    offlineList: renderOffline(() => undefined),
     populated: render((client) => {
       client.setQueryData(['operator-templates', 'list', EMPTY_FILTERS], { pages: [{ templates: summaries, nextCursor: 'next-1' }], pageParams: [null] });
       client.setQueryData(['operator-templates', 'detail', A], detail);

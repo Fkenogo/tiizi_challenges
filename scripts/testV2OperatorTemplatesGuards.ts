@@ -110,6 +110,10 @@ check('Library resets to page one for an invalid cursor and has no total-count c
 check('Library follows the cursor through useInfiniteQuery with the active filters in the query key',
   /useInfiniteQuery/.test(library) && /\['operator-templates', 'list', filters\]/.test(library) && /getNextPageParam: \(last\) => last\.nextCursor/.test(library));
 
+check('free-text filters (search and Activity) are debounced', /setActivityInput/.test(library) && /setTimeout\(\(\) => setFilters/.test(library) && !/setFilter\('activity'/.test(library));
+check('a paused/offline query cannot fall through to a crash or a blank page', /!detail\.data/.test(library) && /list\.isPending/.test(library) && !/detail\.data as /.test(library));
+check('inline retry re-runs the failed request kind (refetch vs next page)', /isFetchNextPageError/.test(library));
+
 console.log('D. vocabulary and presentation');
 const apiVocab = read('api/src/groupVocabulary.ts');
 const apiLabels = [...apiVocab.slice(apiVocab.indexOf('GROUP_FOCUS_AREAS'), apiVocab.indexOf('GROUP_GOALS')).matchAll(/label: '([^']+)'/g)].map((m) => m[1]);

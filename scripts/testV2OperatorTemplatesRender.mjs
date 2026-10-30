@@ -16,18 +16,25 @@ const check = (name, ok) => { if (ok) console.log(`  ok: ${name}`); else { failu
 const text = (html) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
 const populated = cases.populated; const t = text(populated);
-check('lists Templates with title, summary, type, lifecycle and versions', t.includes('Hundred Rep Race') && t.includes('A short race to a hundred reps.') && t.includes('Race') && t.includes('Published') && t.includes('v2') && t.includes('14 days'));
+check('lists Templates with title, summary, type, lifecycle and versions', t.includes('Hundred Rep Race') && t.includes('A short race to a hundred reps.') && />Race<\/td>/.test(populated) && t.includes('Published') && t.includes('v2') && t.includes('14 days'));
 check('a draft with no content is shown honestly as an untitled draft', t.includes('Untitled draft') && t.includes('No summary yet'));
 check('shows tags', t.includes('Strength'));
 check('detail shows every version with state and adoption counts', t.includes('v1') && t.includes('v2') && t.includes('v3') && /Adoptions/.test(t) && />3<\/td>/.test(populated) && /<td[^>]*>0<\/td>/.test(populated));
-check('an unpublished draft version shows no adoption number', /<td[^>]*>—<\/td><\/tr>/.test(populated));
-check('detail shows the selected version configuration and Activities', t.includes('Version 3 configuration') || t.includes('Version 3'));
+const versionsTable = populated.slice(populated.indexOf('aria-label="Versions"'));
+const versionRow = (n) => versionsTable.match(new RegExp(`<tr[^>]*>(?:(?!</tr>).)*?>v${n}</button>(?:(?!</tr>).)*?</tr>`))?.[0] ?? '';
+check('an unpublished draft version shows no adoption number', />—<\/td><\/tr>$/.test(versionRow(3)) && !/<td[^>]*>\d+<\/td><\/tr>$/.test(versionRow(3)));
+check('published versions show their adoption counts in the Versions table', />3<\/td><\/tr>$/.test(versionRow(1)) && />0<\/td><\/tr>$/.test(versionRow(2)));
+check('detail shows the selected version configuration and Activities', t.includes('Version 3 configuration'));
 check('more-available is offered with an explicit control, never a total', t.includes('Load more') && !/of\s+\d+\s+Templates|total/i.test(t));
 check('read-only: no authoring controls are rendered', !/\b(Publish|Revise|Retire|Save draft)\b|New Template|Create Template/i.test(t));
 check('no Firestore / deferred-capability copy remains', !/Firestore|not available in the current Product Truth/.test(t));
 
 const end = text(cases.endOfList);
 check('end of list is stated when the cursor is null', end.includes('end of list') && !end.includes('Load more'));
+
+const offlineDetail = text(cases.offlineDetail); const offlineList = text(cases.offlineList);
+check('an offline (paused) detail query renders a loading state instead of crashing', offlineDetail.includes('Loading Template') && offlineDetail.includes('Hundred Rep Race'));
+check('an offline (paused) list renders a loading state instead of a blank page', offlineList.includes('Loading Templates') && !/denied|No Templates/.test(offlineList));
 
 const empty = text(cases.emptyLibrary);
 check('empty Library is distinct from no-results and from errors', empty.includes('No Templates yet') && !empty.includes('No Templates match') && !/denied|unreachable/i.test(empty));

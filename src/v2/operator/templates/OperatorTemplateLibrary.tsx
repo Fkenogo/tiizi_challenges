@@ -63,14 +63,20 @@ function FailureNotice({ failure, onRetry, retryLabel = 'Retry' }: { failure: Li
 export function OperatorTemplateLibrary() {
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
+  const [activityInput, setActivityInput] = useState('');
   const [filters, setFilters] = useState<LibraryFilters>(EMPTY_FILTERS);
-  const [selected, setSelected] = useState<string>(() => (typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('selected') ?? ''));
+  const [selected, setSelected] = useState<string>('');
 
-  // Search is debounced; the other filters apply immediately.
+  // Free-text inputs (search, Activity) are debounced so a partial value never fires a request per keystroke;
+  // the other filters are discrete selections and apply immediately.
   useEffect(() => {
-    const timer = setTimeout(() => setFilters((prev) => (prev.q === searchInput.trim() ? prev : { ...prev, q: searchInput.trim() })), 300);
+    const timer = setTimeout(() => setFilters((prev) => {
+      const q = searchInput.trim();
+      const activity = activityInput.trim();
+      return prev.q === q && prev.activity === activity ? prev : { ...prev, q, activity };
+    }), 300);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, activityInput]);
 
   const listKey = useMemo(() => ['operator-templates', 'list', filters] as const, [filters]);
   const list = useInfiniteQuery({
@@ -100,7 +106,7 @@ export function OperatorTemplateLibrary() {
   const failure = list.isError ? classifyLibraryError(list.error) : null;
   const filtered = hasActiveFilters(filters);
   const reloadFromStart = () => { void queryClient.resetQueries({ queryKey: ['operator-templates', 'list'] }); };
-  const clearFilters = () => { setSearchInput(''); setFilters(EMPTY_FILTERS); };
+  const clearFilters = () => { setSearchInput(''); setActivityInput(''); setFilters(EMPTY_FILTERS); };
   const setFilter = <K extends keyof LibraryFilters>(key: K, value: LibraryFilters[K]) => setFilters((prev) => ({ ...prev, [key]: value }));
 
   const selectedId = rows.some((row) => row.templateId === selected) ? selected : rows[0]?.templateId ?? '';
@@ -134,8 +140,8 @@ export function OperatorTemplateLibrary() {
           {GROUP_FOCUS_AREA_LABELS.map((label) => <option key={label} value={label}>{label}</option>)}
         </select>
         <input
-          value={filters.activity}
-          onChange={(event) => setFilter('activity', event.target.value)}
+          value={activityInput}
+          onChange={(event) => setActivityInput(event.target.value)}
           placeholder="Activity Code or ID"
           aria-label="Filter by Activity Code or ID"
           className={`${inputClass} w-[190px]`}
@@ -143,8 +149,8 @@ export function OperatorTemplateLibrary() {
         {filtered && <button type="button" onClick={clearFilters} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">Clear filters</button>}
       </div>
 
-      {list.isLoading && <V2LoadingState label="Loading Templates…" />}
-      {failure && !list.isLoading && rows.length === 0 && (
+      {list.isPending && !failure && <V2LoadingState label="Loading Templates…" />}
+      {failure && rows.length === 0 && (
         <FailureNotice failure={failure} onRetry={failure.kind === 'cursor' ? reloadFromStart : () => void list.refetch()} retryLabel={failure.kind === 'cursor' ? 'Reload from the first page' : 'Retry'} />
       )}
       {list.isSuccess && rows.length === 0 && advice === 'done' && (
@@ -195,18 +201,18 @@ export function OperatorTemplateLibrary() {
               {failure && rows.length > 0 && (
                 <span className="flex items-center gap-2 text-red-700">
                   {failure.title}.
-                  <button type="button" onClick={failure.kind === 'cursor' ? reloadFromStart : () => void list.fetchNextPage()} className="font-bold underline">
+                  <button type="button" onClick={failure.kind === 'cursor' ? reloadFromStart : list.isFetchNextPageError ? () => void list.fetchNextPage() : () => void list.refetch()} className="font-bold underline">
                     {failure.kind === 'cursor' ? 'Reload from the first page' : 'Retry'}
                   </button>
                 </span>
               )}
             </div>
           </V2Card>
-          <TemplateDetailPanel templateId={selectedId} />
+          <TemplateDetailPanel key={selectedId} templateId={selectedId} />
         </div>
       )}
 
-      {rows.length === 0 && advice !== 'done' && !failure && !list.isLoading && (
+      {rows.length === 0 && advice !== 'done' && !failure && !list.isPending && (
         <div className="flex items-center gap-3 text-xs text-slate-500" role="status">
           <span>Searching further…</span>
           {advice === 'ask' && <button type="button" onClick={() => void list.fetchNextPage()} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-bold text-slate-700">Keep looking</button>}
@@ -235,9 +241,10 @@ function TemplateDetailPanel({ templateId }: { templateId: string }) {
   useEffect(() => setPickedVersion(null), [templateId]);
 
   if (!templateId) return null;
-  if (detail.isLoading) return <V2Card><V2LoadingState label="Loading Template…" /></V2Card>;
   if (detail.isError) return <FailureNotice failure={classifyLibraryError(detail.error)} onRetry={() => void detail.refetch()} />;
-  const data = detail.data as OperatorTemplateDetail;
+  // isPending (not isLoading): a paused/offline query is pending with no data and must not fall through.
+  if (!detail.data) return <V2Card><V2LoadingState label="Loading Template…" /></V2Card>;
+  const data: OperatorTemplateDetail = detail.data;
   const versions = [...data.versions].reverse();
   const shown: OperatorTemplateVersion = versions.find((version) => version.version === pickedVersion) ?? versions[0];
   const counts = new Map<number, number>((adoption.data ?? []).map((row: TemplateAdoptionRow) => [row.version, row.adoptions]));
