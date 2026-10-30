@@ -102,9 +102,6 @@ export function mapChallengeCreationError(error: unknown): never {
   if (message.includes('challenge-definition:')) {
     routeFail(422, 'invalid_challenge_definition', message);
   }
-  if (message.includes('[template_reference_invalid]')) {
-    routeFail(422, 'template_reference_invalid', 'Template reference is unknown or not a published version');
-  }
   if (message.includes('[template_retired]')) {
     routeFail(409, 'template_retired', 'Template is retired and is no longer offered for new Challenges');
   }

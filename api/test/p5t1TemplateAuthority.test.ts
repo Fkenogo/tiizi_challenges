@@ -936,6 +936,65 @@ describe('P5T-1 #18 adoption measurement', () => {
   });
 });
 
+/* ---------------- R2 follow-ups: trigger defence in depth, cursors ---------------- */
+
+describe('P5T-1 R2 hardening', () => {
+  it('rejects well-shaped but malformed cursors with 400, never 500', async () => {
+    const w = await world();
+    const bad = Buffer.from(JSON.stringify(['a', 'b', 'c']), 'utf8').toString('base64url');
+    const bad2 = Buffer.from(JSON.stringify(['x', 'y']), 'utf8').toString('base64url');
+    const bad1 = Buffer.from(JSON.stringify(['nope']), 'utf8').toString('base64url');
+    for (const [url, token, cursor] of [
+      ['/api/challenge-templates', w.tokens.member, bad],
+      ['/api/operator/templates', w.tokens.reader, bad2],
+      ['/api/operator/templates/adoption', w.tokens.reader, bad2],
+    ] as const) {
+      expect((await call(w, 'GET', `${url}?cursor=${cursor}`, token)).status, url).toBe(400);
+    }
+    const act = await race();
+    const { templateId } = await publish(w, w.tokens.author, racePayload(act));
+    expect((await call(w, 'GET', `/api/operator/templates/${templateId}/audit?cursor=${bad1}`, w.tokens.reader)).status).toBe(400);
+  });
+
+  it('keeps the Template row consistent at the database level', async () => {
+    const act = await race();
+    const w = await world();
+    const { templateId } = await publish(w, w.tokens.author, racePayload(act));
+    await call(w, 'POST', `/api/operator/templates/${templateId}/revisions`, w.tokens.author); // draft v2
+    await expect(w.db.query(`UPDATE challenge_templates SET lifecycle = 'draft' WHERE template_id = $1`, [templateId])).rejects.toThrow(/lifecycle only moves forward/);
+    await expect(w.db.query(`UPDATE challenge_templates SET latest_published_version = NULL WHERE template_id = $1`, [templateId])).rejects.toThrow(/moves forward/);
+    await expect(w.db.query(`UPDATE challenge_templates SET latest_published_version = 2 WHERE template_id = $1`, [templateId])).rejects.toThrow(/must name a published version/);
+    await expect(w.db.query(`INSERT INTO challenge_templates (created_by_member_id, lifecycle) VALUES ($1, 'retired')`, [w.ids.author])).rejects.toThrow();
+  });
+
+  it('asserts the editor on every draft edit and forbids content changes during publication', async () => {
+    const act = await race();
+    const w = await world();
+    const created = await call(w, 'POST', '/api/operator/templates', w.tokens.author, racePayload(act));
+    const { templateId } = created.json as { templateId: string };
+    // Revoke the editor, then edit without touching last_edited_*: still refused.
+    await w.db.query(`UPDATE platform_operator_template_authors SET revoked_at = now(), revoked_reference = 'P5T-1 revoke editor' WHERE member_id = $1`, [w.ids.author]);
+    await expect(w.db.query(`UPDATE challenge_template_versions SET title = 'sneaky' WHERE template_id = $1`, [templateId])).rejects.toThrow(/template_author_required/);
+    // Publication cannot smuggle content changes.
+    await expect(w.db.query(
+      `UPDATE challenge_template_versions SET state = 'published', published_by_member_id = $2, published_at = now(), title = 'changed'
+       WHERE template_id = $1`, [templateId, w.ids.author2],
+    )).rejects.toThrow(/content cannot change while publishing/);
+    // A different live author may still publish the revoked editor's draft (pure transition).
+    expect((await call(w, 'POST', `/api/operator/templates/${templateId}/versions/1/publish`, w.tokens.author2)).status).toBe(200);
+  });
+
+  it('bounds catalogue work per request by returning a cursor when the scan cap is reached', async () => {
+    const act = await race();
+    const w = await world();
+    for (let i = 0; i < 3; i += 1) await publish(w, w.tokens.author, racePayload(act, {}, { title: `Cap ${i}` }));
+    await setKnowledgeLifecycle(w.db, act.id, 'retired'); // every Template is now non-adoptable
+    const page = await call(w, 'GET', '/api/challenge-templates?limit=1', w.tokens.member);
+    expect(page.status).toBe(200);
+    expect(page.json.templates).toHaveLength(0);
+  });
+});
+
 /* ---------------- migration and legacy-shaped database ---------------- */
 
 function wrap(pg: PGlite): Db {

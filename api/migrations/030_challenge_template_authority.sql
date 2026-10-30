@@ -134,6 +134,10 @@ BEGIN
   END IF;
   IF TG_OP = 'INSERT' THEN
     PERFORM assert_active_template_author(NEW.created_by_member_id, 'template creator');
+    IF NEW.lifecycle <> 'draft' OR NEW.latest_published_version IS NOT NULL THEN
+      RAISE EXCEPTION 'template_immutable: Templates are created as drafts'
+        USING ERRCODE = '23514';
+    END IF;
     RETURN NEW;
   END IF;
   IF OLD.lifecycle = 'retired' THEN
@@ -145,10 +149,24 @@ BEGIN
     RAISE EXCEPTION 'template_immutable: Template identity and creator are immutable'
       USING ERRCODE = '23514';
   END IF;
-  IF NEW.latest_published_version IS DISTINCT FROM OLD.latest_published_version
-     AND (OLD.latest_published_version IS NOT NULL
-          AND NEW.latest_published_version <= OLD.latest_published_version) THEN
-    RAISE EXCEPTION 'template_immutable: published version pointer only moves forward'
+  IF NEW.latest_published_version IS DISTINCT FROM OLD.latest_published_version THEN
+    IF NEW.latest_published_version IS NULL
+       OR (OLD.latest_published_version IS NOT NULL
+           AND NEW.latest_published_version <= OLD.latest_published_version) THEN
+      RAISE EXCEPTION 'template_immutable: published version pointer only moves forward'
+        USING ERRCODE = '23514';
+    END IF;
+  END IF;
+  IF NEW.latest_published_version IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM challenge_template_versions
+    WHERE template_id = NEW.template_id AND version = NEW.latest_published_version AND state = 'published'
+  ) THEN
+    RAISE EXCEPTION 'template_immutable: the published pointer must name a published version'
+      USING ERRCODE = '23514';
+  END IF;
+  -- Lifecycle is forward-only: draft -> published -> retired.
+  IF OLD.lifecycle = 'published' AND NEW.lifecycle = 'draft' THEN
+    RAISE EXCEPTION 'template_immutable: lifecycle only moves forward'
       USING ERRCODE = '23514';
   END IF;
   IF NEW.lifecycle = 'retired' AND OLD.lifecycle <> 'retired' THEN
@@ -200,12 +218,23 @@ BEGIN
     RAISE EXCEPTION 'template_retired: a retired Template cannot change'
       USING ERRCODE = '23514';
   END IF;
-  IF NEW.last_edited_by_member_id IS DISTINCT FROM OLD.last_edited_by_member_id
-     OR NEW.last_edited_at IS DISTINCT FROM OLD.last_edited_at THEN
-    PERFORM assert_active_template_author(NEW.last_edited_by_member_id, 'version editor');
-  END IF;
   IF NEW.state = 'published' THEN
+    -- Publication is a pure state transition: no content may change with it,
+    -- and the publisher (not the earlier editor) must be an active author.
+    IF ROW(NEW.title, NEW.description, NEW.summary, NEW.challenge_type, NEW.duration_days,
+           NEW.duration_preset_days, NEW.cover_id, NEW.focus_tags, NEW.sort_order, NEW.composer_config,
+           NEW.last_edited_by_member_id, NEW.last_edited_at)
+       IS DISTINCT FROM
+       ROW(OLD.title, OLD.description, OLD.summary, OLD.challenge_type, OLD.duration_days,
+           OLD.duration_preset_days, OLD.cover_id, OLD.focus_tags, OLD.sort_order, OLD.composer_config,
+           OLD.last_edited_by_member_id, OLD.last_edited_at) THEN
+      RAISE EXCEPTION 'template_version_immutable: content cannot change while publishing'
+        USING ERRCODE = '23514';
+    END IF;
     PERFORM assert_active_template_author(NEW.published_by_member_id, 'version publisher');
+  ELSE
+    -- Any draft edit names an active author as editor.
+    PERFORM assert_active_template_author(NEW.last_edited_by_member_id, 'version editor');
   END IF;
   RETURN NEW;
 END;
@@ -240,6 +269,9 @@ CREATE INDEX IF NOT EXISTS challenges_source_template_idx
   ON challenges (source_template_id, source_template_version)
   WHERE source_template_id IS NOT NULL;
 
+-- Note: retirement is deliberately enforced by the establishing transaction
+-- (after the idempotency claim) rather than here, so a retry of an already
+-- established Challenge can still replay after its Template was retired.
 CREATE OR REPLACE FUNCTION challenges_template_provenance_guard() RETURNS TRIGGER AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN

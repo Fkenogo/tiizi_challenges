@@ -369,7 +369,7 @@ export async function createTemplateDraft(
 
 async function lockVersion(tx: Db, templateId: string, version: number): Promise<VersionRow> {
   const found = await tx.query<VersionRow>(
-    `SELECT ${VERSION_COLUMNS} FROM challenge_template_versions WHERE template_id = $1 AND version = $2 FOR UPDATE`,
+    `SELECT ${VERSION_COLUMNS} FROM challenge_template_versions WHERE template_id = $1 AND version = $2 FOR NO KEY UPDATE`,
     [templateId, version],
   );
   if (found.rows.length === 0) notFound();
@@ -542,11 +542,20 @@ function encodeCursor(parts: unknown[]): string {
   return Buffer.from(JSON.stringify(parts), 'utf8').toString('base64url');
 }
 
-function decodeCursor(raw: unknown, arity: number): unknown[] | null {
+type CursorPart = 'int' | 'uuid' | 'timestamp' | 'digits';
+const CURSOR_CHECKS: Record<CursorPart, (value: unknown) => boolean> = {
+  int: (value) => Number.isInteger(value) && Math.abs(value as number) < 2_000_000_000,
+  uuid: (value) => isTemplateUuid(value),
+  timestamp: (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[ T][0-9:.]+(Z|[+-]\d{2}(:?\d{2})?)?$/.test(value),
+  digits: (value) => typeof value === 'string' && /^\d{1,18}$/.test(value),
+};
+
+function decodeCursor(raw: unknown, shape: CursorPart[]): unknown[] | null {
   if (raw === undefined || raw === '') return null;
   try {
     const parts = JSON.parse(Buffer.from(String(raw), 'base64url').toString('utf8'));
-    if (Array.isArray(parts) && parts.length === arity) return parts;
+    if (Array.isArray(parts) && parts.length === shape.length
+      && parts.every((part, index) => CURSOR_CHECKS[shape[index]](part))) return parts;
   } catch { /* fallthrough */ }
   throw new TemplateError(400, 'invalid_cursor', 'cursor is not valid');
 }
@@ -656,9 +665,13 @@ export async function listMemberTemplates(
   limit: number,
   cursorRaw: unknown,
 ): Promise<{ templates: MemberTemplate[]; nextCursor: string | null }> {
-  const cursor = decodeCursor(cursorRaw, 3);
+  const cursor = decodeCursor(cursorRaw, ['int', 'timestamp', 'uuid']);
   const templates: MemberTemplate[] = [];
   let position = cursor;
+  // Bounded work per request: scan at most SCAN_CAP rows, then hand back a
+  // cursor so a catalogue full of stale Templates cannot pin the server.
+  const scanCap = Math.max(100, limit * 5);
+  let scanned = 0;
   for (;;) {
     const params: unknown[] = [];
     const clauses = await filterClauses(db, filters, params);
@@ -673,7 +686,7 @@ export async function listMemberTemplates(
               t.latest_published_at::text AS cursor_published_at
        FROM challenge_templates t
        JOIN challenge_template_versions v
-         ON v.template_id = t.template_id AND v.version = t.latest_published_version
+         ON v.template_id = t.template_id AND v.version = t.latest_published_version AND v.state = 'published'
        WHERE t.lifecycle = 'published'${clauses.length ? ` AND ${clauses.join(' AND ')}` : ''}
        ORDER BY v.sort_order ASC, t.latest_published_at DESC, t.template_id ASC
        LIMIT $${params.length}`,
@@ -681,10 +694,10 @@ export async function listMemberTemplates(
     );
     for (const row of batch.rows) {
       position = [Number(row.sort_order), row.cursor_published_at, String(row.template_id)];
+      scanned += 1;
       const shaped = await toMemberTemplate(db, row);
-      if (!shaped.adoptable) continue;
-      templates.push(shaped);
-      if (templates.length >= limit) {
+      if (shaped.adoptable) templates.push(shaped);
+      if (templates.length >= limit || scanned >= scanCap) {
         return { templates, nextCursor: encodeCursor(position) };
       }
     }
@@ -765,7 +778,7 @@ export async function listOperatorTemplates(
     params.push(filters.lifecycle);
     clauses.push(`t.lifecycle = $${params.length}`);
   }
-  const cursor = decodeCursor(cursorRaw, 2);
+  const cursor = decodeCursor(cursorRaw, ['timestamp', 'uuid']);
   if (cursor) {
     params.push(cursor[0], cursor[1]);
     const n = params.length;
@@ -845,7 +858,7 @@ export async function getOperatorTemplate(db: Db, templateId: string) {
 export async function listTemplateAudit(db: Db, templateId: string, limit: number, cursorRaw: unknown) {
   const exists = await db.query('SELECT 1 FROM challenge_templates WHERE template_id = $1', [templateId]);
   if (exists.rows.length === 0) notFound();
-  const cursor = decodeCursor(cursorRaw, 1);
+  const cursor = decodeCursor(cursorRaw, ['digits']);
   const result = await db.query<Record<string, unknown>>(
     `SELECT event_id::text AS event_id, version, action, actor_member_id, occurred_at, detail
      FROM challenge_template_audit_events
@@ -879,7 +892,7 @@ export async function listTemplateAdoption(
   limit: number,
   cursorRaw: unknown,
 ) {
-  const cursor = decodeCursor(cursorRaw, 2);
+  const cursor = decodeCursor(cursorRaw, ['uuid', 'int']);
   const params: unknown[] = [];
   const clauses = [`v.state = 'published'`];
   if (templateId) { params.push(templateId); clauses.push(`v.template_id = $${params.length}`); }
