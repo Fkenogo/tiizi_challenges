@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchOperatorTemplate,
@@ -9,6 +10,7 @@ import {
   type OperatorTemplateVersion,
   type TemplateAdoptionRow,
 } from '../../../api/operatorTemplatesApi';
+import { useTemplateCapabilities } from './useTemplateCapabilities';
 import { GROUP_FOCUS_AREA_LABELS } from '../../groups/groupFocusAreas';
 import { V2Card, V2EmptyState, V2LoadingState, V2Page, V2SectionHeader } from '../../components/V2Primitives';
 import {
@@ -31,13 +33,15 @@ import {
 } from './templateLibraryModel';
 
 /**
- * TIIZI-FER-P5T-2-S2 — read-only Operator Template Library (desktop-first).
+ * TIIZI-FER-P5T-2-S2 — Operator Template Library (desktop-first). Slice 3b adds
+ * author-only entry points (New Template, Edit draft) into the draft editor;
+ * the Library itself still only reads.
  *
  * Reads the P5T-1 endpoints only. Authorization is the backend's: a Template
  * author OR a Console reader may read. This page deliberately does NOT call
  * the Console overview, so a failed overview request can never block an
- * otherwise authorized Template author. There are no create/edit/publish/
- * revise/retire controls: those arrive in later slices.
+ * otherwise authorized Template author. There are no publish/revise/retire
+ * controls: those arrive in later slices.
  */
 
 const inputClass = 'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100';
@@ -63,6 +67,8 @@ function FailureNotice({ failure, onRetry, retryLabel = 'Retry' }: { failure: Li
 
 export function OperatorTemplateLibrary() {
   const queryClient = useQueryClient();
+  const capabilities = useTemplateCapabilities();
+  const canAuthor = capabilities.data?.canAuthor === true;
   const [searchInput, setSearchInput] = useState('');
   const [activityInput, setActivityInput] = useState('');
   const [filters, setFilters] = useState<LibraryFilters>(EMPTY_FILTERS);
@@ -117,7 +123,8 @@ export function OperatorTemplateLibrary() {
       <V2SectionHeader
         eyebrow="Tiizi Platform Operator"
         title="Templates"
-        description="Read-only Challenge Template Library: every Template and version, with how often each has been adopted."
+        description="Challenge Template Library: every Template and version, with how often each has been adopted."
+        action={canAuthor ? <Link to="/v2/operator/templates/new" className="inline-block rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white">New Template</Link> : undefined}
       />
 
       <div className="mb-3 flex flex-wrap gap-2" role="search" aria-label="Template search and filters">
@@ -209,7 +216,7 @@ export function OperatorTemplateLibrary() {
               )}
             </div>
           </V2Card>
-          <TemplateDetailPanel key={selectedId} templateId={selectedId} />
+          <TemplateDetailPanel key={selectedId} templateId={selectedId} canAuthor={canAuthor} />
         </div>
       )}
 
@@ -223,7 +230,7 @@ export function OperatorTemplateLibrary() {
   );
 }
 
-function TemplateDetailPanel({ templateId }: { templateId: string }) {
+function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; canAuthor: boolean }) {
   const detail = useQuery({
     queryKey: ['operator-templates', 'detail', templateId],
     queryFn: () => fetchOperatorTemplate(templateId),
@@ -262,6 +269,9 @@ function TemplateDetailPanel({ templateId }: { templateId: string }) {
           </div>
           <span className={lifecycleClass(data.lifecycle)}>{lifecycleLabel(data.lifecycle)}</span>
         </div>
+        {canAuthor && shown?.state === 'draft' && data.lifecycle !== 'retired' && (
+          <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/edit`} className="mt-3 inline-block rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white">Edit draft</Link>
+        )}
         {data.lifecycle === 'retired' && (
           <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
             Retired {formatWhen(data.retiredAt)} by {shortId(data.retiredByMemberId)}{data.retiredReason ? ` — ${data.retiredReason}` : ''}. Retired Templates are no longer offered to members; existing Challenges are unaffected.

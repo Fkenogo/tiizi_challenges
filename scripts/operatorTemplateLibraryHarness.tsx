@@ -15,7 +15,7 @@ const summaries: OperatorTemplateSummary[] = [
 ];
 
 const version = (n: number, state: 'draft' | 'published', title: string) => ({
-  version: n, state,
+  version: n, state, revisionToken: state === 'draft' ? 'a'.repeat(64) : null,
   content: { summary: 'A short race to a hundred reps.', focusTags: ['Strength'], sortOrder: 0, coverId: 'challenge-2', durationDays: 14, durationPresetDays: [7, 14],
     composer: { title, description: 'Race to one hundred.', challengeType: 'competitive', activities: [{ activity: 'FIT-TST-001', observedVersion: 3, metric: 'repetitions', unit: 'reps', targetValue: 100 },
       { activity: 'FIT-TST-002', observedVersion: 1, metric: 'duration', unit: 'minutes', targetValue: 20, durationMode: 'ACCUMULATED' },

@@ -37,11 +37,14 @@ const shell = read('src/v2/operator/OperatorShell.tsx');
 const routes = read('src/v2/routes.tsx');
 const strip = (text: string) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-console.log('A. read-only: no write capability');
-check('API client issues GETs only (no method/body/init)', !/method\s*:|body\s*:|\binit\b/.test(strip(client)));
-check('API client reaches only the P5T-1 Operator read endpoints', [...strip(client).matchAll(/\$\{API_PREFIX\}([^`?]*)/g)].every((match) => /^\/operator\/templates(\/|$)/.test(match[1])));
-check('API client exports no create/update/publish/revise/retire function', !/export (const|async function|function) (create|update|save|publish|revise|retire|delete)/i.test(client));
-check('Library offers no authoring controls', !/>\s*(Publish|Revise|Retire|New Template|Create Template|Edit Template|Save draft)\b/i.test(strip(library)));
+console.log('A. write boundary: draft create/save only (Slice 3b); no publish/revise/retire/validate');
+check('API client has exactly the create and conditional-save writes', [...strip(client).matchAll(/method:\s*'(POST|PUT|PATCH|DELETE)'/g)].map((m) => m[1]).sort().join() === 'POST,PUT');
+check('API client exports no validate/publish/revise/retire/delete function', !/export (const|async function|function) (validate|publish|revise|retire|delete|remove)/i.test(client));
+check('API client reaches only the P5T-1 Operator Template endpoints', [...strip(client).matchAll(/\$\{API_PREFIX\}([^`?]*)/g)].every((match) => /^\/operator\/templates(\/|$)/.test(match[1])));
+check('the save sends the quoted If-Match revision token', /'If-Match':\s*`"\$\{revisionToken\}"`/.test(client));
+check('no validate/publish/revise/retire endpoint is referenced anywhere in the client', !/\/(validate|publish|revisions|retire)\b/.test(strip(client)));
+check('Library offers no publish/revise/retire/validate controls', !/>\s*(Publish|Revise|Retire|Validate)\b/i.test(strip(library)));
+check('Library authoring entry points are shown only to Template authors', /canAuthor \? <Link to="\/v2\/operator\/templates\/new"/.test(library) && /canAuthor && shown\?\.state === 'draft'/.test(library));
 check('Library uses react-query reads only (no mutation hooks)', !/useMutation/.test(library));
 
 console.log('B. permissions: authors and Console readers; no dependency on the Console overview');
@@ -49,7 +52,7 @@ check('Library does not call the Console overview or import the Console API', !/
 check('Operator shell does not gate its Outlet on the overview request', !/overview\.(isError|isLoading|isPending|error|status)/.test(shell));
 check('Templates section renders the Library', /function OperatorTemplates\(\) \{ return <OperatorTemplateLibrary \/>; \}/.test(pages));
 check('the stale Firestore "deferred" placeholder is gone', !/challengeTemplates \/ wellnessTemplates/.test(pages));
-check('no new route or section was added for the Library', (routes.match(/path="templates"/g) ?? []).length === 1);
+check('the Library section route is unchanged; the editor adds exactly two routes', (routes.match(/path="templates"/g) ?? []).length === 1 && (routes.match(/path="templates\/(new|:templateId\/edit)"/g) ?? []).length === 2);
 run('403 is reported as access denied, not as an empty Library', () => {
   assert.equal(classifyLibraryError(new ApiError(403, 'template_author_required', 'x')).kind, 'denied');
   assert.equal(classifyLibraryError(new ApiError(403, 'operator_console_access_required', 'x')).kind, 'denied');
