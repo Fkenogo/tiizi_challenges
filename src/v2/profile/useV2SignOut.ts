@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { clearChallengeDraft } from '../challenges/challengeDraftSession';
 import { clearChallengeIntent } from '../challenges/challengeIntent';
+import { clearAccountRecovery } from '../operator/templates/templateDraftRecovery';
 
 export function useV2SignOut() {
   const { logout, user } = useAuth();
@@ -30,6 +31,7 @@ export function useV2SignOut() {
     if (uid) {
       clearChallengeDraft(uid);
       clearChallengeIntent(uid);
+      clearAccountRecovery(uid); // unsaved Template-draft work never outlives the session
     }
   }, [logout, queryClient, user?.uid]);
 }

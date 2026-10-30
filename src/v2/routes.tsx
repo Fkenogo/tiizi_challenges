@@ -30,6 +30,7 @@ import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizar
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
 import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
 import { V2SupportTiiziScreen } from './support/V2SupportTiiziScreen';
+import { TemplateDraftEditor } from './operator/templates/TemplateDraftEditor';
 
 /**
  * TIIZI S1 — V2 composition root (CORR-001: V2 owns its auth entry).
@@ -123,6 +124,8 @@ export function V2Routes() {
             <Route path="activities" element={<V2OperatorPage section="activities" />} />
             <Route path="challenges" element={<V2OperatorPage section="challenges" />} />
             <Route path="templates" element={<V2OperatorPage section="templates" />} />
+            <Route path="templates/new" element={<TemplateDraftEditor />} />
+            <Route path="templates/:templateId/edit" element={<TemplateDraftEditor />} />
             <Route path="review" element={<SocialCauseReviewPage />} />
             <Route path="support" element={<V2OperatorPage section="support" />} />
             <Route path="content" element={<V2OperatorPage section="content" />} />

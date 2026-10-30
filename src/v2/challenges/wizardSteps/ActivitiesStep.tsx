@@ -33,6 +33,7 @@ export function ActivitiesStep<TDraft extends ActivitiesStepState>({
   onHandoffConsumed,
   guideLinkState,
   onGuideTrip,
+  pick = false,
 }: {
   state: TDraft;
   preselectedIdentity: string;
@@ -43,8 +44,14 @@ export function ActivitiesStep<TDraft extends ActivitiesStepState>({
   onRemove: (activityId: string) => void;
   onHandoffConsumed: (updatedDraft?: TDraft | null) => void;
   /** Router state carried on Activity Guide links so the caller's draft survives the round trip. */
-  guideLinkState: unknown;
-  onGuideTrip: () => void;
+  guideLinkState?: unknown;
+  onGuideTrip?: () => void;
+  /**
+   * In-place picking (Template authoring): rows add the Activity directly and the
+   * Guide opens in a new tab, so the caller's unsaved work is never navigated away
+   * from. Omitted/false = the member Wizard's Guide-trip behaviour, unchanged.
+   */
+  pick?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -79,12 +86,19 @@ export function ActivitiesStep<TDraft extends ActivitiesStepState>({
 
   return (
     <div className="space-y-4">
+      {pick ? (
+        <p className="text-sm leading-6 text-slate-600">
+          Choose Activities from the governed catalogue. {multi
+            ? 'A Streak can include more than one daily activity.'
+            : 'Together and Race work best with a single activity.'}
+        </p>
+      ) : (
       <p className="text-sm leading-6 text-slate-600">
         Choose from the{' '}
         <Link
           to="/v2/guide"
           state={guideLinkState}
-          onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip(); }}
+          onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip?.(); }}
           className="font-bold text-primary underline underline-offset-2"
         >
           Activity Guide
@@ -94,6 +108,7 @@ export function ActivitiesStep<TDraft extends ActivitiesStepState>({
           ? 'A Streak can include more than one daily activity.'
           : 'Together and Race work best with a single activity.'}
       </p>
+      )}
 
       {state.activities.length > 0 ? (
         <section aria-label="Selected activities" className="overflow-hidden rounded-2xl border border-orange-200 bg-white">
@@ -148,12 +163,34 @@ export function ActivitiesStep<TDraft extends ActivitiesStepState>({
       {catalogue.isSuccess && catalogue.data.length > 0 && (
         <ul className="max-h-[min(48vh,420px)] divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200 bg-white">
           {catalogue.data.map((item) => {
+            if (pick) {
+              const chosen = selectedIds.has(item.id);
+              return (
+                <li key={item.id} className="flex min-h-[64px] items-center gap-3 px-3 py-2.5">
+                  <ActivityThumbnail imageUrl={item.imageUrl} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-slate-900">{item.name}</span>
+                    <span className="mt-0.5 block truncate text-xs text-slate-500">{item.kind === 'wellness' ? 'Wellness' : 'Fitness'} · {item.category}{item.subcategory ? ` · ${item.subcategory}` : ''}</span>
+                  </span>
+                  <a href={`/v2/guide/${encodeURIComponent(item.id)}`} target="_blank" rel="noopener noreferrer" aria-label={`View ${item.name} in the Activity Guide (opens in a new tab)`} className="shrink-0 text-xs font-bold text-slate-600 underline underline-offset-2 hover:text-primary">View guide</a>
+                  <button
+                    type="button"
+                    disabled={chosen || addingId !== null}
+                    onClick={() => void onAdd(item)}
+                    aria-label={chosen ? `${item.name} is already added` : `Add ${item.name}`}
+                    className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:bg-slate-200 disabled:text-slate-500"
+                  >
+                    {chosen ? 'Added' : 'Add'}
+                  </button>
+                </li>
+              );
+            }
             return (
               <li key={item.id}>
               <Link
                 to={`/v2/guide/${encodeURIComponent(item.id)}`}
                 state={guideLinkState}
-                onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip(); }}
+                onClick={(event) => { if (isPlainPrimaryClick(event)) onGuideTrip?.(); }}
                 aria-label={`Open ${item.name}, ${item.kind === 'wellness' ? 'Wellness' : 'Fitness'}, ${item.category}${item.subcategory ? `, ${item.subcategory}` : ''}`}
                 className="group flex min-h-[64px] items-center gap-3 px-3 py-2.5 outline-none transition-colors hover:bg-orange-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
               >

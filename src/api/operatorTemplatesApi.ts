@@ -2,8 +2,12 @@ import { API_PREFIX, apiFetch } from './apiClient';
 import { LIBRARY_PAGE_SIZE, templateListQuery, type LibraryFilters } from '../v2/operator/templates/templateLibraryModel';
 
 /**
- * TIIZI-FER-P5T-2-S2 — read-only client for the P5T-1 Operator Template
- * endpoints. Reads only: no Template write function exists in this module.
+ * Client for the P5T-1 Operator Template endpoints.
+ *
+ * Reads (Slice 2) plus exactly three Slice 3b additions: the caller-scoped
+ * capability read, draft creation and the conditional draft save. There is
+ * deliberately NO validate/publish/revise/retire function in this module:
+ * those arrive in later slices.
  */
 
 export interface OperatorTemplateSummary {
@@ -41,6 +45,8 @@ export interface TemplateActivityConfig {
 export interface OperatorTemplateVersion {
   version: number;
   state: 'draft' | 'published';
+  /** Optimistic-concurrency token; present for open drafts, null once published. */
+  revisionToken: string | null;
   content: {
     summary: string | null;
     focusTags: string[];
@@ -64,6 +70,39 @@ export interface OperatorTemplateVersion {
   lastEditedAt: string;
   publishedByMemberId: string | null;
   publishedAt: string | null;
+}
+
+export type TemplateVersionContent = OperatorTemplateVersion['content'];
+
+/** Caller-scoped authoring/reading capability (server-derived, never inferred). */
+export interface TemplateCapabilities { canAuthor: boolean; canRead: boolean }
+
+/** The 409 `template_draft_changed` details: the draft as it now exists on the server. */
+export interface TemplateDraftConflictDetails {
+  current: {
+    revisionToken: string;
+    content: TemplateVersionContent;
+    lastEditedByMemberId: string;
+    lastEditedAt: string;
+  };
+}
+
+/** Body of a Template draft create/save. Only fields a Template may carry. */
+export interface TemplateDraftBody {
+  summary: string | null;
+  focusTags: string[];
+  sortOrder: number;
+  coverId: string | null;
+  durationDays: number | null;
+  durationPresetDays: number[] | null;
+  composer: {
+    draftKind: 'pf04-v1';
+    mode: 'TEMPLATE_AUTHORING';
+    challengeType?: string;
+    title?: string;
+    description?: string;
+    activities: TemplateActivityConfig[];
+  };
 }
 
 export interface OperatorTemplateDetail {
@@ -108,3 +147,17 @@ export async function fetchTemplateAdoption(templateId: string): Promise<Templat
   }
   return rows;
 }
+
+export const fetchTemplateCapabilities = () =>
+  apiFetch<TemplateCapabilities>(`${API_PREFIX}/operator/templates/capabilities`);
+
+/** Create a draft. The response carries no revision token: read the detail next. */
+export const createTemplateDraft = (body: TemplateDraftBody) =>
+  apiFetch<{ templateId: string; version: number }>(`${API_PREFIX}/operator/templates`, { method: 'POST', body });
+
+/** Conditional draft save. `If-Match` is the quoted revision token and is required by the server. */
+export const saveTemplateDraft = (templateId: string, version: number, body: TemplateDraftBody, revisionToken: string) =>
+  apiFetch<{ templateId: string; version: number; revisionToken: string }>(
+    `${API_PREFIX}/operator/templates/${encodeURIComponent(templateId)}/versions/${version}`,
+    { method: 'PUT', body, headers: { 'If-Match': `"${revisionToken}"` } },
+  );

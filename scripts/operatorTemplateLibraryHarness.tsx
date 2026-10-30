@@ -1,5 +1,6 @@
 /** TIIZI-FER-P5T-2-S2 render harness: the Library over seeded, deterministic read data. */
 import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { OperatorTemplateLibrary } from '../src/v2/operator/templates/OperatorTemplateLibrary';
 import { EMPTY_FILTERS } from '../src/v2/operator/templates/templateLibraryModel';
@@ -15,7 +16,7 @@ const summaries: OperatorTemplateSummary[] = [
 ];
 
 const version = (n: number, state: 'draft' | 'published', title: string) => ({
-  version: n, state,
+  version: n, state, revisionToken: state === 'draft' ? 'a'.repeat(64) : null,
   content: { summary: 'A short race to a hundred reps.', focusTags: ['Strength'], sortOrder: 0, coverId: 'challenge-2', durationDays: 14, durationPresetDays: [7, 14],
     composer: { title, description: 'Race to one hundred.', challengeType: 'competitive', activities: [{ activity: 'FIT-TST-001', observedVersion: 3, metric: 'repetitions', unit: 'reps', targetValue: 100 },
       { activity: 'FIT-TST-002', observedVersion: 1, metric: 'duration', unit: 'minutes', targetValue: 20, durationMode: 'ACCUMULATED' },
@@ -34,7 +35,7 @@ const detail: OperatorTemplateDetail = {
 function render(seed: (client: QueryClient) => void): string {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   seed(client);
-  return renderToStaticMarkup(<QueryClientProvider client={client}><OperatorTemplateLibrary /></QueryClientProvider>);
+  return renderToStaticMarkup(<MemoryRouter><QueryClientProvider client={client}><OperatorTemplateLibrary /></QueryClientProvider></MemoryRouter>);
 }
 
 function renderOffline(seed: (client: QueryClient) => void): string {

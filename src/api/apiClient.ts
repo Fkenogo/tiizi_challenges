@@ -64,6 +64,8 @@ export interface ApiRequestInit {
    * (used by the MC-1 member bootstrap). Omitted = unchanged behaviour.
    */
   bearerToken?: string;
+  /** Extra request headers (e.g. `If-Match`). Never overrides Authorization. */
+  headers?: Record<string, string>;
 }
 
 /** Authenticated transport shared by apiFetch and apiFetchRaw. */
@@ -75,6 +77,7 @@ async function authorizedFetch(path: string, init?: ApiRequestInit): Promise<Res
     return await fetch(`${apiBaseUrl()}${path}`, {
       method: init?.method ?? 'GET',
       headers: {
+        ...init?.headers,
         Authorization: `Bearer ${token}`,
         ...(init?.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       },
@@ -91,12 +94,14 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
   if (!response.ok) {
     let code = 'request_error';
     let message = `Request failed (${response.status})`;
+    let details: unknown;
     try {
       const body = (await response.json()) as {
-        error?: { code?: string; message?: string };
+        error?: { code?: string; message?: string; details?: unknown };
       };
       if (body.error?.code) code = body.error.code;
       if (body.error?.message) message = body.error.message;
+      details = body.error?.details;
     } catch {
       // Keep the generic message when the body is not JSON.
     }
@@ -105,7 +110,7 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
       // bodies, which may contain member and beneficiary information.
       console.warn('[Tiizi API] request failed', { path, status: response.status, code });
     }
-    throw new ApiError(response.status, code, message);
+    throw new ApiError(response.status, code, message, details);
   }
   try {
     return (await response.json()) as T;

@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
@@ -8,6 +9,16 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  // TIIZI-FER-P5T-2-S3B: DOM tests (Vitest + jsdom + React Testing Library). Run by
+  // `npm run test:v2-dom`; they are never part of the production bundle.
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['src/testSetup.ts'],
+    alias: [{ find: /^.*\/lib\/firebaseAuth$/, replacement: fileURLToPath(new URL('./src/testStubs/authTransportStub.ts', import.meta.url)) }],
+    include: ['src/**/*.test.{ts,tsx}'],
+    restoreMocks: true,
+    unstubEnvs: true,
   },
   build: {
     rollupOptions: {
