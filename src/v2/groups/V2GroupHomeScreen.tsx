@@ -1,3 +1,4 @@
+import { groupProvenanceView } from './groupProvenanceView';
 import { memberLabel } from '../members/memberLabel';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
@@ -262,6 +263,8 @@ function GroupHomeBody({
   const memberships = useV2Groups();
   const viewerMemberId = memberships.data?.memberId ?? null;
   const roster = useV2GroupRoster(detail.id);
+  const rosterSteward = roster.data?.members.find((member) => member.relationship === 'steward') ?? null;
+  const provenance = groupProvenanceView(detail, rosterSteward, viewerMemberId);
   const leave = useLeaveV2Group(detail.id);
   const viewerIsGroupMember =
     detail.viewerRelationship === 'member' || detail.viewerRelationship === 'steward';
@@ -472,6 +475,23 @@ function GroupHomeBody({
               One Accountable Steward keeps this Group running
               {detail.viewerRelationship === 'steward' ? ' — that’s you.' : '.'}
             </p>
+            {provenance && (
+              <dl className="mt-2 space-y-2" data-group-provenance>
+                <div>
+                  <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Original creator</dt>
+                  <dd className="text-sm font-bold text-slate-900">
+                    {provenance.creatorLabel}
+                    {provenance.creatorIsSteward && <span className="ml-1.5 text-xs font-medium text-slate-500">(also the current Steward)</span>}
+                  </dd>
+                </div>
+                {provenance.showSteward && (
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Current Steward</dt>
+                    <dd className="text-sm font-bold text-slate-900">{provenance.stewardLabel}</dd>
+                  </div>
+                )}
+              </dl>
+            )}
           </div>
           {settings.length > 0 && (
             <div className="border-t border-slate-100 pt-3">

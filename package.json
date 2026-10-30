@@ -99,6 +99,7 @@
     "test:v2-preferences": "tsx scripts/testV2PreferencesGuards.ts",
     "test:v2-discovery": "tsx scripts/testV2DiscoveryGuards.ts",
     "test:v2-support": "tsx scripts/testV2SupportTiiziGuards.ts",
+    "test:v2-provenance": "tsx scripts/testV2GroupProvenanceGuards.ts",
     "test:v2-triage": "tsx scripts/testV2FounderPreviewTriageGuards.ts",
     "preview:s5b:seed": "tsx scripts/previewS5bSeed.ts",
     "preview:s5b:empty": "tsx scripts/previewS5bEmpty.ts"

@@ -124,6 +124,12 @@ export interface V2GroupDetail {
   rules: string[] | null;
   /** Included only when this viewer is an active Group member. */
   inviteCode?: string;
+  /**
+   * P4a: the member who established the Group (distinct from the current
+   * Steward). Present only for active members; `null` = not recorded; absent =
+   * not authorized to see provenance. Never inferred from the Steward.
+   */
+  originalCreator?: { memberId: string; displayName: string | null } | null;
 }
 
 export type V2AdmissionMode = 'open' | 'approval';
