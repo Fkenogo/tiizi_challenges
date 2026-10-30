@@ -1,4 +1,5 @@
 import { groupProvenanceView } from './groupProvenanceView';
+import { establishedLabel, memberCountLabel, standaloneStewardLabel } from './groupAboutView';
 import { memberLabel } from '../members/memberLabel';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
@@ -217,34 +218,6 @@ function GroupHomeBody({
 
   useEffect(() => {
     if (!aboutOpen) return;
-    const dialogSelector = '[role="dialog"][aria-label="About this Group"]';
-    window.requestAnimationFrame(() => {
-      const dialog = document.querySelector<HTMLElement>(dialogSelector);
-      const buttons = dialog?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
-      // The shared sheet's first button is its backdrop dismiss control;
-      // move initial focus to the visible Close button in the sheet header.
-      (buttons?.[1] ?? buttons?.[0])?.focus();
-    });
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeAbout();
-        return;
-      }
-      if (event.key === 'Tab') {
-        const dialog = document.querySelector<HTMLElement>(dialogSelector);
-        const buttons = dialog?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
-        const first = buttons?.[0];
-        const last = buttons?.[buttons.length - 1];
-        if (first && last && event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (first && last && !event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
-    };
     const onPopState = () => {
       if (aboutHistoryState()) {
         setAboutOpen(true);
@@ -253,10 +226,8 @@ function GroupHomeBody({
         window.requestAnimationFrame(() => aboutTriggerRef.current?.focus());
       }
     };
-    window.addEventListener('keydown', onKeyDown);
     window.addEventListener('popstate', onPopState);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('popstate', onPopState);
     };
   }, [aboutOpen, detail.id]);
@@ -265,6 +236,9 @@ function GroupHomeBody({
   const roster = useV2GroupRoster(detail.id);
   const rosterSteward = roster.data?.members.find((member) => member.memberId === detail.steward?.memberId) ?? null;
   const provenance = groupProvenanceView(detail, rosterSteward, viewerMemberId);
+  const stewardOnly = standaloneStewardLabel(detail, rosterSteward, provenance, viewerMemberId);
+  const established = establishedLabel(detail.createdAt);
+  const countLabel = memberCountLabel(detail.memberCount);
   const leave = useLeaveV2Group(detail.id);
   const viewerIsGroupMember =
     detail.viewerRelationship === 'member' || detail.viewerRelationship === 'steward';
@@ -434,8 +408,8 @@ function GroupHomeBody({
         {roster.isSuccess && roster.data.members.length > 4 && <div className="flex justify-center"><V2Button variant="secondary" onClick={() => setShowAllMembers((value) => !value)}>{showAllMembers ? 'Show fewer members' : `View all members (${roster.data.members.length})`}</V2Button></div>}
       </section>
 
-      <V2Sheet open={aboutOpen} onClose={closeAbout} title="About this Group">
-        <div className="max-h-[72dvh] space-y-3 overflow-y-auto pr-1">
+      <V2Sheet open={aboutOpen} onClose={closeAbout} title="About this Group" variant="focused">
+        <div className="space-y-3 pb-2" data-about-content>
           {detail.tagline && <p className="text-sm font-semibold text-slate-700">{detail.tagline}</p>}
           {detail.description && (
             <div>
@@ -443,9 +417,15 @@ function GroupHomeBody({
               <p className="mt-0.5 text-sm leading-6 text-slate-600">{detail.description}</p>
             </div>
           )}
+          {(established || countLabel) && (
+            <dl className="flex flex-wrap gap-x-6 gap-y-2" data-group-facts>
+              {established && <div><dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Established</dt><dd className="text-sm font-bold text-slate-900">{established}</dd></div>}
+              {countLabel && <div><dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Members</dt><dd className="text-sm font-bold text-slate-900">{countLabel}</dd></div>}
+            </dl>
+          )}
           {focusTags.length > 0 && (
             <div>
-              <h3 className="text-sm font-black text-slate-900">Focus Areas</h3>
+              <h3 className="text-sm font-black text-slate-900">Group Interests</h3>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {focusTags.map((tag) => (
                   <span key={tag} className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
@@ -484,6 +464,12 @@ function GroupHomeBody({
                     {provenance.creatorIsSteward && <span className="ml-1.5 text-xs font-medium text-slate-500">(also the current Steward)</span>}
                   </dd>
                 </div>
+                {stewardOnly && (
+                  <div>
+                    <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Current Steward</dt>
+                    <dd className="text-sm font-bold text-slate-900">{stewardOnly}</dd>
+                  </div>
+                )}
                 {provenance.showSteward && (
                   <div>
                     <dt className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Current Steward</dt>

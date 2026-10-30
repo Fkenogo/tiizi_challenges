@@ -101,7 +101,7 @@ check('wizard has five progressive steps', createScreen.includes("label: 'Review
 check('steps render one at a time with progress', createScreen.includes('V2StepProgress') && createScreen.includes('step === 0') && createScreen.includes('step === 4'));
 check('per-step gating blocks Continue on invalid fields', createScreen.includes('stepBlocked('));
 check('identity step: name + tagline + description', createCode.includes('Step 1 — Identity') && createCode.includes('Tagline (optional)'));
-check('look step: cover picker + location + focus', createCode.includes('Step 2 — Look') && createCode.includes('Group cover (optional)') && createCode.includes('Focus areas (optional)'));
+check('look step: cover picker + location + focus', createCode.includes('Step 2 — Look') && createCode.includes('Group cover (optional)') && createCode.includes('Group Interests (optional)'));
 check('setup step keeps the governed choices', createCode.includes('Step 3 — How the group works'));
 check('Goal outcomes and selectable Community Norms remain distinct from Activities', createCode.includes('Group goals (optional)') && createCode.includes('What would this Group like to work towards?') && createCode.includes('communityNormIds') && createCode.includes('Our culture') && createCode.includes('Add your own (optional)') && !createCode.includes('Your Group operates under Tiizi Platform governance'));
 check('review step summarizes before submitting', createCode.includes('Step 5 — Review') && createCode.includes('Establish Group'));
@@ -158,11 +158,10 @@ check('focus options reuse governed Activity category labels without synonyms',
   && GROUP_FOCUS_AREA_LABELS.includes('Nutrition & Hydration')
   && focusAreaMatchesSearch('Mind & Emotional Wellbeing', 'emotional'));
 check('uncontrolled free-text is limited in creation UI to one bounded Other value',
-  createCode.includes('Other focus area (optional)') && createCode.includes('hasCustomTag'));
-check('settings preserves legacy focus metadata and validates changed values against the bounded Focus Area contract',
-  settingsScreen.includes('unchangedLegacyFocus') && settingsScreen.includes('customFocusCount <= 1')
-  && settingsScreen.includes('canonical Fitness and Wellness category labels')
-  && !settingsScreen.includes('up to 8 tags'));
+  createCode.includes('Other Group Interest (optional)') && createCode.includes('hasCustomTag'));
+check('settings uses the structured Group Interests selector (P4) with the bounded contract and preserves stored values',
+  settingsScreen.includes('GroupInterestsPicker') && settingsScreen.includes('interestIssue(focusTags, group.focusTags')
+  && !settingsScreen.includes('split(\',\')') && !settingsScreen.includes('up to 8 tags'));
 
 // ─── B. Review submits once to the canonical ID ───────────────────────────
 console.log('creation → home navigation');
@@ -190,7 +189,7 @@ check('configuration lives in the secondary About surface',
 check('no dominant Community Setup section', !homeCode.includes('Community setup'));
 check('About is closed on entry and revealed in an accessible V2 sheet',
   homeCode.includes('About this Group') && homeCode.includes('aria-expanded={aboutOpen}')
-  && homeCode.includes('<V2Sheet open={aboutOpen}') && homeCode.includes('event.key === \'Escape\'')
+  && homeCode.includes('<V2Sheet open={aboutOpen}') && homeCode.includes('variant="focused"')
   && !homeCode.includes('{aboutOpen && <section id="group-about-details"'));
 check('About shows purpose, norms, stewardship and governed setup without platform-governance configuration copy',
   homeCode.includes('Community purpose') && homeCode.includes('Community norms') && !homeCode.includes('This Group operates under Tiizi Platform governance'));
