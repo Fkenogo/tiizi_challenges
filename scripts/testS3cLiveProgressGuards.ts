@@ -347,9 +347,9 @@ check('approved Cause detail exposes participant Cause facts but never internal 
   screenSrc.includes("approvalStatus === 'approved'") && screenSrc.includes('cause.description')
     && screenSrc.includes('cause.beneficiary') && !screenSrc.includes('paymentDestinationReference')
     && !screenSrc.includes('approvalAuthority'));
-check('long Challenge descriptions are bounded in hero and full text uses an accessible detail sheet',
-  heroSrc.includes('Read more') && heroSrc.includes('WebkitLineClamp: 3')
-    && heroSrc.includes('V2Sheet') && heroSrc.includes('aria-expanded'));
+check('long Challenge descriptions are bounded in hero and expand/collapse inline with an accessible toggle (P5)',
+  heroSrc.includes('Read more') && heroSrc.includes('Read less') && heroSrc.includes('WebkitLineClamp: 3')
+    && !heroSrc.includes('V2Sheet') && heroSrc.includes('aria-expanded') && heroSrc.includes('aria-controls'));
 check('finalized competitive unmounts the S3c live surface (no final-as-live)',
   competitiveSrc.includes('if (detail.finalized) return null'));
 check('leaderboard hook gates on the S3c enablement (finalized disables fetch)',

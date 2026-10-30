@@ -155,7 +155,7 @@ check('no hardcoded Group list in the wizard', !/Nairobi Morning Movers|INITIAL_
 const membershipsApi = read('src/api/membershipsApi.ts');
 check('memberships come from GET /api/memberships/me',
   membershipsApi.includes('API_PREFIX') && membershipsApi.includes('${API_PREFIX}/memberships/me'));
-check('host results stay hidden until the user searches', wizardSource.includes("search.trim() !== '' && <ul aria-label=\"Matching host Groups\""));
+check('host results show on search focus and refine while typing (P5)', wizardSource.includes("(listOpen || search.trim() !== '') && <ul aria-label=\"Matching host Groups\"") && wizardSource.includes('onFocus={() => setListOpen(true)}'));
 check('host results keep the governed challenge-creation eligibility filter', wizardSource.includes("membership.group.allowMemberChallenges !== false") && wizardSource.includes("['owner', 'admin', 'steward']"));
 check('host selector uses the shared Group cover catalogue renderer', wizardSource.includes('coverFor(membership.group.coverId, membership.groupId)') && wizardSource.includes('coverGradientFor'));
 check('host selection retains canonical membership groupId and selected state', wizardSource.includes('onSelectGroup(membership)') && wizardSource.includes('aria-pressed={state.groupId === membership.groupId}') && wizardSource.includes('Selected Group:'));

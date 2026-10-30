@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
-import { V2Sheet } from '../components/V2Primitives';
 import { challengeTypeLabel, formatDayRange, timezoneLabel } from './challengeCreationDraft';
 import { challengeCoverGradient } from './challengeCovers';
 
@@ -52,7 +51,7 @@ export function V2ChallengeHero({
   showLeave: boolean;
   onLeave: () => void;
 }) {
-  const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [descriptionTruncated, setDescriptionTruncated] = useState(false);
   const descriptionRef = useRef<HTMLParagraphElement>(null);
   const tone = HERO_TONE[detail.challengeType] ?? 'from-slate-800 via-slate-700 to-slate-600';
@@ -64,6 +63,8 @@ export function V2ChallengeHero({
       return;
     }
     const measure = () => {
+      // While expanded the paragraph is unclamped; keep the last collapsed measurement so "Read less" stays.
+      if (descriptionExpanded) return;
       const clampedHeight = paragraph.clientHeight;
       const lineClamp = paragraph.style.getPropertyValue('-webkit-line-clamp');
       paragraph.style.setProperty('-webkit-line-clamp', 'unset');
@@ -80,7 +81,7 @@ export function V2ChallengeHero({
       observer?.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [detail.description]);
+  }, [detail.description, descriptionExpanded]);
 
   return (
     <section aria-label="Challenge overview" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -109,31 +110,29 @@ export function V2ChallengeHero({
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="flex flex-col gap-4 p-5 sm:px-6">
         <div className="min-w-0">
           {detail.description ? (
             <>
               <p
+                id="challenge-description"
                 ref={descriptionRef}
-                className="overflow-hidden text-sm italic leading-6 text-slate-700"
-                style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}
+                className={`text-sm italic leading-6 text-slate-700 ${descriptionExpanded ? 'whitespace-pre-wrap break-words' : 'overflow-hidden'}`}
+                style={descriptionExpanded ? undefined : { display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}
               >
                 “{detail.description}”
               </p>
-              {descriptionTruncated && (
+              {(descriptionTruncated || descriptionExpanded) && (
                 <button
                   type="button"
-                  aria-haspopup="dialog"
-                  aria-expanded={descriptionOpen}
-                  onClick={() => setDescriptionOpen(true)}
+                  aria-expanded={descriptionExpanded}
+                  aria-controls="challenge-description"
+                  onClick={() => setDescriptionExpanded((open) => !open)}
                   className="mt-1 text-sm font-bold text-primary underline underline-offset-2"
                 >
-                  Read more
+                  {descriptionExpanded ? 'Read less' : 'Read more'}
                 </button>
               )}
-              <V2Sheet open={descriptionOpen} onClose={() => setDescriptionOpen(false)} title="Challenge description">
-                <p className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-slate-700">{detail.description}</p>
-              </V2Sheet>
             </>
           ) : (
             <p className="text-sm leading-6 text-slate-500">
@@ -142,7 +141,7 @@ export function V2ChallengeHero({
           )}
         </div>
         {(loggable || showLeave) && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             {loggable && (
               <button
                 type="button"
