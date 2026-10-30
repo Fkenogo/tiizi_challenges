@@ -22,8 +22,10 @@ const server = await createServer({
   esbuild: { jsx: 'automatic' },
 });
 let snapshots;
+let narrowFailures;
 try {
   snapshots = (await server.ssrLoadModule('/scripts/wizardStepSnapshots.tsx')).buildSnapshots();
+  narrowFailures = (await server.ssrLoadModule('/scripts/wizardStepNarrowChecks.tsx')).narrowChecks();
 } finally {
   await server.close();
 }
@@ -43,4 +45,9 @@ if (diffs.length) {
   console.error(`wizard snapshots: ${diffs.length} entries differ from the pre-extraction golden:\n  ${diffs.slice(0, 20).join('\n  ')}`);
   process.exit(1);
 }
+if (narrowFailures.length) {
+  console.error(`wizard step interfaces: ${narrowFailures.length} failures:\n  ${narrowFailures.join('\n  ')}`);
+  process.exit(1);
+}
+console.log('wizard step interfaces: narrow-state steps render identically to the member Wizard');
 console.log(`wizard snapshots: all ${Object.keys(snapshots).length} entries identical to the pre-extraction golden`);
