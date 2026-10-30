@@ -30,6 +30,7 @@ import { registerChallengeCreationSeamRoutes } from './challengeCreationSeamRout
 import { createPostgresGroupReadStore } from './postgresGroupReadStore.js';
 import { registerSocialCauseApprovalRoutes, type SocialCauseApprovalDeps } from './socialCauseApprovalRoutes.js';
 import { registerOperatorConsoleRoutes } from './operatorConsoleRoutes.js';
+import { registerChallengeTemplateRoutes } from './challengeTemplateRoutes.js';
 import { registerGroupFeedRoutes } from './groupFeedReads.js';
 import { API_PREFIX } from './apiPrefix.js';
 import { isMemberBootstrapRequest, registerMemberBootstrapRoutes } from './memberBootstrap.js';
@@ -154,6 +155,8 @@ export function buildApp(deps: AppDeps) {
   registerChallengeCreationRoutes(app, deps.db, deps.challengeCreation ?? {});
   registerSocialCauseApprovalRoutes(app, deps.db, deps.socialCauseApproval ?? {});
   registerOperatorConsoleRoutes(app, deps.db);
+  // P5T-1 governed Challenge Template authority (Operator writes + member published reads).
+  registerChallengeTemplateRoutes(app, deps.db);
   // S2a challenge-creation API seam (read-only, transport only): Composer
   // activity options + Composer draft preview through the single PF-03
   // validator. Additive; persists nothing; no new domain authority.
