@@ -144,8 +144,8 @@ export async function createGovernedGroup(db: Db, actor: GroupMutationActor, ter
       for (let attempt = 0; attempt < 4 && result.rows.length === 0; attempt += 1) {
         const code = generateGroupInviteCode();
         result = await tx.query<{ group_id: string }>(
-          `INSERT INTO groups (name, description, is_private, status, require_admin_approval, allow_member_challenges, steward_member_id, invite_code, cover_id, tagline, location, focus_tags, rules, goal_ids, custom_goal, community_norm_ids, custom_community_norm, created_at, updated_at)
-           VALUES ($1,$2,$3,'active',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17)
+          `INSERT INTO groups (name, description, is_private, status, require_admin_approval, allow_member_challenges, steward_member_id, invite_code, cover_id, tagline, location, focus_tags, rules, goal_ids, custom_goal, community_norm_ids, custom_community_norm, created_at, updated_at, original_creator_member_id)
+           VALUES ($1,$2,$3,'active',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$17,$6)
            ON CONFLICT ((upper(btrim(invite_code)))) WHERE invite_code IS NOT NULL DO NOTHING
            RETURNING group_id`,
           [name, typeof terms.description==='string'?terms.description:'', terms.isPrivate===true, terms.requireAdminApproval===true, terms.allowMemberChallenges!==false, actor.memberId, code, typeof terms.coverId==='string'?terms.coverId:null, typeof terms.tagline==='string'?terms.tagline.trim():'', typeof terms.location==='string'?terms.location.trim():'', Array.isArray(terms.focusTags)?terms.focusTags:[], Array.isArray(terms.rules)?terms.rules:[], goalIds, typeof terms.customGoal==='string'&&terms.customGoal.trim()?terms.customGoal.trim():null, normIds, typeof terms.customCommunityNorm==='string'&&terms.customCommunityNorm.trim()?terms.customCommunityNorm.trim():null, now]);

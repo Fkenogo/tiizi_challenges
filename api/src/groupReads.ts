@@ -187,6 +187,13 @@ export interface ApiGroupDetail {
   rules: string[] | null;
   /** Stored V2 invite code; present only to an active Group member. */
   inviteCode?: string;
+  /**
+   * P4a: the member who ESTABLISHED the Group — distinct from the current
+   * Steward. Present only on the full (active member) projection; absent for
+   * outsiders, pending applicants and former members. `null` = not recorded
+   * (never inferred). The name is the governed display name (null → neutral).
+   */
+  originalCreator?: { memberId: string; displayName: string | null } | null;
 }
 
 /** Server-side viewer identity (never client-supplied; null when unlinkable). */
@@ -225,7 +232,8 @@ export async function getGroupDetail(
   const identityRow = await db.query<{
     legacy_firestore_id: string | null;
     invite_code: string | null;
-  }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id, invite_code FROM groups WHERE group_id = $1`, [groupId]);
+    original_creator_member_id: string | null;
+  }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id, invite_code, original_creator_member_id FROM groups WHERE group_id = $1`, [groupId]);
   const legacyId = identityRow.rows[0]?.legacy_firestore_id ?? null;
   if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
   // Live authority decides existence and liveness; outages fail closed.
@@ -307,6 +315,14 @@ export async function getGroupDetail(
   // Full member projection. Absent flags fall back to the governed defaults
   // the creation authority applies (open admission, permitted creation).
   const stewardMemberId = ownerId ? await resolveStewardMemberId(db, ownerId) : null;
+  // P4a: provenance is read only here, after the viewer is proven an ACTIVE
+  // member (the subset above returns earlier). Never derived from the Steward.
+  const creatorId = identityRow.rows[0]?.original_creator_member_id ?? null;
+  let originalCreator: { memberId: string; displayName: string | null } | null = null;
+  if (creatorId) {
+    const names = await readDisplayNames(db, [String(creatorId)]);
+    originalCreator = { memberId: String(creatorId), displayName: names.get(String(creatorId)) ?? null };
+  }
   return {
     id: groupId,
     name,
@@ -331,6 +347,7 @@ export async function getGroupDetail(
     customCommunityNorm,
     rules,
     inviteCode: identityRow.rows[0]?.invite_code ?? undefined,
+    originalCreator,
   };
 }
 
@@ -414,6 +431,19 @@ const groupDetailResponseSchema = {
     customCommunityNorm: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     rules: { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] },
     inviteCode: { type: 'string' },
+    originalCreator: {
+      anyOf: [
+        {
+          type: 'object',
+          required: ['memberId', 'displayName'],
+          properties: {
+            memberId: { type: 'string', format: 'uuid' },
+            displayName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          },
+        },
+        { type: 'null' },
+      ],
+    },
   },
 } as const;
 
