@@ -20,7 +20,7 @@ const version = (n: number, state: 'draft' | 'published', title: string) => ({
     composer: { title, description: 'Race to one hundred.', challengeType: 'competitive', activities: [{ activity: 'FIT-TST-001', observedVersion: 3, metric: 'repetitions', unit: 'reps', targetValue: 100 },
       { activity: 'FIT-TST-002', observedVersion: 1, metric: 'duration', unit: 'minutes', targetValue: 20, durationMode: 'ACCUMULATED' },
       { activity: 'WEL-TST-003', observedVersion: 2, metric: 'completion', unit: 'completion', targetValue: 1, completionOccurrence: 'one guided breathing session' },
-      { activity: 'FIT-TST-004', observedVersion: 1, metric: 'weight', unit: 'kilograms', targetValue: 20, loadBasis: 'TOTAL_LOAD', componentIds: ['LEFT', 'RIGHT'] }] } },
+      { activity: 'FIT-TST-004', observedVersion: 1, metric: 'weight', unit: 'kilograms', targetValue: 20, loadBasis: 'TOTAL_LOADED_IMPLEMENT', componentIds: ['LEFT', 'RIGHT'], activityVariant: 'incline' }] } },
   authoredByMemberId: M, authoredAt: '2026-10-30T08:00:00Z', lastEditedByMemberId: M, lastEditedAt: '2026-10-30T08:00:00Z',
   publishedByMemberId: state === 'published' ? M : null, publishedAt: state === 'published' ? '2026-10-30T08:30:00Z' : null,
 });

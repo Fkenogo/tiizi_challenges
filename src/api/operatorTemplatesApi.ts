@@ -26,6 +26,8 @@ export interface OperatorTemplatePage { templates: OperatorTemplateSummary[]; ne
 export interface TemplateActivityConfig {
   activity: string;
   observedVersion?: number;
+  activityVariant?: string | null;
+  position?: number;
   kind?: string;
   metric?: string;
   unit?: string;

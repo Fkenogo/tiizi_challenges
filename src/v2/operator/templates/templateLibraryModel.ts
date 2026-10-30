@@ -153,12 +153,22 @@ export function formatWhen(value: unknown): string {
 
 const DURATION_MODE_LABELS: Record<string, string> = { CONTINUOUS: 'All at once', ACCUMULATED: 'Added up across the day' };
 
+/** Mirrors the member Wizard's load-basis wording (challengeCreationDraft.loadBasisLabel). */
+const LOAD_BASIS_LABELS: Record<string, string> = {
+  TOTAL_LOADED_IMPLEMENT: 'Total loaded weight',
+  PER_IMPLEMENT: 'Per implement',
+  SINGLE_IMPLEMENT: 'Single implement',
+  PER_SIDE: 'Per side',
+  MACHINE_DISPLAYED_LOAD: 'As shown on the machine',
+};
+
 function humanize(code: string): string {
   const text = code.replace(/_/g, ' ').toLowerCase();
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export interface ActivitySettingsInput {
+  activityVariant?: string | null;
   durationMode?: string;
   completionOccurrence?: string;
   loadBasis?: string;
@@ -171,9 +181,10 @@ export interface ActivitySettingsInput {
  */
 export function activitySettings(activity: ActivitySettingsInput): string[] {
   const lines: string[] = [];
+  if (activity.activityVariant) lines.push(`Variant: ${activity.activityVariant}`);
   if (activity.durationMode) lines.push(`Time counts: ${DURATION_MODE_LABELS[activity.durationMode] ?? humanize(activity.durationMode)}`);
   if (activity.completionOccurrence) lines.push(`Counts when: ${activity.completionOccurrence}`);
-  if (activity.loadBasis) lines.push(`Weight reported as: ${humanize(activity.loadBasis)}`);
+  if (activity.loadBasis) lines.push(`Weight reported as: ${LOAD_BASIS_LABELS[activity.loadBasis] ?? humanize(activity.loadBasis)}`);
   if (activity.componentIds && activity.componentIds.length > 0) lines.push(`Required parts: ${activity.componentIds.join(', ')}`);
   return lines;
 }

@@ -16,6 +16,7 @@ const check = (name, ok) => { if (ok) console.log(`  ok: ${name}`); else { failu
 const text = (html) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
 const populated = cases.populated; const t = text(populated);
+const footerText = (html) => text(html.match(/<div[^>]*aria-live="polite"[^>]*>[\s\S]*?<\/div>/)?.[0] ?? '');
 check('lists Templates with title, summary, type, lifecycle and versions', t.includes('Hundred Rep Race') && t.includes('A short race to a hundred reps.') && />Race<\/td>/.test(populated) && t.includes('Published') && t.includes('v2') && t.includes('14 days'));
 check('a draft with no content is shown honestly as an untitled draft', t.includes('Untitled draft') && t.includes('No summary yet'));
 check('shows tags', t.includes('Strength'));
@@ -25,8 +26,8 @@ const versionRow = (n) => versionsTable.match(new RegExp(`<tr[^>]*>(?:(?!</tr>).
 check('an unpublished draft version shows no adoption number', />—<\/td><\/tr>$/.test(versionRow(3)) && !/<td[^>]*>\d+<\/td><\/tr>$/.test(versionRow(3)));
 check('published versions show their adoption counts in the Versions table', />3<\/td><\/tr>$/.test(versionRow(1)) && />0<\/td><\/tr>$/.test(versionRow(2)));
 check('detail shows the selected version configuration and Activities', t.includes('Version 3 configuration'));
-check('detail shows the settings that determine counting (time mode, completion, load basis, parts)', t.includes('Time counts: Added up across the day') && t.includes('Counts when: one guided breathing session') && t.includes('Weight reported as: Total load') && t.includes('Required parts: LEFT, RIGHT'));
-check('more-available is offered with an explicit control, never a total', t.includes('Load more') && !/of\s+\d+\s+Templates|\d+\s+total|total (count|templates?)/i.test(t));
+check('detail shows the settings that determine counting (time mode, completion, load basis, parts)', t.includes('Time counts: Added up across the day') && t.includes('Counts when: one guided breathing session') && t.includes('Weight reported as: Total loaded weight') && t.includes('Variant: incline') && t.includes('Required parts: LEFT, RIGHT'));
+check('more-available is offered with an explicit control, never a total', t.includes('Load more') && !/\btotal\b|\bof\s+\d+\b/i.test(footerText(populated)));
 check('read-only: no authoring controls are rendered', !/\b(Publish|Revise|Retire|Save draft)\b|New Template|Create Template/i.test(t));
 check('no Firestore / deferred-capability copy remains', !/Firestore|not available in the current Product Truth/.test(t));
 

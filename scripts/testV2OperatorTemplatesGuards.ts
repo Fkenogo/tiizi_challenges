@@ -107,7 +107,7 @@ run('an expired or invalid cursor is a recoverable, distinct state', () => {
   assert.match(failure.message, /first page/);
 });
 check('Library resets to page one for an invalid cursor and has no total-count claim',
-  /resetQueries/.test(library) && !/\btotal\b/i.test(strip(library).replace(/Template Library|totals?\s*:/gi, '')));
+  /resetQueries/.test(library) && !/\btotal\b/i.test(strip(library).replace(/Template Library/gi, '')));
 check('Library follows the cursor through useInfiniteQuery with the active filters in the query key',
   /useInfiniteQuery/.test(library) && /\['operator-templates', 'list', filters\]/.test(library) && /getNextPageParam: \(last\) => last\.nextCursor/.test(library));
 
@@ -121,6 +121,11 @@ run('Activity counting settings are surfaced so versions differing only there ne
   assert.deepEqual(activitySettings({ durationMode: 'ACCUMULATED' }), ['Time counts: Added up across the day']);
   assert.deepEqual(activitySettings({ completionOccurrence: 'one session' }), ['Counts when: one session']);
   assert.deepEqual(activitySettings({ loadBasis: 'PER_SIDE', componentIds: ['A', 'B'] }), ['Weight reported as: Per side', 'Required parts: A, B']);
+  assert.deepEqual(activitySettings({ activityVariant: 'incline' }), ['Variant: incline']);
+  assert.notDeepEqual(activitySettings({ activityVariant: null }), activitySettings({ activityVariant: 'incline' }));
+  // Load-basis wording equals the member Wizard's (real codes), not an invented humanization.
+  assert.deepEqual(activitySettings({ loadBasis: 'TOTAL_LOADED_IMPLEMENT' }), ['Weight reported as: Total loaded weight']);
+  assert.deepEqual(activitySettings({ loadBasis: 'MACHINE_DISPLAYED_LOAD' }), ['Weight reported as: As shown on the machine']);
   assert.notDeepEqual(activitySettings({ durationMode: 'CONTINUOUS' }), activitySettings({ durationMode: 'ACCUMULATED' }));
 });
 check('Library renders the Activity settings for every configured Activity', /activitySettings\(activity\)\.map/.test(library));
