@@ -66,6 +66,7 @@
     "test:s3d-results": "tsx scripts/testS3dResultsGuards.ts",
     "test:v2-challenge-corrections": "tsx scripts/testV2ChallengeCorrectionsGuards.ts",
     "test:v2-wizard-snapshots": "node scripts/testV2WizardStepSnapshots.mjs",
+    "test:v2-operator-templates": "tsx scripts/testV2OperatorTemplatesGuards.ts && node scripts/testV2OperatorTemplatesRender.mjs",
     "test:v2-wizard-steps": "node scripts/testV2WizardStepSnapshots.mjs && tsx scripts/testV2WizardStepIsolationGuards.ts",
     "test:s4a-group-home": "tsx scripts/testS4aGroupHomeGuards.ts",
     "test:gf04-group-feed": "tsx scripts/testGF04GroupFeedGuards.ts",
