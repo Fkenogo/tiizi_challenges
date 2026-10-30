@@ -287,11 +287,35 @@ function contentFromRow(row: VersionRow): TemplateContent {
   };
 }
 
-function contentHash(row: VersionRow): string {
-  return createHash('sha256').update(JSON.stringify([
+/** The editable content of a version, in a fixed order, as read back from the database. */
+function canonicalContent(row: VersionRow): unknown[] {
+  return [
     row.title, row.description, row.summary, row.challenge_type, row.duration_days, row.duration_preset_days,
     row.cover_id, row.focus_tags, row.sort_order, row.composer_config,
-  ]), 'utf8').digest('hex');
+  ];
+}
+
+function sha256(value: unknown): string {
+  return createHash('sha256').update(JSON.stringify(value), 'utf8').digest('hex');
+}
+
+/** Publish-time equivalence: "the content I validated is the content I publish". */
+function contentHash(row: VersionRow): string {
+  return sha256(canonicalContent(row));
+}
+
+export const REVISION_TOKEN_PATTERN = /^[0-9a-f]{64}$/;
+
+/**
+ * Optimistic-concurrency token for an editable (draft) version: SHA-256 over
+ * Template identity, version identity and the canonical editable content.
+ * It denotes CONTENT EQUIVALENCE, not a revision sequence: a save that does
+ * not change the content leaves the token unchanged, and content that returns
+ * to a previous state returns to that state's token. Tokens never match across
+ * Templates or versions because both identities are hashed in.
+ */
+export function revisionTokenFor(row: VersionRow): string {
+  return sha256([String(row.template_id), Number(row.version), canonicalContent(row)]);
 }
 
 const VERSION_COLUMNS = `template_id, version, state, title, description, summary, challenge_type, duration_days,
@@ -376,28 +400,60 @@ async function lockVersion(tx: Db, templateId: string, version: number): Promise
   return found.rows[0];
 }
 
+/** Re-check the writer's roster standing INSIDE the write transaction; a revocation then serializes with the write. */
+async function assertAuthorInTransaction(tx: Db, actor: string): Promise<void> {
+  const active = await tx.query(
+    `SELECT 1 FROM platform_operator_template_authors WHERE member_id = $1 AND revoked_at IS NULL FOR SHARE`,
+    [actor],
+  );
+  if (active.rows.length === 0) {
+    throw new TemplateError(403, 'template_author_required', 'Template authoring authority is required');
+  }
+}
+
+/**
+ * Conditional draft save. The token comparison runs after the Template and
+ * version rows are locked in this same transaction, so two saves that start
+ * from the same token serialize: the first commits, the second finds a
+ * different token and is refused with the current server state. No read
+ * outside the lock is part of the guarantee.
+ */
 export async function updateTemplateDraft(
   db: Db,
   actor: string,
   templateId: string,
   version: number,
   content: TemplateContent,
-): Promise<void> {
-  await db.transaction(async (tx) => {
+  expectedToken: string,
+): Promise<{ revisionToken: string }> {
+  return db.transaction(async (tx) => {
+    await assertAuthorInTransaction(tx, actor);
     await lockTemplate(tx, templateId);
     const row = await lockVersion(tx, templateId, version);
     if (row.state !== 'draft') {
       throw new TemplateError(409, 'template_version_immutable', 'A published version is immutable; create a revision');
     }
-    await tx.query(
+    if (revisionTokenFor(row) !== expectedToken) {
+      throw new TemplateError(409, 'template_draft_changed', 'This draft changed after you loaded it. Review the current draft before saving.', {
+        current: {
+          revisionToken: revisionTokenFor(row),
+          content: contentFromRow(row),
+          lastEditedByMemberId: String(row.last_edited_by_member_id),
+          lastEditedAt: row.last_edited_at,
+        },
+      });
+    }
+    const updated = await tx.query<VersionRow>(
       `UPDATE challenge_template_versions
        SET title = $3, description = $4, summary = $5, challenge_type = $6, duration_days = $7,
            duration_preset_days = $8, cover_id = $9, focus_tags = $10, sort_order = $11,
            composer_config = $12::jsonb, last_edited_by_member_id = $13, last_edited_at = clock_timestamp()
-       WHERE template_id = $1 AND version = $2`,
+       WHERE template_id = $1 AND version = $2
+       RETURNING ${VERSION_COLUMNS}`,
       [templateId, version, ...contentParams(content), actor],
     );
     await recordAudit(tx, templateId, version, 'edit_draft', actor);
+    return { revisionToken: revisionTokenFor(updated.rows[0]) };
   });
 }
 
@@ -845,6 +901,8 @@ export async function getOperatorTemplate(db: Db, templateId: string) {
       version: Number(version.version),
       state: version.state,
       content: contentFromRow(version),
+      // Editable (draft) versions only; send it back as If-Match to save.
+      revisionToken: version.state === 'draft' ? revisionTokenFor(version) : null,
       authoredByMemberId: String(version.authored_by_member_id),
       authoredAt: version.authored_at,
       lastEditedByMemberId: String(version.last_edited_by_member_id),

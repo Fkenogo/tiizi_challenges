@@ -133,14 +133,30 @@ async function world(authority: ChallengeCreationAuthority = permitAll) {
 
 type World = Awaited<ReturnType<typeof world>>;
 
-async function call(w: World, method: 'GET' | 'POST' | 'PUT', url: string, token: string, payload?: unknown) {
+async function call(w: World, method: 'GET' | 'POST' | 'PUT', url: string, token: string, payload?: unknown, headers: Record<string, string> = {}) {
   const response = await w.app.inject({
-    method, url, headers: authHeaders(token),
+    method, url, headers: { ...authHeaders(token), ...headers },
     ...(payload !== undefined ? { payload: payload as Record<string, unknown> } : {}),
   });
   let json: any = null;
   try { json = response.json(); } catch { json = null; }
   return { status: response.statusCode, json };
+}
+
+/**
+ * Draft save with the required `If-Match` precondition. The token comes from the
+ * Operator detail read unless one is supplied; a published version has none, so a
+ * well-formed placeholder is sent (the lifecycle guard answers first).
+ */
+async function put(w: World, url: string, token: string, payload: unknown, ifMatch?: string | null) {
+  let match = ifMatch;
+  if (match === undefined) {
+    const m = /\/operator\/templates\/([^/]+)\/versions\/(\d+)$/.exec(url)!;
+    const detail = await call(w, 'GET', `/api/operator/templates/${m[1]}`, token);
+    const version = (detail.json?.versions ?? []).find((v: any) => v.version === Number(m[2]));
+    match = version?.revisionToken ?? '0'.repeat(64);
+  }
+  return call(w, 'PUT', url, token, payload, match === null ? {} : { 'if-match': `"${match}"` });
 }
 
 function racePayload(act: Seeded, overrides: Record<string, unknown> = {}, composer: Record<string, unknown> = {}) {
@@ -377,7 +393,7 @@ describe('P5T-1 #3 publish-time PF-03 validation', () => {
     const s = await minute();
     const w = await world();
     const mismatch = await createDraft(w, streakPayload(s));
-    await call(w, 'PUT', `/api/operator/templates/${mismatch.templateId}/versions/1`, w.tokens.author, {
+    await put(w, `/api/operator/templates/${mismatch.templateId}/versions/1`, w.tokens.author, {
       ...streakPayload(s), composer: { ...streakPayload(s).composer, requiredConsecutiveDays: 3 },
     });
     expect((await tryPublish(w, mismatch)).status).toBe(422);
@@ -428,7 +444,7 @@ describe('P5T-1 #2/#4 draft, published, retired and stale visibility', () => {
     // Revision draft stays invisible; the catalogue keeps serving v1 until v2 publishes.
     const revision = await call(w, 'POST', `/api/operator/templates/${draftId}/revisions`, w.tokens.author);
     expect(revision.json.version).toBe(2);
-    await call(w, 'PUT', `/api/operator/templates/${draftId}/versions/2`, w.tokens.author, racePayload(act, { summary: 'Revised summary' }));
+    await put(w, `/api/operator/templates/${draftId}/versions/2`, w.tokens.author, racePayload(act, { summary: 'Revised summary' }));
     let listed = (await call(w, 'GET', '/api/challenge-templates', w.tokens.member)).json.templates;
     expect(listed).toHaveLength(1);
     expect(listed[0].version).toBe(1);
@@ -479,7 +495,7 @@ describe('P5T-1 #5/#12 version immutability, revision and retirement', () => {
     const act = await race();
     const w = await world();
     const { templateId } = await publish(w, w.tokens.author, racePayload(act));
-    const edit = await call(w, 'PUT', `/api/operator/templates/${templateId}/versions/1`, w.tokens.author, racePayload(act, { summary: 'sneaky' }));
+    const edit = await put(w, `/api/operator/templates/${templateId}/versions/1`, w.tokens.author, racePayload(act, { summary: 'sneaky' }));
     expect(edit.status).toBe(409);
     expect(edit.json.error.code).toBe('template_version_immutable');
     expect((await call(w, 'POST', `/api/operator/templates/${templateId}/versions/1/publish`, w.tokens.author)).status).toBe(409);
@@ -502,7 +518,7 @@ describe('P5T-1 #5/#12 version immutability, revision and retirement', () => {
     expect((await call(w, 'POST', `/api/operator/templates/${templateId}/revisions`, w.tokens.author2)).status).toBe(201);
     // One open draft at a time.
     expect((await call(w, 'POST', `/api/operator/templates/${templateId}/revisions`, w.tokens.author)).status).toBe(409);
-    await call(w, 'PUT', `/api/operator/templates/${templateId}/versions/2`, w.tokens.author2, racePayload(act, { summary: 'v2 summary' }, { title: 'Revised Race' }));
+    await put(w, `/api/operator/templates/${templateId}/versions/2`, w.tokens.author2, racePayload(act, { summary: 'v2 summary' }, { title: 'Revised Race' }));
     await call(w, 'POST', `/api/operator/templates/${templateId}/versions/2/publish`, w.tokens.author2);
     expect(JSON.stringify(await snapshot())).toBe(before);
 
@@ -545,7 +561,7 @@ describe('P5T-1 #5/#12 version immutability, revision and retirement', () => {
     ]);
     const before = await snapshot();
     await call(w, 'POST', `/api/operator/templates/${ref.templateId}/revisions`, w.tokens.author);
-    await call(w, 'PUT', `/api/operator/templates/${ref.templateId}/versions/2`, w.tokens.author, racePayload(act, { summary: 'new' }, { title: 'Totally different' }));
+    await put(w, `/api/operator/templates/${ref.templateId}/versions/2`, w.tokens.author, racePayload(act, { summary: 'new' }, { title: 'Totally different' }));
     await call(w, 'POST', `/api/operator/templates/${ref.templateId}/versions/2/publish`, w.tokens.author);
     await call(w, 'POST', `/api/operator/templates/${ref.templateId}/retire`, w.tokens.author, {});
     expect(await snapshot()).toBe(before);
@@ -648,7 +664,7 @@ describe('P5T-1 #14 internal provenance and idempotent establishment', () => {
     const ref = await publish(w, w.tokens.author, racePayload(act));
     await call(w, 'POST', `/api/operator/templates/${ref.templateId}/revisions`, w.tokens.author);
     await call(w, 'POST', `/api/operator/templates/${ref.templateId}/versions/2/publish`, w.tokens.author).then(async (r) => {
-      if (r.status !== 200) await call(w, 'PUT', `/api/operator/templates/${ref.templateId}/versions/2`, w.tokens.author, racePayload(act));
+      if (r.status !== 200) await put(w, `/api/operator/templates/${ref.templateId}/versions/2`, w.tokens.author, racePayload(act));
     });
     await call(w, 'POST', `/api/operator/templates/${ref.templateId}/versions/2/publish`, w.tokens.author);
     // A draft hydrated from v1 may still establish while the Template is live.
@@ -834,7 +850,7 @@ describe('P5T-1 #17 separate author and publisher audit', () => {
     const w = await world();
     const created = await call(w, 'POST', '/api/operator/templates', w.tokens.author, racePayload(act));
     const { templateId } = created.json as { templateId: string };
-    await call(w, 'PUT', `/api/operator/templates/${templateId}/versions/1`, w.tokens.author2, racePayload(act, { summary: 'Edited by second author' }));
+    await put(w, `/api/operator/templates/${templateId}/versions/1`, w.tokens.author2, racePayload(act, { summary: 'Edited by second author' }));
     await call(w, 'POST', `/api/operator/templates/${templateId}/versions/1/publish`, w.tokens.author2);
     await call(w, 'POST', `/api/operator/templates/${templateId}/revisions`, w.tokens.author);
     await call(w, 'POST', `/api/operator/templates/${templateId}/versions/2/publish`, w.tokens.author); // self-publish own revision

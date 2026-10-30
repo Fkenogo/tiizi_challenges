@@ -497,6 +497,7 @@ describe('P5T-1 Template routes use the canonical API namespace', () => {
     ['POST', `/operator/templates/${TEMPLATE_ID}/revisions`],
     ['POST', `/operator/templates/${TEMPLATE_ID}/retire`],
     ['GET', '/operator/templates'],
+    ['GET', '/operator/templates/capabilities'],
     ['GET', '/operator/templates/adoption'],
     ['GET', `/operator/templates/${TEMPLATE_ID}`],
     ['GET', `/operator/templates/${TEMPLATE_ID}/audit`],
