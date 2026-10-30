@@ -102,6 +102,15 @@ export function mapChallengeCreationError(error: unknown): never {
   if (message.includes('challenge-definition:')) {
     routeFail(422, 'invalid_challenge_definition', message);
   }
+  if (message.includes('[template_reference_invalid]')) {
+    routeFail(422, 'template_reference_invalid', 'Template reference is unknown or not a published version');
+  }
+  if (message.includes('[template_retired]')) {
+    routeFail(409, 'template_retired', 'Template is retired and is no longer offered for new Challenges');
+  }
+  if (message.includes('template_reference_invalid')) {
+    routeFail(422, 'template_reference_invalid', 'Template reference is unknown or not a published version');
+  }
   if (message.includes('idempotency key was already used for a different establishment request')) {
     routeFail(409, 'idempotency_conflict', 'Idempotency key was already used for a different request');
   }
@@ -169,6 +178,7 @@ const ALLOWED_TOP_FIELDS = new Set([
   'activate',
   'join_creator',
   'idempotency_key',
+  'template_ref',
 ]);
 
 const ALLOWED_ACTIVITY_FIELDS = new Set([
@@ -332,6 +342,15 @@ function checkCreationBody(data: unknown): string | null {
   if (body.join_creator !== undefined && typeof body.join_creator !== 'boolean') {
     return 'join_creator must be boolean when present';
   }
+  if (body.template_ref !== undefined) {
+    const ref = body.template_ref as Record<string, unknown> | null;
+    if (typeof ref !== 'object' || ref === null || Array.isArray(ref)
+      || Object.keys(ref).some((key) => key !== 'template_id' && key !== 'version')
+      || typeof ref.template_id !== 'string' || !UUID_RE.test(ref.template_id)
+      || !Number.isInteger(ref.version) || (ref.version as number) < 1) {
+      return 'template_ref must be { template_id: UUID, version: integer >= 1 }';
+    }
+  }
   if (body.idempotency_key !== undefined
     && (typeof body.idempotency_key !== 'string'
       || body.idempotency_key.length < 1 || body.idempotency_key.length > 100)) {
@@ -392,6 +411,10 @@ const createBodySchema = {
     activate: { type: 'boolean' },
     join_creator: { type: 'boolean' },
     idempotency_key: { type: 'string', minLength: 1, maxLength: 100 },
+    template_ref: { type: 'object', additionalProperties: false, required: ['template_id', 'version'], properties: {
+      template_id: { type: 'string', format: 'uuid' },
+      version: { type: 'integer', minimum: 1 },
+    } },
   },
 } as const;
 
@@ -431,6 +454,7 @@ interface RouteBody {
   activate?: boolean;
   join_creator?: boolean;
   idempotency_key?: string;
+  template_ref?: { template_id: string; version: number };
 }
 
 export function registerChallengeCreationRoutes(
@@ -526,6 +550,9 @@ export function registerChallengeCreationRoutes(
               beneficiary: body.social_cause.beneficiary, paymentDestinationReference: body.social_cause.payment_destination_reference,
             } : null,
             ...(body.idempotency_key !== undefined ? { idempotencyKey: body.idempotency_key } : {}),
+            ...(body.template_ref !== undefined
+              ? { templateRef: { templateId: body.template_ref.template_id, version: body.template_ref.version } }
+              : {}),
           },
           {
             // Governed path: live Group authority only. Knowledge

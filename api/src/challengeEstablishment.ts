@@ -81,6 +81,7 @@ import {
   type ConfigVersionRow,
 } from './challengeConfigs.js';
 import { recordChallengePublication } from './groupFeedPublication.js';
+import { resolvePublishedTemplateReference, type TemplateReference } from './challengeTemplates.js';
 
 export interface EstablishmentInput extends NewChallengeInput {
   /** establishment -> active inside the same transaction when true. */
@@ -380,6 +381,7 @@ export function hashDefinitionRequest(input: {
   coverId?: string | null;
   supportTiiziEnabled?: boolean;
   socialCause?: DefinitionEstablishmentInput['socialCause'];
+  templateRef?: TemplateReference | null;
 }): string {
   const canonical = {
     path: 'pf03-v1',
@@ -391,6 +393,10 @@ export function hashDefinitionRequest(input: {
     coverId: input.coverId ?? null,
     supportTiiziEnabled: input.supportTiiziEnabled === true,
     socialCause: input.socialCause ?? null,
+    // Only present for Template-started requests so every pre-existing
+    // idempotency hash is unchanged; a key reused with a different (or
+    // missing) Template reference is a different request.
+    ...(input.templateRef ? { templateRef: { id: input.templateRef.templateId, v: input.templateRef.version } } : {}),
   };
   return createHash('sha256').update(JSON.stringify(canonical), 'utf8').digest('hex');
 }
@@ -409,6 +415,12 @@ export interface DefinitionEstablishmentInput {
   coverId?: string | null;
   supportTiiziEnabled?: boolean;
   socialCause?: { title: string; description: string; purpose: string; beneficiary: string; paymentDestinationReference: string } | null;
+  /**
+   * FD-TPL-03 internal provenance. Verified server-side (published version of
+   * a Template) and written in the establishing transaction; informational
+   * only, never grants authority, never joins or enrolls anyone.
+   */
+  templateRef?: TemplateReference | null;
 }
 
 /**
@@ -442,6 +454,7 @@ export async function establishChallengeDefinitionV2(
       coverId: input.coverId ?? null,
       supportTiiziEnabled: input.supportTiiziEnabled === true,
       socialCause: input.socialCause ?? null,
+      templateRef: input.templateRef ?? null,
     });
 
   // Live Group authority, outside the transaction (fail closed) — the same
@@ -466,6 +479,17 @@ export async function establishChallengeDefinitionV2(
     );
   }
 
+  // Template reference: unknown or non-published versions never trust the
+  // client. Retirement is checked inside the transaction AFTER the
+  // idempotency claim so a retry of an already-established Challenge still
+  // replays even if the Template was retired in between.
+  if (input.templateRef) {
+    const resolved = await resolvePublishedTemplateReference(db, input.templateRef);
+    if (!resolved) {
+      fail('[template_reference_invalid] Template reference is unknown or not a published version');
+    }
+  }
+
   try {
     return await db.transaction(async (tx) => {
       const inserted = await tx.query(
@@ -473,8 +497,8 @@ export async function establishChallengeDefinitionV2(
            (group_id, created_by_member_id, challenge_type, title, cover_id, support_tiizi_enabled, description,
             instructions, start_date, end_date,
             goal_value, goal_unit, required_consecutive_days, reset_on_miss,
-            timezone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            timezone, source_template_id, source_template_version)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
          RETURNING *`,
         [
           input.groupId, input.creatorMemberId, definition.challengeType,
@@ -483,6 +507,7 @@ export async function establishChallengeDefinitionV2(
           definition.goalValue, definition.goalUnit,
           definition.requiredConsecutiveDays, definition.resetOnMiss,
           definition.window.timezone,
+          input.templateRef?.templateId ?? null, input.templateRef?.version ?? null,
         ],
       );
       const challengeRow = normalizeChallengeRow(inserted.rows[0] as never);
@@ -512,6 +537,15 @@ export async function establishChallengeDefinitionV2(
         } catch (error) {
           if (isUniqueViolation(error)) throw new IdempotencyConflict(idempotencyKey);
           throw error;
+        }
+      }
+      if (input.templateRef) {
+        const locked = await tx.query<{ lifecycle: string }>(
+          `SELECT lifecycle FROM challenge_templates WHERE template_id = $1 FOR SHARE`,
+          [input.templateRef.templateId],
+        );
+        if (locked.rows[0]?.lifecycle === 'retired') {
+          fail('[template_retired] Template is retired and is no longer offered for new Challenges');
         }
       }
       let status = challengeRow.status;
