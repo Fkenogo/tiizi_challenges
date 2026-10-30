@@ -52,7 +52,8 @@ const pg = read('api/src/postgresGroupAuthority.ts');
 check('establishment records the creator from the authenticated actor in the same insert as the Steward', /original_creator_member_id\)\s*\n\s*VALUES \(\$1,\$2,\$3,'active',\$4,\$5,\$6,[^)]*\$17,\$17,\$6\)/.test(pg));
 const migration = read('api/migrations/029_group_original_creator.sql');
 check('the migration only adds a nullable column and a guard trigger: no UPDATE/INSERT backfill', !/^\s*(UPDATE|INSERT)\b/im.test(migration.replace(/--.*$/gm, '')) && /ADD COLUMN IF NOT EXISTS original_creator_member_id UUID REFERENCES members/.test(migration));
-check('the migration documents that no authoritative source proves historical creators', /NO BACKFILL/.test(migration));
+check('the migration records the no-backfill decision, the candidate establishment signature and why it is not adopted', /NO BACKFILL IN THIS MIGRATION/.test(migration) && /CANDIDATE signature/.test(migration) && /approved_by_member_id = member_id/.test(migration));
+check('the current Steward row is matched by member id, never by relationship order', /member\.memberId === detail\.steward\?\.memberId/.test(screen) && !/relationship === 'steward'\) \?\? null/.test(screen));
 
 if (failures > 0) { console.error(`\nGroup provenance guards: ${failures} failure(s).`); process.exit(1); }
 console.log('\nGroup provenance guards: all passing.');

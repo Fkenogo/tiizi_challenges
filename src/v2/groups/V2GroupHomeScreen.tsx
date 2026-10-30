@@ -263,7 +263,7 @@ function GroupHomeBody({
   const memberships = useV2Groups();
   const viewerMemberId = memberships.data?.memberId ?? null;
   const roster = useV2GroupRoster(detail.id);
-  const rosterSteward = roster.data?.members.find((member) => member.relationship === 'steward') ?? null;
+  const rosterSteward = roster.data?.members.find((member) => member.memberId === detail.steward?.memberId) ?? null;
   const provenance = groupProvenanceView(detail, rosterSteward, viewerMemberId);
   const leave = useLeaveV2Group(detail.id);
   const viewerIsGroupMember =
