@@ -25,7 +25,7 @@ export function GroupInterestsPicker({
   const [otherInput, setOtherInput] = useState('');
   const others = customInterests(value, vocabulary);
   const addOther = () => {
-    if (!otherInput.trim() || others.length > 0) return;
+    if (!otherInput.trim() || others.length > 0 || value.length >= GROUP_FOCUS_TAGS_MAX_COUNT) return;
     onChange(addCustomInterest(value, otherInput, vocabulary));
     setOtherInput('');
   };
