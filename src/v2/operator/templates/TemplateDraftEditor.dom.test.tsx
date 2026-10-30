@@ -16,7 +16,6 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => ({ user: h.user }) }));
-vi.mock('../../../lib/firebaseAuth', () => ({ auth: { currentUser: null } }));
 vi.mock('../../../api/operatorTemplatesApi', async (original) => ({
   ...(await original<typeof import('../../../api/operatorTemplatesApi')>()),
   fetchTemplateCapabilities: h.capabilities, fetchOperatorTemplate: h.detail, createTemplateDraft: h.create, saveTemplateDraft: h.save,
@@ -82,6 +81,8 @@ describe('authorization', () => {
 
   it('a 403 on save switches editing off immediately and keeps the work', async () => {
     h.save.mockRejectedValue(new ApiError(403, 'template_author_required', 'no'));
+    // The server also stops reporting the capability, as it does for a real revocation.
+    h.capabilities.mockResolvedValueOnce({ canAuthor: true, canRead: true }).mockResolvedValue({ canAuthor: false, canRead: true });
     mount();
     const user = userEvent.setup();
     await screen.findByRole('navigation', { name: 'Editor steps' });

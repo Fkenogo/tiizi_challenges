@@ -7,7 +7,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 for (const key of ['API_KEY', 'AUTH_DOMAIN', 'PROJECT_ID', 'STORAGE_BUCKET', 'MESSAGING_SENDER_ID', 'APP_ID']) {
   process.env[`VITE_FIREBASE_${key}`] ??= 'harness-placeholder';
 }
-const server = await createServer({ root, configFile: false, appType: 'custom', logLevel: 'error', server: { middlewareMode: true }, esbuild: { jsx: 'automatic' } });
+const server = await createServer({
+  root, configFile: false, appType: 'custom', logLevel: 'error', server: { middlewareMode: true }, esbuild: { jsx: 'automatic' },
+  resolve: { alias: [{ find: /^(\.\.?\/)+hooks\/useAuth$/, replacement: join(root, 'scripts/fixtures/wizardHarnessAuthStub.ts') }] },
+});
 let cases;
 try { cases = (await server.ssrLoadModule('/scripts/operatorTemplateLibraryHarness.tsx')).renderCases(); } finally { await server.close(); }
 
@@ -28,7 +31,7 @@ check('published versions show their adoption counts in the Versions table', />3
 check('detail shows the selected version configuration and Activities', t.includes('Version 3 configuration'));
 check('detail shows the settings that determine counting (time mode, completion, load basis, parts)', t.includes('Time counts: Added up across the day') && t.includes('Counts when: one guided breathing session') && t.includes('Weight reported as: Total loaded weight') && t.includes('Variant: incline') && t.includes('Required parts: LEFT, RIGHT'));
 check('more-available is offered with an explicit control, never a total', t.includes('Load more') && !/\btotal\b|\bof\s+\d+\b/i.test(footerText(populated)));
-check('read-only: no authoring controls are rendered', !/\b(Publish|Revise|Retire|Save draft)\b|New Template|Create Template/i.test(t));
+check('a non-author sees no authoring controls (no capability data = no New Template / Edit draft)', !/\b(Publish|Revise|Retire|Save draft)\b|New Template|Create Template|Edit draft/i.test(t));
 check('no Firestore / deferred-capability copy remains', !/Firestore|not available in the current Product Truth/.test(t));
 
 const end = text(cases.endOfList);

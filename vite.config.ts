@@ -14,6 +14,8 @@ export default defineConfig({
   // `npm run test:v2-dom`; they are never part of the production bundle.
   test: {
     environment: 'jsdom',
+    setupFiles: ['src/testSetup.ts'],
+    alias: [{ find: /^.*\/lib\/firebaseAuth$/, replacement: fileURLToPath(new URL('./src/testStubs/authTransportStub.ts', import.meta.url)) }],
     include: ['src/**/*.test.{ts,tsx}'],
     restoreMocks: true,
     unstubEnvs: true,

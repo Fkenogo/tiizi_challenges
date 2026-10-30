@@ -211,6 +211,8 @@ export function TemplateDraftEditor() {
   const [immutable, setImmutable] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
+  const phaseRef = useRef<Phase>('loading');
+  phaseRef.current = phase;
   const sessionRef = useRef(session);
   sessionRef.current = session;
   const currentRef = useRef(current);
@@ -253,7 +255,11 @@ export function TemplateDraftEditor() {
   useEffect(() => {
     if (!uid) { setPhase('signin'); return; }
     if (!capabilityKnown) { setPhase('loading'); return; }
-    if (!canAuthor) { setPhase('denied'); return; }
+    if (!canAuthor) {
+      // Authority withdrawn after the editor opened: keep the author's work visible but read-only.
+      if (phaseRef.current === 'ready') setRevoked(true); else setPhase('denied');
+      return;
+    }
     let cancelled = false;
     purgeOtherAccountsRecovery(uid);
     setPhase('loading');

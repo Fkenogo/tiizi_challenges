@@ -9,7 +9,6 @@ import type { WizardActivity } from '../challengeCreationDraft';
 
 const h = vi.hoisted(() => ({ catalogue: vi.fn() }));
 vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'u1' } }) }));
-vi.mock('../../../lib/firebaseAuth', () => ({ auth: { currentUser: null } }));
 vi.mock('../../../api/challengeCreationApi', async (original) => ({
   ...(await original<typeof import('../../../api/challengeCreationApi')>()), fetchComposerSelectableKnowledge: h.catalogue,
 }));

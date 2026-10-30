@@ -1,5 +1,6 @@
 /** TIIZI-FER-P5T-2-S2 render harness: the Library over seeded, deterministic read data. */
 import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { OperatorTemplateLibrary } from '../src/v2/operator/templates/OperatorTemplateLibrary';
 import { EMPTY_FILTERS } from '../src/v2/operator/templates/templateLibraryModel';
@@ -34,7 +35,7 @@ const detail: OperatorTemplateDetail = {
 function render(seed: (client: QueryClient) => void): string {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   seed(client);
-  return renderToStaticMarkup(<QueryClientProvider client={client}><OperatorTemplateLibrary /></QueryClientProvider>);
+  return renderToStaticMarkup(<MemoryRouter><QueryClientProvider client={client}><OperatorTemplateLibrary /></QueryClientProvider></MemoryRouter>);
 }
 
 function renderOffline(seed: (client: QueryClient) => void): string {

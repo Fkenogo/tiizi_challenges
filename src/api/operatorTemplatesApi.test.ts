@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './apiError';
 import { createTemplateDraft, fetchTemplateCapabilities, saveTemplateDraft, type TemplateDraftBody } from './operatorTemplatesApi';
 
-vi.mock('../lib/firebaseAuth', () => ({ auth: { currentUser: { getIdToken: async () => 'id-token-123' } } }));
 
 const BODY: TemplateDraftBody = {
   summary: 'S', focusTags: [], sortOrder: 0, coverId: null, durationDays: 14, durationPresetDays: null,
