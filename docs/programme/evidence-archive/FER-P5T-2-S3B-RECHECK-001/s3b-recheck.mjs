@@ -82,7 +82,7 @@ const editorReady = (page) => page.getByRole('navigation', { name: 'Editor steps
 async function matrix() {
   dbMarker = psql(`select shobj_description(oid,'pg_database') from pg_database where datname='${DB}'`);
   console.log(`DB target ${DB} marker=${dbMarker} source=${SHA} tree=${TREE}`);
-  if (!/^tiizi-disposable-preview:/.test(marker)) throw new Error('refusing: database is not marked disposable');
+  if (!/^tiizi-disposable-preview:/.test(dbMarker)) throw new Error('refusing: database is not marked disposable');
 
   await scenario('A1-account-switch-in-place', 'Author A unsaved draft; in-place switch to Author B', async ({ page, step, check, rec }) => {
     const before = counts();

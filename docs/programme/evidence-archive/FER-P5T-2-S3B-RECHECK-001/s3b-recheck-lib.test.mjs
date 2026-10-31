@@ -1,7 +1,7 @@
 // Focused verification of the two script corrections. No browser, database or network:  node --test s3b-recheck-lib.test.mjs
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -44,6 +44,27 @@ test('the real script loads Playwright from its own directory and fails later, a
   // A crash outside any scenario still writes the evidence, records the failure, and exits nonzero.
   assert.equal(out.status, 1);
   assert.match(readFileSync(join(dir, 'evidence.json'), 'utf8'), /"overall": "FAIL"[\s\S]*run-error/);
+});
+
+test('with a valid disposable marker the run gets past the marker check and reaches the scenarios', () => {
+  const dir = tmp();
+  cpSync(join(here, 's3b-recheck.mjs'), join(dir, 's3b-recheck.mjs'));
+  cpSync(join(here, 's3b-recheck-lib.mjs'), join(dir, 's3b-recheck-lib.mjs'));
+  // A fake browser whose first context fails with a known message; a stub psql that reports a valid marker.
+  const fake = join(dir, 'node_modules', 'playwright');
+  mkdirSync(fake, { recursive: true });
+  writeFileSync(join(fake, 'package.json'), '{"name":"playwright","version":"0.0.0","main":"index.js"}');
+  writeFileSync(join(fake, 'index.js'), "module.exports = { chromium: { launch: async () => ({ newContext: async () => { throw new Error('ctx boom'); }, close: async () => {} }) } };");
+  const bin = join(dir, 'bin'); mkdirSync(bin);
+  writeFileSync(join(bin, 'psql'), '#!/bin/sh\necho tiizi-disposable-preview:stub\n'); chmodSync(join(bin, 'psql'), 0o755);
+  execFileSync('git', ['init', '-q'], { cwd: dir });
+  execFileSync('git', ['-c', 'user.email=t@example.test', '-c', 'user.name=t', 'commit', '--allow-empty', '-qm', 'x'], { cwd: dir });
+  const out = spawnSync('node', ['s3b-recheck.mjs'], { cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, STUB_TOKEN_AUTHOR2: 'x', S3B_SOURCE_WORKTREE: dir } });
+  const evidence = readFileSync(join(dir, 'evidence.json'), 'utf8');
+  assert.doesNotMatch(out.stderr + evidence, /is not defined/);
+  assert.match(evidence, /ctx boom/);
+  assert.match(readFileSync(join(dir, 'evidence.md'), 'utf8'), /marker: tiizi-disposable-preview:stub/);
+  assert.equal(out.status, 1);
 });
 
 test('a playwright install with a missing dependency is reported as broken, not as "not found"', () => {
