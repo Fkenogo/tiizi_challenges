@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../../api/apiError';
 import { TemplateDraftEditor } from './TemplateDraftEditor';
+import { readRecovery } from './templateDraftRecovery';
 import { bodyFromContent } from './templateAuthoringModel';
 import { CATALOGUE, TEMPLATE_ID, TOKEN_A, TOKEN_B, TOKEN_C, contentOf, detailOf, knowledge, optionsFor, versionOf } from './testing/fixtures';
 
@@ -90,6 +91,14 @@ describe('Save and check', () => {
     expect(h.save).toHaveBeenCalledWith(TEMPLATE_ID, 1, expect.objectContaining({ summary: 'Checked summary' }), TOKEN_A);
     expect(h.validate).toHaveBeenCalledWith(TEMPLATE_ID, 1);
     expect(h.validate).toHaveBeenCalledTimes(1);
+  });
+
+  it('states when the validation actually happened, not when the draft was saved or opened', async () => {
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    const note = await screen.findByText(/passed the server check when it was checked, at /);
+    expect(note.textContent).not.toMatch(/saved or opened/);
   });
 
   it('validates an unchanged saved draft without writing', async () => {
@@ -249,7 +258,7 @@ describe('review findings', () => {
     mount();
     await screen.findByRole('navigation', { name: 'Editor steps' });
     await userEvent.click(checkButton());
-    expect(await screen.findByText(/no longer an open draft/)).toBeTruthy();
+    expect(await screen.findByText(/stopped being an open draft/)).toBeTruthy();
     expect(screen.queryByText(/passed the server check/)).toBeNull();
     expect((screen.getByRole('button', { name: 'Save draft' }) as HTMLButtonElement).disabled).toBe(true);
   });
@@ -278,6 +287,62 @@ describe('review findings', () => {
     expect(within(panel).getByText(/found 1 issue/)).toBeTruthy();
     expect(within(panel).queryByText('Other checks')).toBeNull();
     expect(within(screen.getByRole('button', { name: /4\. What counts/ })).getByText('(1 server check issue)')).toBeTruthy();
+  });
+});
+
+describe('conflict hydration and Template switching (final review)', () => {
+  it('edits made while the conflicting draft is still hydrating are kept, not replaced by an older snapshot', async () => {
+    let slow = false;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    h.options.mockImplementation(async (id: string) => { if (slow) await gate; return optionsFor(id, 3); });
+    h.detail.mockResolvedValueOnce(serverDraft()).mockResolvedValue(serverDraft(TOKEN_C, contentOf({ summary: 'Changed by someone else' })));
+    mount();
+    const user = userEvent.setup();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await step(/Template details/);
+    slow = true;
+    await user.click(checkButton());
+    // The check finished and the conflict is hydrating (Activity lookups are held). The author keeps typing.
+    await waitFor(() => expect(h.detail).toHaveBeenCalledTimes(2));
+    const summary = screen.getByLabelText('Template summary') as HTMLTextAreaElement;
+    await user.clear(summary);
+    await user.type(summary, 'Typed during hydration');
+    release();
+    expect(await screen.findByText(/changed by someone else while it was being checked/)).toBeTruthy();
+    expect((screen.getByLabelText('Template summary') as HTMLTextAreaElement).value).toBe('Typed during hydration');
+    expect(readRecovery('author-1', { templateId: TEMPLATE_ID, version: 1 })?.body.summary).toBe('Typed during hydration');
+  });
+
+  it('switching to another Template while a check is running never shows or applies the old Template\'s result', async () => {
+    const OTHER = '22222222-2222-4222-8222-222222222222';
+    let release: (value: { ok: boolean; issues: [] }) => void = () => undefined;
+    h.validate.mockImplementation(() => new Promise((resolve) => { release = resolve; }));
+    h.detail.mockImplementation(async (id: string) => (id === OTHER
+      ? { ...serverDraft(TOKEN_C, contentOf({ summary: 'Other draft' })), templateId: OTHER }
+      : serverDraft()));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    function Jump() { const go = useNavigate(); return <button type="button" onClick={() => go(`/v2/operator/templates/${OTHER}/edit`)}>jump</button>; }
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[EDIT]}>
+          <Jump />
+          <Routes><Route path="/v2/operator/templates/:templateId/edit" element={<TemplateDraftEditor />} /></Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText('Checking…');
+    await userEvent.click(screen.getByRole('button', { name: 'jump' }));
+    await waitFor(() => expect(h.detail).toHaveBeenCalledWith(OTHER));
+    release({ ok: true, issues: [] });
+    await step(/Template details/);
+    expect((screen.getByLabelText('Template summary') as HTMLTextAreaElement).value).toBe('Other draft');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByText(/passed the server check/)).toBeNull();
+    expect(screen.queryByText(/changed by someone else while it was being checked/)).toBeNull();
+    expect(screen.queryByText('Checking…')).toBeNull();
   });
 });
 

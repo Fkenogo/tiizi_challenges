@@ -269,10 +269,10 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
           </div>
           <span className={lifecycleClass(data.lifecycle)}>{lifecycleLabel(data.lifecycle)}</span>
         </div>
+        <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/preview`} className="mr-2 mt-3 inline-block rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">Preview</Link>
         {canAuthor && shown?.state === 'draft' && data.lifecycle !== 'retired' && (
           <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/edit`} className="mt-3 inline-block rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white">Edit draft</Link>
         )}
-        <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/preview`} className="mt-3 ml-2 inline-block rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">Preview</Link>
         {data.lifecycle === 'retired' && (
           <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
             Retired {formatWhen(data.retiredAt)} by {shortId(data.retiredByMemberId)}{data.retiredReason ? ` — ${data.retiredReason}` : ''}. Retired Templates are no longer offered to members; existing Challenges are unaffected.

@@ -18,12 +18,14 @@ export interface ValidationRecord {
   version: number;
   /** The draft revision token the server held when it was validated. */
   token: string;
+  /** When the server answered (ms since epoch); the result describes the draft as of this moment. */
+  checkedAt: number;
   ok: boolean;
   issues: TemplateValidationIssue[];
 }
 
-export function toValidationRecord(templateId: string, version: number, token: string, response: TemplateValidationResponse): ValidationRecord {
-  return { templateId, version, token, ok: response.ok === true && response.issues.length === 0, issues: response.issues };
+export function toValidationRecord(templateId: string, version: number, token: string, response: TemplateValidationResponse, checkedAt: number): ValidationRecord {
+  return { templateId, version, token, checkedAt, ok: response.ok === true && response.issues.length === 0, issues: response.issues };
 }
 
 const FIELD_STEP: Record<string, EditorStepId> = {

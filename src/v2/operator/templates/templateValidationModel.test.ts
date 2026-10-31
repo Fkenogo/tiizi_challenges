@@ -3,7 +3,7 @@ import {
   classifyValidationFailure, groupIssuesByStep, isValidationStale, stepForIssue, toValidationRecord, type FreshnessInput,
 } from './templateValidationModel';
 
-const record = toValidationRecord('t', 1, 'tok-a', { ok: false, issues: [{ code: 'MISSING_FIELD', field: 'title', message: 'm' }] });
+const record = toValidationRecord('t', 1, 'tok-a', { ok: false, issues: [{ code: 'MISSING_FIELD', field: 'title', message: 'm' }] }, 1000);
 const fresh: FreshnessInput = { currentToken: 'tok-a', templateId: 't', version: 1, dirty: false, conflict: false };
 
 describe('issue → editor step mapping (placement only, never validity)', () => {
@@ -61,8 +61,8 @@ describe('validation freshness', () => {
     expect(isValidationStale(record, { ...fresh, currentToken: null })).toBe(true);
   });
   it('treats ok:true with issues as not ok (the server list is authoritative)', () => {
-    expect(toValidationRecord('t', 1, 'x', { ok: true, issues: [] }).ok).toBe(true);
-    expect(toValidationRecord('t', 1, 'x', { ok: true, issues: [{ code: 'A', message: 'm' }] }).ok).toBe(false);
+    expect(toValidationRecord('t', 1, 'x', { ok: true, issues: [] }, 1).ok).toBe(true);
+    expect(toValidationRecord('t', 1, 'x', { ok: true, issues: [{ code: 'A', message: 'm' }] }, 1).ok).toBe(false);
   });
 });
 

@@ -234,6 +234,8 @@ function TemplateDraftEditorInner() {
   const location = useLocation();
   const phaseRef = useRef<Phase>('loading');
   phaseRef.current = phase;
+  const routeIdRef = useRef(routeTemplateId);
+  routeIdRef.current = routeTemplateId;
   const sessionRef = useRef(session);
   sessionRef.current = session;
   const currentRef = useRef(current);
@@ -263,12 +265,15 @@ function TemplateDraftEditorInner() {
     lastEditedByMemberId: string;
     lastEditedAt: string;
     theirsState?: TemplateAuthoringState;
+    /** The caller's mine-state is the live editor state: re-read it after the async hydration so newer edits are kept. */
+    live?: boolean;
   }) => {
     const theirs = args.theirsState ?? (await hydrateAuthoringState(args.theirsBody, lookup)).state;
+    const mineState = args.live ? currentRef.current : args.mineState;
     const names = new Map<string, string>();
-    [...args.mineState.activities, ...theirs.activities].forEach((activity) => names.set(activity.activity, activity.name));
-    const items = reconcile(args.baseBody ?? EMPTY_BODY, toTemplateBody(args.mineState), args.theirsBody, (id) => names.get(id) ?? id);
-    setCurrent(args.mineState);
+    [...mineState.activities, ...theirs.activities].forEach((activity) => names.set(activity.activity, activity.name));
+    const items = reconcile(args.baseBody ?? EMPTY_BODY, toTemplateBody(mineState), args.theirsBody, (id) => names.get(id) ?? id);
+    setCurrent(mineState);
     setConflict({ theirsToken: args.theirsToken, theirsBody: args.theirsBody, theirsState: theirs, lastEditedByMemberId: args.lastEditedByMemberId, lastEditedAt: args.lastEditedAt, items, choices: {} });
     setFailure(null);
   }, [lookup]);
@@ -286,6 +291,7 @@ function TemplateDraftEditorInner() {
     let cancelled = false;
     purgeOtherAccountsRecovery(uid);
     setRevoked(false); setFlags({}); setProblems({});
+    setValidation(null); setValidationFailure(null);
     setPhase('loading');
     (async () => {
       try {
@@ -426,6 +432,7 @@ function TemplateDraftEditorInner() {
   const applyFailure = useCallback(async (result: SaveFailure) => {
     if (result.kind === 'conflict') {
       await beginConflict({
+        live: true,
         mineState: currentRef.current,
         baseBody: sessionRef.current.baseBody,
         theirsBody: bodyFromContent(result.current.content),
@@ -454,23 +461,23 @@ function TemplateDraftEditorInner() {
       const response = await validateTemplateDraft(templateId, version);
       const detail = await fetchOperatorTemplate(templateId);
       // The editor moved to another Template while this check ran: its answer is not ours to show.
-      if (sessionRef.current.templateId !== templateId || sessionRef.current.version !== version) return;
+      if (routeIdRef.current !== templateId || sessionRef.current.templateId !== templateId || sessionRef.current.version !== version) return;
       const draft = detail.versions.find((entry) => entry.version === version && entry.state === 'draft');
       if (!draft || !draft.revisionToken) {
         // Published or retired by someone else meanwhile: no longer an open draft.
         setImmutable(true);
-        setValidationFailure(classifyValidationFailure({ status: 409 }));
+        setValidationFailure({ kind: 'immutable', message: 'This version stopped being an open draft while it was being checked (it was published or retired), so no result is shown. Your work is kept here.' });
         return;
       }
       if (draft.revisionToken !== token) {
         await beginConflict({
-          mineState: currentRef.current, baseBody: sessionRef.current.baseBody, theirsBody: bodyFromContent(draft.content),
+          live: true, mineState: currentRef.current, baseBody: sessionRef.current.baseBody, theirsBody: bodyFromContent(draft.content),
           theirsToken: draft.revisionToken, lastEditedByMemberId: draft.lastEditedByMemberId, lastEditedAt: draft.lastEditedAt,
         });
         setBanner({ tone: 'error', text: 'The draft was changed by someone else while it was being checked. Review their changes, then save and check again.' });
         return;
       }
-      setValidation(toValidationRecord(templateId, version, token, response));
+      setValidation(toValidationRecord(templateId, version, token, response, Date.now()));
     } catch (error) {
       const result = classifyValidationFailure(error);
       setValidationFailure(result);
@@ -642,7 +649,7 @@ function TemplateDraftEditorInner() {
             aria-current={entry.id === step ? 'step' : undefined}
             className={`rounded-full px-3 py-1.5 text-xs font-bold ${entry.id === step ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}
           >
-            {index + 1}. {entry.label}{stepIssues(entry.id).length > 0 ? <span className="ml-1 rounded-full bg-red-600 px-1.5 text-[10px] text-white" ><span aria-hidden="true">{stepIssues(entry.id).length}</span><span className="sr-only">{` (${stepIssues(entry.id).length} server check ${stepIssues(entry.id).length === 1 ? 'issue' : 'issues'})`}</span></span> : null}
+            {index + 1}. {entry.label}{stepIssues(entry.id).length > 0 ? <span className="ml-1 rounded-full bg-red-600 px-1.5 text-[10px] text-white"><span aria-hidden="true">{stepIssues(entry.id).length}</span><span className="sr-only">{` (${stepIssues(entry.id).length} server check ${stepIssues(entry.id).length === 1 ? 'issue' : 'issues'})`}</span></span> : null}
           </button>
         ))}
       </nav>
