@@ -37,6 +37,7 @@ const counts = () => ({ templates: Number(psql('select count(*) from challenge_t
 const RUN = Date.now().toString(36);
 const results = [];
 let browser;
+let dbMarker = 'not read (run aborted before the marker check)';
 
 async function scenario(id, title, fn) {
   if (process.env.ONLY && !id.startsWith(process.env.ONLY)) return;
@@ -79,8 +80,8 @@ const storageText = (page) => page.evaluate(() => JSON.stringify(Object.fromEntr
 const editorReady = (page) => page.getByRole('navigation', { name: 'Editor steps' }).waitFor({ timeout: 20000 });
 
 async function matrix() {
-  const marker = psql(`select shobj_description(oid,'pg_database') from pg_database where datname='${DB}'`);
-  console.log(`DB target ${DB} marker=${marker} source=${SHA} tree=${TREE}`);
+  dbMarker = psql(`select shobj_description(oid,'pg_database') from pg_database where datname='${DB}'`);
+  console.log(`DB target ${DB} marker=${dbMarker} source=${SHA} tree=${TREE}`);
   if (!/^tiizi-disposable-preview:/.test(marker)) throw new Error('refusing: database is not marked disposable');
 
   await scenario('A1-account-switch-in-place', 'Author A unsaved draft; in-place switch to Author B', async ({ page, step, check, rec }) => {
@@ -217,7 +218,7 @@ async function matrix() {
 
   await scenario('E-conflict-hydration', 'Stale-save conflict with delayed Activity/options requests', async ({ page, step, check, rec }) => {
     const t2 = tid('T2 conflict draft');
-    const writes = []; page.on('request', (r) => { if (r.method() === 'PUT' && r.url().startsWith(API)) writes.push({ ifMatch: r.headers()['if-match'] ? 'present' : 'absent', summary: JSON.parse(r.postData() ?? '{}').summary }); });
+    const writes = []; page.on('request', (r) => { if (r.method() === 'PUT' && r.url().startsWith(API)) writes.push({ ifMatch: r.headers()['if-match'] ? 'present' : 'absent', summary: ((d) => { try { return JSON.parse(d ?? '{}').summary; } catch { return undefined; } })(r.postData()) }); });
     await open(page, 'author', `/v2/operator/templates/${t2}/edit`); await editorReady(page);
     await stepNav(page, /Template details/); await page.getByLabel('Template summary').fill(`E-MINE-${RUN}`);
     step('Author typed an unsaved summary (E-MINE-<run>)');
@@ -310,7 +311,7 @@ function writeEvidence() {
   const finished = new Date().toISOString();
   const pass = exitCodeFor(results) === 0;
   writeFileSync(join(here, 'evidence.json'), JSON.stringify({ sourceSha: SHA, sourceTree: TREE, executor: EXEC, finished, database: DB, overall: pass ? 'PASS' : 'FAIL', scenarios: results }, null, 2));
-  const md = [`# S3b final-head browser matrix`, ``, `- Source SHA: \`${SHA}\` (tree \`${TREE}\`)`, `- Executor: ${EXEC}`, `- Finished: ${finished}`, `- Database: ${DB} (disposable, marker verified)`, `- Overall: **${pass ? 'PASS' : 'FAIL'}**`, ``,
+  const md = [`# S3b final-head browser matrix`, ``, `- Source SHA: \`${SHA}\` (tree \`${TREE}\`)`, `- Executor: ${EXEC}`, `- Finished: ${finished}`, `- Database: ${DB} (marker: ${dbMarker})`, `- Overall: **${pass ? 'PASS' : 'FAIL'}**`, ``,
     ...results.flatMap((r) => [`## ${r.id} — ${r.title}`, `Result: **${r.result}** · ${r.startedAt} → ${r.endedAt}`, ``, `Steps:`, ...r.steps.map((s) => `- ${s}`), ``, `Checks:`, ...r.checks.map((c) => `- ${c.ok ? 'PASS' : 'FAIL'}: ${c.name}${c.ok ? '' : ` (${c.detail})`}`), ``, `API: ${r.api.map((a) => `${a.method} ${a.path} ${a.status}`).join('; ') || '—'}`, ``])].join('\n');
   writeFileSync(join(here, 'evidence.md'), md);
   console.log(`OVERALL ${pass ? 'PASS' : 'FAIL'}`);
