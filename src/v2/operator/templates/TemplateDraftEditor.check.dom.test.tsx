@@ -344,6 +344,52 @@ describe('conflict hydration and Template switching (final review)', () => {
     expect(screen.queryByText(/changed by someone else while it was being checked/)).toBeNull();
     expect(screen.queryByText('Checking…')).toBeNull();
   });
+
+  it('an Activity whose add finishes after a conflict opened is refused with a message, not silently dropped', async () => {
+    let slowFor: string | null = null;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    h.options.mockImplementation(async (id: string) => { if (id === slowFor) await gate; return optionsFor(id, 3); });
+    h.detail.mockResolvedValueOnce(serverDraft()).mockResolvedValue(serverDraft(TOKEN_C, contentOf({ summary: 'Changed by someone else' })));
+    mount();
+    const user = userEvent.setup();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await step(/3\. Activities/);
+    slowFor = 'act-2';
+    await user.click(await screen.findByRole('button', { name: 'Add Plank' }));
+    await user.click(checkButton());
+    expect(await screen.findByText(/changed by someone else while it was being checked/)).toBeTruthy();
+    release();
+    expect(await screen.findByText(/changed while that Activity was loading/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Plank is already added' })).toBeNull();
+  });
+
+  it('moving in place to another draft carries no conflict, read-only state or banner over', async () => {
+    const OTHER = '22222222-2222-4222-8222-222222222222';
+    h.detail.mockImplementation(async (id: string) => (id === OTHER ? { ...serverDraft(TOKEN_C, contentOf({ summary: 'Other draft' })), templateId: OTHER } : serverDraft()));
+    h.save.mockRejectedValue(new ApiError(409, 'template_draft_changed', 'changed', {
+      current: { revisionToken: TOKEN_C, content: contentOf({ summary: 'Theirs' }), lastEditedByMemberId: 'other', lastEditedAt: '2026-10-30T09:00:00Z' },
+    }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    function Jump() { const go = useNavigate(); return <button type="button" onClick={() => go(`/v2/operator/templates/${OTHER}/edit`)}>jump</button>; }
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[EDIT]}>
+          <Jump />
+          <Routes><Route path="/v2/operator/templates/:templateId/edit" element={<TemplateDraftEditor />} /></Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const user = await editSummary('Mine');
+    await user.click(screen.getByRole('button', { name: 'Save draft' }));
+    await screen.findByRole('button', { name: /Apply/ });
+    await user.click(screen.getByRole('button', { name: 'jump' }));
+    await waitFor(() => expect(h.detail).toHaveBeenCalledWith(OTHER));
+    await step(/Template details/);
+    expect((screen.getByLabelText('Template summary') as HTMLTextAreaElement).value).toBe('Other draft');
+    expect(screen.queryByRole('button', { name: /Apply/ })).toBeNull();
+    expect((screen.getByLabelText('Template summary').closest('fieldset') as HTMLFieldSetElement).disabled).toBe(false);
+  });
 });
 
 describe('authorization and failures', () => {

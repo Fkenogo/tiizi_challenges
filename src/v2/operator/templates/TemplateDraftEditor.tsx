@@ -234,6 +234,8 @@ function TemplateDraftEditorInner() {
   const location = useLocation();
   const phaseRef = useRef<Phase>('loading');
   phaseRef.current = phase;
+  const readOnlyRef = useRef(false);
+  const loadedRouteRef = useRef(routeTemplateId);
   const routeIdRef = useRef(routeTemplateId);
   routeIdRef.current = routeTemplateId;
   const sessionRef = useRef(session);
@@ -292,6 +294,11 @@ function TemplateDraftEditorInner() {
     purgeOtherAccountsRecovery(uid);
     setRevoked(false); setFlags({}); setProblems({});
     setValidation(null); setValidationFailure(null);
+    if (loadedRouteRef.current !== routeTemplateId) {
+      // In-place move to another draft: nothing about the previous draft may carry over.
+      loadedRouteRef.current = routeTemplateId;
+      setConflict(null); setImmutable(false); setFailure(null); setBanner(null);
+    }
     setPhase('loading');
     (async () => {
       try {
@@ -359,6 +366,7 @@ function TemplateDraftEditorInner() {
   const dirty = currentCanonical !== baseCanonical;
   const readOnly = revoked || immutable || conflict !== null;
   const locked = readOnly || saving;
+  readOnlyRef.current = readOnly;
 
   /* ------------------------ temporary session recovery -------------------- */
   useEffect(() => {
@@ -395,6 +403,8 @@ function TemplateDraftEditorInner() {
     setAddingId(item.id);
     try {
       const options = await queryClient.fetchQuery({ queryKey: ['v2-create-options', item.id], queryFn: () => fetchActivityOptions(item.id), staleTime: 5 * 60 * 1000 });
+      // A conflict opened (or editing was switched off) while this Activity was loading: adding now would be silently dropped.
+      if (readOnlyRef.current) { setAddError('The draft changed while that Activity was loading. Resolve the changes, then add it again.'); return null; }
       const latest = currentRef.current;
       const next = buildWizardActivity(item, options, latest.challengeType) as TemplateActivity;
       const others = latest.activities.filter((activity) => activity.activity !== item.id);
