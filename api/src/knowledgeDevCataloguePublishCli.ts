@@ -3,16 +3,17 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createPool, databaseUrl } from './db.js';
 import { importS6Catalogue } from './knowledgeCatalogueImport.js';
-import { publishDevCatalogue, verifyDisposableTarget } from './knowledgeDevCataloguePublish.js';
+import { disposableTargetSpecFromEnv, openGuardedDisposableDb } from './disposableDbGuard.js';
+import { publishDevCatalogue } from './knowledgeDevCataloguePublish.js';
 
 /**
  * DEVELOPMENT-ONLY: import (existing S6 importer) and publish (governed
  * `setKnowledgeLifecycle`) the 118-Activity catalogue in a verified DISPOSABLE
  * database. Dry-run by default.
  *
- *   DATABASE_URL=... npm run knowledge:dev-catalogue -- --target-db tiizi_p0_preview [--apply]
+ *   DATABASE_URL=... TIIZI_DISPOSABLE_DB_HOST=127.0.0.1 TIIZI_DISPOSABLE_DB_PORT=<port> npm run knowledge:dev-catalogue -- --target-db tiizi_p0_preview [--apply]
  *
- * Refuses unless the database is loopback, matches --target-db, matches the
+ * Refuses unless the explicit host/port allow-list matches, the database is loopback, matches --target-db, matches the
  * disposable naming pattern, is not a protected name, and carries the
  * `tiizi-disposable-preview:*` database comment marker.
  */
@@ -26,9 +27,10 @@ async function main(): Promise<void> {
   if (apply && args.includes('--dry-run')) throw new Error('Choose either --dry-run or --apply');
 
   const url = databaseUrl();
-  const db = createPool(url);
+  // Also requires TIIZI_DISPOSABLE_DB_HOST / _PORT (explicit allow-list; port 5432 is never accepted).
+  const spec = { ...disposableTargetSpecFromEnv(url), databaseName: targetDb };
+  const { db, identity } = await openGuardedDisposableDb(spec, (u) => createPool(u));
   try {
-    const identity = await verifyDisposableTarget(db, url, targetDb);
     process.stdout.write(`${JSON.stringify({ target: identity }, null, 2)}\n`);
     const base = resolve(process.cwd(), '../docs/programme/working/s6-content');
     const [candidate, inventory] = await Promise.all([

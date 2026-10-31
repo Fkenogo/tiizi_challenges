@@ -5,18 +5,21 @@
  * update race. This suite uses independent pooled connections against a
  * DISPOSABLE local cluster and is skipped unless explicitly pointed at one:
  *
- *   TIIZI_REAL_PG_URL=postgres://postgres@localhost:5549/tiizi_p5_preview_s3a \
- *   TIIZI_REAL_PG_DB=tiizi_p5_preview_s3a npx vitest run test/p5t2s3aRealPostgres.test.ts
+ *   TIIZI_REAL_PG_URL=postgres://postgres@127.0.0.1:5549/tiizi_p5_preview_s3a \
+ *   TIIZI_REAL_PG_DB=tiizi_p5_preview_s3a \
+ *   TIIZI_DISPOSABLE_DB_HOST=127.0.0.1 TIIZI_DISPOSABLE_DB_PORT=5549 \
+ *   npx vitest run test/p5t2s3aRealPostgres.test.ts
  *
- * The target must pass the same disposable-database verification the dev
- * catalogue tool uses (loopback, disposable name, `tiizi-disposable-preview:*`
- * database comment). It is never run in CI and never against a shared database.
+ * The target must pass the disposable-database guard (`disposableDbGuard.ts`):
+ * explicit allowed host/port/name, loopback, not port 5432, disposable name and
+ * the `tiizi-disposable-preview:*` database comment, all checked before any
+ * mutation. It is never run in CI and never against a shared database.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Db } from '../src/db.js';
 import { createPool } from '../src/db.js';
-import { verifyDisposableTarget } from '../src/knowledgeDevCataloguePublish.js';
+import { disposableTargetSpecFromEnv, openGuardedDisposableDb } from '../src/disposableDbGuard.js';
 import { runMigrations } from '../src/migrate.js';
 import {
   createTemplateDraft,
@@ -39,8 +42,8 @@ describe.skipIf(!url || !target)('P5T-2 S3a real PostgreSQL concurrency (disposa
   const authors: string[] = [];
 
   beforeAll(async () => {
-    db = createPool(url as string, { max: 12 });
-    await verifyDisposableTarget(db, url as string, target as string);
+    const spec = { ...disposableTargetSpecFromEnv(url), databaseName: target };
+    ({ db } = await openGuardedDisposableDb(spec, (u) => createPool(u, { max: 12 })));
     await runMigrations(db);
     await db.query('TRUNCATE challenge_templates, platform_operator_template_authors, members CASCADE');
     for (let i = 0; i < 4; i += 1) {
