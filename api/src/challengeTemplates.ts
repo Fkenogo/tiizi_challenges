@@ -253,6 +253,9 @@ export async function validateTemplateContent(db: Db, content: TemplateContent):
   return { ok: issues.length === 0, issues };
 }
 
+/** The lifecycle a Template row can carry (migration 030 constrains it). */
+type TemplateLifecycle = 'draft' | 'published' | 'retired';
+
 interface VersionRow {
   template_id: string;
   version: number;
@@ -412,6 +415,23 @@ async function assertAuthorInTransaction(tx: Db, actor: string): Promise<void> {
 }
 
 /**
+ * The optimistic-concurrency refusal shared by the conditional save and the
+ * conditional publish: one client path for both writes, one payload shape.
+ * `current` always carries the revision token, the current content and the
+ * last editor's identity and timestamp.
+ */
+function draftChangedError(row: VersionRow, message: string): TemplateError {
+  return new TemplateError(409, 'template_draft_changed', message, {
+    current: {
+      revisionToken: revisionTokenFor(row),
+      content: contentFromRow(row),
+      lastEditedByMemberId: String(row.last_edited_by_member_id),
+      lastEditedAt: row.last_edited_at,
+    },
+  });
+}
+
+/**
  * Conditional draft save. The token comparison runs after the Template and
  * version rows are locked in this same transaction, so two saves that start
  * from the same token serialize: the first commits, the second finds a
@@ -473,29 +493,12 @@ async function readVersionRow(db: Db, templateId: string, version: number): Prom
  * early retired check on the publish path; the authoritative retired check is
  * the one inside the transaction (`lockTemplate`).
  */
-async function readTemplateLifecycle(db: Db, templateId: string): Promise<string | null> {
-  const found = await db.query<{ lifecycle: string }>(
+async function readTemplateLifecycle(db: Db, templateId: string): Promise<TemplateLifecycle | null> {
+  const found = await db.query<{ lifecycle: TemplateLifecycle }>(
     `SELECT lifecycle FROM challenge_templates WHERE template_id = $1`,
     [templateId],
   );
   return found.rows[0]?.lifecycle ?? null;
-}
-
-/**
- * The optimistic-concurrency refusal shared by the conditional save and the
- * conditional publish: one client path for both writes, one payload shape.
- * `current` always carries the revision token, the current content and the
- * last editor's identity and timestamp.
- */
-function draftChangedError(row: VersionRow, message: string): TemplateError {
-  return new TemplateError(409, 'template_draft_changed', message, {
-    current: {
-      revisionToken: revisionTokenFor(row),
-      content: contentFromRow(row),
-      lastEditedByMemberId: String(row.last_edited_by_member_id),
-      lastEditedAt: row.last_edited_at,
-    },
-  });
 }
 
 /**

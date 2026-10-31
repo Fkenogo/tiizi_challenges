@@ -1089,6 +1089,15 @@ describe('P5T-2 S5A publish precondition and authorisation revocation', () => {
     const publishRaw = await rawCall(w, 'POST', saveUrl.replace('/versions/1', '/versions/1/publish'), w.tokens.author, { 'if-match': '*' });
     expect(publishRaw.status).toBe(400);
     expect(JSON.stringify(JSON.parse(publishRaw.body).error)).toBe(saveBodies[0]);
+
+    // The publish endpoint refuses EVERY malformed shape the save endpoint
+    // refuses — a wildcard, a weak validator and multiple validators alike —
+    // and always with that same body.
+    for (const value of malformed) {
+      const publish = await rawCall(w, 'POST', saveUrl.replace('/versions/1', '/versions/1/publish'), w.tokens.author, { 'if-match': value });
+      expect(publish.status, value).toBe(400);
+      expect(JSON.stringify(JSON.parse(publish.body).error), value).toBe(saveBodies[0]);
+    }
   });
 
   it('publishes with no If-Match header exactly as before', async () => {
@@ -1130,6 +1139,7 @@ describe('P5T-2 S5A publish precondition and authorisation revocation', () => {
     const current = refused.json.error.details.current;
     expect(current.revisionToken).toBe(fresh);
     expect(current.content).toBeTruthy();
+    expect(current.content.composer.title).toBe('Edited after review');
     expect(current.lastEditedByMemberId).toBe(w.ids.author);
     expect(current.lastEditedAt).toBeTruthy();
     // No publication and no publish audit event.
@@ -1242,6 +1252,20 @@ describe('P5T-2 S5A publish precondition and authorisation revocation', () => {
     const unchanged409 = await publishDraft(w, validNoHeader.templateId, 1);
     expect(unchanged409.status).toBe(409);
     expect(unchanged409.json.error.code).toBe('template_retired');
+
+    // Retired AND already published => template_version_immutable. The
+    // published-state check precedes the retired check, with or without a
+    // token.
+    const publishedThenRetired = await createDraft(w, racePayload(act));
+    const publishedToken = await draftToken(w, publishedThenRetired.templateId, 1);
+    expect((await publishDraft(w, publishedThenRetired.templateId, 1, quoted(publishedToken))).status).toBe(200);
+    await retire(publishedThenRetired.templateId);
+    const immutable = await publishDraft(w, publishedThenRetired.templateId, 1, quoted(publishedToken));
+    expect(immutable.status).toBe(409);
+    expect(immutable.json.error.code).toBe('template_version_immutable');
+    const immutableNoToken = await publishDraft(w, publishedThenRetired.templateId, 1);
+    expect(immutableNoToken.status).toBe(409);
+    expect(immutableNoToken.json.error.code).toBe('template_version_immutable');
   });
 
   it('refuses publish, revise and retire from a revoked author at the transaction boundary', async () => {

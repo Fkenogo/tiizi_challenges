@@ -228,6 +228,8 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
     commit: () => void;
     /** Resolves once the revocation transaction has committed. */
     finished: Promise<void>;
+    /** The backend PID of the revocation, i.e. the backend that blocks the writer. */
+    blockerPid: number;
   }
 
   /**
@@ -240,39 +242,43 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
     const held = new Promise<void>((resolve) => { signalHeld = resolve; });
     let release!: () => void;
     const released = new Promise<void>((resolve) => { release = resolve; });
+    let blockerPid = 0;
     const finished = db.transaction(async (tx) => {
       await tx.query(
         `UPDATE platform_operator_template_authors SET revoked_at = now(), revoked_reference = 'S5a held revocation' WHERE member_id = $1`,
         [memberId],
       );
+      // Test-only orchestration: learn which backend holds the roster lock so
+      // the detector below can be scoped to it.
+      const pid = await tx.query<{ pid: number }>('SELECT pg_backend_pid() AS pid');
+      blockerPid = Number(pid.rows[0].pid);
       signalHeld(); // the roster row lock is held from here until COMMIT
       await released;
     });
     await held;
-    return { commit: release, finished };
+    return { commit: release, finished, blockerPid };
   }
 
   /**
-   * Wait until a backend is genuinely blocked on the roster row lock.
+   * Wait until the WRITER is genuinely blocked on the roster row lock.
    *
-   * This observes DATABASE STATE, not elapsed time: it looks for a lock wait
-   * the server itself reports. The deadline is a failure bound, so a writer
-   * that never blocks fails the test instead of hanging.
+   * This observes DATABASE STATE, not elapsed time. The wait is scoped to the
+   * exact backend the revocation is blocking (`pg_blocking_pids`), so it
+   * cannot be satisfied by an unrelated waiter elsewhere on the cluster. The
+   * deadline is a failure bound, so a writer that never blocks fails the test
+   * instead of hanging.
    */
-  async function waitForBlockedRosterLock(timeoutMs = 30_000): Promise<void> {
+  async function waitForBlockedRosterLock(blockerPid: number, timeoutMs = 30_000): Promise<void> {
     const deadline = Date.now() + timeoutMs;
     for (;;) {
       const waiting = await db.query<{ pid: number }>(
         `SELECT a.pid
            FROM pg_stat_activity a
           WHERE a.wait_event_type = 'Lock'
+            AND a.query ILIKE '%FOR SHARE%'
             AND a.query ILIKE '%platform_operator_template_authors%'
-         UNION
-         SELECT l.pid
-           FROM pg_locks l
-           JOIN pg_class c ON c.oid = l.relation
-          WHERE NOT l.granted
-            AND c.relname = 'platform_operator_template_authors'`,
+            AND $1 = ANY(pg_blocking_pids(a.pid))`,
+        [blockerPid],
       );
       if (waiting.rows.length > 0) return;
       if (Date.now() >= deadline) throw new Error('the writer never blocked on the roster row lock');
@@ -325,7 +331,7 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
       const { templateId } = await freshDraft(racer);
       const held = await holdRevocationOpen(racer);
       const write = publishTemplateVersion(db, racer, templateId, 1).then(() => null, (error: unknown) => error);
-      await waitForBlockedRosterLock();
+      await waitForBlockedRosterLock(held.blockerPid);
       held.commit();
       await held.finished;
       const error = await write;
@@ -341,7 +347,7 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
       const { templateId } = await freshPublished(racer);
       const held = await holdRevocationOpen(racer);
       const write = reviseTemplate(db, racer, templateId).then(() => null, (error: unknown) => error);
-      await waitForBlockedRosterLock();
+      await waitForBlockedRosterLock(held.blockerPid);
       held.commit();
       await held.finished;
       const error = await write;
@@ -356,7 +362,7 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
       const { templateId } = await freshDraft(racer);
       const held = await holdRevocationOpen(racer);
       const write = retireTemplate(db, racer, templateId, 'refused while held').then(() => null, (error: unknown) => error);
-      await waitForBlockedRosterLock();
+      await waitForBlockedRosterLock(held.blockerPid);
       held.commit();
       await held.finished;
       const error = await write;
