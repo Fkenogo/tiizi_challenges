@@ -9,6 +9,7 @@
  *   TIIZI_REAL_PG_URL=postgres://postgres@127.0.0.1:5549/tiizi_p5_preview_s5a \
  *   TIIZI_REAL_PG_DB=tiizi_p5_preview_s5a \
  *   TIIZI_DISPOSABLE_DB_HOST=127.0.0.1 TIIZI_DISPOSABLE_DB_PORT=5549 \
+ *   TIIZI_DISPOSABLE_DB_NAME=tiizi_p5_preview_s5a \
  *   npx vitest run test/p5t2s5RealPostgres.test.ts
  *
  * The target must pass the disposable-database guard (`disposableDbGuard.ts`):
@@ -17,8 +18,14 @@
  * comment, all checked before any mutation. It is never run in CI and never
  * against a shared, persistent or production database.
  *
+ * The name is declared TWICE and the two must agree: `TIIZI_DISPOSABLE_DB_NAME`
+ * is the guard's independent declaration of the target and `TIIZI_REAL_PG_DB`
+ * is the suite's own. A mismatch or an unset value is refused before any
+ * connection is opened.
+ *
  * DETERMINISM. Every interleaving below is coordinated on OBSERVED DATABASE
- * STATE — a lock wait visible in `pg_locks`/`pg_stat_activity`, a committed
+ * STATE — a lock wait visible in `pg_stat_activity` and scoped by
+ * `pg_blocking_pids` to the backend that holds the roster row, a committed
  * row, an audit row — never on elapsed time. The single `setTimeout` below is
  * a polling interval for a state predicate; the deadline that bounds it is a
  * failure bound, never an assertion. No assertion in this file says "this must
@@ -271,6 +278,25 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
   }
 
   /**
+   * Run `work` with a revocation HELD OPEN on its own pooled connection.
+   *
+   * The held revocation is ALWAYS released, including when an assertion inside
+   * `work` fails: an unreleased revocation keeps a transaction open and a
+   * pooled client checked out, so the pool could not be closed and a failing
+   * suite would HANG instead of failing. Releasing in a `finally` keeps the
+   * failure mode honest.
+   */
+  async function withHeldRevocation<T>(memberId: string, work: (held: HeldRevocation) => Promise<T>): Promise<T> {
+    const held = await holdRevocationOpen(memberId);
+    try {
+      return await work(held);
+    } finally {
+      held.commit();
+      await held.finished;
+    }
+  }
+
+  /**
    * Wait until the WRITER is genuinely blocked on the roster row lock.
    *
    * This observes DATABASE STATE, not elapsed time. The wait is scoped to the
@@ -340,46 +366,49 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
     {
       const racer = await seedAuthor('held-publish');
       const { templateId } = await freshDraft(racer);
-      const held = await holdRevocationOpen(racer);
-      const write = publishTemplateVersion(db, racer, templateId, 1).then(() => null, (error: unknown) => error);
-      await waitForBlockedRosterLock(held.blockerPid);
-      held.commit();
-      await held.finished;
-      const error = await write;
-      expect((error as { code?: string })?.code).toBe('template_author_required');
-      expect(await versionState(templateId, 1)).toBe('draft');
-      expect(await lifecycleOf(templateId)).toBe('draft');
-      expect(await auditCount(templateId, 'publish')).toBe(0);
+      await withHeldRevocation(racer, async (held) => {
+        const write = publishTemplateVersion(db, racer, templateId, 1).then(() => null, (error: unknown) => error);
+        await waitForBlockedRosterLock(held.blockerPid);
+        held.commit();
+        await held.finished;
+        const error = await write;
+        expect((error as { code?: string })?.code).toBe('template_author_required');
+        expect(await versionState(templateId, 1)).toBe('draft');
+        expect(await lifecycleOf(templateId)).toBe('draft');
+        expect(await auditCount(templateId, 'publish')).toBe(0);
+      });
     }
 
     // Revise.
     {
       const racer = await seedAuthor('held-revise');
       const { templateId } = await freshPublished(racer);
-      const held = await holdRevocationOpen(racer);
-      const write = reviseTemplate(db, racer, templateId).then(() => null, (error: unknown) => error);
-      await waitForBlockedRosterLock(held.blockerPid);
-      held.commit();
-      await held.finished;
-      const error = await write;
-      expect((error as { code?: string })?.code).toBe('template_author_required');
-      expect(await versionCount(templateId)).toBe(1);
-      expect(await auditCount(templateId, 'revise')).toBe(0);
+      await withHeldRevocation(racer, async (held) => {
+        const write = reviseTemplate(db, racer, templateId).then(() => null, (error: unknown) => error);
+        await waitForBlockedRosterLock(held.blockerPid);
+        held.commit();
+        await held.finished;
+        const error = await write;
+        expect((error as { code?: string })?.code).toBe('template_author_required');
+        expect(await versionCount(templateId)).toBe(1);
+        expect(await auditCount(templateId, 'revise')).toBe(0);
+      });
     }
 
     // Retire.
     {
       const racer = await seedAuthor('held-retire');
       const { templateId } = await freshDraft(racer);
-      const held = await holdRevocationOpen(racer);
-      const write = retireTemplate(db, racer, templateId, 'refused while held').then(() => null, (error: unknown) => error);
-      await waitForBlockedRosterLock(held.blockerPid);
-      held.commit();
-      await held.finished;
-      const error = await write;
-      expect((error as { code?: string })?.code).toBe('template_author_required');
-      expect(await lifecycleOf(templateId)).toBe('draft');
-      expect(await auditCount(templateId, 'retire')).toBe(0);
+      await withHeldRevocation(racer, async (held) => {
+        const write = retireTemplate(db, racer, templateId, 'refused while held').then(() => null, (error: unknown) => error);
+        await waitForBlockedRosterLock(held.blockerPid);
+        held.commit();
+        await held.finished;
+        const error = await write;
+        expect((error as { code?: string })?.code).toBe('template_author_required');
+        expect(await lifecycleOf(templateId)).toBe('draft');
+        expect(await auditCount(templateId, 'retire')).toBe(0);
+      });
     }
   }, 120_000);
 
