@@ -169,6 +169,8 @@ export interface TemplateValidationIssue {
   message: string;
   field?: string;
   activityIndex?: number;
+  /** Wizard stage the server attributes the issue to (TYPE, BASICS, ACTIVITIES, MEASUREMENT, REQUIREMENT, SCHEDULE, RULES). */
+  stage?: string;
 }
 
 export interface TemplateValidationResponse { ok: boolean; issues: TemplateValidationIssue[] }

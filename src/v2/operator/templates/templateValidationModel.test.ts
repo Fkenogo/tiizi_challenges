@@ -33,6 +33,21 @@ describe('issue → editor step mapping (placement only, never validity)', () =>
   });
 });
 
+describe('server issue shapes from the composer (R1 S1)', () => {
+  it('places combined fields and stage-only issues, and folds STAGE_INCOMPLETE into its fields', () => {
+    expect(stepForIssue({ code: 'MISSING_FIELD', field: 'activities[].metric+unit', stage: 'MEASUREMENT', message: '' })).toBe('counts');
+    expect(stepForIssue({ code: 'STAGE_INCOMPLETE', stage: 'ACTIVITIES', message: '' })).toBe('activities');
+    expect(stepForIssue({ code: 'STAGE_INCOMPLETE', stage: 'REQUIREMENT', message: '' })).toBe('counts');
+    const grouped = groupIssuesByStep([
+      { code: 'MISSING_FIELD', field: 'activities[].metric+unit', stage: 'MEASUREMENT', message: 'a' },
+      { code: 'STAGE_INCOMPLETE', stage: 'MEASUREMENT', message: 'b' },
+      { code: 'STAGE_INCOMPLETE', stage: 'RULES', message: 'c' },
+    ]);
+    expect(grouped.counts.map((i) => i.message)).toEqual(['a', 'c']);
+    expect(grouped.general).toHaveLength(0);
+  });
+});
+
 describe('validation freshness', () => {
   it('is fresh only for the saved draft the result was computed for', () => {
     expect(isValidationStale(record, fresh)).toBe(false);

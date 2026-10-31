@@ -1,5 +1,5 @@
 import type { TemplateValidationIssue } from '../../../api/operatorTemplatesApi';
-import { STEP_LABELS, type IssueStep, type ValidationFailure, type ValidationRecord } from './templateValidationModel';
+import { STEP_LABELS, displayedIssues, type IssueStep, type ValidationFailure, type ValidationRecord } from './templateValidationModel';
 
 /**
  * TIIZI-FER-P5T-2-S4 — shows the SERVER's validation outcome for the saved draft.
@@ -40,12 +40,13 @@ export function TemplateValidationPanel({
     );
   }
   if (record.ok) {
-    return <p role="status" data-validation-state="ok" className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">The saved draft passed the server check. Publishing is a later step and is not available here.</p>;
+    return <p role="status" data-validation-state="ok" className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">The saved draft passed the server check as of when it was saved or opened here. A later change by another author is caught when you next save. Publishing is a later step and is not available here.</p>;
   }
+  const total = displayedIssues(record.issues).length;
   const steps = (Object.keys(grouped) as IssueStep[]).filter((step) => grouped[step].length > 0);
   return (
     <section role="alert" aria-label="Check results" data-validation-state="issues" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-      <p className="font-bold">The server found {record.issues.length} {record.issues.length === 1 ? 'issue' : 'issues'} in the saved draft</p>
+      <p className="font-bold">The server found {total} {total === 1 ? 'issue' : 'issues'} in the saved draft</p>
       <ul className="mt-1 space-y-1">
         {steps.map((step) => (
           <li key={step}>

@@ -30,7 +30,7 @@ export function TemplatePreviewPage() {
       await Promise.all((shown?.content.composer.activities ?? []).map(async (config) => {
         try { names[config.activity] = (await fetchKnowledgeById(config.activity)).name; } catch { /* name stays unavailable; the preview says so */ }
       }));
-      return { shown, names };
+      return { shown, names, lifecycle: found.lifecycle };
     },
   });
 
@@ -48,11 +48,12 @@ export function TemplatePreviewPage() {
   }
   if (!detail.data) return <V2Page wide>{header}<V2LoadingState label="Loading the preview…" /></V2Page>;
   if (!detail.data.shown) return <V2Page wide>{header}<V2EmptyState title="Nothing to preview" message="This Template has no versions." action={back} /></V2Page>;
-  const { shown, names } = detail.data;
+  const { shown, names, lifecycle } = detail.data;
   return (
     <V2Page wide>
       {header}
       <p className="mb-3 text-xs font-bold text-slate-500">{shown.state === 'draft' ? `Saved draft, version ${shown.version}` : `Published version ${shown.version}`}</p>
+      {lifecycle === 'retired' ? <p role="status" className="mb-3 rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">This Template is retired and no longer offered to members.</p> : null}
       <TemplatePreview model={derivePreview(shown, names)} />
       <div className="mt-4">{back}</div>
     </V2Page>

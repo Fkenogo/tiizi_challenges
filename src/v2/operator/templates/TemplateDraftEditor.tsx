@@ -62,8 +62,9 @@ import { templateCapabilitiesKey, useTemplateCapabilities } from './useTemplateC
  * steps over a Template-only state (no hosting Group, dates, Social Cause,
  * Support or creator fields exist in it). It is not a validation authority:
  * the server validates every write; this page only mirrors hard content limits
- * for early feedback. Publish, revise, retire and the validation/preview
- * workflow belong to later slices and are absent here.
+ * for early feedback. "Save and check" asks the server to validate the saved draft;
+ * the read-only preview is a separate route. Publish, revise and retire belong to
+ * later slices and are absent here.
  */
 
 const STEPS = [
@@ -452,8 +453,16 @@ function TemplateDraftEditorInner() {
     try {
       const response = await validateTemplateDraft(templateId, version);
       const detail = await fetchOperatorTemplate(templateId);
+      // The editor moved to another Template while this check ran: its answer is not ours to show.
+      if (sessionRef.current.templateId !== templateId || sessionRef.current.version !== version) return;
       const draft = detail.versions.find((entry) => entry.version === version && entry.state === 'draft');
-      if (draft?.revisionToken && draft.revisionToken !== token) {
+      if (!draft || !draft.revisionToken) {
+        // Published or retired by someone else meanwhile: no longer an open draft.
+        setImmutable(true);
+        setValidationFailure(classifyValidationFailure({ status: 409 }));
+        return;
+      }
+      if (draft.revisionToken !== token) {
         await beginConflict({
           mineState: currentRef.current, baseBody: sessionRef.current.baseBody, theirsBody: bodyFromContent(draft.content),
           theirsToken: draft.revisionToken, lastEditedByMemberId: draft.lastEditedByMemberId, lastEditedAt: draft.lastEditedAt,
@@ -576,7 +585,7 @@ function TemplateDraftEditorInner() {
 
   const stepIndex = STEPS.findIndex((entry) => entry.id === step);
   const saveLabel = session.templateId === null ? 'Create draft' : 'Save draft';
-  const saveDisabled = saving || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
+  const saveDisabled = saving || checking || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
   const checkDisabled = saving || checking || readOnly || issues.length > 0 || (session.templateId === null && !dirty);
   const validationStale = validation !== null && isValidationStale(validation, {
     currentToken: session.token, templateId: session.templateId, version: session.version, dirty, conflict: conflict !== null,
@@ -633,7 +642,7 @@ function TemplateDraftEditorInner() {
             aria-current={entry.id === step ? 'step' : undefined}
             className={`rounded-full px-3 py-1.5 text-xs font-bold ${entry.id === step ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}
           >
-            {index + 1}. {entry.label}{stepIssues(entry.id).length > 0 ? <span className="ml-1 rounded-full bg-red-600 px-1.5 text-[10px] text-white" aria-label={`${stepIssues(entry.id).length} server check issues`}>{stepIssues(entry.id).length}</span> : null}
+            {index + 1}. {entry.label}{stepIssues(entry.id).length > 0 ? <span className="ml-1 rounded-full bg-red-600 px-1.5 text-[10px] text-white" ><span aria-hidden="true">{stepIssues(entry.id).length}</span><span className="sr-only">{` (${stepIssues(entry.id).length} server check ${stepIssues(entry.id).length === 1 ? 'issue' : 'issues'})`}</span></span> : null}
           </button>
         ))}
       </nav>

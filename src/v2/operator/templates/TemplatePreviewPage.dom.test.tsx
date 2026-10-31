@@ -69,7 +69,7 @@ describe('read-only Template preview', () => {
     expect(within(cards[0] as HTMLElement).getByText('Push-ups')).toBeTruthy();
     expect(within(cards[0] as HTMLElement).getByText(/Reps in reps · target 100 reps/)).toBeTruthy();
     expect(within(cards[1] as HTMLElement).getByText(/Time in minutes · target 5 minutes/)).toBeTruthy();
-    expect(within(cards[1] as HTMLElement).getByText('How the time counts: Added up across the day')).toBeTruthy();
+    expect(within(cards[1] as HTMLElement).getByText('Time counts: Added up across the day')).toBeTruthy();
     expect(screen.getByText(/Everyone who reaches the target is ranked/)).toBeTruthy();
   });
 
@@ -131,5 +131,11 @@ describe('read-only Template preview', () => {
     h.detail.mockResolvedValue(detailOf([versionOf(null, rich)]));
     mount();
     expect(await screen.findByText('Published version 1')).toBeTruthy();
+  });
+
+  it('says so when the Template is retired', async () => {
+    h.detail.mockResolvedValue({ ...detailOf([versionOf(null, rich)]), lifecycle: 'retired' });
+    mount();
+    expect(await screen.findByText(/retired and no longer offered/)).toBeTruthy();
   });
 });

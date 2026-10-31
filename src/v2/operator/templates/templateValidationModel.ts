@@ -36,6 +36,10 @@ const FIELD_STEP: Record<string, EditorStepId> = {
   loadBasis: 'counts', componentIds: 'counts', goalValue: 'counts', goalUnit: 'counts',
 };
 
+const STAGE_STEP: Record<string, EditorStepId> = {
+  TYPE: 'type', BASICS: 'name', ACTIVITIES: 'activities', MEASUREMENT: 'counts', REQUIREMENT: 'counts', RULES: 'counts', SCHEDULE: 'template',
+};
+
 const CODE_STEP: Record<string, EditorStepId> = {
   STALE_ACTIVITY: 'activities',
   ACTIVITY_NOT_ELIGIBLE: 'activities',
@@ -46,7 +50,8 @@ const CODE_STEP: Record<string, EditorStepId> = {
 /** The last path segment of `activities[].metric`, `activities[2].unit`, `title`, … */
 function leaf(field: string): string {
   const parts = field.split('.');
-  return parts[parts.length - 1].replace(/\[\d*\]$/, '');
+  // `activities[].metric+unit` names two fields of one step; the first decides the step.
+  return parts[parts.length - 1].replace(/\[\d*\]$/, '').split('+')[0];
 }
 
 /** Which editor step an issue belongs to. Unrecognised issues are `general`, never dropped. */
@@ -57,12 +62,18 @@ export function stepForIssue(issue: TemplateValidationIssue): IssueStep {
     const byField = FIELD_STEP[leaf(issue.field)];
     if (byField) return byField;
   }
-  return CODE_STEP[issue.code] ?? 'general';
+  return CODE_STEP[issue.code] ?? (issue.stage ? STAGE_STEP[issue.stage] : undefined) ?? 'general';
+}
+
+/** `STAGE_INCOMPLETE` only restates missing fields of the same stage; hide it when those are listed. */
+export function displayedIssues(issues: TemplateValidationIssue[]): TemplateValidationIssue[] {
+  const stagesWithFields = new Set(issues.filter((i) => i.code === 'MISSING_FIELD' && i.stage).map((i) => i.stage));
+  return issues.filter((i) => !(i.code === 'STAGE_INCOMPLETE' && i.stage && stagesWithFields.has(i.stage)));
 }
 
 export function groupIssuesByStep(issues: TemplateValidationIssue[]): Record<IssueStep, TemplateValidationIssue[]> {
   const grouped: Record<IssueStep, TemplateValidationIssue[]> = { type: [], name: [], activities: [], counts: [], template: [], general: [] };
-  for (const issue of issues) grouped[stepForIssue(issue)].push(issue);
+  for (const issue of displayedIssues(issues)) grouped[stepForIssue(issue)].push(issue);
   return grouped;
 }
 

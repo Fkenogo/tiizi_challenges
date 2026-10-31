@@ -17,7 +17,7 @@ describe('Template preview derivation', () => {
     expect(model.activities.map((a) => [a.name, a.metric, a.unit, a.target])).toEqual([
       ['Push-ups', 'Reps', 'reps', '100'], ['Plank', 'Weight', 'kilograms', '40'],
     ]);
-    expect(model.activities[1].settings).toEqual(['Weight is reported as: Per side']);
+    expect(model.activities[1].settings).toEqual(['Weight reported as: Per side']);
     expect(model.whatCounts.some((line) => /ranked/.test(line))).toBe(true);
     expect(model.gaps).toEqual([]);
     expect(JSON.stringify(model)).not.toMatch(/goal/i);
@@ -27,13 +27,17 @@ describe('Template preview derivation', () => {
       activityConfig('act-1', { metric: 'duration', unit: 'minutes', durationMode: 'ACCUMULATED' }),
       activityConfig('act-2', { metric: 'completion', unit: 'completion', completionOccurrence: 'one guided session', position: 1 }),
     ])), {});
-    expect(model.activities[0].settings).toEqual(['How the time counts: Added up across the day']);
-    expect(model.activities[1].settings).toEqual(['Counts as done: one guided session']);
+    expect(model.activities[0].settings).toEqual(['Time counts: Added up across the day']);
+    expect(model.activities[1].settings).toEqual(['Counts when: one guided session']);
     expect(model.activities[0].name).toMatch(/name unavailable/);
   });
   it('lists what is still missing from an incomplete draft without claiming validity', () => {
     const model = derivePreview({ content: { summary: null, focusTags: [], sortOrder: 0, coverId: null, durationDays: null, durationPresetDays: null, composer: { activities: [] } } }, {});
     expect(model.title).toBe('Untitled Template');
     expect(model.gaps).toEqual(['No title yet', 'No Challenge type yet', 'No summary yet', 'No duration yet', 'No Activities yet']);
+  });
+  it('shows required parts and the named variant so drafts differing only there never look identical', () => {
+    const model = derivePreview(versionOf(null, contentOf({}, [activityConfig('act-1', { componentIds: ['LEFT', 'RIGHT'], activityVariant: 'incline' })])), {});
+    expect(model.activities[0].settings).toEqual(['Variant: incline', 'Required parts: LEFT, RIGHT']);
   });
 });

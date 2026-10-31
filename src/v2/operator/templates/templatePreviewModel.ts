@@ -1,12 +1,12 @@
 import type { OperatorTemplateVersion, TemplateActivityConfig } from '../../../api/operatorTemplatesApi';
 import {
   challengeTypeLabel,
-  loadBasisLabel,
   metricLabel,
   unitLabel,
   whatCountsExplanation,
 } from '../../challenges/challengeCreationDraft';
 import { challengeCoverGradient } from '../../challenges/challengeCovers';
+import { activitySettings } from './templateLibraryModel';
 
 /**
  * TIIZI-FER-P5T-2-S4 — illustrative member-style preview of a SAVED Template version.
@@ -40,16 +40,8 @@ export interface TemplatePreviewModel {
   gaps: string[];
 }
 
-const DURATION_MODE: Record<string, string> = { CONTINUOUS: 'All at once', ACCUMULATED: 'Added up across the day' };
-
-function describeSettings(config: TemplateActivityConfig): string[] {
-  const settings: string[] = [];
-  if (config.metric === 'weight' && config.loadBasis) settings.push(`Weight is reported as: ${loadBasisLabel(config.loadBasis)}`);
-  if (config.metric === 'duration' && config.durationMode) settings.push(`How the time counts: ${DURATION_MODE[config.durationMode] ?? 'Custom'}`);
-  if (config.metric === 'completion' && config.completionOccurrence) settings.push(`Counts as done: ${config.completionOccurrence}`);
-  if (config.activityVariant) settings.push('Uses a specific Activity variant');
-  return settings;
-}
+/** Counting settings come from the Library's shared helper so the two views can never disagree. */
+const describeSettings = (config: TemplateActivityConfig): string[] => activitySettings(config);
 
 export function derivePreview(version: Pick<OperatorTemplateVersion, 'content'>, names: Record<string, string> = {}): TemplatePreviewModel {
   const { content } = version;

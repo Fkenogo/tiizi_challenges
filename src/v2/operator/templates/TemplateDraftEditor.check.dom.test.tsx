@@ -149,9 +149,9 @@ describe('validation issues and step mapping', () => {
     await checkedWithIssues();
     const nav = screen.getByRole('navigation', { name: 'Editor steps' });
     for (const label of [/2\. Name & appearance/, /3\. Activities/, /4\. What counts/, /5\. Template details/]) {
-      expect(within(within(nav).getByRole('button', { name: label })).getByLabelText('1 server check issues')).toBeTruthy();
+      expect(within(within(nav).getByRole('button', { name: label })).getByText('(1 server check issue)')).toBeTruthy();
     }
-    expect(within(nav).getAllByLabelText('1 server check issues')).toHaveLength(4);
+    expect(within(nav).getAllByText('(1 server check issue)')).toHaveLength(4);
     await step(/Activities/);
     const activitiesIssues = screen.getByLabelText('Server check issues for this step');
     expect(within(activitiesIssues).getByText('Push-ups: Activity is not published')).toBeTruthy();
@@ -205,7 +205,7 @@ describe('stale results', () => {
     await userEvent.type(screen.getByLabelText('Template summary'), '!');
     expect(await screen.findByText(/no longer matches this draft/)).toBeTruthy();
     expect(screen.queryByLabelText('Server check issues for this step')).toBeNull();
-    expect(screen.queryByLabelText('1 server check issues')).toBeNull();
+    expect(screen.queryByText('(1 server check issue)')).toBeNull();
   });
 
   it('a plain save moves the server token, so the earlier result no longer applies', async () => {
@@ -240,6 +240,44 @@ describe('stale results', () => {
     expect(screen.queryByText(/passed the server check/)).toBeNull();
     expect(screen.queryByRole('alert', { name: 'Check results' })).toBeNull();
     await waitFor(() => expect(screen.getByRole('button', { name: /Apply/ })).toBeTruthy());
+  });
+});
+
+describe('review findings', () => {
+  it('a version published by someone else during the check is not presented as a pass; editing is switched off', async () => {
+    h.detail.mockResolvedValueOnce(serverDraft()).mockResolvedValue(detailOf([versionOf(null, contentOf())]));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    expect(await screen.findByText(/no longer an open draft/)).toBeTruthy();
+    expect(screen.queryByText(/passed the server check/)).toBeNull();
+    expect((screen.getByRole('button', { name: 'Save draft' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('Save draft is disabled while a check is running', async () => {
+    let release: (value: { ok: boolean; issues: [] }) => void = () => undefined;
+    h.validate.mockImplementation(() => new Promise((resolve) => { release = resolve; }));
+    h.detail.mockResolvedValueOnce(serverDraft()).mockResolvedValue(serverDraft(TOKEN_B, contentOf({ summary: 'Pending' })));
+    mount();
+    const user = await editSummary('Pending');
+    await user.click(checkButton());
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Save draft' }) as HTMLButtonElement).disabled).toBe(true));
+    release({ ok: true, issues: [] });
+    await screen.findByText(/passed the server check/);
+  });
+
+  it('places a missing metric and unit on What counts without a duplicate stage line', async () => {
+    h.validate.mockResolvedValue({ ok: false, issues: [
+      { code: 'MISSING_FIELD', field: 'activities[].metric+unit', stage: 'MEASUREMENT', message: 'composer: stage MEASUREMENT is missing activities[].metric+unit' },
+      { code: 'STAGE_INCOMPLETE', stage: 'MEASUREMENT', message: 'composer: stage MEASUREMENT is incomplete' },
+    ] });
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    const panel = await screen.findByRole('alert', { name: 'Check results' });
+    expect(within(panel).getByText(/found 1 issue/)).toBeTruthy();
+    expect(within(panel).queryByText('Other checks')).toBeNull();
+    expect(within(screen.getByRole('button', { name: /4\. What counts/ })).getByText('(1 server check issue)')).toBeTruthy();
   });
 });
 
