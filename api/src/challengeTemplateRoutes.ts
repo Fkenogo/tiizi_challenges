@@ -72,6 +72,27 @@ function ifMatchToken(request: FastifyRequest): string {
   return match[1];
 }
 
+/**
+ * `If-Match: "<revisionToken>"` is OPTIONAL for publish: absent means no
+ * precondition and the endpoint behaves exactly as it did before (no 428).
+ * Present but not a single strong quoted token (including `*` and weak
+ * validators): the same 400 `invalid_precondition` the save endpoint returns,
+ * so a wildcard can never defeat the publish precondition either.
+ *
+ * `ifMatchToken` above is deliberately NOT loosened: the save endpoint keeps
+ * its mandatory precondition and its own 428/400 behaviour byte-identical.
+ */
+function optionalIfMatchToken(request: FastifyRequest): string | undefined {
+  const raw = request.headers['if-match'];
+  if (raw === undefined) return undefined; // absent = no precondition
+  const value = (Array.isArray(raw) ? raw.join(',') : raw).trim();
+  const match = /^"([0-9a-f]{64})"$/.exec(value);
+  if (!match || !REVISION_TOKEN_PATTERN.test(match[1])) {
+    throw new TemplateError(400, 'invalid_precondition', 'If-Match must be a single quoted revisionToken');
+  }
+  return match[1];
+}
+
 /** Backstop for database-boundary refusals (roster/immutability triggers). */
 function mapDatabaseError(error: unknown): never {
   if (error instanceof TemplateError) throw error;
@@ -148,7 +169,13 @@ export function registerChallengeTemplateRoutes(app: FastifyInstance, db: Db): v
   app.post(apiPath('/operator/templates/:templateId/versions/:version/publish'), async (request, reply) => {
     const actor = await requireAuthor(request, reply);
     if (!actor) return;
-    const published = await guarded(() => publishTemplateVersion(db, actor, templateIdParam(request), versionParam(request)));
+    // Same order as the save endpoint: authentication, then path validation,
+    // then the header parse — so 401/403 keep precedence over 400 and the
+    // malformed header is refused before any Template or version read.
+    const templateId = templateIdParam(request);
+    const version = versionParam(request);
+    const expectedToken = optionalIfMatchToken(request);
+    const published = await guarded(() => publishTemplateVersion(db, actor, templateId, version, expectedToken));
     return reply.code(200).send(published);
   });
 

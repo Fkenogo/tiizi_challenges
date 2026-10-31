@@ -24,6 +24,11 @@ import {
 import { createDbKnowledgeIdentityResolver } from '../src/knowledgePins.js';
 import { createDbKnowledgeEligibilityResolverByIdentity } from '../src/knowledgeEligibility.js';
 import { listMigrationFiles, runMigrations, splitStatements } from '../src/migrate.js';
+import {
+  publishTemplateVersion,
+  retireTemplate,
+  reviseTemplate,
+} from '../src/challengeTemplates.js';
 import type {
   ChallengeCreationAuthority,
   ChallengeCreationAuthorityStatus,
@@ -1008,6 +1013,266 @@ describe('P5T-1 R2 hardening', () => {
     const page = await call(w, 'GET', '/api/challenge-templates?limit=1', w.tokens.member);
     expect(page.status).toBe(200);
     expect(page.json.templates).toHaveLength(0);
+  });
+});
+
+/* ---------------- P5T-2 S5A: publish precondition and revocation safety ---------------- */
+
+describe('P5T-2 S5A publish precondition and authorisation revocation', () => {
+  const quoted = (token: string) => `"${token}"`;
+
+  async function createDraft(w: World, payload: unknown) {
+    const created = await call(w, 'POST', '/api/operator/templates', w.tokens.author, payload);
+    expect(created.status, JSON.stringify(created.json)).toBe(201);
+    return created.json as { templateId: string; version: number };
+  }
+
+  /** The draft's current revision token, read through the Operator detail route. */
+  async function draftToken(w: World, templateId: string, version: number): Promise<string> {
+    const detail = await call(w, 'GET', `/api/operator/templates/${templateId}`, w.tokens.author);
+    expect(detail.status).toBe(200);
+    const row = (detail.json.versions ?? []).find((v: any) => v.version === version);
+    expect(row?.revisionToken, `version ${version} of ${templateId} must be an editable draft`).toBeTruthy();
+    return String(row.revisionToken);
+  }
+
+  /** Publish with an OPTIONAL If-Match: omit the header to publish exactly as before. */
+  async function publishDraft(w: World, templateId: string, version: number, ifMatch?: string) {
+    return call(
+      w,
+      'POST',
+      `/api/operator/templates/${templateId}/versions/${version}/publish`,
+      w.tokens.author,
+      undefined,
+      ifMatch === undefined ? {} : { 'if-match': ifMatch },
+    );
+  }
+
+  /** The raw response body, for byte-level comparison of two error contracts. */
+  async function rawCall(w: World, method: 'POST' | 'PUT', url: string, token: string | null, headers: Record<string, string> = {}) {
+    const response = await w.app.inject({
+      method, url,
+      headers: { ...(token ? authHeaders(token) : {}), ...headers },
+    });
+    return { status: response.statusCode, body: response.body };
+  }
+
+  it('keeps the save precondition mandatory and its 400 body byte-identical to the publish 400', async () => {
+    const act = await race();
+    const w = await world();
+    const draft = await createDraft(w, racePayload(act));
+    const token = await draftToken(w, draft.templateId, 1);
+    const saveUrl = `/api/operator/templates/${draft.templateId}/versions/1`;
+
+    const absent = await call(w, 'PUT', saveUrl, w.tokens.author, racePayload(act));
+    expect(absent.status).toBe(428);
+    expect(absent.json.error.code).toBe('precondition_required');
+
+    const malformed = [
+      '*',
+      `W/${quoted(token)}`,
+      token,
+      `${quoted(token)}, ${quoted(token)}`,
+      `"${token.slice(0, 63)}"`,
+      '""',
+      `"${token.toUpperCase()}"`,
+    ];
+    const saveBodies: string[] = [];
+    for (const value of malformed) {
+      const response = await call(w, 'PUT', saveUrl, w.tokens.author, racePayload(act), { 'if-match': value });
+      expect(response.status, value).toBe(400);
+      expect(response.json.error.code, value).toBe('invalid_precondition');
+      saveBodies.push(JSON.stringify(response.json.error));
+    }
+
+    // The publish endpoint answers a malformed header with exactly the same body.
+    const publishRaw = await rawCall(w, 'POST', saveUrl.replace('/versions/1', '/versions/1/publish'), w.tokens.author, { 'if-match': '*' });
+    expect(publishRaw.status).toBe(400);
+    expect(JSON.stringify(JSON.parse(publishRaw.body).error)).toBe(saveBodies[0]);
+  });
+
+  it('publishes with no If-Match header exactly as before', async () => {
+    const act = await race();
+    const w = await world();
+    const draft = await createDraft(w, racePayload(act));
+    const result = await publishDraft(w, draft.templateId, 1);
+    expect(result.status).toBe(200);
+    expect(result.json).toEqual({ templateId: draft.templateId, version: 1 });
+    expect(await count(w, 'challenge_template_versions', `state = 'published'`)).toBe(1);
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(1);
+  });
+
+  it('publishes with a matching If-Match token', async () => {
+    const act = await race();
+    const w = await world();
+    const draft = await createDraft(w, racePayload(act));
+    const token = await draftToken(w, draft.templateId, 1);
+    const result = await publishDraft(w, draft.templateId, 1, quoted(token));
+    expect(result.status, JSON.stringify(result.json)).toBe(200);
+    expect(result.json).toEqual({ templateId: draft.templateId, version: 1 });
+    expect(await count(w, 'challenge_template_versions', `state = 'published'`)).toBe(1);
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(1);
+  });
+
+  it('refuses a stale publish token with 409 template_draft_changed and the current draft, publishing nothing', async () => {
+    const act = await race();
+    const w = await world();
+    const draft = await createDraft(w, racePayload(act));
+    const stale = await draftToken(w, draft.templateId, 1);
+    const saved = await put(w, `/api/operator/templates/${draft.templateId}/versions/1`, w.tokens.author, racePayload(act, {}, { title: 'Edited after review' }));
+    expect(saved.status).toBe(200);
+    const fresh = await draftToken(w, draft.templateId, 1);
+    expect(fresh).not.toBe(stale);
+
+    const refused = await publishDraft(w, draft.templateId, 1, quoted(stale));
+    expect(refused.status).toBe(409);
+    expect(refused.json.error.code).toBe('template_draft_changed');
+    const current = refused.json.error.details.current;
+    expect(current.revisionToken).toBe(fresh);
+    expect(current.content).toBeTruthy();
+    expect(current.lastEditedByMemberId).toBe(w.ids.author);
+    expect(current.lastEditedAt).toBeTruthy();
+    // No publication and no publish audit event.
+    expect(await count(w, 'challenge_template_versions', `state = 'published'`)).toBe(0);
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(0);
+  });
+
+  it('refuses a token that belongs to a different Template or a different version', async () => {
+    const act = await race();
+    const w = await world();
+    const first = await createDraft(w, racePayload(act, {}, { title: 'First' }));
+    const second = await createDraft(w, racePayload(act, {}, { title: 'Second' }));
+    const foreign = await draftToken(w, first.templateId, 1);
+
+    const otherTemplate = await publishDraft(w, second.templateId, 1, quoted(foreign));
+    expect(otherTemplate.status).toBe(409);
+    expect(otherTemplate.json.error.code).toBe('template_draft_changed');
+
+    // A different VERSION of the same Template: publish v1, revise to v2, then
+    // offer v1's token for v2.
+    expect((await publishDraft(w, first.templateId, 1, quoted(foreign))).status).toBe(200);
+    const revised = await call(w, 'POST', `/api/operator/templates/${first.templateId}/revisions`, w.tokens.author);
+    expect(revised.status).toBe(201);
+    const otherVersion = await publishDraft(w, first.templateId, 2, quoted(foreign));
+    expect(otherVersion.status).toBe(409);
+    expect(otherVersion.json.error.code).toBe('template_draft_changed');
+    expect(await count(w, 'challenge_template_versions', `state = 'published'`)).toBe(1);
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(1);
+  });
+
+  it('replays a publish token after publication as immutable, not as a draft change', async () => {
+    const act = await race();
+    const w = await world();
+    const draft = await createDraft(w, racePayload(act));
+    const token = await draftToken(w, draft.templateId, 1);
+    expect((await publishDraft(w, draft.templateId, 1, quoted(token))).status).toBe(200);
+    const replay = await publishDraft(w, draft.templateId, 1, quoted(token));
+    expect(replay.status).toBe(409);
+    expect(replay.json.error.code).toBe('template_version_immutable');
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(1);
+  });
+
+  it('refuses a malformed publish header after authentication and path validation, before any read', async () => {
+    const act = await race();
+    const w = await world();
+    const draft = await createDraft(w, racePayload(act));
+    const publishUrl = `/api/operator/templates/${draft.templateId}/versions/1/publish`;
+
+    // Before any Template or version read: an unknown Template still answers 400.
+    const unknown = await call(w, 'POST', '/api/operator/templates/00000000-0000-4000-8000-000000000000/versions/1/publish', w.tokens.author, undefined, { 'if-match': '*' });
+    expect(unknown.status).toBe(400);
+    expect(unknown.json.error.code).toBe('invalid_precondition');
+
+    // Authentication keeps precedence over the header parse.
+    const anonymous = await rawCall(w, 'POST', publishUrl, null, { 'if-match': '*' });
+    expect(anonymous.status).toBe(401);
+
+    // Authorisation keeps precedence over the header parse.
+    const member = await call(w, 'POST', publishUrl, w.tokens.member, undefined, { 'if-match': '*' });
+    expect(member.status).toBe(403);
+
+    // Path validation keeps precedence over the header parse.
+    const badId = await call(w, 'POST', '/api/operator/templates/not-a-uuid/versions/1/publish', w.tokens.author, undefined, { 'if-match': '*' });
+    expect(badId.status).toBe(400);
+    expect(badId.json.error.code).toBe('invalid_template_id');
+    const badVersion = await call(w, 'POST', `/api/operator/templates/${draft.templateId}/versions/zero/publish`, w.tokens.author, undefined, { 'if-match': '*' });
+    expect(badVersion.status).toBe(400);
+    expect(badVersion.json.error.code).toBe('invalid_template_version');
+
+    // The rejected header published nothing.
+    expect(await count(w, 'challenge_template_versions', `state = 'published'`)).toBe(0);
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(0);
+  });
+
+  it('gives a retired Template precedence over the token check and over validation', async () => {
+    const act = await race();
+    const w = await world();
+    const retire = async (templateId: string) => {
+      const response = await call(w, 'POST', `/api/operator/templates/${templateId}/retire`, w.tokens.author, { reason: 'retired in the S5A suite' });
+      expect(response.status).toBe(200);
+    };
+
+    // Retired + valid draft + valid token => template_retired, and no audit event.
+    const valid = await createDraft(w, racePayload(act));
+    const validToken = await draftToken(w, valid.templateId, 1);
+    await retire(valid.templateId);
+    const retiredValid = await publishDraft(w, valid.templateId, 1, quoted(validToken));
+    expect(retiredValid.status).toBe(409);
+    expect(retiredValid.json.error.code).toBe('template_retired');
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(0);
+
+    // Retired + invalid draft + a token => template_retired, never 422.
+    const invalid = await createDraft(w, {});
+    const invalidToken = await draftToken(w, invalid.templateId, 1);
+    await retire(invalid.templateId);
+    const retiredInvalid = await publishDraft(w, invalid.templateId, 1, quoted(invalidToken));
+    expect(retiredInvalid.status).toBe(409);
+    expect(retiredInvalid.json.error.code).toBe('template_retired');
+
+    // Retired + invalid draft + NO header => today's behaviour, 422.
+    const invalidNoHeader = await createDraft(w, {});
+    await retire(invalidNoHeader.templateId);
+    const unchanged422 = await publishDraft(w, invalidNoHeader.templateId, 1);
+    expect(unchanged422.status).toBe(422);
+    expect(unchanged422.json.error.code).toBe('invalid_template');
+
+    // Retired + valid draft + NO header => unchanged: the in-transaction check answers.
+    const validNoHeader = await createDraft(w, racePayload(act));
+    await retire(validNoHeader.templateId);
+    const unchanged409 = await publishDraft(w, validNoHeader.templateId, 1);
+    expect(unchanged409.status).toBe(409);
+    expect(unchanged409.json.error.code).toBe('template_retired');
+  });
+
+  it('refuses publish, revise and retire from a revoked author at the transaction boundary', async () => {
+    const act = await race();
+    const w = await world();
+
+    // Publish: the in-transaction roster assertion refuses it.
+    const draft = await createDraft(w, racePayload(act));
+    await expect(publishTemplateVersion(w.db, w.ids.revoked, draft.templateId, 1)).rejects.toMatchObject({
+      statusCode: 403, code: 'template_author_required',
+    });
+    expect(await count(w, 'challenge_template_versions', `state = 'published'`)).toBe(0);
+    expect(await count(w, 'challenge_template_audit_events', `action = 'publish'`)).toBe(0);
+    expect((await call(w, 'GET', `/api/operator/templates/${draft.templateId}`, w.tokens.author)).json.lifecycle).toBe('draft');
+
+    // Revise: no new draft version is created.
+    const published = await createDraft(w, racePayload(act));
+    expect((await publishDraft(w, published.templateId, 1)).status).toBe(200);
+    await expect(reviseTemplate(w.db, w.ids.revoked, published.templateId)).rejects.toMatchObject({
+      statusCode: 403, code: 'template_author_required',
+    });
+    expect(await count(w, 'challenge_template_versions', `template_id = '${published.templateId}'`)).toBe(1);
+    expect(await count(w, 'challenge_template_audit_events', `action = 'revise'`)).toBe(0);
+
+    // Retire: retirement is terminal, so it must not land.
+    const retireable = await createDraft(w, racePayload(act));
+    await expect(retireTemplate(w.db, w.ids.revoked, retireable.templateId, 'not allowed')).rejects.toMatchObject({
+      statusCode: 403, code: 'template_author_required',
+    });
+    expect((await call(w, 'GET', `/api/operator/templates/${retireable.templateId}`, w.tokens.author)).json.lifecycle).toBe('draft');
+    expect(await count(w, 'challenge_template_audit_events', `action = 'retire'`)).toBe(0);
   });
 });
 

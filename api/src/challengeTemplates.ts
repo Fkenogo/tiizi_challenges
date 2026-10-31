@@ -434,14 +434,7 @@ export async function updateTemplateDraft(
       throw new TemplateError(409, 'template_version_immutable', 'A published version is immutable; create a revision');
     }
     if (revisionTokenFor(row) !== expectedToken) {
-      throw new TemplateError(409, 'template_draft_changed', 'This draft changed after you loaded it. Review the current draft before saving.', {
-        current: {
-          revisionToken: revisionTokenFor(row),
-          content: contentFromRow(row),
-          lastEditedByMemberId: String(row.last_edited_by_member_id),
-          lastEditedAt: row.last_edited_at,
-        },
-      });
+      throw draftChangedError(row, 'This draft changed after you loaded it. Review the current draft before saving.');
     }
     const updated = await tx.query<VersionRow>(
       `UPDATE challenge_template_versions
@@ -476,21 +469,76 @@ async function readVersionRow(db: Db, templateId: string, version: number): Prom
 }
 
 /**
+ * The Template's lifecycle, read without any lock. Used only for the cheap
+ * early retired check on the publish path; the authoritative retired check is
+ * the one inside the transaction (`lockTemplate`).
+ */
+async function readTemplateLifecycle(db: Db, templateId: string): Promise<string | null> {
+  const found = await db.query<{ lifecycle: string }>(
+    `SELECT lifecycle FROM challenge_templates WHERE template_id = $1`,
+    [templateId],
+  );
+  return found.rows[0]?.lifecycle ?? null;
+}
+
+/**
+ * The optimistic-concurrency refusal shared by the conditional save and the
+ * conditional publish: one client path for both writes, one payload shape.
+ * `current` always carries the revision token, the current content and the
+ * last editor's identity and timestamp.
+ */
+function draftChangedError(row: VersionRow, message: string): TemplateError {
+  return new TemplateError(409, 'template_draft_changed', message, {
+    current: {
+      revisionToken: revisionTokenFor(row),
+      content: contentFromRow(row),
+      lastEditedByMemberId: String(row.last_edited_by_member_id),
+      lastEditedAt: row.last_edited_at,
+    },
+  });
+}
+
+/**
  * Publish a draft version. Validation runs BEFORE the transaction (Knowledge
  * reads never happen inside it); the transaction then re-reads the locked
  * draft and refuses to publish if it changed since it was validated, so the
  * published snapshot is exactly the validated content.
+ *
+ * `expectedToken` is OPTIONAL. Without it the behaviour is exactly what it
+ * always was. With it, the publish is bound to the draft the author actually
+ * reviewed: the token is compared before validation is spent (Check 1, an
+ * optimisation over an unlocked read) and again inside the transaction after
+ * the locks (Check 2, the authoritative comparison).
  */
 export async function publishTemplateVersion(
   db: Db,
   actor: string,
   templateId: string,
   version: number,
+  expectedToken?: string,
 ): Promise<{ templateId: string; version: number }> {
   const before = await readVersionRow(db, templateId, version);
   if (!before) notFound();
   if (before.state !== 'draft') {
     throw new TemplateError(409, 'template_version_immutable', 'Version is already published');
+  }
+  if (expectedToken !== undefined) {
+    // Early retired check, only when a token is supplied: without a header the
+    // chain stays byte-identical to today (a retired Template with an invalid
+    // draft still returns 422, and the in-transaction check still answers
+    // `template_retired`). With a token the Operator UI gets the retired state
+    // it expects. The code is the application-level `template_retired`, never
+    // the database backstop's `template_immutable`.
+    if (await readTemplateLifecycle(db, templateId) === 'retired') {
+      throw new TemplateError(409, 'template_retired', 'A retired Template cannot change');
+    }
+    // Check 1 (advisory): the token denotes content equivalence, so a
+    // content-identical A→B→A sequence restores the same token and never
+    // mismatches here. The payload comes from an unlocked read and may itself
+    // be stale; Check 2 is the authoritative comparison.
+    if (revisionTokenFor(before) !== expectedToken) {
+      throw draftChangedError(before, 'This draft changed after you loaded it. Review the current draft before publishing.');
+    }
   }
   const validation = await validateTemplateContent(db, contentFromRow(before));
   if (!validation.ok) {
@@ -498,10 +546,19 @@ export async function publishTemplateVersion(
   }
   const validatedHash = contentHash(before);
   return db.transaction(async (tx) => {
+    // Roster first, then the Template, then the version — the same order the
+    // conditional save uses, so no path inverts it and none can deadlock.
+    await assertAuthorInTransaction(tx, actor);
     await lockTemplate(tx, templateId);
     const row = await lockVersion(tx, templateId, version);
     if (row.state !== 'draft') {
       throw new TemplateError(409, 'template_version_immutable', 'Version is already published');
+    }
+    // Check 2 (authoritative): the locked row is the draft that will be
+    // published, so this is the comparison that actually binds the
+    // publication to the reviewed content.
+    if (expectedToken !== undefined && revisionTokenFor(row) !== expectedToken) {
+      throw draftChangedError(row, 'This draft changed after you loaded it. Review the current draft before publishing.');
     }
     if (contentHash(row) !== validatedHash) {
       throw new TemplateError(409, 'template_changed', 'Template draft changed during publication; validate and publish again');
@@ -534,6 +591,9 @@ export async function reviseTemplate(
   templateId: string,
 ): Promise<{ templateId: string; version: number }> {
   return db.transaction(async (tx) => {
+    // Roster first: a revocation then serializes with this write instead of
+    // slipping through the last non-locking trigger assertion.
+    await assertAuthorInTransaction(tx, actor);
     const template = await lockTemplate(tx, templateId);
     if (template.latest_published_version === null) {
       throw new TemplateError(409, 'template_not_published', 'Only a published Template can be revised');
@@ -571,6 +631,9 @@ export async function retireTemplate(
   reason: string | null,
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    // Roster first: retirement is terminal, so a revocation must serialize
+    // with it rather than land after the last non-locking trigger assertion.
+    await assertAuthorInTransaction(tx, actor);
     await lockTemplate(tx, templateId);
     await tx.query(
       `UPDATE challenge_templates
