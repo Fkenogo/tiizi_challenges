@@ -269,6 +269,7 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
           </div>
           <span className={lifecycleClass(data.lifecycle)}>{lifecycleLabel(data.lifecycle)}</span>
         </div>
+        <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/preview`} className="mr-2 mt-3 inline-block rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">Preview</Link>
         {canAuthor && shown?.state === 'draft' && data.lifecycle !== 'retired' && (
           <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/edit`} className="mt-3 inline-block rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white">Edit draft</Link>
         )}

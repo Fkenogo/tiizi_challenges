@@ -4,10 +4,11 @@ import { LIBRARY_PAGE_SIZE, templateListQuery, type LibraryFilters } from '../v2
 /**
  * Client for the P5T-1 Operator Template endpoints.
  *
- * Reads (Slice 2) plus exactly three Slice 3b additions: the caller-scoped
- * capability read, draft creation and the conditional draft save. There is
- * deliberately NO validate/publish/revise/retire function in this module:
- * those arrive in later slices.
+ * Reads (Slice 2), the Slice 3b additions (caller-scoped capability read, draft
+ * creation, conditional draft save) and the Slice 4 server validation call.
+ * There is deliberately NO publish/revise/retire function in this module:
+ * those arrive in later slices. Validation is the server's only: no client
+ * validator exists.
  */
 
 export interface OperatorTemplateSummary {
@@ -160,4 +161,23 @@ export const saveTemplateDraft = (templateId: string, version: number, body: Tem
   apiFetch<{ templateId: string; version: number; revisionToken: string }>(
     `${API_PREFIX}/operator/templates/${encodeURIComponent(templateId)}/versions/${version}`,
     { method: 'PUT', body, headers: { 'If-Match': `"${revisionToken}"` } },
+  );
+
+/** One issue reported by the server's Template validation (PF-04 preview + establishment-grade gate). */
+export interface TemplateValidationIssue {
+  code: string;
+  message: string;
+  field?: string;
+  activityIndex?: number;
+  /** Wizard stage the server attributes the issue to (TYPE, BASICS, ACTIVITIES, MEASUREMENT, REQUIREMENT, SCHEDULE, RULES). */
+  stage?: string;
+}
+
+export interface TemplateValidationResponse { ok: boolean; issues: TemplateValidationIssue[] }
+
+/** Validate a SAVED draft version on the server (author-only). The server reads the stored draft, never a client body. */
+export const validateTemplateDraft = (templateId: string, version: number) =>
+  apiFetch<TemplateValidationResponse>(
+    `${API_PREFIX}/operator/templates/${encodeURIComponent(templateId)}/versions/${version}/validate`,
+    { method: 'POST', body: {} },
   );

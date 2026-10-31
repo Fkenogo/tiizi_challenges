@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './apiError';
-import { createTemplateDraft, fetchTemplateCapabilities, saveTemplateDraft, type TemplateDraftBody } from './operatorTemplatesApi';
+import { createTemplateDraft, fetchTemplateCapabilities, saveTemplateDraft, validateTemplateDraft, type TemplateDraftBody } from './operatorTemplatesApi';
 
 
 const BODY: TemplateDraftBody = {
@@ -59,5 +59,21 @@ describe('Template draft client (real transport, stubbed fetch)', () => {
   it.each([[428, 'if_match_required'], [403, 'template_author_required'], [400, 'invalid_template_request']])('keeps %i and its code', async (status, code) => {
     fetchMock.mockResolvedValue(reply(status, { error: { code, message: 'm' } }));
     await expect(saveTemplateDraft('t', 1, BODY, TOKEN)).rejects.toMatchObject({ status, code });
+  });
+
+  it('validates a saved version with a bare POST to the validate endpoint and returns the server issues unchanged', async () => {
+    const issues = [{ code: 'MISSING_FIELD', field: 'title', message: 'title is required to publish' }];
+    fetchMock.mockResolvedValue(reply(200, { ok: false, issues }));
+    await expect(validateTemplateDraft('t/1', 3)).resolves.toEqual({ ok: false, issues });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('http://api.test/api/operator/templates/t%2F1/versions/3/validate');
+    expect(init.method).toBe('POST');
+    expect(init.headers.Authorization).toBe('Bearer id-token-123');
+    expect(init.headers['If-Match']).toBeUndefined();
+  });
+
+  it('surfaces a 403 from validation as a typed ApiError', async () => {
+    fetchMock.mockResolvedValue(reply(403, { error: { code: 'template_author_required', message: 'no' } }));
+    await expect(validateTemplateDraft('t', 1)).rejects.toMatchObject({ status: 403, code: 'template_author_required' });
   });
 });

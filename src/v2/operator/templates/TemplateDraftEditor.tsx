@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { fetchActivityOptions } from '../../../api/challengeCreationApi';
 import { fetchKnowledgeById } from '../../../api/knowledgeApi';
@@ -7,6 +7,7 @@ import {
   createTemplateDraft,
   fetchOperatorTemplate,
   saveTemplateDraft,
+  validateTemplateDraft,
   type TemplateDraftBody,
 } from '../../../api/operatorTemplatesApi';
 import { useAuth } from '../../../hooks/useAuth';
@@ -42,6 +43,15 @@ import {
   type TemplateAuthoringState,
 } from './templateAuthoringModel';
 import { TemplateConflictPanel } from './TemplateConflictPanel';
+import { StepIssues, TemplateValidationPanel } from './TemplateValidationPanel';
+import {
+  classifyValidationFailure,
+  groupIssuesByStep,
+  isValidationStale,
+  toValidationRecord,
+  type ValidationFailure,
+  type ValidationRecord,
+} from './templateValidationModel';
 import { clearAccountRecovery, clearRecovery, purgeOtherAccountsRecovery, readRecovery, writeRecovery, type DraftIdentity } from './templateDraftRecovery';
 import { templateCapabilitiesKey, useTemplateCapabilities } from './useTemplateCapabilities';
 
@@ -52,8 +62,9 @@ import { templateCapabilitiesKey, useTemplateCapabilities } from './useTemplateC
  * steps over a Template-only state (no hosting Group, dates, Social Cause,
  * Support or creator fields exist in it). It is not a validation authority:
  * the server validates every write; this page only mirrors hard content limits
- * for early feedback. Publish, revise, retire and the validation/preview
- * workflow belong to later slices and are absent here.
+ * for early feedback. "Save and check" asks the server to validate the saved draft;
+ * the read-only preview is a separate route. Publish, revise and retire belong to
+ * later slices and are absent here.
  */
 
 const STEPS = [
@@ -217,8 +228,16 @@ function TemplateDraftEditorInner() {
   const [immutable, setImmutable] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
+  const [validation, setValidation] = useState<ValidationRecord | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [validationFailure, setValidationFailure] = useState<ValidationFailure | null>(null);
+  const location = useLocation();
   const phaseRef = useRef<Phase>('loading');
   phaseRef.current = phase;
+  const readOnlyRef = useRef(false);
+  const loadedRouteRef = useRef(routeTemplateId);
+  const routeIdRef = useRef(routeTemplateId);
+  routeIdRef.current = routeTemplateId;
   const sessionRef = useRef(session);
   sessionRef.current = session;
   const currentRef = useRef(current);
@@ -248,12 +267,15 @@ function TemplateDraftEditorInner() {
     lastEditedByMemberId: string;
     lastEditedAt: string;
     theirsState?: TemplateAuthoringState;
+    /** The caller's mine-state is the live editor state: re-read it after the async hydration so newer edits are kept. */
+    live?: boolean;
   }) => {
     const theirs = args.theirsState ?? (await hydrateAuthoringState(args.theirsBody, lookup)).state;
+    const mineState = args.live ? currentRef.current : args.mineState;
     const names = new Map<string, string>();
-    [...args.mineState.activities, ...theirs.activities].forEach((activity) => names.set(activity.activity, activity.name));
-    const items = reconcile(args.baseBody ?? EMPTY_BODY, toTemplateBody(args.mineState), args.theirsBody, (id) => names.get(id) ?? id);
-    setCurrent(args.mineState);
+    [...mineState.activities, ...theirs.activities].forEach((activity) => names.set(activity.activity, activity.name));
+    const items = reconcile(args.baseBody ?? EMPTY_BODY, toTemplateBody(mineState), args.theirsBody, (id) => names.get(id) ?? id);
+    setCurrent(mineState);
     setConflict({ theirsToken: args.theirsToken, theirsBody: args.theirsBody, theirsState: theirs, lastEditedByMemberId: args.lastEditedByMemberId, lastEditedAt: args.lastEditedAt, items, choices: {} });
     setFailure(null);
   }, [lookup]);
@@ -271,6 +293,12 @@ function TemplateDraftEditorInner() {
     let cancelled = false;
     purgeOtherAccountsRecovery(uid);
     setRevoked(false); setFlags({}); setProblems({});
+    setValidation(null); setValidationFailure(null);
+    if (loadedRouteRef.current !== routeTemplateId) {
+      // In-place move to another draft: nothing about the previous draft may carry over.
+      loadedRouteRef.current = routeTemplateId;
+      setConflict(null); setImmutable(false); setFailure(null);
+    }
     setPhase('loading');
     (async () => {
       try {
@@ -338,6 +366,7 @@ function TemplateDraftEditorInner() {
   const dirty = currentCanonical !== baseCanonical;
   const readOnly = revoked || immutable || conflict !== null;
   const locked = readOnly || saving;
+  readOnlyRef.current = readOnly;
 
   /* ------------------------ temporary session recovery -------------------- */
   useEffect(() => {
@@ -374,6 +403,8 @@ function TemplateDraftEditorInner() {
     setAddingId(item.id);
     try {
       const options = await queryClient.fetchQuery({ queryKey: ['v2-create-options', item.id], queryFn: () => fetchActivityOptions(item.id), staleTime: 5 * 60 * 1000 });
+      // A conflict opened (or editing was switched off) while this Activity was loading: adding now would be silently dropped.
+      if (readOnlyRef.current) { setAddError('The draft changed while that Activity was loading. Resolve the changes, then add it again.'); return null; }
       const latest = currentRef.current;
       const next = buildWizardActivity(item, options, latest.challengeType) as TemplateActivity;
       const others = latest.activities.filter((activity) => activity.activity !== item.id);
@@ -411,6 +442,7 @@ function TemplateDraftEditorInner() {
   const applyFailure = useCallback(async (result: SaveFailure) => {
     if (result.kind === 'conflict') {
       await beginConflict({
+        live: true,
         mineState: currentRef.current,
         baseBody: sessionRef.current.baseBody,
         theirsBody: bodyFromContent(result.current.content),
@@ -428,14 +460,59 @@ function TemplateDraftEditorInner() {
     setFailure(result);
   }, [beginConflict, queryClient, uid]);
 
-  const save = useCallback(async () => {
-    if (saving || readOnly) return;
+  /**
+   * Ask the SERVER to validate the draft it has stored, for the token we just saved or loaded. If the stored draft
+   * has moved on by the time the answer arrives, the answer describes someone else's content: treat it as a concurrent
+   * edit and reconcile instead of presenting it.
+   */
+  const check = useCallback(async (templateId: string, version: number, token: string) => {
+    setChecking(true); setValidationFailure(null); setValidation(null);
+    try {
+      const response = await validateTemplateDraft(templateId, version);
+      const detail = await fetchOperatorTemplate(templateId);
+      // The editor moved to another Template while this check ran: its answer is not ours to show.
+      if (routeIdRef.current !== templateId || sessionRef.current.templateId !== templateId || sessionRef.current.version !== version) return;
+      const draft = detail.versions.find((entry) => entry.version === version && entry.state === 'draft');
+      if (!draft || !draft.revisionToken) {
+        // Published or retired by someone else meanwhile: no longer an open draft.
+        setImmutable(true);
+        setValidationFailure({ kind: 'immutable', message: 'This version stopped being an open draft while it was being checked (it was published or retired), so no result is shown. Your work is kept here.' });
+        return;
+      }
+      if (draft.revisionToken !== token) {
+        await beginConflict({
+          live: true, mineState: currentRef.current, baseBody: sessionRef.current.baseBody, theirsBody: bodyFromContent(draft.content),
+          theirsToken: draft.revisionToken, lastEditedByMemberId: draft.lastEditedByMemberId, lastEditedAt: draft.lastEditedAt,
+        });
+        setBanner({ tone: 'error', text: 'The draft was changed by someone else while it was being checked. Review their changes, then save and check again.' });
+        return;
+      }
+      setValidation(toValidationRecord(templateId, version, token, response, Date.now()));
+    } catch (error) {
+      const result = classifyValidationFailure(error);
+      setValidationFailure(result);
+      if (result.kind === 'revoked') {
+        setRevoked(true);
+        void queryClient.invalidateQueries({ queryKey: templateCapabilitiesKey(uid) });
+      }
+      if (result.kind === 'immutable') setImmutable(true);
+    } finally {
+      setChecking(false);
+    }
+  }, [beginConflict, queryClient, uid]);
+
+  const save = useCallback(async (andCheck = false) => {
+    if (saving || checking || readOnly) return;
     if (validateAuthoring(currentRef.current).length > 0) return;
     const body = toTemplateBody(currentRef.current);
     setSaving(true); setFailure(null); setBanner(null);
+    let toCheck: { templateId: string; version: number; token: string } | null = null;
     try {
       const sess = sessionRef.current;
-      if (sess.templateId === null || sess.version === null) {
+      if (sess.templateId !== null && sess.version !== null && sess.token !== null && andCheck && canonicalBody(body) === canonicalBody(sess.baseBody ?? EMPTY_BODY)) {
+        // Nothing to save: check the draft exactly as it is stored.
+        toCheck = { templateId: sess.templateId, version: sess.version, token: sess.token };
+      } else if (sess.templateId === null || sess.version === null) {
         const created = await createTemplateDraft(body);
         // Record the new identity before anything else can fail: a retry must never create a second Template.
         // The edit route's load reads the draft back for its first revision token (create returns none).
@@ -443,20 +520,32 @@ function TemplateDraftEditorInner() {
         clearRecovery(uid, 'new');
         void queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
         setBanner({ tone: 'info', text: 'Draft created. You can keep editing and saving.' });
-        navigate(`/v2/operator/templates/${encodeURIComponent(created.templateId)}/edit`, { replace: true });
+        navigate(`/v2/operator/templates/${encodeURIComponent(created.templateId)}/edit`, { replace: true, state: andCheck ? { checkAfterCreate: true } : null });
       } else {
         if (sess.token === null) { setReloadNonce((n) => n + 1); return; }
         const result = await saveTemplateDraft(sess.templateId, sess.version, body, sess.token);
-        setSession({ ...sess, token: result.revisionToken, baseBody: body });
+        sessionRef.current = { ...sess, token: result.revisionToken, baseBody: body };
+        setSession(sessionRef.current);
         setBanner({ tone: 'info', text: 'Draft saved.' });
         void queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
+        if (andCheck) toCheck = { templateId: sess.templateId, version: sess.version, token: result.revisionToken };
       }
     } catch (error) {
       await applyFailure(classifySaveFailure(error));
     } finally {
       setSaving(false);
     }
-  }, [saving, readOnly, uid, navigate, queryClient, applyFailure]);
+    // Validation runs only after a successful save (or against an unchanged saved draft).
+    if (toCheck) await check(toCheck.templateId, toCheck.version, toCheck.token);
+  }, [saving, checking, readOnly, uid, navigate, queryClient, applyFailure, check]);
+
+  // A draft created by "Save and check" is checked once the edit route has read back its first revision token.
+  useEffect(() => {
+    const state = location.state as { checkAfterCreate?: boolean } | null;
+    if (phase !== 'ready' || !state?.checkAfterCreate || !session.templateId || session.version === null || !session.token) return;
+    navigate(location.pathname, { replace: true, state: null });
+    void check(session.templateId, session.version, session.token);
+  }, [phase, location.state, location.pathname, session, navigate, check]);
 
   /* ----------------------------- reconciliation --------------------------- */
   const choose = useCallback((key: string, side: 'mine' | 'theirs') => {
@@ -513,7 +602,14 @@ function TemplateDraftEditorInner() {
 
   const stepIndex = STEPS.findIndex((entry) => entry.id === step);
   const saveLabel = session.templateId === null ? 'Create draft' : 'Save draft';
-  const saveDisabled = saving || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
+  const saveDisabled = saving || checking || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
+  const checkDisabled = saving || checking || readOnly || issues.length > 0 || (session.templateId === null && !dirty);
+  const validationStale = validation !== null && isValidationStale(validation, {
+    currentToken: session.token, templateId: session.templateId, version: session.version, dirty, conflict: conflict !== null,
+  });
+  const groupedIssues = validation ? groupIssuesByStep(validation.issues) : null;
+  const activityNames = current.activities.map((activity) => activity.name);
+  const stepIssues = (id: StepId) => (groupedIssues && !validationStale ? groupedIssues[id] : []);
   const multiNotice = !allowsMultipleActivities(current.challengeType) && current.activities.length > 1;
 
   return (
@@ -521,6 +617,8 @@ function TemplateDraftEditorInner() {
       {header}
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => void save()} disabled={saveDisabled} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40">{saving ? 'Saving…' : saveLabel}</button>
+        <button type="button" onClick={() => void save(true)} disabled={checkDisabled} className="rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-bold text-primary disabled:opacity-40">{checking ? 'Checking…' : 'Save and check'}</button>
+        {session.templateId ? <Link to={`/v2/operator/templates/${encodeURIComponent(session.templateId)}/preview`} className="text-sm font-bold text-primary underline">Preview saved draft</Link> : null}
         <span aria-live="polite" className="text-xs font-bold text-slate-500">{dirty ? 'Unsaved changes' : session.templateId ? 'All changes saved' : 'Nothing to save yet'}</span>
         {back}
       </div>
@@ -533,6 +631,10 @@ function TemplateDraftEditorInner() {
           {(failure.kind === 'precondition' || failure.kind === 'failed') ? <button type="button" onClick={() => setReloadNonce((n) => n + 1)} className="mt-2 rounded-lg bg-red-700 px-3 py-1.5 text-xs font-bold text-white">Reload the draft</button> : null}
         </div>
       ) : null}
+      <TemplateValidationPanel
+        record={validation} stale={validationStale} checking={checking} failure={validationFailure}
+        grouped={groupedIssues} activityNames={activityNames} onOpenStep={setStep}
+      />
       {revoked ? <p role="alert" className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-800">Template authoring access was removed. Editing is switched off; your work is kept in this tab.</p> : null}
       {issues.length > 0 ? (
         <ul aria-label="Fix before saving" className="mb-3 list-disc rounded-xl bg-red-50 px-8 py-2 text-xs font-bold text-red-700">{issues.map((issue) => <li key={`${issue.field}-${issue.message}`}>{issue.message}</li>)}</ul>
@@ -557,7 +659,7 @@ function TemplateDraftEditorInner() {
             aria-current={entry.id === step ? 'step' : undefined}
             className={`rounded-full px-3 py-1.5 text-xs font-bold ${entry.id === step ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}
           >
-            {index + 1}. {entry.label}
+            {index + 1}. {entry.label}{stepIssues(entry.id).length > 0 ? <span className="ml-1 rounded-full bg-red-600 px-1.5 text-[10px] text-white"><span aria-hidden="true">{stepIssues(entry.id).length}</span><span className="sr-only">{` (${stepIssues(entry.id).length} server check ${stepIssues(entry.id).length === 1 ? 'issue' : 'issues'})`}</span></span> : null}
           </button>
         ))}
       </nav>
@@ -565,6 +667,7 @@ function TemplateDraftEditorInner() {
       <V2Card>
         <fieldset disabled={locked} className="min-w-0 space-y-4 border-0 p-0">
           <legend className="sr-only">{STEPS[stepIndex].label}</legend>
+          <StepIssues issues={stepIssues(step)} stale={validationStale} activityNames={activityNames} />
           {step === 'type' ? <ChallengeTypeStep selected={current.challengeType} onSelect={(challengeType) => patch({ challengeType })} /> : null}
           {step === 'name' ? (
             <NameAppearanceFields
