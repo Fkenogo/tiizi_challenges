@@ -1,0 +1,56 @@
+// Focused verification of the two script corrections. No browser, database or network:  node --test s3b-recheck-lib.test.mjs
+import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { exitCodeFor, loadPlaywright } from './s3b-recheck-lib.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const fakePlaywright = (root, marker) => {
+  const dir = join(root, 'node_modules', 'playwright');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'package.json'), '{"name":"playwright","version":"0.0.0","main":"index.js"}');
+  writeFileSync(join(dir, 'index.js'), `module.exports = { marker: ${JSON.stringify(marker)}, chromium: { launch: async () => { throw new Error('fake launch'); } } };`);
+};
+const tmp = () => mkdtempSync(join(tmpdir(), 's3b-lib-'));
+
+test('resolves Playwright from PLAYWRIGHT_MODULE_DIR, then the script directory, then the working directory', () => {
+  const envDir = tmp(); const scriptDir = tmp(); const cwd = tmp();
+  fakePlaywright(envDir, 'env'); fakePlaywright(scriptDir, 'script'); fakePlaywright(cwd, 'cwd');
+  assert.equal(loadPlaywright({ env: { PLAYWRIGHT_MODULE_DIR: envDir }, scriptDir, cwd }).marker, 'env');
+  assert.equal(loadPlaywright({ env: {}, scriptDir, cwd }).marker, 'script');
+  assert.equal(loadPlaywright({ env: {}, scriptDir: tmp(), cwd }).marker, 'cwd');
+});
+
+test('never depends on a machine-specific temporary directory and explains how to fix a missing install', () => {
+  assert.doesNotMatch(readFileSync(join(here, 's3b-recheck.mjs'), 'utf8') + readFileSync(join(here, 's3b-recheck-lib.mjs'), 'utf8'), /\/tmp\/s3b-pw/);
+  assert.throws(() => loadPlaywright({ env: {}, scriptDir: tmp(), cwd: tmp() }), /npm i playwright.*PLAYWRIGHT_MODULE_DIR/s);
+});
+
+test('the real script loads Playwright from its own directory (fails later, at launch, not at resolution)', () => {
+  const dir = tmp();
+  cpSync(join(here, 's3b-recheck.mjs'), join(dir, 's3b-recheck.mjs'));
+  cpSync(join(here, 's3b-recheck-lib.mjs'), join(dir, 's3b-recheck-lib.mjs'));
+  fakePlaywright(dir, 'script');
+  execFileSync('git', ['init', '-q'], { cwd: dir });
+  const out = spawnSync('node', ['s3b-recheck.mjs'], { cwd: dir, encoding: 'utf8', env: { ...process.env, STUB_TOKEN_AUTHOR2: 'x', S3B_SOURCE_WORKTREE: dir } });
+  assert.doesNotMatch(out.stderr, /could not be resolved|MODULE_NOT_FOUND/);
+});
+
+test('any failed scenario, or no scenarios at all, gives a nonzero exit status', () => {
+  assert.equal(exitCodeFor([{ result: 'PASS' }, { result: 'PASS' }]), 0);
+  assert.equal(exitCodeFor([{ result: 'PASS' }, { result: 'FAIL' }]), 1);
+  assert.equal(exitCodeFor([{ result: 'FAIL' }]), 1);
+  assert.equal(exitCodeFor([]), 1);
+});
+
+test('the script sets the exit status from the results only after the evidence files are written', () => {
+  const source = readFileSync(join(here, 's3b-recheck.mjs'), 'utf8');
+  const wroteMd = source.indexOf("writeFileSync(join(here, 'evidence.md')");
+  const exit = source.indexOf('process.exitCode = exitCodeFor(results)');
+  assert.ok(wroteMd > 0 && exit > wroteMd);
+  assert.match(source, /run\(\)\.catch\(.*process\.exit\(1\)/);
+});

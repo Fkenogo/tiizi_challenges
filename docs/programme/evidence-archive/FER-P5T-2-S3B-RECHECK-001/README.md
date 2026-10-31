@@ -15,18 +15,27 @@ This directory contains **no application code** and changes no behaviour.
 | `README.md` | This file, with archive references and checksums |
 | `VERIFICATION-REPORT.md` | Concise per-scenario results |
 | `s3b-recheck.mjs` | Reproducible Playwright matrix (credentials and local paths removed) |
+| `s3b-recheck-lib.mjs` | Playwright resolution and exit-status helpers |
+| `s3b-recheck-lib.test.mjs` | Focused verification of those two helpers |
 
 ## Reproduce
-The harness (`harness/`) and seed scripts are retained in the private archive. Requirements: a disposable PostgreSQL cluster on a non-default loopback port, the harness rebuild script, Vite with the harness config, then
-`STUB_TOKEN_AUTHOR2=<synthetic harness token> S3B_SOURCE_WORKTREE=<checkout of the tested SHA> node s3b-recheck.mjs`.
-The script's output directory is created next to it (`screenshots/`, `evidence.json`, `evidence.md` — ignore these in git).
+Requirements: a disposable PostgreSQL cluster on a non-default loopback port, the harness (`harness/`, retained in the private archive, not in this PR), Node 22, and Playwright.
+
+1. Playwright: in this directory, or in any directory you point `PLAYWRIGHT_MODULE_DIR` at, run `npm i playwright@1.64.1 && npx playwright install chromium`. The script looks in `PLAYWRIGHT_MODULE_DIR`, then its own directory, then the working directory. Optionally set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a specific Chromium binary.
+2. Rebuild the disposable database and start the stack with the archived harness scripts (API on :8788, Vite harness on :5198, database on :55779).
+3. Run: `STUB_TOKEN_AUTHOR2=<synthetic harness token> S3B_SOURCE_WORKTREE=<checkout of the tested SHA> node s3b-recheck.mjs`.
+
+The script writes `screenshots/`, `evidence.json` and `evidence.md` next to itself (do not commit them). **Exit status:** 0 only when every scenario passes; if any scenario fails the evidence is still written and the process exits 1.
+
+### Verifying the script itself
+`node --test s3b-recheck-lib.test.mjs` (no browser, database or network) checks that Playwright resolves from the documented locations and never from a machine-specific temporary directory, and that failed or empty runs give a nonzero exit status written after the evidence files.
 
 ## Durable private archive
 Retained outside the repository (not committed): 23 files, 1.4 MB — `README.md`, `evidence.json`, `evidence.md`, `s3b-recheck.mjs`, 11 screenshots, and the 7-file harness.
 
 - Location (founder workstation, read-only permissions): `~/tiizi-evidence-archive/FER-P5T-2-S3B/s3b-recheck-001/`
 - Manifest: `~/tiizi-evidence-archive/FER-P5T-2-S3B/MANIFEST.sha256` (SHA-256 of every file; source and copy verified identical, 23/23).
-- Status: local protective copy only. **A durable off-machine private archive location has not yet been designated; Founder to name it.** Once copied there, record the reference below.
+- Status: **local protective copy only. Nothing has been transferred off this machine.** A durable off-machine private archive location has not been designated; the Founder names it, and the reference is recorded below once the transfer has actually happened.
 - Off-machine reference: _pending Founder designation_
 
 ### Checksums (SHA-256) of archived items referenced here

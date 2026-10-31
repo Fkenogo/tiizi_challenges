@@ -2,16 +2,16 @@
 // Executor: Claude Code implementation agent (this session), Playwright 1.64.1, headless Chromium.
 // Target: the accepted Slice 3b source (tree 57b7fbe…, head 3e70368), served by a LOCAL Vite harness against a LOCAL
 // API and a DISPOSABLE PostgreSQL database (tiizi_p5_preview_s3b_recheck). Synthetic users and Templates only.
-// Run:  node s3b-recheck.mjs   (needs: the disposable stack up on :5198 / :8788 / :55779 and `playwright` resolvable)
-import { createRequire } from 'node:module';
+// Run:  node s3b-recheck.mjs   (needs: the disposable stack up on :5198 / :8788 / :55779 and `playwright` resolvable; see README)
+// Exit status: 0 only when every scenario passes; any failure leaves the evidence files and exits 1.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { exitCodeFor, loadPlaywright } from './s3b-recheck-lib.mjs';
 
-const require = createRequire('/tmp/s3b-pw/');
-const { chromium } = require('playwright');
 const here = dirname(fileURLToPath(import.meta.url));
+const { chromium } = loadPlaywright({ scriptDir: here });
 const shots = join(here, 'screenshots');
 mkdirSync(shots, { recursive: true });
 
@@ -24,7 +24,8 @@ if (!STUB_TOKEN_AUTHOR2) throw new Error('STUB_TOKEN_AUTHOR2 is required (synthe
 const SHA = execFileSync('git', ['-C', (process.env.S3B_SOURCE_WORKTREE ?? process.cwd()), 'rev-parse', 'HEAD']).toString().trim();
 const TREE = execFileSync('git', ['-C', (process.env.S3B_SOURCE_WORKTREE ?? process.cwd()), 'rev-parse', 'HEAD^{tree}']).toString().trim();
 const EXEC = 'Claude Code implementation agent — Playwright 1.64.1 script s3b-recheck.mjs (NOT the independent R1 reviewer)';
-const HEADLESS = `${process.env.HOME}/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell`;
+// Optional: a specific Chromium binary. Unset = Playwright's own installed Chromium.
+const HEADLESS = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined;
 
 const psql = (sql) => execFileSync('psql', ['-h', '127.0.0.1', '-p', '55779', '-U', 'postgres', '-d', DB, '-At', '-F', '|', '-c', sql]).toString().trim();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -78,7 +79,7 @@ const storageText = (page) => page.evaluate(() => JSON.stringify(Object.fromEntr
 const editorReady = (page) => page.getByRole('navigation', { name: 'Editor steps' }).waitFor({ timeout: 20000 });
 
 async function run() {
-  browser = await chromium.launch({ executablePath: HEADLESS });
+  browser = await chromium.launch(HEADLESS ? { executablePath: HEADLESS } : {});
   const marker = psql(`select shobj_description(oid,'pg_database') from pg_database where datname='${DB}'`);
   console.log(`DB target ${DB} marker=${marker} source=${SHA} tree=${TREE}`);
   if (!/^tiizi-disposable-preview:/.test(marker)) throw new Error('refusing: database is not marked disposable');
@@ -312,5 +313,6 @@ async function run() {
     ...results.flatMap((r) => [`## ${r.id} — ${r.title}`, `Result: **${r.result}** · ${r.startedAt} → ${r.endedAt}`, ``, `Steps:`, ...r.steps.map((s) => `- ${s}`), ``, `Checks:`, ...r.checks.map((c) => `- ${c.ok ? 'PASS' : 'FAIL'}: ${c.name}${c.ok ? '' : ` (${c.detail})`}`), ``, `API: ${r.api.map((a) => `${a.method} ${a.path} ${a.status}`).join('; ') || '—'}`, ``])].join('\n');
   writeFileSync(join(here, 'evidence.md'), md);
   console.log(`OVERALL ${pass ? 'PASS' : 'FAIL'}`);
+  process.exitCode = exitCodeFor(results);
 }
 run().catch((e) => { console.error(e); process.exit(1); });
