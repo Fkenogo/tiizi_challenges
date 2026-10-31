@@ -35,7 +35,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Db } from '../src/db.js';
 import { createPool } from '../src/db.js';
-import { disposableTargetSpecFromEnv, openGuardedDisposableDb } from '../src/disposableDbGuard.js';
+import { DISPOSABLE_TARGET_ENV, disposableTargetSpecFromEnv, openGuardedDisposableDb } from '../src/disposableDbGuard.js';
 import { runMigrations } from '../src/migrate.js';
 import {
   createTemplateDraft,
@@ -89,7 +89,18 @@ describe.skipIf(!url || !target)('P5T-2 S5a real PostgreSQL concurrency (disposa
   let counter = 0;
 
   beforeAll(async () => {
-    const spec = { ...disposableTargetSpecFromEnv(url), databaseName: target };
+    // The disposable target is named THREE times independently of the URL:
+    // allowed host, allowed port and disposable database name. The guard
+    // requires the URL to agree with all three, so the suite's own target
+    // name must equal the independently declared one. Overriding it here
+    // would discard that independence.
+    const spec = disposableTargetSpecFromEnv(url);
+    if (spec.databaseName !== target) {
+      throw new Error(
+        `disposable target refused: ${DISPOSABLE_TARGET_ENV.name} ('${spec.databaseName ?? 'unset'}') `
+        + `does not match TIIZI_REAL_PG_DB ('${target}')`,
+      );
+    }
     ({ db } = await openGuardedDisposableDb(spec, (u) => createPool(u, { max: 12 })));
     await runMigrations(db);
     await db.query('TRUNCATE challenge_templates, platform_operator_template_authors, members CASCADE');
