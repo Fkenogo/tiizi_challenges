@@ -297,7 +297,7 @@ function TemplateDraftEditorInner() {
     if (loadedRouteRef.current !== routeTemplateId) {
       // In-place move to another draft: nothing about the previous draft may carry over.
       loadedRouteRef.current = routeTemplateId;
-      setConflict(null); setImmutable(false); setFailure(null); setBanner(null);
+      setConflict(null); setImmutable(false); setFailure(null);
     }
     setPhase('loading');
     (async () => {

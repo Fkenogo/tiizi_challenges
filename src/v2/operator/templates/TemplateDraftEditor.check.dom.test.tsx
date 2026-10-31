@@ -364,7 +364,7 @@ describe('conflict hydration and Template switching (final review)', () => {
     expect(screen.queryByRole('button', { name: 'Plank is already added' })).toBeNull();
   });
 
-  it('moving in place to another draft carries no conflict, read-only state or banner over', async () => {
+  it('moving in place to another draft carries no conflict or read-only state over', async () => {
     const OTHER = '22222222-2222-4222-8222-222222222222';
     h.detail.mockImplementation(async (id: string) => (id === OTHER ? { ...serverDraft(TOKEN_C, contentOf({ summary: 'Other draft' })), templateId: OTHER } : serverDraft()));
     h.save.mockRejectedValue(new ApiError(409, 'template_draft_changed', 'changed', {
