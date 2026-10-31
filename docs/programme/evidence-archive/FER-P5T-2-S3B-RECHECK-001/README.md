@@ -21,17 +21,17 @@ This directory contains **no application code** and changes no behaviour.
 ## Reproduce
 Requirements: a disposable PostgreSQL cluster on a non-default loopback port, the harness (`harness/`, retained in the private archive, not in this PR), Node 22, and Playwright.
 
-1. Playwright: in this directory, or in any directory you point `PLAYWRIGHT_MODULE_DIR` at, run `npm i playwright@1.64.1 && npx playwright install chromium`. The script looks in `PLAYWRIGHT_MODULE_DIR`, then its own directory, then the working directory. Optionally set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a specific Chromium binary.
+1. Playwright: install it **outside the repository** so no tracked file changes: `mkdir -p ~/s3b-pw && cd ~/s3b-pw && npm init -y && npm i playwright@1.64.1 && npx playwright install chromium`, then set `PLAYWRIGHT_MODULE_DIR=~/s3b-pw`. The script looks in `PLAYWRIGHT_MODULE_DIR`, then its own directory, then the working directory. Optionally set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use a specific Chromium binary.
 2. Rebuild the disposable database and start the stack with the archived harness scripts (API on :8788, Vite harness on :5198, database on :55779).
-3. Run: `STUB_TOKEN_AUTHOR2=<synthetic harness token> S3B_SOURCE_WORKTREE=<checkout of the tested SHA> node s3b-recheck.mjs`.
+3. Run: `STUB_TOKEN_AUTHOR2=<synthetic harness token> S3B_SOURCE_WORKTREE=<checkout of the tested SHA> node s3b-recheck.mjs`. Set `ONLY=<scenario id prefix>` (for example `ONLY=F3`) to run a subset.
 
-The script writes `screenshots/`, `evidence.json` and `evidence.md` next to itself (do not commit them). **Exit status:** 0 only when every scenario passes; if any scenario fails the evidence is still written and the process exits 1.
+The script writes `screenshots/`, `evidence.json` and `evidence.md` next to itself (do not commit them). **Exit status:** 0 only when every scenario passes; if any scenario fails, or the run aborts outside a scenario (recorded as a `run-error` entry), the evidence is still written and the process exits 1. A run that selects no scenarios also exits 1.
 
 ### Verifying the script itself
 `node --test s3b-recheck-lib.test.mjs` (no browser, database or network) checks that Playwright resolves from the documented locations and never from a machine-specific temporary directory, and that failed or empty runs give a nonzero exit status written after the evidence files.
 
 ## Durable private archive
-Retained outside the repository (not committed): 23 files, 1.4 MB — `README.md`, `evidence.json`, `evidence.md`, `s3b-recheck.mjs`, 11 screenshots, and the 7-file harness.
+Retained outside the repository (not committed): 23 files, 1.4 MB — `README.md`, `evidence.json`, `evidence.md`, `s3b-recheck.mjs`, 12 screenshots, and the 7-file harness.
 
 - Location (founder workstation, read-only permissions): `~/tiizi-evidence-archive/FER-P5T-2-S3B/s3b-recheck-001/`
 - Manifest: `~/tiizi-evidence-archive/FER-P5T-2-S3B/MANIFEST.sha256` (SHA-256 of every file; source and copy verified identical, 23/23).

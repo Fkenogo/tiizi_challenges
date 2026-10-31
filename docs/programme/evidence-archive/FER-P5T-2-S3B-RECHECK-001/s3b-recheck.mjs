@@ -25,7 +25,7 @@ const SHA = execFileSync('git', ['-C', (process.env.S3B_SOURCE_WORKTREE ?? proce
 const TREE = execFileSync('git', ['-C', (process.env.S3B_SOURCE_WORKTREE ?? process.cwd()), 'rev-parse', 'HEAD^{tree}']).toString().trim();
 const EXEC = 'Claude Code implementation agent — Playwright 1.64.1 script s3b-recheck.mjs (NOT the independent R1 reviewer)';
 // Optional: a specific Chromium binary. Unset = Playwright's own installed Chromium.
-const HEADLESS = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined;
+const CHROMIUM_EXECUTABLE = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined;
 
 const psql = (sql) => execFileSync('psql', ['-h', '127.0.0.1', '-p', '55779', '-U', 'postgres', '-d', DB, '-At', '-F', '|', '-c', sql]).toString().trim();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -78,8 +78,7 @@ const storageKeys = (page) => page.evaluate(() => Object.keys(sessionStorage).fi
 const storageText = (page) => page.evaluate(() => JSON.stringify(Object.fromEntries(Object.keys(sessionStorage).filter((k) => k.startsWith('tiizi:v2:template-draft:')).map((k) => [k, sessionStorage.getItem(k)]))));
 const editorReady = (page) => page.getByRole('navigation', { name: 'Editor steps' }).waitFor({ timeout: 20000 });
 
-async function run() {
-  browser = await chromium.launch(HEADLESS ? { executablePath: HEADLESS } : {});
+async function matrix() {
   const marker = psql(`select shobj_description(oid,'pg_database') from pg_database where datname='${DB}'`);
   console.log(`DB target ${DB} marker=${marker} source=${SHA} tree=${TREE}`);
   if (!/^tiizi-disposable-preview:/.test(marker)) throw new Error('refusing: database is not marked disposable');
@@ -153,7 +152,7 @@ async function run() {
 
   await scenario('C-stored-activity-integrity', 'Older Activity version: unrelated save keeps version/components/kind; only Refresh adopts current', async ({ page, step, check, rec }) => {
     const t1 = tid('T1 stale-activity draft');
-    const writes = []; page.on('request', (r) => { if (r.method() === 'PUT' && r.url().startsWith(API)) writes.push(JSON.parse(r.postData() ?? '{}')); });
+    const writes = []; page.on('request', (r) => { if (r.method() === 'PUT' && r.url().startsWith(API)) writes.push(((d) => { try { return JSON.parse(d ?? '{}'); } catch { return {}; } })(r.postData())); });
     const before = cfg(t1).activities[0];
     check('seed: stored version 3, components [LEFT], kind fitness', before.observedVersion === 3 && JSON.stringify(before.componentIds) === '["LEFT"]' && before.kind === 'fitness', JSON.stringify(before));
     check('seed: governed current version is 4', psql(`select current_version from knowledge_items where activity_code='FIT-SBB-001'`) === '4');
@@ -305,14 +304,30 @@ async function run() {
     });
   }
 
-  await browser.close();
+}
+
+function writeEvidence() {
   const finished = new Date().toISOString();
-  const pass = results.every((r) => r.result === 'PASS');
+  const pass = exitCodeFor(results) === 0;
   writeFileSync(join(here, 'evidence.json'), JSON.stringify({ sourceSha: SHA, sourceTree: TREE, executor: EXEC, finished, database: DB, overall: pass ? 'PASS' : 'FAIL', scenarios: results }, null, 2));
   const md = [`# S3b final-head browser matrix`, ``, `- Source SHA: \`${SHA}\` (tree \`${TREE}\`)`, `- Executor: ${EXEC}`, `- Finished: ${finished}`, `- Database: ${DB} (disposable, marker verified)`, `- Overall: **${pass ? 'PASS' : 'FAIL'}**`, ``,
     ...results.flatMap((r) => [`## ${r.id} — ${r.title}`, `Result: **${r.result}** · ${r.startedAt} → ${r.endedAt}`, ``, `Steps:`, ...r.steps.map((s) => `- ${s}`), ``, `Checks:`, ...r.checks.map((c) => `- ${c.ok ? 'PASS' : 'FAIL'}: ${c.name}${c.ok ? '' : ` (${c.detail})`}`), ``, `API: ${r.api.map((a) => `${a.method} ${a.path} ${a.status}`).join('; ') || '—'}`, ``])].join('\n');
   writeFileSync(join(here, 'evidence.md'), md);
   console.log(`OVERALL ${pass ? 'PASS' : 'FAIL'}`);
+}
+
+async function run() {
+  try {
+    browser = await chromium.launch(CHROMIUM_EXECUTABLE ? { executablePath: CHROMIUM_EXECUTABLE } : {});
+    await matrix();
+  } catch (error) {
+    console.error(error);
+    const now = new Date().toISOString();
+    results.push({ id: 'run-error', title: 'Run aborted outside a scenario', startedAt: now, endedAt: now, steps: [], checks: [{ name: 'run error', ok: false, detail: String(error?.message ?? error).slice(0, 400) }], api: [], db: {}, result: 'FAIL' });
+  } finally {
+    await browser?.close().catch(() => undefined);
+  }
+  writeEvidence();
   process.exitCode = exitCodeFor(results);
 }
 run().catch((e) => { console.error(e); process.exit(1); });

@@ -13,7 +13,8 @@ export function loadPlaywright({ env = process.env, scriptDir, cwd = process.cwd
     try {
       return createRequire(join(root, 'noop.js'))('playwright');
     } catch (error) {
-      if (error?.code !== 'MODULE_NOT_FOUND') throw error;
+      // Skip a location only when `playwright` itself is missing; a broken install (a missing dependency of it) is surfaced.
+      if (error?.code !== 'MODULE_NOT_FOUND' || !/Cannot find module 'playwright'/.test(String(error.message))) throw error;
       tried.push(root);
     }
   }

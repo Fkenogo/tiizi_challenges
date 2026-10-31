@@ -30,14 +30,27 @@ test('never depends on a machine-specific temporary directory and explains how t
   assert.throws(() => loadPlaywright({ env: {}, scriptDir: tmp(), cwd: tmp() }), /npm i playwright.*PLAYWRIGHT_MODULE_DIR/s);
 });
 
-test('the real script loads Playwright from its own directory (fails later, at launch, not at resolution)', () => {
+test('the real script loads Playwright from its own directory and fails later, at launch', () => {
   const dir = tmp();
   cpSync(join(here, 's3b-recheck.mjs'), join(dir, 's3b-recheck.mjs'));
   cpSync(join(here, 's3b-recheck-lib.mjs'), join(dir, 's3b-recheck-lib.mjs'));
   fakePlaywright(dir, 'script');
   execFileSync('git', ['init', '-q'], { cwd: dir });
-  const out = spawnSync('node', ['s3b-recheck.mjs'], { cwd: dir, encoding: 'utf8', env: { ...process.env, STUB_TOKEN_AUTHOR2: 'x', S3B_SOURCE_WORKTREE: dir } });
-  assert.doesNotMatch(out.stderr, /could not be resolved|MODULE_NOT_FOUND/);
+  execFileSync('git', ['-c', 'user.email=t@example.test', '-c', 'user.name=t', 'commit', '--allow-empty', '-qm', 'x'], { cwd: dir });
+  const { PLAYWRIGHT_MODULE_DIR: _ignored, ...env } = process.env;
+  const out = spawnSync('node', ['s3b-recheck.mjs'], { cwd: dir, encoding: 'utf8', env: { ...env, STUB_TOKEN_AUTHOR2: 'x', S3B_SOURCE_WORKTREE: dir } });
+  assert.doesNotMatch(out.stderr, /could not be resolved/);
+  assert.match(out.stderr, /fake launch/);
+  // A crash outside any scenario still writes the evidence, records the failure, and exits nonzero.
+  assert.equal(out.status, 1);
+  assert.match(readFileSync(join(dir, 'evidence.json'), 'utf8'), /"overall": "FAIL"[\s\S]*run-error/);
+});
+
+test('a playwright install with a missing dependency is reported as broken, not as "not found"', () => {
+  const dir = tmp();
+  fakePlaywright(dir, 'x');
+  writeFileSync(join(dir, 'node_modules', 'playwright', 'index.js'), "require('playwright-core-missing');");
+  assert.throws(() => loadPlaywright({ env: {}, scriptDir: dir, cwd: tmp() }), /playwright-core-missing/);
 });
 
 test('any failed scenario, or no scenarios at all, gives a nonzero exit status', () => {
