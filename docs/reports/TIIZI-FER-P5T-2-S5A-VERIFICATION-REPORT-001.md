@@ -6,7 +6,7 @@
 
 ## 1. Evidence status
 
-Fresh independent verification is recorded below, separately from historical artifact recovery. The original R2 and R1 review reports and original attributable disposable-PostgreSQL execution artifact were **not recovered**. Their absence remains a historical evidence gap; the fresh reviews and run below are replacement verification evidence for the merged implementation. No historical reviewer or test executor is inferred.
+Fresh independent verification is recorded below, separately from historical artifact recovery. The contemporaneous historical R1/R2 reports and original attributable disposable-PostgreSQL execution artifact remain **unrecovered**. Their absence remains a historical evidence gap; no historical reviewer or test executor is inferred. The original emitted outputs for the fresh R1 and R2 reviews have now been retrieved from the respective reviewing-agent conversations and are reproduced verbatim in Appendix A. They were not saved as separate report files at the time. The fresh PostgreSQL execution output and attribution remain recorded in §3.
 
 PR #140's [review API](https://api.github.com/repos/Fkenogo/tiizi_challenges/pulls/140/reviews) and [inline review comments](https://api.github.com/repos/Fkenogo/tiizi_challenges/pulls/140/comments) each return zero records. Commit messages describe review-driven changes and testing, but are not original review reports or attributable execution logs. The recovered local log `/private/tmp/s5a_api_full.log` marks the real-PostgreSQL suite skipped; `/private/tmp/disc_i2.log` records a failed diagnostic run (1 failed, 4 skipped), not successful verification.
 
@@ -19,14 +19,16 @@ Both reviewers inspected the exact merged source SHA `f4eb8a06af1649084bb8e614fe
 - **Reviewer:** separate internal reviewer `s5a_r2_review`.
 - **Outcome:** **PASS**, no blocking or material findings.
 - **Reviewed:** transactional roster authorization and lock order; publish token checks; auth/path/header precedence; revocation interleavings; concurrency detector and disposable-target guard; migration trigger backstop.
-- **Primary review record:** independent reviewer report returned in the Founder-authorized session on 2026-11-01 and preserved here. Source anchors: [`challengeTemplates.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplates.ts#L407-L649), [`challengeTemplateRoutes.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplateRoutes.ts#L169-L202), [real-PostgreSQL suite](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/test/p5t2s5RealPostgres.test.ts#L232-L531), [disposable DB guard](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/disposableDbGuard.ts#L57-L95), [migration trigger](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/migrations/030_challenge_template_authority.sql#L26-L235).
+- **Original fresh-review output:** preserved verbatim in Appendix A. The reviewer identifies the exact merged source SHA and reviewed tree. The output was retrieved from its original agent conversation; no standalone report artifact or exact time was recorded. Review date: **2026-11-01** (confirmed by the reviewer from the review-session environment date).
+- **Findings:** none blocking or material. Source anchors: [`challengeTemplates.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplates.ts#L407-L649), [`challengeTemplateRoutes.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplateRoutes.ts#L169-L202), [real-PostgreSQL suite](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/test/p5t2s5RealPostgres.test.ts#L232-L531), [disposable DB guard](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/disposableDbGuard.ts#L57-L95), [migration trigger](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/migrations/030_challenge_template_authority.sql#L26-L235).
 
 ### R1 implementation and test review
 
 - **Reviewer:** separate internal reviewer `s5a_r1_review`.
 - **Outcome:** **PASS**, no blocking implementation or test-quality findings.
 - **Reviewed:** routes and service transaction semantics, API contract tests, real-PostgreSQL test, disposable DB guard, and migration 030.
-- **Primary review record:** independent reviewer report returned in the Founder-authorized session on 2026-11-01 and preserved here. Sources: [`challengeTemplateRoutes.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplateRoutes.ts), [`challengeTemplates.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplates.ts), [API contract suite](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/test/p5t1TemplateAuthority.test.ts), [real-PostgreSQL suite](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/test/p5t2s5RealPostgres.test.ts), and [disposable DB guard](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/disposableDbGuard.ts).
+- **Original fresh-review output:** preserved verbatim in Appendix A. The reviewer identifies the exact merged source SHA and reviewed tree. The output was retrieved from its original agent conversation; no standalone report artifact, review date or exact time was recorded in the original output. Review date: **not recorded**; it is not inferred from the later retrieval date.
+- **Findings:** none blocking; no implementation or test-quality finding required escalation. Sources: [`challengeTemplateRoutes.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplateRoutes.ts), [`challengeTemplates.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/challengeTemplates.ts), [API contract suite](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/test/p5t1TemplateAuthority.test.ts), [real-PostgreSQL suite](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/test/p5t2s5RealPostgres.test.ts), and [disposable DB guard](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/src/disposableDbGuard.ts).
 
 These are fresh independent internal reviews, not the missing original reports. They do not assess or replace the separate `createTemplateDraft` authorization-revocation R2 assessment.
 
@@ -61,6 +63,34 @@ No material Slice 5A security or concurrency blocker remains from fresh verifica
 
 ## Appendix A — independent review conclusions
 
-**R2 reviewer `s5a_r2_review`:** “PASS, with no blocking or material findings” for merged Slice 5A SHA `f4eb8a06af1649084bb8e614fe60f9d0af83644b`. The review confirmed that scoped write paths acquire the roster `FOR SHARE` lock before Template and version locks; revocation conflicts with that row lock; transaction-boundary tests exercise both lock orderings; the PostgreSQL detector scopes the waiter to the revocation backend using `pg_blocking_pids`; and route authentication precedes path and optional `If-Match` parsing. The separate `createTemplateDraft` assessment was not reviewed.
+### Original fresh R2 review output
 
-**R1 reviewer `s5a_r1_review`:** “PASS — no blocking findings” for the same merged SHA and tree. The review confirmed that write paths recheck author standing transactionally and lock roster, Template, then version; publish compares the optional revision token against the locked version; route validation preserves authentication and path precedence; and the disposable PostgreSQL suite verifies identity before mutation and coordinates revocation through observed lock state. No R1 implementation or test-quality finding requiring escalation was reported.
+Preserved verbatim from the original reviewer response in the `s5a_r2_review` agent conversation. It is not a separately timestamped report artifact. The reviewer confirmed the review date as 2026-11-01; no exact time was recorded.
+
+> R2 review **PASS**, with no blocking or material findings, for merged Slice 5A SHA `f4eb8a06af1649084bb8e614fe60f9d0af83644b`. The reviewed worktree tree matches that exact merged tree.
+>
+> The scoped write paths acquire the roster `FOR SHARE` lock before Template and version locks; the PostgreSQL concurrency suite covers revocation-held and write-first orderings, while the test guard checks the explicit host, port, database name, and live disposable marker. Route authentication precedes path and optional `If-Match` parsing.
+>
+> This is a fresh independent R2 review; it does not recover or replace the missing original R2 report. The separate `createTemplateDraft` assessment was not reviewed.
+
+- **Exact source SHA:** `f4eb8a06af1649084bb8e614fe60f9d0af83644b`.
+- **Exact source tree:** `dfc80211033c54f46d1001fe08255a0a037cde45` (review worktree HEAD `543db958fc4e0b209e6aa24ad064dc3b591bafcb` had the same tree).
+- **Finding list:** none; no blocking or material findings.
+
+### Original fresh R1 review output
+
+Preserved verbatim from the original reviewer response in the `s5a_r1_review` agent conversation. It is not a separately timestamped report artifact. The original output did not record its review date or time; neither is inferred here.
+
+> **R1 review: PASS — no blocking findings.**
+>
+> - **Reviewed source:** merged SHA `f4eb8a06af1649084bb8e614fe60f9d0af83644b`; tree `dfc80211033c54f46d1001fe08255a0a037cde45`. The clean review worktree at `543db958fc4e0b209e6aa24ad064dc3b591bafcb` has the same tree.
+> - **Implementation reviewed:** `api/src/challengeTemplateRoutes.ts` and `api/src/challengeTemplates.ts`.
+> - **Test and guard reviewed:** `api/test/p5t1TemplateAuthority.test.ts`, `api/test/p5t2s5RealPostgres.test.ts`, `api/src/disposableDbGuard.ts`, and migration `030_challenge_template_authority.sql`.
+>
+> The write paths recheck author standing inside their transactions and consistently lock roster, Template, then version. Publish compares the optional revision token against the locked version after validation; route validation preserves authentication and path precedence. The disposable PostgreSQL suite verifies database identity before mutation and coordinates revocation races through observed lock state, including a detector tied to the blocking backend. I found no R1 implementation or test-quality finding requiring escalation.
+>
+> This review is a source and test-design review only. It does not supply primary historical R1 evidence or replace the separate R2 review.
+
+- **Exact source SHA:** `f4eb8a06af1649084bb8e614fe60f9d0af83644b`.
+- **Exact source tree:** `dfc80211033c54f46d1001fe08255a0a037cde45` (review worktree HEAD `543db958fc4e0b209e6aa24ad064dc3b591bafcb` had the same tree).
+- **Finding list:** none; no blocking implementation or test-quality findings.
