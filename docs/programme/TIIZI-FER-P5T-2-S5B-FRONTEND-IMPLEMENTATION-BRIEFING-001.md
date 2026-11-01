@@ -28,10 +28,11 @@ Slice 5B does not include Slice 6 adoption reporting or audit-history presentati
 - Create the next draft through the existing revise endpoint. On `template_draft_open`, open the server-provided/current draft if available; on `template_not_published` or `template_retired`, refetch and remove the action.
 - Do not change published content in place. Reuse the existing draft editor, conditional save, preview and validation workflow for the new draft.
 
-### Retire a Template
+### Retire or discard a Template
 
-- Offer Retire only for a published, non-retired Template and an active author.
-- Require an explicit confirmation with a non-empty, trimmed reason capped at 500 characters. State the terminal effect clearly and preserve Cancel as a no-write action.
+- For an active author, offer retirement for every non-retired Template in `draft` or `published` lifecycle. For a never-published draft, use the approved presentation **“Discard this unpublished Template”**; this action retires the Template because no delete operation exists. For a published Template, present Retire. Retirement is terminal, hides the Template from the member catalogue, and does not change existing Challenges.
+- Require explicit confirmation for either action and preserve Cancel as a no-write action. If the Template has an open draft based on a published version, warn that it will remain but cannot be saved or published after retirement.
+- The reason is optional. An empty or whitespace-only UI field is permitted; omit `reason` from the request body when its trimmed value is empty, because the merged API treats an absent reason as null and rejects an explicitly supplied empty string. When a non-empty reason is supplied, trim it and enforce the design's 500-character limit on the untrimmed input, matching the server contract.
 - After success, refetch and show the retired read-only state. On a network error/503, reread first because the retire result may have committed. A second retire returns the already-retired state; it must not be presented as a generic failure.
 
 ### Needs-revision indicator
@@ -57,7 +58,7 @@ Use the existing Operator Template API client and existing response types. If an
 
 ## 4. Required verification after authorization
 
-- DOM/unit coverage for fresh-token publish enablement; successful publish; stale-token conflict and reconciliation; mapped 422 issues; already-published/retired and revoked-author states; unknown publish/retire outcomes followed by a read; revise conflicts; retire reason validation, confirmation and cancellation; needs-revision true/false/404/failure; reader/member controls absent; and preservation of Slice 3b/4 behavior.
+- DOM/unit coverage for fresh-token publish enablement; successful publish; stale-token conflict and reconciliation; mapped 422 issues; already-published/retired and revoked-author states; unknown publish/retire outcomes followed by a read; revise conflicts; published retirement and draft-only **“Discard this unpublished Template”**; optional empty reason omitted from the body; supplied reason trimming and 500-character boundary; confirmation and cancellation; needs-revision true/false/404/failure; reader/member controls absent; and preservation of Slice 3b/4 behavior.
 - Guard updates that permit only the designed three writes and the one needs-revision read. Retain no-member-write and no-Challenge-establishment constraints.
 - Run the affected DOM/unit suites, Template guards, member Wizard boundary/regression checks, typecheck/build and the six required CI checks on the exact implementation head. The PostgreSQL concurrency suite is a Slice 5A backend verification and is not replaced by frontend tests.
 - Browser acceptance on a verified disposable database: author publish, revise and retire; concurrent save before publish and recovery; publish validation failure; needs-revision state; reader and ordinary-member read-only states; revoked-author behavior; and widths 1280, 900 and 390. Do not use a persistent database or active roster.

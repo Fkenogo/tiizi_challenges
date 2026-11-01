@@ -1,6 +1,6 @@
 # TIIZI-FER-P5T-2-S5A — Closure and Merge Record (001)
 
-**Status:** Slice 5A COMPLETE / MERGED. Documentation records verified merge and validation evidence; no deployment or persistent-data change.
+**Status:** Slice 5A COMPLETE / MERGED. The merge and CI state are verified; primary artifacts for the stated implementation R2/R1 verdicts and disposable PostgreSQL execution were not located, so those claims remain unsubstantiated in this record. No deployment or persistent-data change.
 **Date:** 2026-11-01
 **Canonical baseline:** `main` at `f4eb8a06af1649084bb8e614fe60f9d0af83644b`.
 **Design of record:** [Slice 5 Publish, Revise, Retire Design](TIIZI-FER-P5T-2-S5-PUBLISH-REVISE-RETIRE-DESIGN-001.md).
@@ -16,22 +16,30 @@
 | Required checks | api (typecheck, test, build), api image (build, liveness), web (typecheck, build), functions (build, typecheck), boundary (V1 exclusion + API namespace), and API contract (/api namespace): all SUCCESS |
 | External check | Cloudflare Workers Builds failed; inherited and non-gating under the established programme treatment. No deployment followed. |
 
-## 2. Independent review dispositions
+## 2. Review evidence attribution and gaps
 
-- **R2 security review: PASS.** The authorization-revocation race was closed with an in-transaction author-roster `FOR SHARE` assertion placed before Template and version locks in publish, revise and retire. The save path retains the same roster → Template → version lock order. Publish `If-Match` keeps its optional-header compatibility and checks the reviewed content token after acquiring locks.
-- **R1 implementation review: PASS.** No blocking R1 finding remained for the merged Slice 5A implementation.
-- The merge briefing records the design-gate R2 disposition as **APPROVE WITH CONDITIONS**; those conditions became implementation acceptance requirements and are satisfied by the merged code and disposable-database evidence.
+The prior closure draft stated implementation R2 PASS and R1 PASS. The primary artifacts needed to substantiate those exact-head verdicts were not located in the repository or PR records available for this review; this closure record does not repeat those verdicts as established facts.
 
-## 3. Disposable PostgreSQL concurrency verification
+| Claim | Primary evidence located | Reviewer / executor and exact head | Outcome and limitation |
+| --- | --- | --- | --- |
+| Slice 5 design R2 gate | The merged design/implementation briefing records a design-gate R2 disposition of **APPROVE WITH CONDITIONS** and its corrections. This is a secondary summary, not the underlying reviewer report. The [PR #139 review API](https://api.github.com/repos/Fkenogo/tiizi_challenges/pulls/139/reviews) is also empty. | Reviewer identity and standalone report were not located. The design was merged in PR #139 as `1df0ef5c86d499698270c51de0fec3896a9c54d4`; this is a design review, not an implementation review. | Design-gate disposition is recorded as reported in that briefing. It does not establish implementation R2 PASS. |
+| Slice 5A implementation R2 | No primary security-review report or exact-head review artifact was located. [PR #140 review API](https://api.github.com/repos/Fkenogo/tiizi_challenges/pulls/140/reviews) returned an empty list. | No reviewer identity or exact reviewed implementation head can be attributed to an R2 report. | Implementation R2 PASS is **not independently substantiated** by available evidence. |
+| Slice 5A implementation R1 | No primary independent R1 report was located. The [PR #140 automated Code Review summary](https://github.com/Fkenogo/tiizi_challenges/pull/140#issuecomment-6544824308) refers to intermediate commit `8effab8a9dff6be7c53a76eb82af72f266b082ee`; it is not an independent R1 report and is not the approved final implementation head. | No independent R1 reviewer identity/report for final head `543db958fc4e0b209e6aa24ad064dc3b591bafcb` was located. | Implementation R1 PASS is **not independently substantiated** by available evidence. The intermediate automated summary is not treated as equivalent evidence. |
 
-`api/test/p5t2s5RealPostgres.test.ts` is opt-in and guarded by the disposable-database identity checks. It was executed against a disposable PostgreSQL target, not CI or a persistent database. The deterministic scenarios verify:
+The merged implementation itself is present at the approved head and PR #140. That source is evidence of the code that merged, not proof of an independent review verdict.
 
-1. Revocation committed before publish/revise/retire causes `403 template_author_required`; state and audit assertions show no unauthorized effect.
-2. A revocation held open while each write starts blocks on the roster lock; after revocation commits, each write is refused and leaves no publication, revision, retirement or audit effect.
-3. A write that wins before revocation commits cleanly, and the concurrent ordering check observes no `40P01` deadlock.
-4. Publish with a stale revision token loses to a concurrent save with `409 template_draft_changed`; unreviewed content is never published.
+## 3. Disposable PostgreSQL concurrency evidence attribution and gaps
 
-The suite avoids sleep-based timing assertions. Migration 030 was used only on the disposable target for verification; it remains undeployed. No persistent PostgreSQL database was migrated or contacted for this verification.
+The primary run artifact for the claimed disposable PostgreSQL execution was not located. No executor, run timestamp, disposable target identifier, command transcript, result report, or artifact link is available to attribute. Therefore this record does **not** claim the env-gated real-PostgreSQL suite was executed.
+
+The suite source [`api/test/p5t2s5RealPostgres.test.ts`](https://github.com/Fkenogo/tiizi_challenges/blob/f4eb8a06af1649084bb8e614fe60f9d0af83644b/api/test/p5t2s5RealPostgres.test.ts) exists in the PR #140 merge tree and defines guarded, opt-in scenarios for:
+
+1. Revocation committed before publish/revise/retire.
+2. Revocation held open while each write starts.
+3. Write-before-revocation ordering and a concurrent ordering check for deadlocks.
+4. Stale-token publish versus concurrent save.
+
+These source-level cases do not prove execution. The [PR #140 API CI check](https://github.com/Fkenogo/tiizi_challenges/pull/140/checks) passed, but the real-PostgreSQL suite is environment-gated and CI success alone does not establish that the disposable-database run occurred. Migration 030 remains undeployed; no persistent database migration is claimed here.
 
 ## 4. Scope and preserved obligations
 
