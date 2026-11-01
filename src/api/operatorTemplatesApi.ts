@@ -4,11 +4,8 @@ import { LIBRARY_PAGE_SIZE, templateListQuery, type LibraryFilters } from '../v2
 /**
  * Client for the P5T-1 Operator Template endpoints.
  *
- * Reads (Slice 2), the Slice 3b additions (caller-scoped capability read, draft
- * creation, conditional draft save) and the Slice 4 server validation call.
- * There is deliberately NO publish/revise/retire function in this module:
- * those arrive in later slices. Validation is the server's only: no client
- * validator exists.
+ * Reads (Slice 2), draft authoring, server validation, and the Slice 5A
+ * publish/revise/retire operations. Validation remains server-only.
  */
 
 export interface OperatorTemplateSummary {
@@ -127,6 +124,14 @@ export interface TemplateAdoptionRow {
   adoptions: number;
 }
 
+/** Read-only member response fields used for the Operator needs-revision indicator. */
+export interface TemplateMemberReadiness {
+  templateId: string;
+  version: number;
+  adoptable: boolean;
+  unavailableReason: string | null;
+}
+
 export const fetchOperatorTemplatePage = (filters: LibraryFilters, cursor: string | null) =>
   apiFetch<OperatorTemplatePage>(`${API_PREFIX}/operator/templates?${templateListQuery(filters, cursor, LIBRARY_PAGE_SIZE)}`);
 
@@ -181,3 +186,30 @@ export const validateTemplateDraft = (templateId: string, version: number) =>
     `${API_PREFIX}/operator/templates/${encodeURIComponent(templateId)}/versions/${version}/validate`,
     { method: 'POST', body: {} },
   );
+
+/** Publish only the exact saved revision that passed the server validation. */
+export const publishTemplateVersion = (templateId: string, version: number, revisionToken: string) =>
+  apiFetch<{ templateId: string; version: number }>(
+    `${API_PREFIX}/operator/templates/${encodeURIComponent(templateId)}/versions/${version}/publish`,
+    { method: 'POST', headers: { 'If-Match': `"${revisionToken}"` } },
+  );
+
+/** Create the next draft from the latest published version. */
+export const reviseTemplate = (templateId: string) =>
+  apiFetch<{ templateId: string; version: number }>(
+    `${API_PREFIX}/operator/templates/${encodeURIComponent(templateId)}/revisions`,
+    { method: 'POST' },
+  );
+
+/** Retire a Template. Blank reasons are omitted because the API rejects an explicit empty string. */
+export const retireTemplate = (templateId: string, reason?: string) => {
+  const trimmed = reason?.trim();
+  return apiFetch<{ templateId: string; lifecycle: 'retired' }>(
+    `${API_PREFIX}/operator/templates/${encodeURIComponent(templateId)}/retire`,
+    { method: 'POST', body: trimmed ? { reason: trimmed } : {} },
+  );
+};
+
+/** Existing authenticated member read; the Operator displays its result without deriving eligibility. */
+export const fetchTemplateMemberReadiness = (templateId: string) =>
+  apiFetch<TemplateMemberReadiness>(`${API_PREFIX}/challenge-templates/${encodeURIComponent(templateId)}`);

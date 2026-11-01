@@ -40,7 +40,7 @@ export function TemplateValidationPanel({
     );
   }
   if (record.ok) {
-    return <p role="status" data-validation-state="ok" className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">The saved draft passed the server check when it was checked, at {new Date(record.checkedAt).toLocaleTimeString()}. A later change by another author is caught when you next save. Publishing is a later step and is not available here.</p>;
+    return <p role="status" data-validation-state="ok" className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">The saved draft passed the server check when it was checked, at {new Date(record.checkedAt).toLocaleTimeString()}. A later change by another author is caught when you next save. Publish is available only while this check still matches the saved revision.</p>;
   }
   const total = displayedIssues(record.issues).length;
   const steps = (Object.keys(grouped) as IssueStep[]).filter((step) => grouped[step].length > 0);

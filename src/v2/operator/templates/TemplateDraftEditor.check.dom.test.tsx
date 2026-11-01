@@ -12,7 +12,7 @@ import { CATALOGUE, TEMPLATE_ID, TOKEN_A, TOKEN_B, TOKEN_C, contentOf, detailOf,
 /** Slice 4: "Save and check" over the existing save contract and the server's validation endpoint. */
 const h = vi.hoisted(() => ({
   user: { uid: 'author-1' } as { uid: string } | null,
-  capabilities: vi.fn(), detail: vi.fn(), create: vi.fn(), save: vi.fn(), validate: vi.fn(), options: vi.fn(), catalogue: vi.fn(), item: vi.fn(),
+  capabilities: vi.fn(), detail: vi.fn(), create: vi.fn(), save: vi.fn(), validate: vi.fn(), publish: vi.fn(), options: vi.fn(), catalogue: vi.fn(), item: vi.fn(),
   order: [] as string[],
 }));
 
@@ -20,7 +20,7 @@ vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => ({ user: h.user }) }))
 vi.mock('../../../api/operatorTemplatesApi', async (original) => ({
   ...(await original<typeof import('../../../api/operatorTemplatesApi')>()),
   fetchTemplateCapabilities: h.capabilities, fetchOperatorTemplate: h.detail, createTemplateDraft: h.create,
-  saveTemplateDraft: h.save, validateTemplateDraft: h.validate,
+  saveTemplateDraft: h.save, validateTemplateDraft: h.validate, publishTemplateVersion: h.publish,
 }));
 vi.mock('../../../api/challengeCreationApi', async (original) => ({
   ...(await original<typeof import('../../../api/challengeCreationApi')>()),
@@ -77,6 +77,7 @@ beforeEach(() => {
   h.create.mockResolvedValue({ templateId: TEMPLATE_ID, version: 1 });
   h.save.mockImplementation(async () => { h.order.push('save'); return { templateId: TEMPLATE_ID, version: 1, revisionToken: TOKEN_B }; });
   h.validate.mockImplementation(async () => { h.order.push('validate'); return { ok: true, issues: [] }; });
+  h.publish.mockResolvedValue({ templateId: TEMPLATE_ID, version: 1 });
 });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -135,6 +136,144 @@ describe('Save and check', () => {
     expect(h.create).toHaveBeenCalledTimes(1);
     expect(h.validate).toHaveBeenCalledTimes(1);
     expect(h.validate).toHaveBeenCalledWith(TEMPLATE_ID, 1);
+  });
+});
+
+describe('Publish', () => {
+  it('requires a fresh passing server check, confirms the named version, then sends that check token', async () => {
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    const publish = screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement;
+    expect(publish.disabled).toBe(true);
+    await userEvent.click(checkButton());
+    expect(await screen.findByText(/passed the server check/)).toBeTruthy();
+    expect(publish.disabled).toBe(false);
+    await userEvent.click(publish);
+    expect(screen.getByRole('dialog', { name: 'Publish Template?' })).toBeTruthy();
+    expect(screen.getByText(/Hundred Rep Race.*version 1.*immutable/)).toBeTruthy();
+    expect(h.publish).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(h.publish).toHaveBeenCalledWith(TEMPLATE_ID, 1, TOKEN_A);
+    expect(await screen.findByRole('heading', { name: 'Published Template' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Preview published Template' })).toBeTruthy();
+  });
+
+  it('disables publishing when the checked draft has unsaved edits', async () => {
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await editSummary('changed after check');
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/last check no longer matches this draft/)).toBeTruthy();
+    expect(h.publish).not.toHaveBeenCalled();
+  });
+
+  it('switches read-only when the server reports that author access was revoked', async () => {
+    h.publish.mockRejectedValue(new ApiError(403, 'template_author_required', 'revoked'));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByText(/Template authoring access was removed/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('rereads after an unknown transport outcome before leaving another publish attempt available', async () => {
+    h.publish.mockRejectedValue(new ApiError(503, 'api_unreachable', 'unknown'));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByText(/publish result could not be confirmed.*reread/i)).toBeTruthy();
+    expect(h.detail).toHaveBeenCalledTimes(3);
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('maps the publish 422 invalid_template issues into the existing server validation panel', async () => {
+    h.publish.mockRejectedValue(new ApiError(422, 'invalid_template', 'Template does not validate for publication', {
+      issues: [{ code: 'ACTIVITY_NOT_ELIGIBLE', field: 'activities[].activity', activityIndex: 0, stage: 'ACTIVITIES', message: 'Activity is no longer published' }],
+    }));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    const panel = await screen.findByRole('alert', { name: 'Check results' });
+    expect(within(panel).getByText('Activities')).toBeTruthy();
+    expect(within(panel).getByText('Push-ups: Activity is no longer published')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Published Template' })).toBeNull();
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('locks editor changes and save/check while publish is pending', async () => {
+    let resolvePublish!: (value: { templateId: string; version: number }) => void;
+    h.publish.mockImplementation(() => new Promise((resolve) => { resolvePublish = resolve; }));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await step(/Name & appearance/);
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect((screen.getByRole('button', { name: 'Save and check' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Publishing…' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByPlaceholderText('e.g. Sunrise walking streak').closest('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
+    resolvePublish({ templateId: TEMPLATE_ID, version: 1 });
+    expect(await screen.findByRole('heading', { name: 'Published Template' })).toBeTruthy();
+  });
+
+  it('blocks publish while an Activity options request is still adding that Activity', async () => {
+    let release!: () => void;
+    const pendingOptions = new Promise<void>((resolve) => { release = resolve; });
+    h.options.mockImplementation(async (id: string) => {
+      if (id === 'act-2') await pendingOptions;
+      return optionsFor(id, 3);
+    });
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await step(/3\. Activities/);
+    await userEvent.click(await screen.findByRole('button', { name: 'Add Plank' }));
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
+    release();
+    expect(await screen.findByRole('button', { name: 'Plank is already added' })).toBeTruthy();
+  });
+
+  it('routes a publish revision-token conflict into the existing reconciliation flow', async () => {
+    h.publish.mockRejectedValue(new ApiError(409, 'template_draft_changed', 'changed', {
+      current: { revisionToken: TOKEN_B, content: contentOf({ summary: 'Changed on server' }), lastEditedByMemberId: 'member-other', lastEditedAt: '2026-10-30T09:00:00Z' },
+    }));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByRole('alert', { name: /changed while you were editing/i })).toBeTruthy();
+    expect(screen.getByText(/Changed on server/)).toBeTruthy();
+  });
+
+  it.each([
+    ['immutable version', new ApiError(409, 'template_immutable', 'already published')],
+    ['retired Template', new ApiError(409, 'template_retired', 'retired')],
+    ['missing Template', new ApiError(404, 'template_not_found', 'gone')],
+  ])('surfaces the %s publish outcome without claiming success', async (_label, error) => {
+    h.publish.mockRejectedValue(error);
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Published Template' })).toBeNull();
   });
 });
 
