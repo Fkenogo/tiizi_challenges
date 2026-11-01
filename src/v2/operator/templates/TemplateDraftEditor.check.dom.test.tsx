@@ -12,7 +12,7 @@ import { CATALOGUE, TEMPLATE_ID, TOKEN_A, TOKEN_B, TOKEN_C, contentOf, detailOf,
 /** Slice 4: "Save and check" over the existing save contract and the server's validation endpoint. */
 const h = vi.hoisted(() => ({
   user: { uid: 'author-1' } as { uid: string } | null,
-  capabilities: vi.fn(), detail: vi.fn(), create: vi.fn(), save: vi.fn(), validate: vi.fn(), options: vi.fn(), catalogue: vi.fn(), item: vi.fn(),
+  capabilities: vi.fn(), detail: vi.fn(), create: vi.fn(), save: vi.fn(), validate: vi.fn(), publish: vi.fn(), options: vi.fn(), catalogue: vi.fn(), item: vi.fn(),
   order: [] as string[],
 }));
 
@@ -20,7 +20,7 @@ vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => ({ user: h.user }) }))
 vi.mock('../../../api/operatorTemplatesApi', async (original) => ({
   ...(await original<typeof import('../../../api/operatorTemplatesApi')>()),
   fetchTemplateCapabilities: h.capabilities, fetchOperatorTemplate: h.detail, createTemplateDraft: h.create,
-  saveTemplateDraft: h.save, validateTemplateDraft: h.validate,
+  saveTemplateDraft: h.save, validateTemplateDraft: h.validate, publishTemplateVersion: h.publish,
 }));
 vi.mock('../../../api/challengeCreationApi', async (original) => ({
   ...(await original<typeof import('../../../api/challengeCreationApi')>()),
@@ -77,6 +77,7 @@ beforeEach(() => {
   h.create.mockResolvedValue({ templateId: TEMPLATE_ID, version: 1 });
   h.save.mockImplementation(async () => { h.order.push('save'); return { templateId: TEMPLATE_ID, version: 1, revisionToken: TOKEN_B }; });
   h.validate.mockImplementation(async () => { h.order.push('validate'); return { ok: true, issues: [] }; });
+  h.publish.mockResolvedValue({ templateId: TEMPLATE_ID, version: 1 });
 });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -135,6 +136,62 @@ describe('Save and check', () => {
     expect(h.create).toHaveBeenCalledTimes(1);
     expect(h.validate).toHaveBeenCalledTimes(1);
     expect(h.validate).toHaveBeenCalledWith(TEMPLATE_ID, 1);
+  });
+});
+
+describe('Publish', () => {
+  it('requires a fresh passing server check, confirms the named version, then sends that check token', async () => {
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    const publish = screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement;
+    expect(publish.disabled).toBe(true);
+    await userEvent.click(checkButton());
+    expect(await screen.findByText(/passed the server check/)).toBeTruthy();
+    expect(publish.disabled).toBe(false);
+    await userEvent.click(publish);
+    expect(screen.getByRole('dialog', { name: 'Publish Template?' })).toBeTruthy();
+    expect(screen.getByText(/Hundred Rep Race.*version 1.*immutable/)).toBeTruthy();
+    expect(h.publish).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(h.publish).toHaveBeenCalledWith(TEMPLATE_ID, 1, TOKEN_A);
+    expect(await screen.findByRole('heading', { name: 'Published Template' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Preview published Template' })).toBeTruthy();
+  });
+
+  it('disables publishing when the checked draft has unsaved edits', async () => {
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await editSummary('changed after check');
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/last check no longer matches this draft/)).toBeTruthy();
+    expect(h.publish).not.toHaveBeenCalled();
+  });
+
+  it('switches read-only when the server reports that author access was revoked', async () => {
+    h.publish.mockRejectedValue(new ApiError(403, 'template_author_required', 'revoked'));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByText(/Template authoring access was removed/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('rereads after an unknown transport outcome before leaving another publish attempt available', async () => {
+    h.publish.mockRejectedValue(new ApiError(503, 'api_unreachable', 'unknown'));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByText(/publish result could not be confirmed.*reread/i)).toBeTruthy();
+    expect(h.detail).toHaveBeenCalledTimes(3);
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(false);
   });
 });
 

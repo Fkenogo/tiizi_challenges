@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './apiError';
-import { createTemplateDraft, fetchTemplateCapabilities, saveTemplateDraft, validateTemplateDraft, type TemplateDraftBody } from './operatorTemplatesApi';
+import { createTemplateDraft, fetchTemplateCapabilities, fetchTemplateMemberReadiness, publishTemplateVersion, retireTemplate, reviseTemplate, saveTemplateDraft, validateTemplateDraft, type TemplateDraftBody } from './operatorTemplatesApi';
 
 
 const BODY: TemplateDraftBody = {
@@ -75,5 +75,38 @@ describe('Template draft client (real transport, stubbed fetch)', () => {
   it('surfaces a 403 from validation as a typed ApiError', async () => {
     fetchMock.mockResolvedValue(reply(403, { error: { code: 'template_author_required', message: 'no' } }));
     await expect(validateTemplateDraft('t', 1)).rejects.toMatchObject({ status: 403, code: 'template_author_required' });
+  });
+
+  it('publishes the validated revision with the quoted If-Match token', async () => {
+    fetchMock.mockResolvedValue(reply(200, { templateId: 't/1', version: 2 }));
+    await expect(publishTemplateVersion('t/1', 2, TOKEN)).resolves.toEqual({ templateId: 't/1', version: 2 });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('http://api.test/api/operator/templates/t%2F1/versions/2/publish');
+    expect(init.method).toBe('POST');
+    expect(init.headers['If-Match']).toBe(`"${TOKEN}"`);
+  });
+
+  it('revises through the existing revisions endpoint', async () => {
+    fetchMock.mockResolvedValue(reply(201, { templateId: 't/1', version: 3 }));
+    await expect(reviseTemplate('t/1')).resolves.toEqual({ templateId: 't/1', version: 3 });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('http://api.test/api/operator/templates/t%2F1/revisions');
+    expect(init.method).toBe('POST');
+  });
+
+  it('retires without sending an empty reason, and trims a supplied reason', async () => {
+    fetchMock.mockResolvedValue(reply(200, { templateId: 't', lifecycle: 'retired' }));
+    await retireTemplate('t', '  ');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({});
+    fetchMock.mockResolvedValue(reply(200, { templateId: 't', lifecycle: 'retired' }));
+    await retireTemplate('t', '  reviewed  ');
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ reason: 'reviewed' });
+  });
+
+  it('uses the existing authenticated member read for readiness', async () => {
+    fetchMock.mockResolvedValue(reply(200, { templateId: 't/1', version: 2, adoptable: false, unavailableReason: 'STALE_ACTIVITY' }));
+    await expect(fetchTemplateMemberReadiness('t/1')).resolves.toMatchObject({ adoptable: false, unavailableReason: 'STALE_ACTIVITY' });
+    expect(fetchMock.mock.calls[0][0]).toBe('http://api.test/api/challenge-templates/t%2F1');
+    expect(fetchMock.mock.calls[0][1].method).toBe('GET');
   });
 });
