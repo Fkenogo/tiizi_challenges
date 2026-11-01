@@ -211,6 +211,23 @@ describe('Publish', () => {
     expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it('locks editor changes and save/check while publish is pending', async () => {
+    let resolvePublish!: (value: { templateId: string; version: number }) => void;
+    h.publish.mockImplementation(() => new Promise((resolve) => { resolvePublish = resolve; }));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await step(/Name & appearance/);
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect((screen.getByRole('button', { name: 'Save and check' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Publishing…' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByPlaceholderText('e.g. Sunrise walking streak').closest('fieldset') as HTMLFieldSetElement).disabled).toBe(true);
+    resolvePublish({ templateId: TEMPLATE_ID, version: 1 });
+    expect(await screen.findByRole('heading', { name: 'Published Template' })).toBeTruthy();
+  });
+
   it('routes a publish revision-token conflict into the existing reconciliation flow', async () => {
     h.publish.mockRejectedValue(new ApiError(409, 'template_draft_changed', 'changed', {
       current: { revisionToken: TOKEN_B, content: contentOf({ summary: 'Changed on server' }), lastEditedByMemberId: 'member-other', lastEditedAt: '2026-10-30T09:00:00Z' },

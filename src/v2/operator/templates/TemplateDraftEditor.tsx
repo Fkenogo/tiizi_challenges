@@ -378,7 +378,7 @@ function TemplateDraftEditorInner() {
   const baseCanonical = useMemo(() => canonicalBody(session.baseBody ?? EMPTY_BODY), [session.baseBody]);
   const dirty = currentCanonical !== baseCanonical;
   const readOnly = revoked || immutable || conflict !== null;
-  const locked = readOnly || saving;
+  const locked = readOnly || saving || publishing;
   readOnlyRef.current = readOnly;
 
   /* ------------------------ temporary session recovery -------------------- */
@@ -515,7 +515,7 @@ function TemplateDraftEditorInner() {
   }, [beginConflict, queryClient, uid]);
 
   const save = useCallback(async (andCheck = false) => {
-    if (saving || checking || readOnly) return;
+    if (saving || checking || publishing || readOnly) return;
     if (validateAuthoring(currentRef.current).length > 0) return;
     const body = toTemplateBody(currentRef.current);
     setSaving(true); setFailure(null); setBanner(null);
@@ -550,7 +550,7 @@ function TemplateDraftEditorInner() {
     }
     // Validation runs only after a successful save (or against an unchanged saved draft).
     if (toCheck) await check(toCheck.templateId, toCheck.version, toCheck.token);
-  }, [saving, checking, readOnly, uid, navigate, queryClient, applyFailure, check]);
+  }, [saving, checking, publishing, readOnly, uid, navigate, queryClient, applyFailure, check]);
 
   const publish = useCallback(async () => {
     const sess = sessionRef.current;
@@ -683,8 +683,8 @@ function TemplateDraftEditorInner() {
 
   const stepIndex = STEPS.findIndex((entry) => entry.id === step);
   const saveLabel = session.templateId === null ? 'Create draft' : 'Save draft';
-  const saveDisabled = saving || checking || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
-  const checkDisabled = saving || checking || readOnly || issues.length > 0 || (session.templateId === null && !dirty);
+  const saveDisabled = saving || checking || publishing || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
+  const checkDisabled = saving || checking || publishing || readOnly || issues.length > 0 || (session.templateId === null && !dirty);
   const validationStale = validation !== null && isValidationStale(validation, {
     currentToken: session.token, templateId: session.templateId, version: session.version, dirty, conflict: conflict !== null,
   });

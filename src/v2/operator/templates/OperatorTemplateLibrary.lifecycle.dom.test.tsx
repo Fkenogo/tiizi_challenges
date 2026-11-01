@@ -152,6 +152,38 @@ describe('Operator Template lifecycle actions', () => {
     expect(h.detail.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('shows a retirement error in the confirmation and removes the write action after revocation', async () => {
+    h.detail.mockResolvedValue(publishedDetail());
+    h.retire.mockRejectedValue(new ApiError(403, 'template_author_required', 'revoked'));
+    mount();
+    await userEvent.click(await screen.findByRole('button', { name: 'Retire Template' }));
+    const dialog = screen.getByRole('dialog', { name: 'Retire Template?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Retire Template' }));
+    expect(await within(dialog).findByRole('alert')).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Retire Template' })).toBeNull();
+    expect((within(dialog).getByLabelText(/Reason/) as HTMLTextAreaElement).disabled).toBe(true);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('refreshes server readiness after the detail panel is closed and reopened', async () => {
+    const secondId = '22222222-2222-4222-8222-222222222222';
+    h.list.mockResolvedValue({
+      templates: [summary, { ...summary, templateId: secondId, title: 'Other Template' }], nextCursor: null,
+    });
+    h.detail.mockImplementation(async (id: string) => publishedDetail().templateId === id
+      ? publishedDetail()
+      : { ...publishedDetail(), templateId: secondId });
+    h.readiness.mockResolvedValue({ templateId: TEMPLATE_ID, version: 1, adoptable: false, unavailableReason: 'STALE_ACTIVITY' });
+    mount();
+    await screen.findByText('Needs revision · STALE_ACTIVITY');
+    await userEvent.click(screen.getByRole('button', { name: /Other Template/ }));
+    await screen.findByText('Other Template');
+    await userEvent.click(screen.getByRole('button', { name: /Hundred Rep Race/ }));
+    await screen.findByText('Needs revision · STALE_ACTIVITY');
+    expect(h.readiness).toHaveBeenCalledTimes(3);
+  });
+
   it('shows no lifecycle actions to a Console reader and reports ordinary-member denial distinctly', async () => {
     h.capabilities.mockReturnValue({ canAuthor: false, canRead: true });
     h.detail.mockResolvedValue(detailOf([versionOf(TOKEN_A)]));

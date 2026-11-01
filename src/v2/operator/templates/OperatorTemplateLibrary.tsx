@@ -256,7 +256,8 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
     queryFn: () => fetchTemplateMemberReadiness(templateId),
     enabled: !!templateId && detail.data?.lifecycle === 'published' && detail.data.latestPublishedVersion !== null,
     retry: false,
-    staleTime: Infinity,
+    staleTime: 0,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
   const [pickedVersion, setPickedVersion] = useState<number | null>(null);
@@ -373,7 +374,7 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
           </button>
         )}
         {actionMessage ? <p role="status" className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">{actionMessage}</p> : null}
-        {actionError ? <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{actionError}</p> : null}
+        {actionError && !retireOpen ? <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{actionError}</p> : null}
         {data.lifecycle === 'published' && data.latestPublishedVersion !== null && (
           <div className="mt-3" aria-live="polite">
             {memberReadiness.isPending ? <p role="status" className="text-xs text-slate-500">Checking member availability…</p> : null}
@@ -388,11 +389,12 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
               <p id="retire-template-description" className="mt-2 text-sm leading-6 text-slate-700">Retirement is permanent. This Template will no longer be offered to members. Existing Challenges will not change.</p>
               {openDraft && data.latestPublishedVersion !== null ? <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">The open draft will remain, but it can no longer be saved or published after retirement.</p> : null}
               <label htmlFor="retire-template-reason" className="mt-4 block text-sm font-bold text-slate-800">Reason <span className="font-normal text-slate-500">(optional)</span></label>
-              <textarea id="retire-template-reason" value={retireReason} onChange={(event) => setRetireReason(event.target.value)} maxLength={500} rows={3} placeholder="Add a reason if useful" className={`${inputClass} mt-1 w-full resize-y`} />
+              <textarea id="retire-template-reason" value={retireReason} onChange={(event) => setRetireReason(event.target.value)} disabled={!authorControls} maxLength={500} rows={3} placeholder="Add a reason if useful" className={`${inputClass} mt-1 w-full resize-y disabled:bg-slate-100`} />
               <p className="mt-1 text-right text-xs text-slate-500">{retireReason.length}/500</p>
+              {actionError ? <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{actionError}</p> : null}
               <div className="mt-4 flex flex-wrap justify-end gap-2">
                 <button type="button" onClick={() => setRetireOpen(false)} disabled={actionBusy === 'retire'} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-50">Cancel</button>
-                <button type="button" onClick={() => void confirmRetire()} disabled={actionBusy === 'retire'} className="rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">{actionBusy === 'retire' ? 'Retiring…' : retireLabel}</button>
+                {authorControls ? <button type="button" onClick={() => void confirmRetire()} disabled={actionBusy === 'retire'} className="rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">{actionBusy === 'retire' ? 'Retiring…' : retireLabel}</button> : null}
               </div>
             </section>
           </div>
