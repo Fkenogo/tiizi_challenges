@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -125,6 +125,31 @@ describe('Operator Template lifecycle actions', () => {
     const dialog = screen.getByRole('dialog', { name: 'Retire Template?' });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Retire Template' }));
     await waitFor(() => expect(h.retire).toHaveBeenCalledWith(TEMPLATE_ID, '  obsolete content  '));
+  });
+
+  it('allows a supplied reason of exactly 500 characters', async () => {
+    h.detail.mockResolvedValue(publishedDetail());
+    mount();
+    await userEvent.click(await screen.findByRole('button', { name: 'Retire Template' }));
+    const reason = screen.getByLabelText(/Reason/) as HTMLTextAreaElement;
+    const value = 'x'.repeat(500);
+    fireEvent.change(reason, { target: { value } });
+    expect(reason.value).toHaveLength(500);
+    const dialog = screen.getByRole('dialog', { name: 'Retire Template?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Retire Template' }));
+    await waitFor(() => expect(h.retire).toHaveBeenCalledWith(TEMPLATE_ID, value));
+  });
+
+  it('confirms a published Template retirement and rereads to resolve an unknown write outcome', async () => {
+    h.detail.mockResolvedValueOnce(publishedDetail()).mockResolvedValueOnce({ ...publishedDetail(), lifecycle: 'retired', retiredAt: '2026-11-01T08:00:00Z', retiredReason: null });
+    h.retire.mockRejectedValue(new ApiError(503, 'api_unreachable', 'unknown result'));
+    mount();
+    await userEvent.click(await screen.findByRole('button', { name: 'Retire Template' }));
+    const dialog = screen.getByRole('dialog', { name: 'Retire Template?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Retire Template' }));
+    expect(await screen.findByText('Template retired. Existing Challenges are unchanged.')).toBeTruthy();
+    expect(h.retire).toHaveBeenCalledWith(TEMPLATE_ID, undefined);
+    expect(h.detail.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
   it('shows no lifecycle actions to a Console reader and reports ordinary-member denial distinctly', async () => {

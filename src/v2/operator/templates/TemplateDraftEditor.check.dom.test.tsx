@@ -193,6 +193,48 @@ describe('Publish', () => {
     expect(h.detail).toHaveBeenCalledTimes(3);
     expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(false);
   });
+
+  it('keeps a server validation rejection visible and does not mark the draft published', async () => {
+    h.publish.mockRejectedValue(new ApiError(422, 'template_validation_failed', 'server rejected this revision'));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByText('server rejected this revision')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Published Template' })).toBeNull();
+  });
+
+  it('routes a publish revision-token conflict into the existing reconciliation flow', async () => {
+    h.publish.mockRejectedValue(new ApiError(409, 'template_draft_changed', 'changed', {
+      current: { revisionToken: TOKEN_B, content: contentOf({ summary: 'Changed on server' }), lastEditedByMemberId: 'member-other', lastEditedAt: '2026-10-30T09:00:00Z' },
+    }));
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByRole('alert', { name: /changed while you were editing/i })).toBeTruthy();
+    expect(screen.getByText(/Changed on server/)).toBeTruthy();
+  });
+
+  it.each([
+    ['immutable version', new ApiError(409, 'template_immutable', 'already published')],
+    ['retired Template', new ApiError(409, 'template_retired', 'retired')],
+    ['missing Template', new ApiError(404, 'template_not_found', 'gone')],
+  ])('surfaces the %s publish outcome without claiming success', async (_label, error) => {
+    h.publish.mockRejectedValue(error);
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Published Template' })).toBeNull();
+  });
 });
 
 describe('validation issues and step mapping', () => {
