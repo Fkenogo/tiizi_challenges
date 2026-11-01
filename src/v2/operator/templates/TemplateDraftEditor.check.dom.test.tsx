@@ -194,16 +194,21 @@ describe('Publish', () => {
     expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('keeps a server validation rejection visible and does not mark the draft published', async () => {
-    h.publish.mockRejectedValue(new ApiError(422, 'template_validation_failed', 'server rejected this revision'));
+  it('maps the publish 422 invalid_template issues into the existing server validation panel', async () => {
+    h.publish.mockRejectedValue(new ApiError(422, 'invalid_template', 'Template does not validate for publication', {
+      issues: [{ code: 'ACTIVITY_NOT_ELIGIBLE', field: 'activities[].activity', activityIndex: 0, stage: 'ACTIVITIES', message: 'Activity is no longer published' }],
+    }));
     mount();
     await screen.findByRole('navigation', { name: 'Editor steps' });
     await userEvent.click(checkButton());
     await screen.findByText(/passed the server check/);
     await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
     await userEvent.click(screen.getByRole('button', { name: 'Confirm publish' }));
-    expect(await screen.findByText('server rejected this revision')).toBeTruthy();
+    const panel = await screen.findByRole('alert', { name: 'Check results' });
+    expect(within(panel).getByText('Activities')).toBeTruthy();
+    expect(within(panel).getByText('Push-ups: Activity is no longer published')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Published Template' })).toBeNull();
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('routes a publish revision-token conflict into the existing reconciliation flow', async () => {

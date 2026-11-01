@@ -10,6 +10,7 @@ import {
   saveTemplateDraft,
   validateTemplateDraft,
   type TemplateDraftBody,
+  type TemplateValidationIssue,
 } from '../../../api/operatorTemplatesApi';
 import { useAuth } from '../../../hooks/useAuth';
 import { V2Card, V2Chip, V2EmptyState, V2LoadingState, V2Page, V2SectionHeader } from '../../components/V2Primitives';
@@ -567,6 +568,23 @@ function TemplateDraftEditorInner() {
       // The write response is deliberately small; refresh the authoritative detail after the success.
       void fetchOperatorTemplate(result.templateId).then(() => queryClient.invalidateQueries({ queryKey: ['operator-templates', 'detail', result.templateId] })).catch(() => undefined);
     } catch (error) {
+      const publishError = error as { status?: number; code?: string; details?: unknown };
+      if (publishError.status === 422 && publishError.code === 'invalid_template') {
+        const issues = (publishError.details as { issues?: unknown } | undefined)?.issues;
+        if (Array.isArray(issues) && issues.every((issue) => issue && typeof issue.code === 'string' && typeof issue.message === 'string')) {
+          setValidation({
+            templateId: sess.templateId,
+            version: sess.version,
+            token: record.token,
+            checkedAt: Date.now(),
+            ok: false,
+            issues: issues as TemplateValidationIssue[],
+          });
+          setFailure(null);
+          setBanner(null);
+          return;
+        }
+      }
       const result = classifySaveFailure(error);
       if (result.kind === 'unavailable' || result.kind === 'failed') {
         // A transport failure can hide a committed publish. Read before offering another attempt.
