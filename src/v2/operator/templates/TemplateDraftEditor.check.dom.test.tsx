@@ -228,6 +228,24 @@ describe('Publish', () => {
     expect(await screen.findByRole('heading', { name: 'Published Template' })).toBeTruthy();
   });
 
+  it('blocks publish while an Activity options request is still adding that Activity', async () => {
+    let release!: () => void;
+    const pendingOptions = new Promise<void>((resolve) => { release = resolve; });
+    h.options.mockImplementation(async (id: string) => {
+      if (id === 'act-2') await pendingOptions;
+      return optionsFor(id, 3);
+    });
+    mount();
+    await screen.findByRole('navigation', { name: 'Editor steps' });
+    await userEvent.click(checkButton());
+    await screen.findByText(/passed the server check/);
+    await step(/3\. Activities/);
+    await userEvent.click(await screen.findByRole('button', { name: 'Add Plank' }));
+    expect((screen.getByRole('button', { name: 'Publish' }) as HTMLButtonElement).disabled).toBe(true);
+    release();
+    expect(await screen.findByRole('button', { name: 'Plank is already added' })).toBeTruthy();
+  });
+
   it('routes a publish revision-token conflict into the existing reconciliation flow', async () => {
     h.publish.mockRejectedValue(new ApiError(409, 'template_draft_changed', 'changed', {
       current: { revisionToken: TOKEN_B, content: contentOf({ summary: 'Changed on server' }), lastEditedByMemberId: 'member-other', lastEditedAt: '2026-10-30T09:00:00Z' },

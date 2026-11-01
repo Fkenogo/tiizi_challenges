@@ -555,7 +555,7 @@ function TemplateDraftEditorInner() {
   const publish = useCallback(async () => {
     const sess = sessionRef.current;
     const record = validation;
-    if (!sess.templateId || sess.version === null || !record || !record.ok || publishing || saving || checking || readOnlyRef.current) return;
+    if (!sess.templateId || sess.version === null || !record || !record.ok || publishing || saving || checking || addingId !== null || readOnlyRef.current) return;
     if (isValidationStale(record, { currentToken: sess.token, templateId: sess.templateId, version: sess.version, dirty, conflict: conflict !== null })) return;
     setPublishing(true); setPublishConfirmOpen(false); setFailure(null); setBanner(null);
     try {
@@ -616,7 +616,7 @@ function TemplateDraftEditorInner() {
     } finally {
       setPublishing(false);
     }
-  }, [validation, publishing, saving, checking, dirty, conflict, uid, queryClient, applyFailure]);
+  }, [validation, publishing, saving, checking, addingId, dirty, conflict, uid, queryClient, applyFailure]);
 
   // A draft created by "Save and check" is checked once the edit route has read back its first revision token.
   useEffect(() => {
@@ -688,7 +688,7 @@ function TemplateDraftEditorInner() {
   const validationStale = validation !== null && isValidationStale(validation, {
     currentToken: session.token, templateId: session.templateId, version: session.version, dirty, conflict: conflict !== null,
   });
-  const publishDisabled = !session.templateId || session.version === null || !validation?.ok || validationStale || saving || checking || publishing || readOnly || dirty || issues.length > 0;
+  const publishDisabled = !session.templateId || session.version === null || !validation?.ok || validationStale || saving || checking || publishing || addingId !== null || readOnly || dirty || issues.length > 0;
   const groupedIssues = validation ? groupIssuesByStep(validation.issues) : null;
   const activityNames = current.activities.map((activity) => activity.name);
   const stepIssues = (id: StepId) => (groupedIssues && !validationStale ? groupedIssues[id] : []);
