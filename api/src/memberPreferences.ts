@@ -274,7 +274,7 @@ export function registerMemberPreferenceRoutes(app: FastifyInstance, db: Db): vo
     return setOwnMemberPreferences(db, member, request.body);
   });
 
-  app.post(`${path}/reminders/:category/dismiss`, async (request, reply): Promise<MemberPreferencesState | { error: string }> => {
+  app.post(`${API_PREFIX}/me/preferences/reminders/:category/dismiss`, async (request, reply): Promise<MemberPreferencesState | { error: string }> => {
     const member = authenticatedMember(request);
     const category = (request.params as { category?: string }).category;
     if (category !== 'interests' && category !== 'goals') return reply.code(400).send({ error: 'invalid_preference_category' });
