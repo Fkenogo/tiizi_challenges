@@ -33,10 +33,4 @@ export function groupInterestsByDomain(options: readonly V2InterestOption[]): Ar
   return order.map((domain) => ({ domain, items: byDomain.get(domain)! }));
 }
 
-/** Default landing after personalization: discovery, unless the member asked for a specific page. */
-export const PREFERENCES_DISCOVERY_PATH = '/v2/groups?tab=discover';
-export function afterPreferencesPath(next: string): string {
-  return next === '/v2/today' ? PREFERENCES_DISCOVERY_PATH : next;
-}
-
 export const PREFERENCES_PATH = '/v2/preferences';

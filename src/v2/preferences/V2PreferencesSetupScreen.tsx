@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { V2Button, V2Card, V2ErrorState, V2LoadingState, V2Page, V2SectionHeader } from '../components/V2Primitives';
 import { resolveV2NextPath } from '../auth/v2NextPath';
 import { GoalsPicker, InterestsPicker } from './PreferencePickers';
-import { afterPreferencesPath } from './preferencesView';
 import { useSaveV2Preferences, useV2Preferences } from './usePreferences';
 
 /**
@@ -20,7 +19,9 @@ type Step = 'interests' | 'goals';
 export function V2PreferencesSetupScreen() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const destination = afterPreferencesPath(resolveV2NextPath(params.get('next')));
+  const destination = resolveV2NextPath(params.get('next'));
+  const requestedCategory = params.get('category');
+  const editingCategory: Step | 'both' | null = requestedCategory === 'interests' || requestedCategory === 'goals' || requestedCategory === 'both' ? requestedCategory : null;
   const prefs = useV2Preferences();
   const save = useSaveV2Preferences();
   const [step, setStep] = useState<Step | null>(null);
@@ -32,10 +33,13 @@ export function V2PreferencesSetupScreen() {
   // Pick the first undecided step once, from server truth; if nothing is left, move on.
   useEffect(() => {
     if (!data || step !== null) return;
-    if (!data.interestsDecided) { setStep('interests'); setInterests(data.interestIds); }
+    if (editingCategory === 'interests') { setStep('interests'); setInterests(data.interestIds); }
+    else if (editingCategory === 'goals') { setStep('goals'); setGoals(data.goalIds); }
+    else if (editingCategory === 'both') { setStep('interests'); setInterests(data.interestIds); }
+    else if (!data.interestsDecided) { setStep('interests'); setInterests(data.interestIds); }
     else if (!data.goalsDecided) { setStep('goals'); setGoals(data.goalIds); }
     else navigate(destination, { replace: true });
-  }, [data, step, navigate, destination]);
+  }, [data, step, navigate, destination, editingCategory]);
 
   if (prefs.isLoading || (data && step === null)) {
     return <V2Page><V2LoadingState label="Loading…" /></V2Page>;
@@ -58,11 +62,12 @@ export function V2PreferencesSetupScreen() {
   const finishInterests = (chosen: string[] | null) => {
     setError(null);
     const afterSave = () => {
-      if (data.goalsDecided) navigate(destination, { replace: true });
+      if (editingCategory === 'both') { setStep('goals'); setGoals(data.goalIds); }
+      else if (editingCategory || data.goalsDecided) navigate(destination, { replace: true });
       else { setStep('goals'); setGoals(data.goalIds); }
     };
     // Skip on an already-decided side changes nothing (never erases a selection).
-    if (chosen === null && data.interestsDecided) { afterSave(); return; }
+    if (chosen === null && (data.interestsDecided || editingCategory === 'interests')) { afterSave(); return; }
     save.mutate({ interestIds: chosen ?? [] }, {
       onSuccess: afterSave,
       onError: () => setError("We couldn't save that. Please try again, or skip for now."),
@@ -70,7 +75,7 @@ export function V2PreferencesSetupScreen() {
   };
   const finishGoals = (chosen: string[] | null) => {
     setError(null);
-    if (chosen === null && data.goalsDecided) { navigate(destination, { replace: true }); return; }
+    if (chosen === null && (data.goalsDecided || editingCategory === 'goals')) { navigate(destination, { replace: true }); return; }
     save.mutate({ goalIds: chosen ?? [] }, {
       onSuccess: () => navigate(destination, { replace: true }),
       onError: () => setError("We couldn't save that. Please try again, or skip for now."),
@@ -82,7 +87,7 @@ export function V2PreferencesSetupScreen() {
   return (
     <V2Page>
       <V2SectionHeader
-        eyebrow={isInterests ? 'Step 1 of 2' : 'Step 2 of 2'}
+        eyebrow={editingCategory ? 'Preferences' : isInterests ? 'Step 1 of 2' : 'Step 2 of 2'}
         title={isInterests ? 'What are you into?' : 'What are you working towards?'}
         description={isInterests
           ? 'Pick up to 5. We use this to show the Groups and Challenges most relevant to you first. Everything stays open to you either way.'
@@ -102,7 +107,7 @@ export function V2PreferencesSetupScreen() {
           disabled={save.isPending || selected.length === 0}
           onClick={() => (isInterests ? finishInterests(interests) : finishGoals(goals))}
         >
-          {save.isPending ? 'Saving…' : isInterests ? 'Continue' : 'Save and explore'}
+        {save.isPending ? 'Saving…' : editingCategory === 'both' && isInterests ? 'Save and continue' : editingCategory ? 'Save and return' : isInterests ? 'Continue' : 'Save and explore'}
         </V2Button>
         <V2Button
           variant="ghost"

@@ -19,6 +19,10 @@ export interface V2Preferences {
   /** False until the member has saved OR skipped that side. */
   interestsDecided: boolean;
   goalsDecided: boolean;
+  reminders: {
+    interests: { eligible: boolean; dismissedAt: string | null };
+    goals: { eligible: boolean; dismissedAt: string | null };
+  };
   limits: { interests: number; goals: number };
   vocabulary: { interests: V2InterestOption[]; goals: V2GoalOption[] };
 }
@@ -35,4 +39,8 @@ export function fetchV2Preferences(): Promise<V2Preferences> {
 /** Replaces the provided side(s); an omitted side is untouched; `[]` clears/skips. */
 export function saveV2Preferences(change: V2PreferenceChange): Promise<V2Preferences> {
   return apiFetch<V2Preferences>(apiPath('/me/preferences'), { method: 'PUT', body: change });
+}
+
+export function dismissV2PreferenceReminder(category: 'interests' | 'goals'): Promise<V2Preferences> {
+  return apiFetch<V2Preferences>(apiPath(`/me/preferences/reminders/${category}/dismiss`), { method: 'POST' });
 }

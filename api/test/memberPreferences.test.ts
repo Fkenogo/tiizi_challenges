@@ -70,9 +70,69 @@ describe('GET/PUT /api/me/preferences', () => {
     const res = await get(app, token);
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toMatchObject({ interestIds: [], goalIds: [], interestsDecided: false, goalsDecided: false, limits: { interests: 5, goals: 3 } });
+    expect(body).toMatchObject({ interestIds: [], goalIds: [], interestsDecided: false, goalsDecided: false, limits: { interests: 5, goals: 3 }, reminders: { interests: { eligible: false, dismissedAt: null }, goals: { eligible: false, dismissedAt: null } } });
     expect(body.vocabulary.interests).toHaveLength(12);
     expect(body.vocabulary.goals).toHaveLength(9);
+  });
+
+  it('reminder eligibility is independent, server timed, dismissible for seven days, and member owned', async () => {
+    const a = await member('reminder-a');
+    const b = await member('reminder-b');
+    await put(a.app, a.token, { interestIds: [], goalIds: goals(1) });
+    let state = (await get(a.app, a.token)).json();
+    expect(state.reminders).toMatchObject({ interests: { eligible: true }, goals: { eligible: false } });
+
+    const dismissed = await a.app.inject({ method: 'POST', url: '/api/me/preferences/reminders/interests/dismiss', headers: authHeaders(a.token) });
+    expect(dismissed.statusCode).toBe(200);
+    expect(dismissed.json().reminders.interests).toMatchObject({ eligible: false });
+    expect(dismissed.json().reminders.interests.dismissedAt).toBeTruthy();
+    expect((await get(b.app, b.token)).json().reminders.interests).toMatchObject({ eligible: false, dismissedAt: null });
+
+    await testDb().query("UPDATE member_preferences SET interests_reminder_dismissed_at = clock_timestamp() - interval '7 days' - interval '1 millisecond' WHERE member_id = $1", [a.memberId]);
+    state = (await get(a.app, a.token)).json();
+    expect(state.reminders.interests.eligible).toBe(true);
+    const dismissedAgain = await a.app.inject({ method: 'POST', url: '/api/me/preferences/reminders/interests/dismiss', headers: authHeaders(a.token) });
+    expect(dismissedAgain.json().reminders.interests.eligible).toBe(false);
+    await testDb().query("UPDATE member_preferences SET interests_reminder_dismissed_at = clock_timestamp() - interval '7 days' + interval '1 second' WHERE member_id = $1", [a.memberId]);
+    expect((await get(a.app, a.token)).json().reminders.interests.eligible).toBe(false);
+
+    await put(a.app, a.token, { interestIds: [ids(1)[0]] });
+    expect((await get(a.app, a.token)).json().reminders.interests.eligible).toBe(false);
+    await put(a.app, a.token, { interestIds: [] });
+    expect((await get(a.app, a.token)).json().reminders.interests.eligible).toBe(false);
+    await testDb().query('UPDATE member_preferences SET interests_reminder_dismissed_at = NULL WHERE member_id = $1', [a.memberId]);
+    expect((await get(a.app, a.token)).json().reminders.interests.eligible).toBe(true);
+  });
+
+  it('persists each initial selection/skip combination independently for onboarding', async () => {
+    const scenarios = [
+      { interestIds: ids(1), goalIds: goals(1), interestsDecided: true, goalsDecided: true, interestsReminder: false, goalsReminder: false },
+      { interestIds: ids(1), goalIds: [], interestsDecided: true, goalsDecided: true, interestsReminder: false, goalsReminder: true },
+      { interestIds: [], goalIds: goals(1), interestsDecided: true, goalsDecided: true, interestsReminder: true, goalsReminder: false },
+      { interestIds: [], goalIds: [], interestsDecided: true, goalsDecided: true, interestsReminder: true, goalsReminder: true },
+    ];
+    for (const [index, scenario] of scenarios.entries()) {
+      const { app, token } = await member(`onboarding-combo-${index}`);
+      const saved = await put(app, token, { interestIds: scenario.interestIds, goalIds: scenario.goalIds });
+      expect(saved.statusCode).toBe(200);
+      expect(saved.json()).toMatchObject({
+        interestIds: scenario.interestIds,
+        goalIds: scenario.goalIds,
+        interestsDecided: scenario.interestsDecided,
+        goalsDecided: scenario.goalsDecided,
+        reminders: { interests: { eligible: scenario.interestsReminder }, goals: { eligible: scenario.goalsReminder } },
+      });
+    }
+  });
+
+  it('rejects reminder dismissal unless the requested category is decided and empty', async () => {
+    const { app, token } = await member('reminder-guard');
+    const unauthenticated = await app.inject({ method: 'POST', url: '/api/me/preferences/reminders/goals/dismiss' });
+    expect(unauthenticated.statusCode).toBe(401);
+    expect((await app.inject({ method: 'POST', url: '/api/me/preferences/reminders/nope/dismiss', headers: authHeaders(token) })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'POST', url: '/api/me/preferences/reminders/goals/dismiss', headers: authHeaders(token) })).statusCode).toBe(409);
+    await put(app, token, { goalIds: goals(1) });
+    expect((await app.inject({ method: 'POST', url: '/api/me/preferences/reminders/goals/dismiss', headers: authHeaders(token) })).statusCode).toBe(409);
   });
 
   it('saves, reloads, edits and clears — each side independently', async () => {

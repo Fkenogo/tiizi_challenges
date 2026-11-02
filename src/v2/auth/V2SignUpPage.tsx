@@ -1,27 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizeFirebaseAuthError } from '../../utils/firebaseAuthErrors';
 import { isV2DisplayNameTooLong, normalizeV2DisplayName } from './v2DisplayName';
 import { v2EmailSignUp } from './v2EmailSignUp';
-import { resolveV2NextPath, v2NextQuery } from './v2NextPath';
+import { v2NextQuery } from './v2NextPath';
 import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2AuthLayout';
 
 /**
  * TIIZI S1 CORR-001 — V2 sign-up experience.
  *
  * New V2 surface mirroring the existing account-creation
- * capability (email/password + Google). After sign-up the member
- * returns to the requested V2 route — never into V1 onboarding,
- * profile setup, or group prerequisites (deferred to their
- * authorised vertical slice).
+ * capability (email/password + Google). New members continue through
+ * optional preference onboarding and then arrive at Today.
  */
 
 const EMAIL_PATTERN = /\S+@\S+\.\S+/;
 
 export function V2SignUpPage() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
   const { loginWithGoogle, isAuthenticated, isReady } = useAuth();
 
   const [name, setName] = useState('');
@@ -31,7 +28,9 @@ export function V2SignUpPage() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
 
-  const next = resolveV2NextPath(params.get('next'));
+  // New accounts always enter the member experience at Today. Existing
+  // sessions use the separate sign-in flow, which retains its requested path.
+  const next = '/v2/today';
 
   useEffect(() => {
     // While sign-up is in flight, wait so the shell (and member bootstrap)

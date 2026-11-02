@@ -74,6 +74,10 @@ export interface MemberPreferencesState extends MemberPreferenceIds {
   /** False until the member has saved OR explicitly skipped that side. */
   interestsDecided: boolean;
   goalsDecided: boolean;
+  reminders: {
+    interests: { eligible: boolean; dismissedAt: string | null };
+    goals: { eligible: boolean; dismissedAt: string | null };
+  };
   limits: { interests: number; goals: number };
   vocabulary: { interests: readonly InterestOption[]; goals: readonly GoalOption[] };
 }
@@ -131,25 +135,54 @@ interface Row {
   goal_ids: string[];
   interests_decided_at: Date | string | null;
   goals_decided_at: Date | string | null;
+  interests_reminder_dismissed_at?: Date | string | null;
+  goals_reminder_dismissed_at?: Date | string | null;
+  server_now?: Date | string;
 }
 
 function toState(row: Row | undefined): MemberPreferencesState {
+  const serverNow = row?.server_now ? new Date(row.server_now).getTime() : 0;
+  const reminder = (ids: string[] | undefined, decidedAt: Date | string | null | undefined, dismissedAt: Date | string | null | undefined) => {
+    const dismissed = dismissedAt == null ? null : new Date(dismissedAt).toISOString();
+    return {
+      eligible: !!decidedAt && (ids?.length ?? 0) === 0 && (!dismissedAt || serverNow >= new Date(dismissedAt).getTime() + 7 * 24 * 60 * 60 * 1000),
+      dismissedAt: dismissed,
+    };
+  };
   return {
     interestIds: row?.interest_ids ?? [],
     goalIds: row?.goal_ids ?? [],
     interestsDecided: !!row?.interests_decided_at,
     goalsDecided: !!row?.goals_decided_at,
+    reminders: {
+      interests: reminder(row?.interest_ids, row?.interests_decided_at, row?.interests_reminder_dismissed_at),
+      goals: reminder(row?.goal_ids, row?.goals_decided_at, row?.goals_reminder_dismissed_at),
+    },
     limits: { interests: MAX_MEMBER_INTERESTS, goals: MAX_MEMBER_GOALS },
     vocabulary: { interests: MEMBER_INTEREST_OPTIONS, goals: MEMBER_GOAL_OPTIONS },
   };
 }
 
-const COLUMNS = 'interest_ids, goal_ids, interests_decided_at, goals_decided_at';
+const COLUMNS = 'interest_ids, goal_ids, interests_decided_at, goals_decided_at, interests_reminder_dismissed_at, goals_reminder_dismissed_at, clock_timestamp() AS server_now';
 
 /** Own-member read. No row means nothing decided yet (empty, undecided). */
 export async function getMemberPreferences(db: Db, memberId: string): Promise<MemberPreferencesState> {
   const result = await db.query<Row>(`SELECT ${COLUMNS} FROM member_preferences WHERE member_id = $1`, [memberId]);
   return toState(result.rows[0]);
+}
+
+export async function dismissOwnPreferenceReminder(db: Db, member: RequestMember, category: 'interests' | 'goals'): Promise<boolean> {
+  const columns = category === 'interests'
+    ? { decided: 'interests_decided_at', ids: 'interest_ids', dismissed: 'interests_reminder_dismissed_at' }
+    : { decided: 'goals_decided_at', ids: 'goal_ids', dismissed: 'goals_reminder_dismissed_at' };
+  const result = await db.query(
+    `UPDATE member_preferences
+        SET ${columns.dismissed} = clock_timestamp(), updated_at = clock_timestamp()
+      WHERE member_id = $1 AND ${columns.decided} IS NOT NULL AND cardinality(${columns.ids}) = 0
+      RETURNING member_id`,
+    [member.memberId],
+  );
+  return result.rows.length === 1;
 }
 
 /** P2 read contract: the saved IDs only (ordering input, never a filter or gate). */
@@ -239,5 +272,14 @@ export function registerMemberPreferenceRoutes(app: FastifyInstance, db: Db): vo
   app.put(path, async (request): Promise<MemberPreferencesState> => {
     const member = authenticatedMember(request);
     return setOwnMemberPreferences(db, member, request.body);
+  });
+
+  app.post(`${path}/reminders/:category/dismiss`, async (request, reply): Promise<MemberPreferencesState | { error: string }> => {
+    const member = authenticatedMember(request);
+    const category = (request.params as { category?: string }).category;
+    if (category !== 'interests' && category !== 'goals') return reply.code(400).send({ error: 'invalid_preference_category' });
+    const dismissed = await dismissOwnPreferenceReminder(db, member, category);
+    if (!dismissed) return reply.code(409).send({ error: 'preference_reminder_not_eligible' });
+    return getMemberPreferences(db, member.memberId);
   });
 }
