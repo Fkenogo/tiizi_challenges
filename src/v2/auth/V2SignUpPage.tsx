@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizeFirebaseAuthError } from '../../utils/firebaseAuthErrors';
 import { isV2DisplayNameTooLong, normalizeV2DisplayName } from './v2DisplayName';
 import { v2EmailSignUp } from './v2EmailSignUp';
-import { v2NextQuery } from './v2NextPath';
+import { resolveV2NextPath, v2NextQuery } from './v2NextPath';
 import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2AuthLayout';
 
 /**
@@ -19,6 +19,7 @@ const EMAIL_PATTERN = /\S+@\S+\.\S+/;
 
 export function V2SignUpPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { loginWithGoogle, isAuthenticated, isReady } = useAuth();
 
   const [name, setName] = useState('');
@@ -31,6 +32,7 @@ export function V2SignUpPage() {
   // New accounts always enter the member experience at Today. Existing
   // sessions use the separate sign-in flow, which retains its requested path.
   const next = '/v2/today';
+  const requestedNext = resolveV2NextPath(params.get('next'));
 
   useEffect(() => {
     // While sign-up is in flight, wait so the shell (and member bootstrap)
@@ -82,7 +84,7 @@ export function V2SignUpPage() {
         <>
           Already have an account?{' '}
           <Link
-            to={`/v2/sign-in${v2NextQuery(next)}`}
+            to={`/v2/sign-in${v2NextQuery(requestedNext)}`}
             className="font-bold text-primary hover:underline"
           >
             Sign in
