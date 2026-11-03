@@ -49,8 +49,8 @@ describe('V2 Challenges page sections', () => {
     const controls = screen.getByRole('region', { name: 'Challenge search and filters' });
     const find = screen.getByRole('region', { name: 'Find Challenges' });
     expect(within(controls).getByPlaceholderText('Search Challenges…')).toBeTruthy();
-    expect(within(controls).getAllByRole('button', { name: /Filters/ })).toHaveLength(1);
-    expect(within(controls).queryByRole('button', { name: 'All' })).toBeNull();
+    expect(within(controls).getAllByRole('button', { name: /^(Status|Type|Domain): / })).toHaveLength(3);
+    expect(within(controls).queryByRole('button', { name: /Filters/ })).toBeNull();
     expect(within(find).getByText('1 found')).toBeTruthy();
     expect(screen.getByText('You have not joined a Challenge yet')).toBeTruthy();
     expect(screen.queryByText('Relevant to me')).toBeNull();
@@ -80,50 +80,66 @@ describe('V2 Challenges page sections', () => {
     expect(screen.getByTestId('route-state').textContent).toBe('/v2/challenges/joined-one|{"openLogActivity":true}');
   });
 
-  it('places compact search and Filters before My Challenges and keeps the panel open through selections', async () => {
+  it('places search and three dropdown filters before My Challenges and combines selections', async () => {
     setData([row('my-joined', 'active'), row('fit-together', null, { title: 'Morning Steps' }), row('wellness-streak', null, {
       title: 'Rest Well', challengeType: 'streak', status: 'establishment', activities: [{ name: 'Sleep', domain: 'wellness', category: 'Rest', subcategory: '' }],
     }), row('wellness-race', null, { title: 'Mindful Run', challengeType: 'competitive', activities: [{ name: 'Breathing', domain: 'wellness', category: 'Mindfulness', subcategory: '' }] })]);
     render(<MemoryRouter><V2ChallengeListScreen /></MemoryRouter>);
     const controls = screen.getByRole('region', { name: 'Challenge search and filters' });
     const mine = screen.getByRole('region', { name: 'My Challenges' });
+    const found = () => screen.getByRole('region', { name: 'Find Challenges' }).querySelectorAll('[data-find-challenge]').length;
     expect(controls.compareDocumentPosition(mine) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(controls).getAllByRole('button', { name: /Filters/ })).toHaveLength(1);
     expect(within(controls).getAllByRole('searchbox')).toHaveLength(1);
-    expect(screen.queryByRole('region', { name: 'Challenge filters' })).toBeNull();
+    const status = within(controls).getByRole('button', { name: 'Status: All Statuses' });
+    const type = within(controls).getByRole('button', { name: 'Type: All Types' });
+    const domain = within(controls).getByRole('button', { name: 'Domain: All Domains' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.queryByText('Filters active')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
 
     const user = userEvent.setup();
-    await user.tab();
-    await user.tab();
-    await user.tab();
-    await user.tab();
-    expect(document.activeElement).toBe(within(controls).getByRole('button', { name: /Filters/ }));
+    await user.tab(); await user.tab(); await user.tab(); await user.tab();
+    expect(document.activeElement).toBe(status);
     await user.keyboard('{Enter}');
-    const panel = screen.getByRole('region', { name: 'Challenge filters' });
-    await user.click(within(within(panel).getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Active / Ongoing' }));
-    expect(screen.getByRole('region', { name: 'Find Challenges' }).querySelectorAll('[data-find-challenge]')).toHaveLength(2);
-    await user.click(within(within(panel).getByRole('group', { name: 'Status' })).getByRole('button', { name: 'All' }));
-    await user.click(within(within(panel).getByRole('group', { name: 'Challenge Type' })).getByRole('button', { name: 'Together' }));
-    expect(screen.getByRole('region', { name: 'Find Challenges' }).querySelectorAll('[data-find-challenge]')).toHaveLength(1);
-    await user.click(within(within(panel).getByRole('group', { name: 'Challenge Type' })).getByRole('button', { name: 'All' }));
-    await user.click(within(within(panel).getByRole('group', { name: 'Domain' })).getByRole('button', { name: 'Wellness' }));
-    expect(screen.getByRole('region', { name: 'Find Challenges' }).querySelectorAll('[data-find-challenge]')).toHaveLength(2);
-    await user.click(within(within(panel).getByRole('group', { name: 'Domain' })).getByRole('button', { name: 'All' }));
-    await user.click(within(within(panel).getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Active / Ongoing' }));
-    expect(screen.getByRole('region', { name: 'Challenge filters' })).toBeTruthy();
-    await user.click(within(within(panel).getByRole('group', { name: 'Challenge Type' })).getByRole('button', { name: 'Together' }));
-    await user.click(within(within(panel).getByRole('group', { name: 'Domain' })).getByRole('button', { name: 'Fitness' }));
-    expect(screen.getByRole('button', { name: /Filters, 3 active/ })).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Find Challenges' }).querySelectorAll('[data-find-challenge]')).toHaveLength(1);
+    expect(screen.getAllByRole('listbox')).toHaveLength(1);
+    expect(within(screen.getByRole('listbox', { name: 'Status' })).getAllByRole('option').map((o) => o.textContent)).toEqual(['All Statuses✓', 'Active', 'Upcoming', 'Complete']);
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.activeElement).toBe(status);
+    expect(within(controls).getByRole('button', { name: 'Status: Active' })).toBe(status);
+    expect(found()).toBe(2);
+    expect(screen.getByText('Filters active')).toBeTruthy();
+
+    await user.click(type);
+    await user.click(domain);
+    expect(screen.getAllByRole('listbox')).toHaveLength(1);
+    expect(screen.getByRole('listbox', { name: 'Domain' })).toBeTruthy();
+    await user.click(within(screen.getByRole('listbox', { name: 'Domain' })).getByRole('option', { name: 'Wellness' }));
+    expect(found()).toBe(1);
+    await user.click(type);
+    await user.click(within(screen.getByRole('listbox', { name: 'Type' })).getByRole('option', { name: 'Streak' }));
+    expect(found()).toBe(0);
+    await user.click(type);
+    await user.click(within(screen.getByRole('listbox', { name: 'Type' })).getByRole('option', { name: 'Race' }));
+    expect(found()).toBe(1);
     expect(within(mine).getByText('my-joined')).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: 'Remove Domain filter: Fitness' }));
-    expect(screen.getByRole('region', { name: 'Find Challenges' }).querySelectorAll('[data-find-challenge]')).toHaveLength(1);
-    await user.click(within(panel).getByRole('button', { name: 'Clear All' }));
-    expect(screen.getByRole('button', { name: 'Filters' })).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Find Challenges' }).querySelectorAll('[data-find-challenge]')).toHaveLength(3);
-    await user.click(screen.getByRole('button', { name: 'Done' }));
-    expect(screen.queryByRole('region', { name: 'Challenge filters' })).toBeNull();
+    await user.click(type);
+    expect(screen.getByRole('listbox', { name: 'Type' })).toBeTruthy();
+    await user.click(document.body);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    await user.click(status);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.activeElement).toBe(status);
+
+    await user.click(screen.getByRole('button', { name: 'Reset all' }));
+    expect(within(controls).getByRole('button', { name: 'Status: All Statuses' })).toBeTruthy();
+    expect(within(controls).getByRole('button', { name: 'Type: All Types' })).toBeTruthy();
+    expect(within(controls).getByRole('button', { name: 'Domain: All Domains' })).toBeTruthy();
+    expect(screen.queryByText('Filters active')).toBeNull();
+    expect(found()).toBe(3);
+    expect(controls.querySelector('[aria-label^="Remove"]')).toBeNull();
   });
 
   it('searches only Find, clears the query, and offers a reset from no-results', async () => {
@@ -150,8 +166,8 @@ describe('V2 Challenges page sections', () => {
     expect(mine.querySelectorAll('[data-my-challenge]')).toHaveLength(2);
     await userEvent.click(within(mine).getByRole('button', { name: 'View More (2)' }));
     expect(mine.querySelectorAll('[data-my-challenge]')).toHaveLength(4);
-    await userEvent.click(screen.getByRole('button', { name: /Filters/ }));
-    await userEvent.click(screen.getByRole('region', { name: 'Challenge filters' }).querySelector('button[aria-label="Select Together"]')!);
+    await userEvent.click(screen.getByRole('button', { name: 'Type: All Types' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Together' }));
     expect(mine.querySelectorAll('[data-my-challenge]')).toHaveLength(4);
     expect(within(mine).getByRole('button', { name: 'Show Less' })).toBeTruthy();
     await userEvent.click(within(mine).getByRole('button', { name: 'Show Less' }));
