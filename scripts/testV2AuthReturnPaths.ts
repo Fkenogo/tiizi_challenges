@@ -7,6 +7,7 @@
  * pure-contract tests pin resolveV2NextPath behaviour.
  */
 import { resolveV2NextPath, V2_DEFAULT_NEXT, v2AuthEntryHints, v2NextQuery } from '../src/v2/auth/v2NextPath.js';
+import { readFileSync } from 'node:fs';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail = ''): void {
@@ -63,6 +64,19 @@ check('bare /v2', resolveV2NextPath('/v2') === V2_DEFAULT_NEXT);
 console.log('auth-screen link helper');
 check('default next emits no query', v2NextQuery(V2_DEFAULT_NEXT) === '');
 check('deep next is encoded once', v2NextQuery('/v2/groups?tab=invites') === '?next=%2Fv2%2Fgroups%3Ftab%3Dinvites');
+
+console.log('sign-in, registration, and onboarding destinations');
+const signInSource = readFileSync(new URL('../src/v2/auth/V2SignInPage.tsx', import.meta.url), 'utf8');
+const signUpSource = readFileSync(new URL('../src/v2/auth/V2SignUpPage.tsx', import.meta.url), 'utf8');
+const guardSource = readFileSync(new URL('../src/v2/auth/V2AuthGuard.tsx', import.meta.url), 'utf8');
+const bootstrapGateSource = readFileSync(new URL('../src/v2/auth/V2MemberBootstrapGate.tsx', import.meta.url), 'utf8');
+const todaySource = readFileSync(new URL('../src/v2/today/V2TodayScreen.tsx', import.meta.url), 'utf8');
+check('returning email sign-in uses the resolved destination', /await login\(email\.trim\(\), password\);\s*navigate\(next\)/s.test(signInSource));
+check('restored authenticated session uses the same explicit destination', /isAuthenticated && !operatorPreview\) navigate\(next, \{ replace: true \}\)/.test(signInSource));
+check('first registration continues to the V2 Today entry', /v2EmailSignUp\(name, email\.trim\(\), password\);\s*navigate\(next\)/s.test(signUpSource) && /const next = '\/v2\/today'/.test(signUpSource));
+check('authenticated V2 content remains behind member bootstrap', /<V2MemberBootstrapGate>\{children\}<\/V2MemberBootstrapGate>/.test(guardSource));
+check('bootstrap failure remains a blocking, recoverable gate', /if \(status === 'working'\)/.test(bootstrapGateSource) && /We couldn't finish setting up your account/.test(bootstrapGateSource));
+check('Today retains preference completion/reminder decisions', /preferences|Preference/i.test(todaySource));
 
 if (failures > 0) {
   console.error(`\nV2 auth return-path tests: ${failures} failure(s).`);
