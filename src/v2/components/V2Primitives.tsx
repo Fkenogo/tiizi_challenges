@@ -169,7 +169,7 @@ export function V2Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone} ${className}`}
+      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${tone} ${className}`}
     >
       {children}
     </button>
@@ -244,7 +244,7 @@ export function V2Chip({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
         selected ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
       }`}
     >
