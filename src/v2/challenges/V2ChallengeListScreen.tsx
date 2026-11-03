@@ -97,7 +97,7 @@ export function V2ChallengeListScreen() {
           </div>
           <div className="mt-3 flex justify-end gap-2 border-t border-slate-100 pt-3">
             <button type="button" onClick={clearFilters} disabled={!filterCount} className="min-h-10 rounded-lg px-3 text-sm font-bold text-slate-600 underline underline-offset-2 hover:text-slate-900 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Clear All</button>
-            <V2Button onClick={() => setFiltersOpen(false)}>Done</V2Button>
+            <V2Button className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" onClick={() => setFiltersOpen(false)}>Done</V2Button>
           </div>
         </div>}
         {activeFilters.length > 0 && <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label="Applied filters">
@@ -146,7 +146,7 @@ export function V2ChallengeListScreen() {
           message="We could not load more Challenges to find. Your joined Challenges above are not affected."
           onRetry={() => void discovery.refetch()}
         />}
-        {ownRead.isSuccess && discovery.isSuccess && filtered.length === 0 && <V2EmptyState title="No matching Challenges" message="Try another search or change a filter." action={<V2Button variant="secondary" onClick={() => { setSearch(''); clearFilters(); }}>Clear search and filters</V2Button>} />}
+        {ownRead.isSuccess && discovery.isSuccess && filtered.length === 0 && <V2EmptyState title="No matching Challenges" message="Try another search or change a filter." action={<V2Button variant="secondary" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" onClick={() => { setSearch(''); clearFilters(); }}>Clear search and filters</V2Button>} />}
         {visible.length > 0 && <ul aria-label="Challenge results" className="space-y-2">
           {visible.map((challenge) => isDiscoverable(challenge)
             ? <V2DiscoverChallengeRow key={challenge.challengeId} challenge={challenge} discoveryUpdatedAt={discoveryUpdatedAt} />
@@ -220,6 +220,6 @@ function FilterRow<T extends string>({ label, value, onChange, options }: {
 }) {
   return <div role="group" aria-label={label} className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
     <span className="w-28 shrink-0 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">{label}</span>
-    <div className="flex flex-wrap gap-1.5">{options.map(([key, text]) => <V2Chip key={key} selected={value === key} onClick={() => onChange(key)}>{text}</V2Chip>)}</div>
+    <div className="flex flex-wrap gap-1.5">{options.map(([key, text]) => <V2Chip key={key} selected={value === key} onClick={() => onChange(key)} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">{text}</V2Chip>)}</div>
   </div>;
 }
