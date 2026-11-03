@@ -6,6 +6,7 @@ const routes = read('src/v2/routes.tsx');
 const nav = read('src/v2/member/MemberShell.tsx');
 const profile = read('src/v2/profile/V2ProfileScreen.tsx');
 const wizard = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
+const activitiesStep = read('src/v2/challenges/wizardSteps/ActivitiesStep.tsx');
 const knowledgeApi = read('src/api/knowledgeApi.ts');
 const api = read('api/src/knowledge.ts');
 const resultComponent = ui.split('function ActivityCard(')[1]?.split('function displayText(')[0] ?? '';
@@ -17,7 +18,7 @@ const checks = [
   ['member detail renders only Published coded V2 identities', ui.includes("item.lifecycle === 'published'") && ui.includes('ACTIVITY_CODE.test(item.activityCode)')],
   ['optional detail sections are suppressed when empty', ui.includes('if (!show) return null')],
   ['Challenge action checks the composer-selectable server projection', ui.includes('fetchComposerSelectableKnowledge') && ui.includes('composerSelectable ?')],
-  ['handoff supplies canonical UUID and immutable Activity Code', ui.includes('activityId: item.id, activityCode: item.activityCode') && wizard.includes('candidate.activityCode === preselectedIdentity')],
+  ['handoff supplies canonical UUID and immutable Activity Code', ui.includes('activityId: item.id, activityCode: item.activityCode') && activitiesStep.includes('candidate.activityCode === preselectedIdentity')],
   ['Composer options still flow through the existing PF-04/PF-03 wizard', wizard.includes('fetchActivityOptions(item.id)') && wizard.includes('previewChallengeDefinition(toComposerDraft(state))')],
   ['Library and detail are V2 member routes', routes.includes('path="guide" element={<V2ActivityLibraryScreen />') && routes.includes('path="guide/:activityId"')],
   ['Activity Guide remains reachable from the member Profile (Help & guide); the avatar opens Profile', profile.includes("navigate('/v2/guide')") && profile.includes('Activity Guide') && nav.includes("navigate('/v2/profile')")],
