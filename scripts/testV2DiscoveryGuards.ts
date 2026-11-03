@@ -65,7 +65,7 @@ check('sign-out clears this member\'s return context only after logout succeeds'
   /clearChallengeIntent\(uid\)/.test(signOutSrc) && signOutSrc.indexOf('await logout()') < signOutSrc.indexOf('clearChallengeIntent(uid)'));
 
 console.log('C. the Challenge -> Group -> Challenge journey keeps its explicit steps');
-const explore = read('src/v2/challenges/V2ExploreChallenges.tsx');
+const explore = read('src/v2/challenges/V2DiscoverChallengeRow.tsx');
 check('Explore uses the existing Group join mutation', /useJoinGroup\(/.test(explore));
 check('Explore never joins a Challenge', !/joinChallengeV2|\/join`|useJoinChallenge/.test(explore));
 check('approval Groups show a pending state, not Challenge access', /Request sent — waiting for/.test(explore) && /requiresApproval/.test(explore));
@@ -74,12 +74,14 @@ const banner = read('src/v2/challenges/V2ChallengeIntentBanner.tsx');
 check('return is offered only when the server lists the Challenge in the member\'s own list', /ownChallenges\.find/.test(banner) && /if \(!available\) return null/.test(banner));
 check('return navigates to the Challenge detail and does not join', /navigate\(`\/v2\/challenges\//.test(banner) && !/joinChallenge/.test(banner));
 const list = read('src/v2/challenges/V2ChallengeListScreen.tsx');
-check('Challenges screen composes banner + Explore', /<V2ChallengeIntentBanner/.test(list) && /<V2ExploreChallenges \/>/.test(list));
+check('Challenges page composes explicit My + Find sections with one discovery query', /aria-label="My Challenges"/.test(list) && /aria-label="Find Challenges"/.test(list) && /useV2ChallengeDiscovery\(\)/.test(list));
+check('Find result row retains the existing governed Group join action', /<V2DiscoverChallengeRow/.test(list) && /useJoinGroup\(/.test(explore));
+check('the duplicate Explore ordering controls are removed from the Challenge page', !/Relevant to me|Browse all|V2ExploreChallenges/.test(list) && !/Order Challenges/.test(explore));
 
 console.log('D. ordering never filters, gates or touches Challenge engines');
 const groupPanel = read('src/v2/groups/V2GroupDiscoveryPanel.tsx');
 check('Group discovery offers an accessible general-browsing option', /Browse all/.test(groupPanel) && /aria-label="Order Groups"/.test(groupPanel));
-check('Explore offers an accessible general-browsing option', /Browse all/.test(explore) && /aria-label="Order Challenges"/.test(explore));
+check('Challenge discovery defaults to relevance and exposes further normal browse pages', /useV2ChallengeDiscovery\(\)/.test(list) && /hasNextPage/.test(list) && /fetchNextPage/.test(list) && /preferences only order it/.test(read('src/v2/challenges/useChallengeDiscovery.ts')));
 for (const file of ['api/src/challengeDiscovery.ts', 'api/src/groupDiscovery.ts']) {
   const src = read(file);
   check(`${file} imports no Challenge engine, scoring or participation module (types aside)`, !/^import (?!type)[^;]*from '\.\/(engine|challengeFinalization|challengeParticipations|challengeActivityApplication|derivedTruth|challengeConfigs)/m.test(src));
@@ -98,7 +100,7 @@ check('response order is the SQL order (no JS re-sort that desynchronises cursor
 const clientApi = read('src/api/challengeDiscoveryApi.ts');
 check('client composes the path through apiPath and carries the cursor', /apiPath\(/.test(clientApi) && /params\.set\('cursor'/.test(clientApi));
 check('client does not depend on URLSearchParams.size (older Safari/Chrome would drop the cursor)', !/params\.size/.test(clientApi));
-check('Explore pages with a cursor and offers Load more', /Load more Challenges/.test(explore) && /fetchNextPage/.test(explore) && /useInfiniteQuery/.test(read('src/v2/challenges/useChallengeDiscovery.ts')));
+check('Find results page through the existing cursor and offer Load more', /Load more Challenges/.test(list) && /fetchNextPage/.test(list) && /useInfiniteQuery/.test(read('src/v2/challenges/useChallengeDiscovery.ts')));
 check('Explore uses the refreshed server relationship, not a permanent mutation override', /effectiveRelationship\(/.test(explore) && !/join\.isSuccess \? \(join\.data\.status/.test(explore));
 const pend = { status: 'success', submittedAt: 1000, resultStatus: 'pending' };
 check('before any refresh, the join response stands in (pending)', effectiveRelationship('none', pend, 900) === 'pending');

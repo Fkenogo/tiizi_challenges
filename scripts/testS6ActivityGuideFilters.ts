@@ -5,7 +5,7 @@
  * as an intersection; `intersect` below states that contract so composition is asserted.
  */
 import { readFileSync } from 'node:fs';
-import { guideCategories, nextGuideSelection, resolveGuideCategory, type GuideDomain } from '../src/v2/member/activityGuideFilters';
+import { guideCategories, guideCategoryDomain, guideCategoryGroups, resolveGuideCategory, selectGuideCategory, selectGuideDomain, type GuideDomain } from '../src/v2/member/activityGuideFilters';
 
 const candidate = JSON.parse(readFileSync(new URL('../docs/programme/working/s6-content/tiizi-118-activity-reconciled-content.json', import.meta.url), 'utf8')) as {
   records: Array<{ activityCode: string; name: string; domain: string; category: string; classification: string | null }>;
@@ -39,14 +39,24 @@ check('category options narrow to the selected domain', fitnessCats.length < all
   && !fitnessCats.includes('Nutrition & Hydration') && !wellnessCats.includes('Strength'));
 check('every category belongs to exactly the domain(s) that contain it (union equals all)', [...new Set([...fitnessCats, ...wellnessCats])].sort().join('|') === all.join('|'));
 
-const stale = nextGuideSelection(items, { domain: '', category: 'Strength' }, 'wellness');
+const stale = selectGuideDomain(items, { domain: '', category: 'Strength' }, 'wellness');
 check('stale category resets to All categories when switching domain', stale.domain === 'wellness' && stale.category === '');
-const kept = nextGuideSelection(items, { domain: '', category: 'Strength' }, 'fitness');
+const kept = selectGuideDomain(items, { domain: '', category: 'Strength' }, 'fitness');
 check('a category still valid in the new domain is kept', kept.domain === 'fitness' && kept.category === 'Strength');
-const cleared = nextGuideSelection(items, { domain: 'fitness', category: 'Strength' }, 'fitness');
-check('pressing the active domain clears it and returns to the full catalogue', cleared.domain === '' && cleared.category === 'Strength');
+const cleared = selectGuideDomain(items, { domain: 'fitness', category: 'Strength' }, '');
+check('choosing All Categories clears the domain and keeps a still-valid subcategory', cleared.domain === '' && cleared.category === 'Strength');
 check('resolveGuideCategory never leaves a category the domain does not offer', resolveGuideCategory('Strength', wellnessCats) === '' && resolveGuideCategory('Sleep & Rest', wellnessCats) === 'Sleep & Rest');
 check('a switched domain never yields an empty state from a stale category', intersect({ ...stale, search: '' }).length === 34);
+
+const groupsAll = guideCategoryGroups(items, '');
+check('subcategory groups with Category=All list Fitness then Wellness', groupsAll.map((g) => g.domain).join() === 'fitness,wellness' && groupsAll[0].categories.length === 6 && groupsAll[1].categories.length === 6);
+check('Fitness shows only Fitness subcategories', guideCategoryGroups(items, 'fitness').length === 1 && guideCategoryGroups(items, 'fitness')[0].categories.join() === fitnessCats.join());
+check('Wellness shows only Wellness subcategories', guideCategoryGroups(items, 'wellness').length === 1 && guideCategoryGroups(items, 'wellness')[0].categories.join() === wellnessCats.join());
+const synced = selectGuideCategory({ domain: '', category: '' }, 'Sleep & Rest', 'wellness');
+check('selecting a subcategory selects its parent Category', synced.domain === 'wellness' && synced.category === 'Sleep & Rest' && intersect({ ...synced, search: '' }).every((i) => i.kind === 'wellness' && i.category === 'Sleep & Rest'));
+check('selecting All Subcategories keeps the Category', selectGuideCategory({ domain: 'fitness', category: 'Strength' }, '', '').domain === 'fitness');
+check('a subcategory resolves to its parent Category', guideCategoryDomain(items, 'Strength') === 'fitness' && guideCategoryDomain(items, 'Sleep & Rest') === 'wellness' && guideCategoryDomain(items, 'Nope') === '');
+check('every subcategory belongs to exactly one parent Category', all.every((c) => (fitnessCats.includes(c) ? 1 : 0) + (wellnessCats.includes(c) ? 1 : 0) === 1));
 
 check('search + domain composes (Wellness + "fasting")', intersect({ domain: 'wellness', category: '', search: 'fasting' }).map((i) => i.activityCode).join() === 'WEL-NUT-009');
 check('search under the wrong domain finds nothing (Fitness + "fasting")', intersect({ domain: 'fitness', category: '', search: 'fasting' }).length === 0);
