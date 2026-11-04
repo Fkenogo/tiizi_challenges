@@ -2,7 +2,7 @@ name: ECCL Phase B (informational)
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, edited, reopened, synchronize, ready_for_review]
   workflow_dispatch:
 
 permissions:
