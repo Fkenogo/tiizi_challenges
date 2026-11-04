@@ -234,19 +234,23 @@ export function V2Chip({
   selected,
   onClick,
   children,
+  className = '',
 }: {
   selected: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-        selected ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-      }`}
+      className={[
+        'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
+        selected ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+        className,
+      ].filter(Boolean).join(' ')}
     >
       {children}
     </button>

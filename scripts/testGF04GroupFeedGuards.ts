@@ -202,7 +202,7 @@ assert.match(shell, /max-w-md/);
 assert.doesNotMatch(shell, /\b(?:md|lg|xl):(?:flex|hidden|block)/, 'member shell has no desktop navigation variant');
 
 // Group-specific cache scoping and cleanup wiring.
-assert.match(routes, /previousUid\.current !== user\?\.uid\) void removeV2GroupFeed\(queryClient\)/, 'identity change clears the whole Feed query family');
+assert.match(routes, /if \(priorUid !== user\?\.uid\) \{[^}]*void removeV2GroupFeed\(queryClient\);/s, 'identity change clears the whole Feed query family');
 const groups = await read('../src/v2/groups/useV2Groups.ts');
 assert.match(groups, /onSuccess: async \(\) => \{\s*await removeV2GroupFeed\(queryClient, groupId \?\? undefined, user\?\.uid\)/, 'successful leave clears that Group Feed cache');
 assert.match(screen, /v2GroupFeedKey\(groupId \?\? undefined, user\?\.uid\)/, 'full Feed query key is built by the shared Group + UID scoped builder');

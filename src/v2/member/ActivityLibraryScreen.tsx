@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Search } from 'lucide-react';
@@ -6,13 +6,13 @@ import { fetchKnowledgeById, fetchPublishedActivities, type ApiKnowledgeItem } f
 import { fetchComposerSelectableKnowledge } from '../../api/challengeCreationApi';
 import { createChallengeWizardRouteState, restoreChallengeWizardRouteState } from '../challenges/challengeCreationDraft';
 import { releaseAbandonedChallengeDraft } from '../challenges/challengeDraftSession';
-import { guideCategories, nextGuideSelection, resolveGuideCategory, type GuideDomain } from './activityGuideFilters';
+import { guideCategories, guideCategoryDomain, guideCategoryGroups, resolveGuideCategory, selectGuideCategory, selectGuideDomain, type GuideDomain } from './activityGuideFilters';
 import { useAuth } from '../../hooks/useAuth';
 import { ActivityThumbnail } from '../components/ActivityThumbnail';
+import { FilterToneDot, V2FilterDropdown, type FilterItem } from '../components/V2FilterDropdown';
 import {
   V2Button,
   V2Card,
-  V2Chip,
   V2EmptyState,
   V2ErrorState,
   V2LoadingState,
@@ -29,10 +29,15 @@ function useReleaseAbandonedChallengeDraft(uid: string | undefined) {
   }, [uid]);
 }
 
-const DOMAIN_OPTIONS: ReadonlyArray<{ value: Exclude<GuideDomain, ''>; label: string }> = [
-  { value: 'fitness', label: 'Fitness' },
-  { value: 'wellness', label: 'Wellness' },
+const DOMAIN_LABEL = { fitness: 'Fitness', wellness: 'Wellness' } as const;
+const DOMAIN_TONE = { fitness: 'orange', wellness: 'green' } as const;
+const DOMAIN_ITEMS: ReadonlyArray<FilterItem<GuideDomain>> = [
+  { value: '', label: 'All Categories' },
+  { value: 'fitness', label: 'Fitness', tone: 'orange' },
+  { value: 'wellness', label: 'Wellness', tone: 'green' },
 ];
+/** Subcategory option values carry their parent domain so a selection can sync the Category. */
+const subValue = (domain: string, category: string) => `${domain}::${category}`;
 
 function apiConfigured() {
   return typeof import.meta.env.VITE_TIIZI_API_BASE_URL === 'string'
@@ -53,6 +58,8 @@ export function V2ActivityLibraryScreen() {
   const [search, setSearch] = useState('');
   const [domain, setDomain] = useState<GuideDomain>('');
   const [category, setCategory] = useState('');
+  const [openMenu, setOpenMenu] = useState<'category' | 'subcategory' | null>(null);
+  const filtersRef = useRef<HTMLDivElement>(null);
   const all = useQuery({
     queryKey: ['v2-activity-library', user?.uid],
     queryFn: () => fetchPublishedActivities(),
@@ -71,11 +78,37 @@ export function V2ActivityLibraryScreen() {
   });
   const filtered = !!(search || activeCategory || domain);
 
-  function toggleDomain(pressed: Exclude<GuideDomain, ''>) {
-    const next = nextGuideSelection(all.data ?? [], { domain, category: activeCategory }, pressed);
-    setDomain(next.domain);
-    setCategory(next.category);
+  const subcategoryItems = useMemo<ReadonlyArray<FilterItem<string>>>(() => [
+    { value: '', label: 'All Subcategories' },
+    ...guideCategoryGroups(all.data ?? [], domain).map((group) => ({
+      label: `${DOMAIN_LABEL[group.domain]} Subcategories`,
+      tone: DOMAIN_TONE[group.domain],
+      options: group.categories.map((value) => ({ value: subValue(group.domain, value), label: value, tone: DOMAIN_TONE[group.domain] })),
+    })),
+  ], [all.data, domain]);
+
+  function chooseDomain(next: GuideDomain) {
+    const selection = selectGuideDomain(all.data ?? [], { domain, category: activeCategory }, next);
+    setDomain(selection.domain);
+    setCategory(selection.category);
   }
+
+  function chooseSubcategory(next: string) {
+    const [parent = '', value = ''] = next.split('::');
+    const selection = selectGuideCategory({ domain, category: activeCategory }, value, parent as GuideDomain);
+    setDomain(selection.domain);
+    setCategory(selection.category);
+  }
+
+  const filterCount = Number(!!domain) + Number(!!activeCategory);
+  const resetFilters = () => { setDomain(''); setCategory(''); };
+
+  useEffect(() => {
+    if (!openMenu) return;
+    const close = (event: PointerEvent) => { if (!filtersRef.current?.contains(event.target as Node)) setOpenMenu(null); };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [openMenu]);
 
   return (
     <V2Page wide>
@@ -94,30 +127,31 @@ export function V2ActivityLibraryScreen() {
         title="Explore activities"
         description="Browse activities with clear guidance on what they involve and how to record them."
       />
-      <label className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <Search size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
-        <span className="sr-only">Search activities</span>
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search activities"
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
-        />
-      </label>
-
-      {!all.isLoading && !all.isError && all.data && all.data.length > 0 ? (
-        <div className="mb-3 flex min-w-0 max-w-full gap-2" role="group" aria-label="Activity domain">
-          {DOMAIN_OPTIONS.map((option) => (
-            <button
-              type="button"
-              key={option.value}
-              onClick={() => toggleDomain(option.value)}
-              aria-pressed={domain === option.value}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${domain === option.value ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
-            >{option.label}</button>
-          ))}
+      <section aria-label="Activity search and filters" className="sticky top-14 z-20 mb-4 bg-slate-50/95 px-0.5 py-2 backdrop-blur">
+        <div className="relative">
+          <label htmlFor="activity-search" className="sr-only">Search activities</label>
+          <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <input
+            id="activity-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search activities"
+            className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-16 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/30"
+          />
+          {search ? <button type="button" aria-label="Clear search" onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-sm font-bold text-slate-500 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Clear</button> : null}
         </div>
-      ) : null}
+        {!all.isLoading && !all.isError && all.data && all.data.length > 0 ? <>
+          <div ref={filtersRef} className="mt-2.5 grid grid-cols-2 gap-2">
+            <V2FilterDropdown id="category" label="Category" align="left" menuClassName="w-48" open={openMenu === 'category'} onOpenChange={(next) => setOpenMenu(next ? 'category' : null)} value={domain} onChange={chooseDomain} items={DOMAIN_ITEMS} />
+            <V2FilterDropdown id="subcategory" label="Subcategory" align="right" menuClassName="w-64" open={openMenu === 'subcategory'} onOpenChange={(next) => setOpenMenu(next ? 'subcategory' : null)} value={activeCategory ? subValue(domain || guideCategoryDomain(all.data ?? [], activeCategory), activeCategory) : ''} onChange={chooseSubcategory} items={subcategoryItems} />
+          </div>
+          {filterCount > 0 ? <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 text-[11px]" aria-label="Applied filters">
+            <span className="flex items-center gap-1.5 text-slate-500"><span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-primary" />Filters active</span>
+            <button type="button" onClick={resetFilters} className="min-h-8 rounded-lg px-2 font-bold text-primary underline underline-offset-2 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Reset all</button>
+          </div> : null}
+        </> : null}
+      </section>
 
       {all.isLoading || results.isLoading ? <V2LoadingState label="Loading activities…" /> : null}
       {all.isError || results.isError ? (
@@ -128,38 +162,10 @@ export function V2ActivityLibraryScreen() {
         />
       ) : null}
 
-      {!all.isLoading && !all.isError && categories.length > 0 ? (
-        // The rail scrolls INSIDE the member canvas: the wrapper is a width-bounded
-        // (min-w-0 / max-w-full), clipping flex item, so the chip row can never size
-        // or paint beyond the mobile column, whatever the viewport width.
-        <div className="mb-5 min-w-0 max-w-full overflow-hidden">
-          <div
-            className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            aria-label="Activity categories"
-          >
-            <button
-              type="button"
-              onClick={() => setCategory('')}
-              aria-pressed={!activeCategory}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${!activeCategory ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
-            >All categories</button>
-            {categories.map((value) => (
-              <button
-                type="button"
-                key={value}
-                onClick={() => setCategory(value === activeCategory ? '' : value)}
-                aria-pressed={activeCategory === value}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${activeCategory === value ? 'bg-primary text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}
-              >{value}</button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       {results.isSuccess && results.data.length === 0 ? (
         <V2EmptyState
           title={filtered ? 'No matching activities' : 'The guide is getting ready'}
-          message={filtered ? 'Try another search or category.' : 'Published activities will appear here when they are ready to share.'}
+          message={filtered ? 'Try another search, category or subcategory.' : 'Published activities will appear here when they are ready to share.'}
           action={filtered ? <V2Button variant="secondary" onClick={() => { setSearch(''); setCategory(''); setDomain(''); }}>Clear filters</V2Button> : undefined}
         />
       ) : null}
@@ -187,7 +193,7 @@ function ActivityCard({ item, linkState }: { item: ApiKnowledgeItem; linkState: 
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-extrabold leading-5 text-slate-900 group-hover:text-primary sm:text-[15px]">{item.name}</span>
         <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-[11px] font-medium leading-4 text-slate-500 sm:text-xs">
-          <span>{domain}</span>
+          <span className="inline-flex items-center gap-1"><FilterToneDot tone={item.kind === 'wellness' ? 'green' : 'orange'} />{domain}</span>
           <span aria-hidden="true">·</span>
           <span>{item.category}</span>
           {item.subcategory ? <><span aria-hidden="true">·</span><span>{item.subcategory}</span></> : null}

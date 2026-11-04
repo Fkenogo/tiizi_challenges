@@ -30,11 +30,11 @@ check('no email or auth subject is selected for applicants', !/m\.(email|auth_su
 const pending = read('src/v2/groups/V2PendingApplications.tsx');
 check('UI shows the name with a safe fallback', /applicant\.displayName \?\? 'Tiizi member'/.test(pending));
 
-console.log('B3. new-member Challenges landing keeps Explore on the first screen');
+console.log('B3. Challenges landing keeps joined state distinct from discovery');
 const list = read('src/v2/challenges/V2ChallengeListScreen.tsx');
-const empty = list.slice(list.indexOf('No Challenges yet') - 120, list.indexOf('No Challenges yet') + 260);
-check('empty state is compact and does not repeat Create Challenge', /compact/.test(empty) && !/action=/.test(empty));
-check('Create Challenge stays available in the header; Explore and the list are preserved', /action=\{createAction\}/.test(list) && /<V2ExploreChallenges \/>/.test(list));
+const empty = list.slice(list.indexOf('You have not joined a Challenge yet') - 120, list.indexOf('You have not joined a Challenge yet') + 260);
+check('empty joined state is compact and does not repeat Create Challenge', /compact/.test(empty) && !/action=/.test(empty));
+check('Create Challenge stays in the header and the two approved sections are present', /action=\{createAction\}/.test(list) && /aria-label="My Challenges"/.test(list) && /aria-label="Find Challenges"/.test(list));
 
 console.log('B5. every successful sign-out path ends this member\'s return context');
 const gate = read('src/v2/auth/V2MemberBootstrapGate.tsx');

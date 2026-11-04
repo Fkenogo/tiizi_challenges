@@ -11,7 +11,7 @@ import {
   endStateFor,
   statusLabelForEndState,
 } from '../challenges/challengeEndState';
-import { statusTone } from '../challenges/V2ChallengeListScreen';
+import { statusTone } from '../challenges/challengePresentation';
 import {
   useChallengeContributorsV2,
   useCompetitiveLeaderboardV2,
