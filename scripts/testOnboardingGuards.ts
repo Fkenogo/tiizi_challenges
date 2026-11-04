@@ -128,12 +128,10 @@ const requireOnboardedRoute = read('src/components/Auth/RequireOnboardedRoute.ts
 const requireOnboardingRoute = read('src/components/Auth/RequireOnboardingRoute.tsx');
 
 // RequireOnboardedRoute composes ProtectedRoute + RequireProfileSetup(mode="completed")
-assert.match(requireOnboardedRoute, /<ProtectedRoute>/, 'RequireOnboardedRoute must wrap children in ProtectedRoute (auth check)');
-assert.match(requireOnboardedRoute, /mode="completed"/, 'RequireOnboardedRoute must use RequireProfileSetup mode="completed"');
+assert.match(requireOnboardedRoute, /<ProtectedRoute\b[^>]*>\s*<RequireProfileSetup mode="completed">/s, 'RequireOnboardedRoute must keep RequireProfileSetup(mode="completed") inside ProtectedRoute, including when ProtectedRoute receives props');
 
 // RequireOnboardingRoute composes ProtectedRoute + RequireProfileSetup(mode="onboarding")
-assert.match(requireOnboardingRoute, /<ProtectedRoute>/, 'RequireOnboardingRoute must wrap children in ProtectedRoute (auth check)');
-assert.match(requireOnboardingRoute, /mode="onboarding"/, 'RequireOnboardingRoute must use RequireProfileSetup mode="onboarding"');
+assert.match(requireOnboardingRoute, /<ProtectedRoute\b[^>]*>\s*<RequireProfileSetup mode="onboarding">/s, 'RequireOnboardingRoute must keep RequireProfileSetup(mode="onboarding") inside ProtectedRoute, including when ProtectedRoute receives props');
 
 // /app/home must be gated by RequireOnboardedRoute — incomplete users must not bypass onboarding
 assert.match(appTsx, /path="\/app\/home"[^/]*RequireOnboardedRoute/, '/app/home route must be wrapped in RequireOnboardedRoute so incomplete users are redirected');

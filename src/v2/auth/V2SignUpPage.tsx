@@ -11,10 +11,8 @@ import { V2AuthButton, V2AuthField, V2AuthLayout, V2ProviderButton } from './V2A
  * TIIZI S1 CORR-001 — V2 sign-up experience.
  *
  * New V2 surface mirroring the existing account-creation
- * capability (email/password + Google). After sign-up the member
- * returns to the requested V2 route — never into V1 onboarding,
- * profile setup, or group prerequisites (deferred to their
- * authorised vertical slice).
+ * capability (email/password + Google). New members continue through
+ * optional preference onboarding and then arrive at Today.
  */
 
 const EMAIL_PATTERN = /\S+@\S+\.\S+/;
@@ -31,7 +29,10 @@ export function V2SignUpPage() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
 
-  const next = resolveV2NextPath(params.get('next'));
+  // New accounts always enter the member experience at Today. Existing
+  // sessions use the separate sign-in flow, which retains its requested path.
+  const next = '/v2/today';
+  const requestedNext = resolveV2NextPath(params.get('next'));
 
   useEffect(() => {
     // While sign-up is in flight, wait so the shell (and member bootstrap)
@@ -83,7 +84,7 @@ export function V2SignUpPage() {
         <>
           Already have an account?{' '}
           <Link
-            to={`/v2/sign-in${v2NextQuery(next)}`}
+            to={`/v2/sign-in${v2NextQuery(requestedNext)}`}
             className="font-bold text-primary hover:underline"
           >
             Sign in

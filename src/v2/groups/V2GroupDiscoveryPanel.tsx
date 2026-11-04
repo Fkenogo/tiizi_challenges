@@ -28,7 +28,7 @@ export function V2GroupDiscoveryPanel({ onOpen }: { onOpen: (id: string) => void
       <V2Chip selected={ordering === 'general'} onClick={() => setOrdering('general')}>Browse all</V2Chip>
     </div>
     {caption && <p role="status" data-discovery-caption={caption.kind} className="text-xs text-slate-600">
-      {caption.text}{caption.kind === 'no-preferences' && <> <Link to="/v2/preferences" className="font-bold text-primary underline">Choose interests and goals</Link></>}
+      {caption.text}{caption.kind === 'no-preferences' && <> <Link to={{ pathname: '/v2/preferences', search: '?category=both&next=%2Fv2%2Fgroups%3Ftab%3Ddiscover' }} className="font-bold text-primary underline">Choose interests and goals</Link></>}
     </p>}
     {discovery.isLoading && <V2LoadingState label="Finding Groups…" />}
     {discovery.isError && <V2ErrorState title="Discovery is unavailable" message="We could not load Groups. Please try again." onRetry={() => void discovery.refetch()} />}

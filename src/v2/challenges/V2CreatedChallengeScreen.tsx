@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   V2Button,
@@ -78,6 +78,13 @@ export function V2CreatedChallengeScreen() {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [reuseLoading, setReuseLoading] = useState(false);
   const [reuseError, setReuseError] = useState('');
+
+  useEffect(() => {
+    const state = location.state && typeof location.state === 'object' ? location.state as Record<string, unknown> : null;
+    if (!detail.data || state?.openLogActivity !== true) return;
+    setLogOpen(true);
+    navigate(location.pathname, { replace: true, state: { ...state, openLogActivity: false } });
+  }, [detail.data, location.pathname, location.state, navigate]);
 
   if (detail.isLoading) {
     return (

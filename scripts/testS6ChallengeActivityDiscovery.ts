@@ -80,7 +80,7 @@ const guideLinks = [...stepThree.matchAll(/<Link\b[\s\S]*?className=/g)].map((m)
 assert.equal(guideLinks.length, 2, 'Step 4 has exactly two Guide entries (intro link and result rows)');
 for (const tag of guideLinks) {
   assert.match(tag, /state=\{guideLinkState\}/, 'each Guide entry carries the caller-supplied draft and step state');
-  assert.match(tag, /onClick=\{\(event\) => \{ if \(isPlainPrimaryClick\(event\)\) onGuideTrip\(\); \}\}/, 'each Guide entry arms the backup only on a plain primary click, and never passes the event as the draft');
+  assert.match(tag, /onClick=\{\(event\) => \{ if \(isPlainPrimaryClick\(event\)\) onGuideTrip\?\.\(\); \}\}/, 'each Guide entry arms the backup only on a plain primary click, and never passes the event as the draft');
 }
 const libraryList = guide.split('export function V2ActivityLibraryScreen()')[1]?.split('function ActivityCard(')[0] ?? '';
 assert.match(libraryList, /restoreChallengeWizardRouteState\(location\.state\)/, 'Guide list reads the wizard draft context');
@@ -91,6 +91,7 @@ assert.match(wizard, /peekChallengeDraft\(uid\)/, 'wizard recovers a dropped dra
 assert.doesNotMatch(wizard, /recoverChallengeDraft\(/, 'no side-effecting recovery during render (StrictMode double-invocation)');
 assert.match(wizard, /disarmChallengeDraft\(uid\)/, 'disarm happens in an effect');
 assert.match(wizard, /function handleGuideTrip\(\) \{/, 'Guide-trip handler takes no event/draft argument');
+assert.match(wizard, /onGuideTrip=\{handleGuideTrip\}/, 'the member wrapper supplies the Guide-trip handler');
 assert.match(guide, /releaseAbandonedChallengeDraft\(uid, window\.location\.pathname\)/, 'abandoned Guide trips release the armed backup');
 assert.match(wizard, /clearChallengeDraft\(uid\);\s*navigate\(`\/v2\/challenges\/\$\{established\.challengeId\}`/, 'established Challenge clears the session draft');
 assert.doesNotMatch(wizard + guide, /firestore|collection\(|setDoc/i, 'no Firestore draft persistence');
