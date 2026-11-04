@@ -1,11 +1,20 @@
 #!/usr/bin/env node
-// ECCL-005 Phase B v0.1: read-only, non-gating source and handover diagnostic.
+// ECCL-005 Phase B v0.2: read-only, non-gating source and handover diagnostic.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, appendFileSync } from 'node:fs';
 
 const git = (...args) => {
   try { return execFileSync('git', args, { encoding: 'utf8', timeout: 15000 }).trim(); }
   catch { return null; }
+};
+// Exit 1 means definitely not an ancestor; other git errors remain unknown.
+const isAncestor = (ancestor, descendant) => {
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', ancestor, descendant], { encoding: 'utf8', timeout: 15000 });
+    return true;
+  } catch (error) {
+    return error?.status === 1 ? false : null;
+  }
 };
 const short = sha => sha ? sha.slice(0, 12) : 'UNKNOWN';
 const event = (() => {
@@ -19,13 +28,13 @@ const head = pr?.head?.sha ?? null;
 const base = pr?.base?.sha ?? null;
 const mergeBase = head && main ? git('merge-base', head, main) : null;
 const upToDate = head && main && mergeBase ? mergeBase === main : null;
-const inMain = head && main ? git('merge-base', '--is-ancestor', head, main) !== null : null;
+const inMain = head && main ? isAncestor(head, main) : null;
 const agentEntry = existsSync('AGENTS.md');
 const body = pr?.body ?? '';
 const handoverFields = {
   source: /\b(sha|commit|baseline|head)\b/i.test(body),
-  verification: /\b(test|ci|check|verification|evidence)\b/i.test(body),
-  authority: /\b(approval|founder|decision|authori[sz]ation)\b/i.test(body),
+  verification: /\b(tests?|testing|ci|checks?|verification|evidence)\b/i.test(body),
+  authority: /\b(approvals?|approved|approve|approving|founder|decisions?|authori[sz]ations?)\b/i.test(body),
   continuation: /\b(next|handover|follow.up|blocker|pending)\b/i.test(body),
 };
 const missing = Object.entries(handoverFields).filter(([,found]) => !found).map(([name]) => name);
@@ -33,9 +42,9 @@ const signals = [];
 if (!agentEntry) signals.push('Root AGENTS.md is missing.');
 if (pr && !mergeBase) signals.push('Cannot independently establish PR head ancestry.');
 if (upToDate === false) signals.push('PR head predates remote main; assess accepted changes before integration.');
-if (missing.length) signals.push('PR description has no evidence markers for: ' + missing.join(', ') + '.');
+if (pr && missing.length) signals.push('PR description has no evidence markers for: ' + missing.join(', ') + '.');
 const report = {
-  schema: 'ECCL-005/phase-b/v0.1',
+  schema: 'ECCL-005/phase-b/v0.2',
   status: 'DIAGNOSTIC_COMPLETE_NEEDS_HUMAN_RECONCILIATION',
   repository: process.env.GITHUB_REPOSITORY ?? 'local',
   pr: pr?.number ?? null,
@@ -59,7 +68,7 @@ const lines = [
   `| Merge base | ${short(mergeBase)} |`,
   `| Head includes current main | ${upToDate === null ? 'UNKNOWN' : upToDate ? 'YES' : 'NO — reconcile'} |`,
   `| Root AGENTS.md | ${agentEntry ? 'PRESENT' : 'UNKNOWN'} |`,
-  `| Handover description markers | ${missing.length ? 'MISSING: ' + missing.join(', ') : 'PRESENT (content not validated)'} |`,
+  `| Handover description markers | ${!pr ? 'NOT_APPLICABLE (no PR event)' : missing.length ? 'MISSING: ' + missing.join(', ') : 'PRESENT (content not validated)'} |`,
   '', '### Observations',
   ...(signals.length ? signals.map(s => '- ' + s) : ['- No machine-detectable exceptions.']),
   '', '### Still requires Technical Lead reconciliation',
