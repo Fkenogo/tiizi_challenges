@@ -158,6 +158,10 @@ jobs:
         run: npm run test:v2-challenge-corrections
       - name: P5T-2 S1 Wizard step extraction guards
         run: npm run test:v2-wizard-steps
+      - name: S6 Activity Library guards
+        run: npm run test:s6-activity-library-guards
+      - name: S6 Challenge Activity discovery guards
+        run: npm run test:s6-challenge-activity-discovery
       - name: P5T-2 S2 Operator Template Library guards
         run: npm run test:v2-operator-templates
       - name: P5T-2 S3b DOM tests (Template Draft Editor, Wizard steps)

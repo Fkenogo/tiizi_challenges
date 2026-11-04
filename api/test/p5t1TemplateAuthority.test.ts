@@ -1338,7 +1338,10 @@ describe('P5T-1 migration compatibility', () => {
     )).rows[0].challenge_id;
     const before = JSON.stringify((await db.query(`SELECT * FROM challenges WHERE challenge_id = $1`, [legacy])).rows);
 
-    expect(await runMigrations(db)).toEqual(['030_challenge_template_authority.sql']);
+    expect(await runMigrations(db)).toEqual([
+      '030_challenge_template_authority.sql',
+      '031_member_preference_reminder_dismissals.sql',
+    ]);
     const after = (await db.query<any>(`SELECT * FROM challenges WHERE challenge_id = $1`, [legacy])).rows[0];
     expect(after.source_template_id).toBeNull();
     expect(after.source_template_version).toBeNull();

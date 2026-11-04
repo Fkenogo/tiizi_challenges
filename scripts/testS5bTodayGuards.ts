@@ -708,7 +708,9 @@ const failingToday = async () => { throw new Error('Today refresh failed'); };
 }
 check('M5 the screen shows a separate refresh notice whose retry RE-READS Today (refetch), not the submission',
   /today\.isError && \(/.test(screen) && /We couldn&apos;t refresh your day/.test(screen) && /onClick=\{\(\) => void today\.refetch\(\)\}/.test(screen) && /todayBlockingError\(today\)/.test(screen)
-  && !/mutate|mutateAsync|useLogActivityV2/.test(screen));
+  // Preference reminder dismissal is its own server mutation; it must not
+  // weaken or replace the established activity logging path.
+  && !/mutateAsync|useLogActivityV2/.test(screen));
 check('M7 the accepted outcome is reported immediately: the mutation never awaits the read-model refresh',
   /void refreshAfterAcceptedLog\(/.test(logHookBody) && !/await refreshAfterAcceptedLog/.test(logHookBody) && !/onSuccess: async/.test(logHookBody));
 check('M6 refresh code patches nothing and creates no second mutation or submission key',

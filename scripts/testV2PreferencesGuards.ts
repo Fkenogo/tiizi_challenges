@@ -9,8 +9,6 @@ import { fileURLToPath } from 'node:url';
 import { QueryClient } from '@tanstack/react-query';
 import { resolveV2NextPath } from '../src/v2/auth/v2NextPath';
 import {
-  PREFERENCES_DISCOVERY_PATH,
-  afterPreferencesPath,
   atLimit,
   groupInterestsByDomain,
   sameSelection,
@@ -43,8 +41,9 @@ check('Interests group by domain in vocabulary order',
   ]).map((g) => [g.domain, g.items.map((i) => i.id)])) === JSON.stringify([['Fitness', ['1', '3']], ['Wellness', ['2']]]));
 
 console.log('B. registration → preferences → discovery handoff');
-check('default landing continues to discovery', afterPreferencesPath('/v2/today') === PREFERENCES_DISCOVERY_PATH && PREFERENCES_DISCOVERY_PATH === '/v2/groups?tab=discover');
-check('an explicit requested page is preserved as the return path', afterPreferencesPath('/v2/groups/abc') === '/v2/groups/abc');
+check('first-time destination resolves to Today', resolveV2NextPath(null) === '/v2/today');
+check('preference editing preserves its requested destination', resolveV2NextPath('/v2/profile') === '/v2/profile');
+check('an explicit requested page is preserved as the return path', resolveV2NextPath('/v2/groups/abc') === '/v2/groups/abc');
 check('hostile return paths fall back safely', resolveV2NextPath('https://evil.example/v2/today') === '/v2/today' && resolveV2NextPath('/app/home') === '/v2/today');
 const groupsScreen = read('src/v2/groups/V2GroupsScreen.tsx');
 check('Groups opens on the Discover tab for ?tab=discover', /searchParams\.get\('tab'\) === 'discover'/.test(groupsScreen));
@@ -79,7 +78,10 @@ check('prompt is a null-rendering component, not a route guard', /return null;/.
 const setup = read('src/v2/preferences/V2PreferencesSetupScreen.tsx');
 check('Interests and Goals are separate, independently skippable steps', /Skip for now/.test(setup) && /step === 'interests'|isInterests/.test(setup) && /goalsDecided/.test(setup) && /interestsDecided/.test(setup));
 check('skip records an empty decision but never erases an already-decided selection',
-  /chosen === null && data\.interestsDecided/.test(setup) && /chosen === null && data\.goalsDecided/.test(setup) && /chosen \?\? \[\]/.test(setup));
+  /chosen === null && \(data\.interestsDecided \|\| editingCategory === 'interests'\)/.test(setup) && /chosen === null && \(data\.goalsDecided \|\| editingCategory === 'goals'\)/.test(setup) && /chosen \?\? \[\]/.test(setup));
+check('reminder links edit only the requested category', /editingCategory === 'interests'/.test(setup) && /editingCategory === 'goals'/.test(setup));
+check('Group discovery opens both preference editors and preserves its return destination', /category=both&next=%2Fv2%2Fgroups%3Ftab%3Ddiscover/.test(read('src/v2/groups/V2GroupDiscoveryPanel.tsx')) && /editingCategory === 'both'/.test(setup));
+check('new-member sign-up always enters at Today', /const next = '\/v2\/today';/.test(read('src/v2/auth/V2SignUpPage.tsx')));
 check('load failure still lets the member continue', /Continue without choosing/.test(setup));
 check('Continue needs a choice; skipping needs none', /selected\.length === 0/.test(setup));
 check('no preference value is read by any eligibility, join or participation code',

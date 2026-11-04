@@ -20,6 +20,7 @@ import { useChallengeDetailV2, useChallengeListV2, useV2Memberships } from '../c
 import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
 import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
+import { useDismissV2PreferenceReminder, useV2Preferences } from '../preferences/usePreferences';
 import {
   challengeTypeLabel,
   formatAmount,
@@ -68,6 +69,8 @@ export function V2TodayScreen() {
   const navigate = useNavigate();
   const identity = useV2MemberIdentity();
   const today = useV2Today();
+  const preferences = useV2Preferences(true);
+  const dismissPreferenceReminder = useDismissV2PreferenceReminder();
   const memberships = useV2Memberships();
   const challengeList = useChallengeListV2();
   // P3: the Challenge whose existing Log Activity sheet is open from Today.
@@ -169,6 +172,29 @@ export function V2TodayScreen() {
           </p>
         )}
       </header>
+
+      {preferences.data && (preferences.data.reminders.interests.eligible || preferences.data.reminders.goals.eligible) && (
+        <V2Card className="mb-5 border border-sky-100 bg-sky-50/70 p-4">
+          <p className="text-sm font-bold text-slate-900">Make discovery more relevant</p>
+          <p className="mt-1 text-sm text-slate-600">Adding interests or goals can help put relevant Groups and Challenges first.</p>
+          <div className="mt-3 space-y-2">
+            {(['interests', 'goals'] as const).filter((category) => preferences.data?.reminders[category].eligible).map((category) => (
+              <div key={category} className="flex items-center justify-between gap-3 rounded-xl bg-white/80 px-3 py-2">
+                <span className="text-sm font-semibold text-slate-800">{category === 'interests' ? 'Interests' : 'Goals'}</span>
+                <div className="flex items-center gap-2">
+                  <button type="button" className="text-sm font-bold text-primary hover:underline" onClick={() => navigate(`/v2/preferences?category=${category}&next=%2Fv2%2Ftoday`)}>
+                    Choose {category === 'interests' ? 'interests' : 'goals'}
+                  </button>
+                  <button type="button" className="text-xs font-semibold text-slate-500 hover:text-slate-800" aria-label={`Dismiss ${category} reminder`} disabled={dismissPreferenceReminder.isPending} onClick={() => dismissPreferenceReminder.mutate(category)}>
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          {dismissPreferenceReminder.isError && <p role="alert" className="mt-2 text-xs text-red-700">We couldn't save that. Please try again.</p>}
+        </V2Card>
+      )}
 
       {today.isError && (
         <div

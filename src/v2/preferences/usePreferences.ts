@@ -1,16 +1,29 @@
 import { invalidateV2DiscoveryReads } from '../challenges/challengeQueryKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchV2Preferences, saveV2Preferences, type V2PreferenceChange } from '../../api/preferencesApi';
+import { dismissV2PreferenceReminder, fetchV2Preferences, saveV2Preferences, type V2PreferenceChange } from '../../api/preferencesApi';
 import { useAuth } from '../../hooks/useAuth';
 import { v2MemberPreferencesKey } from './preferencesQuery';
 
-export function useV2Preferences() {
+export function useV2Preferences(pollReminderEligibility = false) {
   const { user } = useAuth();
   return useQuery({
     queryKey: v2MemberPreferencesKey(user?.uid),
     queryFn: fetchV2Preferences,
     enabled: !!user?.uid,
     staleTime: 60_000,
+    refetchInterval: pollReminderEligibility ? 60_000 : false,
+  });
+}
+
+export function useDismissV2PreferenceReminder() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const uid = user?.uid;
+  return useMutation({
+    mutationFn: (category: 'interests' | 'goals') => dismissV2PreferenceReminder(category),
+    onSuccess: (saved) => {
+      if (uid) queryClient.setQueryData(v2MemberPreferencesKey(uid), saved);
+    },
   });
 }
 
