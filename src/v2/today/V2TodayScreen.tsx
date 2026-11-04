@@ -208,6 +208,10 @@ export function V2TodayScreen() {
         </div>
       )}
 
+      {/* Put new-member discovery before the large zero-state card so the
+          recommendations are visible in the initial Today viewport. */}
+      {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodayDiscoveryRecommendations />}
+
       {isTodayEmpty(projection) ? (
         <NoParticipationState kind={noParticipation} onNavigate={navigate} />
       ) : (
@@ -352,7 +356,6 @@ export function V2TodayScreen() {
           )}
         </div>
       )}
-      {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodayDiscoveryRecommendations />}
       {loggingChallengeId && (
         <TodayLogActivity challengeId={loggingChallengeId} onClose={() => setLoggingChallengeId(null)} />
       )}
