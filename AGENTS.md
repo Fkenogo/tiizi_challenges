@@ -172,3 +172,11 @@ overwritten, STOP the affected implementation and report evidence to the
 Technical Lead. Keep unrelated authorised tasks independent. Existing
 V1 exclusion, boundary CI, Master Programme and FEF/TLC controls in §§1–4
 remain unchanged.
+
+## Portfolio Code Lifecycle Guardian — ECCL-005 adoption candidate
+
+This repository participates in the Miledge Ventures Code Lifecycle Guardian rollout. The [central ECCL-005 contract](https://github.com/Fkenogo/miledge-ventures/blob/main/docs/miledge-ventures-knowledge/00-governance/MILEDGE-ECCL-005-PORTFOLIO-ENGINEERING-CONTINUITY-CONTRACT.md) is the proposed versioned portfolio source; it becomes effective only after Founder approval and merge, and does not override this project's approved product truth, security holds, FEF-TLC-001 roles, or merge authority. This local minimum remains usable if the central private document is inaccessible.
+
+**PRG-01 — before starting or resuming a coding task (additional portfolio coverage; §5 remains binding):** inspect the current remote main SHA and branch/worktree state (preserve dirty work); relevant open and stacked PR ancestry; applicable Founder-approved behaviour and latest handover; active route/import/entrypoint; and, when relevant, preview build SHA, environment and isolated test-fixture identity. Distinguish code presence from Founder acceptance. Record facts, unknowns, exact SHAs and the scoped implementation-readiness result. A successful diagnostic command is not an authorization to code. If accepted changes are absent, branch ancestry conflicts, source/preview identity is unknown, or authority is unclear, STOP **only the affected task** and escalate to the Technical Lead; unrelated authorised work may continue.
+
+**HOV-01 — at every handover:** identify the exact baseline/head SHA, branch and PR, accepted and unaccepted functionality, runtime/preview evidence or limitations, outstanding dependencies, known stale or replacement candidates, test results, and the next explicit approval boundary. Preserve historical and unmerged work until consumers and acceptance are verified. Do not delete legacy paths, overwrite dirty work, change CI gates or deploy based solely on this paragraph. Add project-specific automation through separate reviewed PRs, initially non-gating.
