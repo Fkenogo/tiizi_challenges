@@ -152,3 +152,23 @@ member/steward journey against the adopted V2 Experience Reference, then show
 founder-visible behavior and test evidence for any correction. Avoid layering
 unapproved interaction restrictions onto the product. Local preview is a regular
 engineering activity; no production deploy is implied.
+
+---
+
+## 5. Agent Entry Reconciliation Pilot (TIIZI-ECCL-PRG-01)
+
+Before starting or resuming a task on a different branch or worktree, read
+`docs/programme/TIIZI-ECCL-PRG-01-AGENT-ENTRY-PILOT.md` and perform the
+read-only source-state collection with
+`node scripts/prg01LocalReconciliation.mjs`. Independently reconcile
+Founder-accepted behaviour, current open/stacked PR ancestry, active V2
+routes/imports and the actual preview build. The script is informative only:
+its successful exit or `SOURCE_ONLY_RECONCILED` output never grants
+implementation, merge, deletion or deployment permission.
+
+If approved baselines conflict, a stale branch might omit accepted work,
+the active UI/preview SHA is unknown for the task, or dirty work may be
+overwritten, STOP the affected implementation and report evidence to the
+Technical Lead. Keep unrelated authorised tasks independent. Existing
+V1 exclusion, boundary CI, Master Programme and FEF/TLC controls in §§1–4
+remain unchanged.
