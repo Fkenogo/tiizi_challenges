@@ -16,12 +16,37 @@ export function V2TodayDiscoveryRecommendations() {
   const groupPages = groups.data?.pages ?? [];
   const groupRows = recommendedGroups(groupPages.flatMap((page) => page.groups)).slice(0, 3);
   const challengeRows = recommendedChallenges(flattenDiscoveryPages(challenges.data?.pages)).slice(0, 3);
+  const challengePages = challenges.data?.pages ?? [];
+  const lastChallengePage = challengePages[challengePages.length - 1];
+  const nextChallengeCursor = lastChallengePage?.nextCursor ?? null;
+  const requestedChallengeCursors = challenges.data?.pageParams ?? [];
+  const repeatedChallengeCursor = nextChallengeCursor !== null && requestedChallengeCursors.includes(nextChallengeCursor);
+  const insufficientChallenges = challengeRows.length < 3;
+  const challengePaginationStalled = insufficientChallenges && challenges.hasNextPage
+    && !challenges.isLoading && !challenges.isError && !challenges.isFetchingNextPage && !challenges.isFetchNextPageError
+    && (!nextChallengeCursor || repeatedChallengeCursor);
   const lastGroupPage = groupPages[groupPages.length - 1];
   const nextGroupCursor = lastGroupPage?.nextCursor ?? null;
   const requestedGroupCursors = groups.data?.pageParams ?? [];
   const repeatedGroupCursor = nextGroupCursor !== null && requestedGroupCursors.includes(nextGroupCursor);
   const insufficientGroups = groupRows.length < 3;
   const groupPaginationStalled = insufficientGroups && repeatedGroupCursor;
+
+  useEffect(() => {
+    if (!insufficientChallenges || !challenges.hasNextPage || !nextChallengeCursor || repeatedChallengeCursor
+      || challenges.isLoading || challenges.isError || challenges.isFetchingNextPage || challenges.isFetchNextPageError) return;
+    void challenges.fetchNextPage();
+  }, [
+    challenges.fetchNextPage,
+    challenges.hasNextPage,
+    challenges.isError,
+    challenges.isFetchNextPageError,
+    challenges.isFetchingNextPage,
+    challenges.isLoading,
+    insufficientChallenges,
+    nextChallengeCursor,
+    repeatedChallengeCursor,
+  ]);
 
   useEffect(() => {
     if (!insufficientGroups || !groups.hasNextPage || !nextGroupCursor || repeatedGroupCursor
@@ -75,8 +100,11 @@ export function V2TodayDiscoveryRecommendations() {
           <button type="button" onClick={() => navigate('/v2/challenges')} className="text-sm font-bold text-primary underline">Explore all</button>
         </div>
         {challenges.isLoading && <p role="status" className="text-sm text-slate-500">Finding Challenges…</p>}
-        {challenges.isError && <p role="alert" className="text-sm text-red-700">We couldn’t load Challenge suggestions. You can explore Challenges now or try again later.</p>}
-        {challenges.isSuccess && challengeRows.length === 0 && <p className="text-sm text-slate-600">No eligible Challenges are available right now. Check back later.</p>}
+        {challenges.isFetchingNextPage && <p role="status" className="text-sm text-slate-500">Finding more Challenges…</p>}
+        {challenges.isError && !challenges.data && <p role="alert" className="text-sm text-red-700">We couldn’t load Challenge suggestions. You can explore Challenges now or try again later.</p>}
+        {challenges.isFetchNextPageError && <p role="alert" className="text-sm text-red-700">We couldn’t load more Challenge suggestions. Showing the Challenges already available. You can explore Challenges now or try again later.</p>}
+        {challengePaginationStalled && <p role="alert" className="text-sm text-red-700">We couldn’t continue loading Challenge suggestions. Showing the Challenges already available. You can explore Challenges now or try again later.</p>}
+        {challenges.isSuccess && challengeRows.length === 0 && !challenges.hasNextPage && !challenges.isFetchingNextPage && !challenges.isFetchNextPageError && !challengePaginationStalled && <p className="text-sm text-slate-600">No eligible Challenges are available right now. Check back later.</p>}
         <ul className="space-y-2">
           {challengeRows.map((challenge) => {
             const endState = endStateFor(challenge);
