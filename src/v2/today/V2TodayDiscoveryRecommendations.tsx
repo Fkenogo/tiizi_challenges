@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useV2ChallengeDiscovery } from '../challenges/useChallengeDiscovery';
 import { flattenDiscoveryPages, relevanceBadges } from '../challenges/discoveryRelevance';
@@ -12,8 +13,31 @@ export function V2TodayDiscoveryRecommendations() {
   const navigate = useNavigate();
   const groups = useV2GroupDiscovery('', 'relevance');
   const challenges = useV2ChallengeDiscovery('relevance');
-  const groupRows = recommendedGroups(groups.data?.pages.flatMap((page) => page.groups) ?? []).slice(0, 3);
+  const groupPages = groups.data?.pages ?? [];
+  const groupRows = recommendedGroups(groupPages.flatMap((page) => page.groups)).slice(0, 3);
   const challengeRows = recommendedChallenges(flattenDiscoveryPages(challenges.data?.pages)).slice(0, 3);
+  const lastGroupPage = groupPages[groupPages.length - 1];
+  const nextGroupCursor = lastGroupPage?.nextCursor ?? null;
+  const requestedGroupCursors = groups.data?.pageParams ?? [];
+  const repeatedGroupCursor = nextGroupCursor !== null && requestedGroupCursors.includes(nextGroupCursor);
+  const insufficientGroups = groupRows.length < 3;
+  const groupPaginationStalled = insufficientGroups && repeatedGroupCursor;
+
+  useEffect(() => {
+    if (!insufficientGroups || !groups.hasNextPage || !nextGroupCursor || repeatedGroupCursor
+      || groups.isLoading || groups.isError || groups.isFetchingNextPage || groups.isFetchNextPageError) return;
+    void groups.fetchNextPage();
+  }, [
+    groups.fetchNextPage,
+    groups.hasNextPage,
+    groups.isError,
+    groups.isFetchNextPageError,
+    groups.isFetchingNextPage,
+    groups.isLoading,
+    insufficientGroups,
+    nextGroupCursor,
+    repeatedGroupCursor,
+  ]);
 
   return (
     <section aria-labelledby="today-discover" className="mt-6 space-y-5">
@@ -27,8 +51,11 @@ export function V2TodayDiscoveryRecommendations() {
           <button type="button" onClick={() => navigate('/v2/groups')} className="text-sm font-bold text-primary underline">Explore all</button>
         </div>
         {groups.isLoading && <p role="status" className="text-sm text-slate-500">Finding Groups…</p>}
-        {groups.isError && <p role="alert" className="text-sm text-red-700">We couldn’t load Group suggestions. You can explore Groups now or try again later.</p>}
-        {groups.isSuccess && groupRows.length === 0 && <p className="text-sm text-slate-600">No discoverable Groups are available right now. Check back later.</p>}
+        {groups.isFetchingNextPage && <p role="status" className="text-sm text-slate-500">Finding more Groups…</p>}
+        {groups.isError && !groups.data && <p role="alert" className="text-sm text-red-700">We couldn’t load Group suggestions. You can explore Groups now or try again later.</p>}
+        {groups.isFetchNextPageError && <p role="alert" className="text-sm text-red-700">We couldn’t load more Group suggestions. Showing the Groups already available. You can explore Groups now or try again later.</p>}
+        {groupPaginationStalled && <p role="alert" className="text-sm text-red-700">We couldn’t continue loading Group suggestions. Showing the Groups already available. You can explore Groups now or try again later.</p>}
+        {groups.isSuccess && groupRows.length === 0 && !groups.hasNextPage && !groups.isFetchingNextPage && !groups.isFetchNextPageError && !groupPaginationStalled && <p className="text-sm text-slate-600">No discoverable Groups are available right now. Check back later.</p>}
         <ul className="space-y-2">
           {groupRows.map((group) => {
             const reason = recommendationReason(group.relevance);

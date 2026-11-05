@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import type { V2DiscoverableChallenge } from '../../api/challengeDiscoveryApi';
@@ -15,9 +15,16 @@ const challenge = (id: string, status: 'active' | 'establishment' = 'active', re
   challengeId: id, groupId: 'g', groupName: 'Host Group', activities: [{ name: 'Walk', domain: 'fitness' as const, category: 'Movement', subcategory: '' }], title: id, description: 'A safe summary.', challengeType: 'collective' as const, status, startDate: '2026-11-10', endDate: '2026-11-20', timezone: 'UTC', governingToday: '2026-11-04', finalized: false, currentConfigVersion: 1, goalValue: null, goalUnit: null, collectiveTotal: 0, collectiveGoalReached: false, completionsCount: 0, myParticipation: null,
   host: { groupId: 'g', groupName: 'Host Group', admissionMode: 'approval' as const, viewerRelationship: 'none' as const }, relevance,
 });
-function setLoaded(groups: any[], challenges: any[]) {
-  mocks.groups = { data: { pages: [{ groups }] }, isLoading: false, isError: false, isSuccess: true };
+function setLoaded(groups: any[], challenges: any[], groupState: Record<string, unknown> = {}) {
+  const fetchNextPage = vi.fn().mockResolvedValue(undefined);
+  mocks.groups = {
+    data: { pages: [{ groups, nextCursor: null }], pageParams: [undefined] },
+    isLoading: false, isError: false, isSuccess: true, hasNextPage: false,
+    isFetchingNextPage: false, isFetchNextPageError: false, fetchNextPage,
+    ...groupState,
+  };
   mocks.challenges = { data: { pages: [{ challenges }] }, isLoading: false, isError: false, isSuccess: true };
+  return fetchNextPage;
 }
 afterEach(() => cleanup());
 
@@ -38,6 +45,88 @@ describe('Today discovery recommendations', () => {
     expect(screen.getByText('General Group')).toBeTruthy();
     expect(screen.getByText('General Challenge')).toBeTruthy();
     expect(screen.queryByText(/Suggested because/)).toBeNull();
+  });
+  it('fetches later Group pages until three eligible recommendations are collected', async () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({
+      ...group(`Joined ${index}`),
+      viewerRelationship: index % 2 === 0 ? 'member' as const : 'steward' as const,
+    }));
+    const fetchNextPage = setLoaded(excluded, [], {
+      hasNextPage: true,
+      data: { pages: [{ groups: excluded, nextCursor: 'cursor-1' }], pageParams: [undefined] },
+    });
+    const view = render(<MemoryRouter><V2TodayDiscoveryRecommendations /></MemoryRouter>);
+
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+
+    mocks.groups = {
+      ...mocks.groups,
+      data: {
+        pages: [
+          { groups: excluded, nextCursor: 'cursor-1' },
+          { groups: [group('Eligible one'), group('Eligible two')], nextCursor: 'cursor-2' },
+        ],
+        pageParams: [undefined, 'cursor-1'],
+      },
+      hasNextPage: true,
+    };
+    view.rerender(<MemoryRouter><V2TodayDiscoveryRecommendations /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(2));
+
+    mocks.groups = {
+      ...mocks.groups,
+      data: {
+        pages: [
+          { groups: excluded, nextCursor: 'cursor-1' },
+          { groups: [group('Eligible one'), group('Eligible two')], nextCursor: 'cursor-2' },
+          { groups: [group('Eligible three')], nextCursor: 'cursor-3' },
+        ],
+        pageParams: [undefined, 'cursor-1', 'cursor-2'],
+      },
+      hasNextPage: true,
+    };
+    view.rerender(<MemoryRouter><V2TodayDiscoveryRecommendations /></MemoryRouter>);
+
+    expect(screen.getByText('Eligible one')).toBeTruthy();
+    expect(screen.getByText('Eligible two')).toBeTruthy();
+    expect(screen.getByText('Eligible three')).toBeTruthy();
+    expect(fetchNextPage).toHaveBeenCalledTimes(2);
+  });
+  it('shows an exhausted state without fetching beyond the final Group page', () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({ ...group(`Joined ${index}`), viewerRelationship: 'member' as const }));
+    const fetchNextPage = setLoaded(excluded, []);
+    render(<MemoryRouter><V2TodayDiscoveryRecommendations /></MemoryRouter>);
+    expect(screen.getByText('No discoverable Groups are available right now. Check back later.')).toBeTruthy();
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+  it('announces automatic later-page loading without starting a duplicate request', () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({ ...group(`Joined ${index}`), viewerRelationship: 'member' as const }));
+    const fetchNextPage = setLoaded(excluded, [], { hasNextPage: true, isFetchingNextPage: true });
+    render(<MemoryRouter><V2TodayDiscoveryRecommendations /></MemoryRouter>);
+    expect(screen.getByRole('status').textContent).toContain('Finding more Groups');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+  it('stops a repeated cursor and reports a pagination error', () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({ ...group(`Joined ${index}`), viewerRelationship: 'member' as const }));
+    const fetchNextPage = setLoaded(excluded, [], {
+      data: { pages: [{ groups: excluded, nextCursor: 'cursor-1' }, { groups: excluded, nextCursor: 'cursor-1' }], pageParams: [undefined, 'cursor-1'] },
+      hasNextPage: true,
+    });
+    render(<MemoryRouter><V2TodayDiscoveryRecommendations /></MemoryRouter>);
+    expect(screen.getByRole('alert').textContent).toContain('continue loading Group suggestions');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+  it('keeps loaded Group cards and reports a failed later page', () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({ ...group(`Joined ${index}`), viewerRelationship: 'member' as const }));
+    const fetchNextPage = setLoaded([group('Already eligible')], [], {
+      hasNextPage: true, isError: true, isFetchNextPageError: true,
+      data: { pages: [{ groups: [group('Already eligible')], nextCursor: 'cursor-1' }], pageParams: [undefined] },
+    });
+    render(<MemoryRouter><V2TodayDiscoveryRecommendations /></MemoryRouter>);
+    expect(screen.getByText('Already eligible')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('Showing the Groups already available');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+    expect(excluded).toHaveLength(12);
   });
   it('reports independent loading and service errors', () => {
     mocks.groups = { isLoading: true };

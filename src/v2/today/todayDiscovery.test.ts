@@ -7,11 +7,16 @@ const group = (id: string, relationship: V2DiscoverableGroup['viewerRelationship
   id, name: id, description: '', tagline: '', coverId: null, location: '', focusTags: [], goals: [], memberCount: 1,
   admissionMode: 'approval', viewerRelationship: relationship, relevance,
 });
-const challenge = (id: string, relevance: V2DiscoverableChallenge['relevance']): V2DiscoverableChallenge => ({
+const challenge = (
+  id: string,
+  relevance: V2DiscoverableChallenge['relevance'],
+  lifecycle: Partial<Pick<V2DiscoverableChallenge, 'status' | 'finalized' | 'governingToday' | 'startDate' | 'endDate'>> = {},
+): V2DiscoverableChallenge => ({
   challengeId: id, title: id, groupId: 'g', groupName: 'Group', activities: [], description: '', challengeType: 'collective', status: 'active',
   startDate: '2026-10-01', endDate: '2026-12-01', timezone: 'UTC', governingToday: '2026-11-04', finalized: false,
   currentConfigVersion: 1, goalValue: null, goalUnit: null, collectiveTotal: 0, collectiveGoalReached: false, completionsCount: 0, myParticipation: null,
   host: { groupId: 'g', groupName: 'Group', admissionMode: 'approval', viewerRelationship: 'none' }, relevance,
+  ...lifecycle,
 });
 
 describe('Today discovery selection', () => {
@@ -25,6 +30,24 @@ describe('Today discovery selection', () => {
   });
   it('excludes joined and steward Groups while preserving pending approval status', () => {
     expect(recommendedGroups([group('joined', 'member'), group('steward', 'steward'), group('pending', 'pending')]).map((x) => x.id)).toEqual(['pending']);
+  });
+  it('deduplicates eligible Groups across discovery pages while preserving server order', () => {
+    expect(recommendedGroups([
+      group('first', 'none'),
+      group('joined', 'member'),
+      group('first', 'pending'),
+      group('second', 'none'),
+    ]).map((x) => x.id)).toEqual(['first', 'second']);
+  });
+  it('uses actionable unmatched Challenges when all preference matches are closed', () => {
+    const matched = { interests: ['Walking'], goals: [], domains: [] };
+    const unmatched = { interests: [], goals: [], domains: [] };
+    expect(recommendedChallenges([
+      challenge('ended-match', matched, { status: 'ended' }),
+      challenge('finalized-match', matched, { finalized: true }),
+      challenge('expired-match', matched, { governingToday: '2026-12-02' }),
+      challenge('actionable-unmatched', unmatched),
+    ]).map((x) => x.challengeId)).toEqual(['actionable-unmatched']);
   });
   it('explains recommendations only using actual matched labels', () => {
     expect(recommendationReason({ interests: ['Strength'], goals: [], domains: [] })).toBe('Suggested because it matches your interest: Strength.');
