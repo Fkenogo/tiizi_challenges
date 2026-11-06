@@ -2,13 +2,13 @@
 
 **Reference:** TIIZI-V2-MEDIA-1-CLOSURE-RECON-001 (Revision 2 — independent R1 corrections, CORR-001)
 **Date:** 2026-11-06
-**Status:** **SUPPORTING ASSESSMENT AND PROPOSAL — MEDIA-1 IS NOT APPROVED OR CLOSED; FOUNDER-RESERVED ITEMS AWAIT FOUNDER DISPOSITION; NO BUILD**
+**Status:** **SUPPORTING ASSESSMENT — FD-1/FD-2/FD-3 RECORDED; TECHNICAL LEAD DECISIONS AND FOUNDER-RESERVED PRIVACY/RESOURCE/PACKAGE DECISIONS PENDING; MEDIA-1 NOT CLOSED; NO BUILD**
 **Repository:** `Fkenogo/tiizi_challenges`
-**Verified remote baseline:** `origin/main` / `51ec762643cc0feff150a719e89c8b97f4233927` (PR #153 merge; verified 2026-11-06)
+**Verified remote baseline:** `origin/main` / `5722dadccd5fab18ddef2e40c284a8b5762ff2b9` (PR #154 merge; independently queried 2026-11-06)
 **Programme:** FER-001-B P6 — Shared media; MEDIA-1 design closure
 **Companion:** `TIIZI-V2-MEDIA-UPLOAD-INTEGRATION-ASSESSMENT-001.md` (reference `TIIZI-V2-MEDIA-001-CORR-001`)
 
-**Revision note.** Revision 1 (PR #154 head `97c5789250c76b550a825f7aaae028ee0f967244`) described the MEDIA-1 technical specifics as Technical Lead decisions with no assigned decision owner, and described FEF-TLC-001 as unmerged. Independent R1 review found both statements unsupported. This revision corrects them. The file was renamed from `…-AND-FOUNDER-DECISIONS-001.md` so that its name matches its content; it records no Founder decision.
+**Revision note.** Revision 1 (PR #154 head `97c5789250c76b550a825f7aaae028ee0f967244`) described the MEDIA-1 technical specifics as Technical Lead decisions with no assigned decision owner, and described FEF-TLC-001 as unmerged. Revision 2 corrected those statements. PR #154 was reviewed at `eea2b8fc33780237c0b8f342acef7dd78cd8a9d5` and merged by `5722dadccd5fab18ddef2e40c284a8b5762ff2b9`. Founder decisions dated 2026-11-06 are now recorded in Disposition §18. This document remains a supporting assessment, not a separate decision registry.
 
 ## 1. Summary
 
@@ -19,10 +19,13 @@ P6 remains the single shared capability for optional Profile photos, Group cover
 | **Provider selection** — Cloudflare R2 behind a provider-neutral `ObjectStore` port; PostgreSQL holds Tiizi-owned asset references | **Selected / effective** | FD-MC-07a, Disposition §8.1 |
 | **Resource, credential and spend authorization** — account, buckets, tokens, budget | **Not granted.** Account owner, environments and cost ownership are listed as Founder inputs | FDR-03; Disposition §14; Media Assessment §7 |
 | **Implementation and production authorization** — code, migration, deployment, live Member images | **Not granted.** Each slice needs separate written authorization | FER-001-B P6; Disposition §8.4 |
+| **Technical-default accountability** | **Delegated to the Technical Lead (FD-1, 2026-11-06).** Recommendations remain proposals until assessed and explicitly recorded | Disposition §18.1; Media Assessment §9 |
+| **Miledge account direction** | **Preferred for evaluation only (FD-2, 2026-11-06).** Conditional; no account/resource/spend approval | Disposition §18.2; this document §2.6 |
+| **FEF-TLC-001 adoption/effectiveness approval** | **Confirmed 2026-11-06.** Operational role-assignment/activation prerequisite completion remains unverified | Disposition §18.3; FEF activation record |
 
-**MEDIA-1 specifics are Founder-reserved today.** Disposition §14 lists "MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner)" under "Remaining Founder inputs (genuinely open)". `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §7, titled "Founder decisions required for MEDIA-1", lists the R2 account owner and environments, upload mode, size and pixel limits, variants, delivery mechanics, replacement and deletion timings, moderation/takedown, cost and budget ownership, and the proof plan including the optional Cloudflare Images evaluation. This document does not reclassify any of them.
+**Technical defaults now sit with the Technical Lead under FD-1; privacy and resource policy remain Founder-reserved.** The earlier open list in Disposition §14 and Media Assessment §7 is superseded only as to technical-default accountability. The Technical Lead must assess and record the actual defaults in the existing `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §9. No prior proposed value is automatically approved. The Founder retains product scope, privacy/retention/takedown policy, account arrangement, spend/resources, package authorization and production/release authority.
 
-The technical defaults in §§3–5 are **proposals** prepared for Technical Lead review and Founder disposition. None is an approved requirement. §2.4 sets out a delegation request for the Founder to accept, narrow or decline. The Founder-reported preference to use the existing paid Miledge Ventures Cloudflare account is **reported direction that is not yet recorded** in a governing record. It is not resource authorization, and it must be reconciled with Disposition §8.2 (§2.6).
+The technical defaults in §§3–5 remain **proposals** pending Technical Lead assessment and recording under FD-1. The Founder-approved Miledge Ventures account direction is only an evaluation preference under FD-2; it creates no access, resource, credential or spend authorization and remains conditional on Disposition §8.2 (§2.6).
 
 This document creates no programme authority and is not a decision registry. Neither this document nor its companion alters the Master Programme, the Founder Disposition, the MEDIA-1 source record or FER-001-B.
 
@@ -57,37 +60,32 @@ The accepted V2 runtime remains `/v2/*` and `/api/*`, with PostgreSQL as domain 
 | Template cover stays `cover_id`; P5T has no upload; P5T precedes P6 | FD-TPL, TPL-001, FER-001-B Amendment 002 | Effective | P5T incomplete |
 | P6 required for CPE; sequence P5T → P6 → P7 | FER-001-B, Master Programme | Effective 2026-10-28 | P6 not started |
 | R2 account, credentials, non-production resources and live use need separate authorization | FDR-03, FER-001-B P6 | Effective | No Tiizi resource or credential |
-| **MEDIA-1 specifics: upload mode, limits, variants, delivery mechanics, replacement/deletion timings, takedown, account owner and environments, budget owner, proof plan** | **Disposition §14 item 3; Media Assessment §7; Disposition §8.4** | **Open and Founder-reserved. This document supplies proposals only** | Not implemented |
+| Technical defaults: upload/delivery mechanics, processing limits, technical storage, concurrency/reliability and verification | FD-1 (Disposition §18.1); existing MEDIA-1 record §9 | Technical Lead accountability approved; no final defaults attributed/recorded yet | No code or resource |
+| Privacy policy: deletion SLA, retention/backups, takedown/reporting, acceptable access-revocation window | Disposition §14; FD-1 Founder reservation; Privacy Decision Brief | Open and Founder-reserved; brief contains recommendations only | Not implemented |
+| R2 account direction and ownership | FD-2 (Disposition §18.2); Disposition §8.2 | Miledge account preferred for evaluation only; final arrangement and account owner pending Founder review | No account access/resource |
+| Spend, budget owner, bounded expenditure and resource/proof authorization | FD-2; Disposition §14; FER-001-B P6 | Founder-reserved and not authorized | No resource or spend |
 
-### 2.4 Founder-reserved MEDIA-1 authority and delegation request
+### 2.4 MEDIA-1 authority after FD-1
 
-Disposition §8.4 requires MEDIA-1 to produce a Tiizi media decision record. No standalone record exists on `main`: `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` is its preparation and seed, and its §7 holds the remaining items. Disposition §14 and Media Assessment §7 place the open specifics with the Founder. Neither record assigns the Technical Lead authority to close them, and FEF-TLC-001 (§2.5) grants the Technical Lead no product-decision authority. A supporting assessment cannot transfer that authority.
+Disposition §8.4 requires a Tiizi media decision record. The existing `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` is that MEDIA-1 authority; this supporting reconciliation document and its upload-integration companion are not competing decision registries. On 2026-11-06, FD-1 delegated accountability for technical design defaults to the Technical Lead, with consultation of existing engineering, security, product and domain owners as appropriate. Technical assessment and recommendation are recorded in the existing authority §9.
 
-**Proposal, pending Founder disposition (not in effect):** the Founder may delegate to the Technical Lead accountability for preparing and recording the MEDIA-1 technical defaults, consulting the existing authorized backend, architecture, security, domain and operational owners. The delegation would activate no new role and supersede no governance. The Founder would retain:
+The §3–§5 values below and previous proposed technical values remain proposals. They are not decisions until the Technical Lead explicitly assesses, selects and records the value with its evidence/status in the existing MEDIA-1 authority. FD-1 does not expand product requirements or authorize build, migration, resource creation or deployment.
 
-- product and privacy policy, including deletion SLA, retention and backup purge, and takedown and reporting policy (Disposition §14 items 2–3);
-- the R2 account owner, environments, non-production resource authorization, spend and budget owner;
-- production resources, credentials, live Member images and release;
-- package authorization;
-- Today image placement, any Template media reference, and any deferral of the Cloudflare Images evaluation.
+The Founder retains product scope/experience changes; privacy, retention, takedown/reporting and acceptable revocation-window policies; the final Cloudflare account arrangement and resource access; expenditure and budget; implementation package authorization; and production resources, credentials, live Member images, release and deployment. See the separate Founder Privacy Decision Brief. Today placement and any Template media reference still require separate product/experience approval.
 
-The Founder may delegate all, some or none of the technical items, and may ratify the §3–§4 defaults item by item instead. Until the Founder disposes of this request, the §3–§4 values remain proposals.
+### 2.5 FEF-TLC-001 Founder approval and activation evidence
 
-### 2.5 FEF-TLC-001 status
-
-Revision 1 called FEF-TLC-001 "unmerged". That was wrong. Verified evidence on `origin/main`:
-
-| Evidence | Finding |
+| Event/prerequisite | Status/evidence |
 |---|---|
-| Merge | **CONFIRMED.** `docs/programme/TIIZI-FEF-TLC-001-TEAM-ACTIVATION.md` was added by commit `f8d2782` (2026-10-27). PR #106 merged as `542052c12ca7910a297da89f28ae01120b220980` (2026-10-27T12:40:49Z). The merge is recorded under the repository account `Fkenogo`. GitHub records no review on the PR |
-| The file's own header | Still reads "Proposed for Founder review; not effective until merged" |
-| Activation sequence in the file | Step 1 "Founder authorizes merge"; step 2 "On merge, Lead confirms role assignment…". No record of step 2 was found |
-| `AGENTS.md` §4 | The execution-role separation is binding "once that candidate is Founder-approved and merged". It does not record that approval |
-| `CLAUDE.md` line 5 | Applies the file "when the FEF-TLC-001 adoption candidate is merged **and effective**" |
-| Master Programme, Technical Control Board, `docs/governance/FEF-ALIGNMENT.md` | No reference to FEF-TLC-001 and no activation row |
-| Founder Experience Recovery Baseline 001, document header and §F | Its header states that engineering reconciliation was pending. §F provides role information but does not record an activation decision |
+| PR #106 merge | **Confirmed:** activation candidate merged by `542052c12ca7910a297da89f28ae01120b220980` on 2026-10-27 |
+| Founder adoption/effectiveness approval | **Confirmed:** 2026-11-06, Member Completion Founder Disposition §18.3 |
+| Role-assignment/activation completion date | **Not established.** Founder approval date and prerequisite-verification date are distinct |
+| Technical Lead role assignment and the activation-record step-2 confirmation | **Not confirmed in an attributable current role-assignment record** |
+| Programme Controller / Architecture & Decision Controller assignments | **Not confirmed in an attributable current role-assignment record** |
+| Coding Agent / independent Code Reviewer functions | Framework recognizes these roles/functions; this does not create permanent person/account assignments. Independent per-task review remains required |
+| Chief of Staff | Not an engineering approval gatekeeper; no operational-assessment completion claimed |
 
-**Result: merge CONFIRMED; activation UNKNOWN.** The signals about effectiveness conflict, and no activation decision was found. Activation is not inferred. This package neither relies on the FEF-TLC-001 role model for authority nor claims it is ineffective. It names no FEF-TLC-001 role as a decision-maker. Founder confirmation of effectiveness is requested (§8). Under FEF-TLC-001 the Technical Lead selects bounded approved packages and the Founder keeps product decisions, so the role model would not by itself grant MEDIA-1 decision authority in any case.
+**Current status:** Founder adoption/effectiveness approval is confirmed, while required role-assignment and activation-prerequisite completion remains **unverified**. No role name or completion date is inferred. The activation document, `AGENTS.md`, `CLAUDE.md`, Master Programme and FEF alignment profile are reconciled to this distinction. No implementation authorization follows from the approval.
 
 ### 2.6 Tiizi independence (Disposition §8.2) and the Miledge account
 
@@ -108,30 +106,32 @@ Placing Tiizi data, credentials and billing inside a Miledge-controlled account 
 | Residency and legal basis | Where are objects held, and is the processing arrangement acceptable for Member photographs? |
 | Exit | How are Tiizi buckets moved or severed if independence is required? |
 
-**Default until the Founder decides:** a Tiizi-owned or otherwise separate account is the option consistent with §8.2. A Miledge-account placement should be adopted only through an explicit Founder disposition that records the six points above. If the account owner or boundary is unacceptable, provision nothing.
+**FD-2 direction (2026-11-06):** the existing Miledge Ventures Cloudflare account is preferred for evaluation only. The preference remains conditional on: (1) Tiizi independence under §8.2; (2) Tiizi-specific isolation; (3) separate non-production and production resources; (4) least-privilege credentials/access; (5) defined operational/legal ownership; (6) clear billing attribution/spending controls; and (7) acceptable cross-product security/operational risk. The Technical Lead prepares a resource and cost recommendation for Founder review.
+
+No final account arrangement is selected. If a condition cannot be evidenced or is unacceptable, recommend a separate Tiizi account for Founder consideration and provision nothing. FD-2 does not authorize account access, buckets, credentials, Cloudflare Images or other infrastructure, spend or a bounded proof. Final arrangement, resource creation and expenditure require separate Founder authorization.
 
 ### 2.7 Open pull requests (point-in-time)
 
-At review on 2026-11-06, GitHub listed open PRs #154 (this PR), #150, #145, #143, #107 and #94. These are point-in-time GitHub facts, not repository records, and must be re-verified at merge and again before any authorized implementation.
+Before the PR #154 merge on 2026-11-06, GitHub listed open PRs #154, #150, #145, #143, #107 and #94. PR #154 was reviewed at `eea2b8fc33780237c0b8f342acef7dd78cd8a9d5` and merged by `5722dadccd5fab18ddef2e40c284a8b5762ff2b9`; the remaining PR references below are point-in-time facts and must be re-verified before any authorized implementation.
 
 - #150 and #145 touch Today and Challenge presentation. #107 touches Profile, Group and Today. #94 concerns CI documentation. None adds media.
 - #143 is the open Slice 5B operator Template lifecycle UI **implementation** PR (not draft). Master Programme v2.89 records Slice 5B implementation as not started and not authorized, with only the briefing prepared. PR #143's description says it implements "the approved lifecycle briefing" and must not merge without Founder authorization. This package does not resolve that difference. The sequencing dependency is unchanged: P5T must complete before P6.
 
 Unmerged PR content is not accepted authority. Today image placement is excluded.
 
-## 3. Proposed technical defaults — pending Founder disposition
+## 3. Proposed technical defaults — pending Technical Lead assessment under FD-1
 
-These are proposals for Technical Lead review and Founder disposition (§2.4). They are not approved standards.
+These are recommendations for Technical Lead assessment under Founder-delegated accountability (Disposition §18.1). None is a final Technical Lead decision until explicitly selected and recorded in `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §9. They do not determine Founder-reserved product, privacy, resource, expenditure, implementation or production policy.
 
 | Topic | Approved rule | Proposed default |
 |---|---|---|
 | Capability | One P6 capability; optional upload; fallbacks retained; required for CPE | One reusable picker and API contract, with purpose-specific framing and server authorization |
 | Provider | R2 selected behind a neutral port (FD-MC-07a) | Isolated Tiizi buckets per environment. Account placement is a Founder item (§2.6). Separate resource and spend approval is required. The adapter stays replaceable |
 | Creation timing | Group and Challenge ownership and actors are settled | Upload to a short-lived pending asset before the record exists. Bind it inside the authorized create transaction (§4.1) |
-| Upload transfer | Open Founder-reserved item | API-mediated upload for the first release, with no browser object-store credentials. Revisit scoped direct upload only on measured capacity evidence |
-| Formats and limits | Open Founder-reserved item | JPEG, PNG, WebP. Reject SVG and active formats. Client-side resize before upload. Server caps in §4.3 |
-| Variants | Open Founder-reserved item | Profile square 64/128/256 px. Cover widths 480/960/1440 px in the existing UI ratio. Validate against current surfaces and narrow phones before freezing |
-| Private read delivery | Visibility inheritance settled; mechanism open | **Initial proposal: authenticated API delivery.** Signed URLs remain a measured alternative (§4.4) |
+| Upload transfer | Technical Lead decision under FD-1 | API-mediated upload is the starting recommendation; scoped direct upload is an alternative only if verified capacity evidence supports it |
+| Formats and limits | Product surface settled; technical limits await Technical Lead decision and verification | JPEG, PNG, WebP as a candidate allowlist; reject SVG/active formats; client resize plus server decode/re-encode. Numeric caps remain unapproved |
+| Variants | Technical Lead decision subject to mobile-surface verification | 64/128/256 px Profile and 480/960/1440 px covers are proof candidates only; verify current ratios and phone crops before recording |
+| Private read delivery | ARCH-001 settled direction: API-authorized, API-issued signed URLs | Short-lived object-specific signed reads; exact TTL, response cache policy and residual-access window require technical measurement and Founder privacy disposition (§4.4) |
 | Replacement and removal | Replace-then-delete principle settled | Optimistic-concurrency pointer swap with immediate read suppression (§4.2) |
 | Cloudflare Images | Optional (FD-MC-07a); evaluation is part of the bounded proof (Disposition §8.1, §8.4) | Optional evaluation item. Not a dependency of the base capability (§5) |
 | Preview | Synthetic isolated preview; no production user images | Local mock and fixtures. Real R2 proof only in an authorized isolated non-production environment |
@@ -170,7 +170,7 @@ Upload intent, byte upload, bind, read, replace and remove each resolve a verifi
 
 **Initial proposal — authenticated API delivery.** The API (or an authenticated Worker) authorizes each request and streams the exact normalized variant, with an `ETag` and `Cache-Control: private, no-cache`, so each use revalidates. A policy change takes effect on the next request. Residual exposure is limited to bytes already on the device. Costs are API egress and compute per image, and list or discovery pages need batched authorization and concurrency control instead of one lookup per image.
 
-**Measured alternative — signed URLs.** If API delivery proves too costly, issue a short-lived signed GET for one immutable object and method. The revocation window is **URL lifetime plus any client cache lifetime**, because a response fetched at the end of the URL's life stays fresh for the cache duration. For example, a 60-second URL with `max-age=60` leaves up to about 120 seconds of residual access. The earlier "≤60 s" target is met only if responses are not cached (`no-store`, or a `max-age` set to a small fraction of the URL lifetime). Each signature is distinct, so a long `max-age` gives no cache benefit, and `must-revalidate` on an expired signed URL returns 403 and breaks the image. Use batched issuance for list pages. Presigned URLs are an S3-API-endpoint feature, so any assumption that they work through a custom domain or CDN must be verified against current Cloudflare documentation before adoption. Private assets must bypass shared caches. Signatures stay out of logs and analytics. Whichever mechanism is chosen, the maximum revocation window must be stated and tested, and it must be accepted by the Founder where it affects the privacy baseline.
+**Settled ARCH-001 direction — API-authorized, API-issued signed URLs.** Issue a short-lived signed GET for one immutable object and method after application authorization. The revocation window is **URL lifetime plus any client cache lifetime**, because a response fetched at the end of the URL's life stays fresh for the cache duration. For example, a 60-second URL with `max-age=60` leaves up to about 120 seconds of residual access. The earlier "≤60 s" target is met only if responses are not cached (`no-store`, or a `max-age` set to a small fraction of the URL lifetime). Each signature is distinct, so a long `max-age` gives no cache benefit, and `must-revalidate` on an expired signed URL returns 403 and breaks the image. Use batched issuance for list pages. Presigned URLs are an S3-API-endpoint feature, so any assumption that they work through a custom domain or CDN must be verified against current Cloudflare documentation. Private assets must bypass shared caches. Signatures stay out of logs and analytics. Exact TTL/cache behavior and the maximum residual-access window remain subject to Technical Lead assessment, measurement and Founder privacy disposition. A server-proxied read would require an authorized architecture reconciliation.
 
 ### 4.5 Cleanup and operations
 
@@ -194,11 +194,11 @@ This is a plan only. Nothing is provisioned, reserved or tested, and every row i
 | Isolated integration | Dedicated private non-production bucket (name illustrative) in the account the Founder designates | Token scoped to that bucket only; synthetic data; no production access |
 | Production (future, separately authorized) | Separate private bucket, token and deployment secret set | Independent Founder production gate; no reuse of non-production resources |
 
-**Account placement.** Options are (a) a Tiizi-owned or otherwise separate account and (b) the existing Miledge account (reported Founder preference). Option (a) is the §8.2-consistent default. Option (b) requires an explicit Founder disposition covering the points in §2.6. Within either option, use separate buckets and tokens per environment.
+**Account placement.** FD-2 prefers the existing Miledge account for evaluation only, subject to the conditions in §2.6. A Tiizi-owned or otherwise separate account remains an alternative for Founder consideration if independence, isolation, ownership, billing or risk conditions cannot be evidenced. No arrangement is selected and no account access or resource creation is authorized. Within any later-authorized arrangement, use separate buckets and tokens per environment.
 
 **Configuration.** Keep public access blocked and do not enable `r2.dev`, a public bucket or a public custom domain for private or mixed assets. Choose location and jurisdiction only after residency review, because they cannot be changed after bucket creation. Start with Standard storage. **Cloudflare Images is an optional evaluation item** under the existing MEDIA-1 authority (Disposition §8.1, §8.4; Media Assessment §7). It is not a dependency of the base capability, and the evaluation would run only inside the authorized non-production proof. Skipping or deferring that evaluation is a change to the proof plan that needs Founder confirmation.
 
-**API configuration (names only; no values):** `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `MEDIA_UPLOAD_MAX_BYTES`, `MEDIA_UPLOAD_MAX_PIXELS`, `MEDIA_READ_URL_TTL_SECONDS` (only if signed URLs are adopted), `MEDIA_PENDING_TTL_HOURS`, and `MEDIA_PUBLIC_DELIVERY_BASE_URL` only if a separately approved public-only path is later introduced. Local preview has mock configuration and fails closed if production values are present. Secrets live only in the approved server-side secret manager or deployment environment.
+**API configuration (names only; no values):** `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `MEDIA_UPLOAD_MAX_BYTES`, `MEDIA_UPLOAD_MAX_PIXELS`, `MEDIA_READ_URL_TTL_SECONDS` (ARCH-001 signed-URL direction; exact value pending technical and privacy decisions), `MEDIA_PENDING_TTL_HOURS`, and `MEDIA_PUBLIC_DELIVERY_BASE_URL` only if a separately approved public-only path is later introduced. Local preview has mock configuration and fails closed if production values are present. Secrets live only in the approved server-side secret manager or deployment environment.
 
 **Minimum privilege.** An environment-specific token scoped to one bucket with only the object read and write permissions the service needs; no account administration, bucket creation, billing, analytics or access to other buckets. Confirm the exact Cloudflare permission mapping when creating the token. Separate production and non-production tokens. Limit visibility to the named account owner and designated operators. Rotate on staff or role change, suspected exposure and a documented periodic schedule (a 90-day schedule is a proposal), with safe overlap and revocation checks.
 
@@ -245,29 +245,25 @@ No package below is authorized by this document. FER-001-B sequence and package 
 
 ## 8. Decisions and authorization boundaries
 
-**Settled (not for re-approval):** optionality and the CPE requirement (FDR-03); R2 as provider behind a neutral port (FD-MC-07a); scope ownership, mutation authority and visibility inheritance (§§8.3, 8.5, 8.6); fallbacks; Template `cover_id`; P5T-before-P6.
+**Settled (not for re-approval):** optionality and the CPE requirement (FDR-03); R2 as provider behind a neutral port (FD-MC-07a); scope ownership, mutation authority and visibility inheritance (§§8.3, 8.5, 8.6); fallbacks; Template `cover_id`; P5T-before-P6; FD-1 technical-accountability delegation; FD-2 Miledge-account evaluation preference only; FD-3 FEF-TLC-001 adoption/effectiveness approval (Disposition §18).
 
 Today image placement is excluded from the current P6 media package. Any addition requires separate approval under the established Today experience governance. The existing approved Today experience remains unchanged.
 
-**Founder disposition requested:**
+**Technical Lead action under FD-1:** assess the §3–§5 recommendations with existing engineering, security, product and domain owners, verify limits/runtime/cost controls where needed, and record final technical defaults in the existing MEDIA-1 decision authority. Prior values are not automatically approved.
 
-1. **Delegation.** Delegate the MEDIA-1 technical defaults to the Technical Lead as described in §2.4, narrow the scope, or ratify the §3–§4 proposals item by item.
-2. **Account.** Designate the R2 account owner and environments, and decide the Miledge-versus-separate account placement against Disposition §8.2 (§2.6). Name the budget owner and bounded spend. Creating any non-production resource needs its own later authorization.
-3. **Policy items.** Deletion SLA, retention and backup purge, and takedown and reporting policy (Disposition §14 items 2–3).
-4. **FEF-TLC-001.** Confirm whether the role model is effective (§2.5).
-5. **Scope changes, if wanted:** Today image placement, a Template media reference, or deferral of the Cloudflare Images evaluation.
-6. **Production** resources, credentials, live Member images and release remain separate and later.
+**Founder disposition still required:**
+
+1. Deletion SLA; object/master and backup retention/purge; takedown/reporting and moderation; and acceptable residual access/revocation window (see separate Privacy Decision Brief).
+2. Final R2 account arrangement, operational/legal ownership, environment/resource boundaries, budget owner, attribution and bounded spend. FD-2 allows evaluation only.
+3. Non-production resource creation and any implementation package authorization.
+4. Production resources, credentials, live Member images, release and deployment.
+5. Scope changes, if wanted: Today image placement or a Template media reference. The optional Cloudflare Images evaluation remains subject to the existing bounded-proof and resource-authorization boundaries.
 
 ## 9. MEDIA-1 decision record and programme references (prepared, not applied)
 
-Disposition §8.4 requires a Tiizi media decision record. None exists as a standalone document on `main`. `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` is its preparation and seed, and its §7 holds the open items. The two PR #154 documents are supporting assessments and must not hold final defaults.
+Disposition §8.4 requires a Tiizi media decision record. The existing `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` is that authority; its §9 now holds the 2026-11-06 technical assessment and will hold any explicit, attributable Technical Lead decisions. This document and the integration assessment remain supporting analysis. The separate Founder Privacy Decision Brief provides recommendations but is not a decision registry.
 
-Proposed closure path, applying only after Founder disposition and not part of this PR:
-
-- Record the final values in one dedicated, versioned MEDIA-1 decision record. The choice is either a new `TIIZI-MEDIA-1-DECISION-RECORD-001.md` or a MEDIA-1 section appended to `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` (its §§4 and 7). Each value records who decided it and under what authority.
-- Add a Master Programme change-log row that links the record, states the MEDIA-1 status, and states what remains Founder-reserved.
-- Reference the record from FER-001-B P6 as the MEDIA-1 deliverable.
-- Do not alter the Founder Disposition without a separate authorized decision.
+The Master Programme v2.90 change log and FER-001-B P6 point to this existing authority. Record final technical values there with decision owner/date, source rationale, evidence, limits, verification status and any remaining conditions. Founder privacy, account, spend, resource, package and production decisions remain in the existing Founder Disposition. MEDIA-1 remains open and is not marked approved or closed here.
 
 MEDIA-1 is **not** marked approved or closed by this PR.
 
@@ -285,15 +281,16 @@ MEDIA-1 is **not** marked approved or closed by this PR.
 
 ## 11. Document status
 
-These are supporting records for Technical Lead review and Founder disposition. Any approved decision must be entered through the existing governance records by the authorized owner. These documents are not a parallel decision registry. The original assessment remains at `docs/programme/TIIZI-V2-MEDIA-UPLOAD-INTEGRATION-ASSESSMENT-001.md`.
+These are supporting records for Technical Lead review and Founder disposition. FD-1/2/3 are recorded in the existing Member Completion Founder Disposition §18; technical recommendations and any later Technical Lead decisions belong in the existing `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §9. The privacy brief remains a non-authoritative decision brief. These documents are not a parallel decision registry. MEDIA-1 is not closed. The original integration assessment remains at `docs/programme/TIIZI-V2-MEDIA-UPLOAD-INTEGRATION-ASSESSMENT-001.md`.
 
 ## Source register
 
-- `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` (v2.89 at the verified baseline) — P5T and P6 sequence and P5T status.
-- `docs/programme/TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md` §§8 (including §§8.1–8.6), 14, 17 — FD-MC-07/07a, ownership, visibility, mutation, Founder-reserved MEDIA-1 inputs, CPE sequencing.
+- `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` v2.90 — programme sequence and dated FD alignment change-log reference.
+- `docs/programme/TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md` §§8, 14, 17, 18 — existing Product Truth and FD-1/FD-2/FD-3 scope; privacy/resource/package/production holds.
 - `docs/programme/TIIZI-FER-001-A-FOUNDER-DECISION-RECONCILIATION-001.md` — FDR-03 and the separate-authorization boundary.
 - `docs/programme/TIIZI-FER-001-B-EXPERIENCE-RECOVERY-IMPLEMENTATION-PLAN-001.md` — sequence, P6 dependencies, tests and gates.
-- `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §§1–8 — provider, architecture and the open MEDIA-1 items (§7).
+- `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §§1–9 — existing MEDIA-1 decision authority, technical assessment and cost/account evaluation status.
+- `docs/programme/TIIZI-MEDIA-1-FOUNDER-PRIVACY-DECISION-BRIEF-001.md` — non-approved Founder privacy options and trade-offs.
 - `docs/programme/TIIZI-V2-MEDIA-UPLOAD-INTEGRATION-ASSESSMENT-001.md` — companion technical assessment.
 - `docs/programme/TIIZI-FER-TPL-001-CHALLENGE-TEMPLATE-CAPABILITY-ALIGNMENT.md` — Template `cover_id` boundary.
 - `docs/programme/TIIZI-TECHNICAL-CONTROL-BOARD.md` — capability status and dependencies.

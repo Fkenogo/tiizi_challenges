@@ -136,16 +136,9 @@ and record why.
 
 ## 4. Engineering-team coordination (FEF-TLC-001)
 
-The proposed team-working implementation is in
-`docs/programme/TIIZI-FEF-TLC-001-TEAM-ACTIVATION.md`.
-Once that candidate is Founder-approved and merged, treat its execution-role
-separation as binding alongside — not above — the V2 exclusions and architecture
-rules in §§1–3. The Technical Lead coordinates, Programme Controller tracks,
-Architecture & Decision Controller protects decisions, Coding Agent implements,
-and independent Code Reviewer verifies. The Chief of Staff is a portfolio role,
-not the Tiizi Technical Lead. No agent may self-merge or claim its own changes
-were independently reviewed. Existing Founder decisions and Master Programme
-continue to control scope and authority.
+FEF-TLC-001 v1.0 is merged (PR #106, merge `542052c12ca7910a297da89f28ae01120b220980`) and Founder adoption/effectiveness approval was confirmed on 2026-11-06 (Member Completion Founder Disposition §18.3). Apply its execution-role separation alongside — not above — the V2 exclusions and architecture rules in §§1–3. The Founder coordinates directly with the Technical Lead; the Technical Lead is accountable for engineering coordination; the Programme Controller tracks; the Architecture & Decision Controller protects decisions; the Coding Agent implements; and an independent Code Reviewer verifies. The Chief of Staff is a portfolio role, is not the Tiizi Technical Lead, and is not an engineering approval gatekeeper. No agent may self-merge or claim its own changes were independently reviewed. Founder-reserved decisions and the Master Programme continue to control scope and authority.
+
+**Activation evidence boundary:** Founder approval is recorded; completion of required role assignments and other activation prerequisites is not verified. The Technical Lead's role-assignment confirmation and current-state refresh remain pending in the FEF-TLC-001 activation record. Do not infer missing assignments or claim a verification date. This uncertainty does not waive independent review or authorize a package, merge, or deployment.
 
 Protect the assembled volunteer experience: first reproduce the affected
 member/steward journey against the adopted V2 Experience Reference, then show

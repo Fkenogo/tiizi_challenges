@@ -198,3 +198,11 @@ This alignment profile should be reviewed again when any of the following occurs
 ## 14. Non-Effects
 
 This record does not authorise implementation, change Founder authority, change project architecture, create Framework Evolution, import FEF doctrine into Tiizi constitutional governance, or make project lessons binding on other Founder projects.
+
+## 15. FEF-TLC-001 Founder approval and activation status (2026-11-06)
+
+PR #106 merged `TIIZI-FEF-TLC-001-TEAM-ACTIVATION.md` at merge commit `542052c12ca7910a297da89f28ae01120b220980` on 2026-10-27. The Founder separately confirmed adoption and effectiveness approval on 2026-11-06; the decision is recorded in Member Completion Founder Disposition §18.3. The Founder approval date is not the activation-prerequisite verification date.
+
+**Role-assignment completion remains unverified.** No attributable current record was found confirming the Technical Lead's step-2 role-assignment confirmation or the current assignments for Programme Controller and Architecture & Decision Controller. The Coding Agent is recognized as an implementation function; this does not establish a standing person/account assignment. Independent reviewer assignments remain per-task and must be distinct from the implementer. The Chief of Staff is not an engineering approval gatekeeper. No activation-completion date is inferred. See the activation evidence table in `docs/programme/TIIZI-FEF-TLC-001-TEAM-ACTIVATION.md`.
+
+This update reconciles project operations only; it does not import FEF as Tiizi constitutional doctrine, alter the Master Programme's authority, create a new role, or authorize implementation or deployment.
