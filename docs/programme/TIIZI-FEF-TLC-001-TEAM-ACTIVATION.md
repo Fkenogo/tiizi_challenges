@@ -65,10 +65,11 @@ Every handoff should state: package; exact source baseline; Product Truth / expe
 | Candidate merge | Confirmed: PR #106, merge commit `542052c12ca7910a297da89f28ae01120b220980`, 2026-10-27 |
 | Founder adoption/effectiveness approval | Confirmed: 2026-11-06, recorded in Member Completion Founder Disposition §18.3 |
 | Date all activation prerequisites verified | **Not established.** No completion date is claimed |
-| Technical Lead named assignment and step-2 confirmation | **Not confirmed in an attributable current role-assignment record** |
+| Technical Lead function assignment | **Confirmed by Founder FD-A, 2026-11-06:** ChatGPT is assigned the Tiizi Technical Lead function, working directly with the Founder. This is a function assignment, not a named human employee assignment. |
+| Technical Lead step-2 confirmation and current-state refresh | **Not confirmed.** FD-A expressly does not establish completion of the remaining FEF-TLC-001 activation steps. |
 | Programme Controller and Architecture & Decision Controller assignments | **Not confirmed in an attributable current role-assignment record** |
 | Coding Agent | Role explicitly recognized; this approval does not establish a permanent person/account assignment |
 | Independent Code Reviewer assignment | **Not confirmed as a standing assignment**; each review still requires an independent reviewer/session appropriate to the change |
 | Chief of Staff operational assessment | Not found as completed; it is not an engineering approval gate |
 
-The approval and the role-assignment completion date are separate facts. Unknown assignments remain unassigned/unknown until supported by attributable evidence.
+The approval and the role-assignment completion date are separate facts. FD-A now provides attributable Founder evidence for the Technical Lead function assignment only. It does not establish a named human employee, step-2 confirmation, activation completion date, or assignments for other roles. To confirm the remaining assignments, the activation record requires a dated, attributable assignment entry identifying the assigning authority and the person/account/session responsible for each function, the assigned scope, and acceptance/confirmation; where no person or account has been assigned, record that role as unassigned rather than infer one. To complete step 2, the Technical Lead must add an attributable dated confirmation that role assignments have been reviewed and current repository, branch, programme status and Founder feedback have been refreshed. These entries are separate from FD-A; no date, signature format or named human assignment is presumed. Unknown assignments remain unassigned/unknown until supported by attributable evidence.

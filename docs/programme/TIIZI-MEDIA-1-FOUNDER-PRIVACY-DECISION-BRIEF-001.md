@@ -4,8 +4,8 @@
 **Prepared:** 2026-11-06
 **Decision owner:** Founder
 **Status:** **DECISION BRIEF ONLY — NO PRIVACY VALUES APPROVED BY THIS DOCUMENT**
-**Repository baseline:** PR #155 merge `a6a6dd08d62fc64b1803f40f5d81c53d092b1e8b`
-**Authority:** Member Completion Founder Disposition §§8, 10, 14, 18; MEDIA Capability Assessment §9
+**Repository baseline:** `f89698e6b511abe4cc1a5a78de4bad485a9372fd`
+**Authority:** Member Completion Founder Disposition §§8, 10, 14, 18–19; MEDIA Capability Assessment §9
 
 ## 1. Purpose and boundary
 
@@ -42,15 +42,15 @@ The following six decisions remain with the Founder; this brief proposes no adop
 | 3. Normalized-master retention | Decide whether to retain a metadata-stripped normalized master for re-cropping, and for what scope lifecycle/period. | Technical assessment recommends discarding camera originals and retaining a normalized master only if approved; current proposal enables later re-cropping from that master. |
 | 4. Maximum residual access | Set maximum acceptable access after membership/scope revocation or takedown. | Signed URL access can persist until URL expiry, plus any remaining cache freshness. MEDIA-1 proposes a 60-second URL and `private, no-store` as provisional engineering settings, not a privacy decision. Downloaded copies cannot be recalled. |
 | 5. Audit retention | Set audit-log retention, access review and incident handling. | Engineering proposes metadata-only events and no image bytes, EXIF, signatures or credentials in logs. No audit period is set. |
-| 6. Account, spend and owners | Select account arrangement, bounded spend approval, billing owner, privacy owner and operational owner. | FD-2 allows evaluation of the Miledge Cloudflare account only. A separate Tiizi account gives clearer isolation/attribution; shared-account free allowances are not presumed available. No resource, access, paid feature or spend is authorized. |
+| 6. Spend and responsible owners | Set any bounded spend approval and identify billing, privacy and operational owners. | FD-B has selected the Founder-owned Miledge Cloudflare account as preferred R2 account, conditional on isolation, distinct attribution/monitoring and further Founder approvals. Account selection does not authorize resource creation, access, additional spend or production use. Shared-account free allowances are not presumed available. |
 
 ### Cloudflare account and expected spend summary
 
-FD-MC-07a selects R2 behind the provider-neutral ObjectStore interface. FD-2 permits evaluation of the existing Miledge account, conditional on Tiizi-specific isolation, separate environments, least privilege, clear ownership, billing attribution and acceptable cross-product risk. The technical assessment recommends comparing that option with a separate Tiizi-owned account; the latter gives a clearer independence boundary, while the former may reduce administration but requires evidence for every isolation and cost condition. The Founder must select the arrangement.
+FD-MC-07a selects R2 behind the provider-neutral ObjectStore interface. FD-B (Founder authorization 2026-11-06) selects the existing Founder-owned Miledge Cloudflare account as Tiizi's preferred R2 account. The Founder confirms the account is subscribed and R2 is available. The arrangement is conditional on Tiizi-specific resource and credential isolation, separate non-production and production environments, least-privilege access, distinct cost attribution and usage monitoring, and Founder approval before resource creation, additional expenditure or production use. This is an account-arrangement decision only; no access, provisioning, spend or production use is authorized. R2 free allowances remain uncommitted until account eligibility and other-product consumption are verified. Responsible privacy and operational owners and any spend limit remain undecided.
 
 At the official rates retrieved 2026-11-06, an illustrative expected first-year scenario (2,500 new images/month, 1 MiB master plus variants on average, 1 million R2 GETs/month, 30,000 retained assets by month 12) estimates about $0.33/month in R2 storage and operations when a fresh Standard free allowance is available. High usage (25,000 uploads/month and 25 million displayed reads/month) estimates about $28.34/month at month-12 inventory after billable-unit rounding. These figures exclude API compute, PostgreSQL, backups, logs/monitoring, account costs and any Cloudflare Images usage; they are not a budget, forecast commitment or spend approval. Shared-account allowances and existing usage may make the free allowance unavailable. See the existing MEDIA-1 decision record §10.2 for low/expected/high assumptions and provider rates.
 
-The open non-technical decisions are the six Founder choices above, plus confirmation of responsible privacy and operational owners. P5T completion remains before P6/MEDIA-2. MEDIA-1 remains open; no implementation, resource, migration, production access or deployment is authorized.
+The open non-technical decisions are the six Founder choices above, including spend limits and responsible privacy and operational owners. FD-B's account selection is recorded but its conditions and separate provisioning/spend approvals remain outstanding. P5T completion remains before P6/MEDIA-2. MEDIA-1 remains open; no implementation, resource, migration, production access or deployment is authorized.
 
 ## 5. Evidence and limitations
 

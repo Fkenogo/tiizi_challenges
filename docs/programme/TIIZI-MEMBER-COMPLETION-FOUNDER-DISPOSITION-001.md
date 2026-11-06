@@ -548,3 +548,19 @@ On **2026-11-06**, the Founder confirms adoption and effectiveness approval for 
 The operating principles are: Founder coordinates directly with the Technical Lead; the Technical Lead is accountable for engineering coordination; the Coding Agent is an explicitly recognized implementation role; independent review and existing engineering controls remain applicable; the Chief of Staff is not an engineering approval gatekeeper; and Founder-reserved decisions remain with the Founder.
 
 The framework's role-assignment and activation-completion prerequisites have **not been verified as complete** by this addendum. No missing person, assignment, or completion date is inferred. The Technical Lead's role-assignment confirmation and current-state refresh remain pending evidence in the FEF-TLC-001 activation record. The approval does not authorize any implementation or merge.
+
+## 19. TIIZI-MEDIA-1-DECISION-ALIGN-002 — Founder decisions (2026-11-06)
+
+This addendum records the Founder's authorization dated **2026-11-06**. It supplements §18 without changing product scope, privacy policy, implementation authority, or the MEDIA-1/P5T/P6 sequence. It authorizes no resource creation, expenditure, implementation, migration, production access, deployment, or merge.
+
+### 19.1 FD-A — Technical Lead function assignment (APPROVED)
+
+The Founder assigns ChatGPT the Tiizi Technical Lead function, working directly with the Founder. The Technical Lead coordinates engineering, makes bounded technical decisions under §18.1/FD-1, and integrates reviews. The Coding Agent performs implementation and evidence preparation; the Independent Code Reviewer conducts a separate review session/agent. The Founder retains product policy, privacy, infrastructure expenditure, implementation-package approval, merge, and deployment authority.
+
+This assigns a function; it does not assert that ChatGPT is a named human employee or establish completion of all FEF-TLC-001 activation steps. In particular, it does not confirm the Programme Controller, Architecture & Decision Controller, or standing Independent Code Reviewer assignments, nor a completion date for step 2/current-state refresh. Those remain unverified unless attributable evidence is recorded in the existing activation record. FD-A does not by itself establish that owner consultations required for a technical default have occurred.
+
+### 19.2 FD-B — Preferred Cloudflare account arrangement (APPROVED)
+
+The Founder selects the existing Founder-owned Miledge Cloudflare account as Tiizi's preferred R2 account arrangement. The Founder confirms that the account is subscribed and R2 is available. Use is conditional on Tiizi-specific resource and credential isolation; separate non-production and production environments; least-privilege access; distinct cost attribution and usage monitoring; and Founder approval before resource creation, additional expenditure, or production use.
+
+This decision selects an account arrangement only. It does not authorize access, provisioning, buckets, credentials, paid features, expenditure, or production use. It supersedes §18.2's “approved for evaluation only” status as to account selection; all provisioning, spend, and production controls in §18.2 remain in force. No Miledge product or portfolio authority over Tiizi is created.
