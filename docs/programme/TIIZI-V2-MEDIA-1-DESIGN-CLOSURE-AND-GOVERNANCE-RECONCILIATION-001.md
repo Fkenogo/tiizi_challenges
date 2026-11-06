@@ -85,7 +85,7 @@ Revision 1 called FEF-TLC-001 "unmerged". That was wrong. Verified evidence on `
 | `AGENTS.md` §4 | The execution-role separation is binding "once that candidate is Founder-approved and merged". It does not record that approval |
 | `CLAUDE.md` line 5 | Applies the file "when the FEF-TLC-001 adoption candidate is merged **and effective**" |
 | Master Programme, Technical Control Board, `docs/governance/FEF-ALIGNMENT.md` | No reference to FEF-TLC-001 and no activation row |
-| Founder Experience Recovery Baseline 001 §F | Describes the FEF-TLC-001 roles as supporting implementation and review. It does not record an activation decision, and it states engineering reconciliation was still pending |
+| Founder Experience Recovery Baseline 001, document header and §F | The reconciliation-pending statement appears in both the document header and §F. This is evidence of pending reconciliation, not a determination of whether FEF-TLC-001 is effective |
 
 **Result: merge CONFIRMED; activation UNKNOWN.** The signals about effectiveness conflict, and no activation decision was found. Activation is not inferred. This package neither relies on the FEF-TLC-001 role model for authority nor claims it is ineffective. It names no FEF-TLC-001 role as a decision-maker. Founder confirmation of effectiveness is requested (§8). Under FEF-TLC-001 the Technical Lead selects bounded approved packages and the Founder keeps product decisions, so the role model would not by itself grant MEDIA-1 decision authority in any case.
 
@@ -245,7 +245,9 @@ No package below is authorized by this document. FER-001-B sequence and package 
 
 ## 8. Decisions and authorization boundaries
 
-**Settled (not for re-approval):** optionality and the CPE requirement (FDR-03); R2 as provider behind a neutral port (FD-MC-07a); scope ownership, mutation authority and visibility inheritance (§§8.3, 8.5, 8.6); fallbacks; Template `cover_id`; P5T-before-P6; Today image placement excluded.
+**Settled (not for re-approval):** optionality and the CPE requirement (FDR-03); R2 as provider behind a neutral port (FD-MC-07a); scope ownership, mutation authority and visibility inheritance (§§8.3, 8.5, 8.6); fallbacks; Template `cover_id`; P5T-before-P6.
+
+Today image placement is excluded from the current P6 media package. Any addition requires separate approval under the established Today experience governance. The existing approved Today experience remains unchanged.
 
 **Founder disposition requested:**
 
