@@ -10,6 +10,7 @@
 **Addendum:** §16 FD-PILOT-01 (Limited Kenya Pilot) is **FOUNDER APPROVED / EFFECTIVE UPON MERGE of PR #104 into `main`**; §§1–15 are unchanged.
 **Addendum 2 (FER-001 alignment):** §17 records the Founder's *Complete Experience, Controlled Pilot* direction (28 October 2026) and supersedes, **for sequencing only**, the feature deferrals of §16; §§1–16 are preserved as historical text. See §17.
 **Addendum 3 (TIIZI-MEDIA-1-FD-ALIGN-001, Founder approval 2026-11-06):** §18 records three Founder decisions on MEDIA-1 technical accountability, Cloudflare account evaluation direction, and FEF-TLC-001 adoption. Earlier text is preserved; §18 supersedes only the specific authority/status statements identified there.
+**Addendum 4 (TIIZI-MEDIA-1-FD-PRIVACY-001, Founder approval 2026-11-06):** §20 records six approved initial MEDIA-1 privacy policies, subject to legal applicability, technical feasibility and operational verification before real-user pilot. Technical settings, owner assignments, expenditure and provisioning remain separate and pending; no implementation is authorized.
 **Nature:** Documentation, Product Truth and programme alignment only. **No implementation is authorized.** Each work package below still needs its own Founder authorization before it starts. This record is carried by PR #90, which is open, under review and unmerged; the PR is documentation only and authorizes no implementation.
 
 ## 1. How to read this record
@@ -564,3 +565,39 @@ This assigns a function; it does not assert that ChatGPT is a named human employ
 The Founder selects the existing Founder-owned Miledge Cloudflare account as Tiizi's preferred R2 account arrangement. The Founder confirms that the account is subscribed and R2 is available. Use is conditional on Tiizi-specific resource and credential isolation; separate non-production and production environments; least-privilege access; distinct cost attribution and usage monitoring; and Founder approval before resource creation, additional expenditure, or production use.
 
 This decision selects an account arrangement only. It does not authorize access, provisioning, buckets, credentials, paid features, expenditure, or production use. It supersedes §18.2's “approved for evaluation only” status as to account selection; all provisioning, spend, and production controls in §18.2 remain in force. No Miledge product or portfolio authority over Tiizi is created.
+
+## 20. TIIZI-MEDIA-1-FD-PRIVACY-001 — Founder privacy decisions (2026-11-06)
+
+The Founder approves the following initial MEDIA-1 privacy-policy baseline on **2026-11-06**, subject to legal applicability, technical feasibility and operational verification before any real-user pilot. These are policy requirements, not proof that the controls, storage, backup service, takedown process or audit system have been implemented. They do not adopt technical defaults or authorize implementation, resources, expenditure, production access or deployment. MEDIA-1 remains open; P5T remains ahead of P6.
+
+### 20.1 PRIV-01 — Image deletion (APPROVED POLICY)
+
+On an authorized deletion or terminal lifecycle event, suppress image visibility immediately and stop issuing new signed URLs. Initiate physical deletion as soon as operationally possible and complete primary-storage deletion within **30 calendar days**. Thirty days is a maximum, not a waiting period. Require reliable retries, confirmation and audit evidence. Profile images follow Profile/account deletion-anonymization; Group and Challenge images follow their governed scope lifecycle. Do not delete Group/Challenge media merely because its uploader leaves.
+
+### 20.2 PRIV-02 — Backups (APPROVED POLICY)
+
+Backups containing deleted images must expire or be purged within **90 calendar days**. A restore must not reactivate deleted or suppressed media: replay deletion records/tombstones before restored content is accessible. Verify actual backup topology and deletion propagation before real-user pilot. This decision does not claim that a backup service or restore procedure exists.
+
+### 20.3 PRIV-03 — Takedown and reporting (APPROVED POLICY)
+
+Authorized operators may immediately suppress an image when a validated urgent privacy, abuse or safety issue justifies action. Use an existing appropriate support channel initially. Before pilot, establish human review, escalation, documented outcomes, appeal/reconsideration, reporting categories, secure evidence handling and response responsibilities. No in-product reporting UI or automated moderation provider is authorized. A responsible operator remains to be named.
+
+### 20.4 PRIV-04 — Image retention (APPROVED POLICY)
+
+Discard camera originals after successful normalization and before an asset becomes available. Retain only an approved metadata-stripped normalized master and required display renditions. Retain the master only while the governed Profile, Group or Challenge scope legitimately requires it; delete it and its renditions under the approved lifecycle and deletion rules. Do not extend retention because the original uploader remains a member.
+
+### 20.5 PRIV-05 — Residual access (APPROVED POLICY TARGET)
+
+Target no more than **60 seconds of effective access** through previously issued signed URLs after revocation, replacement or suppression. Stop issuing new URLs after revocation and do not use shared caching for private media. Engineering must verify actual URL expiry, cache behavior and endpoint compatibility. A **60-second signed-URL TTL is only a candidate technical mechanism**, not proof that the policy target is met. If ARCH-001 signed-URL delivery cannot meet this target, report the conflict for Technical Lead/Founder disposition; do not silently change ARCH-001. Previously downloaded copies cannot be recalled.
+
+### 20.6 PRIV-06 — Audit records (APPROVED POLICY)
+
+Retain necessary media-operation audit metadata for **12 months**; delete it after that period unless a documented incident or applicable legal obligation justifies longer retention. Restrict audit access. Record actor, scope, asset reference, operation, timestamp, outcome and relevant authorization information. Never log image contents, credentials, signed URLs or unnecessary private metadata. Verify legal basis, applicable obligations and exception procedures before real-user pilot.
+
+### 20.7 Owners, dependencies and authority boundary
+
+The Founder retains final media privacy-policy and expenditure authority. ChatGPT is assigned the Technical Lead function under FD-A (§19.1); the Coding Agent performs implementation and evidence preparation; independent review remains separate. The Founder-owned Miledge Cloudflare account is the preferred R2 arrangement under FD-B (§19.2), subject to its isolation and approval conditions.
+
+Still outstanding are a named daily privacy/takedown operator, a named operational monitoring owner, applicable legal/privacy review, a complete infrastructure cost estimate, bounded spend authorization and Cloudflare resource-provisioning authorization. No individual, completed role assignment, legal conclusion, expenditure approval or provisioning approval is inferred here. The six Founder policy decisions do not automatically adopt any MEDIA-1 technical default.
+
+The separate independent assessment `TIIZI-MEDIA-1-TECH-CONSULT-001` (2026-11-06) is an assessor's report, not attributable backend/security or architecture-owner consultation. It recommends TD-01/04/06 as conditional passes and identifies a TD-05 Challenge-creation transaction-time authorization gap; accordingly, TD-05 remains on HOLD. This reference records no owner consultation or approval. The P5T `createTemplateDraft` authorization-revocation race is separately tracked in `TIIZI-FER-P5T-2-CREATE-TEMPLATE-DRAFT-AUTHORIZATION-REVOCATION-R2-PLAN-001`; it is not asserted to be the same defect and P5T scope is unchanged.
