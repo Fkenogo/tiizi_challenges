@@ -1,13 +1,14 @@
 # TIIZI — V2 Media Upload Integration Assessment 001
 
-**Reference:** TIIZI-V2-MEDIA-001-CORR-001
+**Reference:** TIIZI-V2-MEDIA-001-CORR-001 (Revision 2 — independent R1 corrections)
 **Date:** 2026-11-06
-**Status:** **TECHNICAL ASSESSMENT / FOUNDER REVIEW — NO BUILD; NO IMPLEMENTATION AUTHORIZED**
+**Status:** **SUPPORTING TECHNICAL ASSESSMENT / FOUNDER REVIEW — MEDIA-1 NOT CLOSED; NO BUILD; NO IMPLEMENTATION AUTHORIZED**
+**Companion:** `TIIZI-V2-MEDIA-1-DESIGN-CLOSURE-AND-GOVERNANCE-RECONCILIATION-001.md` (reference `TIIZI-V2-MEDIA-1-CLOSURE-RECON-001`), which carries the governance reconciliation and the current proposals.
 **Repository:** `Fkenogo/tiizi_challenges`
 **Assessment baseline:** `origin/main` / `51ec762643cc0feff150a719e89c8b97f4233927`
 **Assessment branch:** `docs/tiizi-v2-media-assessment-001`
 **Related programme package:** FER-001-B **P6 — Shared media**
-**Authority:** Founder direction, 6 November 2026; existing Tiizi Founder Disposition and FER-001 Gate 0; MV-206 consulted as external guidance only.
+**Authority:** Existing Tiizi Founder Disposition and FER-001 Gate 0; MV-206 consulted as external guidance only. A reported Founder direction of 6 November 2026 about the Miledge account is context only: it is not yet recorded in a governing record and authorizes no resource (see the companion §2.6).
 
 ## 1. Executive finding
 
@@ -15,7 +16,7 @@ Tiizi has a usable V2 foundation for presenting curated Group and Challenge cove
 
 The recommended programme path is the existing **P6 — Shared media** package: close the remaining MEDIA-1 design decisions, then build one API-authorized media service and storage adapter, followed by Profile, Group, and Challenge integrations and an isolated Founder Preview. Reuse one upload component with purpose-specific presentation and server-side authorization. Keep Templates on their current catalogue-cover contract; P6 asset references may be considered later without adding uploads to Template authoring.
 
-Cloudflare R2 is the preferred candidate for the technical evaluation. The previous Tiizi record contains FD-MC-07a selecting R2 behind a provider-neutral port. The 6 November direction makes clear that the availability of the paid Miledge Ventures account does not authorize Tiizi to use that account, provision a Tiizi bucket or credentials, or implement or deploy an integration. Treat account ownership, isolation, billing attribution, and actual provider use as explicit MEDIA-1 / implementation-gate decisions.
+Cloudflare R2 is the **selected** provider: FD-MC-07a (Disposition §8.1) selects R2 behind a provider-neutral port. Provider selection is distinct from resource and implementation authorization, which have not been granted. The availability of the paid Miledge Ventures account, and the reported Founder preference to use it, does not authorize Tiizi to use that account, provision a Tiizi bucket or credentials, or implement or deploy an integration. Account ownership, environments, isolation, billing attribution and budget ownership are Founder-reserved MEDIA-1 inputs (Disposition §14 item 3; `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §7), and placing Tiizi resources in a Miledge account must be reconciled with Tiizi independence under Disposition §8.2 (companion §2.6).
 
 ## 2. Repository reconciliation
 
@@ -24,14 +25,14 @@ Cloudflare R2 is the preferred candidate for the technical evaluation. The previ
 | Check | Result |
 |---|---|
 | Remote | `https://github.com/Fkenogo/tiizi_challenges.git` |
-| Fetch | `origin/main` fetched before checkout creation |
+| Fetch | `origin/main` fetched before the isolated checkout was created |
 | Verified `origin/main` SHA | `51ec762643cc0feff150a719e89c8b97f4233927` |
-| New checkout | `/private/tmp/tiizi-v2-media-assessment-001` |
-| Branch / HEAD | `docs/tiizi-v2-media-assessment-001` at `51ec762643cc0feff150a719e89c8b97f4233927` |
-| State at assessment start | Clean; branch tracked `origin/main`, 0 ahead / 0 behind |
+| Checkout | A new isolated worktree (local path not recorded here) |
+| Branch / HEAD at assessment start | `docs/tiizi-v2-media-assessment-001` at `51ec762643cc0feff150a719e89c8b97f4233927` |
+| State at assessment start | Clean; 0 ahead / 0 behind |
 | Dirty original checkout | Left untouched; no reset, stash, checkout, cleanup, or edits |
 
-The worktree registry contained multiple active worktrees and many stale/prunable records. The assessment used a new, unique path and did not switch or reorganize any existing worktree. `scripts/prg01LocalReconciliation.mjs` was run read-only as required by `AGENTS.md`; it confirmed this checkout's SHA and cleanliness. Its non-gating output did not establish preview identity, runtime state, PR state, or Founder acceptance, so those were checked separately below.
+The assessment used a new, unique worktree and did not switch or reorganize any existing worktree. `scripts/prg01LocalReconciliation.mjs` was run read-only as required by `AGENTS.md`. Its non-gating output did not establish preview identity, runtime state, PR state, or Founder acceptance, so those were checked separately.
 
 ### 2.2 Current V2 authority and ancestry
 
@@ -41,14 +42,14 @@ The 28 October FER-001 Gate 0 record is in the Master Programme as v2.81 and rec
 
 ### 2.3 Open PR and overlap review
 
-At assessment time, open PRs were #150, #145, #143, #107, and #94. No PR is specifically media work and none adds an upload path. Recheck their current heads and rebased diffs before P6 implementation because some touch adjacent surfaces:
+At review on 2026-11-06, GitHub listed open PRs #154 (this PR), #150, #145, #143, #107, and #94. These are point-in-time GitHub facts, not repository records, and must be re-verified at merge and before any implementation. No PR other than this one is media work and none adds an upload path. Recheck their current heads and rebased diffs before P6 implementation because some touch adjacent surfaces:
 
 | PR | Relevant overlap | Media finding |
 |---|---|---|
 | #107 — Experience Recovery | `src/v2/profile/V2ProfileScreen.tsx`, member shell, Groups screen, routes, Today | Experience recovery changes; no media upload or media contract |
 | #145 — Founder Preview corrections | Challenge list/detail/discovery components | Challenge presentation overlap; no media upload or media contract |
 | #150 — Today discovery correction | Today and discoverable-Challenge surfaces | Today/discovery presentation overlap; no media upload or media contract |
-| #143 — Template lifecycle UI | Operator Template authoring components | P5T overlap; Template covers remain catalogue IDs; no media upload |
+| #143 — Template lifecycle UI | Operator Template authoring components. This is the open Slice 5B implementation PR, while Master Programme v2.89 records Slice 5B implementation as not started and not authorized | P5T overlap; Template covers remain catalogue IDs; no media upload |
 | #94 — CI efficiency documentation | CI and programme documentation | No media overlap |
 
 PR #107's branch also contains a proposed programme row that the Master Programme explicitly says is not part of `main`; do not treat that branch as accepted authority. P5T remains incomplete at this baseline, and its approved sequencing places P5T before P6. P5T and P6 both own migrations and must not run concurrently.
@@ -61,7 +62,7 @@ The effective decisions are recorded in `docs/programme/TIIZI-MEMBER-COMPLETION-
 
 - **Scope and sequencing:** profile images, Group covers, and Challenge covers are one shared P6 capability required for CPE; upload is optional in each journey and initials/gradients remain the fallback. P6 is sequenced after P5T and before P7 (`TIIZI-FER-001-B` §P6 and the programme sequence).
 - **FDR-03:** explicitly restores optional Profile, Group, and Challenge uploads as required CPE functionality. No Member is required to upload an image. The decision also states that R2 account/credentials, a non-production environment, and any live use require separate authorization.
-- **Provider direction in the existing Tiizi record:** FD-MC-07a records R2 as Tiizi's initial object-store provider behind a provider-neutral `ObjectStore` / media port. Cloudflare Images is optional, not required. This assessment follows the 6 November instruction to treat the Miledge account's availability as evaluation context only; no Tiizi resource or integration use is approved by that fact.
+- **Provider direction in the existing Tiizi record:** FD-MC-07a records R2 as Tiizi's initial object-store provider behind a provider-neutral `ObjectStore` / media port. Cloudflare Images is optional, not required. The availability of the Miledge account, and the reported Founder preference to use it, is context only; no Tiizi resource or integration use is approved by that fact.
 - **Visibility:** Profile images are visible only where the member identity is authorized and are not anonymously public by default. Group covers inherit Group visibility/discovery. Challenge covers inherit Challenge visibility. The gradient catalogue is the fallback.
 - **Ownership:** ownership is by scope: Member/Profile, Group, or Challenge. The uploader is attribution for Group- and Challenge-scoped assets, not their owner. Group and Challenge media survive uploader account deletion while their own lifecycle requires them; a Profile image is removed when the member reaches deleted-anonymized.
 - **Mutation:** the member alone changes their Profile image; the Accountable Steward changes the Group cover. During Challenge establishment, the creator may set the cover only while holding an eligible current Group relationship authorizing the action. The Group Accountable Steward may replace/remove the cover throughout the Challenge lifecycle. Creator identity alone is not lasting authority.
@@ -74,7 +75,7 @@ MV-206 v0.1 (blob `1c1144e78d8446c19a6aecd415ef5fb8c227df85`, approved 8 October
 
 ### 3.3 Decisions still open
 
-The existing MEDIA-1 record explicitly leaves these technical choices unresolved: API-mediated versus direct scoped upload; exact byte/pixel limits and formats; variants/cropping; authorized delivery and cache behavior; replacement/deletion timings and retention/backup treatment; moderation/takedown operations; and budget/operations ownership. The Founder’s subsequent direction prefers planning around the existing paid Miledge Ventures account; actual access, resource creation, credentials and spend still require separate authorization. Legal/privacy processing arrangements remain a pre-pilot gate in the Member Disposition. This assessment proposes defaults in §5; none becomes a requirement until recorded through the existing Tiizi decision process by its authorized owner.
+The existing MEDIA-1 record leaves these choices unresolved: API-mediated versus direct scoped upload; exact byte/pixel limits and formats; variants/cropping; authorized delivery and cache behavior; replacement/deletion timings and retention/backup treatment; moderation/takedown operations; the R2 account owner and environments; and budget/operations ownership. **The existing records reserve them for Founder input:** Disposition §14 item 3 lists "MEDIA-1 specifics (upload mode, limits, variants, takedown, budget owner)" as remaining Founder inputs, and `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §7 is titled "Founder decisions required for MEDIA-1". This assessment does not reclassify them. It proposes defaults in §5; none becomes a requirement until the Founder disposes of it, or delegates the decision within a scope the Founder sets (companion §2.4). A reported Founder preference for the existing paid Miledge Ventures account is not yet recorded in a governing record; access, resource creation, credentials and spend still require separate authorization. Legal/privacy processing arrangements remain a pre-pilot gate in the Member Disposition.
 
 ## 4. Existing capability inventory
 
@@ -91,7 +92,7 @@ Classification applies to the **active V2 product path**; the archived V1 implem
 | Template cover/background | **Implemented and active (catalogue only)** | `api/src/challengeTemplates.ts` accepts only allowlisted `coverId`; `docs/programme/TIIZI-FER-TPL-001-CHALLENGE-TEMPLATE-CAPABILITY-ALIGNMENT.md` §§2.2, 2.4 says no upload in Templates and P6 owns any future media reference. No Template upload should be added in P5T. |
 | Knowledge images | **Implemented for catalogue content; unrelated to member uploads** | `knowledge_items.image_url` is content metadata (`api/migrations/002_phase_b_knowledge.sql`, `api/src/knowledge.ts`) used by `ActivityThumbnail`. It is not a Profile/Group/Challenge asset model or a trusted upload pipeline. |
 | Legacy upload service and Firebase Storage rules | **Implemented in archived V1; superseded/excluded for V2** | `src/services/imageUploadService.ts`, legacy feature callers, `storage.rules`, and `firebase.json` describe Firebase Storage behavior for older screens. They use URL-based storage and Firebase path rules; they do not provide the PostgreSQL scope/visibility authority required by V2. `AGENTS.md` §§1–2 prohibits using V1 Group/Challenge authority or product code as V2 implementation authority. |
-| V2 media endpoint / adapter / R2 configuration | **Missing** | No `/api/media` upload, finalize, remove, or delivery route; no `ObjectStore` adapter, R2 client configuration, Tiizi bucket, or Tiizi credential. Existing R2 is an evaluation candidate only. |
+| V2 media endpoint / adapter / R2 configuration | **Missing** | No `/api/media` upload, finalize, remove, or delivery route; no `ObjectStore` adapter, R2 client configuration, Tiizi bucket, or Tiizi credential. R2 is the selected provider (FD-MC-07a), but no Tiizi R2 resource exists. |
 | V2 image processing | **Missing** | No server image decoding/re-encoding, metadata stripping, pixel cap, variant generator, malware scan, or image CDN policy is implemented. Client MIME checks or browser preview are not server validation. |
 | Uploaded-media database references | **Missing** | No `media_assets` table or persisted asset reference for Profile/Group/Challenge. Current `cover_id` values identify catalogue choices, not objects. No signed upload or delivery URLs are stored because none exist. |
 | Authorization and lifecycle | **Partially implemented for catalogue changes only** | Existing Group settings restrict the screen to the Accountable Steward; Group and Challenge authority is checked in server paths. These checks do not authorize uploaded objects, reads, deletion, cache revocation, or orphan cleanup. Profile image mutation is absent. |
@@ -101,12 +102,12 @@ Classification applies to the **active V2 product path**; the archived V1 implem
 
 ### 5.1 Components and flow
 
-Use the V2 API as the authorization and asset-association authority, PostgreSQL for durable media metadata/references, and a narrow S3-compatible `ObjectStore` port with an R2 adapter as the preferred candidate:
+Use the V2 API as the authorization and asset-association authority, PostgreSQL for durable media metadata/references, and a narrow S3-compatible `ObjectStore` port with an adapter for the selected provider, R2 (FD-MC-07a):
 
 1. An authenticated browser requests an upload for a purpose and an authorized scope. The client never supplies an owner Member ID, Group ID, Challenge ID, or role that the server trusts without resolving it from the authenticated actor and current domain authority.
 2. For the initial small-image capability, **prefer API-mediated upload**: the API checks scope authority before accepting bytes, enforces request throttles, decodes/normalizes the raster, then writes opaque generated keys to a private bucket. This keeps object write credentials out of the browser and makes one simple path for Profile, Group, and Challenge. If real preview/load evidence shows API-mediated transfer is unsuitable, evaluate direct scoped upload plus mandatory server-side finalization as a later alternative.
 3. Persist a stable Tiizi asset ID and scope/purpose/status/metadata in the same governed flow as attaching the reference to the Profile, Group, or Challenge. A provider URL is never canonical data. Keep catalogue `cover_id` for fallback.
-4. For reads, authorize the viewer against current Profile identity, Group visibility/membership, or Challenge visibility before issuing a narrowly scoped, short-expiry read URL (or streaming through an authorized API endpoint). Do not persist signed URLs. Profile media stays private. Avoid a public bucket or `r2.dev` for private or mixed-visibility media. Public caching may be evaluated only for objects whose visibility is already public and whose URLs/variants are immutable; it is not an entitlement check.
+4. For reads, authorize the viewer against current Profile identity, Group visibility/membership, or Challenge visibility on every request. The initial proposal is to stream through an authenticated API endpoint (`ETag`, `private, no-cache`); a narrowly scoped, short-expiry signed read URL is a measured alternative whose revocation window is URL lifetime plus client cache lifetime (companion §4.4). Do not persist signed URLs. Profile media stays private. Avoid a public bucket or `r2.dev` for private or mixed-visibility media. Public caching may be evaluated only for objects whose visibility is already public and whose URLs/variants are immutable; it is not an entitlement check.
 5. Replace by validating and storing the new asset, committing the reference swap, then revoking/deleting the old object. A failed replacement leaves the old image intact. Cleanup removes unassociated uploads only after a bounded grace period and an authoritative reference check.
 
 This is intentionally a small application capability, not a shared Miledge media service. The image UI can be one reusable `MediaUploadField`/picker with purpose, aspect presentation, fallback, progress, retry, replace, and remove options; all permission decisions remain server-side. Do not create a generalized media library, public URL editor, or Template upload surface.
@@ -115,7 +116,7 @@ This is intentionally a small application capability, not a shared Miledge media
 
 For a first proof, consider JPEG, PNG, and WebP; reject SVG and active-content formats. Consider HEIC only if the server can reliably decode and re-encode it. Treat extension and browser MIME as hints only. Decode the actual image, cap compressed bytes and decoded pixels before allocation, re-encode to supported raster output, normalize orientation, and strip EXIF/GPS. Store only normalized masters/variants needed for the product unless a retention decision requires originals.
 
-The earlier media record's approximate **5 MB / 25 megapixel** input envelope and profile/cover variant examples are proposals, not settled Tiizi requirements. Derive final dimensions and crop controls from the current mobile surfaces and prove memory/latency cost. Malware scanning should be threat-based; it is not a substitute for decode/re-encode. No crop/aspect ratio or camera-capture requirement is inferred here.
+The earlier media record's approximate **5 MB / 25 megapixel** input envelope and profile/cover variant examples are proposals, not settled Tiizi requirements, and they are Founder-reserved items. Many phone originals exceed both (often 48–50 MP and over 5 MB), and a 25 MP decode needs roughly 100 MB of memory, so the proposal is client-side downscale before upload, a lower server pixel ceiling, a decode concurrency limit, a timeout and decoder isolation (companion §4.3). Derive final dimensions and crop controls from the current mobile surfaces and prove memory/latency cost. Crop handling, colour space, output format, original retention and backup/DR remain undecided. Malware scanning should be threat-based; it is not a substitute for decode/re-encode. No crop/aspect ratio or camera-capture requirement is inferred here.
 
 ### 5.3 Scope model and database boundary
 
@@ -125,7 +126,7 @@ This describes assessment inputs, not an approved schema. Assign a sequential mi
 
 ### 5.4 Delivery, cache, retention, and portability
 
-Start with private storage and re-authorized reads, particularly for Profile and private Group/Challenge contexts. Short-lived signed reads are a proposed compromise between API egress and authorization freshness; their expiry, cache headers, revocation gap, and behavior after membership/visibility changes require proof. Do not serve private images through a publicly addressable CDN cache. For approved public assets, use immutable/versioned variants and a separately configured public delivery path only if measurement justifies it.
+Start with private storage and re-authorized reads, particularly for Profile and private Group/Challenge contexts. Authenticated API delivery is the initial proposal. Short-lived signed reads are a measured alternative, a compromise between API egress and authorization freshness; their maximum revocation window is URL lifetime plus any client cache lifetime (for example a 60-second URL cached for 60 seconds allows about 120 seconds), and their expiry, cache headers and behavior after membership/visibility changes require proof. Do not serve private images through a publicly addressable CDN cache. For approved public assets, use immutable/versioned variants and a separately configured public delivery path only if measurement justifies it.
 
 No Tiizi retention SLA, backup deletion timing, takedown workflow, or Group/Challenge deletion lifecycle was found in the media decision. Profile deletion is tied to the approved `deleted-anonymized` state; Group/Challenge media follows its scope lifecycle. Before implementation, decide actual purge timing, backups, failed-deletion retries, user request handling, and operator suppression/takedown authority. Store adapter interfaces and opaque keys so bytes can be copied to another S3-compatible store without changing product references.
 
@@ -133,7 +134,7 @@ No Tiizi retention SLA, backup deletion timing, takedown workflow, or Group/Chal
 
 ### 6.1 Profile photo
 
-- **Upload entry:** V2 Profile page/settings, at the existing identity/photo placeholder, with an optional select/replace/remove interaction. Do not gate Profile completion on uploading a photo.
+- **Upload entry:** FDR-03 specifies an optional Profile image in "onboarding or Profile". Entry points are the V2 Profile page/settings, at the existing identity/photo placeholder, and, where the approved onboarding composition presents a Profile step, an optional image control within it. Neither gates Profile completion or onboarding, and no new required or skippable step is added. Confirm onboarding placement against onboarding Product Truth before UI scope is set.
 - **Display:** Profile itself and only those Member identity projections where the Member identity is already authorized (including authorized Group/Challenge contexts where the current V2 composition presents identity). No anonymous public profile-photo URL by default. Today/Member Shell may consume the current member's own image only if the approved screen composition uses it.
 - **Authority/lifecycle:** member-only mutation; current API actor derived from verified auth, never a request-supplied member ID. Remove the Profile image when the Member reaches deleted-anonymized; deletion SLAs/backup timing remain open.
 - **Gap:** `/api/me` has an explicit unconfigured slot but no asset ID; Profile page has initials fallback and no upload/removal control; no signed-in read capability or persisted Profile reference exists.
@@ -150,7 +151,7 @@ No Tiizi retention SLA, backup deletion timing, takedown workflow, or Group/Chal
 
 - **Creation:** place the optional upload in the existing Name & Appearance / Challenge background area in the established wizard. It must not add a new step or change Challenge semantic validation/establishment.
 - **Management:** creator mutations must be re-authorized against a current eligible Group relationship. The Group Accountable Steward retains replace/remove authority through the Challenge lifecycle. Do not grant broader Challenge administration.
-- **Display:** current Challenge list, discovery row, detail hero, and created-Challenge surfaces can consume the governed media reference; Challenge visibility rules control retrieval. Today currently has no cover field in its read projection. A Today thumbnail is a bounded presentation candidate, but its exact placement must be reconciled with the accepted Today experience before UI scope is set.
+- **Display:** current Challenge list, discovery row, detail hero, and created-Challenge surfaces can consume the governed media reference; Challenge visibility rules control retrieval. Today currently has no cover field in its read projection. **Today image placement is excluded from this package**; it may be added only through separate experience approval.
 - **Fallback/lifecycle:** retain `cover_id` and gradient fallback. Replacing/deleting a cover does not alter Challenge truth or Template provenance. Preserve Challenge-scoped media after uploader deletion while the Challenge/history requires it.
 - **Gap:** current wizard/list/detail display local gradients and catalogue IDs only; there is no media reference in the Today projection or uploaded-asset support.
 
@@ -210,14 +211,14 @@ Use FER-001-B's existing P6 package rather than create a competing programme seq
 
 | Package | Scope / exit evidence | Dependency / boundary |
 |---|---|---|
-| **MEDIA-1 — decision closure** | Implement FDR-03 as optional user journeys; approve upload mode, format/size/pixel limits, variants/crop, read authorization/cache, replacement and deletion/retention, takedown owner, budget/operations owner, account/environment isolation, and isolated proof plan. Record privacy/legal dependencies. | No code. Depends on FDR-03; R2 account availability is not resource authorization. |
+| **MEDIA-1 — decision closure** | Founder disposition of the reserved items (upload mode, format/size/pixel limits, variants/crop, read authorization/cache, replacement and deletion/retention, takedown owner, budget/operations owner, account/environment isolation, isolated proof plan including the optional Cloudflare Images evaluation). The Technical Lead prepares defaults and owner assignments. Record privacy/legal dependencies. Final values go in the MEDIA-1 decision record (companion §9). | No code. Depends on FDR-03; R2 account availability is not resource authorization. MEDIA-1 is not approved or closed by this PR. |
 | **MEDIA-2a — shared backend foundation** | ObjectStore port + R2 adapter; media metadata/reference model; authorized upload/read/replace/remove; decode/re-encode; scoped visibility; status/error/idempotency behavior; orphan/deletion cleanup hooks; exhaustive server and port tests. | MEDIA-1 and separate environment/credential/budget approval. Migration-owning; do not overlap P5T/P7 or another migration package. BG-1 is required for scheduled orphan cleanup, or an explicitly owned/manual proof procedure must be accepted for the bounded preview. |
 | **MEDIA-2b — Profile** | Bind existing Profile slot/UI to asset ID; own-member mutation/read; authorized identity consumers; initials fallback; lifecycle deletion. | 2a; Profile Foundation (MC-2) surfaces and canonical identity contract. Do not make photo upload a setup gate. |
 | **MEDIA-2c — Group** | Bind existing creation cover area, Settings replace/remove, Group card/Home/discovery reads; enforce steward and Group-visibility rules; retain gradients. | 2a; P4 Group surfaces and authorized Group read/mutation contract. |
-| **MEDIA-2d — Challenge** | Bind Name & Appearance, Challenge detail/list/discovery; optional Today display only after experience alignment; creator/steward authority; retain `cover_id`. | 2a; P5 wizard corrections and P5T completion; do not change Template authoring. |
+| **MEDIA-2d — Challenge** | Bind Name & Appearance, Challenge detail/list/discovery; Today display is excluded; creator/steward authority; retain `cover_id`. | 2a; P5 wizard corrections and P5T completion; do not change Template authoring. |
 | **MEDIA-3 — Founder Preview** | End-to-end Profile/Group/Challenge journeys with synthetic images on isolated data; mobile browser evidence, fallback, privacy, replacement/removal, and failure/retry. | 2b–2d; isolated non-production storage only; Founder acceptance. |
 
-**Programme sequencing:** FER-001-B places P5T before P6; P5T is not complete at this baseline (PR #143 remains open and the Master Programme says Slice 5B is only prepared / not authorized). Do not start migration-owning P6 implementation concurrently with P5T. P6 remains required for CPE and is itself not authorized. MEDIA-3 is not production acceptance.
+**Programme sequencing:** FER-001-B places P5T before P6; P5T is not complete at this baseline (Master Programme v2.89 says Slice 5B is only prepared / implementation not authorized, while PR #143, an open Slice 5B implementation PR, exists; re-verify at merge). Do not start migration-owning P6 implementation concurrently with P5T. P6 remains required for CPE and is itself not authorized. MEDIA-3 is not production acceptance.
 
 **Recorded P6 dependencies:** FDR-03, P1a (Profile surface), and MEDIA-1; BG-1 is needed only for scheduled cleanup. P5T is the required preceding migration-owning package. P6 is rated High / R2 in FER-001-B; its slices should be independently reviewed.
 
@@ -240,15 +241,15 @@ Real variants/backup copies increase bytes; signed/private delivery changes requ
 
 ### 11.2 Operational resources
 
-Expected roles: one backend engineer for API/security/storage/migration and cleanup; one frontend engineer for the shared picker and three purpose bindings; an independent security/code reviewer; a database/migration reviewer; a Cloudflare account operator for isolated credentials and billing; QA/mobile browser time; privacy/legal input for image processing, retention, and cross-border transfer; and Founder review of the concrete MEDIA-1 choices and MEDIA-3 evidence. Effort is high-risk and cross-cutting (FER-001-B labels P6 High / R2); no calendar estimate is reliable until MEDIA-1 and environment decisions are made.
+Expected roles: one backend engineer for API/security/storage/migration and cleanup; one frontend engineer for the shared picker and three purpose bindings; an independent security/code reviewer; a database/migration reviewer; a Cloudflare account operator for isolated credentials and billing; QA/mobile browser time; privacy/legal input for image processing, retention, and cross-border transfer; and Founder disposition of the reserved MEDIA-1 choices and review of MEDIA-3 evidence. Effort is high-risk and cross-cutting (FER-001-B labels P6 High / R2); no calendar estimate is reliable until MEDIA-1 and environment decisions are made.
 
 ## 12. Decisions and approvals before implementation
 
-The following are already decided and must not be re-opened absent an explicit amendment: optional Profile/Group/Challenge images required for CPE (FDR-03); R2 behind a neutral ObjectStore port (FD-MC-07a); scope ownership, visibility and mutation (Disposition §§8.3, 8.5–8.6); fallback catalogues/initials; Template `cover_id`; and P5T-before-P6 sequencing. The Founder’s preference for planning around the existing paid Miledge account resolves the former account-placement preference question, but not resource authorization.
+The following are already decided and must not be re-opened absent an explicit amendment: optional Profile/Group/Challenge images required for CPE (FDR-03); R2 behind a neutral ObjectStore port (FD-MC-07a); scope ownership, visibility and mutation (Disposition §§8.3, 8.5–8.6); fallback catalogues/initials; Template `cover_id`; and P5T-before-P6 sequencing.
 
-MEDIA-1 still needs technical defaults recorded through existing governance: upload flow, formats/limits, transformations, read/cache mechanics, pending/orphan/retry behavior, replacement and deletion mechanics, and isolated proof criteria. The Technical Lead and Architecture & Decision Controller should resolve these within approved product truth; do not require Founder approval for routine implementation detail. Escalate only where a proposed default changes product/privacy policy or domain authority.
+**Founder-reserved MEDIA-1 inputs remain open.** Disposition §14 item 3 and `TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §7 reserve for the Founder: upload mode, formats and limits, variants, delivery and cache mechanics, replacement and deletion timings, takedown, the R2 account owner and environments, cost and budget ownership, and the proof plan including the optional Cloudflare Images evaluation. This assessment supplies proposals for them. It does not reassign the decisions. Whether the Founder delegates any of them to the Technical Lead, and within what scope, is a Founder disposition (companion §2.4). Until then the Technical Lead and the existing backend, architecture, security, domain and operational owners may prepare recommendations only. The reported Founder preference for the existing paid Miledge account does not resolve the account question: it is not yet recorded, it authorizes no resource, and it must be reconciled with Tiizi independence under Disposition §8.2 (companion §2.6).
 
-Founder/authorized resource owner approval remains required before non-production R2 access/resource creation and bounded spend. Production resources, credentials, live Member images, production spend and deployment require their own existing package/release authorization. LIFE-1, legal/privacy and operational owners must resolve purge, backup, takedown, reporting and audit obligations before release; use the existing Founder disposition process only if those require a new product-policy decision. Today image placement remains excluded pending separate experience approval.
+Founder/authorized resource owner approval is required before non-production R2 access/resource creation and bounded spend. Production resources, credentials, live Member images, production spend and deployment require their own existing package/release authorization. LIFE-1, legal/privacy and operational owners must resolve purge, backup, takedown, reporting and audit obligations before release; product-policy decisions go through the existing Founder disposition process. Today image placement remains excluded pending separate experience approval.
 
 ## 13. Source register
 
@@ -257,7 +258,7 @@ Primary Tiizi sources at the stated baseline:
 - `AGENTS.md` §§1–3 — V1 exclusion, `/v2` and `/api` boundaries, PostgreSQL authority.
 - `docs/programme/TIIZI-V2-MASTER-PROGRAMME.md` — v2.89 programme state; §FER-001 Gate 0 v2.81 and PR #108 merge; current P5T/P6 sequence.
 - `docs/programme/TIIZI-MEMBER-COMPLETION-FOUNDER-DISPOSITION-001.md` §§3, 8, 17 — FD-MC-07a, visibility, scope ownership, mutation, CPE sequencing.
-- `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §§1–8 — prior MEDIA-1 decision, open implementation choices, proposed storage model and no-build boundary.
+- `docs/programme/TIIZI-MEDIA-CAPABILITY-ASSESSMENT-001.md` §§1–8 — prior MEDIA-1 decision, open implementation choices (§7, "Founder decisions required for MEDIA-1"), proposed storage model and no-build boundary. Disposition §14 item 3 and §8.4 — Founder-reserved MEDIA-1 inputs and the required decision record.
 - `docs/programme/TIIZI-FER-001-A-FOUNDER-DECISION-RECONCILIATION-001.md` — FDR decisions; explicitly distinguishes provider direction from live upload and states R2 resources/credentials require separate authorization.
 - `docs/programme/TIIZI-FER-001-B-EXPERIENCE-RECOVERY-IMPLEMENTATION-PLAN-001.md` — P6 deliverables, order, dependencies, tests, mobile scenarios, and Founder gate.
 - `docs/programme/TIIZI-TECHNICAL-CONTROL-BOARD.md` — current integration gaps and programme package status.
@@ -269,12 +270,14 @@ Primary Tiizi sources at the stated baseline:
 
 ## 14. Disposition
 
-**Assessment complete for Technical Lead review.** Recommendation: retain P6 as the single shared-media work package; use the already selected R2 behind a provider-neutral port; have the established technical decision owners record bounded MEDIA-1 defaults; obtain the existing separate resource authorization before isolated R2 proof; preserve current catalogue/initials fallbacks; then deliver P6 in the approved sequence. No code, migration, bucket, credential, image test, production access, deployment, push, or merge was performed for this assessment.
+**Assessment complete for Technical Lead review.** Recommendation: retain P6 as the single shared-media work package; use the already selected R2 behind a provider-neutral port; obtain Founder disposition of the Founder-reserved MEDIA-1 items (including any delegation to the Technical Lead) and record the result in the MEDIA-1 decision record; obtain the existing separate resource authorization before isolated R2 proof; preserve current catalogue/initials fallbacks; then deliver P6 in the approved sequence. No code, migration, bucket, credential, image test, production access, deployment, or merge was performed for this assessment.
 
-This assessment is supporting analysis, not a competing decision registry. Approved decisions remain in the Master Programme, Founder Disposition and FER-001 records. See §15 for reconciliation status. This document is not merged.
+This assessment is supporting analysis, not a competing decision registry. Approved decisions remain in the Master Programme, Founder Disposition and FER-001 records. See §15 for reconciliation status.
 
 ## 15. Governance reconciliation (2026-11-06)
 
-This addendum reconciles the assessment against current `origin/main` `51ec762643cc0feff150a719e89c8b97f4233927`, the Founder Disposition, FER-001-A/B, the Master Programme, Technical Control Board, TPL-001, `AGENTS.md`, and the FEF/TLC candidate. Decision status is summarized in the companion `TIIZI-V2-MEDIA-1-DESIGN-CLOSURE-AND-FOUNDER-DECISIONS-001.md` §2.3. The companion record's technical recommendations are not new Founder decisions. The Miledge account preference direction is acknowledged; account/resource/spend access remains separately gated. The FEF-TLC document is not effective because it remains unmerged; repository controls and approved product/programme records govern.
+This addendum reconciles the assessment against current `origin/main` `51ec762643cc0feff150a719e89c8b97f4233927`, the Founder Disposition, FER-001-A/B, the Master Programme, Technical Control Board, TPL-001, `AGENTS.md`, and the FEF/TLC candidate. Decision status is summarized in the companion `TIIZI-V2-MEDIA-1-DESIGN-CLOSURE-AND-GOVERNANCE-RECONCILIATION-001.md` §2.3. The companion's technical recommendations are proposals pending Founder disposition. They are not approved standards, and the Founder-reserved MEDIA-1 items (Disposition §14 item 3; Media Assessment §7) are not reassigned. The reported Miledge-account preference is not yet recorded in a governing record; it authorizes no account access, resource or spend, and it must be reconciled with Disposition §8.2 (companion §2.6).
 
-No conflict with approved Profile, Group, Challenge, media or Template policy was found. Open PRs at review are #150, #145, #143, #107 and #94; none is media implementation, and PR #143 remains a P5T sequencing dependency. P5T is incomplete/not authorized. No local preview identity was established, so no preview acceptance is claimed. This addendum changes no product rule, programme status, authorization, or implementation state.
+FEF-TLC-001 status (companion §2.5): its merge is confirmed (PR #106, merge `542052c12ca7910a297da89f28ae01120b220980`, 2026-10-27), but its activation is UNKNOWN because no activation decision was found and the file's header still reads "not effective until merged". This package neither relies on the role model for authority nor claims it is ineffective. Repository controls and approved product and programme records govern.
+
+No conflict with approved Profile, Group, Challenge, media or Template policy was found. Open PRs at review are listed in §2.3 (point-in-time); none other than this PR is media work. P5T is incomplete and Slice 5B implementation is recorded as not authorized. No local preview identity was established, so no preview acceptance is claimed. This addendum changes no product rule, programme status, authorization, or implementation state.
