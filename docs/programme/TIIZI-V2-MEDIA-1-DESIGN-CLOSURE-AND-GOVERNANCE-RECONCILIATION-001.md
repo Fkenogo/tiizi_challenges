@@ -85,7 +85,7 @@ Revision 1 called FEF-TLC-001 "unmerged". That was wrong. Verified evidence on `
 | `AGENTS.md` §4 | The execution-role separation is binding "once that candidate is Founder-approved and merged". It does not record that approval |
 | `CLAUDE.md` line 5 | Applies the file "when the FEF-TLC-001 adoption candidate is merged **and effective**" |
 | Master Programme, Technical Control Board, `docs/governance/FEF-ALIGNMENT.md` | No reference to FEF-TLC-001 and no activation row |
-| Founder Experience Recovery Baseline 001, document header and §F | The reconciliation-pending statement appears in both the document header and §F. This is evidence of pending reconciliation, not a determination of whether FEF-TLC-001 is effective |
+| Founder Experience Recovery Baseline 001, document header and §F | Its header states that engineering reconciliation was pending. §F provides role information but does not record an activation decision |
 
 **Result: merge CONFIRMED; activation UNKNOWN.** The signals about effectiveness conflict, and no activation decision was found. Activation is not inferred. This package neither relies on the FEF-TLC-001 role model for authority nor claims it is ineffective. It names no FEF-TLC-001 role as a decision-maker. Founder confirmation of effectiveness is requested (§8). Under FEF-TLC-001 the Technical Lead selects bounded approved packages and the Founder keeps product decisions, so the role model would not by itself grant MEDIA-1 decision authority in any case.
 
