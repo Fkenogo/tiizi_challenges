@@ -142,33 +142,29 @@ async function seedBreathing(db: ReturnType<typeof testDb>) {
 }
 
 function permitAuthority(): ChallengeCreationAuthority {
-  return {
-    async resolveChallengeCreationAuthority() {
-      return {
+  const resolve = async () => ({
         permitted: true as const,
         reason: null,
         groupStatus: 'active',
         allowMemberChallenges: true,
         memberRole: 'member',
         memberStatus: 'active',
-      };
-    },
-  };
+      });
+  return { resolveChallengeCreationAuthority: resolve,
+    resolveChallengeCreationAuthorityInTransaction: (_tx, _groupId, _memberId) => resolve() };
 }
 
 function denyAuthority(): ChallengeCreationAuthority {
-  return {
-    async resolveChallengeCreationAuthority(): Promise<ChallengeCreationAuthorityStatus> {
-      return {
+  const resolve = async (): Promise<ChallengeCreationAuthorityStatus> => ({
         permitted: false,
         reason: 'charter_restricted',
         groupStatus: 'active',
         allowMemberChallenges: false,
         memberRole: 'member',
         memberStatus: 'active',
-      };
-    },
-  };
+      });
+  return { resolveChallengeCreationAuthority: resolve,
+    resolveChallengeCreationAuthorityInTransaction: (_tx, _groupId, _memberId) => resolve() };
 }
 
 function routeApp(token: string, uid: string, authority?: ChallengeCreationAuthority) {

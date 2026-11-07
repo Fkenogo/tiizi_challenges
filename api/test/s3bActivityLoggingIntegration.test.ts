@@ -76,18 +76,16 @@ interface World {
 }
 
 function permitAuthority(): ChallengeCreationAuthority {
-  return {
-    async resolveChallengeCreationAuthority() {
-      return {
+  const resolve = async () => ({
         permitted: true as const,
         reason: null,
         groupStatus: 'active',
         allowMemberChallenges: true,
         memberRole: 'member',
         memberStatus: 'active',
-      };
-    },
-  };
+      });
+  return { resolveChallengeCreationAuthority: resolve,
+    resolveChallengeCreationAuthorityInTransaction: (_tx, _groupId, _memberId) => resolve() };
 }
 
 function eligibleMembership(): GroupMembershipAuthority {

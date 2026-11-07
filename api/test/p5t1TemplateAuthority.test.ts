@@ -77,9 +77,15 @@ const permitAll: ChallengeCreationAuthority = {
   async resolveChallengeCreationAuthority(): Promise<ChallengeCreationAuthorityStatus> {
     return { permitted: true, reason: null, groupStatus: 'active', allowMemberChallenges: true, memberRole: 'member', memberStatus: 'active' };
   },
+  async resolveChallengeCreationAuthorityInTransaction(): Promise<ChallengeCreationAuthorityStatus> {
+    return { permitted: true, reason: null, groupStatus: 'active', allowMemberChallenges: true, memberRole: 'member', memberStatus: 'active' };
+  },
 };
 const charterRestricted: ChallengeCreationAuthority = {
   async resolveChallengeCreationAuthority(): Promise<ChallengeCreationAuthorityStatus> {
+    return { permitted: false, reason: 'charter_restricted', groupStatus: 'active', allowMemberChallenges: false, memberRole: 'member', memberStatus: 'active' };
+  },
+  async resolveChallengeCreationAuthorityInTransaction(): Promise<ChallengeCreationAuthorityStatus> {
     return { permitted: false, reason: 'charter_restricted', groupStatus: 'active', allowMemberChallenges: false, memberRole: 'member', memberStatus: 'active' };
   },
 };

@@ -39,8 +39,7 @@ type Decision =
 function fakeAuthority(
   decide: (groupId: string, memberId: string) => Decision,
 ): ChallengeCreationAuthority {
-  return {
-    async resolveChallengeCreationAuthority(groupId: string, memberId: string) {
+  const resolve = async (groupId: string, memberId: string) => {
       const decision = decide(groupId, memberId);
       if (decision === 'throw') throw new Error('authority exploded');
       if (decision === null) return null;
@@ -62,7 +61,10 @@ function fakeAuthority(
         memberRole: decision.reason === 'no_membership' ? null : 'member',
         memberStatus: decision.reason === 'no_membership' ? null : 'removed',
       };
-    },
+  };
+  return {
+    resolveChallengeCreationAuthority: resolve,
+    resolveChallengeCreationAuthorityInTransaction: (_tx, groupId, memberId) => resolve(groupId, memberId),
   };
 }
 
@@ -430,6 +432,48 @@ describe('governed challenge establishment', () => {
     expect(response.json().groupId).toBe(w.groupId);
     expect((await testDb().query('SELECT 1 FROM challenges WHERE challenge_id=$1 AND group_id=$2', [response.json().challengeId,w.groupId])).rows).toHaveLength(1);
     expect(await challengeRowCount()).toBe(1);
+  });
+
+  it('rechecks PostgreSQL authority inside the write transaction before persisting', async () => {
+    const w = await world();
+    const db = testDb();
+    await seedMembership(db, w.groupId, w.creatorMemberId, { status: 'active', role: 'member' });
+    const postgresAuthority = createPostgresChallengeCreationAuthority(db);
+    const authority: ChallengeCreationAuthority = {
+      async resolveChallengeCreationAuthority(groupId, memberId) {
+        const preflight = await postgresAuthority.resolveChallengeCreationAuthority(groupId, memberId);
+        // Model revocation after preflight and before the write transaction.
+        await db.query(
+          `UPDATE group_memberships SET status='left' WHERE group_id=$1 AND member_id=$2`,
+          [groupId, memberId],
+        );
+        return preflight;
+      },
+      resolveChallengeCreationAuthorityInTransaction:
+        postgresAuthority.resolveChallengeCreationAuthorityInTransaction,
+    };
+    const app = buildApp({
+      db,
+      verifier: stubVerifier(tokensFor(w)),
+      groupMutation: { store: unusedStore() },
+      challengeCreation: {
+        creationAuthority: authority,
+        eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
+        pinsFor: async (kind, key) => createDbKnowledgeResolver(db, kind)(key),
+      },
+    });
+    const before = await allRowCounts();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/challenges',
+      headers: authHeaders(w.creatorToken),
+      payload: validBody(w),
+    });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().error.code).toBe('group_membership_inactive');
+    expect(await allRowCounts()).toEqual(before);
+    await app.close();
   });
 
   it('missing creation wiring fails closed instead of establishing', async () => {

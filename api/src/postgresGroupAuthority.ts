@@ -100,21 +100,72 @@ export function createPostgresGroupMembershipAuthority(db: Db): GroupMembershipA
 }
 
 export function createPostgresChallengeCreationAuthority(db: Db): ChallengeCreationAuthority {
-  return { async resolveChallengeCreationAuthority(groupId, memberId): Promise<ChallengeCreationAuthorityStatus | null> {
-    const result = await db.query<{ status: string; allow_member_challenges: boolean; role: string | null; membership_status: string | null; is_steward: boolean }>(
-      `SELECT g.status, g.allow_member_challenges, gm.role, gm.status AS membership_status,
-              (g.steward_member_id=$2) AS is_steward
-       FROM groups g LEFT JOIN group_memberships gm ON gm.group_id=g.group_id AND gm.member_id=$2
-       WHERE g.group_id=$1`, [groupId, memberId]);
-    const row = result.rows[0]; if (!row) return null;
-    const role = row.role?.toLowerCase() ?? null;
-    const memberStatus = row.membership_status;
+  type GroupRow = { status: string; allow_member_challenges: boolean; steward_member_id: string | null };
+  type MembershipRow = { role: string; status: string };
+
+  const statusFrom = (group: GroupRow, membership: MembershipRow | null, memberId: string): ChallengeCreationAuthorityStatus => {
+    const role = membership?.role.toLowerCase() ?? null;
+    const memberStatus = membership?.status ?? null;
     let reason: ChallengeCreationAuthorityStatus['reason'] = null;
-    if (row.status !== 'active') reason = 'group_inactive';
+    if (group.status !== 'active') reason = 'group_inactive';
     else if (!memberStatus || !eligible.has(memberStatus.toLowerCase())) reason = memberStatus ? 'membership_inactive' : 'no_membership';
-    else if (!row.allow_member_challenges && !row.is_steward) reason = 'charter_restricted';
-    return { permitted: reason === null, reason, groupStatus: row.status, allowMemberChallenges: row.allow_member_challenges, memberRole: role, memberStatus };
-  } };
+    else if (!group.allow_member_challenges && group.steward_member_id !== memberId) reason = 'charter_restricted';
+    return {
+      permitted: reason === null,
+      reason,
+      groupStatus: group.status,
+      allowMemberChallenges: group.allow_member_challenges,
+      memberRole: role,
+      memberStatus,
+    };
+  };
+
+  const resolve = async (
+    target: Db,
+    groupId: string,
+    memberId: string,
+    lock: boolean,
+  ): Promise<ChallengeCreationAuthorityStatus | null> => {
+    if (lock) {
+      // Keep the global lock order used by Group mutation services: Group,
+      // then membership. FOR SHARE conflicts with their FOR UPDATE locks and
+      // stays held until the Challenge transaction commits or rolls back.
+      const groupResult = await target.query<GroupRow>(
+        `SELECT status, allow_member_challenges, steward_member_id
+         FROM groups WHERE group_id=$1 FOR SHARE`, [groupId]);
+      const group = groupResult.rows[0];
+      if (!group) return null;
+      const memberResult = await target.query<MembershipRow>(
+        `SELECT role, status FROM group_memberships
+         WHERE group_id=$1 AND member_id=$2 FOR SHARE`, [groupId, memberId]);
+      return statusFrom(group, memberResult.rows[0] ?? null, memberId);
+    }
+
+    const result = await target.query<{
+      status: string;
+      allow_member_challenges: boolean;
+      role: string | null;
+      membership_status: string | null;
+      steward_member_id: string | null;
+    }>(
+      `SELECT g.status, g.allow_member_challenges, gm.role,
+              gm.status AS membership_status, g.steward_member_id
+       FROM groups g LEFT JOIN group_memberships gm
+         ON gm.group_id=g.group_id AND gm.member_id=$2
+       WHERE g.group_id=$1`, [groupId, memberId]);
+    const row = result.rows[0];
+    if (!row) return null;
+    return statusFrom({
+      status: row.status,
+      allow_member_challenges: row.allow_member_challenges,
+      steward_member_id: row.steward_member_id,
+    }, row.role === null ? null : { role: row.role, status: row.membership_status! }, memberId);
+  };
+
+  return {
+    resolveChallengeCreationAuthority: (groupId, memberId) => resolve(db, groupId, memberId, false),
+    resolveChallengeCreationAuthorityInTransaction: (tx, groupId, memberId) => resolve(tx, groupId, memberId, true),
+  };
 }
 
 export async function createGovernedGroup(db: Db, actor: GroupMutationActor, terms: CreateGroupTerms) {
