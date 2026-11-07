@@ -6,6 +6,8 @@ import { useV2GroupId } from '../group/V2GroupScope';
 import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor } from './groupCovers';
 import { GroupInterestsPicker } from './GroupInterestsPicker';
 import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet } from './groupInterests';
+import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { useLocalImagePreview } from '../media/useLocalImagePreview';
 
 export function V2GroupSettingsScreen() {
   const groupId = useV2GroupId();
@@ -19,6 +21,7 @@ export function V2GroupSettingsScreen() {
   const options = useV2GroupOptions();
   const [focusTags, setFocusTags] = useState<string[]>([]);
   const [coverId, setCoverId] = useState<string | null>(null);
+  const coverPhoto = useLocalImagePreview();
   const [isPrivate, setIsPrivate] = useState(false);
   const [requireAdminApproval, setRequireAdminApproval] = useState(false);
   const [allowMemberChallenges, setAllowMemberChallenges] = useState(true);
@@ -69,7 +72,20 @@ export function V2GroupSettingsScreen() {
           <label className={label}>Location<input className={field} maxLength={120} value={location} onChange={e => setLocation(e.target.value)} /><span className="mt-1 block text-xs font-normal text-slate-500">A short description. It does not affect search or access.</span></label>
           <GroupInterestsPicker value={focusTags} onChange={setFocusTags} vocabulary={vocabulary} />
           {focusIssue && <p role="alert" className="text-xs font-bold text-red-700">{INTEREST_ISSUE_COPY[focusIssue]}</p>}
-          <fieldset><legend className={label}>Group cover</legend><div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div><p className="mt-1 text-xs text-slate-500">Choose from the existing covers. No image upload.</p></fieldset>
+          <fieldset>
+            <legend className={label}>Group cover</legend>
+            <div className="mt-2">
+              <V2LocalImagePicker
+                subject="Group cover"
+                preview={coverPhoto}
+                previewClassName="h-28 w-full rounded-xl bg-slate-100"
+                fallback={<div className={`h-full w-full bg-gradient-to-br ${coverGradientFor((coverId as (typeof GROUP_COVER_CATALOGUE)[number] | null) ?? GROUP_COVER_CATALOGUE[0])}`} aria-hidden="true" />}
+              />
+            </div>
+            <p className="mb-2 mt-4 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>
+            <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div>
+            <p className="mt-1 text-xs text-slate-500">Catalogue covers save with Group settings. A chosen photo is only a local preview and is not saved.</p>
+          </fieldset>
         </section>
         <section className="space-y-3"><h2 className="text-base font-black">Privacy & joining</h2>{choice('Private Group', isPrivate, setIsPrivate, 'People outside the Group cannot discover it normally. A valid invite code may still resolve it. Existing members are unaffected.')}{choice('Require approval to join', requireAdminApproval, setRequireAdminApproval, 'New join attempts require Steward approval. Existing pending requests remain pending until explicitly decided.')}</section>
         <section className="space-y-3"><h2 className="text-base font-black">Member Challenges</h2>{choice('Allow ordinary members to create Challenges', allowMemberChallenges, setAllowMemberChallenges, 'When off, ordinary members cannot establish new Group Challenges. Existing Challenges remain unchanged; you can still create them.')}</section>
