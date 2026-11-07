@@ -87,7 +87,7 @@ export function SocialCauseReviewPage() {
           />
           {import.meta.env.DEV && queue.error instanceof ApiError && queue.error.status === 403 && (
             <p className="mt-3 text-sm text-slate-600">
-              To enter the Platform Operator Console, <Link className="font-bold text-primary underline" to="/v2/sign-in?next=%2Fv2%2Foperator%2Freview&operatorPreview=1">sign in as Fred Kenogo, Platform Operator</Link>.
+              To enter the Platform Operator Console, <Link className="font-bold text-primary underline" to="/v2/sign-in?next=%2Fv2%2Foperator%2Freview&operatorPreview=1">sign in with an authorized Platform Operator account</Link>.
             </p>
           )}
         </>
@@ -162,7 +162,7 @@ export function SocialCauseReviewPage() {
                           <p className="font-bold">{approvalLabel(item.decision)} · {item.decidedAt.slice(0, 10)}</p>
                           <p className="mt-1">Reason: {item.reason}</p>
                           <p className="mt-1 text-slate-600">{item.authorityMemberId === cause.currentOperatorMemberId
-                            ? `${user?.displayName || 'Fred Kenogo'} · Platform Operator`
+                            ? `${user?.displayName || user?.email?.split('@')[0] || 'Local Operator'} · Platform Operator`
                             : 'Platform Operator'} <span className="font-mono text-slate-500">(member {item.authorityMemberId})</span></p>
                         </li>
                       ))}
