@@ -37,17 +37,19 @@ const shell = read('src/v2/operator/OperatorShell.tsx');
 const routes = read('src/v2/routes.tsx');
 const strip = (text: string) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-console.log('A. write boundary: draft create/save and server validation only (Slice 4); no publish/revise/retire');
-check('API client has exactly the create, conditional-save and validate writes', [...strip(client).matchAll(/method:\s*'(POST|PUT|PATCH|DELETE)'/g)].map((m) => m[1]).sort().join() === 'POST,POST,PUT');
-check('API client exports no publish/revise/retire/delete function', !/export (const|async function|function) (publish|revise|retire|delete|remove)/i.test(client));
+console.log('A. Slice 5B write boundary: existing publish/revise/retire endpoints only');
+check('API client writes are draft create, validation, publish, revise, retire and conditional save', [...strip(client).matchAll(/method:\s*'(POST|PUT|PATCH|DELETE)'/g)].map((m) => m[1]).sort().join() === 'POST,POST,POST,POST,POST,PUT');
+check('API client exposes only the three existing Slice 5A lifecycle writes', ['publishTemplateVersion', 'reviseTemplate', 'retireTemplate'].every((name) => new RegExp(`export const ${name}\\b`).test(client)) && !/export (const|async function|function) (delete|remove)/i.test(client));
 check('the only validation function is the server call (no client validator export)', [...strip(client).matchAll(/export (?:const|async function|function) (\w*[Vv]alidat\w*)/g)].map((m) => m[1]).join() === 'validateTemplateDraft');
-check('API client reaches only the P5T-1 Operator Template endpoints', [...strip(client).matchAll(/\$\{API_PREFIX\}([^`?]*)/g)].every((match) => /^\/operator\/templates(\/|$)/.test(match[1])));
+check('API client reaches only existing Operator Template and member Template read endpoints', [...strip(client).matchAll(/\$\{API_PREFIX\}([^`?]*)/g)].every((match) => /^\/(operator\/templates|challenge-templates)(\/|$)/.test(match[1])));
 check('the save sends the quoted If-Match revision token', /'If-Match':\s*`"\$\{revisionToken\}"`/.test(client));
-check('no publish/revise/retire endpoint is referenced anywhere in the client', !/\/(publish|revisions|retire)\b/.test(strip(client)));
+check('publish sends the validated revision token as If-Match', /publishTemplateVersion[\s\S]*?'If-Match':\s*`"\$\{revisionToken\}"`/.test(client));
+check('retirement omits blank reasons and trims supplied reasons', /const trimmed = reason\?\.trim\(\)[\s\S]*?body:\s*trimmed \? \{ reason: trimmed \} : \{\}/.test(client));
 check('the validate endpoint is referenced exactly once', (strip(client).match(/\/validate\b/g) ?? []).length === 1);
-check('Library offers no publish/revise/retire/validate controls', !/>\s*(Publish|Revise|Retire|Validate)\b/i.test(strip(library)));
+check('Library gates lifecycle actions on the server-derived author capability', /const authorControls = canAuthor && !accessRevoked/.test(library) && /authorControls && data\.lifecycle === 'published'/.test(library) && /authorControls && data\.lifecycle !== 'retired'/.test(library));
+check('Library uses only the existing member Template read for needs-revision status', /fetchTemplateMemberReadiness\(templateId\)/.test(library) && /memberReadiness\.data\?\.adoptable === false/.test(library));
 check('Library authoring entry points are shown only to Template authors', /canAuthor \? <Link to="\/v2\/operator\/templates\/new"/.test(library) && /canAuthor && shown\?\.state === 'draft'/.test(library));
-check('Library uses react-query reads only (no mutation hooks)', !/useMutation/.test(library));
+check('Library keeps lifecycle writes in explicit action handlers, without generic mutation authority', !/useMutation/.test(library) && /const handleRevise = async/.test(library) && /const confirmRetire = async/.test(library));
 
 console.log('B. permissions: authors and Console readers; no dependency on the Console overview');
 check('Library does not call the Console overview or import the Console API', !/fetchOperatorOverview|operatorConsoleApi/.test(library + client));
@@ -142,8 +144,10 @@ const uiVocab = read('src/v2/groups/groupFocusAreas.ts');
 const uiLabels = [...uiVocab.slice(0, uiVocab.indexOf('GROUP_FOCUS_AREA_LABELS')).matchAll(/category: '([^']+)'/g)].map((m) => m[1]);
 check('tag filter options equal the governed vocabulary the server validates', apiLabels.length === 12 && JSON.stringify(apiLabels) === JSON.stringify(uiLabels) && library.includes('GROUP_FOCUS_AREA_LABELS'));
 check('type labels match the member vocabulary (Together / Race / Streak)', typeLabel('collective') === 'Together' && typeLabel('competitive') === 'Race' && typeLabel('streak') === 'Streak');
-check('Operator Library changes touch no member Wizard or Template-member code',
-  !/challenges\/|challenge-templates/.test(client + library));
+check('Library adds no Member Wizard behavior; its only member-surface call is the existing readiness GET',
+  !/src\/v2\/member|MemberWizard|challenge-templates/i.test(library)
+  && [...strip(client).matchAll(/\$\{API_PREFIX\}([^`?]*)/g)].filter((match) => /challenge-templates/.test(match[1])).length === 1
+  && /fetchTemplateMemberReadiness[\s\S]*?apiFetch<TemplateMemberReadiness>\(\`\$\{API_PREFIX\}\/challenge-templates\//.test(client));
 
 if (failures > 0) { console.error(`\n${failures} operator-template guard failure(s)`); process.exit(1); }
 console.log('\noperator-template guards: all passing');

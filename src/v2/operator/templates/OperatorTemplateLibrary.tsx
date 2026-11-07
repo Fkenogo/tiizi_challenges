@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchOperatorTemplate,
   fetchOperatorTemplatePage,
+  fetchTemplateMemberReadiness,
   fetchTemplateAdoption,
+  publishTemplateVersion,
+  retireTemplate,
+  reviseTemplate,
   type OperatorTemplateDetail,
   type OperatorTemplateSummary,
   type OperatorTemplateVersion,
   type TemplateAdoptionRow,
 } from '../../../api/operatorTemplatesApi';
+import { ApiError } from '../../../api/apiError';
 import { useTemplateCapabilities } from './useTemplateCapabilities';
 import { GROUP_FOCUS_AREA_LABELS } from '../../groups/groupFocusAreas';
 import { V2Card, V2EmptyState, V2LoadingState, V2Page, V2SectionHeader } from '../../components/V2Primitives';
@@ -33,15 +38,14 @@ import {
 } from './templateLibraryModel';
 
 /**
- * TIIZI-FER-P5T-2-S2 — Operator Template Library (desktop-first). Slice 3b adds
- * author-only entry points (New Template, Edit draft) into the draft editor;
- * the Library itself still only reads.
+ * TIIZI-FER-P5T-2-S2/5B — Operator Template Library. Slice 5B adds author-only
+ * revise and retire/discard actions plus a read-only needs-revision indicator.
  *
  * Reads the P5T-1 endpoints only. Authorization is the backend's: a Template
  * author OR a Console reader may read. This page deliberately does NOT call
  * the Console overview, so a failed overview request can never block an
- * otherwise authorized Template author. There are no publish/revise/retire
- * controls: those arrive in later slices.
+ * otherwise authorized Template author. Publish remains in the draft editor;
+ * all write authority stays on the existing API.
  */
 
 const inputClass = 'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100';
@@ -231,6 +235,8 @@ export function OperatorTemplateLibrary() {
 }
 
 function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; canAuthor: boolean }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const detail = useQuery({
     queryKey: ['operator-templates', 'detail', templateId],
     queryFn: () => fetchOperatorTemplate(templateId),
@@ -245,7 +251,22 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
     retry: false,
     staleTime: 10_000,
   });
+  const memberReadiness = useQuery({
+    queryKey: ['operator-templates', 'member-readiness', templateId],
+    queryFn: () => fetchTemplateMemberReadiness(templateId),
+    enabled: !!templateId && detail.data?.lifecycle === 'published' && detail.data.latestPublishedVersion !== null,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+  });
   const [pickedVersion, setPickedVersion] = useState<number | null>(null);
+  const [accessRevoked, setAccessRevoked] = useState(false);
+  const [actionBusy, setActionBusy] = useState<'revise' | 'retire' | null>(null);
+  const [actionMessage, setActionMessage] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [retireOpen, setRetireOpen] = useState(false);
+  const [retireReason, setRetireReason] = useState('');
   useEffect(() => setPickedVersion(null), [templateId]);
 
   if (!templateId) return null;
@@ -258,6 +279,72 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
   const counts = new Map<number, number>((adoption.data ?? []).map((row: TemplateAdoptionRow) => [row.version, row.adoptions]));
   const content = shown?.content;
   const composer = content?.composer;
+  const openDraft = data.versions.find((version) => version.state === 'draft');
+  const authorControls = canAuthor && !accessRevoked;
+  const isUnpublishedDraft = data.lifecycle === 'draft' && data.latestPublishedVersion === null;
+  const retireLabel = isUnpublishedDraft ? 'Discard this unpublished Template' : 'Retire Template';
+
+  const handleRevise = async () => {
+    setActionBusy('revise'); setActionMessage(''); setActionError('');
+    try {
+      const result = await reviseTemplate(data.templateId);
+      await queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
+      navigate(`/v2/operator/templates/${encodeURIComponent(result.templateId)}/edit`);
+    } catch (error) {
+      const failure = error as { status?: number; code?: string; message?: string };
+      if (failure.status === 403 || (error instanceof ApiError && error.status === 403)) {
+        setAccessRevoked(true);
+        void queryClient.invalidateQueries({ queryKey: ['operator-templates', 'capabilities'] });
+        setActionError('Template authoring access was removed. This panel is now read-only.');
+        return;
+      }
+      const refreshed = await detail.refetch();
+      const currentDraft = refreshed.data?.versions.find((version) => version.state === 'draft');
+      if (currentDraft) {
+        setActionMessage('A draft is already open. Opening it now.');
+        navigate(`/v2/operator/templates/${encodeURIComponent(data.templateId)}/edit`);
+        return;
+      }
+      if (failure.code === 'template_not_published' || failure.code === 'template_retired') {
+        setActionMessage('This Template can no longer be revised. Its current state has been refreshed.');
+      } else if (failure.status === 503 || failure.status === 0 || failure.code === 'api_unreachable') {
+        setActionError('The revision result could not be confirmed. The Template was refreshed; check its state before trying again.');
+      } else {
+        setActionError(failure.message || 'The Template could not be revised. Retry after checking its current state.');
+      }
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const confirmRetire = async () => {
+    setActionBusy('retire'); setActionError(''); setActionMessage('');
+    try {
+      await retireTemplate(data.templateId, retireReason.trim() ? retireReason : undefined);
+      await queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
+      await detail.refetch();
+      setRetireOpen(false); setRetireReason(''); setActionMessage('Template retired. Existing Challenges are unchanged.');
+    } catch (error) {
+      const failure = error as { status?: number; code?: string; message?: string };
+      const refreshed = await detail.refetch();
+      if (refreshed.data?.lifecycle === 'retired') {
+        await queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
+        setRetireOpen(false); setRetireReason(''); setActionMessage('Template retired. Existing Challenges are unchanged.');
+        return;
+      }
+      if (failure.status === 403) {
+        setAccessRevoked(true);
+        void queryClient.invalidateQueries({ queryKey: ['operator-templates', 'capabilities'] });
+        setActionError('Template authoring access was removed. The Template was refreshed and this panel is now read-only.');
+      } else if (failure.status === 503 || failure.status === 0 || failure.code === 'api_unreachable') {
+        setActionError('The retirement result could not be confirmed. The Template was refreshed; check its state before trying again.');
+      } else {
+        setActionError(failure.message || 'The Template could not be retired. Its current state has been refreshed.');
+      }
+    } finally {
+      setActionBusy(null);
+    }
+  };
 
   return (
     <V2Card className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:self-start xl:overflow-y-auto">
@@ -273,6 +360,45 @@ function TemplateDetailPanel({ templateId, canAuthor }: { templateId: string; ca
         {canAuthor && shown?.state === 'draft' && data.lifecycle !== 'retired' && (
           <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/edit`} className="mt-3 inline-block rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white">Edit draft</Link>
         )}
+        {authorControls && data.lifecycle === 'published' && !openDraft && (
+          <button type="button" onClick={() => void handleRevise()} disabled={actionBusy !== null} className="ml-2 mt-3 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+            {actionBusy === 'revise' ? 'Opening draft…' : 'Revise'}
+          </button>
+        )}
+        {authorControls && openDraft && data.lifecycle !== 'retired' && data.lifecycle === 'published' && (
+          <Link to={`/v2/operator/templates/${encodeURIComponent(data.templateId)}/edit`} className="ml-2 mt-3 inline-block rounded-lg border border-primary bg-white px-3 py-2 text-xs font-bold text-primary">Open draft</Link>
+        )}
+        {authorControls && data.lifecycle !== 'retired' && (
+          <button type="button" onClick={() => { setRetireOpen(true); setRetireReason(''); setActionError(''); }} disabled={actionBusy !== null} className="ml-2 mt-3 rounded-lg border border-red-300 bg-white px-3 py-2 text-xs font-bold text-red-800 disabled:opacity-50">
+            {retireLabel}
+          </button>
+        )}
+        {actionMessage ? <p role="status" className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">{actionMessage}</p> : null}
+        {actionError && !retireOpen ? <p role="alert" className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{actionError}</p> : null}
+        {data.lifecycle === 'published' && data.latestPublishedVersion !== null && (
+          <div className="mt-3" aria-live="polite">
+            {memberReadiness.isPending ? <p role="status" className="text-xs text-slate-500">Checking member availability…</p> : null}
+            {memberReadiness.data?.adoptable === false ? <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">Needs revision · {memberReadiness.data.unavailableReason || 'NOT_ADOPTABLE'}</p> : null}
+            {memberReadiness.isError && (memberReadiness.error as ApiError)?.status !== 404 ? <p role="status" className="rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">Readiness indicator unavailable. Other Library actions are still available.</p> : null}
+          </div>
+        )}
+        {retireOpen ? (
+          <div role="dialog" aria-modal="true" aria-labelledby="retire-template-title" aria-describedby="retire-template-description" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+            <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+              <h3 id="retire-template-title" className="text-lg font-black text-slate-900">{retireLabel}?</h3>
+              <p id="retire-template-description" className="mt-2 text-sm leading-6 text-slate-700">Retirement is permanent. This Template will no longer be offered to members. Existing Challenges will not change.</p>
+              {openDraft && data.latestPublishedVersion !== null ? <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">The open draft will remain, but it can no longer be saved or published after retirement.</p> : null}
+              <label htmlFor="retire-template-reason" className="mt-4 block text-sm font-bold text-slate-800">Reason <span className="font-normal text-slate-500">(optional)</span></label>
+              <textarea id="retire-template-reason" value={retireReason} onChange={(event) => setRetireReason(event.target.value)} disabled={!authorControls} maxLength={500} rows={3} placeholder="Add a reason if useful" className={`${inputClass} mt-1 w-full resize-y disabled:bg-slate-100`} />
+              <p className="mt-1 text-right text-xs text-slate-500">{retireReason.length}/500</p>
+              {actionError ? <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{actionError}</p> : null}
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button type="button" onClick={() => setRetireOpen(false)} disabled={actionBusy === 'retire'} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-50">Cancel</button>
+                {authorControls ? <button type="button" onClick={() => void confirmRetire()} disabled={actionBusy === 'retire'} className="rounded-lg bg-red-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">{actionBusy === 'retire' ? 'Retiring…' : retireLabel}</button> : null}
+              </div>
+            </section>
+          </div>
+        ) : null}
         {data.lifecycle === 'retired' && (
           <p className="mt-3 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700">
             Retired {formatWhen(data.retiredAt)} by {shortId(data.retiredByMemberId)}{data.retiredReason ? ` — ${data.retiredReason}` : ''}. Retired Templates are no longer offered to members; existing Challenges are unaffected.

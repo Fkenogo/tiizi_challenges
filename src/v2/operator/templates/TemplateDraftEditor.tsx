@@ -6,9 +6,11 @@ import { fetchKnowledgeById } from '../../../api/knowledgeApi';
 import {
   createTemplateDraft,
   fetchOperatorTemplate,
+  publishTemplateVersion,
   saveTemplateDraft,
   validateTemplateDraft,
   type TemplateDraftBody,
+  type TemplateValidationIssue,
 } from '../../../api/operatorTemplatesApi';
 import { useAuth } from '../../../hooks/useAuth';
 import { V2Card, V2Chip, V2EmptyState, V2LoadingState, V2Page, V2SectionHeader } from '../../components/V2Primitives';
@@ -63,8 +65,9 @@ import { templateCapabilitiesKey, useTemplateCapabilities } from './useTemplateC
  * Support or creator fields exist in it). It is not a validation authority:
  * the server validates every write; this page only mirrors hard content limits
  * for early feedback. "Save and check" asks the server to validate the saved draft;
- * the read-only preview is a separate route. Publish, revise and retire belong to
- * later slices and are absent here.
+ * the read-only preview is a separate route. Slice 5B adds publish for the
+ * exact saved revision that passed the server validation; revise and retire
+ * remain in the Operator Library.
  */
 
 const STEPS = [
@@ -76,7 +79,7 @@ const STEPS = [
 ] as const;
 type StepId = (typeof STEPS)[number]['id'];
 
-type Phase = 'loading' | 'ready' | 'denied' | 'signin' | 'missing' | 'nodraft' | 'error';
+type Phase = 'loading' | 'ready' | 'published' | 'retired' | 'denied' | 'signin' | 'missing' | 'nodraft' | 'error';
 
 interface Session { templateId: string | null; version: number | null; token: string | null; baseBody: TemplateDraftBody | null }
 
@@ -221,6 +224,9 @@ function TemplateDraftEditorInner() {
   const [flags, setFlags] = useState<Record<string, string[]>>({});
   const [step, setStep] = useState<StepId>('type');
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [publishedVersion, setPublishedVersion] = useState<number | null>(null);
   const [banner, setBanner] = useState<Banner>(null);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   const [conflict, setConflict] = useState<ConflictState | null>(null);
@@ -319,7 +325,14 @@ function TemplateDraftEditorInner() {
         }
         const detail = await fetchOperatorTemplate(routeTemplateId);
         const draft = detail.versions.find((version) => version.state === 'draft');
-        if (!draft || !draft.revisionToken) { if (!cancelled) setPhase('nodraft'); return; }
+        if (!draft || !draft.revisionToken) {
+          if (!cancelled && detail.lifecycle === 'published' && detail.latestPublishedVersion !== null) {
+            setPublishedVersion(detail.latestPublishedVersion);
+            setPhase('published');
+          } else if (!cancelled && detail.lifecycle === 'retired') setPhase('retired');
+          else if (!cancelled) setPhase('nodraft');
+          return;
+        }
         const serverBody = bodyFromContent(draft.content);
         const server = await hydrateAuthoringState(serverBody, lookup);
         const identity: DraftIdentity = { templateId: detail.templateId, version: draft.version };
@@ -365,7 +378,7 @@ function TemplateDraftEditorInner() {
   const baseCanonical = useMemo(() => canonicalBody(session.baseBody ?? EMPTY_BODY), [session.baseBody]);
   const dirty = currentCanonical !== baseCanonical;
   const readOnly = revoked || immutable || conflict !== null;
-  const locked = readOnly || saving;
+  const locked = readOnly || saving || publishing;
   readOnlyRef.current = readOnly;
 
   /* ------------------------ temporary session recovery -------------------- */
@@ -502,7 +515,7 @@ function TemplateDraftEditorInner() {
   }, [beginConflict, queryClient, uid]);
 
   const save = useCallback(async (andCheck = false) => {
-    if (saving || checking || readOnly) return;
+    if (saving || checking || publishing || readOnly) return;
     if (validateAuthoring(currentRef.current).length > 0) return;
     const body = toTemplateBody(currentRef.current);
     setSaving(true); setFailure(null); setBanner(null);
@@ -537,7 +550,73 @@ function TemplateDraftEditorInner() {
     }
     // Validation runs only after a successful save (or against an unchanged saved draft).
     if (toCheck) await check(toCheck.templateId, toCheck.version, toCheck.token);
-  }, [saving, checking, readOnly, uid, navigate, queryClient, applyFailure, check]);
+  }, [saving, checking, publishing, readOnly, uid, navigate, queryClient, applyFailure, check]);
+
+  const publish = useCallback(async () => {
+    const sess = sessionRef.current;
+    const record = validation;
+    if (!sess.templateId || sess.version === null || !record || !record.ok || publishing || saving || checking || addingId !== null || readOnlyRef.current) return;
+    if (isValidationStale(record, { currentToken: sess.token, templateId: sess.templateId, version: sess.version, dirty, conflict: conflict !== null })) return;
+    setPublishing(true); setPublishConfirmOpen(false); setFailure(null); setBanner(null);
+    try {
+      const result = await publishTemplateVersion(sess.templateId, sess.version, record.token);
+      setPublishedVersion(result.version);
+      setImmutable(true);
+      setPhase('published');
+      setBanner({ tone: 'info', text: `Published as version ${result.version}. Published versions are immutable.` });
+      void queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
+      // The write response is deliberately small; refresh the authoritative detail after the success.
+      void fetchOperatorTemplate(result.templateId).then(() => queryClient.invalidateQueries({ queryKey: ['operator-templates', 'detail', result.templateId] })).catch(() => undefined);
+    } catch (error) {
+      const publishError = error as { status?: number; code?: string; details?: unknown };
+      if (publishError.status === 422 && publishError.code === 'invalid_template') {
+        const issues = (publishError.details as { issues?: unknown } | undefined)?.issues;
+        if (Array.isArray(issues) && issues.every((issue) => issue && typeof issue.code === 'string' && typeof issue.message === 'string')) {
+          setValidation({
+            templateId: sess.templateId,
+            version: sess.version,
+            token: record.token,
+            checkedAt: Date.now(),
+            ok: false,
+            issues: issues as TemplateValidationIssue[],
+          });
+          setFailure(null);
+          setBanner(null);
+          return;
+        }
+      }
+      const result = classifySaveFailure(error);
+      if (result.kind === 'unavailable' || result.kind === 'failed') {
+        // A transport failure can hide a committed publish. Read before offering another attempt.
+        try {
+          const latest = await fetchOperatorTemplate(sess.templateId);
+          if (latest.lifecycle === 'published' && latest.latestPublishedVersion !== null && latest.latestPublishedVersion >= sess.version) {
+            setPublishedVersion(latest.latestPublishedVersion);
+            setImmutable(true); setPhase('published');
+            setBanner({ tone: 'info', text: `Published as version ${latest.latestPublishedVersion}. Published versions are immutable.` });
+            void queryClient.invalidateQueries({ queryKey: ['operator-templates'] });
+            return;
+          }
+        } catch (readError) {
+          if ((readError as { status?: number }).status === 403) {
+            setRevoked(true); void queryClient.invalidateQueries({ queryKey: templateCapabilitiesKey(uid) });
+          }
+        }
+        setBanner({ tone: 'error', text: 'The publish result could not be confirmed. The saved draft was reread; check its state before trying again.' });
+      }
+      await applyFailure(result);
+      if (result.kind === 'immutable' || result.kind === 'missing') {
+        try {
+          const latest = await fetchOperatorTemplate(sess.templateId);
+          if (latest.lifecycle === 'published' && latest.latestPublishedVersion !== null) {
+            setPublishedVersion(latest.latestPublishedVersion); setPhase('published');
+          } else if (latest.lifecycle === 'retired') setPhase('retired');
+        } catch { /* Keep the classified error if the follow-up read is unavailable. */ }
+      }
+    } finally {
+      setPublishing(false);
+    }
+  }, [validation, publishing, saving, checking, addingId, dirty, conflict, uid, queryClient, applyFailure]);
 
   // A draft created by "Save and check" is checked once the edit route has read back its first revision token.
   useEffect(() => {
@@ -576,8 +655,8 @@ function TemplateDraftEditorInner() {
   const header = (
     <V2SectionHeader
       eyebrow="Operator · Templates"
-      title={routeTemplateId ? 'Edit Template draft' : 'New Template'}
-      description="Templates are reusable Challenge blueprints. Drafts stay private until a later publish step."
+      title={phase === 'published' ? 'Published Template' : routeTemplateId ? 'Edit Template draft' : 'New Template'}
+      description={phase === 'published' ? 'This published version is read-only. Start a revision from the Template Library to make changes.' : 'Templates are reusable Challenge blueprints. Drafts stay private until an active author publishes them.'}
     />
   );
 
@@ -587,6 +666,8 @@ function TemplateDraftEditorInner() {
     return <V2Page wide>{header}<V2EmptyState title="Template authoring access required" message={capabilities.data?.canRead ? 'You can read Templates, but you are not a Template author, so you cannot create or edit drafts.' : 'You do not have access to author Templates.'} action={back} /></V2Page>;
   }
   if (phase === 'missing') return <V2Page wide>{header}<V2EmptyState title="Template not found" message="This Template does not exist." action={back} /></V2Page>;
+  if (phase === 'published') return <V2Page wide>{header}<V2EmptyState title={`Published as version ${publishedVersion ?? session.version ?? ''}`} message="This published version is read-only. To make a change, open the Template Library and start a revision." action={<div className="flex flex-wrap justify-center gap-3"><Link to={`/v2/operator/templates/${encodeURIComponent(session.templateId ?? routeTemplateId ?? '')}/preview`} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white">Preview published Template</Link>{back}</div>} /></V2Page>;
+  if (phase === 'retired') return <V2Page wide>{header}<V2EmptyState title="Template retired" message="This Template is retired and can no longer be changed or published." action={back} /></V2Page>;
   if (phase === 'nodraft') return <V2Page wide>{header}<V2EmptyState title="No open draft" message="This Template has no open draft to edit. Only open drafts can be edited; published versions are immutable." action={back} /></V2Page>;
   if (phase === 'error') {
     return (
@@ -602,11 +683,12 @@ function TemplateDraftEditorInner() {
 
   const stepIndex = STEPS.findIndex((entry) => entry.id === step);
   const saveLabel = session.templateId === null ? 'Create draft' : 'Save draft';
-  const saveDisabled = saving || checking || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
-  const checkDisabled = saving || checking || readOnly || issues.length > 0 || (session.templateId === null && !dirty);
+  const saveDisabled = saving || checking || publishing || readOnly || issues.length > 0 || (!dirty && session.templateId !== null) || (session.templateId === null && !dirty);
+  const checkDisabled = saving || checking || publishing || readOnly || issues.length > 0 || (session.templateId === null && !dirty);
   const validationStale = validation !== null && isValidationStale(validation, {
     currentToken: session.token, templateId: session.templateId, version: session.version, dirty, conflict: conflict !== null,
   });
+  const publishDisabled = !session.templateId || session.version === null || !validation?.ok || validationStale || saving || checking || publishing || addingId !== null || readOnly || dirty || issues.length > 0;
   const groupedIssues = validation ? groupIssuesByStep(validation.issues) : null;
   const activityNames = current.activities.map((activity) => activity.name);
   const stepIssues = (id: StepId) => (groupedIssues && !validationStale ? groupedIssues[id] : []);
@@ -618,12 +700,25 @@ function TemplateDraftEditorInner() {
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => void save()} disabled={saveDisabled} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40">{saving ? 'Saving…' : saveLabel}</button>
         <button type="button" onClick={() => void save(true)} disabled={checkDisabled} className="rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-bold text-primary disabled:opacity-40">{checking ? 'Checking…' : 'Save and check'}</button>
+        {session.templateId && session.version !== null ? <button type="button" onClick={() => setPublishConfirmOpen(true)} disabled={publishDisabled} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40">{publishing ? 'Publishing…' : 'Publish'}</button> : null}
         {session.templateId ? <Link to={`/v2/operator/templates/${encodeURIComponent(session.templateId)}/preview`} className="text-sm font-bold text-primary underline">Preview saved draft</Link> : null}
         <span aria-live="polite" className="text-xs font-bold text-slate-500">{dirty ? 'Unsaved changes' : session.templateId ? 'All changes saved' : 'Nothing to save yet'}</span>
         {back}
       </div>
 
       {banner ? <p role="status" className={`mb-3 rounded-xl px-3 py-2 text-sm font-semibold ${banner.tone === 'error' ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'}`}>{banner.text}</p> : null}
+      {publishConfirmOpen ? (
+        <div role="dialog" aria-modal="true" aria-labelledby="publish-template-title" aria-describedby="publish-template-description" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+          <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+            <h2 id="publish-template-title" className="text-lg font-black text-slate-900">Publish Template?</h2>
+            <p id="publish-template-description" className="mt-2 text-sm leading-6 text-slate-700">Publish “{current.title.trim() || 'Untitled Template'}” as version {session.version}. Published versions are immutable; future changes require a new revision.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setPublishConfirmOpen(false)} disabled={publishing} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700">Cancel</button>
+              <button type="button" onClick={() => void publish()} disabled={publishDisabled} className="rounded-lg bg-emerald-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">{publishing ? 'Publishing…' : 'Confirm publish'}</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
       {failure && failure.kind !== 'conflict' ? (
         <div role="alert" data-failure={failure.kind} className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           <p className="font-bold">{failure.kind === 'invalid' ? 'The server did not accept this draft' : 'Not saved'}</p>
