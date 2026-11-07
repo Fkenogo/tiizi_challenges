@@ -76,6 +76,8 @@ import {
   type ApiKnowledgeItemLike,
 } from './wizardSteps';
 import { CHALLENGE_COVER_IDS, challengeCoverGradient, challengeCoverLabel } from './challengeCovers';
+import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
 
 /**
  * S2b — the seven-step V2 Challenge Creation experience.
@@ -99,6 +101,7 @@ export function V2ChallengeCreationWizard() {
   const queryClient = useQueryClient();
   const memberships = useV2Memberships();
   const establish = useEstablishChallenge();
+  const challengeCoverPhoto = useLocalImagePreview();
 
   const { user } = useAuth();
   const uid = user?.uid ?? '';
@@ -334,7 +337,7 @@ export function V2ChallengeCreationWizard() {
         />
       )}
 
-      {currentStep === 'CHALLENGE_DETAILS' && <StepChallengeDetails state={state} onUpdate={update} />}
+      {currentStep === 'CHALLENGE_DETAILS' && <StepChallengeDetails state={state} onUpdate={update} coverPhoto={challengeCoverPhoto} />}
 
       {currentStep === 'WHAT_ARE_WE_DOING' && (
         <StepActivities
@@ -385,6 +388,7 @@ export function V2ChallengeCreationWizard() {
           previewState={previewState}
           previewIssues={previewIssues}
           onUpdate={update}
+          coverPhoto={challengeCoverPhoto}
           onEditStep={(step) => goToStep(VISIBLE_STEPS.indexOf(step))}
         />
       )}
@@ -519,11 +523,12 @@ function StepHosting({
   );
 }
 
-export function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void }) {
+export function StepChallengeDetails({ state, onUpdate, coverPhoto }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void; coverPhoto?: LocalImagePreviewState }) {
   return <div className="space-y-4">
     <NameAppearanceFields
       state={state}
       onUpdate={onUpdate}
+      coverPhoto={coverPhoto}
       intro={<p className="text-sm leading-6 text-slate-600">Give the Challenge a clear name and a short description for your Group.</p>}
     />
     <section className="rounded-2xl border border-slate-200 p-4"><h3 className="text-sm font-black">Optional support</h3><p className="mt-1 text-xs text-slate-600">Support a Cause is for a cause this Challenge raises support for. Support Tiizi is separate: voluntary support for the Tiizi platform itself.</p><label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.socialCauseEnabled} onChange={(event) => onUpdate({ socialCauseEnabled: event.target.checked })} />Support a Cause</label>
@@ -638,19 +643,32 @@ export function StepReview({
   previewState,
   previewIssues,
   onUpdate,
+  coverPhoto,
   onEditStep,
 }: {
   state: WizardState;
   previewState: 'idle' | 'checking' | 'valid' | 'invalid';
   previewIssues: MappedPreviewIssue[] | null;
   onUpdate: (patch: Partial<WizardState>) => void;
+  coverPhoto?: LocalImagePreviewState;
   onEditStep: (step: (typeof VISIBLE_STEPS)[number]) => void;
 }) {
   const endDate = state.endDate;
   return (
     <div className="space-y-4">
       <V2Card className="bg-slate-900 text-white">
-        <div className={`mb-3 h-28 rounded-xl bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge background preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />
+        {coverPhoto ? (
+          <V2LocalImagePicker
+            subject="Challenge cover"
+            preview={coverPhoto}
+            previewClassName="mb-3 h-28 rounded-xl bg-slate-800"
+            messageClassName="text-white/70"
+            errorClassName="text-red-200"
+            fallback={<div className={`h-full w-full bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge background preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />}
+          />
+        ) : (
+          <div className={`mb-3 h-28 rounded-xl bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge background preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">{challengeTypeLabel(state.challengeType)}</span>
           <span className="text-[11px] font-bold text-white/70">{state.durationDays} days</span>
