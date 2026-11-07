@@ -5,7 +5,7 @@
  * Auth emulator on loopback and NOTHING else:
  *
  * - target must be the loopback Auth emulator (host 127.0.0.1/localhost,
- *   port 9099 or isolated S4b preview port 19099) — anything else throws;
+ *   with a valid non-privileged TCP port) — anything else throws;
  * - refuses to run under NODE_ENV=production;
  * - never touches production Auth (no admin credentials, no service
  *   accounts; the emulator owner scope exists only on loopback);
@@ -66,8 +66,8 @@ export function resolveEmulatorTarget(opts: {
   if (!LOOPBACK_HOSTS.has(host.toLowerCase())) {
     throw new Error(`Refusing non-loopback Auth target: ${host}. Only the local Auth emulator may be reset.`);
   }
-  if (!Number.isInteger(port) || ![AUTH_EMULATOR_PORT, ISOLATED_S4B_AUTH_EMULATOR_PORT].includes(port)) {
-    throw new Error(`Refusing Auth target port ${opts.port ?? '(default)'}: only local preview Auth ports are allowed.`);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+    throw new Error(`Refusing Auth target port ${opts.port ?? '(default)'}: expected a non-privileged local preview port.`);
   }
   return { host, port, url: `http://${host}:${port}` };
 }

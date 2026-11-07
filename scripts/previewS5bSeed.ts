@@ -105,7 +105,7 @@ interface CreatedIdentity {
 async function ensurePreviewIdentity(): Promise<CreatedIdentity> {
   const authUrl = new URL(AUTH_EMULATOR);
   if (authUrl.protocol !== 'http:' || authUrl.hostname !== '127.0.0.1'
-    || ![9099, 19099].includes(Number(authUrl.port))) {
+    || !Number.isInteger(Number(authUrl.port)) || Number(authUrl.port) < 1024 || Number(authUrl.port) > 65535) {
     throw new Error('Auth emulator must be loopback.');
   }
   if (!PREVIEW_PASSWORD) {

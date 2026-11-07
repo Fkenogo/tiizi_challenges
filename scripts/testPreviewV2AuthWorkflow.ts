@@ -2,8 +2,8 @@
  * TIIZI S1 CORR-003 — preview identity workflow safety tests
  * (run: npm run test:preview-v2-auth-workflow).
  *
- * Spins a stub Auth emulator on the REAL loopback target
- * (127.0.0.1:9099) implementing the verified emulator protocol
+ * Spins a stub Auth emulator on an OS-assigned loopback port
+ * implementing the verified emulator protocol
  * (client-style Identity Toolkit v1 calls + owner-scoped admin
  * calls; fake hashes embed password material like the real
  * emulator) and proves the reset/list workflow against it:
@@ -70,6 +70,7 @@ type StubUser = { localId: string; email: string; password: string; disabled: bo
 const namespaces = new Map<string, Map<string, StubUser>>();
 let clientNamespace = 'stub-proof-project';
 let uidCounter = 0;
+let authBase = '';
 
 function usersOf(project: string): Map<string, StubUser> {
   let users = namespaces.get(project);
@@ -116,7 +117,7 @@ function isOwner(request: IncomingMessage): boolean {
 
 const server: Server = createServer((request, response) => {
   void (async () => {
-    const url = new URL(request.url ?? '/', 'http://127.0.0.1:9099');
+    const url = new URL(request.url ?? '/', authBase);
     if (request.method === 'GET' && url.pathname === '/') {
       send(response, 200, { authEmulator: true });
       return;
@@ -192,25 +193,27 @@ const server: Server = createServer((request, response) => {
 
 async function signInRest(email: string, password: string): Promise<number> {
   const response = await fetch(
-    'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-preview',
+    `${authBase}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-preview`,
     { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password, returnSecureToken: true }) },
   );
   return response.status;
 }
 
 const PROOF_PROJECT = 'stub-proof-project';
-const target = { host: AUTH_EMULATOR_HOST, port: AUTH_EMULATOR_PORT, url: `http://${AUTH_EMULATOR_HOST}:${AUTH_EMULATOR_PORT}` };
-
 await new Promise<void>((resolve, reject) => {
-  server.on('error', (error: unknown) => reject(new Error(`stub emulator could not bind 127.0.0.1:9099: ${(error as Error).message}`)));
-  server.listen(9099, '127.0.0.1', () => resolve());
+  server.on('error', (error: unknown) => reject(new Error(`stub emulator could not bind loopback: ${(error as Error).message}`)));
+  server.listen(0, '127.0.0.1', () => resolve());
 });
+const address = server.address();
+if (!address || typeof address === 'string') throw new Error('Stub emulator did not receive a TCP port.');
+const target = resolveEmulatorTarget({ host: AUTH_EMULATOR_HOST, port: address.port });
+authBase = target.url;
 
 try {
   console.log('safety: target and mode refusal');
   await expectThrow('non-loopback host refused', () => resolveEmulatorTarget({ host: '10.0.0.5' }));
   await expectThrow('public hostname refused', () => resolveEmulatorTarget({ host: 'example.com' }));
-  await expectThrow('wrong port refused', () => resolveEmulatorTarget({ port: 9098 }));
+  await expectThrow('invalid port refused', () => resolveEmulatorTarget({ port: 80 }));
   await expectThrow('production mode refused', () => resolveEmulatorTarget({ nodeEnv: 'production' }));
   await expectThrow('missing password fails', () => resetPreviewAccount({ projectId: PROOF_PROJECT, target, password: undefined as unknown as string }));
   await expectThrow('blank password fails', () => resetPreviewAccount({ projectId: PROOF_PROJECT, target, password: '   ' }));
@@ -255,7 +258,7 @@ try {
 
   // The raw admin response DOES carry password material: proves the filter strips something real.
   const raw = await fetch(
-    `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/${PROOF_PROJECT}/accounts:batchGet?pageSize=100`,
+    `${authBase}/identitytoolkit.googleapis.com/v1/projects/${PROOF_PROJECT}/accounts:batchGet?pageSize=100`,
     { headers: { authorization: 'Bearer owner' } },
   ).then((r) => r.text());
   check('raw admin response carries password material (filter has work to do)', raw.includes(NEW_PASSWORD));
