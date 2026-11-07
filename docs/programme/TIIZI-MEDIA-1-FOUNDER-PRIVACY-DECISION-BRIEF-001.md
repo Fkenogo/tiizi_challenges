@@ -3,7 +3,7 @@
 **Reference:** TIIZI-MEDIA-1-FD-ALIGN-001 (updated for TIIZI-MEDIA-1-FD-PRIVACY-001)
 **Updated:** 2026-11-07
 **Decision owner:** Founder
-**Status:** **SIX INITIAL PRIVACY POLICIES APPROVED; PRIVACY IMPLEMENTATION AND VERIFICATION PENDING; TD-05 AUTHORIZATION INVARIANT ADOPTED**
+**Status:** **SIX INITIAL PRIVACY POLICIES APPROVED; PRIVACY IMPLEMENTATION AND VERIFICATION PENDING; TD-05 CORRECTION VERIFIED / ADOPTION HOLD**
 **Recording baseline:** `9d7f12a19c48be9027e597dba713163e68f737f3`
 **Authority:** Member Completion Founder Disposition §§8, 10, 14, 18–20; MEDIA Capability Assessment §§9–10
 
@@ -36,7 +36,7 @@ No responsible individual, legal conclusion, spend limit, resource approval, or 
 
 ## 4. Technical status and cost note
 
-The independent assessment `TIIZI-MEDIA-1-TECH-CONSULT-001` dated 2026-11-06 is an assessor report, not evidence of appointed backend/security or architecture-owner consultation. It recommended TD-01, TD-04 and TD-06 conditionally and identified a Challenge-creation transaction-time authorization gap. The Technical Lead adopted the TD-05 authorization invariant on 2026-11-07 after PR #159 merged and passed exact-head independent review, required CI and disposable PostgreSQL concurrency verification. This adoption covers the current Challenge-creation authority invariant only; upload intents are not implemented, and their expiry/quota settings remain provisional. TD-01, TD-04 and TD-06 remain pending formal consultation/adoption. The separate P5T `createTemplateDraft` authorization-revocation assessment is recorded in `TIIZI-FER-P5T-2-CREATE-TEMPLATE-DRAFT-AUTHORIZATION-REVOCATION-R2-PLAN-001`; it is not represented as the same defect or as a change to P5T scope.
+The independent assessment `TIIZI-MEDIA-1-TECH-CONSULT-001` dated 2026-11-06 is an assessor report, not evidence of appointed backend/security or architecture-owner consultation. It recommended TD-01, TD-04 and TD-06 conditionally and identified a Challenge-creation transaction-time authorization gap. PR #159 merged and passed exact-head independent review, required CI and disposable PostgreSQL concurrency verification, so the transaction-time correction is verified. **TD-05 adoption remains on HOLD** pending attributable backend/security owner consultation, which is not present in this package. The R1 review verifies code; it is not owner consultation. Upload intents are not implemented, and their expiry/quota settings remain provisional. TD-01, TD-04 and TD-06 remain pending their formal consultation/adoption. The separate P5T `createTemplateDraft` authorization-revocation assessment is recorded in `TIIZI-FER-P5T-2-CREATE-TEMPLATE-DRAFT-AUTHORIZATION-REVOCATION-R2-PLAN-001`; it is not represented as the same defect or as a change to P5T scope.
 
 FD-MC-07a selects R2 behind the provider-neutral ObjectStore interface. FD-B selects the Miledge Cloudflare account arrangement only; it does not authorize access, provisioning or spend. The existing MEDIA-1 assessment §10.2 provides illustrative low/expected/high R2 estimates at official rates checked 2026-11-06. Those are not a budget or committed forecast. Account-wide allowances are not presumed available; API compute, PostgreSQL, backups and monitoring remain excluded or unpriced as specified there.
 
