@@ -7,6 +7,14 @@ on:
     branches: [main]
   pull_request:
 
+# Local-first verification model: superseded PR heads are cancelled so only
+# the latest pushed head consumes runners. Cancellation applies to pull_request
+# runs only — push runs on main are the post-merge exact-head record and are
+# never cancelled. No deployment/release workflow exists in this file.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   api:
     name: api (typecheck, test, build)
