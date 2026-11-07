@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:mobile": "vite --host 127.0.0.1 --port 5173",
+    "preview:founder": "node --import tsx scripts/previewFounder.ts",
+    "test:preview-founder-ports": "node --import tsx scripts/testPreviewFounderPorts.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "sync:mockups": "node scripts/syncScreenLayouts.mjs",
