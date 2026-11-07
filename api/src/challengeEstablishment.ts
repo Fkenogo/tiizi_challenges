@@ -8,11 +8,10 @@
  * participation when requested.
  *
  * Transaction discipline:
- * - network/provider authority resolves OUTSIDE the transaction: Group
- *   liveness, creator Challenge-creation authority under LIVE authority,
- *   Knowledge pins and establishment eligibility are all proven before
- *   transaction entry and carried in as trusted resolved values (map-backed
- *   resolvers perform zero I/O inside the transaction);
+ * - network/provider authority and Knowledge proofs resolve OUTSIDE the
+ *   transaction; creator Challenge-creation authority is preflighted there
+ *   and then revalidated under PostgreSQL Group/membership locks inside the
+ *   write transaction (the locks remain held through commit);
  * - DB-controlled state revalidates INSIDE the transaction (challenge insert
  *   constraints, idempotency-key uniqueness, activation transition guards,
  *   participation uniqueness);
@@ -38,10 +37,9 @@
  * returns the original establishment instead of minting a duplicate, and a
  * reused key with a DIFFERENT request is rejected (no silent aliasing).
  *
- * Authority race (explicit non-goal): creator authority is proven from
- * PostgreSQL BEFORE the transaction. DB-controlled Challenge state is
- * revalidated inside the transaction; this seam does not open a second
- * authority transaction for Group state.
+ * Authority consistency: the preflight result is only an early rejection.
+ * The transaction-scoped authority resolver locks Group before membership
+ * and re-evaluates current eligibility rules before the first write.
  *
  * Provider-neutral: pure domain + `Db`. No Firebase imports.
  */
@@ -68,6 +66,7 @@ import {
 } from './groupMembershipAuthority.js';
 import {
   requireChallengeCreationAuthority,
+  requireChallengeCreationAuthorityInTransaction,
   type ChallengeCreationAuthority,
 } from './challengeCreationAuthority.js';
 import {
@@ -235,7 +234,8 @@ export async function establishChallengeV2(
     : validateIdempotencyKey(input.idempotencyKey);
   const requestHash = idempotencyKey === undefined ? null : hashEstablishmentRequest(input);
 
-  // Live Group authority, outside the transaction (fail closed).
+  // Preflight live authority outside the transaction for early rejection.
+  // The decision is repeated under row locks in the write transaction.
   if (options.creationAuthority) {
     await requireChallengeCreationAuthority(
       options.creationAuthority,
@@ -301,6 +301,15 @@ export async function establishChallengeV2(
 
   try {
     return await db.transaction(async (tx) => {
+      if (options.creationAuthority) {
+        await requireChallengeCreationAuthorityInTransaction(
+          options.creationAuthority,
+          tx,
+          input.group_id,
+          input.created_by_member_id,
+          'challenge establishment',
+        );
+      }
       const created = await insertChallengeWithConfig(tx, input, basis, pinnedResolvers);
       if (idempotencyKey !== undefined && requestHash !== null) {
         try {
@@ -457,8 +466,8 @@ export async function establishChallengeDefinitionV2(
       templateRef: input.templateRef ?? null,
     });
 
-  // Live Group authority, outside the transaction (fail closed) — the same
-  // proofs as the legacy seam, unchanged.
+  // Preflight live authority outside the transaction for early rejection.
+  // The decision is repeated under row locks in the write transaction.
   if (options.creationAuthority) {
     await requireChallengeCreationAuthority(
       options.creationAuthority,
@@ -492,6 +501,13 @@ export async function establishChallengeDefinitionV2(
 
   try {
     return await db.transaction(async (tx) => {
+      await requireChallengeCreationAuthorityInTransaction(
+        options.creationAuthority!,
+        tx,
+        input.groupId,
+        input.creatorMemberId,
+        'challenge establishment',
+      );
       const inserted = await tx.query(
         `INSERT INTO challenges
            (group_id, created_by_member_id, challenge_type, title, cover_id, support_tiizi_enabled, description,

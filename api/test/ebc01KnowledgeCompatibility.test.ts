@@ -518,6 +518,16 @@ describe('establishment compatibility enforcement (route)', () => {
               memberStatus: 'active',
             };
           },
+          async resolveChallengeCreationAuthorityInTransaction() {
+            return {
+              permitted: true as const,
+              reason: null,
+              groupStatus: 'active',
+              allowMemberChallenges: true,
+              memberRole: 'member',
+              memberStatus: 'active',
+            };
+          },
         },
         eligibilityFor: async (kind, key) => createDbKnowledgeEligibilityResolver(db, kind)(key),
         // Intentional quarantined-seam coverage: this compatibility suite
