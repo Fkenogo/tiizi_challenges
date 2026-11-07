@@ -12,6 +12,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 import { resolveEmulatorTarget, resetPreviewAccount } from './previewV2Auth.js';
+import { assertLoopbackPortAvailable, chooseLoopbackPort } from './previewFounderPorts.js';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const DATABASE_NAME = 'tiizi_founder_preview';
@@ -43,19 +44,6 @@ function assertDevelopmentInvocation(): void {
   if (!process.env.CI && process.env.FIREBASE_CONFIG) {
     throw new Error('Founder Preview refuses inherited Firebase project configuration.');
   }
-}
-
-async function portIsFree(port: number): Promise<boolean> {
-  return new Promise((resolvePort) => {
-    const server = net.createServer();
-    server.once('error', () => resolvePort(false));
-    server.listen(port, '127.0.0.1', () => server.close(() => resolvePort(true)));
-  });
-}
-
-async function choosePort(candidates: number[]): Promise<number> {
-  for (const port of candidates) if (await portIsFree(port)) return port;
-  throw new Error(`No free preview port in ${candidates.join(', ')}. Existing services were left untouched.`);
 }
 
 async function freePort(): Promise<number> {
@@ -158,9 +146,9 @@ async function stop(exitCode = 0): Promise<void> {
 async function main(): Promise<void> {
   assertDevelopmentInvocation();
   console.log('Founder Preview: checking loopback ports and local PostgreSQL tools…');
-  const apiPort = await choosePort(API_PORTS);
-  const webPort = await choosePort(WEB_PORTS);
-  const authPort = await choosePort(AUTH_PORTS);
+  const apiPort = await chooseLoopbackPort(API_PORTS);
+  const webPort = await chooseLoopbackPort(WEB_PORTS);
+  const authPort = await chooseLoopbackPort(AUTH_PORTS);
   const postgresPort = await freePort();
   const hubPort = await freePort();
   const loggingPort = await freePort();
@@ -215,6 +203,7 @@ async function main(): Promise<void> {
   console.log(`  PostgreSQL: 127.0.0.1:${postgresPort}/${DATABASE_NAME} (temporary cluster, disposable marker verified)`);
   await run(process.execPath, ['--import', 'tsx', 'api/src/migrateCli.ts'], { env: localEnv({ ...baseEnv, DATABASE_URL: databaseUrl }) });
 
+  await assertLoopbackPortAvailable(authPort, 'Firebase Auth Emulator');
   const auth = startService('Firebase Auth Emulator', 'firebase', [
     'emulators:start', '--only', 'auth', '--project', projectId, '--config', firebaseConfig,
   ], localEnv({ ...baseEnv, FIREBASE_AUTH_EMULATOR_HOST: `127.0.0.1:${authPort}` }));
@@ -250,6 +239,7 @@ async function main(): Promise<void> {
   const bootstrapIdentity = await bootstrapSignIn.json() as { idToken?: string };
   if (!bootstrapIdentity.idToken) throw new Error('The Auth Emulator did not issue a token for the fresh bootstrap test identity.');
 
+  await assertLoopbackPortAvailable(apiPort, 'Tiizi API');
   const api = startService('Tiizi API', process.execPath, ['--import', 'tsx', 'api/src/index.ts'], localEnv({
     ...baseEnv,
     DATABASE_URL: databaseUrl,
@@ -260,6 +250,7 @@ async function main(): Promise<void> {
   }));
   await waitFor(`${apiTarget}/ready`, 'Tiizi API', api);
 
+  await assertLoopbackPortAvailable(webPort, 'Vite V2 frontend');
   const vite = startService('Vite V2 frontend', process.execPath, [
     join(ROOT, 'node_modules/vite/bin/vite.js'), '--host', '127.0.0.1', '--port', String(webPort), '--strictPort',
   ], localEnv({

@@ -39,6 +39,7 @@ check('DEV + flag=true enables mode', resolveAuthEmulatorMode({ DEV: true, VITE_
 check('flag is case/whitespace tolerant', resolveAuthEmulatorMode({ DEV: true, VITE_USE_FIREBASE_EMULATORS: ' True ' }) === true);
 check('emulator endpoint is the local Auth emulator', AUTH_EMULATOR_URL === 'http://127.0.0.1:9099');
 check('isolated preview may use a loopback-only alternate port', resolveAuthEmulatorUrl({ VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://127.0.0.1:19099' }) === 'http://127.0.0.1:19099');
+check('Founder Preview may use an OS-assigned loopback port', resolveAuthEmulatorUrl({ VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://127.0.0.1:50569' }) === 'http://127.0.0.1:50569');
 check('custom Auth emulator rejects non-loopback URLs', (() => { try { resolveAuthEmulatorUrl({ VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://192.0.2.1:19099' }); return false; } catch { return true; } })());
 
 console.log('B. localhost alone never enables mode');
