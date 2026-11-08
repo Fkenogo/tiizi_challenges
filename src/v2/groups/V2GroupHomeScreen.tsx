@@ -160,7 +160,7 @@ export function V2GroupHomeScreen() {
           onManageGroup={() => navigate(`/v2/groups/${view.detail.id}/settings`)}
           onOpenChallenge={(challengeId) => navigate(`/v2/challenges/${challengeId}`)}
           onCreateChallenge={() =>
-            navigate('/v2/challenges/new', { state: { groupId: view.detail.id } })
+            navigate('/v2/challenges/start', { state: { groupId: view.detail.id } })
           }
         />
       )}

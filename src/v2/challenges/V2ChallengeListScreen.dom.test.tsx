@@ -42,6 +42,12 @@ beforeEach(() => setData([]));
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe('V2 Challenges page sections', () => {
+  it('opens the approved Challenge start choice from the Create Challenge action', async () => {
+    render(<MemoryRouter><RouteStateProbe /><V2ChallengeListScreen /></MemoryRouter>);
+    await userEvent.click(screen.getByRole('button', { name: 'Create Challenge' }));
+    expect(screen.getByTestId('route-state').textContent).toBe('/v2/challenges/start|null');
+  });
+
   it('shows a single Find interface and a suitable empty My Challenges state', () => {
     setData([], [row('remote-one')]);
     render(<MemoryRouter><V2ChallengeListScreen /></MemoryRouter>);

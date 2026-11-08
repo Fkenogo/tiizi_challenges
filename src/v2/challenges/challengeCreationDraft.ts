@@ -245,6 +245,8 @@ export interface WizardState {
   durationDays: number;
   timezone: string;
   creatorJoins: boolean;
+  /** Local draft provenance for the member-facing preview journey; never sent to the establishment API. */
+  templateRef?: { templateId: string; version: number; title: string } | null;
 }
 
 export interface ChallengeWizardRouteState {
