@@ -88,6 +88,16 @@ describe('Profile preference summaries and editors', () => {
     expect(mocks.preferences.goalIds).toEqual(['build-strength', 'endurance', 'sleep-well']);
   });
 
+  it('closes without recording a preference decision when Save has no changes', () => {
+    renderSection();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit interests' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Edit interests' })).getByRole('button', { name: 'Save' }));
+
+    expect(mocks.mutate).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByText(/5 selected ·/)).toBeTruthy();
+  });
+
   it('opens Goals with current selections and preserves its three-item maximum', () => {
     renderSection();
     fireEvent.click(screen.getByRole('button', { name: 'Edit goals' }));
