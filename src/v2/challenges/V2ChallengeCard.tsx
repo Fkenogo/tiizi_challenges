@@ -1,6 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import { challengeTypeLabel } from './challengeCreationDraft';
+import { V2ChallengeCover } from './V2ChallengeCover';
 import { getLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 
 type Surface = 'my' | 'find' | 'explore';
@@ -30,19 +31,6 @@ export function V2ChallengeCard({
   actions: ReactNode;
   extraBadges?: string[];
 }) {
-  const localCover = getLocalChallengeCoverPreview(challenge.challengeId);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!localCover) {
-      setPhotoUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(localCover);
-    setPhotoUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [challenge.challengeId, localCover]);
-
   const surfaceAttribute = surface === 'my'
     ? { 'data-my-challenge': challenge.challengeId }
     : surface === 'find'
@@ -51,19 +39,8 @@ export function V2ChallengeCard({
 
   return (
     <li {...surfaceAttribute} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div className="relative h-44 bg-slate-200 sm:h-48">
-        {photoUrl ? (
-          <img src={photoUrl} alt={`${challenge.title} cover photo`} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-200 text-slate-500">
-            <svg aria-hidden="true" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5A1.5 1.5 0 0 1 5.5 6h2l1.2-1.5h6.6L16.5 6h2A1.5 1.5 0 0 1 20 7.5v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-10Z" />
-              <circle cx="12" cy="12" r="3.2" />
-            </svg>
-            <span className="text-xs font-semibold">No cover photo</span>
-          </div>
-        )}
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-slate-950/10" />
+      <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-44 sm:h-48">
+        {!getLocalChallengeCoverPreview(challenge.challengeId) && <div className="absolute inset-x-4 bottom-3 text-xs font-semibold text-white drop-shadow sm:bottom-4">No cover photo</div>}
         <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2 sm:inset-x-4 sm:top-4">
           <span className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide shadow-sm ${TYPE_BADGE[challenge.challengeType]}`}>
             {challengeTypeLabel(challenge.challengeType)}
@@ -77,13 +54,13 @@ export function V2ChallengeCard({
           <p className="line-clamp-1 text-xs font-medium text-slate-100 drop-shadow">{groupLine}</p>
           <h3 className="mt-0.5 line-clamp-2 text-lg font-extrabold leading-tight drop-shadow sm:text-xl">{challenge.title}</h3>
         </div>
-      </div>
+      </V2ChallengeCover>
 
       <div className="space-y-3.5 p-4 sm:p-5">
         <p className="line-clamp-3 text-sm leading-6 text-slate-600">
           {challenge.description.trim() || 'No description provided.'}
         </p>
-        {photoUrl && <p className="-mt-2 text-[11px] font-medium text-slate-500">Local photo preview · not saved to the Challenge</p>}
+        {getLocalChallengeCoverPreview(challenge.challengeId) && <p className="-mt-2 text-[11px] font-medium text-slate-500">Local photo preview · not saved to the Challenge</p>}
         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3.5 sm:p-4" aria-label="Challenge progress">
           {progress}
         </div>
