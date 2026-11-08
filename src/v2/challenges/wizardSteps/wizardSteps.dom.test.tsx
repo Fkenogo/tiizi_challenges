@@ -135,7 +135,7 @@ describe('other extracted steps', () => {
 
   it('NameAppearanceFields reports title, description and cover as patches', async () => {
     const onUpdate = vi.fn();
-    const preview = { previewUrl: null, error: null, selectFile: vi.fn(), remove: vi.fn() };
+    const preview = { previewUrl: null, file: null, error: null, selectFile: vi.fn(), remove: vi.fn() };
     wrap(<NameAppearanceFields state={{ title: '', description: '' }} onUpdate={onUpdate} intro={<p>intro</p>} coverPhoto={preview} />);
     await userEvent.type(screen.getByLabelText('Challenge title'), 'A');
     expect(onUpdate).toHaveBeenCalledWith({ title: 'A' });
