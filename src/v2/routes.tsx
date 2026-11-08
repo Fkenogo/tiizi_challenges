@@ -17,6 +17,7 @@ import { V2MemberShell } from './member/MemberShell';
 import { V2NotificationsPage } from './member/memberPages';
 import { V2ProfileScreen } from './profile/V2ProfileScreen';
 import { V2TodayScreen } from './today/V2TodayScreen';
+import { V2DiscoverableChallengePreviewScreen } from './challenges/V2DiscoverableChallengePreviewScreen';
 import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
 import { V2GroupHomeScreen } from './groups/V2GroupHomeScreen';
@@ -108,6 +109,7 @@ export function V2Routes() {
             <Route path="challenges/start" element={<V2ChallengeStartScreen />} />
             <Route path="challenges/templates" element={<V2ChallengeTemplateLibrary />} />
             <Route path="challenges/templates/:templateId" element={<V2ChallengeTemplatePreview />} />
+            <Route path="challenges/discovery/:challengeId" element={<V2DiscoverableChallengePreviewScreen />} />
             <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />
