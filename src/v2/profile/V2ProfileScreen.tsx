@@ -40,8 +40,8 @@ import {
  *   `active`/`history` bucket are rendered exactly as served;
  * - the email is read directly from the raw Firebase `user.email`, never from
  *   the local `AuthContext.profile` cache and never from the API response;
- * - the photo slot is honest: initials today, no upload control, because
- *   media persistence is MEDIA-2b;
+ * - profile photo changes use the accepted browser-local preview only; no
+ *   image is uploaded or permanently saved;
  * - no legal text or links are invented here (MC-2C-2 / legal authority);
  * - Group and Challenge pages advance independently and are keyed by
  *   participationId, so withdrawal + rejoin episodes stay distinct.
