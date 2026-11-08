@@ -270,7 +270,7 @@ function GroupHomeBody({
             {tagline && <p className="mt-1 max-w-2xl text-sm font-medium text-white/90">“{tagline}”</p>}
           </div>
         </V2GroupCover>
-        <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid gap-3 border-b border-slate-100 bg-slate-50 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${badge.className}`}>
               {badge.text}
@@ -280,21 +280,17 @@ function GroupHomeBody({
                 {detail.memberCount} {detail.memberCount === 1 ? 'member' : 'members'}
               </span>
             )}
-            <span className="text-xs text-slate-500">
-              <span className="font-bold text-slate-700">Accountable Steward</span>
-              {detail.viewerRelationship === 'steward' ? ' — that’s you.' : ' keeps this Group running.'}
-            </span>
           </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-            <button ref={aboutTriggerRef} type="button" aria-haspopup="dialog" aria-expanded={aboutOpen} onClick={openAbout} className="min-h-10 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100">
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+            <button ref={aboutTriggerRef} type="button" aria-haspopup="dialog" aria-expanded={aboutOpen} onClick={openAbout} className="col-span-2 min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 hover:bg-slate-100 sm:col-span-1">
               About this Group
             </button>
             {detail.viewerRelationship === 'steward' && (
-              <V2Button variant="secondary" onClick={onManageGroup}>Manage Group</V2Button>
+              <V2Button variant="secondary" onClick={onManageGroup} className="w-full sm:w-auto">Manage Group</V2Button>
             )}
-            {detail.viewerRelationship === 'none' && !detail.isPrivate && <JoinCta groupId={detail.id} />}
+            {detail.viewerRelationship === 'none' && !detail.isPrivate && <div className="col-span-2 sm:col-span-1"><JoinCta groupId={detail.id} /></div>}
             {canCreate && (
-              <V2Button onClick={onCreateChallenge}>Launch Challenge</V2Button>
+              <V2Button onClick={onCreateChallenge} className="w-full sm:w-auto">Launch Challenge</V2Button>
             )}
           </div>
         </div>
