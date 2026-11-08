@@ -1,13 +1,30 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
+import { handleFounderTemplateRequest } from './src/v2PreviewRuntime/previewFounderTemplates';
 
 const founderPreview = process.env.TIIZI_FOUNDER_PREVIEW === '1';
+
+const founderTemplateFixtures: Plugin = {
+  name: 'tiizi-founder-preview-member-template-fixtures',
+  apply: 'serve',
+  configureServer(server) {
+    if (!founderPreview) return;
+    server.middlewares.use((request, response, next) => {
+      const fixtureResponse = handleFounderTemplateRequest(request.method ?? 'GET', request.url ?? '/');
+      if (!fixtureResponse) return next();
+      response.statusCode = fixtureResponse.status;
+      fixtureResponse.headers.forEach((value, name) => response.setHeader(name, value));
+      void fixtureResponse.text().then((body) => response.end(body));
+    });
+  },
+};
 
 export default defineConfig({
   plugins: [
     react(),
+    founderTemplateFixtures,
     ...(founderPreview ? [{
       name: 'tiizi-founder-preview-local-assets',
       transformIndexHtml(html: string) {

@@ -42,7 +42,7 @@ export function V2ChallengeListScreen() {
 
   const createAction = (
     <div className="flex flex-col items-end gap-1">
-      <V2Button onClick={() => navigate('/v2/challenges/new')}>Create Challenge</V2Button>
+      <V2Button onClick={() => navigate('/v2/challenges/start')}>Create Challenge</V2Button>
       <button
         type="button"
         onClick={() => navigate('/v2/guide')}

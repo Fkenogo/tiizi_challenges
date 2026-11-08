@@ -27,6 +27,7 @@ import { V2OperatorPage } from './operator/operatorPages';
 import { SocialCauseReviewPage } from './operator/SocialCauseReviewPage';
 import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
 import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
+import { V2ChallengeStartScreen, V2ChallengeTemplateLibrary, V2ChallengeTemplatePreview } from './challenges/templates/V2ChallengeTemplateScreens';
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
 import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
 import { V2SupportTiiziScreen } from './support/V2SupportTiiziScreen';
@@ -104,6 +105,9 @@ export function V2Routes() {
             <Route path="today" element={<V2TodayScreen />} />
             <Route path="challenges" element={<V2ChallengeListScreen />} />
             <Route path="challenges/new" element={<V2ChallengeCreationWizard />} />
+            <Route path="challenges/start" element={<V2ChallengeStartScreen />} />
+            <Route path="challenges/templates" element={<V2ChallengeTemplateLibrary />} />
+            <Route path="challenges/templates/:templateId" element={<V2ChallengeTemplatePreview />} />
             <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />

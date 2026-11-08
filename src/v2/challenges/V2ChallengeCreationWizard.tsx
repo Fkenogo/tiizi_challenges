@@ -310,6 +310,15 @@ export function V2ChallengeCreationWizard() {
         />
       </div>
 
+      {state.templateRef && (
+        <V2Card className="mb-4 border-emerald-200 bg-emerald-50">
+          <p data-template-provenance className="text-xs leading-5 text-emerald-900">
+            <span className="font-bold">Started from the template “{state.templateRef.title}”.</span>{' '}
+            Everything here is a starting point you can change. Nothing is created until you review and create it.
+          </p>
+        </V2Card>
+      )}
+
       {state.challengeType && state.activities.length > 0 && (
         <V2Card className="mb-4 border-orange-200 bg-orange-50">
           <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Your Challenge so far</p>
@@ -319,6 +328,7 @@ export function V2ChallengeCreationWizard() {
 
       {currentStep === 'HOW_IT_WORKS' && (
         <StepHowItWorks
+          fromTemplate={Boolean(state.templateRef)}
           selected={state.challengeType}
           onSelect={(type) => {
             const keepFirst = allowsMultipleActivities(type) ? state.activities : state.activities.slice(0, 1);
@@ -430,9 +440,11 @@ export function V2ChallengeCreationWizard() {
 export function StepHowItWorks({
   selected,
   onSelect,
+  fromTemplate = false,
 }: {
   selected: ComposerChallengeType | null;
   onSelect: (type: ComposerChallengeType) => void;
+  fromTemplate?: boolean;
 }) {
   return (
     <ChallengeTypeStep
@@ -440,7 +452,9 @@ export function StepHowItWorks({
       onSelect={onSelect}
       footer={
         <p className="text-xs text-slate-500">
-          Templates are not available yet — you are setting this Challenge up from scratch.
+          {fromTemplate
+            ? 'This type came from your template. Changing it keeps your first Activity where it still fits.'
+            : 'You are setting this Challenge up from scratch.'}
         </p>
       }
     />
