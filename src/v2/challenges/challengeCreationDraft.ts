@@ -400,7 +400,6 @@ export function assessVisibleStep(state: WizardState, step: VisibleStep): StepAs
       break;
     case 'CHALLENGE_DETAILS':
       if (!state.title.trim()) missing.push('title');
-      if (!state.coverId) missing.push('cover');
       if (state.socialCauseEnabled) {
         if (!state.socialCauseTitle.trim()) missing.push('cause.title');
         if (!state.socialCauseDescription.trim()) missing.push('cause.description');
@@ -571,7 +570,7 @@ export function toEstablishmentBody(
     group_id: state.groupId,
     challenge_type: state.challengeType,
     title: state.title.trim(),
-    cover_id: state.coverId as string,
+    ...(state.coverId ? { cover_id: state.coverId } : {}),
     support_tiizi_enabled: state.supportTiiziEnabled,
     ...(state.socialCauseEnabled ? { social_cause: {
       title: state.socialCauseTitle.trim(), description: state.socialCauseDescription.trim(),

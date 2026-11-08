@@ -75,7 +75,6 @@ import {
   buildWizardActivity,
   type ApiKnowledgeItemLike,
 } from './wizardSteps';
-import { CHALLENGE_COVER_IDS, challengeCoverGradient, challengeCoverLabel } from './challengeCovers';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
 
@@ -678,10 +677,10 @@ export function StepReview({
             previewClassName="mb-3 h-28 rounded-xl bg-slate-800"
             messageClassName="text-white/70"
             errorClassName="text-red-200"
-            fallback={<div className={`h-full w-full bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge background preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />}
+            fallback={<div className="flex h-full w-full items-center justify-center rounded-xl bg-slate-700 text-sm font-medium text-white/70">No photo selected</div>}
           />
         ) : (
-          <div className={`mb-3 h-28 rounded-xl bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge background preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />
+          <div className="mb-3 flex h-28 items-center justify-center rounded-xl bg-slate-700 text-sm font-medium text-white/70">No photo selected</div>
         )}
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">{challengeTypeLabel(state.challengeType)}</span>
