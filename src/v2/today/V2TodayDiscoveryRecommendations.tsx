@@ -7,6 +7,7 @@ import { endStateFor, statusLabelForEndState } from '../challenges/challengeEndS
 import { statusTone } from '../challenges/challengePresentation';
 import { useV2GroupDiscovery } from '../groups/useV2Groups';
 import { V2Button } from '../components/V2Primitives';
+import { V2ChallengeCover } from '../challenges/V2ChallengeCover';
 import { recommendedChallenges, recommendedGroups, recommendationReason } from './todayDiscovery';
 
 export function V2TodayDiscoveryRecommendations() {
@@ -109,13 +110,18 @@ export function V2TodayDiscoveryRecommendations() {
           {challengeRows.map((challenge) => {
             const endState = endStateFor(challenge);
             const reason = recommendationReason(challenge.relevance);
-            return <li key={challenge.challengeId} className="rounded-2xl border border-slate-200 bg-white p-4">
+            return <li key={challenge.challengeId} className="rounded-2xl border border-slate-200 bg-white p-3">
+              <div className="flex items-start gap-3">
+              <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-16" className="w-20 shrink-0 rounded-lg" overlay={false} />
+              <div className="min-w-0 flex-1">
               <div className="flex flex-wrap gap-2 text-xs font-bold">
                 <span className="rounded-full bg-orange-50 px-2 py-1 text-primary">{challengeTypeLabel(challenge.challengeType)}</span>
                 <span className={`rounded-full px-2 py-1 ${statusTone(endState)}`}>{challenge.status === 'establishment' ? 'Upcoming' : statusLabelForEndState(challenge.status, endState)}</span>
               </div>
-              <p className="mt-2 font-bold text-slate-900">{challenge.title}</p>
+              <p className="mt-1 font-bold text-slate-900">{challenge.title}</p>
               <p className="mt-1 text-xs text-slate-500">Hosted by {challenge.host.groupName ?? challenge.groupName ?? 'a Group'} · {formatDayRange(challenge.startDate, challenge.endDate)}</p>
+              </div>
+              </div>
               {reason && <p className="mt-1 text-xs text-emerald-800">{reason}</p>}
               <p className="mt-2 text-xs text-slate-500">{challenge.host.viewerRelationship === 'pending' ? 'Your Group request is awaiting approval.' : challenge.host.admissionMode === 'approval' ? 'Request Group membership; approval is required before taking part.' : 'Join the Group to view participation details and choose whether to join this Challenge.'}</p>
               <div className="mt-3 flex flex-wrap gap-2">

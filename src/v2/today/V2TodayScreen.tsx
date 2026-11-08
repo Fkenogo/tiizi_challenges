@@ -17,6 +17,7 @@ import {
 } from '../components/V2Primitives';
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
 import { useChallengeDetailV2, useChallengeListV2, useV2Memberships } from '../challenges/useChallengeCreation';
+import { V2ChallengeCover } from '../challenges/V2ChallengeCover';
 import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
 import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
@@ -304,22 +305,30 @@ export function V2TodayScreen() {
                 Coming up
               </h2>
               <div className="space-y-2">
-                {visibleSectionItems(projection.upcoming, showAllUpcoming).map((item) => (
-                  <button
+                {visibleSectionItems(projection.upcoming, showAllUpcoming).map((item) => {
+                  const summary = challengeList.data?.challenges.find((challenge) => challenge.challengeId === item.challengeId);
+                  return <button
                     key={`${item.challengeId}-${item.kind}`}
                     type="button"
                     onClick={() => navigate(item.detailPath)}
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition-colors hover:bg-slate-50"
                   >
-                    <span className="min-w-0">
+                    <V2ChallengeCover challengeId={item.challengeId} title={item.title} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
+                    <span className="min-w-0 flex-1">
+                      <span className="mb-1 flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-900">{item.kind === 'starts' ? 'Upcoming' : 'Ending soon'}</span>
+                        {summary && (
+                          <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-primary">{challengeTypeLabel(summary.challengeType)}</span>
+                        )}
+                      </span>
                       <span className="block truncate text-sm font-bold text-slate-900">{item.title}</span>
-                      <span className="mt-0.5 block text-xs font-medium text-slate-500">
-                        {upcomingSummary(item)}
+                      <span className="mt-0.5 block truncate text-xs font-medium text-slate-500">
+                        {summary?.groupName ?? 'Hosting Group details unavailable'} · {upcomingSummary(item)}
                       </span>
                     </span>
                     <span className="shrink-0 text-xs font-bold text-primary">View</span>
-                  </button>
-                ))}
+                  </button>;
+                })}
               </div>
               <SectionToggle
                 total={projection.upcoming.length}
@@ -470,13 +479,16 @@ function RequiredTodayCard({
   onLog: () => void;
 }) {
   const { completed, total, allComplete } = requirementProgress(challenge);
+  const lifecycleLabel = challenge.lifecycleState === 'establishment' ? 'Upcoming' : challenge.lifecycleState === 'ended' ? 'Ended' : 'Running';
   return (
     <V2Card>
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-            {challengeTypeLabel(challenge.challengeType)}
-          </p>
+        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{challengeTypeLabel(challenge.challengeType)}</p>
+            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-900">{lifecycleLabel}</span>
+          </div>
           <h3 className="mt-0.5 truncate text-base font-black text-slate-900">{challenge.title}</h3>
           <p className="mt-0.5 truncate text-xs font-medium text-slate-500">{challenge.group.name}</p>
         </div>
@@ -560,13 +572,16 @@ function ActiveChallengeCard({
   onOpen: () => void;
   onLog: () => void;
 }) {
+  const lifecycleLabel = challenge.lifecycleState === 'establishment' ? 'Upcoming' : challenge.lifecycleState === 'ended' ? 'Ended' : 'Running';
   return (
     <V2Card>
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            {challengeTypeLabel(challenge.challengeType)}
-          </p>
+        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-16" className="w-20 shrink-0 rounded-lg" overlay={false} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{challengeTypeLabel(challenge.challengeType)}</p>
+            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-900">{lifecycleLabel}</span>
+          </div>
           <h3 className="mt-0.5 truncate text-base font-black text-slate-900">{challenge.title}</h3>
           <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
             {challenge.group.name} · {challenge.startDate} → {challenge.endDate}
@@ -665,13 +680,19 @@ function OpportunityCard({
 
   return (
     <V2Card>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
-        {challengeTypeLabel(opportunity.challengeType)}
-      </p>
-      <h3 className="mt-0.5 truncate text-base font-black text-slate-900">{opportunity.title}</h3>
-      <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
-        {opportunity.group.name} · {opportunity.startDate} → {opportunity.endDate}
-      </p>
+      <div className="flex items-start gap-3">
+        <V2ChallengeCover challengeId={opportunity.challengeId} title={opportunity.title} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{challengeTypeLabel(opportunity.challengeType)}</p>
+            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-900">{opportunity.lifecycleState === 'establishment' ? 'Upcoming' : opportunity.lifecycleState === 'ended' ? 'Ended' : 'Running'}</span>
+          </div>
+          <h3 className="mt-0.5 truncate text-base font-black text-slate-900">{opportunity.title}</h3>
+          <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
+            {opportunity.group.name} · {opportunity.startDate} → {opportunity.endDate}
+          </p>
+        </div>
+      </div>
       {activityNames.length > 0 && (
         <p className="mt-2 truncate text-xs font-medium text-slate-600">{activityNames.join(' · ')}</p>
       )}
