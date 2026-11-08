@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { V2Button, V2Card, V2ErrorState, V2Sheet } from '../components/V2Primitives';
 import { GoalsPicker, InterestsPicker } from './PreferencePickers';
+import { sameSelection } from './preferencesView';
 import { useSaveV2Preferences, useV2Preferences } from './usePreferences';
 
 type PreferenceCategory = 'interests' | 'goals';
@@ -57,6 +58,12 @@ export function ProfilePreferencesSection({ uid }: { uid: string | null }) {
   const saveEditor = () => {
     if (!editingCategory) return;
     setSaveError(null);
+    const selected = editingCategory === 'interests' ? interests : goals;
+    const current = editingCategory === 'interests' ? data.interestIds : data.goalIds;
+    if (sameSelection(selected, current)) {
+      setEditingCategory(null);
+      return;
+    }
     const change = editingCategory === 'interests' ? { interestIds: interests } : { goalIds: goals };
     save.mutate(change, {
       onSuccess: () => setEditingCategory(null),
