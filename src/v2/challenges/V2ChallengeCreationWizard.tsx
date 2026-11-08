@@ -63,7 +63,7 @@ import {
   useV2Memberships,
 } from './useChallengeCreation';
 import type { ApiMembership } from '../../api/membershipsApi';
-import { coverFor, coverGradientFor } from '../groups/groupCovers';
+import { V2GroupCover } from '../groups/V2GroupCover';
 import {
   ActivitiesStep,
   ChallengeTypeStep,
@@ -522,7 +522,7 @@ function StepHosting({
               <button type="button" aria-pressed={state.groupId === membership.groupId}
                 onClick={() => { onSelectGroup(membership); setListOpen(false); setSearch(''); }}
                 className={`flex min-h-[84px] w-full items-center gap-3 rounded-xl border p-3 text-left ${state.groupId === membership.groupId ? 'border-orange-400 bg-orange-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
-                <span className={`h-14 w-14 shrink-0 rounded-lg bg-gradient-to-br ${coverGradientFor(coverFor(membership.group.coverId, membership.groupId))}`} aria-hidden="true" />
+                <V2GroupCover groupId={membership.groupId} title={membership.group.name} coverId={membership.group.coverId} heightClass="h-14" className="w-14 shrink-0 rounded-lg" overlay={false} />
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold text-slate-900">{membership.group.name}</span><span className="block truncate text-xs text-slate-500">{roleLabel(membership.role)}</span>
                   {(membership.group.focusTags ?? []).length > 0 && <span className="mt-1 flex flex-wrap gap-1">{(membership.group.focusTags ?? []).slice(0, 3).map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>)}</span>}
                   {(membership.group.goals ?? []).length > 0 && <span className="mt-1 block truncate text-[11px] text-slate-500">Goals: {(membership.group.goals ?? []).slice(0, 2).join(' · ')}</span>}

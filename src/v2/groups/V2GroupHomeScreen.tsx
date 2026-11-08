@@ -15,8 +15,8 @@ import {
   V2Sheet,
 } from '../components/V2Primitives';
 import { useV2GroupId } from '../group/V2GroupScope';
-import { coverFor, coverGradientFor } from './groupCovers';
 import { stewardBadgeFor } from './groupDraft';
+import { V2GroupCover } from './V2GroupCover';
 import { groupHomeErrorStatus, groupHomeViewFor, viewerMayCreateChallenge } from './groupHomeView';
 import { useJoinGroup, useLeaveV2Group, useV2GroupChallenges, useV2GroupDetail, useV2GroupRoster, useV2Groups } from './useV2Groups';
 import { V2HostedChallengeCard } from './V2HostedChallengeCard';
@@ -192,7 +192,6 @@ function GroupHomeBody({
   const canCreate = viewerMayCreateChallenge(detail);
   const challenges = hostedState.data?.challenges ?? [];
   const visibleChallenges = showAllChallenges ? challenges : challenges.slice(0, 4);
-  const coverId = coverFor(detail.coverId, detail.id);
   const tagline = detail.tagline.trim() || detail.description;
   const focusTags = detail.focusTags;
   const norms = [...new Set([...(detail.communityNorms ?? []), ...(detail.rules ?? [])])];
@@ -257,8 +256,7 @@ function GroupHomeBody({
 
       {/* Hero: what community is this, who is here, what can I do. */}
       <section aria-label="Group overview" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className={`relative h-40 bg-gradient-to-br sm:h-52 ${coverGradientFor(coverId)}`}>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <V2GroupCover groupId={detail.id} title={detail.name} coverId={detail.coverId} heightClass="h-56 sm:h-72" className="w-full">
           {detail.location.trim() && (
             <span className="absolute left-4 top-4 rounded-full bg-black/60 px-3 py-1 text-[11px] font-bold text-white">
               {detail.location.trim()}
@@ -271,7 +269,7 @@ function GroupHomeBody({
             <h1 className="mt-0.5 text-2xl font-black tracking-tight sm:text-3xl">{detail.name}</h1>
             {tagline && <p className="mt-1 max-w-2xl text-sm font-medium text-white/90">“{tagline}”</p>}
           </div>
-        </div>
+        </V2GroupCover>
         <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${badge.className}`}>

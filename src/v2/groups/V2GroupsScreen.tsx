@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState, V2Page, V2SectionHeader, V2TextInput } from '../components/V2Primitives';
 import type { ApiMembership } from '../../api/membershipsApi';
-import { coverFor, coverGradientFor } from './groupCovers';
 import { stewardBadgeFor } from './groupDraft';
 import { groupsViewFor, V2_GROUPS_NEW_PATH } from './groupsView';
 import { useV2GroupChallenges, useV2GroupDetail, useV2Groups } from './useV2Groups';
 import { V2GroupDiscoveryPanel } from './V2GroupDiscoveryPanel';
 import { V2GroupGlobalSearch } from './V2GroupGlobalSearch';
+import { V2GroupPhotoCard } from './V2GroupPhotoCard';
 
 const INITIAL_GROUP_COUNT = 6;
 
@@ -104,26 +104,25 @@ export function V2GroupsScreen() {
 
 function V2GroupRow({ membership, onOpen }: { membership: ApiMembership; onOpen: () => void }) {
   const group = membership.group;
-  const coverId = coverFor(group.coverId ?? null, group.id);
   const detail = useV2GroupDetail(group.id);
   const hosted = useV2GroupChallenges(group.id);
   const focusTags = (group.focusTags ?? []).slice(0, 3);
   const activeCount = hosted.data?.challenges.filter((challenge) => challenge.status === 'active').length;
+  const accessLabel = group.isPrivate ? 'Private' : 'Discoverable';
   return (
-    <li className="overflow-hidden rounded-xl border border-slate-200 bg-white hover:border-slate-300">
-      <button type="button" onClick={onOpen} className="flex w-full min-w-0 items-center gap-3 p-3 text-left sm:gap-4" aria-label={`Open ${group.name}`}>
-        <span className={`h-16 w-16 shrink-0 rounded-lg bg-gradient-to-br ${coverGradientFor(coverId)}`} aria-hidden="true" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-base font-black text-slate-900">{group.name}</span>
-          <span className="mt-0.5 block text-xs font-semibold text-slate-500">{stewardBadgeFor(membership.role)}</span>
-          {focusTags.length > 0 && <span className="mt-1.5 flex flex-wrap gap-1">{focusTags.map((tag) => <span key={tag} className="max-w-full truncate rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>)}</span>}
-          <span className="mt-1.5 flex flex-wrap gap-x-3 text-xs text-slate-500">
-            {typeof detail.data?.memberCount === 'number' && <span>{detail.data.memberCount} {detail.data.memberCount === 1 ? 'member' : 'members'}</span>}
-            {activeCount !== undefined && <span>{activeCount} active {activeCount === 1 ? 'Challenge' : 'Challenges'}</span>}
-          </span>
-        </span>
-        <span className="shrink-0 text-xs font-bold text-primary">Open</span>
-      </button>
-    </li>
+    <V2GroupPhotoCard
+      groupId={group.id}
+      name={group.name}
+      coverId={group.coverId}
+      location={group.location}
+      description={group.tagline || group.description}
+      status={`${stewardBadgeFor(membership.role)} · ${accessLabel}`}
+      tags={focusTags}
+      goals={group.goals ?? []}
+      memberCount={detail.data?.memberCount}
+      activeChallengeCount={activeCount}
+      onOpen={onOpen}
+      action={<V2Button variant="secondary" onClick={onOpen}>Enter Hub →</V2Button>}
+    />
   );
 }
