@@ -77,6 +77,7 @@ import {
 } from './wizardSteps';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
+import { setLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 
 /**
  * S2b — the seven-step V2 Challenge Creation experience.
@@ -280,6 +281,9 @@ export function V2ChallengeCreationWizard() {
           idempotencyKey: keyRef.current,
         }),
       );
+      if (challengeCoverPhoto.file) {
+        setLocalChallengeCoverPreview(established.challengeId, challengeCoverPhoto.file);
+      }
       clearChallengeDraft(uid);
       navigate(`/v2/challenges/${established.challengeId}`, { replace: true });
     } catch (error) {

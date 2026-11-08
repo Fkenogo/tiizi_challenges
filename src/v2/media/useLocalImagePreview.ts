@@ -8,6 +8,7 @@ const ALLOWED_IMAGE_TYPES = new Set(LOCAL_IMAGE_ACCEPT.split(','));
 /** A browser-memory-only image draft. The object URL is revoked on replace, remove, and unmount. */
 export function useLocalImagePreview() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => () => {
@@ -24,17 +25,19 @@ export function useLocalImagePreview() {
       return false;
     }
     setError(null);
+    setFile(file);
     const nextUrl = URL.createObjectURL(file);
     setPreviewUrl(nextUrl);
     return true;
   }, []);
 
   const remove = useCallback(() => {
+    setFile(null);
     setPreviewUrl(null);
     setError(null);
   }, []);
 
-  return { previewUrl, error, selectFile, remove };
+  return { previewUrl, file, error, selectFile, remove };
 }
 
 export type LocalImagePreviewState = ReturnType<typeof useLocalImagePreview>;

@@ -86,6 +86,26 @@ describe('V2 Challenges page sections', () => {
     expect(screen.getByTestId('route-state').textContent).toBe('/v2/challenges/joined-one|{"openLogActivity":true}');
   });
 
+  it('uses a neutral no-photo cover while keeping type-specific progress and actions', async () => {
+    setData([
+      row('together', 'active', { collectiveTotal: 40, goalValue: 100, goalUnit: 'reps' }),
+      row('race', 'active', { challengeType: 'competitive' }),
+      row('streak', 'active', { challengeType: 'streak' }),
+    ]);
+    render(<MemoryRouter><V2ChallengeListScreen /></MemoryRouter>);
+
+    const mine = screen.getByRole('region', { name: 'My Challenges' });
+    await userEvent.click(within(mine).getByRole('button', { name: 'View More (1)' }));
+    expect(mine.querySelectorAll('[data-my-challenge]')).toHaveLength(3);
+    expect(within(mine).getAllByText('No cover photo')).toHaveLength(3);
+    expect(within(mine).getByText('40 / 100 reps')).toBeTruthy();
+    expect(within(mine).getByText(/2 activities logged/)).toBeTruthy();
+    expect(within(mine).getByText(/2-day streak/)).toBeTruthy();
+    expect(within(mine).getAllByRole('button', { name: 'View Challenge' })).toHaveLength(3);
+    expect(within(mine).getAllByRole('button', { name: 'Log Activity' })).toHaveLength(3);
+    expect(within(mine).queryByText(/Background [1-8]/)).toBeNull();
+  });
+
   it('places search and three dropdown filters before My Challenges and combines selections', async () => {
     setData([row('my-joined', 'active'), row('fit-together', null, { title: 'Morning Steps' }), row('wellness-streak', null, {
       title: 'Rest Well', challengeType: 'streak', status: 'establishment', activities: [{ name: 'Sleep', domain: 'wellness', category: 'Rest', subcategory: '' }],

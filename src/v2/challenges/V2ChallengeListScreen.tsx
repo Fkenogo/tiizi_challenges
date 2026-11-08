@@ -4,14 +4,14 @@ import { V2Button, V2EmptyState, V2ErrorState, V2LoadingState, V2Page, V2Section
 import { useChallengeListV2 } from './useChallengeCreation';
 import { useV2ChallengeDiscovery } from './useChallengeDiscovery';
 import { createRefreshTracker, flattenDiscoveryPages } from './discoveryRelevance';
-import { challengeTypeLabel, formatDayRange } from './challengeCreationDraft';
+import { formatDayRange } from './challengeCreationDraft';
 import { endStateFor, statusLabelForEndState } from './challengeEndState';
 import { statusTone } from './challengePresentation';
 import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import type { V2DiscoverableChallenge } from '../../api/challengeDiscoveryApi';
-import { challengeCoverGradient } from './challengeCovers';
 import { V2ChallengeIntentBanner } from './V2ChallengeIntentBanner';
 import { V2DiscoverChallengeRow } from './V2DiscoverChallengeRow';
+import { FindChallengeProgress, MyChallengeProgress, V2ChallengeCard } from './V2ChallengeCard';
 import { filterChallengeDiscovery, type ChallengeDomainFilter, type ChallengeLifecycleFilter, type ChallengeTypeFilter } from './challengeDiscovery';
 import { findChallenges, myJoinedChallenges } from './challengePageModel';
 
@@ -173,43 +173,32 @@ function MyChallengeRow({ challenge }: { challenge: V2ChallengeSummary }) {
   const navigate = useNavigate();
   const endState = endStateFor(challenge);
   const canLog = challenge.status === 'active' && endState === 'live' && challenge.activities.length > 0;
-  const progress = challenge.myParticipation?.progress;
-  const progressText = progress
-    ? `${progress.logsAccepted} activities logged · ${progress.totalPoints} points${challenge.challengeType === 'streak' ? ` · ${progress.currentStreak}-day streak` : ''}`
-    : 'Progress is not available yet.';
-  return <li className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4" data-my-challenge={challenge.challengeId}>
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-primary">{challengeTypeLabel(challenge.challengeType)}</span>
-      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusTone(endState)}`}>{statusLabelForEndState(challenge.status, endState)}</span>
-    </div>
-    <h3 className="mt-1 text-sm font-black text-slate-900">{challenge.title}</h3>
-    <p className="mt-0.5 text-xs text-slate-500">{challenge.groupName ?? 'Group Challenge'} · {formatDayRange(challenge.startDate, challenge.endDate)}</p>
-    <p className="mt-1 text-xs font-semibold text-slate-600" aria-label="Challenge progress">{progressText}</p>
-    <div className="mt-3 flex flex-wrap gap-2">
+  return <V2ChallengeCard
+    challenge={challenge}
+    surface="my"
+    statusLabel={statusLabelForEndState(challenge.status, endState)}
+    statusTone={statusTone(endState)}
+    groupLine={`${challenge.groupName ?? 'Group Challenge'} · ${formatDayRange(challenge.startDate, challenge.endDate)}`}
+    progress={<MyChallengeProgress challenge={challenge} />}
+    actions={<>
       {canLog && <V2Button onClick={() => navigate(`/v2/challenges/${challenge.challengeId}`, { state: { openLogActivity: true } })}>Log Activity</V2Button>}
       <V2Button variant="secondary" onClick={() => navigate(`/v2/challenges/${challenge.challengeId}`)}>View Challenge</V2Button>
-    </div>
-  </li>;
+    </>}
+  />;
 }
 
 function FindChallengeRow({ challenge }: { challenge: V2ChallengeSummary }) {
   const navigate = useNavigate();
   const endState = endStateFor(challenge);
-  return <li className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4" data-find-challenge={challenge.challengeId}>
-    <div className="flex items-center gap-3">
-      <span className={`h-14 w-14 shrink-0 rounded-xl bg-gradient-to-br ${challengeCoverGradient(challenge.coverId)} ${challenge.coverId ? '' : 'flex items-center justify-center text-xs font-black uppercase text-white/80'}`} aria-hidden="true">{challenge.coverId ? '' : challengeTypeLabel(challenge.challengeType).slice(0, 1)}</span>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-primary">{challengeTypeLabel(challenge.challengeType)}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusTone(endState)}`}>{statusLabelForEndState(challenge.status, endState)}</span>
-        </div>
-        <h3 className="mt-1 truncate text-sm font-black text-slate-900">{challenge.title}</h3>
-        <p className="mt-0.5 truncate text-xs text-slate-500">{challenge.groupName ?? 'Group Challenge'} · {challenge.activities.map((activity) => `${activity.name} · ${activity.domain === 'wellness' ? 'Wellness' : 'Fitness'}`).join(' / ')}</p>
-        <p className="mt-0.5 text-xs font-semibold text-slate-500">{formatDayRange(challenge.startDate, challenge.endDate)}</p>
-      </div>
-    </div>
-    <div className="mt-3"><V2Button variant="secondary" onClick={() => navigate(`/v2/challenges/${challenge.challengeId}`)}>View Challenge</V2Button></div>
-  </li>;
+  return <V2ChallengeCard
+    challenge={challenge}
+    surface="find"
+    statusLabel={statusLabelForEndState(challenge.status, endState)}
+    statusTone={statusTone(endState)}
+    groupLine={`${challenge.groupName ?? 'Group Challenge'} · ${formatDayRange(challenge.startDate, challenge.endDate)}`}
+    progress={<FindChallengeProgress challenge={challenge} />}
+    actions={<V2Button variant="secondary" onClick={() => navigate(`/v2/challenges/${challenge.challengeId}`)}>View Challenge</V2Button>}
+  />;
 }
 
 interface FilterOption<T extends string> { value: T; label: string; short?: string; dot?: string }
