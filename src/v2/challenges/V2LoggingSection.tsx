@@ -24,6 +24,7 @@ import {
   useActivityDisplayNames,
   V2ActivityName,
 } from './activityNames';
+import { ActivitySharePreview } from '../today/ActivityVisibilityPreview';
 
 function toDatetimeLocalValue(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -209,6 +210,14 @@ export function V2LogActivityForm({
           <p className="mt-1 text-sm leading-6 text-slate-600">
             No duplicate was created.
           </p>
+        )}
+        {!accepted.duplicate && (
+          <ActivitySharePreview
+            activityName={selected ? <V2ActivityName canonicalKey={selected.canonicalKey} /> : 'Activity'}
+            value={accepted.value}
+            unit={accepted.unit}
+            challengeTitle={detail.title}
+          />
         )}
         {showSupportAfterAccepted && !accepted.duplicate && (
           <section aria-label="Optional support opportunity" className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">

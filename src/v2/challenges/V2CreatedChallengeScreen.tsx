@@ -23,6 +23,7 @@ import { participationViewFor, V2LeaveChallengeDialog, V2ParticipationSection } 
 import { V2ProgressSection } from './V2ProgressSection';
 import { V2ChallengeResults } from './V2ChallengeResults';
 import { V2ChallengeHero } from './V2ChallengeHero';
+import { ChallengeVisibilityPreview } from '../today/ActivityVisibilityPreview';
 import { fetchKnowledgeByCode, fetchKnowledgeById } from '../../api/knowledgeApi';
 import { fetchActivityOptions } from '../../api/challengeCreationApi';
 import { createChallengeWizardRouteState, createInitialWizardState, type WizardActivity } from './challengeCreationDraft';
@@ -263,6 +264,8 @@ export function V2CreatedChallengeScreen() {
         {endState === 'live'
           ? <V2ProgressSection detail={challenge} />
           : <V2ChallengeResults detail={challenge} endState={endState} />}
+
+        {import.meta.env.DEV && <ChallengeVisibilityPreview detail={challenge} />}
 
         <V2ParticipationSection detail={challenge} />
 

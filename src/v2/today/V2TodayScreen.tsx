@@ -23,6 +23,7 @@ import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
 import { useDismissV2PreferenceReminder, useV2Preferences } from '../preferences/usePreferences';
 import { V2TodayDiscoveryRecommendations } from './V2TodayDiscoveryRecommendations';
+import { TodayActivityTimelinePreview } from './ActivityVisibilityPreview';
 import { showTodayDiscoveryRecommendations } from './todayDiscovery';
 import {
   challengeTypeLabel,
@@ -270,6 +271,8 @@ export function V2TodayScreen() {
               />
             </section>
           )}
+
+          {import.meta.env.DEV && <TodayActivityTimelinePreview />}
 
           {/* 4. Group-contextual opportunities (never recommendations). */}
           {projection.groupChallengeOpportunities.length > 0 && (
