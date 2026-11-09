@@ -21,6 +21,7 @@ import {
   applyChallengeActivity,
   type ApplyChallengeActivityResult,
 } from './challengeActivityApplication.js';
+import { attemptImmediateFinalization } from './challengeFinalization.js';
 import type { Db } from './db.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
 import { createDbKnowledgeIdentityFirstResolver } from './knowledgePins.js';
@@ -249,6 +250,19 @@ export function registerChallengeActivityRoutes(
         resolveKnowledgePin: createDbKnowledgeIdentityFirstResolver(db, body.activity_kind),
         resolveGroupMembershipAuthority: authority.resolveGroupMembershipAuthority,
       });
+      // The Activity transaction has committed both the full crossing value
+      // and the Challenge end. Finalize only that collective terminal event,
+      // outside the acceptance transaction, so a finalizer failure cannot
+      // turn a committed Activity into an apparent rejection.
+      if (result.completionTriggered && result.challenge.collectiveGoalReached) {
+        const attempt = await attemptImmediateFinalization(db, params.challengeId);
+        if (attempt.failureCode) {
+          request.log.error({
+            challengeId: params.challengeId,
+            failureCode: attempt.failureCode,
+          }, 'Challenge ended; immediate finalization remains pending');
+        }
+      }
       return toResponse(result);
     },
   );

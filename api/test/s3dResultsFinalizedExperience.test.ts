@@ -14,6 +14,7 @@ import {
 import {
   finalizeChallenge,
   getParticipationFinals,
+  processExpiredChallenges,
 } from '../src/challengeFinalization.js';
 import {
   getChallengeDetail,
@@ -27,6 +28,7 @@ import {
   seedMembership,
   stubEligibility,
   testDb,
+  failSecondFinalizationTransactionOnce,
 } from './helpers.js';
 import type { Db } from '../src/db.js';
 
@@ -227,6 +229,62 @@ describe('S3d T-1 Together finalized read', () => {
     expect(detail.myParticipation?.progress.cumulativeTotal).toBe(110);
     expect(detail.myParticipation?.final?.completed).toBe(true);
     expect(detail.myParticipation?.final?.finalizedAt).toBe(detail.finalizedAt);
+
+    const app = buildTestApp(setup.tokens);
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${setup.challengeId}`,
+      headers: authHeaders(Object.keys(setup.tokens)[0]),
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ finalized: true, finalResult: { result: { collective_total: 110 } } });
+    await app.close();
+  });
+
+  it('finalizes a goal crossing through the authenticated Activity route and serves the frozen result', async () => {
+    const now = new Date();
+    const day = (value: Date) => value.toISOString().slice(0, 10);
+    const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const setup = await setupChallenge({
+      names: ['A'],
+      start_date: day(new Date(now.getTime() - 24 * 60 * 60 * 1000)),
+      end_date: day(end),
+      challenge_type: 'collective',
+      goal_value: 100,
+      goal_unit: 'reps',
+      activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 20, unit: 'reps' }],
+    });
+    await insertEpisode(setup.db, setup.challengeId, setup.members.A, new Date(now.getTime() - 60 * 60 * 1000).toISOString());
+    const token = Object.keys(setup.tokens)[0];
+    const app = buildTestApp(setup.tokens, {
+      db: failSecondFinalizationTransactionOnce(setup.db),
+      challengeActivity: { groupMembershipAuthority: allEligible },
+    });
+    const accepted = await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${setup.challengeId}/activity`,
+      headers: authHeaders(token),
+      payload: {
+        activity_kind: 'fitness', canonical_key: 'push-up', value: 120, unit: 'reps',
+        occurred_at: now.toISOString(), client_key: next('route-crossing'),
+      },
+    });
+    expect(accepted.statusCode).toBe(200);
+    expect((await setup.db.query<{ status: string; finalized_at: Date | null }>(
+      `SELECT status, finalized_at FROM challenges WHERE challenge_id = $1`, [setup.challengeId],
+    )).rows[0]).toMatchObject({ status: 'ended' });
+    expect((await setup.db.query<{ count: number }>(
+      `SELECT count(*)::int AS count FROM challenge_finalizations WHERE challenge_id = $1`, [setup.challengeId],
+    )).rows[0].count).toBe(0);
+    const recovery = await processExpiredChallenges(setup.db, now);
+    expect(recovery.find((item) => item.challenge_id === setup.challengeId)).toMatchObject({ recoveredEnded: true, finalized: true });
+    expect(Number((await setup.db.query<{ total: string }>(
+      `SELECT result->>'collective_total' AS total FROM challenge_finalizations WHERE challenge_id = $1`, [setup.challengeId],
+    )).rows[0].total)).toBe(120);
+    const read = await app.inject({ method: 'GET', url: `/api/challenges/${setup.challengeId}`, headers: authHeaders(token) });
+    expect(read.statusCode).toBe(200);
+    expect(read.json()).toMatchObject({ finalized: true, finalResult: { result: { collective_total: 120 } } });
+    await app.close();
   });
 
   it('goal not reached at expiry reports the actual result (never a failure label)', async () => {
@@ -303,7 +361,7 @@ describe('S3d lifecycle states', () => {
       });
       await insertEpisode(setup.db, setup.challengeId, setup.members.A);
       await log(setup, setup.members.A, 20, '2026-06-02T12:00:00Z', '2026-06-02T12:00:00Z');
-      await endChallenge(setup.db, setup.challengeId);
+      await endChallenge(failSecondFinalizationTransactionOnce(setup.db), setup.challengeId);
       const detail = await detailFor(setup, setup.members.A);
       expect(detail.status).toBe('ended');
       expect(detail.finalized).toBe(false);

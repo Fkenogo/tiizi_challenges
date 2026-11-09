@@ -346,7 +346,10 @@ describe('CORR-001 B — server-authoritative withdrawal lifecycle', () => {
       activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 10, unit: 'reps' }],
     });
     const participationId = await insertEpisode(setup.db, setup.challengeId, setup.members.A);
-    await endChallenge(setup.db, setup.challengeId);
+    await setup.db.query(
+      `UPDATE challenges SET status = 'ended', ended_at = now() WHERE challenge_id = $1`,
+      [setup.challengeId],
+    );
     const app = buildTestApp(
       { 'token-a': setup.tokens.A },
       {
@@ -532,7 +535,10 @@ describe('CORR-001 I — missing frozen truth never falls back to live derived t
 
     // Simulate corrupt sealed truth: finalized marker present, no
     // challenge_finalizations row (frozen history is delete-protected).
-    await endChallenge(setup.db, setup.challengeId);
+    await setup.db.query(
+      `UPDATE challenges SET status = 'ended', ended_at = now() WHERE challenge_id = $1`,
+      [setup.challengeId],
+    );
     await setup.db.query(
       `UPDATE challenges SET finalized_at = now() WHERE challenge_id = $1`,
       [setup.challengeId],
@@ -559,7 +565,10 @@ describe('CORR-001 I — missing frozen truth never falls back to live derived t
     });
     await insertEpisode(setup.db, setup.challengeId, setup.members.A);
     await log(setup, setup.members.A, 10, '2026-06-02T10:00:00Z', '2026-06-02T10:00:00Z');
-    await endChallenge(setup.db, setup.challengeId);
+    await setup.db.query(
+      `UPDATE challenges SET status = 'ended', ended_at = now() WHERE challenge_id = $1`,
+      [setup.challengeId],
+    );
     await setup.db.query(
       `UPDATE challenges SET finalized_at = now() WHERE challenge_id = $1`,
       [setup.challengeId],

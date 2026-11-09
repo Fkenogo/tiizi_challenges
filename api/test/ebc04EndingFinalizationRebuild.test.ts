@@ -43,6 +43,7 @@ import {
   seedMembership,
   testDb,
   stubEligibility,
+  failSecondFinalizationTransactionOnce,
 } from './helpers.js';
 import type { Db } from '../src/db.js';
 
@@ -332,7 +333,35 @@ describe('EBC-04 GENERAL ENDING', () => {
     const second = await endChallenge(db, setup.challengeId);
     expect(second.status).toBe('ended');
     expect(second.ended_at).toBe(first.ended_at);
+    expect((await finalsCount()).challenges).toBe(1);
+  });
+
+  it('6: a post-commit finalization failure leaves a durable pending row for lifecycle recovery', async () => {
+    const db = testDb();
+    const setup = await setupActiveChallenge({
+      challenge_type: 'competitive',
+      activities: [pushUp({ target_value: 100 })],
+    });
+    await insertEpisode(db, {
+      challengeId: setup.challengeId, memberId: setup.memberId, joinedAt: '2026-06-01T00:00:00Z',
+    });
+
+    await endChallenge(failSecondFinalizationTransactionOnce(db), setup.challengeId);
+    expect(await challengeStatus(setup.challengeId)).toMatchObject({ status: 'ended', finalized_at: null });
     expect((await finalsCount()).challenges).toBe(0);
+
+    const recovered = await processExpiredChallenges(db, T('2026-06-10T12:00:00Z'));
+    expect(recovered.find((item) => item.challenge_id === setup.challengeId)).toMatchObject({
+      ended: true,
+      finalized: true,
+      recoveredEnded: true,
+      failureCode: null,
+    });
+    expect((await challengeStatus(setup.challengeId)).finalized_at).not.toBeNull();
+    const frozen = await getChallengeFinal(db, setup.challengeId);
+    const repeated = await processExpiredChallenges(db, T('2026-06-11T12:00:00Z'));
+    expect(repeated.some((item) => item.challenge_id === setup.challengeId)).toBe(false);
+    expect(await getChallengeFinal(db, setup.challengeId)).toEqual(frozen);
   });
 });
 
