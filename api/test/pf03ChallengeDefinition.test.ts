@@ -817,10 +817,26 @@ describe('PF-03 history, mutation and boundaries (proofs 20-25)', () => {
       activities: [pushUp],
       reset_on_miss: false,
     }, pinned)).rejects.toThrow(/reset_on_miss/);
-    // Finalized terminal truth is frozen (simulate finalization marker;
-    // full finalization is proven by the EBC-04 suite).
+    // Governed ending now performs immediate finalization (EBC-04 Option C).
     await endChallenge(db, challengeId);
-    await db.query(`UPDATE challenges SET finalized_at = now() WHERE challenge_id = $1`, [challengeId]);
+    const finalizedChallenge = await db.query<{ status: string; finalized_at: Date | null }>(
+      `SELECT status, finalized_at FROM challenges WHERE challenge_id = $1`, [challengeId],
+    );
+    expect(finalizedChallenge.rows[0].status).toBe('ended');
+    expect(finalizedChallenge.rows[0].finalized_at).toBeInstanceOf(Date);
+    const frozenBefore = await db.query<{ finalized_at: Date; result: unknown }>(
+      `SELECT finalized_at, result FROM challenge_finalizations WHERE challenge_id = $1`, [challengeId],
+    );
+    expect(frozenBefore.rows).toHaveLength(1);
+
+    await expect(db.query(
+      `UPDATE challenges SET finalized_at = finalized_at + INTERVAL '1 second' WHERE challenge_id = $1`,
+      [challengeId],
+    )).rejects.toThrow(/finalized_at is write-once/);
+    const frozenAfter = await db.query<{ finalized_at: Date; result: unknown }>(
+      `SELECT finalized_at, result FROM challenge_finalizations WHERE challenge_id = $1`, [challengeId],
+    );
+    expect(frozenAfter.rows).toEqual(frozenBefore.rows);
     await expect(addChallengeConfigVersion(db, challengeId, {
       activities: [pushUp],
     }, pinned)).rejects.toThrow(/frozen|historically complete/);
