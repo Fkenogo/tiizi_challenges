@@ -146,4 +146,3 @@ realDescribe('Option C lifecycle on independent PostgreSQL connections', () => {
     expect((await processExpiredChallenges(db, new Date('2026-06-11T12:00:00Z'))).some((x) => x.challenge_id === challenge.challenge_id)).toBe(false);
   }, 60_000);
 });
-
