@@ -540,12 +540,47 @@ export async function finalizeChallenge(
   });
 }
 
+export interface ImmediateFinalizationAttempt {
+  finalized: boolean;
+  alreadyFinalized: boolean;
+  failureCode: string | null;
+}
+
+/**
+ * Best-effort Option C trigger for an end operation that has already
+ * committed. A failure must never turn an accepted Activity or committed
+ * end into an apparent rejection; the ended/unfinalized row is the durable
+ * recovery signal consumed by processExpiredChallenges.
+ */
+export async function attemptImmediateFinalization(
+  db: Db,
+  challengeId: string,
+  now: Date = new Date(),
+): Promise<ImmediateFinalizationAttempt> {
+  try {
+    const result = await finalizeChallenge(db, challengeId, now);
+    return {
+      finalized: result.finalization != null,
+      alreadyFinalized: result.alreadyFinalized,
+      failureCode: null,
+    };
+  } catch (error) {
+    return {
+      finalized: false,
+      alreadyFinalized: false,
+      failureCode: error instanceof ApplicationError ? error.code : 'finalization_failed',
+    };
+  }
+}
+
 export interface ExpiredProcessingOutcome {
   challenge_id: string;
   expired: boolean;
   ended: boolean;
   finalized: boolean;
   alreadyFinalized: boolean;
+  recoveredEnded: boolean;
+  failureCode: string | null;
 }
 
 export interface ScheduledStartProcessingOutcome {
@@ -607,10 +642,11 @@ export async function processScheduledChallengeStarts(
 }
 
 /**
- * Scheduled-ending seam (EBC-04 §6): end + finalize every active Challenge
- * whose governing window has expired — without requiring any future
- * participant activity. Deterministic for a given `now`; each Challenge
- * finalizes in its own transaction so one failure never blocks the rest.
+ * Scheduled lifecycle recovery seam (EBC-04 §6): finalize active Challenges
+ * whose governing window has expired and retry every ended/unfinalized
+ * Challenge (including early Together completion and prior finalization
+ * failures). Deterministic for a given `now`; each Challenge finalizes in its
+ * own transaction so one failure never blocks the rest.
  * No scheduler is deployed here: this is the callable seam a later job
  * invokes.
  */
@@ -618,16 +654,44 @@ export async function processExpiredChallenges(
   db: Db,
   now: Date = new Date(),
 ): Promise<ExpiredProcessingOutcome[]> {
-  const active = await db.query<{
+  const candidates = await db.query<{
     challenge_id: unknown;
     end_date: string | Date;
     timezone: unknown;
+    status: 'active' | 'ended';
   }>(
-    `SELECT challenge_id, end_date, timezone FROM challenges WHERE status = 'active'`,
+    `SELECT challenge_id, end_date, timezone, status FROM challenges
+     WHERE status = 'active' OR (status = 'ended' AND finalized_at IS NULL)`,
   );
   const outcomes: ExpiredProcessingOutcome[] = [];
-  for (const row of active.rows) {
+  for (const row of candidates.rows) {
     const challengeId = String(row.challenge_id);
+    const recoveredEnded = row.status === 'ended';
+    if (recoveredEnded) {
+      try {
+        const result = await finalizeChallenge(db, challengeId, now);
+        outcomes.push({
+          challenge_id: challengeId,
+          expired: false,
+          ended: true,
+          finalized: result.finalization != null,
+          alreadyFinalized: result.alreadyFinalized,
+          recoveredEnded: true,
+          failureCode: null,
+        });
+      } catch (error) {
+        outcomes.push({
+          challenge_id: challengeId,
+          expired: false,
+          ended: true,
+          finalized: false,
+          alreadyFinalized: false,
+          recoveredEnded: true,
+          failureCode: error instanceof ApplicationError ? error.code : 'finalization_failed',
+        });
+      }
+      continue;
+    }
     // Calendar-date comparison: the stored end DATE must survive any server
     // timezone (toDayString never projects through UTC).
     const endDate = toDayString(row.end_date);
@@ -638,11 +702,11 @@ export async function processExpiredChallenges(
     } catch {
       // Unreadable timezone config fails closed for this Challenge only;
       // the seam continues with the remaining Challenges.
-      outcomes.push({ challenge_id: challengeId, expired: false, ended: false, finalized: false, alreadyFinalized: false });
+      outcomes.push({ challenge_id: challengeId, expired: false, ended: false, finalized: false, alreadyFinalized: false, recoveredEnded: false, failureCode: 'invalid_timezone' });
       continue;
     }
     if (!expired) {
-      outcomes.push({ challenge_id: challengeId, expired: false, ended: false, finalized: false, alreadyFinalized: false });
+      outcomes.push({ challenge_id: challengeId, expired: false, ended: false, finalized: false, alreadyFinalized: false, recoveredEnded: false, failureCode: null });
       continue;
     }
     try {
@@ -654,9 +718,19 @@ export async function processExpiredChallenges(
         ended: challenge.status === 'ended',
         finalized: result.finalization != null,
         alreadyFinalized: result.alreadyFinalized,
+        recoveredEnded: false,
+        failureCode: null,
       });
-    } catch {
-      outcomes.push({ challenge_id: challengeId, expired: true, ended: false, finalized: false, alreadyFinalized: false });
+    } catch (error) {
+      outcomes.push({
+        challenge_id: challengeId,
+        expired: true,
+        ended: false,
+        finalized: false,
+        alreadyFinalized: false,
+        recoveredEnded: false,
+        failureCode: error instanceof ApplicationError ? error.code : 'finalization_failed',
+      });
     }
   }
   return outcomes;

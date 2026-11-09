@@ -378,16 +378,14 @@ export async function activateChallenge(
   });
 }
 
-/** active (or establishment) -> ended. Terminal: history stays put. */
 /**
- * EBC-04 idempotent governed end: ending stops ordinary activity
- * acceptance (it is NOT finalization — terminal truth freezes separately).
- * Ending an already-ended Challenge returns its current state instead of
- * failing, so duplicate/concurrent ending calls converge; ended Challenges
- * still never reopen (guard trigger) and finalization never reverses this.
+ * Option C governed end: commit the terminal status first, then immediately
+ * attempt the canonical idempotent finalizer. The post-commit attempt is
+ * deliberately best-effort: if it fails, the end remains committed and the
+ * ended/unfinalized Challenge is recoverable by the lifecycle processor.
  */
 export async function endChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {
-  return db.transaction(async (tx) => {
+  const ended = await db.transaction(async (tx) => {
     // Lock and retain the actual source status so only GF-01's canonical
     // active -> ended transition emits. Ending during establishment remains
     // existing domain behavior but is outside the automatic Feed allow-list.
@@ -417,6 +415,24 @@ export async function endChallenge(db: Db, challengeId: string): Promise<Challen
     }
     fail(`challenge ${challengeId} lost its ${before.status} -> ended transition race`);
   });
+  try {
+    const { attemptImmediateFinalization } = await import('./challengeFinalization.js');
+    const attempt = await attemptImmediateFinalization(db, challengeId);
+    if (attempt.failureCode) {
+      console.error('Challenge ended; immediate finalization remains pending', {
+        challengeId,
+        failureCode: attempt.failureCode,
+      });
+    }
+  } catch {
+    // Preserve the committed end if the finalization module itself cannot be
+    // loaded. The lifecycle processor will retry the durable pending row.
+    console.error('Challenge ended; immediate finalization remains pending', {
+      challengeId,
+      failureCode: 'finalization_unavailable',
+    });
+  }
+  return readChallenge(db, ended.challenge_id);
 }
 
 export async function getChallenge(db: Db, challengeId: string): Promise<ChallengeRow> {

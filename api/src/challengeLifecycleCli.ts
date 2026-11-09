@@ -59,12 +59,18 @@ export async function runLifecycleCommand(db: Db, argv: string[]): Promise<void>
       );
     }
     const outcomes = await processExpiredChallenges(db, now);
+    let finalizationFailures = 0;
     for (const outcome of outcomes) {
       console.log(
         `lifecycle: ${outcome.challenge_id} expired=${outcome.expired} `
         + `ended=${outcome.ended} finalized=${outcome.finalized} `
-        + `already=${outcome.alreadyFinalized}`,
+        + `already=${outcome.alreadyFinalized} recoveredEnded=${outcome.recoveredEnded} `
+        + `failure=${outcome.failureCode ?? 'none'}`,
       );
+      if (outcome.failureCode) finalizationFailures += 1;
+    }
+    if (finalizationFailures > 0) {
+      cliFail(`${finalizationFailures} Challenge finalization attempt(s) failed; ended Challenges remain pending for retry`);
     }
     return;
   }

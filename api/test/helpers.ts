@@ -93,6 +93,37 @@ export function testDb(): Db {
 }
 
 /**
+ * Inject one failure into the second transaction after a caller commits an
+ * end transition. Used to prove that immediate finalization failure cannot
+ * roll back the end or its already-accepted Activity, and that the lifecycle
+ * recovery pass can retry the durable ended/unfinalized row.
+ */
+export function failSecondFinalizationTransactionOnce(target: Db): Db {
+  let transactionCount = 0;
+  const wrap = (inner: Db, failFinalizationWrite: boolean): Db => ({
+    async query<T>(text: string, params?: unknown[]) {
+      if (failFinalizationWrite && /INSERT INTO challenge_finalizations/i.test(text)) {
+        throw new Error('test-injected finalization failure');
+      }
+      return inner.query<T>(text, params);
+    },
+    async transaction<T>(fn: (tx: Db) => Promise<T>) {
+      return inner.transaction((tx) => fn(wrap(tx, failFinalizationWrite)));
+    },
+    close: () => inner.close(),
+  });
+
+  return {
+    query: (text, params) => target.query(text, params),
+    async transaction<T>(fn: (tx: Db) => Promise<T>) {
+      transactionCount += 1;
+      return target.transaction((tx) => fn(wrap(tx, transactionCount === 2)));
+    },
+    close: () => target.close(),
+  };
+}
+
+/**
  * Read-only failure fixture for Group authority tests. Authentication/member
  * lookup remains available; every Group or membership query fails so the
  * application must fail closed at the PostgreSQL boundary.
