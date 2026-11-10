@@ -58,7 +58,7 @@ export function narrowChecks(): string[] {
   expect('ChallengeTypeStep carries no composition copy of its own', !footerless.includes('Templates are not available yet'));
   expect('member type step = reusable step + member footer',
     html(<StepHowItWorks selected="streak" onSelect={NOOP} />)
-    === footerless.replace(/<\/div>$/, '<p class="text-xs text-slate-500">Templates are not available yet — you are setting this Challenge up from scratch.</p></div>'));
+    === footerless.replace(/<\/div>$/, '<p class="text-xs text-slate-500">You are setting this Challenge up from scratch.</p></div>'));
 
   expect('WhatCountsExplanation renders the type-specific lines',
     html(<WhatCountsExplanation challengeType="collective" />) !== html(<WhatCountsExplanation challengeType="streak" />));

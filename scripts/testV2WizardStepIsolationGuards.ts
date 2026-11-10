@@ -38,7 +38,7 @@ check('reusable steps contain no network calls of their own', !/\bfetch\(|apiFet
 
 console.log('B. narrow state contracts');
 const states = read(`${dir}/stepStates.ts`);
-check("NameAppearanceState = Pick<'title'|'description'|'coverId'>", /NameAppearanceState = Pick<WizardState, 'title' \| 'description' \| 'coverId'>/.test(states));
+check("NameAppearanceState = Pick<'title'|'description'>", /NameAppearanceState = Pick<WizardState, 'title' \| 'description'>/.test(states));
 check("ActivitiesStepState = Pick<'challengeType'|'activities'>", /ActivitiesStepState = Pick<WizardState, 'challengeType' \| 'activities'>/.test(states));
 check("WhatCountsStepState = Pick<'challengeType'|'activities'>", /WhatCountsStepState = Pick<WizardState, 'challengeType' \| 'activities'>/.test(states));
 const stepSources = sources.filter((entry) => /Step\.tsx$|Fields\.tsx$/.test(entry.file));
