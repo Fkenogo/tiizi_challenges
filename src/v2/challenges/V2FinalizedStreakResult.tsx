@@ -1,6 +1,6 @@
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { V2Card } from '../components/V2Primitives';
-import { formatDay } from './challengeCreationDraft';
+import { Link } from 'react-router-dom';
 import { formatResultDay } from './resultsFormat';
 import { streakFinalResultFor, streakOutcomeFor, streakPeriodDays } from './resultsView';
 
@@ -73,26 +73,12 @@ export function V2FinalizedStreakResult({ detail }: { detail: V2ChallengeDetail 
       </dl>
 
       {period.length > 0 && (
-        <div className="mt-3 border-t border-slate-100 pt-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Day by day</p>
-          <ul className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
-            {period.map((day) => {
-              const state = view.dayStates[day];
-              const complete = state?.complete === true;
-              return (
-                <li
-                  key={day}
-                  className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs ${
-                    complete ? 'bg-emerald-50 text-emerald-900' : 'bg-slate-50 text-slate-600'
-                  }`}
-                >
-                  <span>{formatDay(day)}</span>
-                  <span className="font-bold">{complete ? 'Complete' : 'Missed'}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <Link
+          to={`/v2/challenges/${encodeURIComponent(detail.challengeId)}/history`}
+          className="mt-3 inline-flex rounded-lg py-2 text-sm font-bold text-primary underline underline-offset-2"
+        >
+          View full history
+        </Link>
       )}
 
       <p className="mt-3 text-xs leading-5 text-slate-500">

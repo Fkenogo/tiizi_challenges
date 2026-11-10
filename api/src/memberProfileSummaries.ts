@@ -95,6 +95,8 @@ export interface MemberChallengeSummaryItem {
   participationId: string;
   title: string;
   status: ParticipationStatus;
+  /** Existing Challenge lifecycle state; presentation context only, not Profile bucket authority. */
+  challengeStatus: string;
   bucket: ChallengeSummaryBucket;
   joinedAt: string;
   exitedAt: string | null;
@@ -150,6 +152,7 @@ interface ChallengeSummaryRow {
   participation_id: string | null;
   challenge_id: string | null;
   status: string | null;
+  challenge_status: string | null;
   challenge_title: string | null;
   joined_at: string | Date | null;
   joined_at_cursor: string | null;
@@ -385,7 +388,7 @@ export async function listMemberChallengeSummaries(
        SELECT p.participation_id, p.challenge_id, p.status, p.joined_at, p.exited_at,
               to_char(p.joined_at AT TIME ZONE 'UTC',
                       'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS joined_at_cursor,
-              c.title AS challenge_title, c.finalized_at,
+              c.title AS challenge_title, c.finalized_at, c.status AS challenge_status,
               CASE
                 WHEN p.status = 'active' AND c.finalized_at IS NULL THEN 'active'
                 WHEN p.status = 'active' AND c.finalized_at IS NOT NULL THEN 'history'
@@ -432,7 +435,7 @@ export async function listMemberChallengeSummaries(
     const finalized = row.finalized_at != null;
     const bucket = classifyOrFail(row.status, finalized);
     if (row.bucket !== bucket) return summaryUnavailable();
-    if (row.challenge_id === null || row.challenge_title === null
+    if (row.challenge_id === null || row.challenge_title === null || row.challenge_status === null
         || row.joined_at === null || row.participation_id === null) {
       return summaryUnavailable();
     }
@@ -444,6 +447,7 @@ export async function listMemberChallengeSummaries(
         participationId: String(row.participation_id),
         title: String(row.challenge_title),
         status: row.status as ParticipationStatus,
+        challengeStatus: row.challenge_status,
         bucket,
         joinedAt: toIso(row.joined_at),
         exitedAt: row.exited_at == null ? null : toIso(row.exited_at),

@@ -35,6 +35,7 @@ interface ProfileBody {
       participationId: string;
       title: string;
       status: string;
+      challengeStatus: string;
       bucket: string;
       joinedAt: string;
       exitedAt: string | null;
@@ -281,13 +282,13 @@ describe('GET /api/me', () => {
     const byParticipation = new Map(body.challenges.items.map((item) => [item.participationId, item]));
     expect(byParticipation.get(activeParticipation)).toMatchObject({
       challengeId: activeChallenge, participationId: activeParticipation,
-      title: 'Active challenge', status: 'active', bucket: 'active', exitedAt: null,
+      title: 'Active challenge', status: 'active', challengeStatus: 'active', bucket: 'active', exitedAt: null,
     });
     expect(byParticipation.get(endedParticipation)).toMatchObject({
-      challengeId: endedChallenge, bucket: 'active',
+      challengeId: endedChallenge, challengeStatus: 'ended', bucket: 'active',
     });
     expect(byParticipation.get(finalizedParticipation)).toMatchObject({
-      challengeId: finalizedChallenge, status: 'active', bucket: 'history',
+      challengeId: finalizedChallenge, status: 'active', challengeStatus: 'ended', bucket: 'history',
     });
     expect(byParticipation.get(withdrawnParticipation)).toMatchObject({
       challengeId: rejoinChallenge, status: 'withdrawn', bucket: 'history',

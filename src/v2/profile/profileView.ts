@@ -84,6 +84,7 @@ export function bucketProfileChallenges(
 export function challengeStatusLabel(item: V2ProfileChallengeItem): string {
   if (item.status === 'withdrawn') return 'Withdrawn';
   if (item.status === 'removed') return 'Removed';
+  if (item.bucket === 'active' && item.challengeStatus === 'ended') return 'Awaiting results';
   if (item.bucket === 'history') return 'Finished';
   return 'Active';
 }

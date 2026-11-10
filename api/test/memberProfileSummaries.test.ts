@@ -293,9 +293,9 @@ describe('member-owned Challenge participation summaries', () => {
     const page = await listMemberChallengeSummaries(testDb(), { memberId });
     expect(page).toMatchObject({ activeCount: 2, historyCount: 3, totalCount: 5 });
     const byChallenge = new Map(page.items.map((item) => [item.challengeId, item]));
-    expect(byChallenge.get(activeUnfinalized)?.bucket).toBe('active');
-    expect(byChallenge.get(endedUnfinalized)?.bucket).toBe('active');
-    expect(byChallenge.get(finalizedActiveRow)?.bucket).toBe('history');
+    expect(byChallenge.get(activeUnfinalized)).toMatchObject({ bucket: 'active', challengeStatus: 'active' });
+    expect(byChallenge.get(endedUnfinalized)).toMatchObject({ bucket: 'active', challengeStatus: 'ended' });
+    expect(byChallenge.get(finalizedActiveRow)).toMatchObject({ bucket: 'history', challengeStatus: 'ended' });
     expect(byChallenge.get(finalizedActiveRow)?.status).toBe('active');
     expect(byChallenge.get(withdrawn)?.bucket).toBe('history');
     expect(byChallenge.get(removed)?.bucket).toBe('history');
@@ -305,12 +305,15 @@ describe('member-owned Challenge participation summaries', () => {
     const memberId = await newMember('challenge-counts');
     const creatorId = await newMember('challenge-counts-creator');
     const groupId = await newGroup('Counts group');
+    const expectedChallengeIds: string[] = [];
     for (let i = 0; i < 3; i += 1) {
       const challengeId = await newChallenge(groupId, creatorId, { title: `Active ${i}` });
+      expectedChallengeIds.push(challengeId);
       await newParticipation(challengeId, memberId);
     }
     for (let i = 0; i < 4; i += 1) {
       const challengeId = await newChallenge(groupId, creatorId, { title: `History ${i}` });
+      expectedChallengeIds.push(challengeId);
       await newParticipation(challengeId, memberId, {
         status: 'withdrawn',
         joinedAt: new Date(`2026-04-0${i + 1}T09:00:00.000Z`),
@@ -323,6 +326,8 @@ describe('member-owned Challenge participation summaries', () => {
       expect(page).toMatchObject({ activeCount: 3, historyCount: 4, totalCount: 7 });
     }
     expect(items).toHaveLength(7);
+    expect(new Set(items.map((item) => item.challengeId)).size).toBe(7);
+    expect(new Set(items.map((item) => item.challengeId))).toEqual(new Set(expectedChallengeIds));
     expect(items.filter((item) => item.bucket === 'active')).toHaveLength(3);
     expect(items.filter((item) => item.bucket === 'history')).toHaveLength(4);
   });
