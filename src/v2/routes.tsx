@@ -16,6 +16,7 @@ import { removeV2MemberPreferences } from './preferences/preferencesQuery';
 import { V2MemberShell } from './member/MemberShell';
 import { V2NotificationsPage } from './member/memberPages';
 import { V2ProfileScreen } from './profile/V2ProfileScreen';
+import { V2ProfileChallengeHistoryScreen } from './profile/V2ProfileChallengeHistoryScreen';
 import { V2TodayScreen } from './today/V2TodayScreen';
 import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
@@ -29,6 +30,7 @@ import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
 import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
 import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
+import { V2FinalizedStreakHistoryScreen } from './challenges/V2FinalizedStreakHistoryScreen';
 import { V2SupportTiiziScreen } from './support/V2SupportTiiziScreen';
 import { TemplateDraftEditor } from './operator/templates/TemplateDraftEditor';
 import { TemplatePreviewPage } from './operator/templates/TemplatePreviewPage';
@@ -104,6 +106,7 @@ export function V2Routes() {
             <Route path="today" element={<V2TodayScreen />} />
             <Route path="challenges" element={<V2ChallengeListScreen />} />
             <Route path="challenges/new" element={<V2ChallengeCreationWizard />} />
+            <Route path="challenges/:challengeId/history" element={<V2FinalizedStreakHistoryScreen />} />
             <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />
@@ -113,6 +116,7 @@ export function V2Routes() {
             <Route path="guide" element={<V2ActivityLibraryScreen />} />
             <Route path="guide/:activityId" element={<V2ActivityGuideDetailScreen />} />
             <Route path="profile" element={<V2ProfileScreen />} />
+            <Route path="profile/challenges" element={<V2ProfileChallengeHistoryScreen />} />
             <Route path="preferences" element={<V2PreferencesSetupScreen />} />
             <Route path="support" element={<V2SupportTiiziScreen />} />
             <Route path="notifications" element={<V2NotificationsPage />} />

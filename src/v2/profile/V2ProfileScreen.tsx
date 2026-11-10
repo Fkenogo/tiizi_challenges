@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
 import type { V2ProfileChallengeItem } from '../../api/profileApi';
 import {
@@ -83,6 +83,14 @@ export function V2ProfileScreen() {
     setSaved(false);
   }, [uid]);
 
+  const loadedBuckets = bucketProfileChallenges(profile?.challenges.items ?? []);
+  useEffect(() => {
+    const needed = Math.min(3, profile?.challenges.historyCount ?? 0);
+    if (loadedBuckets.history.length < needed && profile?.challenges.nextCursor && !isLoadingChallenges) {
+      void loadMoreChallenges();
+    }
+  }, [isLoadingChallenges, loadMoreChallenges, loadedBuckets.history.length, profile?.challenges.historyCount, profile?.challenges.nextCursor]);
+
   if (isLoading && !profile) {
     return (
       <V2Page>
@@ -116,6 +124,7 @@ export function V2ProfileScreen() {
   const draftOverLimit = draftLength > PROFILE_DISPLAY_NAME_MAX;
   const email = user?.email ?? null;
   const buckets = bucketProfileChallenges(profile.challenges.items);
+  const recentHistory = buckets.history.slice(0, 3);
 
   const startEditing = () => {
     setDraft(displayName ?? '');
@@ -374,8 +383,11 @@ export function V2ProfileScreen() {
                 <ChallengeGroup title="Active" items={buckets.active} />
               )}
               {buckets.history.length > 0 && (
-                <ChallengeGroup title="History" items={buckets.history} />
+                <ChallengeGroup title="History" items={recentHistory} />
               )}
+              <Link to="/v2/profile/challenges" className="inline-flex py-2 text-sm font-bold text-primary underline underline-offset-2">
+                View all history
+              </Link>
             </div>
           )}
 
@@ -484,9 +496,13 @@ function ChallengeGroup({ title, items }: { title: string; items: V2ProfileChall
             key={item.participationId}
             className="flex items-center justify-between gap-3 py-2.5"
           >
-            <span className="min-w-0 break-words text-sm font-bold text-slate-900">
-              {item.title}
-            </span>
+            {item.bucket === 'history' ? (
+              <Link to={`/v2/challenges/${encodeURIComponent(item.challengeId)}`} className="min-w-0 break-words text-sm font-bold text-primary underline underline-offset-2">
+                {item.title}
+              </Link>
+            ) : (
+              <span className="min-w-0 break-words text-sm font-bold text-slate-900">{item.title}</span>
+            )}
             <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
               {challengeStatusLabel(item)}
             </span>

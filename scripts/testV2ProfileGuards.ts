@@ -57,6 +57,7 @@ function challenge(overrides: Partial<V2ProfileChallengeItem> = {}): V2ProfileCh
     participationId: 'p-1',
     title: 'Morning Movement',
     status: 'active',
+    challengeStatus: 'active',
     bucket: 'active',
     joinedAt: '2026-10-01T08:00:00.000000Z',
     exitedAt: null,
@@ -149,6 +150,7 @@ check(
 );
 
 check('active participation presents Active', challengeStatusLabel(challenge()) === 'Active');
+check('ended but unfinalized active participation presents Awaiting results', challengeStatusLabel(challenge({ challengeStatus: 'ended' })) === 'Awaiting results');
 check(
   'active participation in a finalized Challenge presents Finished',
   challengeStatusLabel(challenge({ bucket: 'history', status: 'active' })) === 'Finished',
@@ -197,6 +199,9 @@ check('does not import the legacy profile cache', !/tiizi_profile/.test(screen))
 check('no upload or media control', !/type=["']file["']|upload|media_assets/i.test(screen));
 check('no V1 or legal routes', !/\/app\/|\/v1|\/terms|\/privacy/i.test(screen));
 check('challenge rows keyed by participationId', screen.includes('key={item.participationId}'));
+check('Profile shows at most the latest three history rows', /buckets\.history\.slice\(0, 3\)/.test(screen));
+check('Profile loads until three qualifying history rows are available', screen.includes('loadedBuckets.history.length < needed') && screen.includes('historyCount ?? 0'));
+check('Profile exposes separate View all history navigation', screen.includes('to="/v2/profile/challenges"'));
 check('name edits submit through the hook', screen.includes('saveDisplayName'));
 check('does not claim a failed save means nothing changed', /may already be updated/.test(screen));
 check('name input has no UTF-16 maxLength attribute', !/maxLength=/.test(screen));
@@ -233,6 +238,10 @@ const routes = code(read('src/v2/routes.tsx'));
 check('profile route renders the real screen', /path="profile"\s+element=\{<V2ProfileScreen\s*\/>\}/.test(routes));
 check('placeholder profile page is gone', !/V2ProfilePage/.test(routes)
   && !/V2ProfilePage/.test(code(read('src/v2/member/memberPages.tsx'))));
+check('history routes mount inside the protected V2 member route tree', routes.includes('V2ProfileChallengeHistoryScreen') && routes.includes('path="profile/challenges"') && routes.includes('V2FinalizedStreakHistoryScreen') && routes.includes('path="challenges/:challengeId/history"'));
+const historyScreen = code(read('src/v2/profile/V2ProfileChallengeHistoryScreen.tsx'));
+check('full history uses server continuation cursor and guards duplicate in-flight paging', historyScreen.includes('profile.challenges.nextCursor') && historyScreen.includes('loadMoreChallenges()'));
+check('historical rows link to their own challengeId', historyScreen.includes('encodeURIComponent(item.challengeId)'));
 
 if (failures > 0) {
   console.error(`\n${failures} Profile guard(s) failed.`);

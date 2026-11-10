@@ -83,6 +83,7 @@ function profileFor(uid: string, displayName: string): V2Profile {
           participationId: 'p-1',
           title: 'Morning Movement',
           status: 'active',
+          challengeStatus: 'active',
           bucket: 'active',
           joinedAt: '2026-10-01T08:00:00.000000Z',
           exitedAt: null,

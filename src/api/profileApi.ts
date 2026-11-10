@@ -47,6 +47,8 @@ export interface V2ProfileChallengeItem {
   participationId: string;
   title: string;
   status: V2ProfileChallengeStatus;
+  /** Existing Challenge lifecycle state; bucket remains independently server-derived. */
+  challengeStatus: string;
   /** Server-derived presentation bucket — never recomputed from dates here. */
   bucket: V2ProfileChallengeBucket;
   joinedAt: string;

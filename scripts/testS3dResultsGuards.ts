@@ -521,6 +521,10 @@ check('resultsView never reads the live currentStreak for the final result',
   !/currentStreak/.test(resultsViewCode) && /finalStreak: final \? final\.finalStreak/.test(resultsViewCode));
 check('streak component renders the frozen finalStreak',
   streakSrc.includes('view.finalStreak'));
+check('Streak summary links to a separate daily history screen', streakSrc.includes('View full history') && streakSrc.includes('/history') && !streakSrc.includes('period.map((day)'));
+const streakHistorySrc = read('src/v2/challenges/V2FinalizedStreakHistoryScreen.tsx');
+check('daily history reads governed finalized Challenge detail and frozen Streak truth', streakHistorySrc.includes('useChallengeDetailV2(challengeId)') && streakHistorySrc.includes("endStateFor(detail) !== 'finalized'") && streakHistorySrc.includes('streakFinalResultFor(detail)'));
+check('daily history route stays in V2 routes', read('src/v2/routes.tsx').includes('path="challenges/:challengeId/history"'));
 // Proof Race consumes PR #41 member-scoped frozen identity.
 check('race result position is frozen passthrough (never computed)',
   /position: final \? final\.finalPosition :/.test(resultsViewCode)
