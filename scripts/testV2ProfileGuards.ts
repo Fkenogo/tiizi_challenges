@@ -201,6 +201,7 @@ check('no V1 or legal routes', !/\/app\/|\/v1|\/terms|\/privacy/i.test(screen));
 check('challenge rows keyed by participationId', screen.includes('key={item.participationId}'));
 check('Profile shows at most the latest three history rows', /buckets\.history\.slice\(0, 3\)/.test(screen));
 check('Profile loads until three qualifying history rows are available', screen.includes('loadedBuckets.history.length < needed') && screen.includes('historyCount ?? 0'));
+check('automatic history loading pauses after a failed page so retry stays user-controlled', screen.includes("pageError?.section !== 'challenges'"));
 check('Profile exposes separate View all history navigation', screen.includes('to="/v2/profile/challenges"'));
 check('name edits submit through the hook', screen.includes('saveDisplayName'));
 check('does not claim a failed save means nothing changed', /may already be updated/.test(screen));

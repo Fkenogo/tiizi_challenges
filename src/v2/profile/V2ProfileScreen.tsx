@@ -86,10 +86,11 @@ export function V2ProfileScreen() {
   const loadedBuckets = bucketProfileChallenges(profile?.challenges.items ?? []);
   useEffect(() => {
     const needed = Math.min(3, profile?.challenges.historyCount ?? 0);
-    if (loadedBuckets.history.length < needed && profile?.challenges.nextCursor && !isLoadingChallenges) {
+    if (loadedBuckets.history.length < needed && profile?.challenges.nextCursor && !isLoadingChallenges
+        && pageError?.section !== 'challenges') {
       void loadMoreChallenges();
     }
-  }, [isLoadingChallenges, loadMoreChallenges, loadedBuckets.history.length, profile?.challenges.historyCount, profile?.challenges.nextCursor]);
+  }, [isLoadingChallenges, loadMoreChallenges, loadedBuckets.history.length, pageError?.section, profile?.challenges.historyCount, profile?.challenges.nextCursor]);
 
   if (isLoading && !profile) {
     return (
