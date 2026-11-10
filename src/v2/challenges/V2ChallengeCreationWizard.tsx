@@ -295,8 +295,8 @@ export function V2ChallengeCreationWizard() {
       if (challengeCoverPhoto.file) {
         setLocalChallengeCoverPreview(established.challengeId, challengeCoverPhoto.file);
       }
-      clearChallengeDraft(uid);
       clearChallengeCoverPhotoDraft(uid);
+      clearChallengeDraft(uid);
       navigate(`/v2/challenges/${established.challengeId}`, { replace: true });
     } catch (error) {
       setSubmitError(creationErrorMessage(error instanceof ApiError ? error.code : null));
