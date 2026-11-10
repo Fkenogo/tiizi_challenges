@@ -3,8 +3,30 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
+import { API_PREFIX } from './api/src/apiPrefix';
+
+const founderPreview = process.env.TIIZI_FOUNDER_PREVIEW === '1';
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    ...(founderPreview ? [{
+      name: 'tiizi-founder-preview-local-assets',
+      transformIndexHtml(html: string) {
+        const withoutRemoteFonts = html.replace(/\s*<link[^>]+(?:fonts\.googleapis\.com|fonts\.gstatic\.com)[^>]*>/g, '');
+        return withoutRemoteFonts.replace('</body>', '<div style="position:fixed;left:82px;top:13px;z-index:2147483647;border-radius:999px;background:#172033;color:white;padding:4px 7px;font:600 10px system-ui;box-shadow:0 2px 8px #0003;pointer-events:none">Founder Preview · local development</div></body>');
+      },
+    }] : []),
+  ],
+  server: founderPreview ? {
+    host: '127.0.0.1',
+    proxy: {
+      [API_PREFIX]: {
+        target: process.env.TIIZI_FOUNDER_API_TARGET ?? 'http://127.0.0.1:4019',
+        changeOrigin: false,
+      },
+    },
+  } : undefined,
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

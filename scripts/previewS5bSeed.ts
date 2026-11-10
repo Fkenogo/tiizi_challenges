@@ -89,7 +89,7 @@ function assertLocalOnly(): string {
   return url.toString();
 }
 
-const AUTH_EMULATOR = 'http://127.0.0.1:9099';
+const AUTH_EMULATOR = process.env.TIIZI_FOUNDER_AUTH_EMULATOR_URL ?? 'http://127.0.0.1:9099';
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID ?? process.env.VITE_FIREBASE_PROJECT_ID ?? '12345';
 const PREVIEW_PASSWORD = process.env.TIIZI_S5B_PREVIEW_PASSWORD ?? '';
 
@@ -103,7 +103,9 @@ interface CreatedIdentity {
  * Founder signs in with `PREVIEW_PASSWORD`. The password is never logged.
  */
 async function ensurePreviewIdentity(): Promise<CreatedIdentity> {
-  if (new URL(AUTH_EMULATOR).hostname !== '127.0.0.1') {
+  const authUrl = new URL(AUTH_EMULATOR);
+  if (authUrl.protocol !== 'http:' || authUrl.hostname !== '127.0.0.1'
+    || !Number.isInteger(Number(authUrl.port)) || Number(authUrl.port) < 1024 || Number(authUrl.port) > 65535) {
     throw new Error('Auth emulator must be loopback.');
   }
   if (!PREVIEW_PASSWORD) {
