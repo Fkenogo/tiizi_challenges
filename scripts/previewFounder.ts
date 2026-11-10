@@ -227,6 +227,21 @@ async function main(): Promise<void> {
   console.log(`  PostgreSQL: 127.0.0.1:${postgresPort}/${DATABASE_NAME} (temporary cluster, disposable marker verified)`);
   await run(process.execPath, ['--import', 'tsx', 'api/src/migrateCli.ts'], { env: localEnv({ ...baseEnv, DATABASE_URL: databaseUrl }) });
 
+  console.log('Founder Preview: populating the reconciled 118-Activity catalogue into the disposable database…');
+  await run(process.execPath, [
+    '--import', 'tsx', 'api/src/knowledgeDevCataloguePublishCli.ts',
+    '--target-db', DATABASE_NAME,
+    '--apply',
+  ], {
+    env: localEnv({
+      ...baseEnv,
+      DATABASE_URL: databaseUrl,
+      TIIZI_DISPOSABLE_DB_HOST: '127.0.0.1',
+      TIIZI_DISPOSABLE_DB_PORT: String(postgresPort),
+      TIIZI_DISPOSABLE_DB_NAME: DATABASE_NAME,
+    }),
+  });
+
   await assertLoopbackPortAvailable(authPort, 'Firebase Auth Emulator');
   const auth = startService('Firebase Auth Emulator', 'firebase', [
     'emulators:start', '--only', 'auth', '--project', projectId, '--config', firebaseConfig,
