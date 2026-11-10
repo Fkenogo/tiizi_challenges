@@ -144,6 +144,16 @@ describe('other extracted steps', () => {
     expect(screen.queryByRole('button', { name: 'Background 1' })).toBeNull();
   });
 
+  it('NameAppearanceFields restores background catalogue selector when enabled (Operator Template authoring)', async () => {
+    const onUpdate = vi.fn();
+    wrap(<NameAppearanceFields state={{ title: '', description: '', coverId: 'challenge-2' }} onUpdate={onUpdate} intro={<p>intro</p>} showBackgroundSelector />);
+    expect(screen.getByRole('group', { name: 'Challenge background' })).toBeTruthy();
+    const buttons = screen.getAllByRole('button', { pressed: false });
+    expect(buttons.length).toBeGreaterThan(0);
+    await userEvent.click(buttons[0]);
+    expect(onUpdate).toHaveBeenCalledWith({ coverId: 'challenge-1' });
+  });
+
   it('WhatCountsStep reports edits and removal for the right row', async () => {
     const onUpdateActivity = vi.fn(); const onRemove = vi.fn();
     wrap(<WhatCountsStep state={{ challengeType: 'streak', activities: [activity('act-1'), activity('act-2', 'Plank')] }} onUpdateActivity={onUpdateActivity} onRemove={onRemove} />);

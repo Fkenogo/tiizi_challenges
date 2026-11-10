@@ -146,6 +146,7 @@ export function releaseAbandonedChallengeDraft(
 ): void {
   if (/^\/v2\/(guide|challenges\/new)(\/|\?|$)/.test(pathname)) return;
   clearChallengeDraft(uid, options);
+  clearChallengeCoverPhotoDraft(uid);
 }
 
 /** Recover the backed-up draft after a Guide trip, then disarm (non-render callers/tests). */
@@ -175,6 +176,9 @@ export function clearChallengeDraft(uid: string, options: { storage?: DraftStora
 /** Remove drafts left by any other account in this tab session (account switch hygiene). */
 export function clearOtherMembersChallengeDrafts(uid: string, options: { storage?: DraftStorage | null } = {}): void {
   const storage = options.storage === undefined ? browserStorage() : options.storage;
+  for (const memberUid of memoryPhotoDrafts.keys()) {
+    if (memberUid !== uid) memoryPhotoDrafts.delete(memberUid);
+  }
   if (!storage) return;
   try {
     const stale: string[] = [];
@@ -186,4 +190,27 @@ export function clearOtherMembersChallengeDrafts(uid: string, options: { storage
   } catch {
     // ignore
   }
+}
+
+/**
+ * Member-scoped in-memory carrier for temporary Challenge cover photos.
+ * Preserves the selected File across Activity Guide round trips without any
+ * persistent storage (no sessionStorage/localStorage) or remote upload.
+ */
+const memoryPhotoDrafts = new Map<string, File>();
+
+export function stashChallengeCoverPhotoDraft(uid: string, file: File | null): void {
+  if (!uid) return;
+  if (file) memoryPhotoDrafts.set(uid, file);
+  else memoryPhotoDrafts.delete(uid);
+}
+
+export function peekChallengeCoverPhotoDraft(uid: string): File | null {
+  if (!uid) return null;
+  return memoryPhotoDrafts.get(uid) ?? null;
+}
+
+export function clearChallengeCoverPhotoDraft(uid: string): void {
+  if (!uid) return;
+  memoryPhotoDrafts.delete(uid);
 }

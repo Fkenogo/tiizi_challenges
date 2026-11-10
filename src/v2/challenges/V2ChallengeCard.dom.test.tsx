@@ -36,4 +36,32 @@ describe('V2ChallengeCard local cover previews', () => {
     expect(screen.queryByRole('img', { name: 'Challenge other-challenge cover photo' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'View Challenge' })).toHaveLength(2);
   });
+
+  it('keeps Challenge title and group line readable and unobstructed without cover photo', () => {
+    render(
+      <V2ChallengeCard
+        challenge={challenge('uncovered-challenge')}
+        surface="explore"
+        statusLabel="Upcoming"
+        statusTone="bg-slate-100 text-slate-800"
+        groupLine="Kilimanjaro Runners"
+        progress={<p>Progress placeholder</p>}
+        actions={<button>Join</button>}
+      />,
+    );
+
+    const titleHeading = screen.getByRole('heading', { level: 3, name: 'Challenge uncovered-challenge' });
+    expect(titleHeading).toBeTruthy();
+    expect(screen.getByText('Kilimanjaro Runners')).toBeTruthy();
+
+    const placeholderBadge = screen.getByText('No cover photo');
+    expect(placeholderBadge).toBeTruthy();
+    // The placeholder container is positioned at top-11/top-12, completely separate from the bottom title container
+    const placeholderContainer = placeholderBadge.closest('.absolute');
+    expect(placeholderContainer?.className).toContain('top-11');
+    expect(placeholderContainer?.className).not.toContain('bottom-3');
+    const titleContainer = titleHeading.closest('.absolute');
+    expect(titleContainer?.className).toContain('bottom-3');
+    expect(titleContainer?.className).not.toContain('top-11');
+  });
 });

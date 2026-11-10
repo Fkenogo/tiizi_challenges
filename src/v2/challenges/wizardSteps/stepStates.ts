@@ -6,6 +6,8 @@ import type { WizardState } from '../challengeCreationDraft';
  * composition can reuse the step without ever receiving a hosting Group,
  * dates, Social Cause, Support or `creatorJoins` field.
  */
-export type NameAppearanceState = Pick<WizardState, 'title' | 'description'>;
+export type NameAppearanceState = Pick<WizardState, 'title' | 'description'> & {
+  coverId?: WizardState['coverId'];
+};
 export type ActivitiesStepState = Pick<WizardState, 'challengeType' | 'activities'>;
 export type WhatCountsStepState = Pick<WizardState, 'challengeType' | 'activities'>;

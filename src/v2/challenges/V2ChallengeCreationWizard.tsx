@@ -9,12 +9,15 @@ import {
 import { ApiError } from '../../api/apiClient';
 import { useAuth } from '../../hooks/useAuth';
 import {
+  clearChallengeCoverPhotoDraft,
   clearChallengeDraft,
   clearOtherMembersChallengeDrafts,
   markChallengeGuideJourney,
   disarmChallengeDraft,
+  peekChallengeCoverPhotoDraft,
   peekChallengeDraft,
   saveChallengeDraft,
+  stashChallengeCoverPhotoDraft,
 } from './challengeDraftSession';
 import {
   V2Button,
@@ -101,10 +104,15 @@ export function V2ChallengeCreationWizard() {
   const queryClient = useQueryClient();
   const memberships = useV2Memberships();
   const establish = useEstablishChallenge();
-  const challengeCoverPhoto = useLocalImagePreview();
-
   const { user } = useAuth();
   const uid = user?.uid ?? '';
+  const initialPhoto = useMemo(() => (uid ? peekChallengeCoverPhotoDraft(uid) : null), [uid]);
+  const challengeCoverPhoto = useLocalImagePreview(initialPhoto);
+
+  useEffect(() => {
+    if (uid) stashChallengeCoverPhotoDraft(uid, challengeCoverPhoto.file);
+  }, [uid, challengeCoverPhoto.file]);
+
   // Router history state is the primary draft carrier. If it was dropped on
   // the way back from the Activity Guide, the uid-scoped session backup
   // (armed only by an explicit Guide trip) recovers the same draft instead of
@@ -145,7 +153,10 @@ export function V2ChallengeCreationWizard() {
     saveChallengeDraft(uid, state, stepIndex);
   }, [uid, state, stepIndex]);
   useEffect(() => () => {
-    if (!leavingForGuide.current) clearChallengeDraft(uid);
+    if (!leavingForGuide.current) {
+      clearChallengeDraft(uid);
+      clearChallengeCoverPhotoDraft(uid);
+    }
   }, [uid]);
   function handleGuideTrip() {
     leavingForGuide.current = true;
@@ -285,6 +296,7 @@ export function V2ChallengeCreationWizard() {
         setLocalChallengeCoverPreview(established.challengeId, challengeCoverPhoto.file);
       }
       clearChallengeDraft(uid);
+      clearChallengeCoverPhotoDraft(uid);
       navigate(`/v2/challenges/${established.challengeId}`, { replace: true });
     } catch (error) {
       setSubmitError(creationErrorMessage(error instanceof ApiError ? error.code : null));

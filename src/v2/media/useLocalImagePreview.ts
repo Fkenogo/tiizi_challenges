@@ -6,10 +6,18 @@ export const LOCAL_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
 const ALLOWED_IMAGE_TYPES = new Set(LOCAL_IMAGE_ACCEPT.split(','));
 
 /** A browser-memory-only image draft. The object URL is revoked on replace, remove, and unmount. */
-export function useLocalImagePreview() {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
+export function useLocalImagePreview(initialFile?: File | null) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(() => (initialFile ? URL.createObjectURL(initialFile) : null));
+  const [file, setFile] = useState<File | null>(() => initialFile ?? null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialFile && !file) {
+      setFile(initialFile);
+      const url = URL.createObjectURL(initialFile);
+      setPreviewUrl(url);
+    }
+  }, [initialFile]);
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);

@@ -1,3 +1,5 @@
+import { apiPath } from '../../api/src/apiPrefix';
+
 /**
  * Read-only fictional member Templates for the disposable Founder Preview.
  * These two configurations use only the governed Activities installed by
@@ -42,13 +44,17 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
   },
 });
 
+const TEMPLATES_LIST_PATH = apiPath('/challenge-templates');
+const TEMPLATES_PREFIX = `${TEMPLATES_LIST_PATH}/`;
+const TEMPLATES_DETAIL_REGEX = new RegExp(`^${apiPath('/challenge-templates')}/([^/]+)(?:/versions/(\\d+))?$`);
+
 /** Handles only the member Template read contract. Every other API request falls through to the local API. */
 export function handleFounderTemplateRequest(method: string, requestUrl: string): Response | null {
   const url = new URL(requestUrl, 'http://127.0.0.1');
-  if (!url.pathname.startsWith('/api/challenge-templates')) return null;
+  if (url.pathname !== TEMPLATES_LIST_PATH && !url.pathname.startsWith(TEMPLATES_PREFIX)) return null;
   if (method.toUpperCase() !== 'GET') return json(405, { error: { code: 'method_not_allowed', message: 'Founder Preview Templates are read-only.' } });
 
-  if (url.pathname === '/api/challenge-templates') {
+  if (url.pathname === TEMPLATES_LIST_PATH) {
     const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
     const type = url.searchParams.get('type');
     const tag = url.searchParams.get('tag');
@@ -62,7 +68,7 @@ export function handleFounderTemplateRequest(method: string, requestUrl: string)
     return json(200, { templates, nextCursor: null });
   }
 
-  const match = url.pathname.match(/^\/api\/challenge-templates\/([^/]+)(?:\/versions\/(\d+))?$/);
+  const match = url.pathname.match(TEMPLATES_DETAIL_REGEX);
   if (!match) return json(404, { error: { code: 'not_found', message: 'Template not found.' } });
   const template = FOUNDER_TEMPLATE_FIXTURES.find((item) => item.templateId === decodeURIComponent(match[1])
     && (!match[2] || item.version === Number(match[2])));
