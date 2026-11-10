@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createPool, databaseUrl } from './db.js';
 import { importS6Catalogue } from './knowledgeCatalogueImport.js';
 import { disposableTargetSpecFromEnv, openGuardedDisposableDb } from './disposableDbGuard.js';
@@ -32,7 +33,7 @@ async function main(): Promise<void> {
   const { db, identity } = await openGuardedDisposableDb(spec, (u) => createPool(u));
   try {
     process.stdout.write(`${JSON.stringify({ target: identity }, null, 2)}\n`);
-    const base = resolve(process.cwd(), '../docs/programme/working/s6-content');
+    const base = fileURLToPath(new URL('../../docs/programme/working/s6-content', import.meta.url));
     const [candidate, inventory] = await Promise.all([
       readFile(resolve(base, 'tiizi-118-activity-reconciled-content.json'), 'utf8').then(JSON.parse),
       readFile(resolve(base, 'activity-master-inventory.json'), 'utf8').then(JSON.parse),

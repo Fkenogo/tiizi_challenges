@@ -31,6 +31,28 @@ function toDatetimeLocalValue(date: Date): string {
 }
 
 /**
+ * Resolves the occurrence timestamp for submission:
+ * - When unmodified (default), uses the actual current instant (including seconds and milliseconds)
+ *   so immediate logging after joining succeeds without being truncated to minute 00.
+ * - When replayed/retried without fact change, reuses the last attempt's exact instant so idempotency keys converge.
+ * - When explicitly modified by the user (historical or custom entry), parses the user-selected datetime-local.
+ */
+export function resolveLoggingOccurredAt(params: {
+  when: string;
+  whenModified: boolean;
+  lastAttemptOccurredAtISO?: string;
+  now?: Date;
+}): Date {
+  if (params.whenModified) {
+    return new Date(params.when);
+  }
+  if (params.lastAttemptOccurredAtISO) {
+    return new Date(params.lastAttemptOccurredAtISO);
+  }
+  return params.now ?? new Date();
+}
+
+/**
  * S3b — Challenge activity logging (CORR-001, as amended by CORR-002).
  *
  * Binds the existing governed activity-application seam
@@ -85,6 +107,7 @@ export function V2LogActivityForm({
   const [optionId, setOptionId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [when, setWhen] = useState(() => toDatetimeLocalValue(new Date()));
+  const [whenModified, setWhenModified] = useState(false);
   const [clientKey, setClientKey] = useState(() => newClientKey());
   const [lastAttempt, setLastAttempt] = useState<LoggingAttempt | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -121,6 +144,7 @@ export function V2LogActivityForm({
     setLocalError(null);
     setAmount('');
     setWhen(toDatetimeLocalValue(new Date()));
+    setWhenModified(false);
     setOptionId(null);
     setLastAttempt(null);
     setClientKey(newClientKey());
@@ -138,7 +162,11 @@ export function V2LogActivityForm({
       setLocalError('Enter an amount greater than zero.');
       return;
     }
-    const occurredAt = new Date(when);
+    const occurredAt = resolveLoggingOccurredAt({
+      when,
+      whenModified,
+      lastAttemptOccurredAtISO: lastAttempt?.facts.occurredAtISO,
+    });
     if (Number.isNaN(occurredAt.getTime())) {
       setLocalError('Enter a valid date and time for this entry.');
       return;
@@ -183,7 +211,11 @@ export function V2LogActivityForm({
       // Record the attempt so a same-facts retry reuses the key while a
       // corrected-facts resubmit mints a new one.
       setLastAttempt({ key: submitKey, facts: currentFacts });
-      setDenial(mapV2ApiError(error));
+      const mapped = mapV2ApiError(error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[V2LoggingSection] Logging submission denied:', mapped.code, error);
+      }
+      setDenial(mapped);
     }
   };
 
@@ -255,7 +287,7 @@ export function V2LogActivityForm({
       amount={amount}
       onAmount={(next) => { setAmount(next); setLocalError(null); }}
       when={when}
-      onWhen={(next) => { setWhen(next); setLocalError(null); }}
+      onWhen={(next) => { setWhen(next); setWhenModified(true); setLocalError(null); }}
       pending={log.isPending}
       onSubmit={handleSubmit}
       localError={localError}
@@ -363,9 +395,6 @@ function LogActivityFields({
           className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-800"
         >
           <p>{denial.message}</p>
-          {denial.code && (
-            <p className="mt-0.5 font-mono text-[11px] opacity-70">Code: {denial.code}</p>
-          )}
           <div className="mt-2 flex flex-wrap gap-2">
             {denial.retryable ? (
               <V2Button variant="secondary" onClick={onRetry} disabled={pending}>

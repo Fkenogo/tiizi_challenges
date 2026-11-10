@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createPool, databaseUrl } from './db.js';
 import { importS6Catalogue } from './knowledgeCatalogueImport.js';
 
@@ -11,8 +12,8 @@ async function main(): Promise<void> {
   }
   if (args.includes('--apply') && args.includes('--dry-run')) throw new Error('Choose either --dry-run or --apply');
   const mode = args.includes('--apply') ? 'apply' : 'dry-run';
-  const candidatePath = resolve(process.cwd(), '../docs/programme/working/s6-content/tiizi-118-activity-reconciled-content.json');
-  const inventoryPath = resolve(process.cwd(), '../docs/programme/working/s6-content/activity-master-inventory.json');
+  const candidatePath = fileURLToPath(new URL('../../docs/programme/working/s6-content/tiizi-118-activity-reconciled-content.json', import.meta.url));
+  const inventoryPath = fileURLToPath(new URL('../../docs/programme/working/s6-content/activity-master-inventory.json', import.meta.url));
   const [candidateText, inventoryText] = await Promise.all([readFile(candidatePath, 'utf8'), readFile(inventoryPath, 'utf8')]);
   const db = createPool(databaseUrl());
   try {
