@@ -20,7 +20,7 @@ The recent UX Continuity Audit (`V2-UX-CONTINUITY-AUDIT-001`) incorrectly treate
 
 On 10 November 2026, the Founder clarified the product direction:
 1. **Activity sharing was previously reviewed and accepted**, including UI layout corrections.
-2. **Members must have options to share recorded activities to permitted feeds** (Challenge Feed / permitted Group context).
+2. **Members must have options to explicitly share recorded activities to the Challenge Feed** (Group Feed is reserved for approved automatic lifecycle events and collective milestones; members do not publish individual logs to Group Feed).
 3. **Members must be able to copy a shareable link for use on external channels.**
 4. **Age and gender are required capabilities of the Tiizi member profile and onboarding experience.**
 5. **Profile photo selection must be offered during onboarding, remain strictly skippable, and remain editable through Profile.**
@@ -70,7 +70,7 @@ To eliminate ambiguity, this register formally distinguishes:
 
 | Capability Area | Confirmed Founder Product Direction | Existing Approved Behaviour (Preserved) | Implementation Proposals (Awaiting Founder Decision) |
 |---|---|---|---|
-| **Activity Sharing** | Post-activity logging must offer options to share to permitted feeds AND copy a shareable link for external channels. | **CF-01 v0.2 Invariants:** Explicit member action only; default is unshared; self-only; withdrawable; logging NEVER auto-publishes. Private entity boundaries strictly enforced. | UI wireframes for `V2LoggingConfirmationModal`; exact payload for `POST /api/challenges/:id/feed/shares`; external landing card presentation. |
+| **Activity Sharing** | Post-activity logging must offer options to explicitly share to the Challenge Feed AND copy a shareable link for external channels. Group Feed is reserved for approved automatic lifecycle events and collective milestones; members never publish individual activity logs to Group Feed. | **CF-01 v0.2 & GF-01 Invariants:** Explicit member action only; default is unshared; self-only; withdrawable; logging NEVER auto-publishes. Private entity boundaries strictly enforced. | UI wireframes for `V2LoggingConfirmationModal`; exact payload for `POST /api/challenges/:id/feed/shares`; external landing card presentation. |
 | **Interests & Goals** | Preferences personalize discovery and recommendations; they never restrict general browsing, challenge participation, or scoring. | **Onboarding Requirement:** Members must select **at least one Interest (1–5)** and **at least one Goal (1–3)** during onboarding. This requirement is **PRESERVED** and is **NOT optional**. | Future revision to optional/skippable selection remains an unapproved proposal and would require an explicit separate decision. |
 | **Age & Adult Eligibility** | Age is a required capability of the member profile and onboarding. Tiizi is an adult (18+) community. | **Adult Community Invariant:** Minimum age is 18. Exact birth date is **confidential and private by default**; it is NEVER displayed or exposed over public/shared APIs. | Specific capture format (exact Date of Birth vs. birth year vs. age integer); durable database audit schema vs. API-layer validation. |
 | **Gender** | Gender is a required capability of the member profile and onboarding. Governed inclusive options must be provided. | **Privacy Invariant:** Gender is **private by default**. No public gender visibility is authorized. Gender never affects challenge eligibility or scoring. | Gender input policy (whether selecting a gender option is mandatory or skippable during onboarding); visibility toggle (private vs. group-only). |
@@ -82,9 +82,11 @@ To eliminate ambiguity, this register formally distinguishes:
    - External share links (via Copy Link or Web Share API) must NEVER leak private data.
    - For private Groups or private Challenges, an unauthorized or unauthenticated viewer opening a share link receives only a generic, safe landing card (e.g., *"You've been invited to a private challenge on Tiizi — Sign in or request to join the host Group to view details"*).
    - Protected titles, group descriptions, member rosters, participation details, activity records, and feed items MUST NOT be exposed in unauthenticated API responses or Open Graph metadata tags.
-2. **Feed Scoping & Ownership:**
-   - A member can only share an activity to the specific Challenge Feed in which that activity was recorded.
-   - Cross-posting an individual activity to the Group Feed or unassociated Challenges is prohibited.
+2. **Feed Scoping & Ownership (GF-01 & CF-01 Boundaries):**
+   - **Group Feed:** Reserved exclusively for approved automatic Group and Challenge lifecycle events and collective milestones (GF-01). Members do not publish individual activity logs to the Group Feed.
+   - **Challenge Feed:** Individual activity sharing belongs exclusively to the Challenge Feed where the activity was recorded (CF-01 S1) and strictly requires explicit member action.
+   - **External Sharing:** Copy Link and native device sharing remain a separate member-controlled option.
+   - **No Auto-Publishing:** Logging an activity never automatically publishes or broadcasts individual activity to any feed or external channel.
 3. **Confidentiality of Personal Attributes:**
    - Exact birth dates are strictly confidential and private by default. They are never rendered on public profile cards, leaderboards, or feed items.
    - Gender is private by default; public exposure of gender is prohibited.
