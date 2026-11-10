@@ -31,6 +31,8 @@ import {
 import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor, type GroupCoverId } from './groupCovers';
 import { useCreateGroup, useV2GroupOptions } from './useV2Groups';
 import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
+import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { useLocalImagePreview } from '../media/useLocalImagePreview';
 
 /**
  * TIIZI S4a CORR-001 — progressive Group formation wizard.
@@ -112,6 +114,7 @@ export function V2CreateGroupScreen() {
   const [step, setStep] = useState(0);
   const [tagInput, setTagInput] = useState('');
   const [focusSearch, setFocusSearch] = useState('');
+  const coverPhoto = useLocalImagePreview();
 
   const issues = validateCreateGroupDraft(draft);
   const submittable = isCreateGroupDraftSubmittable(draft) && !createGroup.isPending;
@@ -213,6 +216,13 @@ export function V2CreateGroupScreen() {
           </p>
           <fieldset>
             <legend className="mb-2 text-sm font-black text-slate-900">Group cover (optional)</legend>
+            <V2LocalImagePicker
+              subject="Group cover"
+              preview={coverPhoto}
+              previewClassName="h-28 w-full rounded-xl bg-slate-100"
+              fallback={<div className={`h-full w-full bg-gradient-to-br ${coverGradientFor((draft.coverId as GroupCoverId | null) ?? GROUP_COVER_CATALOGUE[0])}`} aria-hidden="true" />}
+            />
+            <p className="mt-4 mb-2 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>
             <div className="grid grid-cols-4 gap-2">
               {GROUP_COVER_CATALOGUE.map((coverId: GroupCoverId) => {
                 const selected = draft.coverId === coverId;

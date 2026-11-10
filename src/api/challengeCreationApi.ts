@@ -171,7 +171,7 @@ export interface EstablishChallengeBody {
   group_id: string;
   challenge_type: ComposerChallengeType;
   title: string;
-  cover_id: string;
+  cover_id?: string;
   support_tiizi_enabled: boolean;
   social_cause?: { title: string; description: string; purpose: string; beneficiary: string; payment_destination_reference: string };
   description?: string;

@@ -9,12 +9,15 @@ import {
 import { ApiError } from '../../api/apiClient';
 import { useAuth } from '../../hooks/useAuth';
 import {
+  clearChallengeCoverPhotoDraft,
   clearChallengeDraft,
   clearOtherMembersChallengeDrafts,
   markChallengeGuideJourney,
   disarmChallengeDraft,
+  peekChallengeCoverPhotoDraft,
   peekChallengeDraft,
   saveChallengeDraft,
+  stashChallengeCoverPhotoDraft,
 } from './challengeDraftSession';
 import {
   V2Button,
@@ -75,7 +78,9 @@ import {
   buildWizardActivity,
   type ApiKnowledgeItemLike,
 } from './wizardSteps';
-import { CHALLENGE_COVER_IDS, challengeCoverGradient, challengeCoverLabel } from './challengeCovers';
+import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
+import { setLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 
 /**
  * S2b — the seven-step V2 Challenge Creation experience.
@@ -99,9 +104,15 @@ export function V2ChallengeCreationWizard() {
   const queryClient = useQueryClient();
   const memberships = useV2Memberships();
   const establish = useEstablishChallenge();
-
   const { user } = useAuth();
   const uid = user?.uid ?? '';
+  const initialPhoto = useMemo(() => (uid ? peekChallengeCoverPhotoDraft(uid) : null), [uid]);
+  const challengeCoverPhoto = useLocalImagePreview(initialPhoto);
+
+  useEffect(() => {
+    if (uid) stashChallengeCoverPhotoDraft(uid, challengeCoverPhoto.file);
+  }, [uid, challengeCoverPhoto.file]);
+
   // Router history state is the primary draft carrier. If it was dropped on
   // the way back from the Activity Guide, the uid-scoped session backup
   // (armed only by an explicit Guide trip) recovers the same draft instead of
@@ -142,7 +153,10 @@ export function V2ChallengeCreationWizard() {
     saveChallengeDraft(uid, state, stepIndex);
   }, [uid, state, stepIndex]);
   useEffect(() => () => {
-    if (!leavingForGuide.current) clearChallengeDraft(uid);
+    if (!leavingForGuide.current) {
+      clearChallengeDraft(uid);
+      clearChallengeCoverPhotoDraft(uid);
+    }
   }, [uid]);
   function handleGuideTrip() {
     leavingForGuide.current = true;
@@ -278,6 +292,10 @@ export function V2ChallengeCreationWizard() {
           idempotencyKey: keyRef.current,
         }),
       );
+      if (challengeCoverPhoto.file) {
+        setLocalChallengeCoverPreview(established.challengeId, challengeCoverPhoto.file);
+      }
+      clearChallengeCoverPhotoDraft(uid);
       clearChallengeDraft(uid);
       navigate(`/v2/challenges/${established.challengeId}`, { replace: true });
     } catch (error) {
@@ -307,6 +325,15 @@ export function V2ChallengeCreationWizard() {
         />
       </div>
 
+      {state.templateRef && (
+        <V2Card className="mb-4 border-emerald-200 bg-emerald-50">
+          <p data-template-provenance className="text-xs leading-5 text-emerald-900">
+            <span className="font-bold">Started from the template “{state.templateRef.title}”.</span>{' '}
+            Everything here is a starting point you can change. Nothing is created until you review and create it.
+          </p>
+        </V2Card>
+      )}
+
       {state.challengeType && state.activities.length > 0 && (
         <V2Card className="mb-4 border-orange-200 bg-orange-50">
           <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Your Challenge so far</p>
@@ -316,6 +343,7 @@ export function V2ChallengeCreationWizard() {
 
       {currentStep === 'HOW_IT_WORKS' && (
         <StepHowItWorks
+          fromTemplate={Boolean(state.templateRef)}
           selected={state.challengeType}
           onSelect={(type) => {
             const keepFirst = allowsMultipleActivities(type) ? state.activities : state.activities.slice(0, 1);
@@ -334,7 +362,7 @@ export function V2ChallengeCreationWizard() {
         />
       )}
 
-      {currentStep === 'CHALLENGE_DETAILS' && <StepChallengeDetails state={state} onUpdate={update} />}
+      {currentStep === 'CHALLENGE_DETAILS' && <StepChallengeDetails state={state} onUpdate={update} coverPhoto={challengeCoverPhoto} />}
 
       {currentStep === 'WHAT_ARE_WE_DOING' && (
         <StepActivities
@@ -385,6 +413,7 @@ export function V2ChallengeCreationWizard() {
           previewState={previewState}
           previewIssues={previewIssues}
           onUpdate={update}
+          coverPhoto={challengeCoverPhoto}
           onEditStep={(step) => goToStep(VISIBLE_STEPS.indexOf(step))}
         />
       )}
@@ -426,9 +455,11 @@ export function V2ChallengeCreationWizard() {
 export function StepHowItWorks({
   selected,
   onSelect,
+  fromTemplate = false,
 }: {
   selected: ComposerChallengeType | null;
   onSelect: (type: ComposerChallengeType) => void;
+  fromTemplate?: boolean;
 }) {
   return (
     <ChallengeTypeStep
@@ -436,7 +467,9 @@ export function StepHowItWorks({
       onSelect={onSelect}
       footer={
         <p className="text-xs text-slate-500">
-          Templates are not available yet — you are setting this Challenge up from scratch.
+          {fromTemplate
+            ? 'This type came from your template. Changing it keeps your first Activity where it still fits.'
+            : 'You are setting this Challenge up from scratch.'}
         </p>
       }
     />
@@ -519,11 +552,12 @@ function StepHosting({
   );
 }
 
-export function StepChallengeDetails({ state, onUpdate }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void }) {
+export function StepChallengeDetails({ state, onUpdate, coverPhoto }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void; coverPhoto?: LocalImagePreviewState }) {
   return <div className="space-y-4">
     <NameAppearanceFields
       state={state}
       onUpdate={onUpdate}
+      coverPhoto={coverPhoto}
       intro={<p className="text-sm leading-6 text-slate-600">Give the Challenge a clear name and a short description for your Group.</p>}
     />
     <section className="rounded-2xl border border-slate-200 p-4"><h3 className="text-sm font-black">Optional support</h3><p className="mt-1 text-xs text-slate-600">Support a Cause is for a cause this Challenge raises support for. Support Tiizi is separate: voluntary support for the Tiizi platform itself.</p><label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.socialCauseEnabled} onChange={(event) => onUpdate({ socialCauseEnabled: event.target.checked })} />Support a Cause</label>
@@ -638,19 +672,32 @@ export function StepReview({
   previewState,
   previewIssues,
   onUpdate,
+  coverPhoto,
   onEditStep,
 }: {
   state: WizardState;
   previewState: 'idle' | 'checking' | 'valid' | 'invalid';
   previewIssues: MappedPreviewIssue[] | null;
   onUpdate: (patch: Partial<WizardState>) => void;
+  coverPhoto?: LocalImagePreviewState;
   onEditStep: (step: (typeof VISIBLE_STEPS)[number]) => void;
 }) {
   const endDate = state.endDate;
   return (
     <div className="space-y-4">
       <V2Card className="bg-slate-900 text-white">
-        <div className={`mb-3 h-28 rounded-xl bg-gradient-to-br ${challengeCoverGradient(state.coverId)}`} aria-label={`Challenge background preview: ${state.coverId ? challengeCoverLabel(state.coverId as typeof CHALLENGE_COVER_IDS[number]) : 'default'}`} />
+        {coverPhoto ? (
+          <V2LocalImagePicker
+            subject="Challenge cover"
+            preview={coverPhoto}
+            previewClassName="mb-3 h-28 rounded-xl bg-slate-800"
+            messageClassName="text-white/70"
+            errorClassName="text-red-200"
+            fallback={<div className="flex h-full w-full items-center justify-center rounded-xl bg-slate-700 text-sm font-medium text-white/70">No photo selected</div>}
+          />
+        ) : (
+          <div className="mb-3 flex h-28 items-center justify-center rounded-xl bg-slate-700 text-sm font-medium text-white/70">No photo selected</div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">{challengeTypeLabel(state.challengeType)}</span>
           <span className="text-[11px] font-bold text-white/70">{state.durationDays} days</span>

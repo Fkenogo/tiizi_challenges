@@ -42,6 +42,12 @@ beforeEach(() => setData([]));
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe('V2 Challenges page sections', () => {
+  it('opens the approved Challenge start choice from the Create Challenge action', async () => {
+    render(<MemoryRouter><RouteStateProbe /><V2ChallengeListScreen /></MemoryRouter>);
+    await userEvent.click(screen.getByRole('button', { name: 'Create Challenge' }));
+    expect(screen.getByTestId('route-state').textContent).toBe('/v2/challenges/start|null');
+  });
+
   it('shows a single Find interface and a suitable empty My Challenges state', () => {
     setData([], [row('remote-one')]);
     render(<MemoryRouter><V2ChallengeListScreen /></MemoryRouter>);
@@ -78,6 +84,26 @@ describe('V2 Challenges page sections', () => {
     expect(screen.getByRole('region', { name: 'Find Challenges' }).querySelector('[data-find-challenge="hosted-two"]')).toBeTruthy();
     await userEvent.click(within(mine).getByRole('button', { name: 'Log Activity' }));
     expect(screen.getByTestId('route-state').textContent).toBe('/v2/challenges/joined-one|{"openLogActivity":true}');
+  });
+
+  it('uses a neutral no-photo cover while keeping type-specific progress and actions', async () => {
+    setData([
+      row('together', 'active', { collectiveTotal: 40, goalValue: 100, goalUnit: 'reps' }),
+      row('race', 'active', { challengeType: 'competitive' }),
+      row('streak', 'active', { challengeType: 'streak' }),
+    ]);
+    render(<MemoryRouter><V2ChallengeListScreen /></MemoryRouter>);
+
+    const mine = screen.getByRole('region', { name: 'My Challenges' });
+    await userEvent.click(within(mine).getByRole('button', { name: 'View More (1)' }));
+    expect(mine.querySelectorAll('[data-my-challenge]')).toHaveLength(3);
+    expect(within(mine).getAllByText('No cover photo')).toHaveLength(3);
+    expect(within(mine).getByText('40 / 100 reps')).toBeTruthy();
+    expect(within(mine).getByText(/2 activities logged/)).toBeTruthy();
+    expect(within(mine).getByText(/2-day streak/)).toBeTruthy();
+    expect(within(mine).getAllByRole('button', { name: 'View Challenge' })).toHaveLength(3);
+    expect(within(mine).getAllByRole('button', { name: 'Log Activity' })).toHaveLength(3);
+    expect(within(mine).queryByText(/Background [1-8]/)).toBeNull();
   });
 
   it('places search and three dropdown filters before My Challenges and combines selections', async () => {

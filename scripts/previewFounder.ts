@@ -284,6 +284,7 @@ async function main(): Promise<void> {
   ], localEnv({
     ...baseEnv,
     TIIZI_FOUNDER_PREVIEW: '1',
+    VITE_TIIZI_FOUNDER_PREVIEW: '1',
     TIIZI_FOUNDER_API_TARGET: apiTarget,
     VITE_TIIZI_API_ENABLED: 'true',
     VITE_TIIZI_API_BASE_URL: webOrigin,

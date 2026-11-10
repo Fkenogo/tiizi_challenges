@@ -88,8 +88,8 @@ check('My and Find have separate loading, error, empty, and no-match states',
   list.includes('You have not joined a Challenge yet') && list.includes('No matching Challenges')
   && list.includes('Clear search and filters') && list.includes('We could not load your Challenges')
   && list.includes('Challenge discovery is unavailable'));
-check('Challenge result rows remain single-column and omit full descriptions', list.includes('ul className="space-y-2"')
-  && !list.includes('line-clamp-2') && list.includes('challenge.activities.map'));
+check('Challenge result rows render V2ChallengeCard', list.includes('V2ChallengeCard')
+  && list.includes('MyChallengeProgress') && list.includes('FindChallengeProgress'));
 check('host selector is searchable and excludes restricted non-steward memberships', wizard.includes('Search Groups')
   && wizard.includes('allowMemberChallenges !== false') && wizard.includes("membership.role.toLowerCase()"));
 const hostStep = wizard.slice(wizard.indexOf('function StepHosting'), wizard.indexOf('function StepChallengeDetails'));

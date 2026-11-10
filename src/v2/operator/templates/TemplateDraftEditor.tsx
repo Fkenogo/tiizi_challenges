@@ -673,6 +673,7 @@ function TemplateDraftEditorInner() {
             <NameAppearanceFields
               state={current}
               onUpdate={(value) => patch(value)}
+              showBackgroundSelector
               intro={<p className="text-sm leading-6 text-slate-600">Name this Template the way members will first see it.</p>}
             />
           ) : null}

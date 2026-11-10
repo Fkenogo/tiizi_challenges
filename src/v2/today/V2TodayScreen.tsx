@@ -443,7 +443,7 @@ function NoParticipationState({
           )}
           {kind === 'group-without-challenges' && (
             <>
-              <V2Button onClick={() => onNavigate('/v2/challenges/new')}>Create a Challenge</V2Button>
+              <V2Button onClick={() => onNavigate('/v2/challenges/start')}>Create a Challenge</V2Button>
               <V2Button variant="secondary" onClick={() => onNavigate('/v2/challenges')}>Find a Challenge</V2Button>
             </>
           )}

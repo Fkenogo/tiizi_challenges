@@ -19,6 +19,8 @@ import { ProfilePreferencesSection } from '../preferences/ProfilePreferencesSect
 import { V2SupportTiiziCard } from '../support/V2SupportTiiziCard';
 import { WELCOME_PATH } from '../welcome/welcomeContent';
 import { ProfileSaveUncertainError } from './profileWriteState';
+import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { useLocalImagePreview } from '../media/useLocalImagePreview';
 import {
   bucketProfileChallenges,
   challengeStatusLabel,
@@ -38,8 +40,8 @@ import {
  *   `active`/`history` bucket are rendered exactly as served;
  * - the email is read directly from the raw Firebase `user.email`, never from
  *   the local `AuthContext.profile` cache and never from the API response;
- * - the photo slot is honest: initials today, no upload control, because
- *   media persistence is MEDIA-2b;
+ * - profile photo changes use the accepted browser-local preview only; no
+ *   image is uploaded or permanently saved;
  * - no legal text or links are invented here (MC-2C-2 / legal authority);
  * - Group and Challenge pages advance independently and are keyed by
  *   participationId, so withdrawal + rejoin episodes stay distinct.
@@ -67,6 +69,7 @@ export function V2ProfileScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const signOut = useV2SignOut();
+  const profilePhoto = useLocalImagePreview();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const uid = user?.uid ?? null;
@@ -81,7 +84,8 @@ export function V2ProfileScreen() {
     setFieldError(null);
     setSaveError(null);
     setSaved(false);
-  }, [uid]);
+    profilePhoto.remove();
+  }, [uid, profilePhoto.remove]);
 
   const loadedBuckets = bucketProfileChallenges(profile?.challenges.items ?? []);
   useEffect(() => {
@@ -204,26 +208,35 @@ export function V2ProfileScreen() {
 
       <div className="space-y-4">
         <V2Card>
-          <div className="flex items-start gap-4">
-            <ProfileAvatar name={displayName} />
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Display name
-              </p>
-              <p className="mt-0.5 break-words text-lg font-black text-slate-900">
-                {displayName ?? 'No display name yet'}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                {displayName
-                  ? 'You can change your name at any time.'
-                  : 'Add a name so Tiizi can greet you properly.'}
-              </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <V2LocalImagePicker
+              subject="Profile picture"
+              preview={profilePhoto}
+              className="w-full sm:w-36 sm:shrink-0"
+              previewClassName="mx-auto h-16 w-16 rounded-2xl bg-orange-50 sm:ml-0 sm:mr-auto"
+              imageClassName="h-full w-full rounded-2xl object-cover"
+              fallback={<ProfileAvatar name={displayName} />}
+            />
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Display name
+                </p>
+                <p className="mt-0.5 break-words text-lg font-black text-slate-900">
+                  {displayName ?? 'No display name yet'}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {displayName
+                    ? 'You can change your name at any time.'
+                    : 'Add a name so Tiizi can greet you properly.'}
+                </p>
+              </div>
+              {!editing && (
+                <V2Button variant="secondary" onClick={startEditing}>
+                  {displayName ? 'Edit' : 'Add name'}
+                </V2Button>
+              )}
             </div>
-            {!editing && (
-              <V2Button variant="secondary" onClick={startEditing}>
-                {displayName ? 'Edit' : 'Add name'}
-              </V2Button>
-            )}
           </div>
 
           {editing && (

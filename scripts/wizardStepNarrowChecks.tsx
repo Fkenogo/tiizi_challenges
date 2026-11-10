@@ -27,11 +27,11 @@ const html = (element: ReactElement) => renderToStaticMarkup(
 
 // Compile-time proof (checked by tsc over scripts/): the narrow contracts carry NO
 // hosting, schedule, Social Cause, Support or creatorJoins field.
-const templateShapedNames: NameAppearanceState = { title: 'T', description: '', coverId: null };
+const templateShapedNames: NameAppearanceState = { title: 'T', description: '' };
 const templateShapedActivities: ActivitiesStepState = { challengeType: 'streak', activities: [] };
 const templateShapedCounts: WhatCountsStepState = { challengeType: 'competitive', activities: STATES.race.activities };
 // @ts-expect-error member-only fields are not part of the narrow contract
-const leak: NameAppearanceState = { title: '', description: '', coverId: null, groupId: 'x' };
+const leak: NameAppearanceState = { title: '', description: '', groupId: 'x' };
 void [templateShapedNames, templateShapedActivities, leak];
 
 export function narrowChecks(): string[] {
@@ -45,7 +45,7 @@ export function narrowChecks(): string[] {
       html(<WhatCountsStep state={narrow} onUpdateActivity={NOOP} onRemove={NOOP} />)
       === html(<StepWhatCounts state={state} onUpdateActivity={NOOP} onRemove={NOOP} />));
 
-    const names: NameAppearanceState = { title: state.title, description: state.description, coverId: state.coverId };
+    const names: NameAppearanceState = { title: state.title, description: state.description };
     const member = html(<StepChallengeDetails state={state} onUpdate={NOOP} />);
     const fields = html(<div className="space-y-4"><NameAppearanceFields state={names} onUpdate={NOOP} intro={<p className="text-sm leading-6 text-slate-600">Give the Challenge a clear name and a short description for your Group.</p>} /></div>);
     expect(`${name}: NameAppearanceFields markup is the prefix of the member details step`,
@@ -58,7 +58,7 @@ export function narrowChecks(): string[] {
   expect('ChallengeTypeStep carries no composition copy of its own', !footerless.includes('Templates are not available yet'));
   expect('member type step = reusable step + member footer',
     html(<StepHowItWorks selected="streak" onSelect={NOOP} />)
-    === footerless.replace(/<\/div>$/, '<p class="text-xs text-slate-500">Templates are not available yet — you are setting this Challenge up from scratch.</p></div>'));
+    === footerless.replace(/<\/div>$/, '<p class="text-xs text-slate-500">You are setting this Challenge up from scratch.</p></div>'));
 
   expect('WhatCountsExplanation renders the type-specific lines',
     html(<WhatCountsExplanation challengeType="collective" />) !== html(<WhatCountsExplanation challengeType="streak" />));

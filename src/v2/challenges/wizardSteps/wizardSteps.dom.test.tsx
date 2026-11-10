@@ -135,11 +135,23 @@ describe('other extracted steps', () => {
 
   it('NameAppearanceFields reports title, description and cover as patches', async () => {
     const onUpdate = vi.fn();
-    wrap(<NameAppearanceFields state={{ title: '', description: '', coverId: null }} onUpdate={onUpdate} intro={<p>intro</p>} />);
+    const preview = { previewUrl: null, file: null, error: null, selectFile: vi.fn(), remove: vi.fn() };
+    wrap(<NameAppearanceFields state={{ title: '', description: '' }} onUpdate={onUpdate} intro={<p>intro</p>} coverPhoto={preview} />);
     await userEvent.type(screen.getByLabelText('Challenge title'), 'A');
     expect(onUpdate).toHaveBeenCalledWith({ title: 'A' });
-    await userEvent.click(screen.getAllByRole('button', { pressed: false })[0]);
-    expect(onUpdate).toHaveBeenLastCalledWith({ coverId: 'challenge-1' });
+    expect(screen.getByRole('button', { name: 'Add Photo' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Challenge background' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Background 1' })).toBeNull();
+  });
+
+  it('NameAppearanceFields restores background catalogue selector when enabled (Operator Template authoring)', async () => {
+    const onUpdate = vi.fn();
+    wrap(<NameAppearanceFields state={{ title: '', description: '', coverId: 'challenge-2' }} onUpdate={onUpdate} intro={<p>intro</p>} showBackgroundSelector />);
+    expect(screen.getByRole('group', { name: 'Challenge background' })).toBeTruthy();
+    const buttons = screen.getAllByRole('button', { pressed: false });
+    expect(buttons.length).toBeGreaterThan(0);
+    await userEvent.click(buttons[0]);
+    expect(onUpdate).toHaveBeenCalledWith({ coverId: 'challenge-1' });
   });
 
   it('WhatCountsStep reports edits and removal for the right row', async () => {

@@ -19,6 +19,7 @@ import {
 import { invalidateV2ChallengeReads } from '../challenges/challengeQueryKeys';
 import { hostedChallengeCtaLabel } from './hostedChallengeCta';
 import { joinChallengeV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
+import { V2ChallengeCover } from '../challenges/V2ChallengeCover';
 
 /**
  * TIIZI S4a CORR-001 — hosted Challenge card for Group Home.
@@ -135,8 +136,10 @@ export function V2HostedChallengeCard({
   );
 
   if (compact) return (
-    <li className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:gap-4">
+    <li className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="flex items-center gap-2 p-3 sm:gap-4">
       <button type="button" onClick={() => onOpen(challenge.challengeId)} className="min-w-0 flex-1 text-left" aria-label={`Open ${challenge.title}`}>
+        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-16" className="mb-2 rounded-lg" overlay={false} />
         <span className="flex flex-wrap items-center gap-1.5">
           <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-primary">{challengeTypeLabel(challenge.challengeType)}</span>
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${upcoming ? 'bg-sky-100 text-sky-900' : statusTone(endState)}`}>{upcoming ? 'Upcoming' : statusLabelForEndState(challenge.status, endState)}</span>
@@ -145,6 +148,7 @@ export function V2HostedChallengeCard({
         <span className="mt-0.5 block truncate text-[11px] text-slate-500">Hosted by {groupName} · {formatDayRange(challenge.startDate, challenge.endDate)}</span>
       </button>
       <div className="shrink-0">{cta}</div>
+      </div>
       <V2Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title={`Join ${challenge.title}?`}>
         <p className="text-sm leading-6 text-slate-600">Joining starts your participation in this Challenge. Membership in {groupName} does not join you automatically — this is your explicit choice.</p>
         {joinError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{joinError}</p>}
@@ -161,7 +165,8 @@ export function V2HostedChallengeCard({
         className="block w-full p-4 text-left"
         aria-label={`Open ${challenge.title}`}
       >
-        <div className="flex flex-wrap items-center gap-2">
+        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-36 sm:h-44" className="-mx-4 -mt-4 mb-3 sm:-mx-4">
+        <div className="absolute inset-x-3 top-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-bold text-primary">
             {challengeTypeLabel(challenge.challengeType)}
           </span>
@@ -180,7 +185,8 @@ export function V2HostedChallengeCard({
             </span>
           )}
         </div>
-        <p className="mt-2 text-base font-black text-slate-900">{challenge.title}</p>
+        <p className="absolute inset-x-3 bottom-3 text-base font-black text-white drop-shadow">{challenge.title}</p>
+        </V2ChallengeCover>
         <p className="mt-0.5 text-[11px] font-bold text-slate-400">
           Hosted by {groupName} · {timezoneLabel(challenge.timezone)}
         </p>
