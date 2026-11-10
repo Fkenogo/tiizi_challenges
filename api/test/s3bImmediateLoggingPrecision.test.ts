@@ -14,7 +14,7 @@ describe('S3b immediate logging timestamp precision & episode ownership', () => 
     joined_config_version: 1,
     exited_at: null,
     exit_reason: null,
-    removed_by_member_id: null,
+    exited_by_member_id: null,
     created_at: '2026-11-10T15:22:45.321Z',
     updated_at: '2026-11-10T15:22:45.321Z',
     ...overrides,
