@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 import { resolveEmulatorTarget, resetPreviewAccount } from './previewV2Auth.js';
 import { assertLoopbackPortAvailable, chooseLoopbackPort } from './previewFounderPorts.js';
+import { API_PREFIX, apiPath } from '../api/src/apiPrefix.js';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const DATABASE_NAME = 'tiizi_founder_preview';
@@ -28,6 +29,7 @@ let dataDir = '';
 let pgCtl = '';
 let pgStarted = false;
 let stopping: Promise<void> | undefined;
+const shutdownAbortController = new AbortController();
 
 function localEnv(extra: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env = { ...process.env, ...extra };
@@ -83,7 +85,7 @@ function startService(name: string, command: string, args: string[], env: NodeJS
   services.push({ name, child });
   child.once('error', (error) => console.error(`${name} failed to start: ${error.message}`));
   child.once('exit', (code, signal) => {
-    if (!stopping) {
+    if (!stopping && !shutdownAbortController.signal.aborted) {
       console.error(`${name} stopped unexpectedly (${signal ?? code}).`);
       void stop(1);
     }
@@ -95,31 +97,53 @@ async function waitFor(url: string, label: string, child?: ChildProcess): Promis
   const deadline = Date.now() + 60_000;
   let lastError = 'not ready';
   while (Date.now() < deadline) {
-    if (child?.exitCode !== null && child?.exitCode !== undefined) throw new Error(`${label} exited before becoming ready.`);
+    if (shutdownAbortController.signal.aborted || stopping) {
+      throw new Error(`${label} startup aborted.`);
+    }
+    if (child && (child.exitCode !== null || child.signalCode !== null)) {
+      throw new Error(`${label} exited before becoming ready (${child.signalCode ?? child.exitCode}).`);
+    }
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(1_500) });
+      const timeoutSignal = AbortSignal.timeout(1_500);
+      const combinedSignal = AbortSignal.any
+        ? AbortSignal.any([timeoutSignal, shutdownAbortController.signal])
+        : timeoutSignal;
+      const response = await fetch(url, { signal: combinedSignal });
       if (response.ok) return;
       lastError = `HTTP ${response.status}`;
     } catch (error) {
+      if (shutdownAbortController.signal.aborted || stopping) {
+        throw new Error(`${label} startup aborted.`);
+      }
       lastError = error instanceof Error ? error.message : String(error);
     }
-    await new Promise((resolveWait) => setTimeout(resolveWait, 400));
+    if (shutdownAbortController.signal.aborted || stopping) {
+      throw new Error(`${label} startup aborted.`);
+    }
+    await new Promise<void>((resolveWait) => {
+      const timer = setTimeout(resolveWait, 400);
+      shutdownAbortController.signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        resolveWait();
+      }, { once: true });
+    });
   }
   throw new Error(`${label} did not become ready at ${url}: ${lastError}`);
 }
 
 async function stop(exitCode = 0): Promise<void> {
+  shutdownAbortController.abort();
   if (stopping) return stopping;
   stopping = (async () => {
     for (const { child } of services) {
-      if (child.exitCode !== null) continue;
+      if (child.exitCode !== null || child.signalCode !== null) continue;
       try {
         if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, 'SIGINT');
         else child.kill('SIGINT');
       } catch { /* already stopped */ }
     }
     await Promise.all(services.map(({ child }) => new Promise<void>((done) => {
-      if (child.exitCode !== null) return done();
+      if (child.exitCode !== null || child.signalCode !== null) return done();
       const timer = setTimeout(() => {
         try {
           if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, 'SIGTERM');
@@ -239,6 +263,9 @@ async function main(): Promise<void> {
   const bootstrapIdentity = await bootstrapSignIn.json() as { idToken?: string };
   if (!bootstrapIdentity.idToken) throw new Error('The Auth Emulator did not issue a token for the fresh bootstrap test identity.');
 
+  const groupFeedCursorSecret = process.env.TIIZI_GROUP_FEED_CURSOR_SECRET
+    || randomBytes(32).toString('hex');
+
   await assertLoopbackPortAvailable(apiPort, 'Tiizi API');
   const api = startService('Tiizi API', process.execPath, ['--import', 'tsx', 'api/src/index.ts'], localEnv({
     ...baseEnv,
@@ -247,6 +274,7 @@ async function main(): Promise<void> {
     HOST: '127.0.0.1',
     PORT: String(apiPort),
     TIIZI_ALLOWED_ORIGINS: '',
+    TIIZI_GROUP_FEED_CURSOR_SECRET: groupFeedCursorSecret,
   }));
   await waitFor(`${apiTarget}/ready`, 'Tiizi API', api);
 
@@ -268,7 +296,7 @@ async function main(): Promise<void> {
     VITE_FIREBASE_APP_ID: '1:0:web:founder-preview',
   }));
   await waitFor(webOrigin, 'V2 frontend', vite);
-  const bootstrap = await fetch(`${webOrigin}/api/members/bootstrap`, {
+  const bootstrap = await fetch(`${webOrigin}${apiPath('/members/bootstrap')}`, {
     method: 'POST',
     headers: { authorization: `Bearer ${identity.idToken}`, 'content-type': 'application/json' },
     body: JSON.stringify({ displayName: 'Amara' }),
@@ -277,7 +305,7 @@ async function main(): Promise<void> {
     const body = await bootstrap.json().catch(() => ({})) as { error?: { code?: string } };
     throw new Error(`Synthetic account bootstrap failed through the same-origin proxy (HTTP ${bootstrap.status}, ${body.error?.code ?? 'unknown'}).`);
   }
-  const createdBootstrap = await fetch(`${webOrigin}/api/members/bootstrap`, {
+  const createdBootstrap = await fetch(`${webOrigin}${apiPath('/members/bootstrap')}`, {
     method: 'POST',
     headers: { authorization: `Bearer ${bootstrapIdentity.idToken}`, 'content-type': 'application/json' },
     body: JSON.stringify({ displayName: 'Preview Member' }),
@@ -287,13 +315,30 @@ async function main(): Promise<void> {
     throw new Error(`Fresh synthetic member bootstrap did not create a member through the same-origin proxy (HTTP ${createdBootstrap.status}, ${createdMember.error?.code ?? 'created=false'}).`);
   }
 
+  // Seeded Group Feed read verification: proves the preview API accepts Group
+  // Feed requests without HTTP 503 feed_unavailable when cursor secret is auto-generated.
+  const seededGroupQuery = spawnSync(psql, [
+    ...dbArgs, '-d', DATABASE_NAME, '-tA', '-v', 'ON_ERROR_STOP=1',
+    '-c', `SELECT group_id FROM groups WHERE name = 'KILIMANJARO — S5b Today Preview' LIMIT 1`,
+  ], { encoding: 'utf8' });
+  const seededGroupId = seededGroupQuery.stdout.trim();
+  if (seededGroupId) {
+    const feed = await fetch(`${webOrigin}${apiPath(`/groups/${encodeURIComponent(seededGroupId)}/feed`)}`, {
+      headers: { authorization: `Bearer ${identity.idToken}` },
+    });
+    if (!feed.ok) {
+      const feedBody = await feed.json().catch(() => ({})) as { error?: { code?: string } };
+      throw new Error(`Seeded Group Feed failed through the same-origin proxy (HTTP ${feed.status}, ${feedBody.error?.code ?? 'unknown'}).`);
+    }
+  }
+
   console.log('\nFounder Preview is ready.');
   console.log(`  Today: ${webOrigin}/v2/today`);
   console.log(`  Sign in: ${EMAIL}`);
   console.log('  Fresh bootstrap test identity: founder1@tiizi.local');
   console.log(`  Local-only password: ${PASSWORD}`);
   console.log(`  Auth emulator: ${authUrl} (${projectId})`);
-  console.log(`  API: same-origin /api proxy to ${apiTarget}; CORS is not relaxed`);
+  console.log(`  API: same-origin ${API_PREFIX} proxy to ${apiTarget}; CORS is not relaxed`);
   console.log(`  Bootstrap: Amara idempotent HTTP ${bootstrap.status}; founder1 created=true HTTP ${createdBootstrap.status}`);
   console.log('  Operator Template routes retain their real API authorization and may show a restricted state for this member.');
   console.log('  Press Ctrl-C to stop only this preview and remove its temporary PostgreSQL cluster.');
@@ -312,6 +357,8 @@ process.on('exit', () => {
 });
 
 main().catch(async (error: unknown) => {
-  console.error(`Founder Preview startup failed: ${error instanceof Error ? error.message : String(error)}`);
+  if (!shutdownAbortController.signal.aborted) {
+    console.error(`Founder Preview startup failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
   await stop(1);
 });
