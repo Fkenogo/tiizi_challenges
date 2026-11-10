@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 import { handleFounderTemplateRequest } from './src/v2PreviewRuntime/previewFounderTemplates';
 
+import { API_PREFIX } from './api/src/apiPrefix';
+
 const founderPreview = process.env.TIIZI_FOUNDER_PREVIEW === '1';
 
 const founderTemplateFixtures: Plugin = {
@@ -36,7 +38,7 @@ export default defineConfig({
   server: founderPreview ? {
     host: '127.0.0.1',
     proxy: {
-      '/api': {
+      [API_PREFIX]: {
         target: process.env.TIIZI_FOUNDER_API_TARGET ?? 'http://127.0.0.1:4019',
         changeOrigin: false,
       },
