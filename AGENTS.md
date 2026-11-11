@@ -1,3 +1,13 @@
+## START-01 — mandatory first response for coding agents (Founder direction 2026-11-11)
+
+Before **any new or resumed coding, integration, correction, preview or release task**, apply the existing PRG-01/ECCL-005 contract and return a brief START-01 starting-point receipt **before changing code**. Repeat on agent, worktree, branch or repository handoff and after relevant upstream changes. Do not assume a handover or newer-looking branch is correct.
+
+The receipt must identify: (1) task authority and observation time; (2) refreshed remote `main` SHA, working branch/HEAD, merge-base, dirty files/worktrees and relevant stacked/open PRs; (3) exact Founder-accepted implementation and evidence or UNKNOWN; (4) **START FROM** exact branch/commit and behaviour to preserve; (5) **DO NOT START FROM** known stale/superseded versions; (6) task-relevant active routes/imports/build selection; (7) preview artifact SHA, environment and fixture identity when relevant or UNKNOWN; and (8) CONFIRMED/CONFLICTED/UNKNOWN findings plus overall PASS / PASS WITH EXPLICIT LIMITATIONS / STOP.
+
+A PASS never authorises work beyond the approved assignment. A limited PASS allows only independently unaffected authorised work. Missing approved ancestry, competing baselines or unknown source/preview identity material to the assignment means **STOP that affected implementation**: continue read-only investigation and escalate to the Technical Lead/Founder. Never overwrite dirty work or silently substitute old code. At HOV-01 handover, give the next agent the verified start point and separate implemented, tested, accepted, merged and deployed states.
+
+This clause supplements, and never replaces, the project's stricter constitution, Founder decisions, review and release gates. It does not authorise merges, deployments, deletion, migrations or changes to production. Central reference: `MILEDGE-ECCL-005` in `Fkenogo/miledge-ventures`.
+
 # Tiizi — Repository Engineering Instructions
 
 These instructions apply to every coding agent and human contributor working in
