@@ -8,6 +8,12 @@ A PASS never authorises work beyond the approved assignment. A limited PASS allo
 
 This clause supplements, and never replaces, the project's stricter constitution, Founder decisions, review and release gates. It does not authorise merges, deployments, deletion, migrations or changes to production. Central reference: `MILEDGE-ECCL-005` in `Fkenogo/miledge-ventures`.
 
+## Frontend guidance — Modern Web Guidance
+
+After START-01 and task classification, for changes involving web UI, CSS, browser APIs, accessibility, or client-side performance, consult the installed GoogleChrome Modern Web Guidance plugin: search the relevant topic, then retrieve the matching guide before implementation. Apply its browser-support and fallback guidance.
+
+Experimental or volatile browser features remain opt-in unless explicitly approved. This guidance does not override the project's stricter governance, acceptance, review, merge, or deployment controls, and it does not authorize broad modernization, dependencies, or CI changes.
+
 # Tiizi — Repository Engineering Instructions
 
 These instructions apply to every coding agent and human contributor working in
