@@ -56,6 +56,8 @@ At each explicit Founder UX acceptance, the Technical Lead instructs the Program
 - present integration PR and last verified merged-main SHA;
 - later Founder supersession if any; unresolved behavior and next action.
 
+When the Founder gives acceptance or a walkthrough decision in a conversation, the Programme Controller must preserve a durable, dated decision record with the exact accepted/rejected journeys and stated defects before closing the associated UX review. The register must distinguish **direct Founder-supplied evidence** (including the conversation and date), **repository-filed acceptance evidence** (a durable decision/handover path and revision, if one exists), and **verified preview/runtime identity** (exact served frontend/API source, overlay, data/fixture identity and URL/process). One category never substitutes for another. If no filed record or runtime identity exists yet, record `NOT YET FILED` or `UNKNOWN`; do not invent a document, commit or SHA. Until the durable decision record is filed, the acceptance is preserved as direct evidence but the UX review remains open.
+
 A closed UX review with unmerged work must be recorded as **ACCEPTED / INTEGRATION OPEN**. Its branch and accepted source are preserved, and integration stays in the delivery queue. An approved screen is not declared delivered or production-ready merely because the Founder accepted its visuals.
 
 If source is local-only, first preserve it by an authorized commit and durable remote ref or verified archive; a local disk copy is not sufficient long-term protection.
