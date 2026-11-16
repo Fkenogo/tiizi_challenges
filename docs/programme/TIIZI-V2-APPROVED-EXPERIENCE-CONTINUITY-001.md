@@ -33,6 +33,19 @@ The Technical Lead ensures a START-01 receipt is collected **before coding**; re
 
 The agent may not use an old SHA printed in a previous handover as current `main` without refetching.
 
+### 3.1 Independent Code Lifecycle Guardian checkpoints
+
+The Code Lifecycle Guardian is a **continuity-verification function**, not a coding-agent self-review and not the same function as the independent Code Reviewer. FEF-TLC-001 defines distinct functions but does not establish a permanent Guardian appointment. The four checks below are required by this proposed procedure; until an attributable Guardian assignment/activation is recorded, each checkpoint must be marked **UNVERIFIED — OWNER NOT ASSIGNED**. A coding agent may supply evidence but cannot certify its own work as an independent Guardian receipt. The Technical Lead/Founder must record a bounded temporary verifier and activation decision before relying on any such checkpoint as a completed gate.
+
+| Checkpoint | Timing | Required continuity decision |
+| --- | --- | --- |
+| G1 — Task entry | Before implementation or resumed work | Confirm fresh main, accepted-source inventory, PR ancestry, runtime identity, known gaps and valid start point. |
+| G2 — Integrated-preview preparation | Before Founder/acceptance walkthrough of an integrated candidate | Confirm candidate includes the intended accepted sources, identify exact served code/API/data/fixture identity and enumerate missing journeys. |
+| G3 — Pre-merge reconciliation | After exact-head independent code review and before merge recommendation | Compare candidate and accepted-source ancestry/behavior against current main; enumerate omissions, supersessions, relevant PRs, CI/review and unresolved gaps. |
+| G4 — Post-merge reconciliation | After merge, with a fresh fetch of main | Verify accepted-source ancestry and behavior in the merged tree, exact post-merge preview identity and closure evidence; reopen the queue for any failure. |
+
+Each receipt must give the exact `origin/main` SHA fetched for that checkpoint (and fetch time), candidate/PR SHA, accepted source SHAs and evidence references, relevant PR numbers and exact heads, runtime identity (or `UNKNOWN`), missing functionality, and a continuity verdict. A SHA alone is not runtime identity: record frontend/server revision, dirty overlay, database/fixture identity and preview URL/process where applicable.
+
 ## 4. Founder acceptance is a preservation event, not just a screenshot
 
 At each explicit Founder UX acceptance, the Technical Lead instructs the Programme Controller to update the register through a bounded PR or the same implementation PR. Each entry records:
@@ -72,7 +85,7 @@ The independent reviewer reports (on exact head):
 
 Introduce a **non-gating** PR checklist/report first; only propose a blocking CI guard in a separately approved change after assessing false positives and the six existing CI jobs. Automated checks supplement, not replace, the Founder browser walkthrough.
 
-## 7. Ownership and records
+## 7. Responsibilities, role activation and handoff
 
 | Accountable role | Required artifact |
 | --- | --- |
@@ -80,33 +93,60 @@ Introduce a **non-gating** PR checklist/report first; only propose a blocking CI
 | Technical Lead | Reconciles start point; approves integration sequence; checks preview fidelity and merge readiness |
 | Programme Controller | Maintains Master Programme status and register; tracks **ACCEPTED / NOT MERGED** queue |
 | Architecture & Decision Controller | Validates latest decisions and supersession; prevents accidental privacy/authority changes |
-| Code Lifecycle Guardian / START-01 | Captures source, ancestry, active runtime and acceptance variance |
+| Code Lifecycle Guardian (proposed continuity function) | Independently verifies source, ancestry, active runtime, accepted behavior and variance at G1–G4; records a receipt or explicit unassigned status |
 | Coding Agent | Implements narrow changes only after START-01; provides HOV-01 and test evidence |
-| Independent Reviewer | Checks accepted-journey regressions and exact-head compliance |
+| Independent Reviewer / Code Reviewer | Separately checks the exact candidate for code quality, authorization and accepted-journey regressions; cannot be the implementer reviewing their own work |
 
-**Role-activation limitation:** The 2026-11-16 reconciliation reported permanent Programme Controller, Architecture & Decision Controller and independent reviewer assignments **not verified**. Until a real assignment and attributable review evidence exist, do not claim these independent role checks completed. Technical Lead must surface the gap and obtain appropriate independent verification before a merge recommendation.
+The Programme Controller maintains the source-of-truth operational ledger (or records the assignment gap until appointed):
 
-## 8. Required report at every development turn
+- Founder acceptance records with dates, exact evidence and accepted sources;
+- this Approved Experience Register and its versioned updates;
+- the accepted-but-unmerged integration queue;
+- implementation, test, preview, PR, merge and deployment state as separate evidence-backed fields;
+- explicit Founder supersession records, retaining the superseded decision/source pointer; and
+- post-merge closure evidence, including G4 receipt, exact merged baseline, affected journey results and remaining queue.
 
-Use this compact receipt in each coding-agent report and Tech Lead review:
+Before declaring any work package closed, the Programme Controller must reconcile each affected register entry against its evidence and current main and publish/update the queue disposition. If no Programme Controller is assigned, closure remains **OPEN — CONTROLLER RECONCILIATION UNVERIFIED**; the person compiling an update must not silently certify it as the Programme Controller.
+
+### Verified activation status
+
+FEF-TLC-001 is an adopted role-separation authority, not evidence that each operating seat is filled. Current attributable records identify ChatGPT as performing the Technical Lead function under Founder direction, while the required Technical Lead current-state/step-2 activation confirmation remains unrecorded. Programme Controller and Architecture & Decision Controller assignments are unverified. No permanent Code Lifecycle Guardian appointment is established in FEF-TLC-001 or the reviewed activation records. A standing independent reviewer is also unverified. The Coding Agent is a task function, not a permanent person assignment. In the present recovery, the Coding Agent performed source comparison and documentation edits; no independent Guardian review or PR review is claimed. Record any subsequent named/temporary assignment, scope, activation date and evidence before describing that role as active.
+
+Where the Guardian or Programme Controller is unassigned, record the missing owner and activation evidence, name only the function currently performed and by whom (if attributable), and mark the relevant verification **UNVERIFIED**. For this AEC-001 correction, the coding-agent function is performed by the current agent; the Technical Lead function is attributed to ChatGPT by Founder direction; no Guardian or Programme Controller is verified as performing its function. This draft update is evidence collection, not Controller certification or Guardian sign-off. Escalate to Technical Lead/Founder for assignment or explicit bounded temporary coverage before treating the check as a mandatory completed gate. Do not silently transfer independence to the coding agent.
+
+### Mandatory integration handoff
+
+1. Programme Controller supplies the accepted-work inventory: Founder evidence, exact sources, status by dimension, current PR/merge state, supersessions and open queue.
+2. Guardian independently verifies source ancestry and preservation, or records the checkpoint unverified and escalates the assignment gap.
+3. Technical Lead authorizes a bounded integration task and its starting baseline.
+4. Coding Agent implements only that authorized scope and supplies change/test/runtime evidence.
+5. Independent Reviewer checks the exact candidate SHA.
+6. Founder accepts the experience and separately authorizes merge; acceptance is not merge authorization unless explicitly stated.
+7. Guardian verifies the post-merge baseline and preview at G4.
+8. Programme Controller records final status, closure evidence, and any outstanding/unmerged queue items. A work package is not closed until this reconciliation is explicit.
+
+## 8. Required checkpoint receipts
+
+Use the shared receipt below at G1–G4. The responsible independent Guardian completes the verdict fields. If unassigned, retain the receipt with `UNVERIFIED — OWNER NOT ASSIGNED`; evidence submitted by the Coding Agent is labeled self-reported and does not satisfy independent verification.
 
 ```text
 TASK / AUTHORITY:
+CHECKPOINT (G1/G2/G3/G4) + TIME:
+VERIFIER / ASSIGNMENT EVIDENCE / INDEPENDENCE:
 CURRENT origin/main SHA (fetched at):
-WORK BRANCH / HEAD / MERGE-BASE / DIRTY STATE:
-OPEN OR STACKED PRs (exact heads):
-ACCEPTED EXPERIENCE IDs + accepted source SHAs:
-START FROM / DO NOT START FROM:
-ACTIVE ROUTES + API + DATA STATE (fixture/connected):
-PREVIEW: frontend/API SHA, working-tree overlay, DB/fixture identity:
-REGRESSION MATRIX: preserved / conflicted / not tested:
-STATUS: accepted | implemented | tested | merged | preview-verified | deployed (each separately):
-CI + independent R1 exact-head evidence:
-PR + NEXT INTEGRATION + FOUNDER DECISION:
-OVERALL PASS / LIMITATIONS / STOP:
+CANDIDATE BRANCH / EXACT HEAD / MERGE-BASE / DIRTY STATE:
+ACCEPTED SOURCES (IDs, evidence, exact SHAs, branches/paths):
+RELEVANT OPEN/STACKED PRs (numbers, exact heads, state):
+RUNTIME IDENTITY (URL/process, frontend/API SHA, dirty overlay, DB/fixture):
+MISSING FUNCTIONALITY / ACCESS OR JOURNEY GAPS:
+CONTINUITY VERDICT (preserved / conflict / unknown + evidence):
+IMPLEMENTATION STATUS (accepted / implemented / tested / merged / preview-verified / deployed separately):
+CI + exact-head independent Code Reviewer evidence:
+QUEUE / NEXT OWNER / REQUIRED FOUNDER OR TECHNICAL LEAD DECISION:
+GUARDIAN RESULT: VERIFIED PASS | VERIFIED WITH LIMITATIONS | STOP | UNVERIFIED — OWNER NOT ASSIGNED
 ```
 
-Unknown means UNKNOWN, not deferred, complete or removed. If accepted behavior is missing, the next instruction is recovery/reconciliation, not redesign by default.
+For G1, record `START FROM / DO NOT START FROM` and entry disposition. For G2, attach the proposed Founder-preview journey matrix and block acceptance claims where runtime identity is unknown. For G3, include exact-head independent review, required CI and unresolved threads. For G4, include merge commit, fresh main SHA, post-merge runtime identity and per-register-ID closure result. Unknown means UNKNOWN, not deferred, complete or removed. If accepted behavior is missing, recover/reconcile rather than redesign by default.
 
 ## 9. Tiizi recovery disposition at drafting date
 
