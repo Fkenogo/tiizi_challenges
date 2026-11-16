@@ -52,7 +52,9 @@ export function V2DiscoverableChallengePreviewScreen() {
   if (discovery.isError) return <V2Page><V2ErrorState title="We couldn’t load this Challenge" message="Please try again." onRetry={() => void discovery.refetch()} /></V2Page>;
   if (!challenge && discovery.isFetchingNextPage) return <V2Page><V2LoadingState label="Finding this Challenge…" /></V2Page>;
   if (!challenge && paginationStalled) return <V2Page><V2ErrorState title="We couldn’t finish checking this Challenge" message="Please try again." onRetry={() => void discovery.refetch()} /></V2Page>;
-  if (!challenge && detail.isLoading) return <V2Page><V2LoadingState label="Checking your Group access…" /></V2Page>;
+  if (!challenge && (detail.isLoading || (Boolean(detail.data?.groupId) && hostGroup.isLoading))) {
+    return <V2Page><V2LoadingState label="Checking your Group access…" /></V2Page>;
+  }
   if (!challenge) return <V2Page><V2ErrorState title="This Challenge is no longer available" message="It may no longer be open to discovery. Explore current Challenges to see what is available." /></V2Page>;
   const state = endStateFor(challenge);
   const lifecycle = lifecycleBucket(challenge);

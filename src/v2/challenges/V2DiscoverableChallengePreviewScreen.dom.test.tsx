@@ -62,6 +62,15 @@ describe('discoverable Challenge preview route', () => {
     expect(h.join).toHaveBeenCalledWith('challenge-1');
   });
 
+  it('keeps a loading state while authorized Group membership details are resolving', () => {
+    h.query = { data: { pages: [{ challenges: [] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
+    h.detail = { isLoading: false, data: { ...challenge(), instructions: '', activatedAt: null, endedAt: null, finalizedAt: null, finalResult: null } };
+    h.group = { isLoading: true, data: undefined };
+    render(tree());
+    expect(screen.getByText('Checking your Group access…')).toBeTruthy();
+    expect(screen.queryByText(/no longer available/i)).toBeNull();
+  });
+
   it('does not disclose records absent from the complete authorized discovery set', () => {
     h.query = { data: { pages: [{ challenges: [] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
     render(tree());
