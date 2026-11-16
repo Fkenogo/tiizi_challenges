@@ -1,6 +1,6 @@
 # TIIZI — Approved Experience Continuity & Integration Procedure (AEC-001)
 
-**Status:** PROPOSED — Founder review required; not effective until reviewed and merged.
+**Status:** ADOPTED / EFFECTIVE — Founder-approved merge in PR #172, merge commit `1786a465d3c0f10944b181188b90d18d16f04a2e` (2026-11-16). This document records the adopted procedure; any later amendment requires its own approval and merge.
 **Prepared:** 2026-11-16
 **Authority:** Founder direction to preserve accepted V2 product experience, applied under current Master Programme, AGENTS.md, FEF-TLC-001 and ECCL-005 / START-01 / PRG-01 / HOV-01.
 **Scope:** V2 product experience continuity, development integration, local Founder Preview and merge assurance. No production deployment, V1 reuse, autonomous merge authority, or modification of existing constitutional/product-truth rules.
@@ -35,7 +35,7 @@ The agent may not use an old SHA printed in a previous handover as current `main
 
 ### 3.1 Independent Code Lifecycle Guardian checkpoints
 
-The Code Lifecycle Guardian is a **continuity-verification function**, not a coding-agent self-review and not the same function as the independent Code Reviewer. FEF-TLC-001 defines distinct functions but does not establish a permanent Guardian appointment. The four checks below are required by this proposed procedure; until an attributable Guardian assignment/activation is recorded, each checkpoint must be marked **UNVERIFIED — OWNER NOT ASSIGNED**. A coding agent may supply evidence but cannot certify its own work as an independent Guardian receipt. The Technical Lead/Founder must record a bounded temporary verifier and activation decision before relying on any such checkpoint as a completed gate.
+The Code Lifecycle Guardian is a **continuity-verification function**, not a coding-agent self-review and not the same function as the independent Code Reviewer. FEF-TLC-001 defines distinct functions but does not establish a permanent Guardian appointment. The four checks below are required by this adopted procedure; until an attributable Guardian assignment/activation is recorded, each checkpoint must be marked **UNVERIFIED — OWNER NOT ASSIGNED**. A coding agent may supply evidence but cannot certify its own work as an independent Guardian receipt. The Technical Lead/Founder must record a bounded temporary verifier and activation decision before relying on any such checkpoint as a completed gate.
 
 | Checkpoint | Timing | Required continuity decision |
 | --- | --- | --- |
@@ -95,7 +95,7 @@ Introduce a **non-gating** PR checklist/report first; only propose a blocking CI
 | Technical Lead | Reconciles start point; approves integration sequence; checks preview fidelity and merge readiness |
 | Programme Controller | Maintains Master Programme status and register; tracks **ACCEPTED / NOT MERGED** queue |
 | Architecture & Decision Controller | Validates latest decisions and supersession; prevents accidental privacy/authority changes |
-| Code Lifecycle Guardian (proposed continuity function) | Independently verifies source, ancestry, active runtime, accepted behavior and variance at G1–G4; records a receipt or explicit unassigned status |
+| Code Lifecycle Guardian (continuity-verification function) | Independently verifies source, ancestry, active runtime, accepted behavior and variance at G1–G4; records a receipt or explicit unassigned status |
 | Coding Agent | Implements narrow changes only after START-01; provides HOV-01 and test evidence |
 | Independent Reviewer / Code Reviewer | Separately checks the exact candidate for code quality, authorization and accepted-journey regressions; cannot be the implementer reviewing their own work |
 
@@ -159,8 +159,8 @@ Observed on 2026-11-16: `origin/main = ce477b0756129119c6ee93e99029984db35cecfc`
 - Treat Recent Activity and post-log Share as **Founder-accepted UX / unmerged fixture prototype**, not completed connected features. Preserve them while the connected implementation is separately scoped.
 - Retain merged Package A (PR #168) and merged #167 image/profile/card work; do not replay superseded #163.
 - The current local preview artifact/source identity is UNKNOWN until measured.
-- No PR #171 merge, production deployment, database changes or new B2 build is authorized by this draft.
+- This procedure authorizes no PR #171 merge, production deployment, database changes or new B2 build.
 
 ## 10. Approval boundary
 
-This document is a **proposed Tiizi implementation procedure**. It becomes effective after Founder review, normal review gates and an approved merge. It does not replace the Master Programme, the central ECCL-005 contract, the current AGENTS.md, or Founder acceptance decisions.
+This is the adopted Tiizi implementation procedure under Founder-approved PR #172, merged as `1786a465d3c0f10944b181188b90d18d16f04a2e`. It does not replace the Master Programme, the central ECCL-005 contract, the current AGENTS.md, or Founder acceptance decisions. Its G1–G4 checkpoints remain in force; role assignment and activation are tracked separately and are not implied by adoption of this procedure.
