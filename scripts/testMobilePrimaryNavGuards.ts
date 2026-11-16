@@ -51,6 +51,7 @@ const profileScreen = read('src/v2/profile/V2ProfileScreen.tsx');
 const emulators = read('src/lib/firebaseEmulators.ts');
 const listScreen = read('src/v2/challenges/V2ChallengeListScreen.tsx');
 const wizard = read('src/v2/challenges/V2ChallengeCreationWizard.tsx');
+const activitiesStep = read('src/v2/challenges/wizardSteps/ActivitiesStep.tsx');
 
 /** Isolate the mobile member <nav> block. */
 const memberNavStart = shell.indexOf('aria-label="Member"');
@@ -96,11 +97,15 @@ check('Activity Guide route remains defined', /<Route path="guide"/.test(routes)
 check('Challenges screen exposes a contextual Activity Guide entry', /navigate\('\/v2\/guide'\)/.test(listScreen));
 check('Challenges entry is visually subordinate to Create Challenge',
   listScreen.indexOf('Create Challenge') < listScreen.indexOf('/v2/guide'));
-check('creation activity step links to the Activity Guide', /to="\/v2\/guide"/.test(wizard));
+check('creation activity step links to the Activity Guide', /to="\/v2\/guide"/.test(activitiesStep) && /ActivitiesStep/.test(wizard));
 check('Activity Guide stays reachable: Profile → Help & guide row',
   /navigate\('\/v2\/guide'\)/.test(profileScreen) && /Activity Guide/.test(profileScreen));
 check('Profile stays reachable from the member shell: the header avatar navigates to /v2/profile',
   /<V2AccountTrigger[^>]*onOpen=\{\(\) => navigate\('\/v2\/profile'\)\}/.test(shell));
+check('authenticated member header omits repeated Tiizi branding and tagline',
+  !/V2BrandMark|Together We Move|>tiizi</.test(shell));
+check('clean authenticated header retains notification and Profile access',
+  /<V2NotificationTrigger/.test(shell) && /<V2AccountTrigger/.test(shell));
 
 // ─── E. No public/Cloudflare dependency in the shell ──────────────────────
 console.log('E. no public URL dependency');
@@ -125,6 +130,11 @@ const expectedMember = [
   'today:V2TodayScreen',
   'challenges:V2ChallengeListScreen',
   'challenges/new:V2ChallengeCreationWizard',
+  'challenges/discovery/:challengeId:V2DiscoverableChallengePreviewScreen',
+  'challenges/start:V2ChallengeStartScreen',
+  'challenges/templates:V2ChallengeTemplateLibrary',
+  'challenges/templates/:templateId:V2ChallengeTemplatePreview',
+  'challenges/:challengeId/history:V2FinalizedStreakHistoryScreen',
   'challenges/:challengeId:V2CreatedChallengeScreen',
   'groups:V2GroupsScreen',
   'groups/new:V2CreateGroupScreen',
@@ -134,7 +144,9 @@ const expectedMember = [
   'guide:V2ActivityLibraryScreen',
   'guide/:activityId:V2ActivityGuideDetailScreen',
   'profile:V2ProfileScreen',
+  'profile/challenges:V2ProfileChallengeHistoryScreen',
   'preferences:V2PreferencesSetupScreen',
+  'support:V2SupportTiiziScreen',
   'notifications:V2NotificationsPage',
 ];
 check('member routes are exactly the approved set including S4d settings, S6 Guide and the GF-04 Group Feed',
