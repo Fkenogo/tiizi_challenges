@@ -3,7 +3,7 @@
 **Prepared:** 2026-11-18
 **Authority:** Founder / Technical Lead, AEC-004 "Integrated Founder Experience Recovery"
 **Status:** COMPLETE FOR FOUNDER BROWSER ACCEPTANCE — STOPPED BEFORE MERGE
-**Candidate:** `integration/aec-004-founder-experience-recovery-001` — **behaviour SHA `3f1ed8e4ef64124e2b704490626a97a6c6ce9393`** (verified by the Guardian and the Independent Code Reviewer) · **branch head `9e96d43a5665ca989b78c3a8d433755de63fba21`** (adds only programme records; `git diff 3f1ed8e 9e96d43 -- src api scripts` is **empty**)
+**Candidate:** `integration/aec-004-founder-experience-recovery-001` — **shipped-app SHA `3f1ed8e4ef64124e2b704490626a97a6c6ce9393`** · **candidate head `976b60a9829a6b452bb72343f746e29ce7bec1e2`** (adds only the routing behavioural test, two guard corrections and programme records; `git diff 3f1ed8e HEAD -- src` shows **only the new test file** — no shipped app code changed)
 **Base:** `origin/main` @ `21c88f681427172fdc2150f3122e6cce6b90a63e`
 **Integration PR:** [#174](https://github.com/Fkenogo/tiizi_challenges/pull/174) — **DRAFT, open, not merged**
 
@@ -54,10 +54,10 @@
 | --- | --- |
 | PR | [#174 — AEC-004: Integrated Founder Experience Recovery (V2 member experience)](https://github.com/Fkenogo/tiizi_challenges/pull/174) |
 | State | **DRAFT · OPEN · MERGEABLE · NOT MERGED** |
-| Head | **behaviour SHA** `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` · **branch head** `9e96d43a5665ca989b78c3a8d433755de63fba21` (programme records only; behaviour-identical) |
+| Head | **shipped-app SHA** `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` · **candidate head** `976b60a9829a6b452bb72343f746e29ce7bec1e2` (adds the routing behavioural test, two guard corrections and programme records; no shipped app code changed) |
 | Branch | `integration/aec-004-founder-experience-recovery-001` (pushed) |
 | Base | `main` @ `21c88f681427172fdc2150f3122e6cce6b90a63e` |
-| Commits | `326f4c9` implementation · `9c94f7e` programme records · `3f1ed8e` Group cover-photo wiring fix |
+| Commits | `326f4c9` implementation · `9c94f7e` programme records · `3f1ed8e` Group cover-photo wiring fix · `de0106a` routing behavioural test + two guard corrections + adjudication · `976b60a` completion report and reviewer dispositions |
 | Behaviour delta `326f4c9` → `9c94f7e` | **none** — `git diff --name-only 326f4c9 9c94f7e -- src api scripts` is empty. The only difference is one added `docs/programme/*.md` record. |
 | Behaviour delta `9c94f7e` → `3f1ed8e` | **2 files, 4 lines** — the Group cover-photo wiring fix (§6.1). Both hunks are the PFD branch's own content. |
 
@@ -173,7 +173,7 @@ A systematic sweep of every `origin/main` ↔ PFD difference confirmed the other
 | --- | --- |
 | `npx tsc -b` | **PASS** (clean) |
 | `npm run build` | **PASS** (Vite build succeeded; only the pre-existing Browserslist / large-chunk warnings) |
-| `npx vitest run` | **PASS — 33 files, 236 tests, 0 failures** |
+| `npx vitest run` | **PASS — 34 files, 241 tests, 0 failures** |
 | `npx tsx scripts/testMobilePrimaryNavGuards.ts` | **PASS** (all passing) |
 | `npx tsx scripts/testV2DiscoveryGuards.ts` | **PASS** (all passing) |
 | `npx tsx scripts/testS4aGroupHomeGuards.ts` | **PASS** (all passing) |
@@ -242,18 +242,18 @@ Every finding raised by the two independent reviewers is recorded below with its
 
 | Item | Value |
 | --- | --- |
-| Frontend source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` — the behaviour-identical candidate; branch head `9e96d43a5665ca989b78c3a8d433755de63fba21` differs by programme records only |
-| API source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` — identical; **no `api/` file was modified** |
+| Frontend source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` (shipped app code) — the candidate head `976b60a9829a6b452bb72343f746e29ce7bec1e2` differs only by a test file, two guard scripts and programme records |
+| API source SHA | `976b60a9829a6b452bb72343f746e29ce7bec1e2` — identical; **no `api/` file was modified** (`git diff 21c88f6 HEAD -- api/` is empty) |
 | Working-tree overlay | **NONE.** `git status --short` in the integration worktree is empty at the recorded SHA. |
-| Preview URL | **http://127.0.0.1:49973/** — Today: http://127.0.0.1:49973/v2/today |
-| API | same-origin `/api` proxy → `http://127.0.0.1:49972` (CORS is not relaxed) |
-| Auth Emulator | `http://127.0.0.1:49974`, project **`demo-tiizi-founder-2025-06d981d6`** (isolated demo project, loopback only) |
-| Disposable database | PostgreSQL `127.0.0.1:49975/tiizi_founder_preview`, user `tiizi_preview`, disposable marker `tiizi-disposable-preview:founder-preview:tiizi-founder-preview-2DtLAy` (temporary cluster, removed on shutdown) |
+| Preview URL | **http://127.0.0.1:57952/** — Today: http://127.0.0.1:57952/v2/today |
+| API | same-origin `/api` proxy → `http://127.0.0.1:57951` (CORS is not relaxed) |
+| Auth Emulator | `http://127.0.0.1:57953`, project **`demo-tiizi-founder-22128-f095e463`** (isolated demo project, loopback only) |
+| Disposable database | PostgreSQL `127.0.0.1:57954/tiizi_founder_preview`, user `tiizi_preview`, disposable marker `tiizi-disposable-preview:founder-preview:tiizi-founder-preview-aWVhpX` (temporary cluster, removed on shutdown) |
 | Fixture identity | 31 migrations applied; 118-Activity catalogue imported (116 created / 1 updated / 1 unchanged) and published (84 fitness, 34 wellness, 0 duplicate codes) |
-| Seeded Group | `cd75d95e-bf4f-48cb-9125-7fc006cc36b7` — "KILIMANJARO — S5b Today Preview", `⌖ Local preview`, focus `#Strength`, goal `Build strength` |
-| Seeded Challenges | Streak `e67c3169-a53a-43af-a39c-58dda0e0a10e` ("Morning Momentum") · Together `422336bf-9abc-46c4-b58a-47a7b6215af9` ("Summit Steps Together") · Race `0b39f544-b15f-4816-90fb-e0145075e6b4` ("Reps Race") · Upcoming `c1913456-c087-47f1-a097-4ab98ca749a5` ("Sunrise Reset") |
-| Seeded member | `8c5c9350-7d48-4f20-bfc1-d070c42c6c44` |
-| Test personas | **Existing Member** — `amara@tiizi.local` (Together, Race and Streak participation) · **New Member** — `founder1@tiizi.local` (interest `Strength`, goal `Build strength`, no Group or Challenge participation). Local-only password for both: `lloYuwU540pTQG3J_L3t5G7A` |
+| Seeded Group | `a7db34fb-88b9-4026-9835-fef1ea68a62e` — "KILIMANJARO — S5b Today Preview", `⌖ Local preview`, focus `#Strength`, goal `Build strength` |
+| Seeded Challenges | Streak `daa426b1-360e-491e-a9cf-01e743f430cc` ("Morning Momentum") · Together `05d24f8d-7487-4eab-9d2f-b38746c08785` ("Summit Steps Together") · Race `eaaa1669-a885-4b3c-8887-c18b748cc3e6` ("Reps Race") · Upcoming `6a0c129c-5253-464a-a572-09d7267e2b77` ("Sunrise Reset") |
+| Seeded member | `05b2a014-2104-4fe6-8f07-38463ed98abe` |
+| Test personas | **Existing Member** — `amara@tiizi.local` (Together, Race and Streak participation) · **New Member** — `founder1@tiizi.local` (interest `Strength`, goal `Build strength`, no Group or Challenge participation). Local-only password for both: `SRcuShfKdQUtrEZA65yYArSa` |
 | Restart command | `npm run preview:founder` (one command; free ports chosen automatically). The session above was run under a managed 1-hour ceiling — run it in your own terminal for a durable session. |
 | Existing Founder test data | **Not overwritten.** The preview uses a fresh temporary PostgreSQL cluster with a disposable marker; it touches no existing database. |
 | Existing member preferences | The **Existing Member** persona first meets the pre-existing first-run preferences gate on `/v2/preferences` ("Continue" / "Skip for now"). This gate is **identical on `origin/main`** and is not an AEC-004 defect. |
@@ -265,7 +265,7 @@ Every finding raised by the two independent reviewers is recorded below with its
 - Today renders "Discover what fits you" with "Groups to explore" and "Challenges to explore", and the discovery block renders **before** the "Start with a Group" zero state (AEC-TODAY-01 ordering).
 - Relevance copy is honest: "Suggested because it matches your interest: Strength and goal: Build strength", and the honest fallback captions "Ordered by your interests and goals. Every Group is still shown." / "Every Challenge is still shown."
 - Groups → **Discover** tab shows the photo-led Group card: cover, "⌖ Local preview", "Tiizi Group", name, tagline, "Open to join", `#Strength`, `Build strength`, "Your interests: Strength · Your goals: Build strength", "1 member", and a **"Join Group"** action.
-- Group Home → hosted Challenge "Morning Momentum" → **`/v2/challenges/discovery/e67c3169-a53a-43af-a39c-58dda0e0a10e`** (the authorized preview — **not** the 404 member route). The preview renders the Challenge summary and offers **"View hosting Group"**; it does **not** offer a Challenge join to a non-member.
+- Group Home → hosted Challenge "Morning Momentum" → **`/v2/challenges/discovery/daa426b1-360e-491e-a9cf-01e743f430cc`** (the authorized preview — **not** the 404 member route). The preview renders the Challenge summary and offers **"View hosting Group"**; it does **not** offer a Challenge join to a non-member.
 - Zero console errors and zero failed/4xx/5xx requests.
 
 **Group cover photo path (targeted check)** — all assertions passed:
@@ -278,12 +278,12 @@ Every finding raised by the two independent reviewers is recorded below with its
 **Existing Member (`amara@tiizi.local`)** — all assertions passed:
 
 - Today shows "3 active Challenges", "1 Streak needs you today", Do today → Streak "Morning Momentum" (1/2 done), Your Ongoing Challenges → Race "Reps Race" and Together "Summit Steps Together", In your Groups, and Coming up. **The discovery block is absent** (AEC-TODAY-03).
-- Group Home → hosted Challenge → **`/v2/challenges/e67c3169-a53a-43af-a39c-58dda0e0a10e`** — the **existing member route**, with the member Challenge detail intact: "+ Log activity", "Leave Challenge", "You are taking part in this Challenge", today's daily consistency, current/best streak and days completed.
+- Group Home → hosted Challenge → **`/v2/challenges/daa426b1-360e-491e-a9cf-01e743f430cc`** — the **existing member route**, with the member Challenge detail intact: "+ Log activity", "Leave Challenge", "You are taking part in this Challenge", today's daily consistency, current/best streak and days completed.
 - Zero console errors and zero failed/4xx/5xx requests.
 
 ## 10. Founder walkthrough checklist
 
-**Sign in** at http://127.0.0.1:49973/v2/sign-in with `founder1@tiizi.local` (New Member) or `amara@tiizi.local` (Existing Member), password `lloYuwU540pTQG3J_L3t5G7A`.
+**Sign in** at http://127.0.0.1:57952/v2/sign-in with `founder1@tiizi.local` (New Member) or `amara@tiizi.local` (Existing Member), password `SRcuShfKdQUtrEZA65yYArSa`.
 
 ### A. New member (founder1@tiizi.local)
 
