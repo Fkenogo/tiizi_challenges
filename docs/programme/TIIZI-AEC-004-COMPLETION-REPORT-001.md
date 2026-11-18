@@ -3,7 +3,7 @@
 **Prepared:** 2026-11-18
 **Authority:** Founder / Technical Lead, AEC-004 "Integrated Founder Experience Recovery"
 **Status:** COMPLETE FOR FOUNDER BROWSER ACCEPTANCE — STOPPED BEFORE MERGE
-**Candidate:** `integration/aec-004-founder-experience-recovery-001` @ `9c94f7e6e118b8e6e6c41ab27afb64181d219f76`
+**Candidate:** `integration/aec-004-founder-experience-recovery-001` @ `3f1ed8e4ef64124e2b704490626a97a6c6ce9393`
 **Base:** `origin/main` @ `21c88f681427172fdc2150f3122e6cce6b90a63e`
 **Integration PR:** [#174](https://github.com/Fkenogo/tiizi_challenges/pull/174) — **DRAFT, open, not merged**
 
@@ -54,11 +54,12 @@
 | --- | --- |
 | PR | [#174 — AEC-004: Integrated Founder Experience Recovery (V2 member experience)](https://github.com/Fkenogo/tiizi_challenges/pull/174) |
 | State | **DRAFT · OPEN · MERGEABLE · NOT MERGED** |
-| Head | `9c94f7e6e118b8e6e6c41ab27afb64181d219f76` |
+| Head | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` |
 | Branch | `integration/aec-004-founder-experience-recovery-001` (pushed) |
 | Base | `main` @ `21c88f681427172fdc2150f3122e6cce6b90a63e` |
-| Commits | `326f4c9` implementation · `9c94f7e` programme records |
-| Behaviour delta between the two commits | **none** — `git diff --name-only 326f4c9 9c94f7e -- src api scripts` is empty. The only difference is one added `docs/programme/*.md` record. |
+| Commits | `326f4c9` implementation · `9c94f7e` programme records · `3f1ed8e` Group cover-photo wiring fix |
+| Behaviour delta `326f4c9` → `9c94f7e` | **none** — `git diff --name-only 326f4c9 9c94f7e -- src api scripts` is empty. The only difference is one added `docs/programme/*.md` record. |
+| Behaviour delta `9c94f7e` → `3f1ed8e` | **2 files, 4 lines** — the Group cover-photo wiring fix (§6.1). Both hunks are the PFD branch's own content. |
 
 ## 5. Accepted-source comparison
 
@@ -94,6 +95,7 @@
 | `src/v2/today/V2TodayScreen.discovery.dom.test.tsx` | #150 = PFD (identical) | — |
 | `src/v2/today/V2TodayScreen.tsx` | PFD (= main + discovery block + cover cards) | — |
 | `src/v2/groups/V2GroupPhotoCard.tsx`, `V2GroupCover.tsx`, `V2GroupCover.dom.test.tsx`, `localGroupCoverPreviews.ts`, `V2GroupsScreen.tsx`, `V2GroupDiscoveryPanel.tsx` | PFD | — |
+| `src/v2/groups/V2CreateGroupScreen.tsx`, `src/v2/groups/V2GroupGlobalSearch.tsx` | PFD (2 files, 4 lines) | **Restored in `3f1ed8e` after the Independent Code Reviewer found the photo path was never wired** — see §6.1 |
 | `src/v2/today/V2TodayScreen.challengeCovers.dom.test.tsx` | PFD | — |
 | `src/v2/today/V2TodayDiscoveryRecommendations.tsx` | — | **Composed:** #171 `discoveryCaption` + tightened pagination-stall detection + `returnTo` state, **plus** the PFD `V2ChallengeCover` thumbnail (resolves Guardian F-04) |
 | `src/v2/groups/V2GroupHomeScreen.tsx` | — | **Composed:** main + PFD cover hero + #171 `returnTo` journey + the AEC-DISC-02 fix |
@@ -125,6 +127,21 @@
 | 5 | Accepted Group listing, detail and Group Hub presentation | PFD `2f065546` | `V2GroupPhotoCard`, `V2GroupCover`, `localGroupCoverPreviews`, `V2GroupsScreen`, `V2GroupDiscoveryPanel`, `V2GroupHomeScreen` hero |
 | 6 | Accepted Today and Challenge card/cover presentation | PFD `2f065546` | `V2ChallengeCover` thumbnails across Today cards, required-today, active-challenge, opportunity and discovery cards |
 | 7 | Clean authenticated member header | #171 | `MemberShell.tsx` — notifications + Profile only |
+
+### 6.1 The Group cover-photo wiring fix (found by the Independent Code Reviewer)
+
+The accepted photo-led Group presentation was first transplanted **without the two wiring points that make it live**: the PFD branch's `V2CreateGroupScreen.tsx` stores the cover photo chosen during Group creation in the tab-local Group cover preview map, and its `V2GroupGlobalSearch.tsx` renders the accepted `V2GroupCover` on Group search results instead of the old gradient placeholder. Without the first, a cover photo chosen at Group creation was **silently discarded** and the Group surfaces fell back to the gradient — so the "photo-led Group presentation" was only partially delivered.
+
+Both were restored verbatim from the PFD branch (`2f065546dd7051b5c6401e52da897b8c82d6cc93`); no new design:
+
+| File | Change |
+| --- | --- |
+| `src/v2/groups/V2CreateGroupScreen.tsx` | +2 lines — import `setLocalGroupCoverPreview`; call `if (coverPhoto.file) setLocalGroupCoverPreview(created.id, coverPhoto.file);` after Group creation |
+| `src/v2/groups/V2GroupGlobalSearch.tsx` | 2 lines — render `<V2GroupCover …/>` on Group search results instead of the gradient placeholder |
+
+Verified end to end in the running preview: a Group created with a cover photo renders `data-local-cover="true"` with the selected image on the Group page, and the same photo appears on the Groups listing under client-side navigation. The accepted tab-local limit is unchanged — a **full page reload clears the photo**, exactly as the accepted design specifies. Cover photos remain non-persistent; AEC-IMG-09 still forbids claiming persistent uploads.
+
+A systematic sweep of every `origin/main` ↔ PFD difference confirmed the other PFD changes that were **not** taken are genuinely **newer on main** (Package A and PR #167 work): `V2LoggingSection.tsx` (Package A's `resolveLoggingOccurredAt` immediate-logging precision), `V2ChallengeCard.tsx`, `V2ChallengeCreationWizard.tsx` (PR #167 cover-draft safety), `V2FinalizedStreakResult.tsx`, `useLocalImagePreview.ts`, `profileView.ts`, and all `api/**` files.
 
 ### The AEC-DISC-02 fix (the only new behaviour authored)
 
@@ -198,18 +215,18 @@ _(populated on completion of the delegated reviews)_
 
 | Item | Value |
 | --- | --- |
-| Frontend source SHA | `9c94f7e6e118b8e6e6c41ab27afb64181d219f76` (`integration/aec-004-founder-experience-recovery-001`) |
-| API source SHA | `9c94f7e6e118b8e6e6c41ab27afb64181d219f76` — identical; **no `api/` file was modified** |
+| Frontend source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` (`integration/aec-004-founder-experience-recovery-001`) |
+| API source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` — identical; **no `api/` file was modified** |
 | Working-tree overlay | **NONE.** `git status --short` in the integration worktree is empty at the recorded SHA. |
-| Preview URL | **http://127.0.0.1:59191/** — Today: http://127.0.0.1:59191/v2/today |
-| API | same-origin `/api` proxy → `http://127.0.0.1:59190` (CORS is not relaxed) |
-| Auth Emulator | `http://127.0.0.1:59192`, project **`demo-tiizi-founder-87576-d8b003e5`** (isolated demo project, loopback only) |
-| Disposable database | PostgreSQL `127.0.0.1:59193/tiizi_founder_preview`, user `tiizi_preview`, disposable marker `tiizi-disposable-preview:founder-preview:tiizi-founder-preview-6G7A5q` (temporary cluster, removed on shutdown) |
+| Preview URL | **http://127.0.0.1:49973/** — Today: http://127.0.0.1:49973/v2/today |
+| API | same-origin `/api` proxy → `http://127.0.0.1:49972` (CORS is not relaxed) |
+| Auth Emulator | `http://127.0.0.1:49974`, project **`demo-tiizi-founder-2025-06d981d6`** (isolated demo project, loopback only) |
+| Disposable database | PostgreSQL `127.0.0.1:49975/tiizi_founder_preview`, user `tiizi_preview`, disposable marker `tiizi-disposable-preview:founder-preview:tiizi-founder-preview-2DtLAy` (temporary cluster, removed on shutdown) |
 | Fixture identity | 31 migrations applied; 118-Activity catalogue imported (116 created / 1 updated / 1 unchanged) and published (84 fitness, 34 wellness, 0 duplicate codes) |
-| Seeded Group | `0f6410e1-c7b2-4623-86a1-daa23b2b8f01` — "KILIMANJARO — S5b Today Preview", `⌖ Local preview`, focus `#Strength`, goal `Build strength` |
-| Seeded Challenges | Streak `87d6bd8d-3c7b-4739-a303-beee221ae1eb` ("Morning Momentum") · Together `6e61a9d4-891a-4b84-b68a-85fb864f3e50` ("Summit Steps Together") · Race `140d9bb9-ef09-44cf-851e-79916c0e3f18` ("Reps Race") · Upcoming `65e04317-96b7-458b-ab6e-09a0964addfc` ("Sunrise Reset") |
-| Seeded member | `e5772a70-b694-4958-9859-a94ded91d63f` |
-| Test personas | **Existing Member** — `amara@tiizi.local` (Together, Race and Streak participation) · **New Member** — `founder1@tiizi.local` (interest `Strength`, goal `Build strength`, no Group or Challenge participation). Local-only password for both: `TsdmnApL3j1hokmD9EqkyYV2` |
+| Seeded Group | `cd75d95e-bf4f-48cb-9125-7fc006cc36b7` — "KILIMANJARO — S5b Today Preview", `⌖ Local preview`, focus `#Strength`, goal `Build strength` |
+| Seeded Challenges | Streak `e67c3169-a53a-43af-a39c-58dda0e0a10e` ("Morning Momentum") · Together `422336bf-9abc-46c4-b58a-47a7b6215af9` ("Summit Steps Together") · Race `0b39f544-b15f-4816-90fb-e0145075e6b4` ("Reps Race") · Upcoming `c1913456-c087-47f1-a097-4ab98ca749a5` ("Sunrise Reset") |
+| Seeded member | `8c5c9350-7d48-4f20-bfc1-d070c42c6c44` |
+| Test personas | **Existing Member** — `amara@tiizi.local` (Together, Race and Streak participation) · **New Member** — `founder1@tiizi.local` (interest `Strength`, goal `Build strength`, no Group or Challenge participation). Local-only password for both: `lloYuwU540pTQG3J_L3t5G7A` |
 | Restart command | `npm run preview:founder` (one command; free ports chosen automatically). The session above was run under a managed 1-hour ceiling — run it in your own terminal for a durable session. |
 | Existing Founder test data | **Not overwritten.** The preview uses a fresh temporary PostgreSQL cluster with a disposable marker; it touches no existing database. |
 | Existing member preferences | The **Existing Member** persona first meets the pre-existing first-run preferences gate on `/v2/preferences` ("Continue" / "Skip for now"). This gate is **identical on `origin/main`** and is not an AEC-004 defect. |
@@ -221,18 +238,25 @@ _(populated on completion of the delegated reviews)_
 - Today renders "Discover what fits you" with "Groups to explore" and "Challenges to explore", and the discovery block renders **before** the "Start with a Group" zero state (AEC-TODAY-01 ordering).
 - Relevance copy is honest: "Suggested because it matches your interest: Strength and goal: Build strength", and the honest fallback captions "Ordered by your interests and goals. Every Group is still shown." / "Every Challenge is still shown."
 - Groups → **Discover** tab shows the photo-led Group card: cover, "⌖ Local preview", "Tiizi Group", name, tagline, "Open to join", `#Strength`, `Build strength`, "Your interests: Strength · Your goals: Build strength", "1 member", and a **"Join Group"** action.
-- Group Home → hosted Challenge "Morning Momentum" → **`/v2/challenges/discovery/87d6bd8d-3c7b-4739-a303-beee221ae1eb`** (the authorized preview — **not** the 404 member route). The preview renders the Challenge summary and offers **"View hosting Group"**; it does **not** offer a Challenge join to a non-member.
+- Group Home → hosted Challenge "Morning Momentum" → **`/v2/challenges/discovery/e67c3169-a53a-43af-a39c-58dda0e0a10e`** (the authorized preview — **not** the 404 member route). The preview renders the Challenge summary and offers **"View hosting Group"**; it does **not** offer a Challenge join to a non-member.
 - Zero console errors and zero failed/4xx/5xx requests.
+
+**Group cover photo path (targeted check)** — all assertions passed:
+
+- A Group created in the "Look & focus" step with a cover photo attached renders `data-local-cover="true"` with the selected image (`blob:` URL) on the Group page.
+- The same photo appears on the Groups listing under **client-side** navigation.
+- A **full page reload clears the photo** (`withPhotoAfterReload=0`), confirming the accepted tab-local-only behaviour and that AEC-IMG-09's "do not claim persistent uploads" still holds.
+- Zero console errors and zero 5xx responses.
 
 **Existing Member (`amara@tiizi.local`)** — all assertions passed:
 
 - Today shows "3 active Challenges", "1 Streak needs you today", Do today → Streak "Morning Momentum" (1/2 done), Your Ongoing Challenges → Race "Reps Race" and Together "Summit Steps Together", In your Groups, and Coming up. **The discovery block is absent** (AEC-TODAY-03).
-- Group Home → hosted Challenge → **`/v2/challenges/87d6bd8d-3c7b-4739-a303-beee221ae1eb`** — the **existing member route**, with the member Challenge detail intact: "+ Log activity", "Leave Challenge", "You are taking part in this Challenge", today's daily consistency, current/best streak and days completed.
+- Group Home → hosted Challenge → **`/v2/challenges/e67c3169-a53a-43af-a39c-58dda0e0a10e`** — the **existing member route**, with the member Challenge detail intact: "+ Log activity", "Leave Challenge", "You are taking part in this Challenge", today's daily consistency, current/best streak and days completed.
 - Zero console errors and zero failed/4xx/5xx requests.
 
 ## 10. Founder walkthrough checklist
 
-**Sign in** at http://127.0.0.1:59191/v2/sign-in with `founder1@tiizi.local` (New Member) or `amara@tiizi.local` (Existing Member), password `TsdmnApL3j1hokmD9EqkyYV2`.
+**Sign in** at http://127.0.0.1:49973/v2/sign-in with `founder1@tiizi.local` (New Member) or `amara@tiizi.local` (Existing Member), password `lloYuwU540pTQG3J_L3t5G7A`.
 
 ### A. New member (founder1@tiizi.local)
 
