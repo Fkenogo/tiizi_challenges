@@ -179,21 +179,24 @@ A systematic sweep of every `origin/main` ↔ PFD difference confirmed the other
 | `npx tsx scripts/testS4aGroupHomeGuards.ts` | **PASS** (all passing) |
 | `npx tsx scripts/testV2PreferencesGuards.ts` | **PASS** (all passing) |
 | `npx tsx scripts/testV2ProfileGuards.ts` | **PASS** (all passing) |
-| `npx tsx scripts/testGroupsFounderFinalPass.ts` | **PRE-EXISTING FAILURE** on clean `origin/main` (identical on both) — "About this Group closes on Escape" — the correction already recorded in the PFD handover |
+| `npx tsx scripts/testGroupsFounderFinalPass.ts` | **PASS** (now passing — it failed identically on clean `origin/main` and was corrected in `de0106a`, see §8.6 R-10) |
+| `npx tsx scripts/testGroupUxPolish.ts`, `test:v2-group-details`, `test:gf04-group-feed`, `test:v2-triage` | **PASS** |
 
 ### 8.2 Full root suite: baseline vs candidate (all 66 `test:*` scripts)
 
 Every script was executed on clean `origin/main` (`21c88f6`) and on the candidate, comparing **exit codes**.
 
-| | Baseline `21c88f6` | Candidate `9c94f7e` |
+| | Baseline `21c88f6` | Candidate (final) |
 | --- | --- | --- |
-| Scripts passing | 55 | **60** |
-| Scripts failing | 11 | **6** |
+| Scripts passing | 55 | **61** |
+| Scripts failing | 11 | **5** |
 
 - **No script regressed** (PASS → FAIL: **none**).
 - The candidate **repairs** `test:mobile-primary-nav`, which failed on clean main with two assertions (Guardian finding F-03).
+- The candidate **also repairs** `test:groups-founder-final-pass`, which failed on clean main with the stale "About this Group closes on Escape" assertion (both reviewers independently confirmed it failed identically on main; the correction is recorded as R-10 in §8.6).
 - Four baseline failures (`test:challenge-creation-backend`, `test:knowledge-authority-backend`, `test:functions-pg-authority-bridge`, `test:group-invite-backend`) were artifacts of the baseline harness's symlinked `node_modules`; the candidate runs them for real and they **pass**.
-- The six remaining failures are **identical on clean `origin/main` and on the candidate**, and are outside the AEC-004 restore scope: `test:challenge-creation-6combos`, `test:s3a-participation-experience`, `test:s3b-activity-logging`, `test:s3c-live-progress`, `test:group-lifecycle`, `test:groups-founder-final-pass`. **None was introduced by AEC-004 and none was masked or silently fixed.**
+- The five remaining failures are **identical on clean `origin/main` and on the candidate**, and are outside the AEC-004 restore scope: `test:challenge-creation-6combos`, `test:s3a-participation-experience`, `test:s3b-activity-logging`, `test:s3c-live-progress`, `test:group-lifecycle`. **None was introduced by AEC-004 and none was masked or silently fixed.**
+- Guard assertion count for `test:s4a-group-home` versus clean main: **164 → 174**, with **nothing removed**.
 
 ### 8.3 Guardian G2 receipt
 
@@ -335,7 +338,7 @@ The accepted prototype is **absent from the candidate** and is **not** represent
 | Recent Activity connected, Challenge participant count read, Challenge Feed, Share publication/withdrawal, external Copy Link | **Not delivered** — out of AEC-004 scope, no authority (§11) |
 | Persistent image/cover storage | **Not delivered.** All accepted image work is browser-tab-local `File` objects in in-memory maps; a reload clears them. AEC-IMG-09: *"Do not claim persistent uploads."* The restored Group cover inherits exactly this limitation. |
 | Matched "recommended for you" results | Require a saved preference set. Without one, the block shows eligible-unmatched fallback rows with honest captions — correct behaviour, not a gap, but it must not be described as "recommended for you". |
-| `test:groups-founder-final-pass` — "About this Group closes on Escape" | **Pre-existing failure**, identical on clean `origin/main`, and already recorded as a pending correction in the PFD handover. Not fixed in AEC-004 (fixing it would mean changing an accepted About-sheet behaviour outside this scope). |
+| `test:groups-founder-final-pass` — "About this Group closes on Escape" | **Pre-existing failure**, identical on clean `origin/main`, and already recorded as a pending correction in the PFD handover. **Now closed** in `de0106a`: the guard asserted an inline `event.key === 'Escape'` handler in `V2GroupHomeScreen`, but the Escape dismissal lives in the shared `V2Sheet` primitive and the Group Home owns the browser-history dismissal. The guard now asserts the accepted mechanism, so it is green **without any accepted About-sheet behaviour being changed**. |
 | Five other pre-existing suite failures | `test:challenge-creation-6combos`, `test:s3a-participation-experience`, `test:s3b-activity-logging`, `test:s3c-live-progress`, `test:group-lifecycle` — identical on clean `origin/main`; outside AEC-004's restore scope and not masked. |
 | First-run preferences gate for the Existing Member persona | **Pre-existing product behaviour**, identical on `origin/main`. Recorded as a walkthrough note, not an AEC-004 defect. |
 | AEC-DISC-02 open UX-review item — *"Reconcile the bypass and approval persona; UX review remains open until the bypass is corrected and independently checked"* | The CTA bypass is corrected and independently verified in §9. **The approval-persona reconciliation remains open** and needs a separate product decision. |
