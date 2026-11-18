@@ -292,6 +292,11 @@ async function main(): Promise<void> {
     TIIZI_GROUP_FEED_CURSOR_SECRET: groupFeedCursorSecret,
   }));
   await waitFor(`${apiTarget}/ready`, 'Tiizi API', api);
+  // Process only the existing governed outbox batch for this disposable preview.
+  // Production and member requests do not run this CLI.
+  await run(process.execPath, ['--import', 'tsx', 'api/src/groupFeedCli.ts', 'process'], {
+    env: localEnv({ ...baseEnv, DATABASE_URL: databaseUrl }),
+  });
 
   await assertLoopbackPortAvailable(webPort, 'Vite V2 frontend');
   const vite = startService('Vite V2 frontend', process.execPath, [
