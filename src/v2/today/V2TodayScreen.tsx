@@ -21,6 +21,8 @@ import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
 import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
 import { useDismissV2PreferenceReminder, useV2Preferences } from '../preferences/usePreferences';
+import { V2TodayDiscoveryRecommendations } from './V2TodayDiscoveryRecommendations';
+import { showTodayDiscoveryRecommendations } from './todayDiscovery';
 import {
   challengeTypeLabel,
   formatAmount,
@@ -205,6 +207,8 @@ export function V2TodayScreen() {
           <V2Button variant="secondary" onClick={() => void today.refetch()}>Try again</V2Button>
         </div>
       )}
+
+      {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodayDiscoveryRecommendations />}
 
       {isTodayEmpty(projection) ? (
         <NoParticipationState kind={noParticipation} onNavigate={navigate} />

@@ -66,7 +66,17 @@ check('sign-out clears this member\'s return context only after logout succeeds'
 
 console.log('C. the Challenge -> Group -> Challenge journey keeps its explicit steps');
 const explore = read('src/v2/challenges/V2DiscoverChallengeRow.tsx');
+const preview = read('src/v2/challenges/V2DiscoverableChallengePreviewScreen.tsx');
+const groupHome = read('src/v2/groups/V2GroupHomeScreen.tsx');
+check('discoverable preview reads the authorized discovery summary and has no private-detail fallback', /useV2ChallengeDiscovery\('relevance'\)/.test(preview) && /challengeId/.test(preview) && /no longer available/i.test(preview));
+check('public preview keeps Group viewing and Challenge joining as separate explicit actions', /View hosting Group/.test(preview) && /Join Challenge/.test(preview) && /useJoinChallengeV2\(\)/.test(preview));
+check('Group return navigation accepts only the internal selected-Challenge path', /returnToValue/.test(groupHome) && /\^\\\/v2\\\/challenges\\\/discovery\\\/\[\^\/\]\+\$/.test(groupHome));
+check('successful Group join/request returns to the selected Challenge preview with active membership state', /result\.status === 'active' \|\| result\.status === 'joined'/.test(groupHome) && /navigate\(returnTo, \{ state: \{ groupJoined: active \} \}\)/.test(groupHome));
+check('Group Home back link preserves the selected Challenge return route', /to=\{returnTo \?\? '\/v2\/groups'\}/.test(groupHome) && /Back to Challenge/.test(groupHome));
+check('Today Challenge recommendations preserve the selected preview when opening its hosting Group', /returnTo: `\/v2\/challenges\/discovery\/\$\{challenge\.challengeId\}`/.test(read('src/v2/today/V2TodayDiscoveryRecommendations.tsx')));
+check('preview fallback uses existing authorized member detail only after outsider discovery is exhausted', /useChallengeDetailV2\(challengeId, discoveryComplete && !discoveredChallenge\)/.test(preview) && /useV2GroupDetail\(detail\.data\?\.groupId/.test(preview));
 check('Explore uses the existing Group join mutation', /useJoinGroup\(/.test(explore));
+check('Explore exposes Preview Challenge without removing its Group join action', /Preview Challenge/.test(explore) && /useJoinGroup\(/.test(explore));
 check('Explore never joins a Challenge', !/joinChallengeV2|\/join`|useJoinChallenge/.test(explore));
 check('approval Groups show a pending state, not Challenge access', /Request sent — waiting for/.test(explore) && /requiresApproval/.test(explore));
 check('copy states that Group join does not enroll in the Challenge', /does not enroll you in the Challenge/.test(explore));

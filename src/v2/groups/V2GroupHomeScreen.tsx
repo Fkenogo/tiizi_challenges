@@ -87,7 +87,7 @@ function settingsRows(detail: V2GroupDetail): Array<{ label: string; value: stri
   ];
 }
 
-function JoinCta({ groupId }: { groupId: string }) {
+function JoinCta({ groupId, onJoined }: { groupId: string; onJoined: (active: boolean) => void }) {
   const join = useJoinGroup(groupId);
   const errorMessage =
     join.isError && join.error instanceof ApiError && join.error.status === 503
@@ -95,7 +95,7 @@ function JoinCta({ groupId }: { groupId: string }) {
       : 'We could not join this Group just now. Please try again.';
   return (
     <div className="mt-3">
-      <V2Button onClick={() => join.mutate()} disabled={join.isPending}>
+      <V2Button onClick={() => join.mutate(undefined, { onSuccess: (result) => onJoined(result.status === 'active' || result.status === 'joined') })} disabled={join.isPending}>
         {join.isPending ? 'Joining…' : 'Join Group'}
       </V2Button>
       {join.isError && (
@@ -117,6 +117,12 @@ export function V2GroupHomeScreen() {
     detail.isSuccess && detail.data?.viewerRelationship !== 'pending',
   );
   const createdGroupName = (location.state as { createdGroupName?: string } | null)?.createdGroupName;
+  const returnToValue = location.state && typeof location.state === 'object'
+    ? (location.state as { returnTo?: unknown }).returnTo
+    : undefined;
+  const returnTo = typeof returnToValue === 'string' && /^\/v2\/challenges\/discovery\/[^/]+$/.test(returnToValue)
+    ? returnToValue
+    : undefined;
 
   const view = groupHomeViewFor({
     isLoading: detail.isLoading,
@@ -129,8 +135,12 @@ export function V2GroupHomeScreen() {
   return (
     <V2Page>
       <p className="mb-2 text-sm font-bold">
-        <Link to="/v2/groups" className="text-slate-500 hover:text-slate-800">
-          ← Back to Groups
+        <Link
+          to={returnTo ?? '/v2/groups'}
+          state={returnTo ? { groupJoined: view.kind === 'home' && (view.detail.viewerRelationship === 'member' || view.detail.viewerRelationship === 'steward') } : undefined}
+          className="text-slate-500 hover:text-slate-800"
+        >
+          {returnTo ? '← Back to Challenge' : '← Back to Groups'}
         </Link>
       </p>
 
@@ -156,6 +166,7 @@ export function V2GroupHomeScreen() {
         <GroupHomeBody
           detail={view.detail}
           createdGroupName={createdGroupName}
+          onJoined={(active) => { if (returnTo) navigate(returnTo, { state: { groupJoined: active } }); }}
           hostedState={hosted}
           onManageGroup={() => navigate(`/v2/groups/${view.detail.id}/settings`)}
           onOpenChallenge={(challengeId) => navigate(`/v2/challenges/${challengeId}`)}
@@ -171,6 +182,7 @@ export function V2GroupHomeScreen() {
 function GroupHomeBody({
   detail,
   createdGroupName,
+  onJoined,
   hostedState,
   onManageGroup,
   onOpenChallenge,
@@ -178,6 +190,7 @@ function GroupHomeBody({
 }: {
   detail: V2GroupDetail;
   createdGroupName: string | undefined;
+  onJoined: (active: boolean) => void;
   hostedState: ReturnType<typeof useV2GroupChallenges>;
   onManageGroup: () => void;
   onOpenChallenge: (challengeId: string) => void;
@@ -294,7 +307,7 @@ function GroupHomeBody({
             {detail.viewerRelationship === 'steward' && (
               <V2Button variant="secondary" onClick={onManageGroup}>Manage Group</V2Button>
             )}
-            {detail.viewerRelationship === 'none' && !detail.isPrivate && <JoinCta groupId={detail.id} />}
+            {detail.viewerRelationship === 'none' && !detail.isPrivate && <JoinCta groupId={detail.id} onJoined={onJoined} />}
             {canCreate && (
               <V2Button onClick={onCreateChallenge}>Launch Challenge</V2Button>
             )}
