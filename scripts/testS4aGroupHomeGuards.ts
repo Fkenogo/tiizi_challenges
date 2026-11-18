@@ -85,7 +85,16 @@ function stripComments(source: string): string {
 
 const groupFiles = walk('src/v2/groups').filter((path) => /\.(ts|tsx)$/.test(path));
 const groupSources = groupFiles.map((path) => ({ path, source: read(path) }));
-const anyGroupCode = groupSources.map((entry) => stripComments(entry.source)).join('\n');
+// The client-authority scan covers PRODUCTION surfaces only. A test fixture
+// legitimately declares server-shaped facts (a detail projection's member
+// count, a steward's membership) in order to drive the surface under test;
+// that is fixture input, not client-manufactured authority. The per-file
+// runtime checks further down still cover every file, test files included.
+const isTestFile = (path: string) => /\.(test|dom\.test)\.(ts|tsx)$/.test(path);
+const anyGroupCode = groupSources
+  .filter((entry) => !isTestFile(entry.path))
+  .map((entry) => stripComments(entry.source))
+  .join('\n');
 const createScreen = read('src/v2/groups/V2CreateGroupScreen.tsx');
 const settingsScreen = read('src/v2/groups/V2GroupSettingsScreen.tsx');
 const createCode = stripComments(createScreen);

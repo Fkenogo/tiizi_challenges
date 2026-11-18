@@ -215,6 +215,30 @@ Live PR metadata read from the GitHub API on 2026-11-18. **No PR is closed, supe
 ## 10. Unknowns and limitations of this extract
 
 1. **AEC-DISC-02 — whether the `#171` `returnTo` flow is the Founder-accepted correction of the Group Home hosted-Challenge path: UNKNOWN.** In both `origin/main` and the `#171` head, `src/v2/groups/V2GroupHomeScreen.tsx` opens a hosted Challenge at `/v2/challenges/:challengeId` (`onOpenChallenge`), unchanged. The `#171` `returnTo` journey serves the *discovery row → Group → back to preview* path. Whether this constitutes the correction of the defect the Founder confirmed on 2026-11-16 (opening a hosted Challenge from a **public Group Home** did not provide the accepted outsider preview journey) requires Founder/Technical Lead adjudication; it is not established by the source evidence, and the canonical register already records this journey as open.
+
+#### AEC-004 adjudication (recorded 2026-11-18) — RESOLVED
+
+**Decision:** the `#171` `returnTo` flow alone is **not** the correction. AEC-004 implements the additional routing branch that sends a non-member viewer from a public Group Home to the accepted `#171` authorized discovery summary preview, while members and stewards keep the existing member Challenge route.
+
+**Adjudicating authority:** the **Founder / Technical Lead**, through the AEC-004 task instruction issued 2026-11-18:
+
+- §4 item 3 — *"Public hosted-Challenge preview without requiring Group membership."*
+- §6 — *"The public Group → hosted Challenge preview defect must be resolved before Founder acceptance."*
+
+**Corroborating canonical direction:** the Accepted Experience Register's own "First candidate sequence" step (5) — *"fix Group Home hosted-Challenge navigation so outsiders reach the authorized discovery summary preview, preserving access controls and separate Group/Challenge joins."*
+
+**Independent basis:** Guardian G1 finding F-01 established by blob-level evidence that neither `#150` nor `#171` changes `onOpenChallenge`, so the defect would have survived a `#171`-only restoration.
+
+**Constraints carried into the implementation:**
+
+- Group join and Challenge join remain **separate** explicit actions; a non-member is not offered a Challenge join.
+- `requireChallengeVisible` (`api/src/challengeReads.ts`) remains the server authorization boundary; **no `api/` file was modified**.
+- The `returnTo` pattern stays strictly anchored: `^/v2/challenges/discovery/[^/]+$`.
+- Members and stewards keep the existing member Challenge route unchanged.
+
+**Verification:** pinned by `src/v2/groups/V2GroupHomeScreen.routing.dom.test.tsx` (5 cases: non-member, pending, member, steward, and the no-bypass invariant); confirmed in the running Founder Preview by the Guardian G2 receipt and by the Independent Code Review.
+
+**Still open (carried forward, not closed by this adjudication):** the register's open UX-review item on AEC-DISC-02 — *"Reconcile the bypass and approval persona; UX review remains open until the bypass is corrected and independently checked."* The bypass is corrected and independently checked; the **approval-persona reconciliation** remains open and is not adjudicated here.
 2. **AEC-GROUP-08 — the acceptance relationship between the preserved PFD Group Home and the evolved `origin/main` Group Home: UNKNOWN.** The `2f065546` layout polish is absent from `origin/main` (zero occurrences of `grid-cols-[minmax(0,1fr)_auto]`), yet `origin/main` carries an independently evolved Group Home with an "About this Group" sheet. Whether the preserved polish is still wanted, or is superseded by the evolved screen, is not evidenced and is not decided here.
 3. **AEC-SHARE-06 — the exact accepted Copy Link UX artefact: UNKNOWN.** The decision document is merged; no V2 visual implementation or acceptance artefact was located. The V1 implementation referenced by the decision document is a historical record only.
 4. **AEC-GROUP-08 / AEC-IMG-09 — the acceptance evidence for the individual PFD Group/Today handovers is not cross-linked per item.** The canonical register states individual acceptance evidence should be cross-linked; that cross-link is still outstanding and is not created by this extract.

@@ -3,7 +3,7 @@
 **Prepared:** 2026-11-18
 **Authority:** Founder / Technical Lead, AEC-004 "Integrated Founder Experience Recovery"
 **Status:** COMPLETE FOR FOUNDER BROWSER ACCEPTANCE — STOPPED BEFORE MERGE
-**Candidate:** `integration/aec-004-founder-experience-recovery-001` @ `3f1ed8e4ef64124e2b704490626a97a6c6ce9393`
+**Candidate:** `integration/aec-004-founder-experience-recovery-001` — **behaviour SHA `3f1ed8e4ef64124e2b704490626a97a6c6ce9393`** (verified by the Guardian and the Independent Code Reviewer) · **branch head `9e96d43a5665ca989b78c3a8d433755de63fba21`** (adds only programme records; `git diff 3f1ed8e 9e96d43 -- src api scripts` is **empty**)
 **Base:** `origin/main` @ `21c88f681427172fdc2150f3122e6cce6b90a63e`
 **Integration PR:** [#174](https://github.com/Fkenogo/tiizi_challenges/pull/174) — **DRAFT, open, not merged**
 
@@ -54,7 +54,7 @@
 | --- | --- |
 | PR | [#174 — AEC-004: Integrated Founder Experience Recovery (V2 member experience)](https://github.com/Fkenogo/tiizi_challenges/pull/174) |
 | State | **DRAFT · OPEN · MERGEABLE · NOT MERGED** |
-| Head | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` |
+| Head | **behaviour SHA** `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` · **branch head** `9e96d43a5665ca989b78c3a8d433755de63fba21` (programme records only; behaviour-identical) |
 | Branch | `integration/aec-004-founder-experience-recovery-001` (pushed) |
 | Base | `main` @ `21c88f681427172fdc2150f3122e6cce6b90a63e` |
 | Commits | `326f4c9` implementation · `9c94f7e` programme records · `3f1ed8e` Group cover-photo wiring fix |
@@ -215,7 +215,7 @@ _(populated on completion of the delegated reviews)_
 
 | Item | Value |
 | --- | --- |
-| Frontend source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` (`integration/aec-004-founder-experience-recovery-001`) |
+| Frontend source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` — the behaviour-identical candidate; branch head `9e96d43a5665ca989b78c3a8d433755de63fba21` differs by programme records only |
 | API source SHA | `3f1ed8e4ef64124e2b704490626a97a6c6ce9393` — identical; **no `api/` file was modified** |
 | Working-tree overlay | **NONE.** `git status --short` in the integration worktree is empty at the recorded SHA. |
 | Preview URL | **http://127.0.0.1:49973/** — Today: http://127.0.0.1:49973/v2/today |
