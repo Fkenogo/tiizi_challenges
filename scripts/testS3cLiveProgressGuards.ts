@@ -340,6 +340,8 @@ check('detail assembles hero → live progress → secondary actions (no permane
     && screenSrc.indexOf('<V2ParticipationSection') < screenSrc.indexOf("navigate('/v2/challenges/new')")
     && !screenSrc.includes('<V2LoggingSection'));
 const heroSrc = read('src/v2/challenges/V2ChallengeHero.tsx');
+const coverSrc = read('src/v2/challenges/V2ChallengeCover.tsx');
+const coverTestSrc = read('src/v2/challenges/V2ChallengeCover.dom.test.tsx');
 check('detail renders canonical Support Tiizi only on active enabled Challenges',
   screenSrc.includes('supportTiiziEnabled') && screenSrc.includes("challenge.status === 'active'")
     && screenSrc.includes('Tiizi is supported by this Challenge'));
@@ -367,11 +369,17 @@ check('hero consolidates identity for all three types (badge/title/host/schedule
     && heroSrc.includes('timezoneLabel')
     && heroSrc.includes('Log activity')
     && heroSrc.includes('onLogActivity'));
-check('hero imagery is a bounded CSS fallback (no fabricated media state)',
-  !/<img|image_url|coverImage/.test(heroSrc)
-    && heroSrc.includes('detail.coverId')
-    && heroSrc.includes('challengeCoverGradient(detail.coverId)')
-    && heroSrc.includes('Legacy Challenges without an id'));
+check('hero uses shared Challenge cover with local preview and accessible fallback',
+  heroSrc.includes("import { V2ChallengeCover } from './V2ChallengeCover'")
+    && heroSrc.includes('<V2ChallengeCover challengeId={detail.challengeId} title={detail.title}')
+    && coverSrc.includes('getLocalChallengeCoverPreview(challengeId)')
+    && coverSrc.includes('URL.createObjectURL(localCover)')
+    && coverSrc.includes('data-challenge-cover-id={challengeId}')
+    && coverSrc.includes("aria-label={`${title} has no cover photo`}")
+    && coverSrc.includes('data-local-cover={photoUrl ?')
+    && coverSrc.includes('bg-slate-200')
+    && coverTestSrc.includes("screen.getByLabelText('Missing has no cover photo')")
+    && coverTestSrc.includes("screen.queryByRole('img', { name: 'Missing cover photo' })).toBeNull()"));
 check('Log Activity is a CTA opening the overlay (form absent while closed)',
   screenSrc.includes('setLogOpen(true)')
     && screenSrc.includes('<V2LogActivityDialog')
