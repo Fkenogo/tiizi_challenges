@@ -99,11 +99,14 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
   const rejoining = view.kind === 'not-joined' && view.previouslyEnded;
 
   useEffect(() => {
-    if (view.kind === 'joined' && notice?.tone === 'success') setNotice(null);
-  }, [view.kind, notice?.tone]);
+    if (notice?.tone !== 'success') return;
+    const timeout = window.setTimeout(() => setNotice(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [notice?.tone, notice?.message]);
 
-  if (view.kind === 'joined') return null;
   if (view.kind === 'read-only' && view.reason === 'finalized') return null;
+  const showParticipationCard = view.kind !== 'joined';
+  const joinSheetOpen = joinOpen && (view.kind !== 'joined' || busy);
 
   const handleJoin = async () => {
     setNotice(null);
@@ -133,51 +136,53 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
 
   return (
     <>
-      <V2Card>
-        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          Taking part
-        </p>
+      {showParticipationCard && (
+        <V2Card>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            Taking part
+          </p>
 
-        {view.kind === 'read-only' && (
-          <div className="mt-2">
-            <p className="text-sm font-black text-slate-900">
-              {detail.myParticipation?.status === 'active'
-                ? 'You took part in this Challenge.'
-                : 'You are not taking part in this Challenge.'}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              This Challenge has ended, so joining and leaving are closed.
-            </p>
-          </div>
-        )}
-
-        {view.kind === 'not-joined' && (
-          <div className="mt-2">
-            <p className="text-sm font-black text-slate-900">
-              {rejoining ? 'You are not taking part right now.' : 'You are not taking part yet.'}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              {rejoining
-                ? 'You left this Challenge before. You can join again where the Challenge still allows it.'
-                : 'Join to take part. Only current members of the hosting group can join.'}
-            </p>
-            <div className="mt-3">
-              <V2Button
-                onClick={() => {
-                  setNotice(null);
-                  setJoinOpen(true);
-                }}
-                disabled={busy}
-              >
-                {busy ? 'Joining…' : rejoining ? 'Join again' : 'Join Challenge'}
-              </V2Button>
+          {view.kind === 'read-only' && (
+            <div className="mt-2">
+              <p className="text-sm font-black text-slate-900">
+                {detail.myParticipation?.status === 'active'
+                  ? 'You took part in this Challenge.'
+                  : 'You are not taking part in this Challenge.'}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                This Challenge has ended, so joining and leaving are closed.
+              </p>
             </div>
-          </div>
-        )}
-      </V2Card>
+          )}
+
+          {view.kind === 'not-joined' && (
+            <div className="mt-2">
+              <p className="text-sm font-black text-slate-900">
+                {rejoining ? 'You are not taking part right now.' : 'You are not taking part yet.'}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                {rejoining
+                  ? 'You left this Challenge before. You can join again where the Challenge still allows it.'
+                  : 'Join to take part. Only current members of the hosting group can join.'}
+              </p>
+              <div className="mt-3">
+                <V2Button
+                  onClick={() => {
+                    setNotice(null);
+                    setJoinOpen(true);
+                  }}
+                  disabled={busy}
+                >
+                  {busy ? 'Joining…' : rejoining ? 'Join again' : 'Join Challenge'}
+                </V2Button>
+              </div>
+            </div>
+          )}
+        </V2Card>
+      )}
 
       <V2Sheet
-        open={joinOpen}
+        open={joinSheetOpen}
         onClose={() => {
           if (!busy) setJoinOpen(false);
         }}
@@ -200,7 +205,7 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
         </div>
       </V2Sheet>
 
-      {!joinOpen && noticeView}
+      {!joinSheetOpen && noticeView}
     </>
   );
 }

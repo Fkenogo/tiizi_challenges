@@ -69,23 +69,33 @@ describe('Challenge Details participation joining', () => {
     expect(h.join).not.toHaveBeenCalled();
   });
 
-  it('calls the authorized join mutation once, shows success, then suppresses the active card after canonical refetch', async () => {
+  it('shows success after canonical refetch without retaining an active participation card', async () => {
+    let resolveJoin: (() => void) | undefined;
+    h.join.mockImplementation(() => {
+      h.pending = true;
+      return new Promise<void>((resolve) => {
+        resolveJoin = () => resolve();
+      });
+    });
     const view = renderSection();
     await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
-
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
-
     await waitFor(() => expect(h.join).toHaveBeenCalledTimes(1));
-    expect(h.join).toHaveBeenCalledWith('challenge-1');
-    expect((await screen.findByRole('status')).textContent).toContain('You joined this Challenge.');
-    expect(screen.queryByRole('dialog')).toBeNull();
 
     h.success = true;
     h.variables = 'challenge-1';
     view.rerender(<V2ParticipationSection detail={detail({ myParticipation: { status: 'active' } as V2ChallengeDetail['myParticipation'] })} />);
-    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Joining…' })).toBeTruthy();
+
+    h.pending = false;
+    resolveJoin?.();
+    expect((await screen.findByRole('status')).textContent).toContain('You joined this Challenge.');
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.queryByText('Taking part')).toBeNull();
     expect(screen.queryByRole('button', { name: /Join/ })).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull(), { timeout: 5000, interval: 50 });
+    expect(screen.queryByText('Taking part')).toBeNull();
   });
 
   it('requires a separate, reworded confirmation for Join again', async () => {

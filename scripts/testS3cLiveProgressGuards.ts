@@ -426,8 +426,12 @@ check('hero Leave stays subordinate to the primary Log Activity CTA',
   heroSrc.includes('+ Log activity')
     && heroSrc.indexOf('+ Log activity') < heroSrc.indexOf('Leave Challenge'));
 check('permanent Taking Part card is not rendered for active participants',
-  participationSrc.includes("if (view.kind === 'joined') return null")
+  participationSrc.includes("const showParticipationCard = view.kind !== 'joined'")
+    && participationSrc.includes('{showParticipationCard && (')
     && !/You are taking part in this Challenge\.<\/p>/.test(participationSrc));
+check('active join success is temporary and pending sheet remains visible through refetch',
+  participationSrc.includes('window.setTimeout(() => setNotice(null), 3000)')
+    && participationSrc.includes("const joinSheetOpen = joinOpen && (view.kind !== 'joined' || busy)"));
 check('initial Leave selection only opens confirmation (no mutation in hero)',
   !/mutateAsync|withdrawChallengeV2|useWithdrawChallengeV2/.test(heroSrc)
     && screenSrc.includes('<V2LeaveChallengeDialog'));
