@@ -10,10 +10,10 @@ The Founder walkthrough statements below are direct evidence supplied for this r
 
 Repository reconciliation for this preparation:
 
-- PR #174 is open and Draft at `56ea62e369bef3e4fe523d672cd9e4af7d9e9d28`; its integration worktree is `integration/aec-004-founder-experience-recovery-001`.
-- `origin/main` was fetched at `21c88f681427172fdc2150f3122e6cce6b90a63e`.
+- PR #174 was merged normally at `732c3316d06184916521591a1a9372051ab50538` from approved head `2b23d5f0aa0583db9c78f679ff93fb90cf9426f8`; the merge commit is on `origin/main`.
+- `origin/main` was fetched at `732c3316d06184916521591a1a9372051ab50538`.
 - The accepted November 9 Activity Visibility UX source remains `codex/tiizi-pfd-activity-visibility-003` at `e2aee9239d42e6f92a66c22e4fcbbb97595c9521`. It is preserved and is not changed by this record.
-- The accepted prototype is not a connected implementation: its timeline entries and Feed cards are fictional; its Share choice is local-only and Publish is disabled. AEC-004 protected-source status remains unchanged.
+- The accepted prototype remains unconnected: its timeline entries and Feed cards are fictional; its Share choice is local-only and Publish is disabled. The G4 verification of merged AEC-004 did not implement Recent Activity, Challenge Feed publication, or post-log sharing; those remain AEC-005 or later.
 
 Code-level baseline inspected in the AEC-004 candidate:
 
@@ -21,7 +21,7 @@ Code-level baseline inspected in the AEC-004 candidate:
 - `src/v2/challenges/V2CreatedChallengeScreen.tsx` owns Challenge Details navigation; `src/v2/challenges/V2ProgressSection.tsx` routes to the existing server-derived Together, Race, and Streak progress views. The separate latest-own-contribution display is not evidenced.
 - `api/src/challengeActivityRoutes.ts` and `api/src/challengeActivityApplication.ts` implement authenticated Activity application and canonical V2 writes. `api/src/app.ts` / `api/src/challengeReads.ts` do not provide an owner-only personal Activity history read.
 
-This record captures product direction and a proposed engineering boundary. It does not claim that the November 19 journey is implemented, that sharing is published, that a preview was verified, or that AEC-004 / PR #174 is Founder-approved for merge.
+This record captures product direction and a proposed engineering boundary. It does not claim that the November 19 post-log journey is implemented or that sharing is published. The separate G4 verification tested the merged AEC-004 runtime; it does not verify the AEC-005 journeys or identify the earlier Founder walkthrough runtime.
 
 ## 2. Founder walkthrough disposition
 
@@ -140,7 +140,9 @@ The full journey is acceptable only when all applicable authorized dependencies 
 
 Tests for Feed or external behavior are requirements for later authorized packages, not work performed in this preparation.
 
-## 9. PR #174 merge-readiness blockers
+## 9. PR #174 merge-readiness blockers (historical pre-merge snapshot)
+
+The findings below describe the pre-merge state recorded at the original preparation baseline. They are preserved as historical evidence and are superseded for current PR #174 status by the post-merge G4 reconciliation in §12.
 
 PR #174 remains **Draft** by explicit instruction and must not be merged. Live GitHub reconciliation for head `56ea62e369bef3e4fe523d672cd9e4af7d9e9d28` reported `mergeStateStatus=CLEAN`; all seven listed CI/informational checks completed successfully. However, `latestReviews` is empty and `reviewDecision` is unset. A clean merge state and green CI do not satisfy review or governance gates.
 
@@ -155,14 +157,24 @@ Current blockers / holds:
 
 CI is not the current blocker. There are no unresolved GitHub review threads. Do not close Guardian G2, merge, push, or change PR #174 under this preparation task.
 
-## 10. Handover boundary
+## 10. Handover boundary (historical AEC-005 preparation)
 
 **Next action:** Technical Lead review this disposition, register updates, AEC-005A/AEC-005B boundaries, open Founder decisions, and the CF-01/external-sharing dependencies. No implementation, migration, backend publication, merge, deployment, or Guardian gate closure is included. Preserve the AEC-004 source candidate and the accepted November 9 source unchanged.
 
-## 11. AEC-004 documentation dependency and PR isolation
+## 11. AEC-004 documentation dependency and PR isolation (historical pre-merge snapshot)
+
+This section records the original pre-merge documentation comparison. PR #174's AEC-004 supporting records are now on `main`; the current baseline and separate PR status are updated in §12.
 
 The canonical Register rows updated here (AEC-ACT-04, AEC-SHARE-05/06, AEC-CF-07, and AEC-LOG-11) already exist on the current `origin/main` baseline. The committed PR #174 delta contains no prior change to the canonical Register, so this documentation change updates existing rows and does not silently omit or replace an AEC-004-specific Register entry.
 
 AEC-004-specific supporting records — `TIIZI-AEC-004-ACCEPTED-INVENTORY-001.md`, `TIIZI-AEC-004-PROTECTED-SOURCE-RECORD-001.md`, `TIIZI-AEC-004-COVERAGE-ACTIVATION-001.md`, `TIIZI-AEC-004-G1-GUARDIAN-RECEIPT-001.md`, and `TIIZI-AEC-004-COMPLETION-REPORT-001.md` — are on PR #174 and are absent from the current main baseline. This AEC-005 documentation PR intentionally excludes those files and all #174 application changes; it cross-references PR #174 for AEC-004-specific reconciliation and governance evidence. The November 9 handover is also absent from current main; its accepted source remains separately preserved at `e2aee9239d42e6f92a66c22e4fcbbb97595c9521` on the remote `codex/tiizi-pfd-activity-visibility-003` branch. Neither that source nor its worktree is modified here.
 
-This documentation PR is based directly on current `origin/main` `21c88f681427172fdc2150f3122e6cce6b90a63e`; it does not merge, rebase, or cherry-pick PR #174. Keep both PRs Draft and separate pending Technical Lead review.
+This documentation PR was initially prepared against `origin/main` `21c88f681427172fdc2150f3122e6cce6b90a63e` and intentionally excluded PR #174 application changes. That baseline statement is historical: PR #174 has since merged at `732c3316d06184916521591a1a9372051ab50538`. PR #175 remains a separate documentation-only proposal; no merge or AEC-005 implementation is authorized here.
+
+## 12. 2026-11-19 post-merge reconciliation
+
+PR #174 is merged at `732c3316d06184916521591a1a9372051ab50538`. The independent Guardian's G4 verdict is **VERIFIED WITH LIMITATIONS**: merged runtime identity was independently verified, and the Guardian reviewed the operator's browser evidence, but did not independently replay the full browser matrix or read the disposable database marker. The Technical Lead accepts that G4 evidence for AEC-004 closure with explicit limitations; the detailed receipt is in separate PR [#176](https://github.com/Fkenogo/tiizi_challenges/pull/176).
+
+The operator's G4 browser evidence includes successful existing Activity logging, canonical persistence, and refreshed progress. It does not make the Recent Activity timeline, Challenge Feed publication, internal or external post-log sharing, or the full AEC-005 journeys implemented. Pending-member and ended/finalized Challenge browser personas remain accepted G4 limitations. The November 19 Founder walkthrough runtime remains unknown; do not attribute it to the G4 preview.
+
+AEC-005A (owner-only Recent Activity) and AEC-005B (post-log choice and Challenge Details convergence) remain proposals for Technical Lead review and separate implementation authorization. Preserve the November 19 Founder direction, private-by-default boundary, CF-01 publication dependency, and separate recipient-safe external-sharing dependency. No connected Recent Activity, Challenge Feed publication, Share, or external-sharing behavior is claimed here.
