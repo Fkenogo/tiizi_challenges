@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { V2Button, V2ErrorState, V2LoadingState, V2Page } from '../components/V2Primitives';
+import { V2Button, V2ErrorState, V2LoadingState, V2Page, V2Sheet } from '../components/V2Primitives';
 import { useV2GroupDetail } from '../groups/useV2Groups';
 import { useV2ChallengeDiscovery } from './useChallengeDiscovery';
 import { flattenDiscoveryPages, relevanceBadges } from './discoveryRelevance';
@@ -15,6 +15,10 @@ export function V2DiscoverableChallengePreviewScreen() {
   const { challengeId } = useParams();
   const navigate = useNavigate();
   const joinChallenge = useJoinChallengeV2();
+  const [joinOpen, setJoinOpen] = useState(false);
+  useEffect(() => {
+    if (joinChallenge.isSuccess) setJoinOpen(false);
+  }, [joinChallenge.isSuccess]);
   const discovery = useV2ChallengeDiscovery('relevance');
   const rows = flattenDiscoveryPages(discovery.data?.pages);
   const discoveredChallenge = rows.find((item) => item.challengeId === challengeId);
@@ -84,11 +88,23 @@ export function V2DiscoverableChallengePreviewScreen() {
       <V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${challenge.host.groupId}`, { state: { returnTo: `/v2/challenges/discovery/${challenge.challengeId}` } })}>View hosting Group</V2Button>
       {(challenge.host.viewerRelationship === 'member' || challenge.host.viewerRelationship === 'steward') && state === 'live' && (
         <div className="mt-3">
-          <V2Button disabled={joinChallenge.isPending} onClick={() => joinChallenge.mutate(challenge.challengeId)}>
+          <V2Button disabled={joinChallenge.isPending} onClick={() => setJoinOpen(true)}>
             {joinChallenge.isPending ? 'Joining Challenge…' : 'Join Challenge'}
           </V2Button>
           {joinChallenge.isSuccess && <p role="status" className="mt-2 text-sm font-semibold text-emerald-800">You joined this Challenge.</p>}
-          {joinChallenge.isError && <p role="alert" className="mt-2 text-sm text-red-700">We couldn’t join this Challenge. Please try again.</p>}
+          {joinChallenge.isError && !joinOpen && <p role="alert" className="mt-2 text-sm text-red-700">We couldn’t join this Challenge. Please try again.</p>}
+          <V2Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title={`Join ${challenge.title}?`} variant="member">
+            <p className="text-sm leading-6 text-slate-600">
+              Joining starts your participation in this Challenge. Membership in {challenge.host.groupName ?? challenge.groupName ?? 'the hosting Group'} does not join you automatically — this is your explicit choice.
+            </p>
+            {joinChallenge.isError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">We couldn’t join this Challenge. Please try again.</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <V2Button variant="ghost" onClick={() => setJoinOpen(false)}>Not now</V2Button>
+              <V2Button disabled={joinChallenge.isPending} onClick={() => joinChallenge.mutate(challenge.challengeId)}>
+                {joinChallenge.isPending ? 'Joining…' : 'Join Challenge'}
+              </V2Button>
+            </div>
+          </V2Sheet>
         </div>
       )}
     </div>

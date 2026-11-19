@@ -1,12 +1,12 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { V2DiscoverableChallenge } from '../../api/challengeDiscoveryApi';
 
-const h = vi.hoisted(() => ({ query: {} as any, join: vi.fn(), detail: { isLoading: false, data: undefined } as any, group: { data: undefined } as any }));
+const h = vi.hoisted(() => ({ query: {} as unknown, join: vi.fn(), joinPending: false, joinSuccess: false, joinError: false, detail: { isLoading: false, data: undefined } as unknown, group: { data: undefined } as unknown }));
 vi.mock('./useChallengeDiscovery', () => ({ useV2ChallengeDiscovery: () => h.query }));
-vi.mock('./useChallengeCreation', () => ({ useChallengeDetailV2: () => h.detail, useJoinChallengeV2: () => ({ isPending: false, isSuccess: false, isError: false, mutate: h.join }) }));
+vi.mock('./useChallengeCreation', () => ({ useChallengeDetailV2: () => h.detail, useJoinChallengeV2: () => ({ isPending: h.joinPending, isSuccess: h.joinSuccess, isError: h.joinError, mutate: h.join }) }));
 vi.mock('../groups/useV2Groups', () => ({ useV2GroupDetail: () => h.group }));
 
 import { V2DiscoverableChallengePreviewScreen } from './V2DiscoverableChallengePreviewScreen';
@@ -19,7 +19,7 @@ function challenge(overrides: Partial<V2DiscoverableChallenge> = {}): V2Discover
 }
 function Probe() { const location = useLocation(); return <div data-testid="location">{location.pathname}</div>; }
 function tree() { return <MemoryRouter initialEntries={['/v2/challenges/discovery/challenge-1']}><Probe /><Routes><Route path="/v2/challenges/discovery/:challengeId" element={<V2DiscoverableChallengePreviewScreen />} /><Route path="/v2/groups/:groupId" element={<p>Governed Group detail</p>} /></Routes></MemoryRouter>; }
-afterEach(() => { cleanup(); h.detail = { isLoading: false, data: undefined }; h.group = { data: undefined }; });
+afterEach(() => { cleanup(); h.detail = { isLoading: false, data: undefined }; h.group = { data: undefined }; h.join.mockReset(); h.joinPending = false; h.joinSuccess = false; h.joinError = false; });
 
 describe('discoverable Challenge preview route', () => {
   it('resolves a direct URL by fetching authorized discovery pages and links to Group detail', async () => {
@@ -41,12 +41,64 @@ describe('discoverable Challenge preview route', () => {
     expect(screen.getByRole('status').textContent).toContain('pending approval');
     expect(screen.getByRole('button', { name: 'View hosting Group' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Join Challenge' })).toBeNull();
+    expect(h.join).not.toHaveBeenCalled();
   });
 
-  it('offers a separate Challenge join only after Group membership is present', async () => {
+  it('does not offer joining to a non-member', () => {
+    h.query = { data: { pages: [{ challenges: [challenge()] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
+    render(tree());
+    expect(screen.queryByRole('button', { name: 'Join Challenge' })).toBeNull();
+    expect(h.join).not.toHaveBeenCalled();
+  });
+
+  it('opens confirmation without a join request; Not now and Close both cancel', async () => {
     h.query = { data: { pages: [{ challenges: [challenge({ host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'open', viewerRelationship: 'member' } })] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
     render(tree());
     await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
+    expect(screen.getByRole('dialog', { name: 'Join Morning Walk?' })).toBeTruthy();
+    expect(h.join).not.toHaveBeenCalled();
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.join).not.toHaveBeenCalled();
+  });
+
+  it.each(['member', 'steward'] as const)('requires explicit confirmation for a %s', async (viewerRelationship) => {
+    h.query = { data: { pages: [{ challenges: [challenge({ host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'open', viewerRelationship } })] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
+    const view = render(tree());
+    await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
+    expect(h.join).not.toHaveBeenCalled();
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
+    expect(h.join).toHaveBeenCalledTimes(1);
+    expect(h.join).toHaveBeenCalledWith('challenge-1');
+    h.joinSuccess = true;
+    view.rerender(tree());
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('status').textContent).toContain('You joined this Challenge.');
+  });
+
+  it('keeps retry feedback available when the authorized join request fails', async () => {
+    h.query = { data: { pages: [{ challenges: [challenge({ host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'open', viewerRelationship: 'member' } })] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
+    h.join.mockImplementationOnce(() => { h.joinError = true; }).mockImplementationOnce(() => { h.joinError = false; });
+    const view = render(tree());
+    await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
+    view.rerender(tree());
+    expect(screen.getByRole('alert').textContent).toContain('Please try again.');
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
+    view.rerender(tree());
+    expect(h.join).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('offers a separate Challenge join after Group membership, but only after confirmation', async () => {
+    h.query = { data: { pages: [{ challenges: [challenge({ host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'open', viewerRelationship: 'member' } })] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
+    render(tree());
+    await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
+    expect(h.join).not.toHaveBeenCalled();
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
     expect(h.join).toHaveBeenCalledWith('challenge-1');
   });
 
@@ -56,9 +108,11 @@ describe('discoverable Challenge preview route', () => {
     h.group = { data: { name: 'Public Group', requireAdminApproval: false, viewerRelationship: 'member' } };
     render(tree());
     expect(await screen.findByRole('heading', { name: 'Morning Walk' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Join Challenge' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'View hosting Group' })).toBeTruthy();
     expect(screen.queryByText(/Join the hosting Group to view/)).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
+    expect(h.join).not.toHaveBeenCalled();
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
     expect(h.join).toHaveBeenCalledWith('challenge-1');
   });
 
