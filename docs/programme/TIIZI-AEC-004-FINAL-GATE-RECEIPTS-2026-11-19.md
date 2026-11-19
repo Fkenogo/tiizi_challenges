@@ -1,7 +1,7 @@
 # TIIZI — AEC-004 Final-Gate Guardian Activation and Receipts — 2026-11-19
 
 **Record ID:** AEC-004-FINAL-GATE-RECEIPTS-2026-11-19
-**Status:** G2 PASS WITH LIMITATIONS; G3 STOP. PR #174 remains Draft and is not merge-ready.
+**Status at time of this pre-merge receipt:** G2 PASS WITH LIMITATIONS; G3 STOP. PR #174 was OPEN/Draft at the then-current candidate and was not merge-ready. This historical receipt preserves those actual findings; see the [post-merge G4 disposition](./TIIZI-AEC-004-FINAL-MERGE-READINESS-RECEIPT-2026-11-19.md#7-post-merge-g4-verification-and-technical-lead-disposition) for current status.
 
 ## 1. Authorization and independent assignments
 

@@ -3,8 +3,8 @@
 **Record ID:** AEC-004-FINAL-MERGE-READINESS-RECEIPT-2026-11-19
 **PR:** #174 — `integration/aec-004-founder-experience-recovery-001`
 **Exact head:** `2b23d5f0aa0583db9c78f679ff93fb90cf9426f8`
-**Base / merge-base:** `main` / `21c88f681427172fdc2150f3122e6cce6b90a63e`
-**Status:** G2 PASS WITH LIMITATIONS; G3 PASS WITH LIMITATIONS; independent exact-head review PASS; all seven GitHub checks PASS. PR #174 remains OPEN and Draft; this record is not merge authorization.
+**Pre-merge base / merge-base:** `main` / `21c88f681427172fdc2150f3122e6cce6b90a63e`
+**Status at time of filing (pre-merge):** G2 PASS WITH LIMITATIONS; G3 PASS WITH LIMITATIONS; independent exact-head review PASS; all seven GitHub checks PASS. PR #174 was OPEN and Draft; this receipt was not merge authorization. Current post-merge disposition is recorded in §7.
 
 ## 1. Founder decision and evidence boundary
 
@@ -52,4 +52,32 @@ All seven visible checks passed at exact head `2b23d5f0aa0583db9c78f679ff93fb90c
 
 ## 6. Disposition
 
-Keep PR #174 Draft pending Founder merge authorization. This receipt does not approve the whole PR or authorize merge. PR #175 is the separate AEC-005 documentation PR and remains OPEN/Draft; it is not included here and must not be merged as part of this action. No AEC-005 implementation, production deployment, migration, Feed implementation, or database change is authorized.
+At the time this receipt was filed, the disposition was to keep PR #174 Draft pending Founder merge authorization. That pre-merge recommendation is historical and superseded by §7; this receipt does not retroactively change the recorded G2/G3 findings or their limits.
+
+## 7. Post-merge G4 verification and Technical Lead disposition
+
+**Merged source:** PR #174's approved head `2b23d5f0aa0583db9c78f679ff93fb90cf9426f8` was merged normally as `732c3316d06184916521591a1a9372051ab50538`; that commit is the verified `main` source for this G4 run.
+
+The PR-state sentence in the original Founder Acceptance Addendum is a pre-merge snapshot. Its component-level Founder acceptances remain unchanged and do not imply acceptance of the entire PR.
+
+**Runtime identity:** isolated clean checkout `/tmp/tiizi-aec-004-g4-recovery-001` at `732c3316d06184916521591a1a9372051ab50538`; web `http://127.0.0.1:5178`, API `http://127.0.0.1:4019`; Auth Emulator `127.0.0.1:19099`, project `demo-tiizi-founder-58964-2f386dc5`; disposable database marker `tiizi-disposable-preview:founder-preview:tiizi-founder-preview-USZGNi`. The runtime used only local preview services and disposable test records; no deployment occurred.
+
+**Dependency recovery:** the initial `ERR_MODULE_NOT_FOUND` for `pg` was caused by installing only the root package scope, not by a declaration defect. The root and `api/` have separate lockfiles. `api/package.json` declares `pg` (`^8.13.1`) and `api/package-lock.json` resolves it; running `npm ci` at the root and `npm ci --prefix api` in the isolated checkout resolved the dependency and allowed `npm run preview:founder` to start. No production application code or dependency declarations were changed.
+
+**Operator browser evidence:** the operator exercised the merged runtime and recorded PASS for:
+
+| Journey | Operator result |
+|---|---|
+| New Member Today, discovery, and Group/Challenge recommendations | PASS |
+| Group Home and authorized Group Feed events | PASS |
+| New Group empty state | PASS |
+| Group membership, separate Challenge joining, and Join Challenge confirmation from all three entrypoints | PASS |
+| Existing Member Today | PASS |
+| Activity logging, canonical persistence, and refreshed progress | PASS |
+| Mobile layout at 320px and 390px | PASS |
+
+**Independent Guardian result:** **VERIFIED WITH LIMITATIONS**. The Guardian independently verified the merged source/runtime identity and reviewed the operator's browser evidence. The Guardian did not independently replay the full browser matrix or read the disposable database marker. Do not describe the browser matrix as independently replayed.
+
+Pending-member and ended/finalized Challenge browser-persona coverage was unavailable and remains an explicit limitation accepted by the Founder. The evidence is not an unconditional PASS. Recent Activity, Challenge Feed publication, and post-log sharing were not required for G4 and remain outside AEC-004 closure.
+
+**Technical Lead disposition:** AEC-004 G4 evidence is accepted for closure with the explicit limitations above. This accepts the G4 evidence for closure; it does not claim the untested personas passed, change the Guardian verdict, authorize deployment, or authorize AEC-005 implementation.

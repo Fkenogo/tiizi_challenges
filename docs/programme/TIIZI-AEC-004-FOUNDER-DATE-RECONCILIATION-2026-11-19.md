@@ -23,14 +23,18 @@ The inspected repository record contains no attributable Founder screenshot or t
 
 These decisions do not constitute acceptance of PR #174 as a whole, a Guardian receipt, or merge authorization.
 
-## 3. Existing records preserved unchanged
+## 3. Original decision and evidence records preserved
 
 - The original Founder acceptance addendum is preserved verbatim at `docs/programme/TIIZI-AEC-004-FOUNDER-ACCEPTANCE-ADDENDUM-2026-11-19.md`. Its November 19 date remains the filing/documentation date; this supplemental record separately records the reported November 18 decision date.
-- The original Guardian receipt is preserved verbatim at `docs/programme/TIIZI-AEC-004-FINAL-GATE-RECEIPTS-2026-11-19.md`. It records historical G2/G3 results for PR head `56ea62e369bef3e4fe523d672cd9e4af7d9e9d28`; it is not the latest receipt and is not overwritten.
-- The original files remain unchanged on `docs/aec-004-founder-acceptance-addendum-001` at `f8d45e675031d48e75a42559205bce028dbf001e`; unchanged copies are included in this documentation-only PR.
-- The latest exact-head review and Guardian evidence is recorded separately in `TIIZI-AEC-004-FINAL-MERGE-READINESS-RECEIPT-2026-11-19.md`. It does not change the historical head or results in the original receipt.
+- The original Guardian receipt remains at `docs/programme/TIIZI-AEC-004-FINAL-GATE-RECEIPTS-2026-11-19.md` with its G2/G3 evidence and verdicts unchanged; its status line now labels the receipt as a historical pre-merge snapshot.
+- The original Founder addendum and Guardian receipt remain unchanged on `docs/aec-004-founder-acceptance-addendum-001` at `f8d45e675031d48e75a42559205bce028dbf001e`. This PR preserves the Founder addendum and the historical G2/G3 findings, and adds a separate post-merge G4 record.
+- The later exact-head review and Guardian evidence, including post-merge G4, is recorded in `TIIZI-AEC-004-FINAL-MERGE-READINESS-RECEIPT-2026-11-19.md`; it does not rewrite the earlier G2/G3 results.
 - The older visual reference assets listed in the addendum remain reference-only. No Founder screenshot was added, relabeled, or represented as runtime evidence.
 
 ## 4. Documentation boundary
 
-This supplemental date record and the accompanying records are isolated on a documentation branch based on current `origin/main` (`21c88f681427172fdc2150f3122e6cce6b90a63e`). The PR contains documentation only; it changes no application behavior and does not amend AEC-001 or the Accepted Experience Register. PR #174 application changes and the separate AEC-005 documentation PR #175 are not included or modified.
+This supplemental date record and accompanying documentation were initially prepared against `origin/main` `21c88f681427172fdc2150f3122e6cce6b90a63e`; that base is historical. The PR remains documentation-only: no application behavior changed, and AEC-001 and the Accepted Experience Register were not amended in this PR. PR #174 has since merged; the post-merge G4 state is recorded separately. PR #175 remains a separate documentation PR.
+
+## 5. Post-merge status clarification
+
+PR #174 merged normally at `732c3316d06184916521591a1a9372051ab50538` from approved head `2b23d5f0aa0583db9c78f679ff93fb90cf9426f8`. The detailed G4 result and Technical Lead acceptance with explicit limitations are recorded in the [post-merge receipt](./TIIZI-AEC-004-FINAL-MERGE-READINESS-RECEIPT-2026-11-19.md#7-post-merge-g4-verification-and-technical-lead-disposition). The Founder decisions in §2 remain component-level and are not a blanket acceptance of AEC-004 or authorization for AEC-005.
