@@ -29,3 +29,21 @@ Make Founder previews deterministic and disposable instead of depending on tempo
 ## Boundary
 
 This is an engineering productivity/tooling follow-up. Do NOT turn it into a new governance programme. Do NOT implement it under this record; any implementation requires a separate bounded authorisation. No product behaviour, authority, permission, API contract or schema is defined or changed here.
+
+## Current manual Founder Preview procedure
+
+For the existing local preview command (this documents manual operation; the deterministic-preview tooling follow-up above remains unimplemented):
+
+1. Use the repository-supported Node.js 22 version.
+2. From the repository root, install both lockfile scopes:
+
+   ```sh
+   npm ci
+   npm ci --prefix api
+   ```
+
+   Root and API dependencies are separate; root installation alone does not install the API's `pg` package.
+
+3. From the repository root, start the preview with `npm run preview:founder`.
+4. Keep it running in a user-owned Terminal session; do not rely on a managed task session that may expire.
+5. Treat preview credentials, Auth Emulator state, and the disposable database as per-run resources. Do not commit or log credentials. Restart with the same install/start steps for a fresh run.
