@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { mapV2ApiError } from '../../services/v2ActivityPayload';
 import { V2Button, V2Card, V2Sheet } from '../components/V2Primitives';
@@ -97,17 +97,13 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
   const view = participationViewFor(detail);
   const busy = join.isPending;
   const rejoining = view.kind === 'not-joined' && view.previouslyEnded;
-  const joinSucceeded = notice?.tone === 'success'
-    || (join.isSuccess && join.variables === detail.challengeId);
 
-  // Active participation remains canonical read truth. Keep a brief success
-  // result visible only for the join mutation that just completed.
-  if (
-    view.kind === 'joined'
-    && !busy
-    && !joinSucceeded
-    && notice?.tone !== 'error'
-  ) return null;
+  useEffect(() => {
+    if (view.kind === 'joined' && notice?.tone === 'success') setNotice(null);
+  }, [view.kind, notice?.tone]);
+
+  if (view.kind === 'joined') return null;
+  if (view.kind === 'read-only' && view.reason === 'finalized') return null;
 
   const handleJoin = async () => {
     setNotice(null);
@@ -153,12 +149,6 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
               This Challenge has ended, so joining and leaving are closed.
             </p>
           </div>
-        )}
-
-        {view.kind === 'joined' && (
-          <p role={joinSucceeded ? 'status' : undefined} className="mt-2 text-sm font-black text-slate-900">
-            {joinSucceeded ? notice?.message ?? 'You joined this Challenge.' : 'You are taking part in this Challenge.'}
-          </p>
         )}
 
         {view.kind === 'not-joined' && (
@@ -210,7 +200,7 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
         </div>
       </V2Sheet>
 
-      {!joinOpen && !(view.kind === 'joined' && joinSucceeded) && noticeView}
+      {!joinOpen && noticeView}
     </>
   );
 }

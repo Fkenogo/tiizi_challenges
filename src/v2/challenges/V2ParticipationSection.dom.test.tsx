@@ -69,7 +69,7 @@ describe('Challenge Details participation joining', () => {
     expect(h.join).not.toHaveBeenCalled();
   });
 
-  it('calls the authorized join mutation once and keeps one success state after canonical refetch', async () => {
+  it('calls the authorized join mutation once, shows success, then suppresses the active card after canonical refetch', async () => {
     const view = renderSection();
     await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
 
@@ -83,8 +83,9 @@ describe('Challenge Details participation joining', () => {
     h.success = true;
     h.variables = 'challenge-1';
     view.rerender(<V2ParticipationSection detail={detail({ myParticipation: { status: 'active' } as V2ChallengeDetail['myParticipation'] })} />);
-    expect(screen.getAllByRole('status')).toHaveLength(1);
-    expect(screen.getByRole('status').textContent).toContain('You joined this Challenge.');
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+    expect(screen.queryByText('Taking part')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Join/ })).toBeNull();
   });
 
   it('requires a separate, reworded confirmation for Join again', async () => {
@@ -132,19 +133,18 @@ describe('Challenge Details participation joining', () => {
   });
 
 
-  it('does not offer duplicate joining to active participants', () => {
+  it('does not offer duplicate joining or a persistent card to active participants', () => {
     renderSection(detail({ myParticipation: { status: 'active' } as V2ChallengeDetail['myParticipation'] }));
 
     expect(screen.queryByRole('button', { name: /Join/ })).toBeNull();
+    expect(screen.queryByText('Taking part')).toBeNull();
   });
 
-  it.each([
-    ['ended', false],
-    ['active', true],
-  ] as const)('does not offer joining for %s finalized=%s Challenges', (status, finalized) => {
-    renderSection(detail({ status, finalized }));
+  it('does not render a participation card or joining action for finalized Challenges', () => {
+    renderSection(detail({ status: 'ended', finalized: true }));
 
     expect(screen.queryByRole('button', { name: /Join/ })).toBeNull();
-    expect(screen.getByText(/joining and leaving are closed/i)).toBeTruthy();
+    expect(screen.queryByText('Taking part')).toBeNull();
+    expect(screen.queryByText(/joining and leaving are closed/i)).toBeNull();
   });
 });
