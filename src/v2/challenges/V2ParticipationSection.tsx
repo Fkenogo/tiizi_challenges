@@ -93,10 +93,12 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
   const join = useJoinChallengeV2();
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string; code?: string } | null>(null);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [joinAgainMode, setJoinAgainMode] = useState(false);
 
   const view = participationViewFor(detail);
   const busy = join.isPending;
-  const rejoining = view.kind === 'not-joined' && view.previouslyEnded;
+  const viewRejoining = view.kind === 'not-joined' && view.previouslyEnded;
+  const rejoining = joinOpen ? joinAgainMode : viewRejoining;
 
   useEffect(() => {
     if (notice?.tone !== 'success') return;
@@ -168,6 +170,7 @@ export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }
               <div className="mt-3">
                 <V2Button
                   onClick={() => {
+                    setJoinAgainMode(rejoining);
                     setNotice(null);
                     setJoinOpen(true);
                   }}

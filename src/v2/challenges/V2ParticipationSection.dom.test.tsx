@@ -113,6 +113,31 @@ describe('Challenge Details participation joining', () => {
     expect(h.join).toHaveBeenCalledWith('challenge-1');
   });
 
+  it('keeps Join again wording while canonical refetch is pending', async () => {
+    let resolveJoin: (() => void) | undefined;
+    h.join.mockImplementation(() => {
+      h.pending = true;
+      return new Promise<void>((resolve) => {
+        resolveJoin = () => resolve();
+      });
+    });
+    const view = renderSection(detail({ myParticipation: { status: 'withdrawn' } as V2ChallengeDetail['myParticipation'] }));
+    await userEvent.click(screen.getByRole('button', { name: 'Join again' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join again' }));
+    await waitFor(() => expect(h.join).toHaveBeenCalledTimes(1));
+
+    h.success = true;
+    h.variables = 'challenge-1';
+    view.rerender(<V2ParticipationSection detail={detail({ myParticipation: { status: 'active' } as V2ChallengeDetail['myParticipation'] })} />);
+    const pendingDialog = screen.getByRole('dialog', { name: 'Join Reps Race again?' });
+    expect(within(pendingDialog).getByText(/You left this Challenge before/i)).toBeTruthy();
+    expect(within(pendingDialog).getByRole('button', { name: 'Joining…' })).toBeTruthy();
+
+    h.pending = false;
+    resolveJoin?.();
+    expect((await screen.findByRole('status')).textContent).toContain('You joined this Challenge.');
+  });
+
   it('keeps the confirmation available for retry after an authorized join failure', async () => {
     h.join.mockRejectedValueOnce(new Error('temporary network failure')).mockResolvedValueOnce({});
     renderSection();
