@@ -9,6 +9,7 @@ const createScreen = readFileSync('src/v2/groups/V2CreateGroupScreen.tsx', 'utf8
 const membershipApi = readFileSync('api/src/memberships.ts', 'utf8');
 const discoveryApi = readFileSync('api/src/groupDiscovery.ts', 'utf8');
 const testHelpers = readFileSync('api/test/helpers.ts', 'utf8');
+const sheetPrimitives = readFileSync('src/v2/components/V2Primitives.tsx', 'utf8');
 
 assert.match(groupsScreen, /Search all Groups/, 'one global Group search is presented above browse modes');
 assert.match(groupsScreen, /searchQuery\.trim\(\)\.length > 0 \?[\s\S]*?: \([\s\S]*aria-label="Groups"/, 'My Groups and Discover browse tabs remain when global search is inactive');
@@ -21,7 +22,12 @@ assert.doesNotMatch(discoverPanel, /Search Groups<V2TextInput/, 'Discover does n
 assert.match(discoveryApi, /g\.status='active' AND g\.is_private=false/, 'server search excludes private and inactive discoverable Groups');
 assert.match(discoveryApi, /custom_goal.*ILIKE|ILIKE.*custom_goal/, 'server search includes custom Group Goal metadata');
 assert.match(homeScreen, /<V2Sheet open=\{aboutOpen\}/, 'About this Group uses the existing V2 sheet');
-assert.match(homeScreen, /event\.key === 'Escape'/, 'About this Group closes on Escape');
+// The Escape dismissal lives in the shared V2Sheet primitive (the sheet owns
+// its keydown handling); the Group Home owns the browser-history dismissal.
+// Assert the accepted mechanism rather than an inline handler that no
+// longer exists in this screen.
+assert.match(sheetPrimitives, /event\.key === 'Escape'/, 'About this Group closes on Escape (the shared V2 sheet owns the Escape dismissal)');
+assert.match(homeScreen, /window\.history\.back\(\)/, 'About this Group dismissal returns through browser history');
 assert.doesNotMatch(homeScreen, /aboutOpen && <section/, 'About content is not expanded inline');
 assert.match(createScreen, /label: 'Our culture'/, 'Step 4 uses the approved member-facing label');
 assert.match(createScreen, /Step 4 — Our culture/, 'Step 4 heading uses the approved member-facing label');

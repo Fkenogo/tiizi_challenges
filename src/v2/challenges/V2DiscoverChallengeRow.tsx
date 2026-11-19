@@ -73,7 +73,8 @@ export function V2DiscoverChallengeRow({
               </p>
             </>
           )}
-          <V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${challenge.host.groupId}`)}>View Group</V2Button>
+          <V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${challenge.host.groupId}`, { state: { returnTo: `/v2/challenges/discovery/${challenge.challengeId}` } })}>View Group</V2Button>
+          <V2Button variant="secondary" onClick={() => navigate(`/v2/challenges/discovery/${challenge.challengeId}`)}>Preview Challenge</V2Button>
           {join.isError && <p role="alert" className="w-full text-[11px] text-red-700">{error}</p>}
         </>
       }

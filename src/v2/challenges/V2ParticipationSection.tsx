@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { mapV2ApiError } from '../../services/v2ActivityPayload';
 import { V2Button, V2Card, V2Sheet } from '../components/V2Primitives';
@@ -92,85 +92,123 @@ export function V2LeaveChallengeDialog({
 export function V2ParticipationSection({ detail }: { detail: V2ChallengeDetail }) {
   const join = useJoinChallengeV2();
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; message: string; code?: string } | null>(null);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinAgainMode, setJoinAgainMode] = useState(false);
 
   const view = participationViewFor(detail);
-
-  // CORR-003: active participants get no permanent card — the hero owns
-  // the secondary Leave action with confirmation disclosure
-  // (`V2LeaveChallengeDialog`). Join / rejoin / read-only states below are
-  // unchanged canonical truth.
-  if (view.kind === 'joined') return null;
-
-  // CORR-002: a FINALIZED Challenge's sealed results already carry the
-  // participant-facing outcome, so the separate "Taking part" card adds no
-  // useful result information and is removed. The underlying participation
-  // authority is untouched: participationViewFor still reports finalized as
-  // read-only, and logging/leave remain unavailable via the end-state gates.
-  if (view.kind === 'read-only' && view.reason === 'finalized') return null;
-
   const busy = join.isPending;
+  const viewRejoining = view.kind === 'not-joined' && view.previouslyEnded;
+  const rejoining = joinOpen ? joinAgainMode : viewRejoining;
+
+  useEffect(() => {
+    if (notice?.tone !== 'success') return;
+    const timeout = window.setTimeout(() => setNotice(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [notice?.tone, notice?.message]);
+
+  if (view.kind === 'read-only' && view.reason === 'finalized') return null;
+  const showParticipationCard = view.kind !== 'joined';
+  const joinSheetOpen = joinOpen && (view.kind !== 'joined' || busy);
 
   const handleJoin = async () => {
     setNotice(null);
     try {
       await join.mutateAsync(detail.challengeId);
       setNotice({ tone: 'success', message: 'You joined this Challenge.' });
+      setJoinOpen(false);
     } catch (error) {
       const mapped = mapV2ApiError(error);
       setNotice({ tone: 'error', message: mapped.message, code: mapped.code });
     }
   };
 
+  const noticeView = notice && (
+    <div
+      role={notice.tone === 'error' ? 'alert' : 'status'}
+      className={`mt-3 rounded-xl px-3 py-2 text-sm font-medium ${
+        notice.tone === 'error' ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-900'
+      }`}
+    >
+      <p>{notice.message}</p>
+      {notice.code && (
+        <p className="mt-0.5 font-mono text-[11px] opacity-70">Code: {notice.code}</p>
+      )}
+    </div>
+  );
+
   return (
-    <V2Card>
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-        Taking part
-      </p>
+    <>
+      {showParticipationCard && (
+        <V2Card>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            Taking part
+          </p>
 
-      {view.kind === 'read-only' && (
-        <div className="mt-2">
-          <p className="text-sm font-black text-slate-900">
-            {detail.myParticipation?.status === 'active'
-              ? 'You took part in this Challenge.'
-              : 'You are not taking part in this Challenge.'}
-          </p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            This Challenge has ended, so joining and leaving are closed.
-          </p>
-        </div>
-      )}
-
-      {view.kind === 'not-joined' && (
-        <div className="mt-2">
-          <p className="text-sm font-black text-slate-900">
-            {view.previouslyEnded ? 'You are not taking part right now.' : 'You are not taking part yet.'}
-          </p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            {view.previouslyEnded
-              ? 'You left this Challenge before. You can join again where the Challenge still allows it.'
-              : 'Join to take part. Only current members of the hosting group can join.'}
-          </p>
-          <div className="mt-3">
-            <V2Button onClick={() => void handleJoin()} disabled={busy}>
-              {join.isPending ? 'Joining…' : view.previouslyEnded ? 'Join again' : 'Join Challenge'}
-            </V2Button>
-          </div>
-        </div>
-      )}
-
-      {notice && (
-        <div
-          role={notice.tone === 'error' ? 'alert' : 'status'}
-          className={`mt-3 rounded-xl px-3 py-2 text-sm font-medium ${
-            notice.tone === 'error' ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-900'
-          }`}
-        >
-          <p>{notice.message}</p>
-          {notice.code && (
-            <p className="mt-0.5 font-mono text-[11px] opacity-70">Code: {notice.code}</p>
+          {view.kind === 'read-only' && (
+            <div className="mt-2">
+              <p className="text-sm font-black text-slate-900">
+                {detail.myParticipation?.status === 'active'
+                  ? 'You took part in this Challenge.'
+                  : 'You are not taking part in this Challenge.'}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                This Challenge has ended, so joining and leaving are closed.
+              </p>
+            </div>
           )}
-        </div>
+
+          {view.kind === 'not-joined' && (
+            <div className="mt-2">
+              <p className="text-sm font-black text-slate-900">
+                {rejoining ? 'You are not taking part right now.' : 'You are not taking part yet.'}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                {rejoining
+                  ? 'You left this Challenge before. You can join again where the Challenge still allows it.'
+                  : 'Join to take part. Only current members of the hosting group can join.'}
+              </p>
+              <div className="mt-3">
+                <V2Button
+                  onClick={() => {
+                    setJoinAgainMode(rejoining);
+                    setNotice(null);
+                    setJoinOpen(true);
+                  }}
+                  disabled={busy}
+                >
+                  {busy ? 'Joining…' : rejoining ? 'Join again' : 'Join Challenge'}
+                </V2Button>
+              </div>
+            </div>
+          )}
+        </V2Card>
       )}
-    </V2Card>
+
+      <V2Sheet
+        open={joinSheetOpen}
+        onClose={() => {
+          if (!busy) setJoinOpen(false);
+        }}
+        title={`Join ${detail.title}${rejoining ? ' again' : ''}?`}
+        variant="member"
+      >
+        <p className="text-sm leading-6 text-slate-600">
+          {rejoining
+            ? `You left this Challenge before. Confirm if you want to join ${detail.title} again.`
+            : 'Joining starts your participation in this Challenge. Membership in the hosting Group does not join you automatically — this is your explicit choice.'}
+        </p>
+        {noticeView}
+        <div className="mt-4 flex justify-end gap-2">
+          <V2Button variant="ghost" onClick={() => setJoinOpen(false)} disabled={busy}>
+            Not now
+          </V2Button>
+          <V2Button onClick={() => void handleJoin()} disabled={busy}>
+            {busy ? 'Joining…' : rejoining ? 'Join again' : 'Join Challenge'}
+          </V2Button>
+        </div>
+      </V2Sheet>
+
+      {!joinSheetOpen && noticeView}
+    </>
   );
 }

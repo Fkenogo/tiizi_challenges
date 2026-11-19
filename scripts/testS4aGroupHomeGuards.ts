@@ -85,7 +85,16 @@ function stripComments(source: string): string {
 
 const groupFiles = walk('src/v2/groups').filter((path) => /\.(ts|tsx)$/.test(path));
 const groupSources = groupFiles.map((path) => ({ path, source: read(path) }));
-const anyGroupCode = groupSources.map((entry) => stripComments(entry.source)).join('\n');
+// The client-authority scan covers PRODUCTION surfaces only. A test fixture
+// legitimately declares server-shaped facts (a detail projection's member
+// count, a steward's membership) in order to drive the surface under test;
+// that is fixture input, not client-manufactured authority. The per-file
+// runtime checks further down still cover every file, test files included.
+const isTestFile = (path: string) => /\.(test|dom\.test)\.(ts|tsx)$/.test(path);
+const anyGroupCode = groupSources
+  .filter((entry) => !isTestFile(entry.path))
+  .map((entry) => stripComments(entry.source))
+  .join('\n');
 const createScreen = read('src/v2/groups/V2CreateGroupScreen.tsx');
 const settingsScreen = read('src/v2/groups/V2GroupSettingsScreen.tsx');
 const createCode = stripComments(createScreen);
@@ -93,6 +102,12 @@ const homeScreen = read('src/v2/groups/V2GroupHomeScreen.tsx');
 const homeCode = stripComments(homeScreen);
 const cardRow = read('src/v2/groups/V2HostedChallengeCard.tsx');
 const cardCode = stripComments(cardRow);
+// The Founder-accepted Group photo-led presentation (PFD source
+// 2f065546dd7051b5c6401e52da897b8c82d6cc93, AEC-GROUP-08) moved the Group
+// row rendering out of V2GroupsScreen into V2GroupPhotoCard. The guard asserts
+// the same intent across both files.
+const photoCardRow = read('src/v2/groups/V2GroupPhotoCard.tsx');
+const photoCardCode = stripComments(photoCardRow);
 const routes = read('src/v2/routes.tsx');
 
 // ─── A. Progressive wizard, authorized fields only ────────────────────────
@@ -179,7 +194,7 @@ check('landing cards navigate into Group Home',
 // ─── C. Hero-first Home, About-secondary ──────────────────────────────────
 console.log('home assembly');
 check('Home opens with a cover hero (name, tagline, location)',
-  homeCode.includes('Group overview') && homeCode.includes('coverGradientFor(') && homeCode.includes('tagline'));
+  homeCode.includes('Group overview') && homeCode.includes('V2GroupCover') && homeCode.includes('tagline'));
 check('hero carries relationship, count, steward and contextual CTA',
   homeCode.includes('Accountable Steward') && homeCode.includes('Launch Challenge'));
 check('empty-group CTA stays attached to Group context',
@@ -247,8 +262,12 @@ check('outsiders are never offered creation',
 console.log('group cards');
 const listScreen = read('src/v2/groups/V2GroupsScreen.tsx');
 check('compact rows render cover, name, focus, counts and open affordance',
-  listScreen.includes('coverGradientFor(') && listScreen.includes('>Open</span>')
-  && listScreen.includes('activeCount !== undefined') && listScreen.includes('memberCount'));
+  listScreen.includes('V2GroupPhotoCard') && listScreen.includes('coverId={group.coverId}')
+  && listScreen.includes('tags={focusTags}') && listScreen.includes('memberCount={detail.data?.memberCount}')
+  && listScreen.includes('activeChallengeCount={activeCount}') && listScreen.includes('onOpen={onOpen}')
+  && photoCardCode.includes('<V2GroupCover') && photoCardCode.includes('coverId={coverId}')
+  && photoCardCode.includes('tags.slice(0, 4)') && photoCardCode.includes('typeof memberCount === \'number\'')
+  && photoCardCode.includes('activeChallengeCount !== undefined') && photoCardCode.includes('aria-label={`Open ${name}`}'));
 check('My Groups and Discover each render one compact row per row at all widths',
   listScreen.includes('aria-label="Your Groups" className="space-y-2"')
   && !/md:grid-cols-2|lg:grid-cols-2/.test(listScreen));
@@ -260,8 +279,9 @@ check('Groups list does not introduce horizontal card scrolling',
   !/overflow-x-(auto|scroll)|snap-x|carousel/i.test(stripComments(listScreen)));
 check('cards bind live counts from governed reads (no fabricated zero)',
   listScreen.includes('useV2GroupDetail') && listScreen.includes('useV2GroupChallenges')
-  && listScreen.includes('typeof detail.data?.memberCount === \'number\'')
-  && listScreen.includes('activeCount !== undefined'));
+  && listScreen.includes('memberCount={detail.data?.memberCount}')
+  && listScreen.includes('activeChallengeCount={activeCount}')
+  && listScreen.includes('const activeCount = hosted.data?.challenges.filter'));
 check('steward badge is owner-only (legacy admins read Member)',
   stewardBadgeFor('owner') === 'Accountable Steward' && stewardBadgeFor('admin') === 'Member'
   && stewardBadgeFor('member') === 'Member');
