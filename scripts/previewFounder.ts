@@ -292,6 +292,11 @@ async function main(): Promise<void> {
     TIIZI_GROUP_FEED_CURSOR_SECRET: groupFeedCursorSecret,
   }));
   await waitFor(`${apiTarget}/ready`, 'Tiizi API', api);
+  // Process only the existing governed outbox batch for this disposable preview.
+  // Production and member requests do not run this CLI.
+  await run(process.execPath, ['--import', 'tsx', 'api/src/groupFeedCli.ts', 'process'], {
+    env: localEnv({ ...baseEnv, DATABASE_URL: databaseUrl }),
+  });
 
   await assertLoopbackPortAvailable(webPort, 'Vite V2 frontend');
   const vite = startService('Vite V2 frontend', process.execPath, [
@@ -324,12 +329,18 @@ async function main(): Promise<void> {
   const createdBootstrap = await fetch(`${webOrigin}${apiPath('/members/bootstrap')}`, {
     method: 'POST',
     headers: { authorization: `Bearer ${bootstrapIdentity.idToken}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ displayName: 'Preview Member' }),
+    body: JSON.stringify({ displayName: 'New Member' }),
   });
   const createdMember = await createdBootstrap.json().catch(() => ({})) as { created?: boolean; error?: { code?: string } };
   if (!createdBootstrap.ok || createdMember.created !== true) {
     throw new Error(`Fresh synthetic member bootstrap did not create a member through the same-origin proxy (HTTP ${createdBootstrap.status}, ${createdMember.error?.code ?? 'created=false'}).`);
   }
+  const newMemberPreferences = await fetch(`${webOrigin}${apiPath('/me/preferences')}`, {
+    method: 'PUT',
+    headers: { authorization: `Bearer ${bootstrapIdentity.idToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ interestIds: ['strength'], goalIds: ['build_strength'] }),
+  });
+  if (!newMemberPreferences.ok) throw new Error('Could not set the New Member preview preferences through the governed API.');
 
   // Seeded Group Feed read verification: proves the preview API accepts Group
   // Feed requests without HTTP 503 feed_unavailable when cursor secret is auto-generated.
@@ -351,6 +362,9 @@ async function main(): Promise<void> {
   console.log('\nFounder Preview is ready.');
   console.log(`  Today: ${webOrigin}/v2/today`);
   console.log(`  Sign in: ${EMAIL}`);
+  console.log('  Existing Member: Amara (Together, Race, and Streak participation)');
+  console.log('  New Member: founder1@tiizi.local (Strength + Build strength; no Group or Challenge participation)');
+  console.log(`  New Member sign-in: founder1@tiizi.local / the same local-only password`);
   console.log('  Fresh bootstrap test identity: founder1@tiizi.local');
   console.log(`  Local-only password: ${PASSWORD}`);
   console.log(`  Auth emulator: ${authUrl} (${projectId})`);

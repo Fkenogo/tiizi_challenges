@@ -27,6 +27,7 @@ import { V2OperatorShell } from './operator/OperatorShell';
 import { V2OperatorPage } from './operator/operatorPages';
 import { SocialCauseReviewPage } from './operator/SocialCauseReviewPage';
 import { V2ChallengeListScreen } from './challenges/V2ChallengeListScreen';
+import { V2DiscoverableChallengePreviewScreen } from './challenges/V2DiscoverableChallengePreviewScreen';
 import { V2ChallengeCreationWizard } from './challenges/V2ChallengeCreationWizard';
 import { V2ChallengeStartScreen, V2ChallengeTemplateLibrary, V2ChallengeTemplatePreview } from './challenges/templates/V2ChallengeTemplateScreens';
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
@@ -107,6 +108,7 @@ export function V2Routes() {
             <Route path="today" element={<V2TodayScreen />} />
             <Route path="challenges" element={<V2ChallengeListScreen />} />
             <Route path="challenges/new" element={<V2ChallengeCreationWizard />} />
+            <Route path="challenges/discovery/:challengeId" element={<V2DiscoverableChallengePreviewScreen />} />
             <Route path="challenges/start" element={<V2ChallengeStartScreen />} />
             <Route path="challenges/templates" element={<V2ChallengeTemplateLibrary />} />
             <Route path="challenges/templates/:templateId" element={<V2ChallengeTemplatePreview />} />

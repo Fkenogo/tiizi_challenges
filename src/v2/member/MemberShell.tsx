@@ -1,5 +1,4 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { V2BrandMark } from '../brand';
 import { V2AccountTrigger, V2NotificationTrigger } from '../components/V2Primitives';
 import { useV2Locale } from '../i18n/V2Locale';
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
@@ -42,22 +41,7 @@ export function V2MemberShell() {
       <div className="mx-auto min-h-screen w-full max-w-md bg-slate-50 shadow-xl">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex h-14 w-full items-center gap-3 px-4">
-            <button
-              type="button"
-              onClick={() => navigate('/v2/today')}
-              className="flex items-center gap-2 text-left"
-              aria-label="Tiizi Today"
-            >
-              <V2BrandMark size={30} />
-              <span className="flex flex-col leading-none">
-                <span className="text-lg font-black tracking-tight">tiizi</span>
-                <span className="hidden text-[10px] font-bold uppercase tracking-widest text-primary sm:inline">
-                  Together We Move
-                </span>
-              </span>
-            </button>
-
-            <div className="ml-auto flex items-center gap-2">
+            <div role="group" aria-label="Member tools" className="ml-auto flex items-center gap-2">
               <V2NotificationTrigger unread={false} onOpen={() => navigate('/v2/notifications')} />
               <V2AccountTrigger name={displayName} onOpen={() => navigate('/v2/profile')} />
             </div>

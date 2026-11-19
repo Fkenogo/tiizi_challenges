@@ -149,7 +149,7 @@ export function V2HostedChallengeCard({
       </button>
       <div className="shrink-0">{cta}</div>
       </div>
-      <V2Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title={`Join ${challenge.title}?`}>
+      <V2Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title={`Join ${challenge.title}?`} variant="member">
         <p className="text-sm leading-6 text-slate-600">Joining starts your participation in this Challenge. Membership in {groupName} does not join you automatically — this is your explicit choice.</p>
         {joinError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{joinError}</p>}
         <div className="mt-4 flex justify-end gap-2"><V2Button variant="ghost" onClick={() => setJoinOpen(false)}>Not now</V2Button><V2Button onClick={() => void confirmJoin()} disabled={joining}>{joining ? 'Joining…' : 'Join Challenge'}</V2Button></div>
@@ -264,7 +264,7 @@ export function V2HostedChallengeCard({
       <div className="flex items-center justify-end border-t border-slate-100 px-4 py-2.5">
         {cta}
       </div>
-      <V2Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title={`Join ${challenge.title}?`}>
+      <V2Sheet open={joinOpen} onClose={() => setJoinOpen(false)} title={`Join ${challenge.title}?`} variant="member">
         <p className="text-sm leading-6 text-slate-600">
           Joining starts your participation in this Challenge. Membership in {groupName} does
           not join you automatically — this is your explicit choice.
