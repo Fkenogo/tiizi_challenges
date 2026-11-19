@@ -118,12 +118,12 @@ export function useChallengeListV2() {
 }
 
 /** One V2 Challenge from persisted truth (created context / refresh proof). */
-export function useChallengeDetailV2(challengeId: string | undefined) {
+export function useChallengeDetailV2(challengeId: string | undefined, enabled = true) {
   const { user } = useAuth();
   return useQuery<V2ChallengeDetail>({
     queryKey: v2ChallengeDetailKey(challengeId, user?.uid),
     queryFn: () => getChallengeV2(challengeId as string),
-    enabled: !!user?.uid && apiConfigured() && !!challengeId,
+    enabled: enabled && !!user?.uid && apiConfigured() && !!challengeId,
     staleTime: 10 * 1000,
   });
 }

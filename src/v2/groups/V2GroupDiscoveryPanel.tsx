@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom';
 import { discoveryCaption, relevanceBadges } from '../challenges/discoveryRelevance';
 import { useJoinGroup, useV2GroupDiscovery } from './useV2Groups';
 import type { V2DiscoverableGroup } from '../../api/groupsApi';
-import { coverFor, coverGradientFor } from './groupCovers';
 import { V2GroupInvitePanel } from './V2GroupInvitePanel';
+import { V2GroupPhotoCard } from './V2GroupPhotoCard';
 
 export function V2GroupDiscoveryPanel({ onOpen }: { onOpen: (id: string) => void }) {
   const [showInviteCode, setShowInviteCode] = useState(false);
@@ -44,23 +44,22 @@ function DiscoverRow({ group, onOpen }: { group: V2DiscoverableGroup; onOpen: (i
   const isMember = relation === 'active' || relation === 'member' || relation === 'steward';
   const isPending = relation === 'pending';
   const error = join.isError && join.error instanceof ApiError && join.error.status === 503 ? 'Tiizi is unavailable. Please try again.' : 'We could not update your membership.';
-  return <li className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:gap-4">
-    <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4" onClick={() => onOpen(group.id)} aria-label={`View ${group.name}`}>
-      <span className={`h-16 w-16 shrink-0 rounded-lg bg-gradient-to-br ${coverGradientFor(coverFor(group.coverId, group.id))}`} aria-hidden="true" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-base font-black text-slate-900">{group.name}</span>
-        <span className="mt-0.5 block truncate text-xs text-slate-600">{group.tagline || group.description || 'Tiizi Group'}</span>
-        {group.focusTags.length > 0 && <span className="mt-1.5 flex flex-wrap gap-1">{group.focusTags.slice(0, 3).map((tag) => <span key={tag} className="max-w-full truncate rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>)}</span>}
-        {group.goals.length > 0 && <span className="mt-1 block truncate text-[11px] text-slate-500">Goals: {group.goals.slice(0, 2).join(' · ')}</span>}
-        {relevanceBadges(group.relevance).map((badge) => <span key={badge} className="mt-1 block truncate text-[11px] font-bold text-emerald-800">{badge}</span>)}
-        <span className="mt-1 block text-xs text-slate-500">{group.memberCount} {group.memberCount === 1 ? 'member' : 'members'} · {group.admissionMode === 'approval' ? 'Request to join' : 'Open to join'}</span>
-      </span>
-    </button>
-    <div className="shrink-0">
-      {isMember ? <V2Button variant="secondary" onClick={() => onOpen(group.id)}>Open</V2Button>
-        : isPending ? <span className="rounded-full bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">Pending</span>
-          : <V2Button disabled={join.isPending} onClick={() => join.mutate()}>{join.isPending ? 'Joining…' : group.admissionMode === 'approval' ? 'Request' : 'Join'}</V2Button>}
-      {join.isError && <p role="alert" className="mt-1 max-w-28 text-[10px] text-red-700">{error}</p>}
-    </div>
-  </li>;
+  const relationship = isMember ? (relation === 'steward' ? 'Accountable Steward' : 'Member') : isPending ? 'Request pending' : group.admissionMode === 'approval' ? 'Approval to join' : 'Open to join';
+  return <V2GroupPhotoCard
+    groupId={group.id}
+    name={group.name}
+    coverId={group.coverId}
+    location={group.location}
+    description={group.tagline || group.description}
+    status={relationship}
+    tags={group.focusTags}
+    goals={group.goals}
+    context={relevanceBadges(group.relevance)}
+    memberCount={group.memberCount}
+    onOpen={() => onOpen(group.id)}
+    actionError={join.isError ? error : null}
+    action={isMember ? <V2Button variant="secondary" onClick={() => onOpen(group.id)}>Enter Hub →</V2Button>
+      : isPending ? <span className="rounded-full bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">Pending</span>
+        : <V2Button disabled={join.isPending} onClick={() => join.mutate()}>{join.isPending ? 'Joining…' : group.admissionMode === 'approval' ? 'Request to join' : 'Join Group'}</V2Button>}
+  />;
 }

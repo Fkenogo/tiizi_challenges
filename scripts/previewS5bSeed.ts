@@ -322,6 +322,13 @@ async function main(): Promise<void> {
         groupId = created.rows[0].group_id;
       }
       const group = String(groupId);
+      // Founder discovery preview: the New Member fixture has matching
+      // Strength / Build strength preferences, while the same public set
+      // remains available to any other preference selection or general browse.
+      await c.query(
+        `UPDATE groups SET focus_tags = ARRAY['Strength']::text[], goal_ids = ARRAY['build_strength']::text[] WHERE group_id = $1`,
+        [group],
+      );
       // Lookup-then-insert: the schema enforces one owner per Group, so a
       // blind upsert can collide on its partial unique index.
       const membership = await c.query<{ status: string; role: string }>(

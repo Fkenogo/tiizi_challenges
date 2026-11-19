@@ -15,8 +15,8 @@ import {
   V2Sheet,
 } from '../components/V2Primitives';
 import { useV2GroupId } from '../group/V2GroupScope';
-import { coverFor, coverGradientFor } from './groupCovers';
 import { stewardBadgeFor } from './groupDraft';
+import { V2GroupCover } from './V2GroupCover';
 import { groupHomeErrorStatus, groupHomeViewFor, viewerMayCreateChallenge } from './groupHomeView';
 import { useJoinGroup, useLeaveV2Group, useV2GroupChallenges, useV2GroupDetail, useV2GroupRoster, useV2Groups } from './useV2Groups';
 import { V2HostedChallengeCard } from './V2HostedChallengeCard';
@@ -87,7 +87,7 @@ function settingsRows(detail: V2GroupDetail): Array<{ label: string; value: stri
   ];
 }
 
-function JoinCta({ groupId }: { groupId: string }) {
+function JoinCta({ groupId, onJoined }: { groupId: string; onJoined: (active: boolean) => void }) {
   const join = useJoinGroup(groupId);
   const errorMessage =
     join.isError && join.error instanceof ApiError && join.error.status === 503
@@ -95,7 +95,7 @@ function JoinCta({ groupId }: { groupId: string }) {
       : 'We could not join this Group just now. Please try again.';
   return (
     <div className="mt-3">
-      <V2Button onClick={() => join.mutate()} disabled={join.isPending}>
+      <V2Button onClick={() => join.mutate(undefined, { onSuccess: (result) => onJoined(result.status === 'active' || result.status === 'joined') })} disabled={join.isPending}>
         {join.isPending ? 'Joining…' : 'Join Group'}
       </V2Button>
       {join.isError && (
@@ -117,6 +117,14 @@ export function V2GroupHomeScreen() {
     detail.isSuccess && detail.data?.viewerRelationship !== 'pending',
   );
   const createdGroupName = (location.state as { createdGroupName?: string } | null)?.createdGroupName;
+  // Only an in-app Challenge preview path may be returned to. The pattern is
+  // anchored so a crafted location.state cannot become an open redirect.
+  const returnToValue = location.state && typeof location.state === 'object'
+    ? (location.state as { returnTo?: unknown }).returnTo
+    : undefined;
+  const returnTo = typeof returnToValue === 'string' && /^\/v2\/challenges\/discovery\/[^/]+$/.test(returnToValue)
+    ? returnToValue
+    : undefined;
 
   const view = groupHomeViewFor({
     isLoading: detail.isLoading,
@@ -126,11 +134,23 @@ export function V2GroupHomeScreen() {
     detail: detail.data,
   });
 
+  // A viewer who is not already a Group member cannot open the member-gated
+  // Challenge route: the server answers 404 for an unauthorised Challenge read.
+  // They are sent to the authorized discovery summary preview instead, where
+  // Group join and Challenge join remain separate actions.
+  const viewerIsGroupMember =
+    view.kind === 'home'
+    && (view.detail.viewerRelationship === 'member' || view.detail.viewerRelationship === 'steward');
+
   return (
     <V2Page>
       <p className="mb-2 text-sm font-bold">
-        <Link to="/v2/groups" className="text-slate-500 hover:text-slate-800">
-          ← Back to Groups
+        <Link
+          to={returnTo ?? '/v2/groups'}
+          state={returnTo ? { groupJoined: view.kind === 'home' && (view.detail.viewerRelationship === 'member' || view.detail.viewerRelationship === 'steward') } : undefined}
+          className="text-slate-500 hover:text-slate-800"
+        >
+          {returnTo ? '← Back to Challenge' : '← Back to Groups'}
         </Link>
       </p>
 
@@ -156,9 +176,14 @@ export function V2GroupHomeScreen() {
         <GroupHomeBody
           detail={view.detail}
           createdGroupName={createdGroupName}
+          onJoined={(active) => { if (returnTo) navigate(returnTo, { state: { groupJoined: active } }); }}
           hostedState={hosted}
           onManageGroup={() => navigate(`/v2/groups/${view.detail.id}/settings`)}
-          onOpenChallenge={(challengeId) => navigate(`/v2/challenges/${challengeId}`)}
+          onOpenChallenge={(challengeId) => navigate(
+            viewerIsGroupMember
+              ? `/v2/challenges/${challengeId}`
+              : `/v2/challenges/discovery/${challengeId}`,
+          )}
           onCreateChallenge={() =>
             navigate('/v2/challenges/start', { state: { groupId: view.detail.id } })
           }
@@ -171,6 +196,7 @@ export function V2GroupHomeScreen() {
 function GroupHomeBody({
   detail,
   createdGroupName,
+  onJoined,
   hostedState,
   onManageGroup,
   onOpenChallenge,
@@ -178,6 +204,7 @@ function GroupHomeBody({
 }: {
   detail: V2GroupDetail;
   createdGroupName: string | undefined;
+  onJoined: (active: boolean) => void;
   hostedState: ReturnType<typeof useV2GroupChallenges>;
   onManageGroup: () => void;
   onOpenChallenge: (challengeId: string) => void;
@@ -192,7 +219,6 @@ function GroupHomeBody({
   const canCreate = viewerMayCreateChallenge(detail);
   const challenges = hostedState.data?.challenges ?? [];
   const visibleChallenges = showAllChallenges ? challenges : challenges.slice(0, 4);
-  const coverId = coverFor(detail.coverId, detail.id);
   const tagline = detail.tagline.trim() || detail.description;
   const focusTags = detail.focusTags;
   const norms = [...new Set([...(detail.communityNorms ?? []), ...(detail.rules ?? [])])];
@@ -257,8 +283,7 @@ function GroupHomeBody({
 
       {/* Hero: what community is this, who is here, what can I do. */}
       <section aria-label="Group overview" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div className={`relative h-40 bg-gradient-to-br sm:h-52 ${coverGradientFor(coverId)}`}>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <V2GroupCover groupId={detail.id} title={detail.name} coverId={detail.coverId} heightClass="h-56 sm:h-72" className="w-full">
           {detail.location.trim() && (
             <span className="absolute left-4 top-4 rounded-full bg-black/60 px-3 py-1 text-[11px] font-bold text-white">
               {detail.location.trim()}
@@ -271,8 +296,8 @@ function GroupHomeBody({
             <h1 className="mt-0.5 text-2xl font-black tracking-tight sm:text-3xl">{detail.name}</h1>
             {tagline && <p className="mt-1 max-w-2xl text-sm font-medium text-white/90">“{tagline}”</p>}
           </div>
-        </div>
-        <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        </V2GroupCover>
+        <div className="grid gap-3 border-b border-slate-100 bg-slate-50 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${badge.className}`}>
               {badge.text}
@@ -282,21 +307,17 @@ function GroupHomeBody({
                 {detail.memberCount} {detail.memberCount === 1 ? 'member' : 'members'}
               </span>
             )}
-            <span className="text-xs text-slate-500">
-              <span className="font-bold text-slate-700">Accountable Steward</span>
-              {detail.viewerRelationship === 'steward' ? ' — that’s you.' : ' keeps this Group running.'}
-            </span>
           </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-            <button ref={aboutTriggerRef} type="button" aria-haspopup="dialog" aria-expanded={aboutOpen} onClick={openAbout} className="min-h-10 rounded-lg px-3 text-sm font-bold text-slate-600 hover:bg-slate-100">
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+            <button ref={aboutTriggerRef} type="button" aria-haspopup="dialog" aria-expanded={aboutOpen} onClick={openAbout} className="col-span-2 min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 hover:bg-slate-100 sm:col-span-1">
               About this Group
             </button>
             {detail.viewerRelationship === 'steward' && (
-              <V2Button variant="secondary" onClick={onManageGroup}>Manage Group</V2Button>
+              <V2Button variant="secondary" onClick={onManageGroup} className="w-full sm:w-auto">Manage Group</V2Button>
             )}
-            {detail.viewerRelationship === 'none' && !detail.isPrivate && <JoinCta groupId={detail.id} />}
+            {detail.viewerRelationship === 'none' && !detail.isPrivate && <div className="col-span-2 sm:col-span-1"><JoinCta groupId={detail.id} onJoined={onJoined} /></div>}
             {canCreate && (
-              <V2Button onClick={onCreateChallenge}>Launch Challenge</V2Button>
+              <V2Button onClick={onCreateChallenge} className="w-full sm:w-auto">Launch Challenge</V2Button>
             )}
           </div>
         </div>

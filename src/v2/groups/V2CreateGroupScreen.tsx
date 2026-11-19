@@ -33,6 +33,7 @@ import { useCreateGroup, useV2GroupOptions } from './useV2Groups';
 import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
+import { setLocalGroupCoverPreview } from './localGroupCoverPreviews';
 
 /**
  * TIIZI S4a CORR-001 — progressive Group formation wizard.
@@ -135,6 +136,7 @@ export function V2CreateGroupScreen() {
     if (!submittable) return;
     try {
       const created = await createGroup.mutateAsync(toCreateGroupInput(draft));
+      if (coverPhoto.file) setLocalGroupCoverPreview(created.id, coverPhoto.file);
       // Canonical returned identity — the Home re-proves it from the server.
       navigate(`/v2/groups/${created.id}`, {
         replace: true,
