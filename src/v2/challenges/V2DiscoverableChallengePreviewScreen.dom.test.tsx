@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { V2DiscoverableChallenge } from '../../api/challengeDiscoveryApi';
+import type { V2OwnParticipation } from '../../api/v2ChallengeApi';
 
-const h = vi.hoisted(() => ({ query: {} as unknown, join: vi.fn(), joinPending: false, joinSuccess: false, joinError: false, detail: { isLoading: false, data: undefined } as unknown, group: { data: undefined } as unknown }));
+const h = vi.hoisted(() => ({ query: {} as unknown, join: vi.fn(), joinVariables: undefined as string | undefined, joinPending: false, joinSuccess: false, joinError: false, detail: { isLoading: false, data: undefined } as unknown, group: { data: undefined } as unknown }));
 vi.mock('./useChallengeDiscovery', () => ({ useV2ChallengeDiscovery: () => h.query }));
-vi.mock('./useChallengeCreation', () => ({ useChallengeDetailV2: () => h.detail, useJoinChallengeV2: () => ({ isPending: h.joinPending, isSuccess: h.joinSuccess, isError: h.joinError, mutate: h.join }) }));
+vi.mock('./useChallengeCreation', () => ({ useChallengeDetailV2: () => h.detail, useJoinChallengeV2: () => ({ isPending: h.joinPending, isSuccess: h.joinSuccess, isError: h.joinError, variables: h.joinVariables, mutate: h.join }) }));
 vi.mock('../groups/useV2Groups', () => ({ useV2GroupDetail: () => h.group }));
 
 import { V2DiscoverableChallengePreviewScreen } from './V2DiscoverableChallengePreviewScreen';
@@ -17,9 +18,34 @@ function challenge(overrides: Partial<V2DiscoverableChallenge> = {}): V2Discover
     host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'approval', viewerRelationship: 'none' }, relevance: { interests: [], goals: [], domains: [] }, ...overrides,
   };
 }
+function activeParticipation(): V2OwnParticipation {
+  return {
+    participationId: 'participation-1',
+    status: 'active',
+    joinedAt: '2026-11-19T12:00:00.000Z',
+    joinedConfigVersion: 1,
+    progress: {
+      logsAccepted: 0,
+      distinctDays: 0,
+      totalPoints: 0,
+      completionRate: 0,
+      cumulativeValues: {},
+      cumulativeTotal: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+      lastCompletedDay: null,
+      dayStates: {},
+      daysCompleted: 0,
+      completionStatus: 'in_progress',
+      completedAt: null,
+      finalPosition: null,
+    },
+    final: null,
+  };
+}
 function Probe() { const location = useLocation(); return <div data-testid="location">{location.pathname}</div>; }
 function tree() { return <MemoryRouter initialEntries={['/v2/challenges/discovery/challenge-1']}><Probe /><Routes><Route path="/v2/challenges/discovery/:challengeId" element={<V2DiscoverableChallengePreviewScreen />} /><Route path="/v2/groups/:groupId" element={<p>Governed Group detail</p>} /></Routes></MemoryRouter>; }
-afterEach(() => { cleanup(); h.detail = { isLoading: false, data: undefined }; h.group = { data: undefined }; h.join.mockReset(); h.joinPending = false; h.joinSuccess = false; h.joinError = false; });
+afterEach(() => { cleanup(); h.detail = { isLoading: false, data: undefined }; h.group = { data: undefined }; h.join.mockReset(); h.join.mockImplementation((challengeId: string) => { h.joinVariables = challengeId; }); h.joinVariables = undefined; h.joinPending = false; h.joinSuccess = false; h.joinError = false; });
 
 describe('discoverable Challenge preview route', () => {
   it('resolves a direct URL by fetching authorized discovery pages and links to Group detail', async () => {
@@ -73,15 +99,23 @@ describe('discoverable Challenge preview route', () => {
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
     expect(h.join).toHaveBeenCalledTimes(1);
     expect(h.join).toHaveBeenCalledWith('challenge-1');
+    h.joinVariables = 'challenge-1';
     h.joinSuccess = true;
     view.rerender(tree());
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('status').textContent).toContain('You joined this Challenge.');
+    expect(screen.queryByRole('button', { name: 'Join Challenge' })).toBeNull();
+    h.joinSuccess = false;
+    h.joinVariables = undefined;
+    h.query = { data: { pages: [{ challenges: [challenge({ status: 'active', myParticipation: activeParticipation(), host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'open', viewerRelationship } })] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
+    view.rerender(tree());
+    expect(screen.getByRole('status').textContent).toContain('already taking part');
+    expect(screen.queryByRole('button', { name: 'Join Challenge' })).toBeNull();
   });
 
   it('keeps retry feedback available when the authorized join request fails', async () => {
     h.query = { data: { pages: [{ challenges: [challenge({ host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'open', viewerRelationship: 'member' } })] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
-    h.join.mockImplementationOnce(() => { h.joinError = true; }).mockImplementationOnce(() => { h.joinError = false; });
+    h.join.mockImplementationOnce((challengeId: string) => { h.joinVariables = challengeId; h.joinError = true; }).mockImplementationOnce((challengeId: string) => { h.joinVariables = challengeId; h.joinError = false; });
     const view = render(tree());
     await userEvent.click(screen.getByRole('button', { name: 'Join Challenge' }));
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Join Challenge' }));
