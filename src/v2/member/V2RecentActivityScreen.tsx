@@ -160,16 +160,16 @@ export function V2RecentActivityScreen() {
               </V2Button>
             </div>
           )}
-          {history.isError && !history.isFetchNextPageError && (
-            <div className="mt-4" role="alert">
-              <V2ErrorState
-                title="We couldn't refresh Recent Activity"
-                message="The entries shown are unchanged. Please try again."
-                onRetry={() => void history.refetch()}
-              />
-            </div>
-          )}
         </>
+      )}
+      {history.isError && !history.isFetchNextPageError && (
+        <div className="mt-4" role="alert">
+          <V2ErrorState
+            title="We couldn't refresh Recent Activity"
+            message="The history shown may be out of date. Please try again."
+            onRetry={() => void history.refetch()}
+          />
+        </div>
       )}
       <V2Card className="mt-5 border-dashed bg-slate-50 p-3">
         <p className="text-xs leading-5 text-slate-600">Recent Activity is separate from Group Feed and Challenge Feed publishing. Sharing is not part of this history.</p>

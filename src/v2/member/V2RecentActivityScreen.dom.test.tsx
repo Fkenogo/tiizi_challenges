@@ -105,6 +105,26 @@ describe('Personal Recent Activity presentation', () => {
     expect(screen.getByText(/not automatically shared to a Feed/)).toBeTruthy();
   });
 
+  it('shows a refresh warning when cached history is empty and refetch fails', () => {
+    const refetch = vi.fn();
+    h.history = {
+      data: { pages: [{ items: [], nextCursor: null }] },
+      isLoading: false,
+      isError: true,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isFetchNextPageError: false,
+      fetchNextPage: vi.fn(),
+      refetch,
+    };
+    render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    expect(screen.getByRole('heading', { name: 'No Activity logged yet' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: "We couldn't refresh Recent Activity" })).toBeTruthy();
+    expect(screen.getByText(/history shown may be out of date/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
   it('renders loading and retryable error states', () => {
     h.history = { data: undefined, isLoading: true, isError: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
     const loading = render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
