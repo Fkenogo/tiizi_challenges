@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { invalidateV2ChallengeReads } from './challengeQueryKeys';
 import { invalidateV2Today } from '../today/todayQueryKeys';
-import { invalidateV2RecentActivity } from '../member/recentActivityQuery';
+import { V2_RECENT_ACTIVITY_SCOPE } from '../member/recentActivityQueryKeys';
 
 /**
  * TIIZI-FER-P3-CORR-001 — after the server ACCEPTS an activity, refresh the
@@ -22,7 +22,9 @@ export async function refreshAfterAcceptedLog(
   const results = await Promise.allSettled([
     invalidateV2ChallengeReads(queryClient, uid, challengeId),
     invalidateV2Today(queryClient, uid),
-    invalidateV2RecentActivity(queryClient, uid),
+    uid
+      ? queryClient.invalidateQueries({ queryKey: [V2_RECENT_ACTIVITY_SCOPE, uid] })
+      : Promise.resolve(),
   ]);
   return { refreshed: results.every((result) => result.status === 'fulfilled') };
 }

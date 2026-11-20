@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import { refreshAfterAcceptedLog } from './refreshAfterAcceptedLog';
-import { V2_RECENT_ACTIVITY_SCOPE } from '../member/recentActivityQuery';
+import { V2_RECENT_ACTIVITY_SCOPE } from '../member/recentActivityQueryKeys';
 
 afterEach(() => vi.restoreAllMocks());
 

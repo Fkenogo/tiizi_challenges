@@ -6,13 +6,18 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { fetchMemberRecentActivity } from '../../api/memberRecentActivityApi';
 
-export const V2_RECENT_ACTIVITY_SCOPE = 'v2-member-recent-activity';
-export const V2_RECENT_ACTIVITY_PREVIEW_SIZE = 3;
-export const V2_RECENT_ACTIVITY_PAGE_SIZE = 20;
-
-export function v2RecentActivityKey(uid: string | undefined, limit: number) {
-  return [V2_RECENT_ACTIVITY_SCOPE, uid, limit] as const;
-}
+import {
+  V2_RECENT_ACTIVITY_PAGE_SIZE,
+  V2_RECENT_ACTIVITY_PREVIEW_SIZE,
+  V2_RECENT_ACTIVITY_SCOPE,
+  v2RecentActivityKey,
+} from './recentActivityQueryKeys';
+export {
+  V2_RECENT_ACTIVITY_PAGE_SIZE,
+  V2_RECENT_ACTIVITY_PREVIEW_SIZE,
+  V2_RECENT_ACTIVITY_SCOPE,
+  v2RecentActivityKey,
+};
 
 export function useV2RecentActivityPreview() {
   const { user } = useAuth();
