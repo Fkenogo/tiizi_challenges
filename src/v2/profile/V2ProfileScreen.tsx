@@ -399,11 +399,11 @@ export function V2ProfileScreen() {
               {buckets.history.length > 0 && (
                 <ChallengeGroup title="History" items={recentHistory} />
               )}
-              <Link to="/v2/profile/challenges" className="inline-flex py-2 text-sm font-bold text-primary underline underline-offset-2">
-                View all history
-              </Link>
             </div>
           )}
+          <Link to="/v2/profile/challenges" className="mt-3 inline-flex py-2 text-sm font-bold text-primary underline underline-offset-2">
+            View Challenge History
+          </Link>
 
           {profile.challenges.nextCursor && (
             <div className="mt-3">
@@ -419,6 +419,17 @@ export function V2ProfileScreen() {
           {pageError?.section === 'challenges' && (
             <PageError onRetry={() => void loadMoreChallenges()} />
           )}
+        </V2Card>
+        <V2Card>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-900">Activity History</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Your private history of logged Activities.</p>
+            </div>
+            <Link to="/v2/activity" className="inline-flex min-h-11 items-center self-start text-sm font-bold text-primary underline underline-offset-2">
+              View Activity History
+            </Link>
+          </div>
         </V2Card>
 
         <SectionLabel>Account &amp; preferences</SectionLabel>

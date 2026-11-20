@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { MemberRecentActivityItem } from '../../api/memberRecentActivityApi';
 
 interface MockHistoryState {
@@ -51,6 +51,27 @@ const reversed: MemberRecentActivityItem = {
   activityId: '00000000-0000-4000-8000-000000000003',
   revisionState: 'reversed',
 };
+const second: MemberRecentActivityItem = {
+  ...current,
+  activityId: '00000000-0000-4000-8000-000000000004',
+  activityName: 'Walk',
+  value: 2,
+  unit: 'km',
+  occurredAt: '2026-06-09T12:00:00.000Z',
+  recordedAt: '2026-06-09T12:05:00.000Z',
+  acceptedAt: '2026-06-09T12:05:00.000Z',
+};
+
+const third: MemberRecentActivityItem = {
+  ...current,
+  activityId: '00000000-0000-4000-8000-000000000005',
+  activityName: 'Plank',
+  value: 60,
+  unit: 'seconds',
+  occurredAt: '2026-06-08T12:00:00.000Z',
+  recordedAt: '2026-06-08T12:05:00.000Z',
+  acceptedAt: '2026-06-08T12:05:00.000Z',
+};
 
 function setHistory(items: MemberRecentActivityItem[] = [current]) {
   h.history = {
@@ -92,10 +113,38 @@ describe('Personal Recent Activity presentation', () => {
   });
 
   it('shows the accepted timeline preview on Today with a link to full history', () => {
-    render(<MemoryRouter><V2RecentActivityPreview /></MemoryRouter>);
+    render(
+      <MemoryRouter initialEntries={['/v2/today']}>
+        <Routes>
+          <Route path="/v2/today" element={<V2RecentActivityPreview />} />
+          <Route path="/v2/activity" element={<V2RecentActivityScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
     expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeTruthy();
     expect(screen.getByText(/Activity logged/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'View history' }).getAttribute('href')).toBe('/v2/activity');
+    const link = screen.getByRole('link', { name: 'View all activity' });
+    expect(link.getAttribute('href')).toBe('/v2/activity');
+    fireEvent.click(link);
+    expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Load more' })).toBeTruthy();
+  });
+
+  it('limits Today to two server-ordered entries without truncating full history', () => {
+    h.preview = { ...h.preview, data: { items: [current, second, third] } };
+    const today = render(<MemoryRouter><V2RecentActivityPreview /></MemoryRouter>);
+    const previewRows = today.container.querySelectorAll('ol > li');
+    expect(previewRows).toHaveLength(2);
+    expect(previewRows[0].textContent).toContain('Push-Up');
+    expect(previewRows[1].textContent).toContain('Walk');
+    expect(screen.queryByText(/Plank/)).toBeNull();
+
+    today.unmount();
+    setHistory([current, second, third]);
+    const history = render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    expect(history.container.querySelectorAll('ol > li')).toHaveLength(3);
+    expect(screen.getByText(/Plank/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Load more' })).toBeTruthy();
   });
 
   it('renders an honest empty state when no accepted Activities exist', () => {

@@ -73,12 +73,13 @@ function ActivityTimeline({ items }: { items: MemberRecentActivityItem[] }) {
 export function V2RecentActivityPreview() {
   const recent = useV2RecentActivityPreview();
   const items = recent.data?.items ?? [];
+  const previewItems = items.length > 2 ? items.slice(0, 2) : items;
 
   return (
     <section aria-labelledby="recent-activity-preview" className="mt-6">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 id="recent-activity-preview" className="text-base font-black text-slate-900">Recent Activity</h2>
-        <Link to="/v2/activity" className="text-sm font-bold text-primary hover:underline">View history</Link>
+        <Link to="/v2/activity" className="text-sm font-bold text-primary hover:underline">View all activity</Link>
       </div>
       {recent.isLoading ? (
         <V2LoadingState label="Loading Recent Activity…" />
@@ -95,7 +96,7 @@ export function V2RecentActivityPreview() {
           message="Accepted Activity logs will appear here. Your history is private to you."
         />
       ) : (
-        <ActivityTimeline items={items} />
+        <ActivityTimeline items={previewItems} />
       )}
     </section>
   );
