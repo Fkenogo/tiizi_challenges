@@ -1,8 +1,9 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveLoggingOccurredAt } from './V2LoggingSection';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
-import { V2LogActivityForm } from './V2LoggingSection';
+import { V2LogActivityDialog, V2LogActivityForm } from './V2LoggingSection';
+import { useLogActivityV2 } from './useChallengeCreation';
 
 vi.mock('./useChallengeCreation', () => ({
   useLogActivityV2: vi.fn(() => ({
@@ -150,7 +151,6 @@ describe('V2LoggingSection — member-friendly error display', () => {
   };
 
   it('renders friendly error message and NEVER renders raw internal API error codes', async () => {
-    const { useLogActivityV2 } = await import('./useChallengeCreation');
     const mutateAsyncMock = vi.fn().mockRejectedValue({
       status: 422,
       code: 'no_participation_episode',
@@ -167,7 +167,6 @@ describe('V2LoggingSection — member-friendly error display', () => {
     const amountInput = screen.getByPlaceholderText('e.g. 50');
     expect(amountInput).toBeTruthy();
 
-    const { fireEvent } = await import('@testing-library/react');
     fireEvent.change(amountInput, { target: { value: '25' } });
 
     // Click submit
@@ -184,5 +183,70 @@ describe('V2LoggingSection — member-friendly error display', () => {
     expect(alert.textContent).not.toContain('no_participation_episode');
     expect(screen.queryByText(/Code:/i)).toBeNull();
     expect(screen.queryByText(/no_participation_episode/i)).toBeNull();
+  });
+
+  it('Done opens a private-first choice, disables unavailable sharing, and returns to the same Challenge', async () => {
+    const mutateAsyncMock = vi.fn().mockResolvedValue({
+      value: 25,
+      unit: 'reps',
+      pointsAwarded: 5,
+      occurredDay: '2026-11-10',
+      duplicate: false,
+    });
+    const onClose = vi.fn();
+    const onKeepPrivate = vi.fn();
+    vi.mocked(useLogActivityV2).mockReturnValue({
+      mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as any);
+
+    render(<V2LogActivityDialog detail={detail} open onClose={onClose} onKeepPrivate={onKeepPrivate} />);
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findByText('Recorded.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Activity privacy choice' })).toBeTruthy();
+    expect(screen.getByText(/Private by default/)).toBeTruthy();
+    expect(screen.getByText(/return you to Strength Challenge Details/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Share to Challenge' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/Challenge Feed sharing is not available yet/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep private' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onKeepPrivate).toHaveBeenCalledTimes(1);
+    expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps Log another as a separate deliberate Activity intent', async () => {
+    const mutateAsyncMock = vi.fn().mockResolvedValue({
+      value: 25,
+      unit: 'reps',
+      pointsAwarded: 5,
+      occurredDay: '2026-11-10',
+      duplicate: false,
+    });
+    vi.mocked(useLogActivityV2).mockReturnValue({
+      mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as any);
+
+    render(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findByText('Recorded.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Log another' }));
+    expect(screen.queryByLabelText('Activity privacy choice')).toBeNull();
+    const amountInput = screen.getByPlaceholderText('e.g. 50');
+    expect((amountInput as HTMLInputElement).value).toBe('');
+    fireEvent.change(amountInput, { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findAllByText('Recorded.');
+
+    expect(mutateAsyncMock).toHaveBeenCalledTimes(2);
+    const firstKey = mutateAsyncMock.mock.calls[0][0].payload.client_key;
+    const secondKey = mutateAsyncMock.mock.calls[1][0].payload.client_key;
+    expect(secondKey).not.toBe(firstKey);
   });
 });

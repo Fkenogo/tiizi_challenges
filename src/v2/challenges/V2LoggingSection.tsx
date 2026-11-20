@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { V2ActivityResult, V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import {
   buildS3bActivityPayload,
@@ -412,6 +412,33 @@ function LogActivityFields({
   );
 }
 
+function PostLogPrivacyChoice({
+  detail,
+  onKeepPrivate,
+}: {
+  detail: V2ChallengeDetail;
+  onKeepPrivate: () => void;
+}) {
+  return (
+    <section aria-labelledby="post-log-choice-title" className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+      <p className="text-xs font-black uppercase tracking-wide text-violet-800">Private by default</p>
+      <h3 id="post-log-choice-title" className="mt-1 text-base font-black text-slate-900">Choose what happens next</h3>
+      <p className="mt-1 text-sm leading-6 text-slate-700">
+        Your Activity has been recorded. Keeping it private will return you to {detail.title} Details with refreshed progress.
+      </p>
+      <div className="mt-3 space-y-2">
+        <V2Button variant="secondary" disabled className="min-h-11 w-full">
+          Share to Challenge
+        </V2Button>
+        <p id="challenge-sharing-unavailable" className="text-xs leading-5 text-slate-600">
+          Challenge Feed sharing is not available yet. This preview will not publish your Activity.
+        </p>
+        <V2Button onClick={onKeepPrivate} className="min-h-11 w-full">Keep private</V2Button>
+      </div>
+    </section>
+  );
+}
+
 /**
  * CORR-002 §5 — the focused Log Activity mobile sheet.
  *
@@ -427,18 +454,38 @@ export function V2LogActivityDialog({
   detail,
   open,
   onClose,
+  onKeepPrivate,
 }: {
   detail: V2ChallengeDetail;
   open: boolean;
   onClose: () => void;
+  onKeepPrivate?: () => void;
 }) {
   const view = loggingViewFor(detail);
+  const [privacyChoiceOpen, setPrivacyChoiceOpen] = useState(false);
+  useEffect(() => {
+    if (!open) setPrivacyChoiceOpen(false);
+  }, [open]);
+
   return (
-    <V2Sheet open={open} onClose={onClose} title="Log activity" variant="focused">
+    <V2Sheet
+      open={open}
+      onClose={onClose}
+      title={privacyChoiceOpen ? 'Activity privacy choice' : 'Log activity'}
+      variant="focused"
+    >
       {view.kind === 'empty' ? (
         <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
+      ) : privacyChoiceOpen ? (
+        <PostLogPrivacyChoice
+          detail={detail}
+          onKeepPrivate={() => {
+            onClose();
+            onKeepPrivate?.();
+          }}
+        />
       ) : (
-        <V2LogActivityForm detail={detail} onClose={onClose} />
+        <V2LogActivityForm detail={detail} onClose={() => setPrivacyChoiceOpen(true)} />
       )}
     </V2Sheet>
   );

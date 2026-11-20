@@ -11,11 +11,13 @@ import {
   V2_RECENT_ACTIVITY_PREVIEW_SIZE,
   V2_RECENT_ACTIVITY_SCOPE,
   v2RecentActivityKey,
+  v2ChallengeRecentActivityKey,
 } from './recentActivityQueryKeys';
 export {
   V2_RECENT_ACTIVITY_PAGE_SIZE,
   V2_RECENT_ACTIVITY_PREVIEW_SIZE,
   V2_RECENT_ACTIVITY_SCOPE,
+  v2ChallengeRecentActivityKey,
   v2RecentActivityKey,
 };
 
@@ -33,6 +35,24 @@ export function useV2RecentActivityPreview() {
     enabled: Boolean(user),
   });
 }
+
+/** Fetch the newest accepted contribution by the authenticated owner to one Challenge. */
+export function useV2LatestChallengeActivity(challengeId: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: v2ChallengeRecentActivityKey(user?.uid, challengeId),
+    queryFn: async () => {
+      if (!user) throw new Error('Recent Activity requires an authenticated member');
+      const page = await fetchMemberRecentActivity(
+        { limit: 1, challengeId },
+        await user.getIdToken(),
+      );
+      return page.items[0] ?? null;
+    },
+    enabled: Boolean(user && challengeId),
+  });
+}
+
 
 export function useV2RecentActivityHistory() {
   const { user } = useAuth();
