@@ -28,6 +28,7 @@ vi.mock('../challenges/useChallengeCreation', () => ({
 }));
 vi.mock('../groups/useV2Groups', () => ({ useV2GroupDiscovery: () => h.groups }));
 vi.mock('../challenges/useChallengeDiscovery', () => ({ useV2ChallengeDiscovery: () => h.challenges }));
+vi.mock('../member/V2RecentActivityScreen', () => ({ V2RecentActivityPreview: () => null }));
 
 import { V2TodayScreen } from './V2TodayScreen';
 
