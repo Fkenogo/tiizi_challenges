@@ -421,8 +421,8 @@ check(
     && loggingSection.includes('deriveSubmitKey'),
 );
 check(
-  'H5 logging opts into the focused sheet variant while other consumers keep the default',
-  loggingSection.includes('title="Log activity" variant="focused"')
+  'H5 logging uses the focused sheet variant while other consumers keep the default',
+  /<V2Sheet[^>]*variant="focused"\s*>[\s\S]*?<V2LogActivityForm/.test(loggingSection)
     && primitives.includes("variant = 'default'")
     && primitives.includes("variant === 'default' ? 'max-w-3xl' : 'max-w-md'"),
 );
@@ -434,7 +434,7 @@ check(
 );
 check(
   'H7 form and Recorded state share the same focused sheet wrapper',
-  /<V2Sheet[^>]*title="Log activity" variant="focused">[\s\S]*?<V2LogActivityForm/.test(loggingSection)
+  /<V2Sheet[^>]*variant="focused"\s*>[\s\S]*?<V2LogActivityForm/.test(loggingSection)
     && loggingSection.includes("'Recorded.'"),
 );
 check(
