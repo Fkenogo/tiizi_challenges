@@ -46,6 +46,23 @@ The [dated disposition](./TIIZI-AEC-005-LOGGING-FOUNDER-DISPOSITION-2026-11-19.m
 
 **2026-11-19 current reconciliation:** fetched `origin/main = 732c3316d06184916521591a1a9372051ab50538`; PR #174 merged normally at that SHA from approved head `2b23d5f0aa0583db9c78f679ff93fb90cf9426f8`. G4 is **VERIFIED WITH LIMITATIONS**: Guardian verified source/runtime identity and reviewed operator browser evidence, but did not independently replay the full browser matrix or read the disposable database marker. The detailed G4 receipt is in separate PR #176. The November 19 Founder walkthrough runtime remains UNKNOWN. This update preserves Founder direction and AEC-005A/B boundaries; it is not AEC-005 implementation authorization or approval to merge either documentation PR.
 
+## 2026-11-20 AEC-005A implementation authorization and draft candidate
+
+**Founder scope:** AEC-005A is authorized as owner-only Personal Recent Activity over accepted V2 Activity logs and valid correction/reversal lineage. Display newest performed first (`occurred_at`) with stable tie-breakers and distinct Performed/Recorded times. A correction appears once with the effective value marked Updated; a reversal remains visible as Reversed and is excluded from active progress. AEC-005B, Group/Challenge joins, Feed publication and sharing remain out of scope. No V1 store, migration, retention/deletion mechanism or deployment.
+
+**Implementation candidate:** built from `023a591049884b1db9c3de8a794fdc8f4bc72ec1` on `codex/aec-005a-personal-recent-activity-001`; protected `GET /api/me/activity` and `/v2/activity` screen. API tests: 6 passed; selected frontend DOM tests: 11 passed; after the review fix, the Recent Activity screen tests: 6 passed, cache-refresh tests: 2 passed, and the S5b Today guard passed. API typecheck and Vite production bundle passed. Independent review found the cached-empty refresh-error case; it was fixed and re-reviewed with no remaining findings. The full root build remains locally blocked by missing `functions` dependencies (`firebase-functions`, `pg`); no functions install was performed.
+
+**Operator browser evidence:** a disposable one-rep Challenge Activity log appeared in Recent Activity, survived refresh and fresh login, and was absent from a separate member's history. The authorized Challenge Details link opened. At 320px and 390px there was no horizontal overflow; screenshots were captured. This is operator evidence, not independent Guardian browser replay.
+
+**Release state: BLOCKED:** retention stewardship and requirements remain deferred in the Entity Ownership Foundation. No new retention/deletion behavior was added. Technical Lead and Founder acceptance remain pending; this is a Draft candidate, not merged or deployed.
+
+## Future Personal Activity History extension (not implemented)
+
+**Founder direction (2026-11-20):** future private Personal Activity History may include `Joined Group`, `Joined Challenge`, and appropriate future participation and Challenge milestones. These are outside authorized AEC-005A scope; this candidate does not implement these events, a new API, event store, migration, retention behavior, or Feed publication.
+
+**Source assessment:** V2 `challenge_participations` preserves per-member participation episodes with `joined_at`/`exited_at`; the existing Profile summary binds to the authenticated member and distinguishes active from historical participations. It may support a separately specified private Challenge-join milestone. PostgreSQL `group_memberships` is a mutable per-member row; the governed join upsert can replace `joined_at` on rejoin, so it cannot truthfully reconstruct a complete Group-join chronology or every transition. Do not infer missing events from current status or expose another member's history. Any future milestones require a separately authorized contract using authoritative owner-bound records with trustworthy event times and explicit rejoin/approval semantics. No milestone is automatically published to a Group or Challenge Feed.
+
+
 
 ## Updates and supersession
 

@@ -1,10 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { invalidateV2ChallengeReads } from './challengeQueryKeys';
 import { invalidateV2Today } from '../today/todayQueryKeys';
+import { V2_RECENT_ACTIVITY_SCOPE } from '../member/recentActivityQueryKeys';
 
 /**
  * TIIZI-FER-P3-CORR-001 — after the server ACCEPTS an activity, refresh the
- * read models that show it (the Challenge reads and Today).
+ * read models that show it (the Challenge reads, Today and Personal Recent Activity).
  *
  * The refresh is a separate concern from the accepted submission: it never
  * throws, so a failing invalidation or refetch can never turn an accepted
@@ -21,6 +22,9 @@ export async function refreshAfterAcceptedLog(
   const results = await Promise.allSettled([
     invalidateV2ChallengeReads(queryClient, uid, challengeId),
     invalidateV2Today(queryClient, uid),
+    uid
+      ? queryClient.invalidateQueries({ queryKey: [V2_RECENT_ACTIVITY_SCOPE, uid] })
+      : Promise.resolve(),
   ]);
   return { refreshed: results.every((result) => result.status === 'fulfilled') };
 }

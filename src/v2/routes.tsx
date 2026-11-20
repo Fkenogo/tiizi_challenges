@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { removeV2GroupFeed } from './groups/groupFeedQueryKeys';
 import { removeV2MemberIdentity } from './profile/memberIdentityQuery';
+import { removeV2RecentActivity } from './member/recentActivityQuery';
 import { V2LocaleProvider } from './i18n/V2Locale';
 import { V2GroupScope } from './group/V2GroupScope';
 import { V2Authenticated } from './auth/V2AuthGuard';
@@ -18,6 +19,7 @@ import { V2NotificationsPage } from './member/memberPages';
 import { V2ProfileScreen } from './profile/V2ProfileScreen';
 import { V2ProfileChallengeHistoryScreen } from './profile/V2ProfileChallengeHistoryScreen';
 import { V2TodayScreen } from './today/V2TodayScreen';
+import { V2RecentActivityScreen } from './member/V2RecentActivityScreen';
 import { V2GroupsScreen } from './groups/V2GroupsScreen';
 import { V2CreateGroupScreen } from './groups/V2CreateGroupScreen';
 import { V2GroupHomeScreen } from './groups/V2GroupHomeScreen';
@@ -63,6 +65,7 @@ function V2ProtectedScope() {
       void removeV2MemberIdentity(queryClient, priorUid);
       void removeV2MemberPreferences(queryClient, priorUid);
       void removeV2GroupFeed(queryClient);
+      void removeV2RecentActivity(queryClient, priorUid);
     }
     previousUid.current = user?.uid;
   }, [queryClient, user?.uid]);
@@ -106,6 +109,7 @@ export function V2Routes() {
           <Route element={<V2MemberShell />}>
             <Route index element={<Navigate to="today" replace />} />
             <Route path="today" element={<V2TodayScreen />} />
+            <Route path="activity" element={<V2RecentActivityScreen />} />
             <Route path="challenges" element={<V2ChallengeListScreen />} />
             <Route path="challenges/new" element={<V2ChallengeCreationWizard />} />
             <Route path="challenges/discovery/:challengeId" element={<V2DiscoverableChallengePreviewScreen />} />
