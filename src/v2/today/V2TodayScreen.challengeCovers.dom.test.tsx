@@ -18,6 +18,7 @@ vi.mock('../challenges/useChallengeCreation', () => ({
   useV2Memberships: () => h.memberships,
   useChallengeDetailV2: vi.fn(),
 }));
+vi.mock('../member/V2RecentActivityScreen', () => ({ V2RecentActivityPreview: () => null }));
 
 import { V2TodayScreen } from './V2TodayScreen';
 

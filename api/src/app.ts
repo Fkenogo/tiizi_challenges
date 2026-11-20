@@ -35,12 +35,10 @@ import { registerGroupFeedRoutes } from './groupFeedReads.js';
 import { API_PREFIX } from './apiPrefix.js';
 import { isMemberBootstrapRequest, registerMemberBootstrapRoutes } from './memberBootstrap.js';
 import { registerMemberProfileRoutes } from './memberProfileRoutes.js';
+import { registerMemberRecentActivityRoutes } from './memberRecentActivity.js';
 import { registerMemberPreferenceRoutes } from './memberPreferences.js';
-/* No member activity-history route in C1: Tiizi is not a personal activity
- * logger (Stage F), and no user-facing personal-history capability is
- * approved. The ledger is readable internally via listEffectiveEvents for
- * C2 application/replay. A product surface, if ever approved, is a C2+ API
- * decision — not an accident of this table existing. */
+/* AEC-005A owner-only Personal Recent Activity reads accepted V2 applications
+ * and their valid correction/reversal lineage. It does not read or publish Feed events. */
 
 export interface AppDeps {
   db: Db;
@@ -119,6 +117,7 @@ export function buildApp(deps: AppDeps) {
   });
 
   registerMemberBootstrapRoutes(app, deps.db, deps.verifier);
+  registerMemberRecentActivityRoutes(app, deps.db);
   registerMemberProfileRoutes(app, deps.db);
   registerMemberPreferenceRoutes(app, deps.db);
   registerMembershipRoutes(app, deps.db);
