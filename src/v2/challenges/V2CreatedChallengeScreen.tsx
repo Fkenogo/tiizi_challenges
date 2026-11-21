@@ -280,7 +280,15 @@ export function V2CreatedChallengeScreen() {
         {reuseError && <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">{reuseError}</p>}
       </div>
 
-      <V2LogActivityDialog detail={challenge} open={logOpen} onClose={() => setLogOpen(false)} />
+      <V2LogActivityDialog
+        detail={challenge}
+        open={logOpen}
+        onClose={() => setLogOpen(false)}
+        onKeepPrivate={() => navigate(
+          `${location.pathname}${location.search}${location.hash}`,
+          { replace: true, state: location.state },
+        )}
+      />
       <V2LeaveChallengeDialog detail={challenge} open={leaveOpen} onClose={() => setLeaveOpen(false)} />
     </V2Page>
   );
