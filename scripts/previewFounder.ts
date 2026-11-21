@@ -18,7 +18,13 @@ import { API_PREFIX, apiPath } from '../api/src/apiPrefix.js';
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const DATABASE_NAME = 'tiizi_founder_preview';
 const EMAIL = 'amara@tiizi.local';
-const PASSWORD = randomBytes(18).toString('base64url');
+/**
+ * Local-only preview password. Random by default so each run stays disposable;
+ * exporting TIIZI_FOUNDER_PREVIEW_PASSWORD (>= 6 chars, loopback Auth emulator
+ * only) gives browser agents and the Founder a repeatable local credential
+ * without re-creating accounts or retrieving passwords between sessions.
+ */
+const PASSWORD = process.env.TIIZI_FOUNDER_PREVIEW_PASSWORD?.trim() || randomBytes(18).toString('base64url');
 const API_PORTS = [4019, 4020, 4021];
 const WEB_PORTS = [5178, 5179, 5180];
 const AUTH_PORTS = [19099, 9099];
@@ -45,6 +51,10 @@ function assertDevelopmentInvocation(): void {
   if (process.env.NODE_ENV === 'production') throw new Error('Founder Preview refuses NODE_ENV=production.');
   if (!process.env.CI && process.env.FIREBASE_CONFIG) {
     throw new Error('Founder Preview refuses inherited Firebase project configuration.');
+  }
+  const suppliedPassword = process.env.TIIZI_FOUNDER_PREVIEW_PASSWORD?.trim();
+  if (suppliedPassword !== undefined && suppliedPassword.length < 6) {
+    throw new Error('Invalid password: TIIZI_FOUNDER_PREVIEW_PASSWORD must be at least 6 characters.');
   }
 }
 
@@ -169,6 +179,11 @@ async function stop(exitCode = 0): Promise<void> {
 
 async function main(): Promise<void> {
   assertDevelopmentInvocation();
+  // macOS postmaster refuses to start ("became multithreaded") when the
+  // inherited locale is empty or invalid, which agent shells frequently have.
+  // The disposable cluster is initialized with --no-locale anyway, so pin a
+  // valid LC_ALL for every child process instead of failing on shell state.
+  process.env.LC_ALL = process.env.LC_ALL || 'C';
   console.log('Founder Preview: checking loopback ports and local PostgreSQL tools…');
   const apiPort = await chooseLoopbackPort(API_PORTS);
   const webPort = await chooseLoopbackPort(WEB_PORTS);
@@ -366,7 +381,11 @@ async function main(): Promise<void> {
   console.log('  New Member: founder1@tiizi.local (Strength + Build strength; no Group or Challenge participation)');
   console.log(`  New Member sign-in: founder1@tiizi.local / the same local-only password`);
   console.log('  Fresh bootstrap test identity: founder1@tiizi.local');
-  console.log(`  Local-only password: ${PASSWORD}`);
+  console.log(
+    process.env.TIIZI_FOUNDER_PREVIEW_PASSWORD?.trim()
+      ? '  Password: supplied via TIIZI_FOUNDER_PREVIEW_PASSWORD (not shown)'
+      : `  Local-only password: ${PASSWORD}`,
+  );
   console.log(`  Auth emulator: ${authUrl} (${projectId})`);
   console.log(`  API: same-origin ${API_PREFIX} proxy to ${apiTarget}; CORS is not relaxed`);
   console.log(`  Bootstrap: Amara idempotent HTTP ${bootstrap.status}; founder1 created=true HTTP ${createdBootstrap.status}`);
