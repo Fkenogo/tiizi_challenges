@@ -5,15 +5,20 @@ import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { V2LogActivityDialog, V2LogActivityForm } from './V2LoggingSection';
 import { useLogActivityV2 } from './useChallengeCreation';
 
+const authState = vi.hoisted(() => ({ user: { uid: 'owner-1' } as { uid: string } | null }));
 vi.mock('./useChallengeCreation', () => ({
   useLogActivityV2: vi.fn(() => ({
     mutateAsync: vi.fn(),
     isPending: false,
   })),
 }));
+vi.mock('../../hooks/useAuth', () => ({
+  useAuth: () => authState,
+}));
 
 vi.mock('./activityNames', () => ({
   useActivityDisplayNames: () => new Map([['FIT-STR-001', 'Push-Up']]),
+  resolveActivityDisplayName: (canonicalKey: string, names: Map<string, string>) => names.get(canonicalKey) ?? 'Push-Up',
   resolvedChoiceOptionLabel: () => 'Push-Up (reps)',
   V2ActivityName: ({ canonicalKey }: { canonicalKey: string }) => <span>{canonicalKey}</span>,
 }));
@@ -21,6 +26,7 @@ vi.mock('./activityNames', () => ({
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  authState.user = { uid: 'owner-1' };
 });
 
 describe('V2LoggingSection — timestamp resolution', () => {
@@ -185,8 +191,11 @@ describe('V2LoggingSection — member-friendly error display', () => {
     expect(screen.queryByText(/no_participation_episode/i)).toBeNull();
   });
 
-  it('Done opens a private-first choice, disables unavailable sharing, and returns to the same Challenge', async () => {
+  it('opens the shared destination selector after Done and keeps the private continuation functional', async () => {
     const mutateAsyncMock = vi.fn().mockResolvedValue({
+      recordId: 'record-0001',
+      eventId: 'event-0001',
+      challengeId: detail.challengeId,
       value: 25,
       unit: 'reps',
       pointsAwarded: 5,
@@ -209,13 +218,49 @@ describe('V2LoggingSection — member-friendly error display', () => {
     expect(await screen.findByRole('dialog', { name: 'Activity privacy choice' })).toBeTruthy();
     expect(screen.getByText(/Private by default/)).toBeTruthy();
     expect(screen.getByText(/return you to Strength Challenge Details/)).toBeTruthy();
-    expect((screen.getByRole('button', { name: 'Share to Challenge' }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByText(/Challenge Feed sharing is not available yet/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Share activity' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Keep private' }));
+    expect(await screen.findByRole('dialog', { name: 'Activity sharing options' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Challenge Feed — unavailable' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'External sharing — unavailable' }).hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep private and continue' }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onKeepPrivate).toHaveBeenCalledTimes(1);
     expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
+  });
+  it('clears accepted Activity and sharing choices when the authenticated owner changes', async () => {
+    const mutateAsyncMock = vi.fn().mockResolvedValue({
+      recordId: 'record-owner-1',
+      eventId: 'event-owner-1',
+      challengeId: detail.challengeId,
+      value: 25,
+      unit: 'reps',
+      pointsAwarded: 5,
+      occurredDay: '2026-11-10',
+      duplicate: false,
+    });
+    vi.mocked(useLogActivityV2).mockReturnValue({
+      mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as any);
+
+    const view = render(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findByText('Recorded.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Share activity' }));
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+
+    authState.user = { uid: 'owner-2' };
+    view.rerender(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+
+    expect(screen.queryByRole('region', { name: 'Sharing destinations' })).toBeNull();
+    expect(screen.queryByText('Push-Up · 25 reps')).toBeNull();
+    expect(screen.queryByText('Recorded.')).toBeNull();
   });
 
   it('keeps Log another as a separate deliberate Activity intent', async () => {

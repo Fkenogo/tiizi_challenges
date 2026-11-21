@@ -105,6 +105,17 @@ describe('Personal Recent Activity presentation', () => {
       .toBe('/v2/challenges/00000000-0000-4000-8000-000000000002');
     expect(screen.getByText(/do not count as active progress/)).toBeTruthy();
   });
+  it('opens the same share-later selector from an owner Activity History entry', () => {
+    setHistory([current]);
+    render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share Push-Up activity' }));
+    expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Challenge Feed — unavailable' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Close sharing options' }));
+    expect(screen.queryByRole('region', { name: 'Sharing destinations' })).toBeNull();
+  });
 
   it('requests the next page only when the member selects Load more', () => {
     render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
@@ -123,6 +134,7 @@ describe('Personal Recent Activity presentation', () => {
     );
     expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeTruthy();
     expect(screen.getByText(/Activity logged/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share Push-Up activity' })).toBeNull();
     const link = screen.getByRole('link', { name: 'View all activity' });
     expect(link.getAttribute('href')).toBe('/v2/activity');
     fireEvent.click(link);
@@ -143,7 +155,7 @@ describe('Personal Recent Activity presentation', () => {
     setHistory([current, second, third]);
     const history = render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
     expect(history.container.querySelectorAll('ol > li')).toHaveLength(3);
-    expect(screen.getByText(/Plank/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Share Plank activity' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Load more' })).toBeTruthy();
   });
 

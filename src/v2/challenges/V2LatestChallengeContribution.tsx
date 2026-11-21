@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { MemberRecentActivityItem } from '../../api/memberRecentActivityApi';
-import { V2ErrorState } from '../components/V2Primitives';
+import { V2ActivityShareChoices, shareSourceFromHistoryItem } from '../components/V2ActivityShareChoices';
+import { V2Button, V2ErrorState } from '../components/V2Primitives';
 import { useV2LatestChallengeActivity } from '../member/recentActivityQuery';
 
 function formatActivityTime(value: string, timezone: string): string {
@@ -20,7 +22,7 @@ function RevisionStatus({ item }: { item: MemberRecentActivityItem }) {
   return null;
 }
 
-function Contribution({ item }: { item: MemberRecentActivityItem }) {
+function Contribution({ item, onShare }: { item: MemberRecentActivityItem; onShare: () => void }) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-3">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
@@ -47,12 +49,21 @@ function Contribution({ item }: { item: MemberRecentActivityItem }) {
         </div>
       </dl>
       <RevisionStatus item={item} />
+      <V2Button
+        variant="secondary"
+        onClick={onShare}
+        className="mt-3 min-h-11 max-w-full break-words"
+      >
+        Share {item.activityName} activity
+      </V2Button>
     </article>
   );
 }
 
 export function V2LatestChallengeContribution({ challengeId }: { challengeId: string }) {
   const activity = useV2LatestChallengeActivity(challengeId);
+  const [shareActivityId, setShareActivityId] = useState<string | null>(null);
+  const latestActivity = activity.data;
 
   return (
     <section aria-labelledby="latest-challenge-contribution-title" className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -69,12 +80,22 @@ export function V2LatestChallengeContribution({ challengeId }: { challengeId: st
           />
         </div>
       )}
-      {activity.isSuccess && !activity.isFetching && activity.data === null && (
+      {activity.isSuccess && !activity.isFetching && latestActivity === null && (
         <p className="mt-3 text-sm text-slate-600">No accepted Activity from you in this Challenge yet.</p>
       )}
-      {activity.isSuccess && !activity.isFetching && activity.data && (
+      {activity.isSuccess && !activity.isFetching && latestActivity && (
         <div className="mt-3">
-          <Contribution item={activity.data} />
+          <Contribution
+            item={latestActivity}
+            onShare={() => setShareActivityId(latestActivity.activityId)}
+          />
+          {shareActivityId === latestActivity.activityId && (
+            <V2ActivityShareChoices
+              mode="later"
+              source={shareSourceFromHistoryItem(latestActivity)}
+              onClose={() => setShareActivityId(null)}
+            />
+          )}
         </div>
       )}
     </section>

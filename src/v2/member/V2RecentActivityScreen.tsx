@@ -1,5 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { MemberRecentActivityItem } from '../../api/memberRecentActivityApi';
+import {
+  V2ActivityShareChoices,
+  shareSourceFromHistoryItem,
+} from '../components/V2ActivityShareChoices';
 import {
   V2Button,
   V2Card,
@@ -25,7 +30,14 @@ function formatActivityTime(value: string, timezone: string): string {
   }).format(new Date(value));
 }
 
-function ActivityTimeline({ items }: { items: MemberRecentActivityItem[] }) {
+function ActivityTimeline({
+  items,
+  shareLater = false,
+}: {
+  items: MemberRecentActivityItem[];
+  shareLater?: boolean;
+}) {
+  const [shareActivityId, setShareActivityId] = useState<string | null>(null);
   return (
     <ol className="space-y-3">
       {items.map((item) => (
@@ -62,6 +74,26 @@ function ActivityTimeline({ items }: { items: MemberRecentActivityItem[] }) {
             >
               Challenge: {item.challenge.title} · View details
             </Link>
+            {shareLater && (
+              <>
+                <div>
+                  <V2Button
+                    variant="secondary"
+                    onClick={() => setShareActivityId(item.activityId)}
+                    className="mt-2 min-h-11 max-w-full break-words"
+                  >
+                    Share {item.activityName} activity
+                  </V2Button>
+                </div>
+                {shareActivityId === item.activityId && (
+                  <V2ActivityShareChoices
+                    mode="later"
+                    source={shareSourceFromHistoryItem(item)}
+                    onClose={() => setShareActivityId(null)}
+                  />
+                )}
+              </>
+            )}
           </article>
         </li>
       ))}
@@ -140,7 +172,7 @@ export function V2RecentActivityScreen() {
         />
       ) : (
         <>
-          <ActivityTimeline items={items} />
+          <ActivityTimeline items={items} shareLater />
           {history.isFetchNextPageError && (
             <div className="mt-4" role="alert">
               <V2ErrorState

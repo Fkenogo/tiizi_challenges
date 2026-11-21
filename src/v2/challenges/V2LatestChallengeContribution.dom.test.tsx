@@ -55,6 +55,17 @@ describe('V2LatestChallengeContribution', () => {
     expect(screen.getByText('Private to you')).toBeTruthy();
     expect(screen.getByText(/not automatically published to a Feed/i)).toBeTruthy();
   });
+  it('opens the same owner-scoped unavailable destination selector from the latest contribution', () => {
+    setActivity(current);
+    render(<V2LatestChallengeContribution challengeId={current.challenge.id} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share Push-Up activity' }));
+    expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Challenge Feed — unavailable' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Close sharing options' }));
+    expect(screen.queryByRole('region', { name: 'Sharing destinations' })).toBeNull();
+  });
 
   it('hides cached Activity until the owner-scoped read has refreshed', () => {
     h.activity = {

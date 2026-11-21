@@ -5,8 +5,10 @@ import {
   mapV2ApiError,
   newClientKey,
 } from '../../services/v2ActivityPayload';
+import { V2ActivityShareChoices, shareSourceFromAcceptedActivity, type V2ActivityShareSource } from '../components/V2ActivityShareChoices';
 import { V2Button, V2Field, V2Select, V2Sheet, V2TextInput } from '../components/V2Primitives';
 import { useLogActivityV2 } from './useChallengeCreation';
+import { useAuth } from '../../hooks/useAuth';
 import {
   isNewEntryAllowed,
   loggingViewFor,
@@ -21,6 +23,7 @@ import {
   type LoggingAttempt,
 } from './loggingIntent';
 import {
+  resolveActivityDisplayName,
   useActivityDisplayNames,
   V2ActivityName,
 } from './activityNames';
@@ -98,11 +101,15 @@ export function resolveLoggingOccurredAt(params: {
 export function V2LogActivityForm({
   detail,
   onClose,
+  onActivityAccepted,
 }: {
   detail: V2ChallengeDetail;
   onClose?: () => void;
+  onActivityAccepted?: (source: V2ActivityShareSource) => void;
 }) {
   const view = loggingViewFor(detail);
+  const configuredChoices = view.kind === 'loggable' ? view.choices : [];
+  const names = useActivityDisplayNames(configuredChoices.map((choice) => choice.canonicalKey));
   const log = useLogActivityV2();
   const [optionId, setOptionId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -130,8 +137,7 @@ export function V2LogActivityForm({
     return <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>;
   }
 
-  const choices: S3bLoggableChoice[] =
-    view.kind === 'loggable' ? view.choices : [];
+  const choices: S3bLoggableChoice[] = configuredChoices;
   const selected: S3bLoggableChoice | undefined =
     choices.find((c) => c.optionId === optionId) ?? choices[0];
 
@@ -207,6 +213,9 @@ export function V2LogActivityForm({
       const result = await log.mutateAsync({ challengeId: detail.challengeId, payload });
       setLastAttempt({ key: submitKey, facts: currentFacts });
       setAccepted(result);
+      onActivityAccepted?.(
+        shareSourceFromAcceptedActivity(result, resolveActivityDisplayName(selected.canonicalKey, names)),
+      );
     } catch (error) {
       // Record the attempt so a same-facts retry reuses the key while a
       // corrected-facts resubmit mints a new one.
@@ -293,6 +302,7 @@ export function V2LogActivityForm({
       localError={localError}
       denial={denial}
       onRetry={handleRetry}
+      names={names}
       onFreshEntry={startFreshEntry}
     />
   );
@@ -307,6 +317,7 @@ export function V2LogActivityForm({
 function LogActivityFields({
   choices,
   selected,
+  names,
   onSelect,
   amount,
   onAmount,
@@ -321,6 +332,7 @@ function LogActivityFields({
 }: {
   choices: S3bLoggableChoice[];
   selected: S3bLoggableChoice;
+  names: Map<string, string>;
   onSelect: (optionId: string) => void;
   amount: string;
   onAmount: (next: string) => void;
@@ -333,7 +345,6 @@ function LogActivityFields({
   onRetry: () => void;
   onFreshEntry: () => void;
 }) {
-  const names = useActivityDisplayNames(choices.map((choice) => choice.canonicalKey));
   return (
     <div>
       <div className="space-y-3">
@@ -414,9 +425,11 @@ function LogActivityFields({
 
 function PostLogPrivacyChoice({
   detail,
+  onShareActivity,
   onKeepPrivate,
 }: {
   detail: V2ChallengeDetail;
+  onShareActivity: () => void;
   onKeepPrivate: () => void;
 }) {
   return (
@@ -426,13 +439,13 @@ function PostLogPrivacyChoice({
       <p className="mt-1 text-sm leading-6 text-slate-700">
         Your Activity has been recorded. Keeping it private will return you to {detail.title} Details with refreshed progress.
       </p>
+      <p className="mt-1 text-sm leading-6 text-slate-700">
+        The same Activity stays in your private history. You can review sharing options now or later; no destination is connected in this preview.
+      </p>
       <div className="mt-3 space-y-2">
-        <V2Button variant="secondary" disabled className="min-h-11 w-full">
-          Share to Challenge
+        <V2Button variant="secondary" onClick={onShareActivity} className="min-h-11 w-full">
+          Share activity
         </V2Button>
-        <p id="challenge-sharing-unavailable" className="text-xs leading-5 text-slate-600">
-          Challenge Feed sharing is not available yet. This preview will not publish your Activity.
-        </p>
         <V2Button onClick={onKeepPrivate} className="min-h-11 w-full">Keep private</V2Button>
       </div>
     </section>
@@ -461,31 +474,70 @@ export function V2LogActivityDialog({
   onClose: () => void;
   onKeepPrivate?: () => void;
 }) {
+  const { user } = useAuth();
+  const authUid = user?.uid ?? null;
   const view = loggingViewFor(detail);
   const [privacyChoiceOpen, setPrivacyChoiceOpen] = useState(false);
+  const [privacyChoiceOwnerUid, setPrivacyChoiceOwnerUid] = useState<string | null>(null);
+  const [shareChoiceOpen, setShareChoiceOpen] = useState(false);
+  const [shareSourceState, setShareSourceState] = useState<{
+    ownerUid: string | null;
+    source: V2ActivityShareSource;
+  } | null>(null);
+  const shareSource = shareSourceState?.ownerUid === authUid ? shareSourceState.source : null;
+  const showPrivacyChoice = privacyChoiceOpen && privacyChoiceOwnerUid === authUid;
   useEffect(() => {
-    if (!open) setPrivacyChoiceOpen(false);
+    if (!open) {
+      setPrivacyChoiceOpen(false);
+      setPrivacyChoiceOwnerUid(null);
+      setShareChoiceOpen(false);
+      setShareSourceState(null);
+    }
   }, [open]);
+  useEffect(() => {
+    setPrivacyChoiceOpen(false);
+    setPrivacyChoiceOwnerUid(null);
+    setShareChoiceOpen(false);
+    setShareSourceState(null);
+  }, [authUid]);
+
+  const continuePrivate = () => {
+    onClose();
+    onKeepPrivate?.();
+  };
 
   return (
     <V2Sheet
       open={open}
       onClose={onClose}
-      title={privacyChoiceOpen ? 'Activity privacy choice' : 'Log activity'}
+      title={!showPrivacyChoice ? 'Log activity' : shareChoiceOpen ? 'Activity sharing options' : 'Activity privacy choice'}
       variant="focused"
     >
       {view.kind === 'empty' ? (
         <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
-      ) : privacyChoiceOpen ? (
+      ) : showPrivacyChoice && shareChoiceOpen && shareSource ? (
+        <V2ActivityShareChoices
+          mode="immediate"
+          source={shareSource}
+          onClose={() => setShareChoiceOpen(false)}
+          onKeepPrivate={continuePrivate}
+        />
+      ) : showPrivacyChoice ? (
         <PostLogPrivacyChoice
           detail={detail}
-          onKeepPrivate={() => {
-            onClose();
-            onKeepPrivate?.();
-          }}
+          onShareActivity={() => setShareChoiceOpen(true)}
+          onKeepPrivate={continuePrivate}
         />
       ) : (
-        <V2LogActivityForm detail={detail} onClose={() => setPrivacyChoiceOpen(true)} />
+        <V2LogActivityForm
+          key={authUid ?? 'signed-out'}
+          detail={detail}
+          onClose={() => {
+            setPrivacyChoiceOwnerUid(authUid);
+            setPrivacyChoiceOpen(true);
+          }}
+          onActivityAccepted={(source) => setShareSourceState({ ownerUid: authUid, source })}
+        />
       )}
     </V2Sheet>
   );
