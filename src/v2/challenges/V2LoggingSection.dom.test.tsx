@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveLoggingOccurredAt } from './V2LoggingSection';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
@@ -209,7 +210,14 @@ describe('V2LoggingSection — member-friendly error display', () => {
       isPending: false,
     } as any);
 
-    render(<V2LogActivityDialog detail={detail} open onClose={onClose} onKeepPrivate={onKeepPrivate} />);
+    // StrictMode double-invokes effects in the real app shell; the mounted
+    // guard must not swallow the accepted result after that simulated
+    // remount.
+    render(
+      <React.StrictMode>
+        <V2LogActivityDialog detail={detail} open onClose={onClose} onKeepPrivate={onKeepPrivate} />
+      </React.StrictMode>,
+    );
     fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
     fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
     await screen.findByText('Recorded.');

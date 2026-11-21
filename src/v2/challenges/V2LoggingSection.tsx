@@ -123,9 +123,14 @@ export function V2LogActivityForm({
   // Closing the sheet unmounts this form while a submission may still be
   // in flight. A response that lands after unmounting belongs to a closed
   // intent; it must never call back into the live dialog and overwrite the
-  // share source of a newer, currently-open Activity.
+  // share source of a newer, currently-open Activity. (The effect body
+  // re-asserts the flag so React StrictMode's simulated remount cannot
+  // leave a stale false value.)
   const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const showAccepted = shouldShowAcceptedResult(accepted);
   const allowNewEntry = isNewEntryAllowed(detail);
