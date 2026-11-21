@@ -78,6 +78,17 @@ No AEC-005B, CF-01, migration, deployment, or production change is authorized by
 
 **Closure state: IMPLEMENTED, FOUNDER-ACCEPTED, MERGED; NOT PRODUCTION-RELEASED.** Retention stewardship and requirements remain unresolved in the Entity Ownership Foundation and block production release. No new retention/deletion behavior was added and no deployment occurred. Technical Lead review remains requested.
 
+## 2026-11-20 AEC-005B1 private post-log implementation candidate
+
+**Status:** Implementation candidate; pending exact-head independent review and Technical Lead / Founder UX review. This record is not Founder acceptance, merge approval, or production-release approval.
+
+**Candidate behavior:** After an accepted Activity, Done opens the private-first choice. Keep private closes the choice and returns to the exact originating Challenge Details; a log started from Today routes there by the retained Challenge ID. The unavailable Challenge Feed action is visibly disabled. The existing authenticated `/api/me/activity` read accepts an optional Challenge filter, bound into its stable cursor, and Challenge Details displays the signed-in member's latest accepted contribution with performed/recorded times and truthful Updated/Reversed status. Existing authoritative Challenge progress refresh remains unchanged.
+
+**Boundaries:** No new Activity store, Activity-engine/persistence changes, Feed publication, external sharing, Group/Challenge join milestones, schema migration, or deployment. AEC-005A history remains separate from Feed projections. Group-join and Challenge-join milestones, Challenge Feed publication/withdrawal, and external sharing remain deferred to their separately authorized scopes.
+
+**Release boundary:** Retention/privacy stewardship remains unresolved and continues to block production release. No new retention or deletion behavior is introduced.
+
+
 ## Future Personal Activity History extension (not implemented)
 
 **Founder direction (2026-11-20):** future private Personal Activity History may include `Joined Group`, `Joined Challenge`, and appropriate future participation and Challenge milestones. These are outside authorized AEC-005A scope; this implementation does not add these events, a new API, event store, migration, retention behavior, or Feed publication.

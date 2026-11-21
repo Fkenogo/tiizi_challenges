@@ -368,7 +368,11 @@ export function V2TodayScreen() {
       )}
       <V2RecentActivityPreview />
       {loggingChallengeId && (
-        <TodayLogActivity challengeId={loggingChallengeId} onClose={() => setLoggingChallengeId(null)} />
+        <TodayLogActivity
+          challengeId={loggingChallengeId}
+          onClose={() => setLoggingChallengeId(null)}
+          onKeepPrivate={() => navigate(`/v2/challenges/${encodeURIComponent(loggingChallengeId)}`)}
+        />
       )}
     </V2Page>
   );
@@ -377,11 +381,18 @@ export function V2TodayScreen() {
 /**
  * P3 — the EXISTING Log Activity sheet, opened in the context of one Challenge.
  * The Challenge detail is fetched on demand through the existing governed read;
- * the unchanged `V2LogActivityDialog` owns the form, `loggingIntent`
- * idempotency, double-submit protection and the activity API path. Today is
- * re-read from the server after an accepted log (see `useLogActivityV2`).
+ * the dialog retains canonical logging and routes Keep private to this exact
+ * Challenge's Details. Today is re-read from the server after an accepted log.
  */
-function TodayLogActivity({ challengeId, onClose }: { challengeId: string; onClose: () => void }) {
+function TodayLogActivity({
+  challengeId,
+  onClose,
+  onKeepPrivate,
+}: {
+  challengeId: string;
+  onClose: () => void;
+  onKeepPrivate: () => void;
+}) {
   const detail = useChallengeDetailV2(challengeId);
   const data = detail.data;
   // The same gate as the Challenge page: logging only while the Challenge is
@@ -393,7 +404,9 @@ function TodayLogActivity({ challengeId, onClose }: { challengeId: string; onClo
   const offered = useRef(false);
   const loggable = !!data && todayLoggingOpen(data);
   if (loggable) offered.current = true;
-  if (data && (loggable || offered.current)) return <V2LogActivityDialog detail={data} open onClose={onClose} />;
+  if (data && (loggable || offered.current)) {
+    return <V2LogActivityDialog detail={data} open onClose={onClose} onKeepPrivate={onKeepPrivate} />;
+  }
   return (
     <V2Sheet open onClose={onClose} title="Log activity" variant="focused">
       {detail.isError ? (

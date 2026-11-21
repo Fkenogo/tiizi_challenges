@@ -355,6 +355,54 @@ describe('owner-only Personal Recent Activity', () => {
       await app.close();
     }
   });
+  it('filters the authenticated owner to one Challenge and binds cursors to that filter', async () => {
+    const owner = await setupOwner();
+    const otherOwner = await setupOwner();
+    await apply(owner, logInput({
+      client_key: 'challenge-filter-older',
+      occurred_at: instant('2026-06-10T12:00:00Z'),
+    }));
+    await apply(owner, logInput({
+      client_key: 'challenge-filter-newer',
+      occurred_at: instant('2026-06-10T13:00:00Z'),
+    }));
+    await apply(otherOwner, logInput());
+
+    const app = createApp(owner, otherOwner.subject);
+    try {
+      const first = await getHistory(app, 'owner-token', `?challengeId=${owner.challengeId}&limit=1`);
+      expect(first.statusCode).toBe(200);
+      const firstPage = await jsonPage(first);
+      expect(firstPage.items).toHaveLength(1);
+      expect(firstPage.items[0].challenge.id).toBe(owner.challengeId);
+      expect(firstPage.nextCursor).not.toBeNull();
+
+      const second = await getHistory(
+        app,
+        'owner-token',
+        `?challengeId=${owner.challengeId}&limit=1&cursor=${encodeURIComponent(firstPage.nextCursor!)}`,
+      );
+      expect(second.statusCode).toBe(200);
+      const secondPage = await jsonPage(second);
+      expect(secondPage.items).toHaveLength(1);
+      expect(secondPage.items[0].challenge.id).toBe(owner.challengeId);
+      expect(secondPage.nextCursor).toBeNull();
+
+      const otherMemberChallenge = await getHistory(app, 'owner-token', `?challengeId=${otherOwner.challengeId}`);
+      expect(otherMemberChallenge.statusCode).toBe(200);
+      expect((await jsonPage(otherMemberChallenge)).items).toHaveLength(0);
+
+      const mismatchedCursor = await getHistory(
+        app,
+        'owner-token',
+        `?challengeId=${otherOwner.challengeId}&limit=1&cursor=${encodeURIComponent(firstPage.nextCursor!)}`,
+      );
+      expect(mismatchedCursor.statusCode).toBe(400);
+    } finally {
+      await app.close();
+    }
+  });
+
 
   it('derives the owner from verified authentication and ignores caller-selected owners', async () => {
     const owner = await setupOwner();
