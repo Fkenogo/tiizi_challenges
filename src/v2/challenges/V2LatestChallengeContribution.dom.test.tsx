@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
     isLoading: boolean;
     isError: boolean;
     isSuccess: boolean;
+    isFetching?: boolean;
     refetch: () => unknown;
   },
 }));
@@ -53,6 +54,21 @@ describe('V2LatestChallengeContribution', () => {
     expect(screen.getAllByText('America/New_York')).toHaveLength(2);
     expect(screen.getByText('Private to you')).toBeTruthy();
     expect(screen.getByText(/not automatically published to a Feed/i)).toBeTruthy();
+  });
+
+  it('hides cached Activity until the owner-scoped read has refreshed', () => {
+    h.activity = {
+      data: current,
+      isLoading: false,
+      isFetching: true,
+      isError: false,
+      isSuccess: true,
+      refetch: vi.fn(),
+    };
+    render(<V2LatestChallengeContribution challengeId={current.challenge.id} />);
+
+    expect(screen.getByRole('status').textContent).toContain('Refreshing your latest Activity');
+    expect(screen.queryByText('25 reps')).toBeNull();
   });
 
   it('labels corrected values and keeps reversed history separate from active progress', () => {

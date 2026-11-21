@@ -59,6 +59,7 @@ export function V2LatestChallengeContribution({ challengeId }: { challengeId: st
       <h2 id="latest-challenge-contribution-title" className="text-sm font-black text-slate-900">Your latest contribution</h2>
       <p className="mt-1 text-xs leading-5 text-slate-600">Personal Activity is private to you and is not automatically published to a Feed.</p>
       {activity.isLoading && <p role="status" className="mt-3 text-sm text-slate-600">Loading your latest Activity…</p>}
+      {activity.isFetching && !activity.isLoading && <p role="status" className="mt-3 text-sm text-slate-600">Refreshing your latest Activity…</p>}
       {activity.isError && (
         <div className="mt-3">
           <V2ErrorState
@@ -68,10 +69,10 @@ export function V2LatestChallengeContribution({ challengeId }: { challengeId: st
           />
         </div>
       )}
-      {activity.isSuccess && activity.data === null && (
+      {activity.isSuccess && !activity.isFetching && activity.data === null && (
         <p className="mt-3 text-sm text-slate-600">No accepted Activity from you in this Challenge yet.</p>
       )}
-      {activity.isSuccess && activity.data && (
+      {activity.isSuccess && !activity.isFetching && activity.data && (
         <div className="mt-3">
           <Contribution item={activity.data} />
         </div>
