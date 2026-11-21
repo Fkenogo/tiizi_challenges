@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import type * as ReactRouter from 'react-router-dom';
 
 const h = vi.hoisted(() => ({
   detail: { isLoading: false, isError: false, data: null as unknown },
@@ -9,7 +10,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('react-router-dom', async (importOriginal) => {
-  const router = await importOriginal();
+  const router = await importOriginal<typeof ReactRouter>();
   return { ...router, useNavigate: () => h.navigate };
 });
 vi.mock('./useChallengeCreation', () => ({
