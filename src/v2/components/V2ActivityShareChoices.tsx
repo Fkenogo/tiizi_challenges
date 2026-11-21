@@ -70,9 +70,13 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
   const { source } = props;
   // The post-log transition replaces the focused Done button while the
   // sheet stays open; the sheet's own initial-focus effect does not re-run,
-  // so this panel takes focus itself when it mounts.
+  // so the immediate panel takes focus itself when it mounts. Share-later
+  // panels never take focus: Challenge Details unmounts and remounts them
+  // during background refreshes, and a remount must not pull keyboard
+  // focus away from whatever unrelated control the member is using.
   const panelRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    if (props.mode !== 'immediate') return;
     panelRef.current?.focus({ preventScroll: true });
   }, []);
   return (

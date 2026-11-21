@@ -84,4 +84,29 @@ describe('V2ActivityShareChoices', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Keep private and continue' }));
     expect(onKeepPrivate).toHaveBeenCalledTimes(1);
   });
+
+  it('never takes focus in share-later mode, including across refresh remounts', () => {
+    const outside = document.createElement('button');
+    outside.textContent = 'outside control';
+    document.body.appendChild(outside);
+    outside.focus();
+    try {
+      const later = () => render(
+        <V2ActivityShareChoices
+          mode="later"
+          source={shareSourceFromHistoryItem(item)}
+          onClose={() => {}}
+        />,
+      );
+      later();
+      expect(document.activeElement).toBe(outside);
+      // Challenge Details unmounts the panel during a background refresh
+      // and remounts it; the remount must not steal focus.
+      cleanup();
+      later();
+      expect(document.activeElement).toBe(outside);
+    } finally {
+      outside.remove();
+    }
+  });
 });

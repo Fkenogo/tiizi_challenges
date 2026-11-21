@@ -183,21 +183,20 @@ async function main(): Promise<void> {
   // inherited locale is empty or invalid, which agent shells frequently
   // have. The disposable cluster is initialized with --no-locale anyway,
   // so validate the inherited locale against the system's known list and
-  // pin a safe LC_ALL for every child process instead of failing on shell
-  // state. An empty or unknown locale falls back to C; LC_ALL overrides
-  // every other locale variable, so this also neutralizes a bad LANG.
+  // write the decision back as the exact child-process value. LC_ALL
+  // overrides every other locale variable, so this also neutralizes a bad
+  // LANG. Unset, unknown, padded, or unverifiable (no `locale` command)
+  // values all fall back to C.
   const declaredLocale = process.env.LC_ALL?.trim();
-  if (!declaredLocale) {
-    process.env.LC_ALL = 'C';
-  } else {
+  let resolvedLocale = 'C';
+  if (declaredLocale) {
     const knownLocales = spawnSync('locale', ['-a'], { encoding: 'utf8' });
-    const known = knownLocales.status === 0
-      ? new Set(knownLocales.stdout.split('\n').map((line) => line.trim()))
-      : null;
-    if (known !== null && !known.has(declaredLocale)) {
-      process.env.LC_ALL = 'C';
+    if (knownLocales.status === 0) {
+      const known = new Set(knownLocales.stdout.split('\n').map((line) => line.trim()));
+      if (known.has(declaredLocale)) resolvedLocale = declaredLocale;
     }
   }
+  process.env.LC_ALL = resolvedLocale;
   console.log('Founder Preview: checking loopback ports and local PostgreSQL tools…');
   const apiPort = await chooseLoopbackPort(API_PORTS);
   const webPort = await chooseLoopbackPort(WEB_PORTS);
