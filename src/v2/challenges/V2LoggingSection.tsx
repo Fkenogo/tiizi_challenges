@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { V2ActivityResult, V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import {
   buildS3bActivityPayload,
@@ -120,6 +120,12 @@ export function V2LogActivityForm({
   const [localError, setLocalError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState<V2ActivityResult | null>(null);
   const [denial, setDenial] = useState<{ message: string; retryable: boolean; code?: string } | null>(null);
+  // Closing the sheet unmounts this form while a submission may still be
+  // in flight. A response that lands after unmounting belongs to a closed
+  // intent; it must never call back into the live dialog and overwrite the
+  // share source of a newer, currently-open Activity.
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const showAccepted = shouldShowAcceptedResult(accepted);
   const allowNewEntry = isNewEntryAllowed(detail);
@@ -211,12 +217,14 @@ export function V2LogActivityForm({
     }
     try {
       const result = await log.mutateAsync({ challengeId: detail.challengeId, payload });
+      if (!mountedRef.current) return;
       setLastAttempt({ key: submitKey, facts: currentFacts });
       setAccepted(result);
       onActivityAccepted?.(
         shareSourceFromAcceptedActivity(result, resolveActivityDisplayName(selected.canonicalKey, names)),
       );
     } catch (error) {
+      if (!mountedRef.current) return;
       // Record the attempt so a same-facts retry reuses the key while a
       // corrected-facts resubmit mints a new one.
       setLastAttempt({ key: submitKey, facts: currentFacts });
@@ -423,35 +431,6 @@ function LogActivityFields({
   );
 }
 
-function PostLogPrivacyChoice({
-  detail,
-  onShareActivity,
-  onKeepPrivate,
-}: {
-  detail: V2ChallengeDetail;
-  onShareActivity: () => void;
-  onKeepPrivate: () => void;
-}) {
-  return (
-    <section aria-labelledby="post-log-choice-title" className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
-      <p className="text-xs font-black uppercase tracking-wide text-violet-800">Private by default</p>
-      <h3 id="post-log-choice-title" className="mt-1 text-base font-black text-slate-900">Choose what happens next</h3>
-      <p className="mt-1 text-sm leading-6 text-slate-700">
-        Your Activity has been recorded. Keeping it private will return you to {detail.title} Details with refreshed progress.
-      </p>
-      <p className="mt-1 text-sm leading-6 text-slate-700">
-        The same Activity stays in your private history. You can review sharing options now or later; no destination is connected in this preview.
-      </p>
-      <div className="mt-3 space-y-2">
-        <V2Button variant="secondary" onClick={onShareActivity} className="min-h-11 w-full">
-          Share activity
-        </V2Button>
-        <V2Button onClick={onKeepPrivate} className="min-h-11 w-full">Keep private</V2Button>
-      </div>
-    </section>
-  );
-}
-
 /**
  * CORR-002 §5 — the focused Log Activity mobile sheet.
  *
@@ -477,27 +456,24 @@ export function V2LogActivityDialog({
   const { user } = useAuth();
   const authUid = user?.uid ?? null;
   const view = loggingViewFor(detail);
-  const [privacyChoiceOpen, setPrivacyChoiceOpen] = useState(false);
-  const [privacyChoiceOwnerUid, setPrivacyChoiceOwnerUid] = useState<string | null>(null);
   const [shareChoiceOpen, setShareChoiceOpen] = useState(false);
+  const [shareChoiceOwnerUid, setShareChoiceOwnerUid] = useState<string | null>(null);
   const [shareSourceState, setShareSourceState] = useState<{
     ownerUid: string | null;
     source: V2ActivityShareSource;
   } | null>(null);
   const shareSource = shareSourceState?.ownerUid === authUid ? shareSourceState.source : null;
-  const showPrivacyChoice = privacyChoiceOpen && privacyChoiceOwnerUid === authUid;
+  const showShareChoices = shareChoiceOpen && shareChoiceOwnerUid === authUid && shareSource !== null;
   useEffect(() => {
     if (!open) {
-      setPrivacyChoiceOpen(false);
-      setPrivacyChoiceOwnerUid(null);
       setShareChoiceOpen(false);
+      setShareChoiceOwnerUid(null);
       setShareSourceState(null);
     }
   }, [open]);
   useEffect(() => {
-    setPrivacyChoiceOpen(false);
-    setPrivacyChoiceOwnerUid(null);
     setShareChoiceOpen(false);
+    setShareChoiceOwnerUid(null);
     setShareSourceState(null);
   }, [authUid]);
 
@@ -510,22 +486,16 @@ export function V2LogActivityDialog({
     <V2Sheet
       open={open}
       onClose={onClose}
-      title={!showPrivacyChoice ? 'Log activity' : shareChoiceOpen ? 'Activity sharing options' : 'Activity privacy choice'}
+      title={showShareChoices ? 'Activity sharing options' : 'Log activity'}
       variant="focused"
     >
       {view.kind === 'empty' ? (
         <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
-      ) : showPrivacyChoice && shareChoiceOpen && shareSource ? (
+      ) : showShareChoices && shareSource ? (
         <V2ActivityShareChoices
           mode="immediate"
           source={shareSource}
-          onClose={() => setShareChoiceOpen(false)}
-          onKeepPrivate={continuePrivate}
-        />
-      ) : showPrivacyChoice ? (
-        <PostLogPrivacyChoice
-          detail={detail}
-          onShareActivity={() => setShareChoiceOpen(true)}
+          challengeTitle={detail.title}
           onKeepPrivate={continuePrivate}
         />
       ) : (
@@ -533,8 +503,15 @@ export function V2LogActivityDialog({
           key={authUid ?? 'signed-out'}
           detail={detail}
           onClose={() => {
-            setPrivacyChoiceOwnerUid(authUid);
-            setPrivacyChoiceOpen(true);
+            // Founder direction: sharing options appear immediately after
+            // logging. Done opens the destination list directly; Keep
+            // private remains the default continuation inside it.
+            setShareChoiceOwnerUid(authUid);
+            if (shareSource !== null) {
+              setShareChoiceOpen(true);
+            } else {
+              continuePrivate();
+            }
           }}
           onActivityAccepted={(source) => setShareSourceState({ ownerUid: authUid, source })}
         />

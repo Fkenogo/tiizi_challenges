@@ -59,27 +59,29 @@ describe('V2ActivityShareChoices', () => {
     });
   });
 
-  it('shows unavailable destinations honestly and preserves the immediate private path', () => {
-    const onClose = vi.fn();
+  it('shows unavailable destinations immediately with the Keep-private default path', () => {
     const onKeepPrivate = vi.fn();
     render(
       <V2ActivityShareChoices
         mode="immediate"
         source={shareSourceFromHistoryItem(item)}
-        onClose={onClose}
+        challengeTitle="Strength Challenge"
         onKeepPrivate={onKeepPrivate}
       />,
     );
 
     expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
     expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(screen.getByText(/return you to Strength Challenge Details/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Challenge Feed — unavailable' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: 'External sharing — unavailable' }).hasAttribute('disabled')).toBe(true);
     expect(screen.queryByRole('button', { name: /Group Feed/ })).toBeNull();
     expect(screen.getByText(/Group Feed is not a destination for individual Activity/)).toBeTruthy();
+    // The panel takes focus itself: it replaces the focused Done button
+    // inside an already-open sheet whose initial-focus effect will not re-run.
+    expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('activity-share-choices-title');
 
     fireEvent.click(screen.getByRole('button', { name: 'Keep private and continue' }));
     expect(onKeepPrivate).toHaveBeenCalledTimes(1);
-    expect(onClose).not.toHaveBeenCalled();
   });
 });

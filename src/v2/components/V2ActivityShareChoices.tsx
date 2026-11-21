@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { V2ActivityResult } from '../../api/v2ChallengeApi';
 import type {
   MemberRecentActivityItem,
@@ -47,7 +48,8 @@ type V2ActivityShareChoicesProps =
   | {
       source: V2ActivityShareSource;
       mode: 'immediate';
-      onClose: () => void;
+      /** Post-log context: the originating Challenge the Keep-private path returns to. */
+      challengeTitle: string;
       onKeepPrivate: () => void;
     }
   | {
@@ -57,14 +59,26 @@ type V2ActivityShareChoicesProps =
     };
 
 /**
- * Shared immediate and share-later destination selector. No destination has
- * an authorized, implemented Activity publication contract yet, so this UI
- * reports that boundary and never simulates a share.
+ * Shared immediate and share-later destination selector. In the immediate
+ * post-log mode the destinations are shown directly after Done (Founder
+ * direction: sharing options appear immediately after logging, with Keep
+ * private as the default continuation). No destination has an authorized,
+ * implemented Activity publication contract yet, so this UI reports that
+ * boundary and never simulates a share.
  */
 export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
-  const { source, onClose } = props;
+  const { source } = props;
+  // The post-log transition replaces the focused Done button while the
+  // sheet stays open; the sheet's own initial-focus effect does not re-run,
+  // so this panel takes focus itself when it mounts.
+  const panelRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    panelRef.current?.focus({ preventScroll: true });
+  }, []);
   return (
     <section
+      ref={panelRef}
+      tabIndex={-1}
       aria-labelledby="activity-share-choices-title"
       className="mt-3 rounded-2xl border border-violet-200 bg-violet-50 p-4"
     >
@@ -75,6 +89,11 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
       <p className="mt-1 break-words text-sm font-semibold text-slate-800">
         {source.activityName} · {source.value} {source.unit}
       </p>
+      {props.mode === 'immediate' && (
+        <p className="mt-1 text-sm leading-6 text-slate-700">
+          Your Activity has been recorded. Keeping it private will return you to {props.challengeTitle} Details with refreshed progress.
+        </p>
+      )}
       {source.revisionState === 'updated' && (
         <p className="mt-1 text-sm text-amber-900">Updated Activity — showing the current effective value.</p>
       )}
@@ -106,18 +125,19 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
         Group Feed is not a destination for individual Activity. Viewing these options creates no Activity and does not change Challenge progress.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        {props.mode === 'immediate' && (
+        {props.mode === 'immediate' ? (
           <V2Button onClick={props.onKeepPrivate} className="min-h-11 w-full">
             Keep private and continue
           </V2Button>
+        ) : (
+          <V2Button
+            variant="secondary"
+            onClick={props.onClose}
+            className="min-h-11"
+          >
+            Close sharing options
+          </V2Button>
         )}
-        <V2Button
-          variant="secondary"
-          onClick={onClose}
-          className={props.mode === 'immediate' ? 'min-h-11 w-full' : 'min-h-11'}
-        >
-          {props.mode === 'immediate' ? 'Back to choices' : 'Close sharing options'}
-        </V2Button>
       </div>
     </section>
   );

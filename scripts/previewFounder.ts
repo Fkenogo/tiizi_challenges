@@ -180,10 +180,24 @@ async function stop(exitCode = 0): Promise<void> {
 async function main(): Promise<void> {
   assertDevelopmentInvocation();
   // macOS postmaster refuses to start ("became multithreaded") when the
-  // inherited locale is empty or invalid, which agent shells frequently have.
-  // The disposable cluster is initialized with --no-locale anyway, so pin a
-  // valid LC_ALL for every child process instead of failing on shell state.
-  process.env.LC_ALL = process.env.LC_ALL || 'C';
+  // inherited locale is empty or invalid, which agent shells frequently
+  // have. The disposable cluster is initialized with --no-locale anyway,
+  // so validate the inherited locale against the system's known list and
+  // pin a safe LC_ALL for every child process instead of failing on shell
+  // state. An empty or unknown locale falls back to C; LC_ALL overrides
+  // every other locale variable, so this also neutralizes a bad LANG.
+  const declaredLocale = process.env.LC_ALL?.trim();
+  if (!declaredLocale) {
+    process.env.LC_ALL = 'C';
+  } else {
+    const knownLocales = spawnSync('locale', ['-a'], { encoding: 'utf8' });
+    const known = knownLocales.status === 0
+      ? new Set(knownLocales.stdout.split('\n').map((line) => line.trim()))
+      : null;
+    if (known !== null && !known.has(declaredLocale)) {
+      process.env.LC_ALL = 'C';
+    }
+  }
   console.log('Founder Preview: checking loopback ports and local PostgreSQL tools…');
   const apiPort = await chooseLoopbackPort(API_PORTS);
   const webPort = await chooseLoopbackPort(WEB_PORTS);
