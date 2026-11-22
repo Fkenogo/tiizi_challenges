@@ -438,6 +438,13 @@ async function currentHead(db: Db, eventId: string): Promise<ResolvedHead> {
   return head;
 }
 
+/** Bound the acknowledged-key history per Share: keep the newest 8. A
+ * replay of a key older than that horizon would be treated as a fresh
+ * choice — acceptable because a genuine delayed replay arrives within
+ * seconds/minutes, while the bound keeps storage finite for a Share that
+ * is repeatedly re-confirmed while already active. */
+const CHOICE_HISTORY_LIMIT = 8;
+
 /** Record an acknowledged publication request key for one Share row. */
 async function recordChoice(tx: Db, shareId: string, clientKey: string): Promise<void> {
   await tx.query(
@@ -445,6 +452,17 @@ async function recordChoice(tx: Db, shareId: string, clientKey: string): Promise
      VALUES ($1, $2)
      ON CONFLICT (share_id, client_key) DO NOTHING`,
     [shareId, clientKey],
+  );
+  await tx.query(
+    `DELETE FROM challenge_feed_share_choices
+      WHERE share_id = $1
+        AND client_key NOT IN (
+          SELECT client_key FROM challenge_feed_share_choices
+           WHERE share_id = $1
+           ORDER BY acknowledged_at DESC, client_key DESC
+           LIMIT $2
+        )`,
+    [shareId, CHOICE_HISTORY_LIMIT],
   );
 }
 
@@ -509,9 +527,14 @@ export async function publishActivityShare(
     throw new ChallengeFeedError(409, 'feed_expired', 'This Challenge Feed has expired');
   }
 
-  // State-explicit publication inside one transaction: the source event row
-  // is locked FOR SHARE so a correction/reversal committed concurrently
-  // cannot slip between validation and the write.
+  // State-explicit publication inside one transaction. The source event row
+  // is locked FOR SHARE and the lineage HEAD is resolved, LOCKED and
+  // re-verified, so no correction/reversal can slip between validation and
+  // the write. Share-row state is settled BEFORE the measurement checks, so
+  // the error contract is exact: a suppressed Share answers share_suppressed,
+  // an acknowledged-key replay after withdrawal answers share_withdrawn, and
+  // only a genuinely fresh choice reaches the reversal / changed-source
+  // checks.
   return db.transaction(async (tx) => {
     // S1 source authority: the caller's own DIRECT application of this exact
     // event to this exact Challenge (self-only by construction; a foreign or
@@ -535,13 +558,50 @@ export async function publishActivityShare(
       throw new ChallengeFeedError(404, 'unknown_activity', 'Activity not found');
     }
 
-    let head = await currentHead(tx, activityEventId);
-    // Hold the head row so a correction/reversal committed concurrently
-    // (whose ledger trigger must update this row) cannot slip between
-    // validation and the Share write — for the accepted event AND for any
-    // head reached through earlier corrections.
-    const locked = await lockHead(tx, head.event_id);
-    head = locked;
+    // Settle the existing Share-row state first (serialized against
+    // withdrawal and concurrent publication by FOR UPDATE).
+    const existing = await tx.query<ExistingShareRow>(
+      `SELECT share_id, published_at, withdrawn_at, suppressed_at, last_publish_key
+         FROM challenge_feed_shares
+        WHERE member_id = $1 AND activity_event_id = $2
+        FOR UPDATE`,
+      [memberId, activityEventId],
+    );
+    const share = existing.rows[0];
+    if (share && share.suppressed_at !== null) {
+      // Operator suppression is projection-only; republishing needs review.
+      throw new ChallengeFeedError(409, 'share_suppressed', 'This Share was removed and cannot be republished');
+    }
+    if (share && share.withdrawn_at !== null
+        && (await choiceWasAcknowledged(tx, String(share.share_id), clientKey))) {
+      // A delayed retry of ANY choice the member has since WITHDRAWN can
+      // never silently undo that withdrawal — this precedence is exact and
+      // never masked by a later measurement change. (An acknowledged key
+      // retried while the Share is still active is an ordinary idempotent
+      // retry and converges below.)
+      throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
+    }
+
+    // Resolve the current lineage head, LOCK it, and VERIFY the lock still
+    // holds the committed head. The ledger's supersede trigger flips the
+    // parent's status at commit, so a correction/reversal that won the race
+    // between resolution and lock acquisition leaves the locked row
+    // superseded — re-resolve (bounded) instead of ever validating against
+    // a stale head. Once a COMMITTED head is locked, no further child can
+    // commit through this transaction: its trigger update blocks here.
+    let head: ResolvedHead | null = null;
+    for (let attempt = 0; attempt < 5 && head === null; attempt += 1) {
+      const resolved = await currentHead(tx, activityEventId);
+      const locked = await lockHead(tx, resolved.event_id);
+      if (locked.status === 'committed') head = locked;
+    }
+    if (!head) {
+      throw new ChallengeFeedError(
+        409,
+        'source_changed',
+        'This Activity is changing continuously; preview the current version and confirm again',
+      );
+    }
     if (head.correction_kind === 'reversal') {
       throw new ChallengeFeedError(
         409,
@@ -558,6 +618,57 @@ export async function publishActivityShare(
         'source_changed',
         'This Activity changed since you previewed it; preview the current version and confirm again',
       );
+    }
+
+    if (share && share.withdrawn_at === null) {
+      // Already shared: idempotent for both a retry and a repeat deliberate
+      // choice — the existing Share is returned unchanged, never reordered.
+      // (The reversal / changed-source checks above still refuse an active
+      // Share whose source was corrected or reversed since, so the returned
+      // visible:true is always read-truth.) EVERY acknowledged key is
+      // recorded so a DELAYED REPLAY of any acknowledged request, arriving
+      // after a later withdrawal, is refused as stale instead of silently
+      // re-publishing.
+      await recordChoice(tx, String(share.share_id), clientKey);
+      if (share.last_publish_key !== clientKey) {
+        await tx.query(
+          `UPDATE challenge_feed_shares SET last_publish_key = $2 WHERE share_id = $1`,
+          [String(share.share_id), clientKey],
+        );
+      }
+      return {
+        shareId: String(share.share_id),
+        challengeId,
+        activityEventId,
+        publishedAt: new Date(share.published_at).toISOString(),
+        withdrawn: false,
+        visible: true,
+        hiddenReason: null,
+      };
+    }
+    if (share) {
+      // A FRESH explicit choice revives the same auditable row.
+      const revived = await tx.query<ExistingShareRow>(
+        `UPDATE challenge_feed_shares
+            SET withdrawn_at = NULL, published_at = now(), last_publish_key = $4
+          WHERE member_id = $1 AND activity_event_id = $2 AND challenge_id = $3
+          RETURNING share_id, published_at, withdrawn_at, suppressed_at, last_publish_key`,
+        [memberId, activityEventId, challengeId, clientKey],
+      );
+      const back = revived.rows[0];
+      if (!back) {
+        throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
+      }
+      await recordChoice(tx, String(back.share_id), clientKey);
+      return {
+        shareId: String(back.share_id),
+        challengeId,
+        activityEventId,
+        publishedAt: new Date(back.published_at).toISOString(),
+        withdrawn: false,
+        visible: true,
+        hiddenReason: null,
+      };
     }
 
     const inserted = await tx.query<ExistingShareRow>(
@@ -581,73 +692,9 @@ export async function publishActivityShare(
         hiddenReason: null,
       };
     }
-
-    const existing = await tx.query<ExistingShareRow>(
-      `SELECT share_id, published_at, withdrawn_at, suppressed_at, last_publish_key
-         FROM challenge_feed_shares
-        WHERE member_id = $1 AND activity_event_id = $2
-        FOR UPDATE`,
-      [memberId, activityEventId],
-    );
-    const share = existing.rows[0];
-    if (!share) {
-      throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
-    }
-    const active = share.withdrawn_at === null && share.suppressed_at === null;
-    if (share.suppressed_at !== null) {
-      // Operator suppression is projection-only; republishing needs review.
-      throw new ChallengeFeedError(409, 'share_suppressed', 'This Share was removed and cannot be republished');
-    }
-    if (active) {
-      // Already shared: idempotent for both a retry and a repeat deliberate
-      // choice — the existing Share is returned unchanged, never reordered.
-      // EVERY acknowledged key is recorded so a DELAYED REPLAY of any
-      // acknowledged request, arriving after a later withdrawal, is refused
-      // as stale instead of silently re-publishing.
-      await recordChoice(tx, String(share.share_id), clientKey);
-      if (share.last_publish_key !== clientKey) {
-        await tx.query(
-          `UPDATE challenge_feed_shares SET last_publish_key = $2 WHERE share_id = $1`,
-          [String(share.share_id), clientKey],
-        );
-      }
-      return {
-        shareId: String(share.share_id),
-        challengeId,
-        activityEventId,
-        publishedAt: new Date(share.published_at).toISOString(),
-        withdrawn: false,
-        visible: true,
-        hiddenReason: null,
-      };
-    }
-    if (await choiceWasAcknowledged(tx, String(share.share_id), clientKey)) {
-      // A delayed retry of ANY choice the member has since withdrawn can
-      // never silently undo that withdrawal.
-      throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
-    }
-    // A FRESH explicit choice revives the same auditable row.
-    const revived = await tx.query<ExistingShareRow>(
-      `UPDATE challenge_feed_shares
-          SET withdrawn_at = NULL, published_at = now(), last_publish_key = $4
-        WHERE member_id = $1 AND activity_event_id = $2 AND challenge_id = $3
-        RETURNING share_id, published_at, withdrawn_at, suppressed_at, last_publish_key`,
-      [memberId, activityEventId, challengeId, clientKey],
-    );
-    const back = revived.rows[0];
-    if (!back) {
-      throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
-    }
-    await recordChoice(tx, String(back.share_id), clientKey);
-    return {
-      shareId: String(back.share_id),
-      challengeId,
-      activityEventId,
-      publishedAt: new Date(back.published_at).toISOString(),
-      withdrawn: false,
-      visible: true,
-      hiddenReason: null,
-    };
+    // Lost a concurrent first-publication race on the same source: the
+    // state above has changed under us; the caller retries safely.
+    throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
   });
 }
 

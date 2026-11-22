@@ -165,6 +165,56 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.getByRole('button', { name: 'Continue to Strength Challenge' })).toBeTruthy();
   });
 
+  it('announces and focuses the withdrawal outcome inside the panel', () => {
+    resetFeed({
+      shareId: '00000000-0000-4000-8000-00000000000a',
+      challengeId: item.challenge.id,
+      activityEventId: item.activityId,
+      publishedAt: '2026-06-10T12:10:00.000Z',
+      withdrawn: false,
+      visible: true,
+      hiddenReason: null,
+    });
+    h.withdraw = {
+      // Simulate the real flow: the mutation's invalidation refetches the
+      // owner state, so the refetched data reports the withdrawn Share.
+      error: null,
+      mutate: vi.fn((activityEventId: string, opts?: { onSuccess?: () => void }) => {
+        h.shareState = {
+          data: {
+            shareId: '00000000-0000-4000-8000-00000000000a',
+            challengeId: item.challenge.id,
+            activityEventId,
+            publishedAt: '2026-06-10T12:10:00.000Z',
+            withdrawn: true,
+            visible: false,
+            hiddenReason: 'withdrawn',
+          },
+          isLoading: false,
+          isError: false,
+          isSuccess: true,
+          refetch: vi.fn(),
+        };
+        opts?.onSuccess?.();
+      }),
+      isPending: false,
+    };
+    render(
+      <V2ActivityShareChoices
+        mode="immediate"
+        source={shareSourceFromHistoryItem(item)}
+        challengeTitle="Strength Challenge"
+        onKeepPrivate={vi.fn()}
+      />,
+    );
+    const withdrawButton = screen.getByRole('button', { name: 'Withdraw Share' });
+    withdrawButton.focus();
+    fireEvent.click(withdrawButton);
+    const notice = screen.getByText('Your Share is withdrawn. Other members can no longer see it.');
+    expect(notice.getAttribute('role')).toBe('status');
+    expect(document.activeElement).toBe(notice);
+  });
+
   it('states reversal and suppression honestly and offers no Share action for them', () => {
     resetFeed({
       shareId: '00000000-0000-4000-8000-00000000000a',

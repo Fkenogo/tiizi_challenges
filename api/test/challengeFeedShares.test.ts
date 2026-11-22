@@ -480,8 +480,34 @@ const refused = await publish(app, fx.challengeId, eventId, 30);
 
     // Publishing the first Challenge's Activity into the second Challenge is
     // not-found: only a DIRECT application in the requested Challenge binds.
-const cross = await publish(app, secondId, eventId, 40);
+    const cross = await publish(app, secondId, eventId, 40);
     expect(cross.statusCode).toBe(404);
+
+    // The lineage path: a correction of the first Challenge's Activity has
+    // NO application of its own anywhere — its only ancestor applied in the
+    // FIRST Challenge. Publishing that correction into the second Challenge
+    // must still be not-found.
+    const eventResolvers: ActivityEventResolvers = {
+      resolveKnowledgePin: async () => fx.pin,
+    };
+    const original = await db.query<{ member_id: string; activity_kind: 'fitness'; canonical_key: string }>(
+      'SELECT member_id, activity_kind, canonical_key FROM member_activity_events WHERE event_id = $1',
+      [eventId],
+    );
+    const correction = await appendCorrectionEvent(db, {
+      member_id: String(original.rows[0].member_id),
+      activity_kind: original.rows[0].activity_kind,
+      canonical_key: original.rows[0].canonical_key,
+      occurred_at: new Date('2026-06-10T12:00:00Z'),
+      occurred_day: '2026-06-10',
+      value: 77,
+      unit: 'reps',
+      client_key: next('cf-cross-corr'),
+      supersedes_event_id: eventId,
+      correction_kind: 'correction',
+    }, eventResolvers);
+    const crossLineage = await publish(app, secondId, correction.event_id, 77);
+    expect(crossLineage.statusCode).toBe(404);
     const rows = await db.query<{ count: string }>(
       'SELECT COUNT(*)::text AS count FROM challenge_feed_shares',
     );

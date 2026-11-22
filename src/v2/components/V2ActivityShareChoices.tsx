@@ -185,7 +185,7 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
       <div className="mt-3 space-y-2">
         <div className="rounded-xl border border-violet-200 bg-white p-3">
           <p className="text-sm font-black text-slate-900">Challenge Feed</p>
-          {withdrawnNotice !== null && (
+          {withdrawnNotice !== null && !shared && (
             <p
               ref={withdrawnNoticeRef}
               tabIndex={-1}
