@@ -253,6 +253,46 @@ describe('V2ActivityShareChoices', () => {
     expect(h.shareState.refetch).toHaveBeenCalled();
   });
 
+  it('shows Checking (never Private) while the state read is pending, with a way out', () => {
+    resetFeed(null);
+    h.shareState = { ...h.shareState, isLoading: true, isSuccess: false };
+    render(
+      <V2ActivityShareChoices
+        mode="immediate"
+        source={shareSourceFromHistoryItem(item)}
+        challengeTitle="Strength Challenge"
+        onKeepPrivate={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Checking')).toBeTruthy();
+    expect(screen.queryByText('Private')).toBeNull();
+    expect(screen.queryByText('Not shared yet')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Share to Challenge Feed' })).toBeNull();
+    // The member is never trapped: a dismissal path always exists.
+    expect(screen.getByRole('button', { name: 'Continue without sharing' })).toBeTruthy();
+  });
+
+  it('renders no further actions while the brief confirmation shows', async () => {
+    resetFeed();
+    vi.useFakeTimers();
+    render(
+      <V2ActivityShareChoices
+        mode="immediate"
+        source={shareSourceFromHistoryItem(item)}
+        challengeTitle="Strength Challenge"
+        onKeepPrivate={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Share to Challenge Feed' }));
+    expect(screen.getByText(/Shared to Challenge Feed!/)).toBeTruthy();
+    // The confirmation pause permits no second mutation and no early exit.
+    expect(screen.queryByRole('button', { name: 'Withdraw Share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Keep private and continue' })).toBeNull();
+    act(() => { vi.advanceTimersByTime(1400); });
+    expect(h.publish.mutate).toHaveBeenCalledTimes(1);
+  });
+
   it('disables every action while a Share choice is in flight', () => {
     resetFeed();
     h.publish.isPending = true;

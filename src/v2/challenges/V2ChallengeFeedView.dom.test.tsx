@@ -130,10 +130,48 @@ describe('V2ChallengeFeedScreen', () => {
     const kudosButton = screen.getByRole('button', { name: /Kudos/ });
     expect(screen.getByText('2')).toBeTruthy();
 
+    expect(kudosButton.getAttribute('aria-pressed')).toBe('false');
+
     fireEvent.click(kudosButton);
     await waitFor(() => expect(h.kudos.mutate).toHaveBeenCalledWith(
       { feedItemId: own.feedItemId, active: false },
     ));
+  });
+
+  it('exposes the viewer Kudos toggle state to assistive technology', () => {
+    h.history = {
+      data: { pages: [page([item({ viewerKudos: true, kudosCount: 3 })])] },
+      isLoading: false, isPending: false, isFetching: false, isError: false, isSuccess: true, hasNextPage: false,
+      isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn(),
+    };
+    h.withdraw = { error: null, mutate: vi.fn(), isPending: false };
+    h.kudos = { error: null, mutate: vi.fn(), isPending: false };
+    renderScreen();
+
+    const kudosButton = screen.getByRole('button', { name: /Kudos/ });
+    expect(kudosButton.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('3')).toBeTruthy();
+  });
+
+  it('keeps the Share fallback open with selectable text when the clipboard is denied', async () => {
+    h.history = {
+      data: { pages: [page([item()])] },
+      isLoading: false, isPending: false, isFetching: false, isError: false, isSuccess: true, hasNextPage: false,
+      isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn(),
+    };
+    h.withdraw = { error: null, mutate: vi.fn(), isPending: false };
+    h.kudos = { error: null, mutate: vi.fn(), isPending: false };
+    const writeText = vi.fn(async () => { throw new Error('clipboard denied'); });
+    Object.assign(navigator, { clipboard: { writeText } });
+    renderScreen();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy text' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't copy automatically");
+    expect(screen.getByText(/Amara Test shared 25 reps/)).toBeTruthy();
+    // The menu stays open — nothing was silently dismissed.
+    expect(screen.getByRole('link', { name: 'Share on WhatsApp' })).toBeTruthy();
   });
 
   it('never offers Kudos or Withdraw mutations on the publishing member own card', async () => {

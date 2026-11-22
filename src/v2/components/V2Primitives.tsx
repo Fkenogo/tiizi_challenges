@@ -148,6 +148,7 @@ export function V2Button({
   variant = 'primary',
   disabled,
   className = '',
+  pressed,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -155,6 +156,8 @@ export function V2Button({
   variant?: 'primary' | 'secondary' | 'ghost' | 'success' | 'dark';
   disabled?: boolean;
   className?: string;
+  /** Toggle semantics for assistive technology (e.g. Kudos). */
+  pressed?: boolean;
 }) {
   const tone =
     variant === 'primary'
@@ -171,6 +174,7 @@ export function V2Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={pressed}
       className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone} ${className}`}
     >
       {children}

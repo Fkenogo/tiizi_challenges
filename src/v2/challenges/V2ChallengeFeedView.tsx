@@ -66,6 +66,7 @@ export function ChallengeFeedEntries({
   const [copiedEntry, setCopiedEntry] = useState<string | null>(null);
   const [shareMenuEntry, setShareMenuEntry] = useState<string | null>(null);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [copyFailedEntry, setCopyFailedEntry] = useState<string | null>(null);
   const copiedNoticeRef = useRef<HTMLParagraphElement | null>(null);
 
   useEffect(() => {
@@ -92,10 +93,13 @@ export function ChallengeFeedEntries({
     try {
       await navigator.clipboard.writeText(externalShareText(item));
       setShareMenuOpen(false);
+      setCopyFailedEntry(null);
       setCopiedEntry(item.feedItemId);
       setTimeout(() => setCopiedEntry(null), 2200);
     } catch {
-      setShareMenuOpen(false);
+      // Clipboard access denied or unavailable: keep the menu open and show
+      // the selectable text instead of silently closing with nothing copied.
+      setCopyFailedEntry(item.feedItemId);
     }
   };
 
@@ -131,7 +135,7 @@ export function ChallengeFeedEntries({
                   onClick={() => toggleKudos.mutate({ feedItemId: item.feedItemId, active: item.viewerKudos })}
                   disabled={toggleKudos.isPending}
                   className="min-h-9 rounded-full px-3 py-1.5"
-                  aria-pressed={item.viewerKudos}
+                  pressed={item.viewerKudos}
                 >
                   <span className="flex items-center gap-1.5">
                     <span aria-hidden="true">{item.viewerKudos ? '👏' : '🙌'}</span>
@@ -195,6 +199,16 @@ export function ChallengeFeedEntries({
                 <V2Button variant="secondary" onClick={() => void copyShareText(item)} className="min-h-10 w-full">
                   Copy text
                 </V2Button>
+                {copyFailedEntry === item.feedItemId && (
+                  <div role="alert" className="space-y-1.5 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
+                    <p className="text-xs font-bold text-amber-900">
+                      Couldn&apos;t copy automatically — select and copy:
+                    </p>
+                    <p className="select-all break-words rounded-lg bg-white p-2 text-xs font-semibold text-slate-700">
+                      {externalShareText(item)}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </article>

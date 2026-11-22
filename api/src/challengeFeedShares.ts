@@ -804,15 +804,18 @@ async function feedRoute<T>(run: () => Promise<T>, fallback: string): Promise<T>
 }
 
 /** CF-01 §6.2 — resolve a currently-visible Feed entry for a Kudos
- * mutation, under the SAME audience and visibility truth as the Feed read.
- * Denials stay indistinguishable from not-found. */
+ * mutation, under the SAME audience and visibility truth as the Feed read,
+ * with the entry row LOCKED so a concurrent withdrawal or suppression
+ * serializes against this decision. Denials stay indistinguishable from
+ * not-found. Never fails open: an unreadable source lineage is a 503, not
+ * an implicit pass. */
 async function requireKudosEntry(
   db: Db,
   authority: GroupMembershipAuthority,
   memberId: string,
   challengeId: string,
   feedItemId: string,
-): Promise<{ shareId: string; sharerMemberId: string }> {
+): Promise<{ shareId: string; sharerMemberId: string; activityEventId: string }> {
   if (!UUID_RE.test(challengeId)) {
     throw new ChallengeFeedError(400, 'invalid_challenge_id', 'challengeId must be a Tiizi challenge UUID');
   }
@@ -823,29 +826,44 @@ async function requireKudosEntry(
   if (feedExpired(endedAt, new Date())) {
     throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
   }
-  const found = await db.query<{ share_id: string; member_id: string; withdrawn_at: Date | null; suppressed_at: Date | null }>(
-    `SELECT s.share_id, s.member_id, s.withdrawn_at, s.suppressed_at
+  const found = await db.query<{ share_id: string; member_id: string; activity_event_id: string; withdrawn_at: Date | null; suppressed_at: Date | null }>(
+    `SELECT s.share_id, s.member_id, s.activity_event_id, s.withdrawn_at, s.suppressed_at
        FROM challenge_feed_shares s
       WHERE s.share_id = $1 AND s.challenge_id = $2
-        AND s.withdrawn_at IS NULL AND s.suppressed_at IS NULL`,
+        AND s.withdrawn_at IS NULL AND s.suppressed_at IS NULL
+      FOR UPDATE`,
     [feedItemId, challengeId],
   );
   const share = found.rows[0];
   if (!share) throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
   // Reversal safety: a Feed entry whose source lineage was reversed is not
-  // currently visible, so it cannot be Kudos-mutated either.
-  const source = await db.query<{ activity_event_id: string }>(
-    'SELECT activity_event_id FROM challenge_feed_shares WHERE share_id = $1',
-    [String(share.share_id)],
-  );
-  const eventId = source.rows[0]?.activity_event_id;
-  let reversed = false;
-  if (eventId) {
-    const chainHead = await currentHead(db, String(eventId)).catch(() => null);
-    reversed = chainHead?.correction_kind === 'reversal';
+  // currently visible, so it cannot be Kudos-mutated either. The lookup never
+  // fails open — an unreadable lineage refuses the mutation.
+  const head = await currentHead(db, String(share.activity_event_id));
+  if (head.correction_kind === 'reversal') {
+    throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
   }
-  if (reversed) throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
-  return { shareId: String(share.share_id), sharerMemberId: String(share.member_id) };
+  return {
+    shareId: String(share.share_id),
+    sharerMemberId: String(share.member_id),
+    activityEventId: String(share.activity_event_id),
+  };
+}
+
+/** CF-01 §6.2 required abuse protection: a member may not exceed a bounded
+ * rate of Kudos mutations. Enforced per member over a sliding window. */
+const KUDOS_RATE_LIMIT_PER_MINUTE = 30;
+
+async function requireKudosRateAllowed(db: Db, memberId: string): Promise<void> {
+  const recent = await db.query<{ count: string | number }>(
+    `SELECT COUNT(*) AS count
+       FROM challenge_feed_kudos
+      WHERE member_id = $1 AND created_at > now() - interval '1 minute'`,
+    [memberId],
+  );
+  if (Number(recent.rows[0]?.count ?? 0) > KUDOS_RATE_LIMIT_PER_MINUTE) {
+    throw new ChallengeFeedError(429, 'kudos_rate_limited', 'Slow down — try again in a minute');
+  }
 }
 
 async function readKudosState(db: Db, feedItemId: string, memberId: string): Promise<KudosState> {
@@ -876,21 +894,31 @@ export async function addChallengeFeedKudos(
   challengeId: string,
   feedItemId: string,
 ): Promise<KudosState> {
-  const entry = await requireKudosEntry(db, authority, memberId, challengeId, feedItemId);
-  if (entry.sharerMemberId === memberId) {
-    // CF-01 §6.2: no self-Kudos. The entry is visible to the sharer, so an
-    // honest policy refusal discloses nothing.
-    throw new ChallengeFeedError(409, 'self_kudos', 'You cannot add Kudos to your own Share');
-  }
-  await db.query(
-    `INSERT INTO challenge_feed_kudos (share_id, member_id) VALUES ($1, $2)
-     ON CONFLICT (share_id, member_id) DO NOTHING`,
-    [entry.shareId, memberId],
-  );
-  return readKudosState(db, feedItemId, memberId);
+  await requireKudosRateAllowed(db, memberId);
+  return db.transaction(async (tx) => {
+    // Entry authorization and the insert share ONE transaction with the
+    // entry row locked, so a concurrent withdrawal/suppression serializes
+    // before this decision rather than racing it.
+    const entry = await requireKudosEntry(tx, authority, memberId, challengeId, feedItemId);
+    if (entry.sharerMemberId === memberId) {
+      // CF-01 §6.2: no self-Kudos. The entry is visible to the sharer, so an
+      // honest policy refusal discloses nothing.
+      throw new ChallengeFeedError(409, 'self_kudos', 'You cannot add Kudos to your own Share');
+    }
+    await tx.query(
+      `INSERT INTO challenge_feed_kudos (share_id, member_id) VALUES ($1, $2)
+       ON CONFLICT (share_id, member_id) DO NOTHING`,
+      [entry.shareId, memberId],
+    );
+    return readKudosState(tx, feedItemId, memberId);
+  });
 }
 
-/** Remove the member's Kudos from a Feed entry (idempotent). */
+/** Remove the member's Kudos from a Feed entry (idempotent). Uses the
+ * SAME entry authorization as the add: a cross-Challenge, withdrawn,
+ * suppressed, reversed or expired entry is not-found, never a silent zero
+ * state, and a Kudos can never be removed for an entry the caller cannot
+ * currently view. */
 export async function removeChallengeFeedKudos(
   db: Db,
   authority: GroupMembershipAuthority,
@@ -898,15 +926,14 @@ export async function removeChallengeFeedKudos(
   challengeId: string,
   feedItemId: string,
 ): Promise<KudosState> {
-  await requireFeedAudience(db, authority, challengeId, memberId);
-  if (!UUID_RE.test(feedItemId)) {
-    throw new ChallengeFeedError(400, 'invalid_entry', 'feedItemId must be a Tiizi Feed entry UUID');
-  }
-  await db.query(
-    'DELETE FROM challenge_feed_kudos WHERE share_id = $1 AND member_id = $2',
-    [feedItemId, memberId],
-  );
-  return readKudosState(db, feedItemId, memberId);
+  return db.transaction(async (tx) => {
+    const entry = await requireKudosEntry(tx, authority, memberId, challengeId, feedItemId);
+    await tx.query(
+      'DELETE FROM challenge_feed_kudos WHERE share_id = $1 AND member_id = $2',
+      [entry.shareId, memberId],
+    );
+    return readKudosState(tx, feedItemId, memberId);
+  });
 }
 
 export interface ChallengeFeedRouteDeps {

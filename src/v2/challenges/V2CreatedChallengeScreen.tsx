@@ -97,11 +97,14 @@ export function V2CreatedChallengeScreen() {
   useEffect(() => {
     if (shareToast?.shareAction) {
       setShareToastVisible(true);
-      const timer = setTimeout(() => {
-        setShareToastVisible(false);
-        // Clear the one-shot state so a refresh does not replay the toast.
-        navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: {} });
-      }, 2600);
+      // Consume the one-shot outcome IMMEDIATELY: the toast lives in local
+      // state from here on, so a refresh or Back can never replay it, and
+      // every other field of the router state is preserved.
+      navigate(`${location.pathname}${location.search}${location.hash}`, {
+        replace: true,
+        state: { ...(location.state ?? {}), shareAction: undefined },
+      });
+      const timer = setTimeout(() => setShareToastVisible(false), 2600);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -331,7 +334,9 @@ export function V2CreatedChallengeScreen() {
         onClose={() => setLogOpen(false)}
         onKeepPrivate={(outcome) => navigate(
           `${location.pathname}${location.search}${location.hash}`,
-          { replace: true, state: { ...shareToastState(outcome) } },
+          // Preserve the existing return context (Group Feed origin etc.);
+          // only the share outcome is added on top.
+          { replace: true, state: { ...(location.state ?? {}), ...shareToastState(outcome) } },
         )}
       />
       <V2LeaveChallengeDialog detail={challenge} open={leaveOpen} onClose={() => setLeaveOpen(false)} />

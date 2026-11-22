@@ -135,11 +135,17 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
   useEffect(() => {
     if (confirmation !== null) confirmationRef.current?.focus({ preventScroll: true });
   }, [confirmation]);
-  // Cancel a pending auto-return ONLY on unmount (never on a confirmation
+  // Cancel a pending auto-return on unmount (never on a confirmation
   // transition, which would clear the just-scheduled timer).
   useEffect(() => () => {
     if (autoActionRef.current) clearTimeout(autoActionRef.current);
   }, []);
+  const scheduleAutoAction = (action: () => void) => {
+    // A second success can never leave the first timer dangling: clear
+    // before reschedule so exactly ONE pending return exists at a time.
+    if (autoActionRef.current) clearTimeout(autoActionRef.current);
+    autoActionRef.current = setTimeout(action, CONFIRMATION_PAUSE_MS);
+  };
 
   const previewName = displayName ?? 'Your display name';
 
@@ -157,10 +163,10 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
       {
         onSuccess: () => {
           setConfirmation('shared');
-          autoActionRef.current = setTimeout(() => {
+          scheduleAutoAction(() => {
             if (props.mode === 'immediate') props.onKeepPrivate({ shared: true });
             else props.onClose();
-          }, CONFIRMATION_PAUSE_MS);
+          });
         },
       },
     );
@@ -171,10 +177,10 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
     withdraw.mutate(source.activityId, {
       onSuccess: () => {
         setConfirmation('withdrawn');
-        autoActionRef.current = setTimeout(() => {
+        scheduleAutoAction(() => {
           if (props.mode === 'immediate') props.onKeepPrivate({ withdrawn: true });
           else props.onClose();
-        }, CONFIRMATION_PAUSE_MS);
+        });
       },
     });
   };
@@ -206,10 +212,14 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
             </h3>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                shared ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                shared
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : stateKnown
+                    ? 'bg-slate-100 text-slate-600'
+                    : 'bg-amber-100 text-amber-900'
               }`}
             >
-              {shared ? 'Shared' : 'Private'}
+              {shared ? 'Shared' : stateKnown ? 'Private' : 'Checking'}
             </span>
           </div>
           <p className="mt-0.5 text-xs font-semibold text-slate-600">
@@ -226,14 +236,16 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
           </span>
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-              shared
+              shared || confirmation === 'shared'
                 ? 'bg-emerald-100 text-emerald-800'
-                : confirmation === 'shared'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-amber-100 text-amber-900'
+                : stateKnown
+                  ? 'bg-amber-100 text-amber-900'
+                  : 'bg-slate-100 text-slate-500'
             }`}
           >
-            {shared || confirmation === 'shared' ? 'Shared to Feed' : 'Not shared yet'}
+            {shared || confirmation === 'shared'
+              ? 'Shared to Feed'
+              : stateKnown ? 'Not shared yet' : 'Checking your Share…'}
           </span>
         </div>
         <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3">
@@ -299,21 +311,44 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
       )}
 
       {/* Action stack: an unconfirmed or failed state read never offers a
-      Share action — the server state must be known before any choice. */}
-      {shareState.isError ? null : (
+      Share action — the server state must be known before any choice. A
+      showing confirmation renders no further actions until it completes. */}
+      {shareState.isError || confirmation !== null ? null : (
       <div className="space-y-2.5 pt-1">
         {!stateKnown ? (
-          <p role="status" className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500">
-            Checking your current Share…
-          </p>
+          <>
+            <p role="status" className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500">
+              Checking your current Share…
+            </p>
+            {props.mode === 'immediate' ? (
+              <V2Button variant="secondary" onClick={() => props.onKeepPrivate()} className="min-h-11 w-full">
+                Continue without sharing
+              </V2Button>
+            ) : (
+              <V2Button variant="secondary" onClick={props.onClose} className="min-h-11 w-full">
+                Close
+              </V2Button>
+            )}
+          </>
         ) : notShareable ? (
-          <p className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-600">
-            {source.revisionState === 'reversed' || hiddenReason === 'reversed'
-              ? 'This Activity was reversed and cannot be shared.'
-              : hiddenReason === 'suppressed'
-                ? 'This Share was removed and cannot be republished.'
-                : 'This Challenge Feed has expired.'}
-          </p>
+          <>
+            <p className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-600">
+              {source.revisionState === 'reversed' || hiddenReason === 'reversed'
+                ? 'This Activity was reversed and cannot be shared.'
+                : hiddenReason === 'suppressed'
+                  ? 'This Share was removed and cannot be republished.'
+                  : 'This Challenge Feed has expired.'}
+            </p>
+            {props.mode === 'immediate' ? (
+              <V2Button variant="secondary" onClick={() => props.onKeepPrivate()} className="min-h-11 w-full">
+                Continue to {props.challengeTitle}
+              </V2Button>
+            ) : (
+              <V2Button variant="secondary" onClick={props.onClose} className="min-h-11 w-full">
+                Close
+              </V2Button>
+            )}
+          </>
         ) : shared ? (
           <>
             <V2Button variant="secondary" onClick={confirmWithdraw} disabled={mutationPending} className="min-h-11 w-full">

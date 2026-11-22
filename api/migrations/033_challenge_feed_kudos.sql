@@ -21,3 +21,8 @@ CREATE TABLE challenge_feed_kudos (
 );
 
 CREATE INDEX challenge_feed_kudos_share_idx ON challenge_feed_kudos (share_id);
+
+-- Serves the per-member sliding-window rate check (CF-01 §6.2 abuse
+-- protection) and future per-member maintenance.
+CREATE INDEX challenge_feed_kudos_member_recent_idx
+  ON challenge_feed_kudos (member_id, created_at);

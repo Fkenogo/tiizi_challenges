@@ -853,6 +853,84 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     expect(((replay.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
   });
 
+  it('authorizes Kudos REMOVAL with the same entry predicate as the add', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos-remove'));
+    const db = testDb();
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 28);
+    await publish(app, fx.challengeId, eventId, 28);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+    await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+
+    // Removal succeeds on the visible entry…
+    const removed = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(removed.statusCode).toBe(200);
+    expect(((removed.json() as { viewerKudos: boolean })).viewerKudos).toBe(false);
+
+    // …but a cross-Challenge entry id is not-found, never a silent zero state.
+    const other = await setupFixture(next('cf-s1-kudos-remove-other'));
+    const crossChallenge = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${other.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(crossChallenge.statusCode).toBe(404);
+
+    // A withdrawn entry is not Kudos-mutable for removal either.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const withdrawnRemove = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(withdrawnRemove.statusCode).toBe(404);
+
+    // A missing entry id is not-found (never a 200 zero-count).
+    const missing = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/00000000-0000-4000-8000-0000000000ff/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(missing.statusCode).toBe(404);
+
+    // Rate limiting (CF-01 §6.2 abuse protection): 31 mutations in a minute
+    // are refused with 429.
+    // The limiter counts per MEMBER across every row (the table carries no
+    // domain FKs), so synthetic recent rows on another entry id exercise it.
+    const flood = await db.query<{ kudos_id: string }>(
+      `INSERT INTO challenge_feed_kudos (share_id, member_id, created_at)
+       SELECT gen_random_uuid(), $1::uuid, now() - (interval '1 second' * g)
+         FROM generate_series(1, 31) AS g
+       RETURNING kudos_id`,
+      [fx.fellowMemberId],
+    );
+    expect(flood.rows.length).toBe(31);
+    const limitedAdd = await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(limitedAdd.statusCode).toBe(429);
+    expect(((limitedAdd.json() as { error: { code: string } }).error.code)).toBe('kudos_rate_limited');
+  });
+
   it('discloses the canonical event ID only to the Share owner, and serves the owner an exact state read', async () => {
     const fx = await setupFixture(next('cf-s1-disclosure'));
     const app = appFor(fx, stubAuthority(true));
