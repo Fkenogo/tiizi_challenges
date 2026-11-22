@@ -910,25 +910,41 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     });
     expect(missing.statusCode).toBe(404);
 
-    // Rate limiting (CF-01 §6.2 abuse protection): 31 mutations in a minute
-    // are refused with 429.
-    // The limiter counts per MEMBER across every row (the table carries no
-    // domain FKs), so synthetic recent rows on another entry id exercise it.
-    const flood = await db.query<{ kudos_id: string }>(
-      `INSERT INTO challenge_feed_kudos (share_id, member_id, created_at)
-       SELECT gen_random_uuid(), $1::uuid, now() - (interval '1 second' * g)
-         FROM generate_series(1, 31) AS g
-       RETURNING kudos_id`,
-      [fx.fellowMemberId],
-    );
-    expect(flood.rows.length).toBe(31);
-    const limitedAdd = await app.inject({
-      method: 'POST',
-      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
-      headers: authHeaders('token-fellow'),
-    });
-    expect(limitedAdd.statusCode).toBe(429);
-    expect(((limitedAdd.json() as { error: { code: string } }).error.code)).toBe('kudos_rate_limited');
+  });
+
+  it('rate-limits every Kudos mutation call, including add/remove toggling', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos-rate'));
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 19);
+    await publish(app, fx.challengeId, eventId, 19);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+
+    // The in-process sliding window counts EVERY mutation call — including
+    // idempotent re-adds and add/remove toggling on one entry — so a
+    // hard-deleted row can never reset the counter: the 31st mutation in a
+    // minute is refused with 429.
+    let limitedSeen = false;
+    let succeeded = 0;
+    for (let i = 0; i < 40 && !limitedSeen; i += 1) {
+      const attempt = await app.inject({
+        method: i % 2 === 0 ? 'POST' : 'DELETE',
+        url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+        headers: authHeaders('token-fellow'),
+      });
+      if (attempt.statusCode === 429) {
+        limitedSeen = true;
+        expect(((attempt.json() as { error: { code: string } }).error.code)).toBe('kudos_rate_limited');
+      } else {
+        succeeded += 1;
+      }
+    }
+    expect(limitedSeen).toBe(true);
+    expect(succeeded).toBe(30);
   });
 
   it('discloses the canonical event ID only to the Share owner, and serves the owner an exact state read', async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   V2Button,
@@ -93,22 +93,36 @@ export function V2CreatedChallengeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const shareToast = (location.state ?? null) as V2ShareToastState | null;
-  const [shareToastVisible, setShareToastVisible] = useState(false);
+  // The consumed action lives in LOCAL state (never router state): the
+  // display and its styling stay stable across the state-clearing
+  // navigation, the dismiss timer is unmount-cancelled only, and a fresh
+  // outcome on the same mount still displays.
+  const [toastAction, setToastAction] = useState<'shared' | 'withdrawn' | null>(null);
+  const toastConsumedRef = useRef(false);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
   useEffect(() => {
-    if (shareToast?.shareAction) {
-      setShareToastVisible(true);
-      // Consume the one-shot outcome IMMEDIATELY: the toast lives in local
-      // state from here on, so a refresh or Back can never replay it, and
-      // every other field of the router state is preserved.
-      navigate(`${location.pathname}${location.search}${location.hash}`, {
-        replace: true,
-        state: { ...(location.state ?? {}), shareAction: undefined },
-      });
-      const timer = setTimeout(() => setShareToastVisible(false), 2600);
-      return () => clearTimeout(timer);
+    const action = shareToast?.shareAction;
+    if (!action) {
+      // Re-arm for the next outcome on this mount.
+      toastConsumedRef.current = false;
+      return undefined;
     }
+    if (toastConsumedRef.current) return undefined;
+    toastConsumedRef.current = true;
+    setToastAction(action);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastAction(null), 2600);
+    // Consume the one-shot outcome IMMEDIATELY: a refresh or Back can never
+    // replay it, and every other field of the router state is preserved.
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: { ...(location.state ?? {}), shareAction: undefined },
+    });
     return undefined;
-  }, [shareToast?.shareAction, location.pathname, location.search, location.hash, navigate]);
+  }, [shareToast?.shareAction, location.pathname, location.search, location.hash, location.state, navigate]);
   const detail = useChallengeDetailV2(challengeId);
   const memberships = useV2Memberships();
   const [logOpen, setLogOpen] = useState(false);
@@ -226,14 +240,14 @@ export function V2CreatedChallengeScreen() {
 
   return (
     <V2Page>
-      {shareToastVisible && (
+      {toastAction !== null && (
         <p
           role="status"
           className={`mb-3 rounded-2xl p-3 text-center text-sm font-bold text-white ${
-            shareToast?.shareAction === 'withdrawn' ? 'bg-slate-900' : 'bg-emerald-600'
+            toastAction === 'withdrawn' ? 'bg-slate-900' : 'bg-emerald-600'
           }`}
         >
-          {shareToast?.shareAction === 'withdrawn' ? 'Share removed.' : 'Shared to Challenge Feed.'}
+          {toastAction === 'withdrawn' ? 'Share removed.' : 'Shared to Challenge Feed.'}
         </p>
       )}
       <div className="mb-3">

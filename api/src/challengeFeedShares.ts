@@ -837,9 +837,12 @@ async function requireKudosEntry(
   const share = found.rows[0];
   if (!share) throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
   // Reversal safety: a Feed entry whose source lineage was reversed is not
-  // currently visible, so it cannot be Kudos-mutated either. The lookup never
+  // currently visible, so it cannot be Kudos-mutated either. The head row is
+  // locked FOR SHARE exactly as publication does, so a concurrent reversal
+  // cannot commit between this check and the Kudos write; the lookup never
   // fails open — an unreadable lineage refuses the mutation.
-  const head = await currentHead(db, String(share.activity_event_id));
+  const resolvedHead = await currentHead(db, String(share.activity_event_id));
+  const head = await lockHead(db, resolvedHead.event_id);
   if (head.correction_kind === 'reversal') {
     throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
   }
@@ -851,19 +854,28 @@ async function requireKudosEntry(
 }
 
 /** CF-01 §6.2 required abuse protection: a member may not exceed a bounded
- * rate of Kudos mutations. Enforced per member over a sliding window. */
+ * rate of Kudos MUTATIONS (adds and removals alike — toggling add/remove on
+ * one entry is still one mutation per call, so a hard-deleted row can never
+ * reset the counter). Enforced per member over an in-process sliding
+ * window; the API today runs as a single process (preview/CI/standalone),
+ * and the bound is per process by design — a cross-instance limiter is a
+ * deployment-scale decision, not a pilot safeguard. */
 const KUDOS_RATE_LIMIT_PER_MINUTE = 30;
+const KUDOS_RATE_WINDOW_MS = 60_000;
 
-async function requireKudosRateAllowed(db: Db, memberId: string): Promise<void> {
-  const recent = await db.query<{ count: string | number }>(
-    `SELECT COUNT(*) AS count
-       FROM challenge_feed_kudos
-      WHERE member_id = $1 AND created_at > now() - interval '1 minute'`,
-    [memberId],
+const kudosRateWindow = new Map<string, number[]>();
+
+function requireKudosRateAllowed(memberId: string): void {
+  const now = Date.now();
+  const window = (kudosRateWindow.get(memberId) ?? []).filter(
+    (stamp) => now - stamp < KUDOS_RATE_WINDOW_MS,
   );
-  if (Number(recent.rows[0]?.count ?? 0) > KUDOS_RATE_LIMIT_PER_MINUTE) {
+  if (window.length >= KUDOS_RATE_LIMIT_PER_MINUTE) {
+    kudosRateWindow.set(memberId, window);
     throw new ChallengeFeedError(429, 'kudos_rate_limited', 'Slow down — try again in a minute');
   }
+  window.push(now);
+  kudosRateWindow.set(memberId, window);
 }
 
 async function readKudosState(db: Db, feedItemId: string, memberId: string): Promise<KudosState> {
@@ -894,7 +906,7 @@ export async function addChallengeFeedKudos(
   challengeId: string,
   feedItemId: string,
 ): Promise<KudosState> {
-  await requireKudosRateAllowed(db, memberId);
+  requireKudosRateAllowed(memberId);
   return db.transaction(async (tx) => {
     // Entry authorization and the insert share ONE transaction with the
     // entry row locked, so a concurrent withdrawal/suppression serializes
@@ -926,6 +938,7 @@ export async function removeChallengeFeedKudos(
   challengeId: string,
   feedItemId: string,
 ): Promise<KudosState> {
+  requireKudosRateAllowed(memberId);
   return db.transaction(async (tx) => {
     const entry = await requireKudosEntry(tx, authority, memberId, challengeId, feedItemId);
     await tx.query(

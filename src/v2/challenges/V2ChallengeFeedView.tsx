@@ -68,6 +68,10 @@ export function ChallengeFeedEntries({
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [copyFailedEntry, setCopyFailedEntry] = useState<string | null>(null);
   const copiedNoticeRef = useRef<HTMLParagraphElement | null>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (copiedEntry !== null) copiedNoticeRef.current?.focus({ preventScroll: true });
@@ -95,7 +99,8 @@ export function ChallengeFeedEntries({
       setShareMenuOpen(false);
       setCopyFailedEntry(null);
       setCopiedEntry(item.feedItemId);
-      setTimeout(() => setCopiedEntry(null), 2200);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopiedEntry(null), 2200);
     } catch {
       // Clipboard access denied or unavailable: keep the menu open and show
       // the selectable text instead of silently closing with nothing copied.
