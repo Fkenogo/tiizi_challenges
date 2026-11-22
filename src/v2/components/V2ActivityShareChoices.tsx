@@ -8,7 +8,7 @@ import { ApiError } from '../../api/apiClient';
 import { V2Button } from './V2Primitives';
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
 import {
-  useV2OwnActivityShare,
+  useV2ActivityShareState,
   useV2PublishActivityShare,
   useV2WithdrawActivityShare,
 } from '../challenges/challengeFeedQuery';
@@ -65,10 +65,16 @@ type V2ActivityShareChoicesProps =
       onClose: () => void;
     };
 
-function shareErrorMessage(error: unknown): string {
+function publishErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.code === 'source_not_current') {
-      return 'This Activity was corrected or reversed. Share the current version instead.';
+    if (error.code === 'source_reversed') {
+      return 'This Activity was reversed and cannot be shared.';
+    }
+    if (error.code === 'share_withdrawn') {
+      return 'This Share was withdrawn. Confirm again to share it.';
+    }
+    if (error.code === 'share_suppressed') {
+      return 'This Share was removed and cannot be republished.';
     }
     if (error.code === 'feed_expired') {
       return 'This Challenge Feed has expired.';
@@ -77,15 +83,23 @@ function shareErrorMessage(error: unknown): string {
   return 'Sharing to the Challenge Feed failed. Please try again.';
 }
 
+function withdrawErrorMessage(): string {
+  return 'Withdrawing your Share failed. Please try again.';
+}
+
 /**
  * Shared immediate and share-later destination selector.
  *
  * CF-01 v0.2 §6.1 (Founder-authorized CF-2/S1): the Challenge Feed is a
  * FUNCTIONAL destination. Publication is an explicit, previewed, self-only,
- * withdrawable member action; only the S1 allow-list is published (display
- * name, Activity name, own accepted value, unit — the Challenge title is
- * preview-only and never published). Publication never modifies Activity
- * evidence or Challenge progress, and is idempotent per source Activity.
+ * withdrawable member action keyed to a fresh choice; only the S1 allow-list
+ * is published (display name, Activity name, own accepted value, unit — the
+ * Challenge title is preview-only and never published). Publication never
+ * modifies Activity evidence or Challenge progress. The current Share state
+ * comes from the server's exact owner read — an outage is never presented
+ * as "not shared", and the Keep-private path is disabled while a Share
+ * choice is in flight so a completed publication can never be described as
+ * private.
  *
  * External sharing remains honestly unavailable; Group Feed is not a
  * destination for individual Activity.
@@ -105,13 +119,22 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
   }, []);
 
   const { displayName } = useV2MemberIdentity();
-  const ownShare = useV2OwnActivityShare(source.challengeId, source.activityId);
+  const shareState = useV2ActivityShareState(source.challengeId, source.activityId);
   const publish = useV2PublishActivityShare(source.challengeId);
   const withdraw = useV2WithdrawActivityShare(source.challengeId);
 
-  const shared = ownShare.data ?? null;
+  const stateKnown = shareState.isSuccess;
+  const shared = stateKnown && shareState.data !== null && !shareState.data.withdrawn;
   const mutationPending = publish.isPending || withdraw.isPending;
-  const mutationError = publish.error ?? withdraw.error ?? null;
+  const publishError = publish.error;
+  const withdrawError = withdraw.error;
+
+  const confirmShare = () => {
+    // A fresh explicit choice: the request key makes retries converge and
+    // lets the server refuse a delayed replay of an older choice.
+    const clientKey = (globalThis.crypto?.randomUUID?.() ?? `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    publish.mutate({ activityEventId: source.activityId, clientKey });
+  };
 
   return (
     <section
@@ -142,8 +165,21 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
       <div className="mt-3 space-y-2">
         <div className="rounded-xl border border-violet-200 bg-white p-3">
           <p className="text-sm font-black text-slate-900">Challenge Feed</p>
-          {ownShare.isLoading ? (
-            <p className="mt-1 text-sm text-slate-600">Checking your current Share…</p>
+          {shareState.isLoading ? (
+            <p className="mt-1 text-sm text-slate-600" role="status">Checking your current Share…</p>
+          ) : shareState.isError ? (
+            <div>
+              <p className="mt-1 text-sm text-slate-600">
+                We couldn&apos;t confirm whether this Activity is shared. Sharing stays blocked until the state is known.
+              </p>
+              <V2Button
+                variant="secondary"
+                onClick={() => void shareState.refetch()}
+                className="mt-2 min-h-11"
+              >
+                Retry
+              </V2Button>
+            </div>
           ) : shared ? (
             <div>
               <p className="mt-1 text-sm text-emerald-800" role="status">
@@ -154,12 +190,17 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
               </p>
               <V2Button
                 variant="secondary"
-                onClick={() => void withdraw.mutateAsync(source.activityId)}
+                onClick={() => withdraw.mutate(source.activityId)}
                 disabled={mutationPending}
                 className="mt-2 min-h-11"
               >
                 {withdraw.isPending ? 'Withdrawing…' : 'Withdraw Share'}
               </V2Button>
+              {withdrawError && (
+                <p role="alert" className="mt-2 text-sm font-medium text-red-800">
+                  {withdrawErrorMessage()}
+                </p>
+              )}
             </div>
           ) : (
             <div>
@@ -174,18 +215,18 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
               </p>
               <V2Button
                 variant="secondary"
-                onClick={() => void publish.mutateAsync(source.activityId)}
+                onClick={confirmShare}
                 disabled={mutationPending}
                 className="mt-2 min-h-11"
               >
                 {publish.isPending ? 'Sharing…' : 'Share to Challenge Feed'}
               </V2Button>
+              {publishError && (
+                <p role="alert" className="mt-2 text-sm font-medium text-red-800">
+                  {publishErrorMessage(publishError)}
+                </p>
+              )}
             </div>
-          )}
-          {mutationError && (
-            <p role="alert" className="mt-2 text-sm font-medium text-red-800">
-              {shareErrorMessage(mutationError)}
-            </p>
           )}
         </div>
         <div>
@@ -202,8 +243,16 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {props.mode === 'immediate' ? (
-          <V2Button onClick={props.onKeepPrivate} className="min-h-11 w-full">
-            {shared ? `Continue to ${props.challengeTitle}` : 'Keep private and continue'}
+          <V2Button
+            onClick={props.onKeepPrivate}
+            disabled={mutationPending}
+            className="min-h-11 w-full"
+          >
+            {mutationPending
+              ? 'Completing your choice…'
+              : shared
+                ? `Continue to ${props.challengeTitle}`
+                : 'Keep private and continue'}
           </V2Button>
         ) : (
           <V2Button

@@ -5,12 +5,14 @@ import { apiFetch, apiPath } from './apiClient';
  *
  * Transport only. Every field mirrors the server contract in
  * `api/src/challengeFeedShares.ts`; the server rechecks Group membership and
- * Challenge visibility on every read and never expands visibility.
+ * Challenge visibility on every read and never expands visibility. The
+ * canonical Activity event ID is disclosed ONLY on the viewer's own Share.
  */
 export interface ChallengeFeedItem {
   feedItemId: string;
   kind: 'activity_share';
-  activityEventId: string;
+  /** Withdrawal reference, present only on the viewer's own Share. */
+  activityEventId?: string;
   sharerDisplayName: string | null;
   activityName: string;
   value: number;
@@ -28,7 +30,9 @@ export interface ChallengeFeedPage {
 /**
  * CF-2 S1 — explicit Activity Share publication state. The server publishes
  * only the CF-01 S1 allow-list (display name, Activity name, own accepted
- * value, unit); publication is idempotent per source Activity.
+ * value, unit); publication is idempotent per explicit member choice
+ * (`clientKey`): retries converge, and a withdrawn Share is only re-shared
+ * by a fresh confirm.
  */
 export interface ActivityShareState {
   shareId: string;
@@ -58,14 +62,27 @@ export function fetchChallengeFeed(
   );
 }
 
-export function publishActivityShare(
+/** The owner's exact current Share state for one source Activity. */
+export function fetchActivityShareState(
   challengeId: string,
   activityEventId: string,
   bearerToken: string,
 ): Promise<ActivityShareState> {
   return apiFetch<ActivityShareState>(
+    apiPath(`/challenges/${encodeURIComponent(challengeId)}/feed/activity-shares/${encodeURIComponent(activityEventId)}`),
+    { bearerToken },
+  );
+}
+
+export function publishActivityShare(
+  challengeId: string,
+  activityEventId: string,
+  clientKey: string,
+  bearerToken: string,
+): Promise<ActivityShareState> {
+  return apiFetch<ActivityShareState>(
     apiPath(`/challenges/${encodeURIComponent(challengeId)}/feed/activity-shares`),
-    { method: 'POST', bearerToken, body: { activityEventId } },
+    { method: 'POST', bearerToken, body: { activityEventId, clientKey } },
   );
 }
 

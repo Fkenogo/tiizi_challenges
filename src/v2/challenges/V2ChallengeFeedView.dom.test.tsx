@@ -21,7 +21,7 @@ const h = vi.hoisted(() => ({
     fetchNextPage: () => unknown;
     refetch: () => unknown;
   },
-  withdraw: {} as { mutateAsync: ReturnType<typeof vi.fn>; isPending: boolean },
+  withdraw: {} as { mutate: ReturnType<typeof vi.fn>; isPending: boolean },
 }));
 
 vi.mock('./challengeFeedQuery', () => ({
@@ -91,13 +91,16 @@ describe('V2ChallengeFeedScreen', () => {
     );
   }
 
-  it('lists authorized entries and withdraws only the viewer own Share', async () => {
+  it('lists authorized entries, withdraws only the viewer own Share, and announces the outcome', async () => {
     h.history = {
       data: { pages: [page([item({ ownShare: true }), item({ feedItemId: '00000000-0000-4000-8000-0000000000bb', sharerDisplayName: 'Fellow Member' })])] },
       isLoading: false, isError: false, isSuccess: true, hasNextPage: false,
       isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn(),
     };
-    h.withdraw = { mutateAsync: vi.fn(async () => ({ withdrawn: true })), isPending: false };
+    h.withdraw = {
+      mutate: vi.fn((activityEventId: string, opts?: { onSuccess?: () => void }) => opts?.onSuccess?.()),
+      isPending: false,
+    };
     renderScreen();
 
     expect(screen.getByRole('heading', { name: 'Challenge activity' })).toBeTruthy();
@@ -108,7 +111,26 @@ describe('V2ChallengeFeedScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Withdraw Share' }));
     await waitFor(() =>
-      expect(h.withdraw.mutateAsync).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000001'));
+      expect(h.withdraw.mutate).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000001', expect.anything()));
+    // The outcome is announced and takes focus (the focused button is gone).
+    const notice = await screen.findByRole('status');
+    expect(notice.textContent).toContain('Your Share is withdrawn.');
+    expect(document.activeElement).toBe(notice);
+  });
+
+  it('never renders cached entries after a failed read', () => {
+    h.history = {
+      data: { pages: [page([item()])] },
+      isLoading: false, isError: true, isSuccess: false, hasNextPage: false,
+      isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn(),
+    };
+    h.withdraw = { mutate: vi.fn(), isPending: false };
+    renderScreen();
+
+    expect(screen.getByText(/Shared Challenge activity is unavailable/)).toBeTruthy();
+    // A stale cached page must not keep presenting entries or controls.
+    expect(screen.queryByText(/shared Push-Up/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Withdraw Share' })).toBeNull();
   });
 
   it('offers Load more only while a signed cursor page remains', () => {
@@ -117,7 +139,7 @@ describe('V2ChallengeFeedScreen', () => {
       isLoading: false, isError: false, isSuccess: true, hasNextPage: true,
       isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn(),
     };
-    h.withdraw = { mutateAsync: vi.fn(async () => ({ withdrawn: true })), isPending: false };
+    h.withdraw = { mutate: vi.fn(), isPending: false };
     renderScreen();
 
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }));

@@ -11,9 +11,9 @@ const h = vi.hoisted(() => ({
     isFetching?: boolean;
     refetch: () => unknown;
   },
-  ownShare: { data: null, isLoading: false },
-  publish: { mutateAsync: vi.fn(async () => ({ withdrawn: false })), isPending: false, error: null },
-  withdraw: { mutateAsync: vi.fn(async () => ({ withdrawn: true })), isPending: false, error: null },
+  ownShare: { data: null, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() },
+  publish: { mutate: vi.fn(), isPending: false, error: null },
+  withdraw: { mutate: vi.fn(), isPending: false, error: null },
 }));
 
 vi.mock('../member/recentActivityQuery', () => ({
@@ -23,7 +23,7 @@ vi.mock('../profile/useV2MemberIdentity', () => ({
   useV2MemberIdentity: () => ({ displayName: 'Amara Test', isLoading: false }),
 }));
 vi.mock('./challengeFeedQuery', () => ({
-  useV2OwnActivityShare: () => h.ownShare,
+  useV2ActivityShareState: () => h.ownShare,
   useV2PublishActivityShare: () => h.publish,
   useV2WithdrawActivityShare: () => h.withdraw,
 }));

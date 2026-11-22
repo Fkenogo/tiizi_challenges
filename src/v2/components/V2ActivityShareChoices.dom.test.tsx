@@ -10,16 +10,22 @@ import {
 
 const h = vi.hoisted(() => ({
   identity: { displayName: 'Amara Test', isLoading: false },
-  ownShare: {} as { data: unknown; isLoading: boolean },
-  publish: {} as { mutateAsync: ReturnType<typeof vi.fn>; isPending: boolean; error: unknown },
-  withdraw: {} as { mutateAsync: ReturnType<typeof vi.fn>; isPending: boolean; error: unknown },
+  shareState: {} as {
+    data: unknown;
+    isLoading: boolean;
+    isError: boolean;
+    isSuccess: boolean;
+    refetch: ReturnType<typeof vi.fn>;
+  },
+  publish: {} as { mutate: ReturnType<typeof vi.fn>; isPending: boolean; error: unknown },
+  withdraw: {} as { mutate: ReturnType<typeof vi.fn>; isPending: boolean; error: unknown },
 }));
 
 vi.mock('../profile/useV2MemberIdentity', () => ({
   useV2MemberIdentity: () => h.identity,
 }));
 vi.mock('../challenges/challengeFeedQuery', () => ({
-  useV2OwnActivityShare: () => h.ownShare,
+  useV2ActivityShareState: () => h.shareState,
   useV2PublishActivityShare: () => h.publish,
   useV2WithdrawActivityShare: () => h.withdraw,
 }));
@@ -37,10 +43,16 @@ const item: MemberRecentActivityItem = {
   challenge: { id: '00000000-0000-4000-8000-000000000002', title: 'Summer Challenge' },
 };
 
-function resetFeed(ownShareData: unknown = null) {
-  h.ownShare = { data: ownShareData, isLoading: false };
-  h.publish = { mutateAsync: vi.fn(async () => ({ withdrawn: false })), isPending: false, error: null };
-  h.withdraw = { mutateAsync: vi.fn(async () => ({ withdrawn: true })), isPending: false, error: null };
+function resetFeed(shareStateData: unknown = null, shareStateError = false) {
+  h.shareState = {
+    data: shareStateData,
+    isLoading: false,
+    isError: shareStateError,
+    isSuccess: !shareStateError,
+    refetch: vi.fn(),
+  };
+  h.publish = { mutate: vi.fn(), isPending: false, error: null };
+  h.withdraw = { mutate: vi.fn(), isPending: false, error: null };
 }
 
 afterEach(() => {
@@ -82,7 +94,7 @@ describe('V2ActivityShareChoices', () => {
     });
   });
 
-  it('previews exactly the CF-01 S1 fields, then publishes on the explicit confirm', async () => {
+  it('previews exactly the CF-01 S1 fields, then publishes a fresh keyed choice on confirm', async () => {
     resetFeed();
     render(
       <V2ActivityShareChoices
@@ -110,29 +122,27 @@ describe('V2ActivityShareChoices', () => {
     expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('activity-share-choices-title');
 
     fireEvent.click(screen.getByRole('button', { name: 'Share to Challenge Feed' }));
-    await waitFor(() => expect(h.publish.mutateAsync).toHaveBeenCalledWith(item.activityId));
-    expect(screen.getByRole('button', { name: 'Keep private and continue' })).toBeTruthy();
+    await waitFor(() => expect(h.publish.mutate).toHaveBeenCalledTimes(1));
+    const call = h.publish.mutate.mock.calls[0][0] as { activityEventId: string; clientKey: string };
+    expect(call.activityEventId).toBe(item.activityId);
+    // Every confirm is a FRESH keyed choice (retries converge server-side).
+    expect(call.clientKey).toMatch(/^[A-Za-z0-9-]{16,64}$/);
   });
 
-  it('shows the withdrawable shared state when the Activity is already shared', async () => {
+  it('shows the withdrawable shared state when the Activity is already shared', () => {
     resetFeed({
-      feedItemId: '00000000-0000-4000-8000-00000000000a',
-      kind: 'activity_share',
+      shareId: '00000000-0000-4000-8000-00000000000a',
+      challengeId: item.challenge.id,
       activityEventId: item.activityId,
-      sharerDisplayName: 'Amara Test',
-      activityName: 'Push-Up',
-      value: 25,
-      unit: 'reps',
       publishedAt: '2026-06-10T12:10:00.000Z',
-      ownShare: true,
+      withdrawn: false,
     });
-    const onKeepPrivate = vi.fn();
     render(
       <V2ActivityShareChoices
         mode="immediate"
         source={shareSourceFromHistoryItem(item)}
         challengeTitle="Strength Challenge"
-        onKeepPrivate={onKeepPrivate}
+        onKeepPrivate={vi.fn()}
       />,
     );
 
@@ -140,17 +150,51 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.queryByRole('button', { name: 'Share to Challenge Feed' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Withdraw Share' }));
-    await waitFor(() => expect(h.withdraw.mutateAsync).toHaveBeenCalledWith(item.activityId));
+    expect(h.withdraw.mutate).toHaveBeenCalledWith(item.activityId);
     // The continuation reflects that the private default no longer applies.
     expect(screen.getByRole('button', { name: 'Continue to Strength Challenge' })).toBeTruthy();
   });
 
-  it('surfaces an honest refusal when the server rejects a superseded source', () => {
+  it('never guesses an unknown Share state: an outage blocks sharing with a retry', () => {
+    resetFeed(null, true);
+    render(
+      <V2ActivityShareChoices
+        mode="immediate"
+        source={shareSourceFromHistoryItem(item)}
+        challengeTitle="Strength Challenge"
+        onKeepPrivate={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/couldn.t confirm whether this Activity is shared/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share to Challenge Feed' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(h.shareState.refetch).toHaveBeenCalled();
+  });
+
+  it('disables the private path while a Share choice is in flight', () => {
+    resetFeed();
+    h.publish.isPending = true;
+    render(
+      <V2ActivityShareChoices
+        mode="immediate"
+        source={shareSourceFromHistoryItem(item)}
+        challengeTitle="Strength Challenge"
+        onKeepPrivate={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Sharing…' }).hasAttribute('disabled')).toBe(true);
+    // The Keep-private continuation can never complete a choice the server
+    // is still processing — a finished publication is never described private.
+    expect(screen.getByRole('button', { name: /Completing your choice/ }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('surfaces honest refusals for withdrawn and reversed sources', () => {
     resetFeed();
     h.publish.error = new ApiError(
       409,
-      'source_not_current',
-      'This Activity was corrected or reversed; share the current version instead',
+      'share_withdrawn',
+      'This Share was withdrawn; confirm to share it again',
     );
     render(
       <V2ActivityShareChoices
@@ -160,7 +204,43 @@ describe('V2ActivityShareChoices', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent)
-      .toContain('This Activity was corrected or reversed. Share the current version instead.');
+      .toContain('This Share was withdrawn. Confirm again to share it.');
+    cleanup();
+
+    resetFeed();
+    h.publish.error = new ApiError(
+      409,
+      'source_reversed',
+      'This Activity was reversed and cannot be shared',
+    );
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent)
+      .toContain('This Activity was reversed and cannot be shared.');
+  });
+
+  it('uses distinct failure copy for withdrawals', () => {
+    resetFeed({
+      shareId: '00000000-0000-4000-8000-00000000000a',
+      challengeId: item.challenge.id,
+      activityEventId: item.activityId,
+      publishedAt: '2026-06-10T12:10:00.000Z',
+      withdrawn: false,
+    });
+    h.withdraw.error = new ApiError(503, 'feed_unavailable', 'Share withdrawal is unavailable');
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('Withdrawing your Share failed.');
   });
 
   it('never takes focus in share-later mode, including across refresh remounts', () => {

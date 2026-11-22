@@ -190,7 +190,7 @@ interface ShareState {
 interface FeedItem {
   feedItemId: string;
   kind: string;
-  activityEventId: string;
+  activityEventId?: string;
   sharerDisplayName: string | null;
   activityName: string;
   value: number;
@@ -199,12 +199,13 @@ interface FeedItem {
   ownShare: boolean;
 }
 
-async function publish(app: { inject: (opts: unknown) => Promise<{ statusCode: number; json: () => unknown }> }, challengeId: string, eventId: string, token = 'token-sharer') {
+let choiceSeq = 0;
+async function publish(app: { inject: (opts: unknown) => Promise<{ statusCode: number; json: () => unknown }> }, challengeId: string, eventId: string, clientKey = `cf-choice-${(choiceSeq += 1)}-0123456789abcdef`, token = 'token-sharer') {
   return app.inject({
     method: 'POST',
     url: `/api/challenges/${challengeId}/feed/activity-shares`,
     headers: { ...authHeaders(token), 'content-type': 'application/json' },
-    payload: { activityEventId: eventId },
+    payload: { activityEventId: eventId, clientKey },
   });
 }
 
@@ -341,12 +342,12 @@ describe('CF-2 S1 Activity Share publication', () => {
     const eventId = await acceptedActivity(fx, 40);
 
     // A fellow group member cannot publish the sharer's Activity.
-    const foreign = await publish(app, fx.challengeId, eventId, 'token-fellow');
+    const foreign = await publish(app, fx.challengeId, eventId, undefined, 'token-fellow');
     expect(foreign.statusCode).toBe(404);
 
     // An outsider (no Group membership) cannot publish or read; the denial
     // is indistinguishable from an unknown Challenge.
-    const outsiderPublish = await publish(app, fx.challengeId, eventId, 'token-outsider');
+    const outsiderPublish = await publish(app, fx.challengeId, eventId, undefined, 'token-outsider');
     expect(outsiderPublish.statusCode).toBe(404);
     const outsiderRead = await app.inject({
       method: 'GET',
@@ -371,7 +372,7 @@ describe('CF-2 S1 Activity Share publication', () => {
     expect(outsiderWithdraw.statusCode).toBe(404);
   });
 
-  it('hides a Share whose source Activity was corrected, and refuses superseded sources', async () => {
+  it('a corrected Activity stays shareable under its accepted identity and displays the current effective value', async () => {
     const fx = await setupFixture(next('cf-s1-corrected'));
     const db = testDb();
     const app = appFor(fx, stubAuthority(true));
@@ -385,7 +386,7 @@ describe('CF-2 S1 Activity Share publication', () => {
       'SELECT member_id, activity_kind, canonical_key FROM member_activity_events WHERE event_id = $1',
       [eventId],
     );
-    const correction = await appendCorrectionEvent(db, {
+    await appendCorrectionEvent(db, {
       member_id: String(original.rows[0].member_id),
       activity_kind: original.rows[0].activity_kind,
       canonical_key: original.rows[0].canonical_key,
@@ -398,21 +399,8 @@ describe('CF-2 S1 Activity Share publication', () => {
       correction_kind: 'correction',
     }, eventResolvers);
 
-    const feed = await app.inject({
-      method: 'GET',
-      url: `/api/challenges/${fx.challengeId}/feed`,
-      headers: authHeaders('token-fellow'),
-    });
-    expect(((feed.json() as { items: FeedItem[] }).items)).toHaveLength(0);
-
-    // Sharing the superseded source is refused honestly.
-    const stale = await publish(app, fx.challengeId, eventId);
-    expect(stale.statusCode).toBe(409);
-    expect(((stale.json() as { error: { code: string } }).error.code)).toBe('source_not_current');
-
-    // The corrected Activity is a shareable new source.
-    const corrected = await publish(app, fx.challengeId, correction.event_id);
-    expect(corrected.statusCode).toBe(200);
+    // The read resolves the CURRENT lineage head: the Share displays the
+    // corrected effective value (the same value the owner's History shows).
     const page = (await app.inject({
       method: 'GET',
       url: `/api/challenges/${fx.challengeId}/feed`,
@@ -420,8 +408,225 @@ describe('CF-2 S1 Activity Share publication', () => {
     })).json() as { items: FeedItem[] };
     expect(page.items).toHaveLength(1);
     expect(page.items[0].value).toBe(55);
-    expect(page.items[0].activityEventId).toBe(correction.event_id);
+    expect(page.items[0].activityEventId).toBeUndefined();
   });
+
+  it('a reversed Activity is never shareable and disappears from the Feed', async () => {
+    const fx = await setupFixture(next('cf-s1-reversed'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 30);
+    await publish(app, fx.challengeId, eventId);
+
+    const eventResolvers: ActivityEventResolvers = {
+      resolveKnowledgePin: async () => fx.pin,
+    };
+    const original = await db.query<{ member_id: string; activity_kind: 'fitness'; canonical_key: string }>(
+      'SELECT member_id, activity_kind, canonical_key FROM member_activity_events WHERE event_id = $1',
+      [eventId],
+    );
+    await appendCorrectionEvent(db, {
+      member_id: String(original.rows[0].member_id),
+      activity_kind: original.rows[0].activity_kind,
+      canonical_key: original.rows[0].canonical_key,
+      occurred_at: new Date('2026-06-10T12:00:00Z'),
+      occurred_day: '2026-06-10',
+      value: 20,
+      unit: 'reps',
+      client_key: next('cf-rev'),
+      supersedes_event_id: eventId,
+      correction_kind: 'reversal',
+    }, eventResolvers);
+
+    const feed = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(((feed.json() as { items: FeedItem[] }).items)).toHaveLength(0);
+
+    // A reversed Activity is refused on publish — for the original AND for
+    // a fresh application attempt of the same lineage.
+    const refused = await publish(app, fx.challengeId, eventId);
+    expect(refused.statusCode).toBe(409);
+    expect(((refused.json() as { error: { code: string } }).error.code)).toBe('source_reversed');
+  });
+
+  it('an ancestor application in another Challenge never authorizes a source', async () => {
+    const fx = await setupFixture(next('cf-s1-cross'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 40);
+
+    // A second Challenge in the same Group with the same configured Activity.
+    const second = await db.query<{ challenge_id: string }>(
+      `INSERT INTO challenges
+         (group_id, created_by_member_id, challenge_type, status, title, start_date, end_date, goal_value, goal_unit, current_config_version)
+       VALUES ($1, $2, 'collective', 'active', 'Second CF Challenge', '2026-06-01', '2026-06-30', 10, 'reps', 1)
+       RETURNING challenge_id`,
+      [fx.groupId, fx.sharerMemberId],
+    );
+    const secondId = String(second.rows[0].challenge_id);
+
+    // Publishing the first Challenge's Activity into the second Challenge is
+    // not-found: only a DIRECT application in the requested Challenge binds.
+    const cross = await publish(app, secondId, eventId);
+    expect(cross.statusCode).toBe(404);
+    const rows = await db.query<{ count: string }>(
+      'SELECT COUNT(*)::text AS count FROM challenge_feed_shares',
+    );
+    expect(rows.rows[0].count).toBe('0');
+  });
+
+  it('retries converge without reordering; a withdrawn Share needs a fresh choice', async () => {
+    const fx = await setupFixture(next('cf-s1-retry'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 9);
+    const choiceKey = next('cf-choice-retry');
+
+    const first = await publish(app, fx.challengeId, eventId, choiceKey);
+    expect(first.statusCode).toBe(200);
+    const firstState = first.json() as ShareState;
+    const firstAt = (await db.query<{ published_at: string }>(
+      'SELECT published_at FROM challenge_feed_shares WHERE share_id = $1',
+      [firstState.shareId],
+    )).rows[0].published_at;
+
+    // An ordinary retry (same choice) does not reorder the Feed.
+    const retry = await publish(app, fx.challengeId, eventId, choiceKey);
+    expect(retry.statusCode).toBe(200);
+    expect(((retry.json() as ShareState)).shareId).toBe(firstState.shareId);
+    const retryAt = (await db.query<{ published_at: string }>(
+      'SELECT published_at FROM challenge_feed_shares WHERE share_id = $1',
+      [firstState.shareId],
+    )).rows[0].published_at;
+    expect(new Date(retryAt).getTime()).toBe(new Date(firstAt).getTime());
+
+    // A repeat deliberate choice on an active Share is idempotent too.
+    const repeat = await publish(app, fx.challengeId, eventId, next('cf-choice-fresh'));
+    expect(repeat.statusCode).toBe(200);
+
+    // Withdraw, then a DELAYED RETRY of the withdrawn choice cannot undo it.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const stale = await publish(app, fx.challengeId, eventId, choiceKey);
+    expect(stale.statusCode).toBe(409);
+    expect(((stale.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+    const hidden = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    });
+    expect(((hidden.json() as { items: FeedItem[] }).items)).toHaveLength(0);
+
+    // A fresh explicit choice revives the same row with a new publication.
+    const revived = await publish(app, fx.challengeId, eventId, next('cf-choice-new'));
+    expect(revived.statusCode).toBe(200);
+    expect(((revived.json() as ShareState)).shareId).toBe(firstState.shareId);
+    const rows = await db.query<{ count: string }>(
+      'SELECT COUNT(*)::text AS count FROM challenge_feed_shares',
+    );
+    expect(rows.rows[0].count).toBe('1');
+  });
+
+  it('pages across sub-millisecond boundaries without skipping Shares', async () => {
+    const fx = await setupFixture(next('cf-s1-microseconds'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const events = [
+      await acceptedActivity(fx, 1),
+      await acceptedActivity(fx, 2),
+      await acceptedActivity(fx, 3),
+    ];
+    for (const eventId of events) await publish(app, fx.challengeId, eventId);
+    // Force two Shares to differ ONLY below millisecond precision — a JS
+    // Date cursor would collapse this boundary and skip a row.
+    await db.query(
+      `UPDATE challenge_feed_shares SET published_at = '2026-06-10T12:00:00.123456Z'::timestamptz WHERE activity_event_id = $1`,
+      [events[0]],
+    );
+    await db.query(
+      `UPDATE challenge_feed_shares SET published_at = '2026-06-10T12:00:00.123400Z'::timestamptz WHERE activity_event_id = $1`,
+      [events[1]],
+    );
+    await db.query(
+      `UPDATE challenge_feed_shares SET published_at = '2026-06-10T12:00:00.123300Z'::timestamptz WHERE activity_event_id = $1`,
+      [events[2]],
+    );
+
+    const first = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed?limit=2`,
+      headers: authHeaders('token-fellow'),
+    });
+    const page1 = first.json() as { items: FeedItem[]; nextCursor: string | null };
+    expect(page1.items).toHaveLength(2);
+    expect(page1.items[0].value).toBe(1);
+    expect(page1.items[1].value).toBe(2);
+
+    const second = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed?limit=2&cursor=${encodeURIComponent(page1.nextCursor!)}`,
+      headers: authHeaders('token-fellow'),
+    });
+    const page2 = second.json() as { items: FeedItem[] };
+    expect(page2.items).toHaveLength(1);
+    expect(page2.items[0].value).toBe(3);
+  });
+
+  it('discloses the canonical event ID only to the Share owner, and serves the owner an exact state read', async () => {
+    const fx = await setupFixture(next('cf-s1-disclosure'));
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 21);
+    await publish(app, fx.challengeId, eventId);
+
+    const fellowView = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-fellow'),
+    })).json() as { items: FeedItem[] };
+    expect(fellowView.items[0].activityEventId).toBeUndefined();
+
+    const ownView = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    expect(ownView.items[0].activityEventId).toBe(eventId);
+
+    // The owner's exact state read; another member's request is not-found.
+    const ownState = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    expect(ownState.statusCode).toBe(200);
+    expect(((ownState.json() as ShareState)).withdrawn).toBe(false);
+    const foreignState = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(foreignState.statusCode).toBe(404);
+
+    // After withdrawal the owner's read reports the hidden state.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const withdrawnState = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    expect(((withdrawnState.json() as ShareState)).withdrawn).toBe(true);
+  });
+
 
   it('publishes no Group Feed event (strict Group Feed isolation)', async () => {
     const fx = await setupFixture(next('cf-s1-isolation'));
@@ -467,8 +672,8 @@ describe('CF-2 S1 Activity Share publication', () => {
     });
     const page2 = second.json() as { items: FeedItem[]; nextCursor: string | null };
     expect(page2.items).toHaveLength(1);
-    const seen = [...page1.items, ...page2.items].map((item) => item.activityEventId).sort();
-    expect(seen).toEqual([...events].sort());
+    const seenIds = [...page1.items, ...page2.items].map((item) => item.feedItemId);
+    expect(new Set(seenIds).size).toBe(3);
     expect(page2.nextCursor).toBeNull();
 
     // The cursor is Challenge-bound: another Challenge rejects it.

@@ -6,12 +6,13 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
+import { ApiError } from '../../api/apiClient';
 import {
+  fetchActivityShareState,
   fetchChallengeFeed,
   publishActivityShare,
   withdrawActivityShare,
   type ActivityShareState,
-  type ChallengeFeedItem,
 } from '../../api/challengeFeedApi';
 
 /**
@@ -24,11 +25,13 @@ import {
 export const V2_CHALLENGE_FEED_SCOPE = 'v2-challenge-feed';
 export const V2_CHALLENGE_FEED_PREVIEW_SIZE = 5;
 export const V2_CHALLENGE_FEED_PAGE_SIZE = 20;
-/** The share panel scans one bounded page for the owner's own active Share. */
-export const V2_CHALLENGE_FEED_SHARE_SCAN_SIZE = 50;
 
 export function v2ChallengeFeedKey(uid: string | undefined, challengeId: string, limit: number) {
   return [V2_CHALLENGE_FEED_SCOPE, uid, challengeId, limit] as const;
+}
+
+export function v2ActivityShareStateKey(uid: string | undefined, challengeId: string, activityEventId: string) {
+  return [V2_CHALLENGE_FEED_SCOPE, uid, challengeId, 'share-state', activityEventId] as const;
 }
 
 export function useV2ChallengeFeedPreview(challengeId: string) {
@@ -65,44 +68,51 @@ export function useV2ChallengeFeedHistory(challengeId: string) {
   });
 }
 
-/** Find the owner's own active Share for one Activity within a bounded page. */
-export function useV2OwnActivityShare(challengeId: string, activityEventId: string) {
+/**
+ * The owner's EXACT current Share state for one source Activity, from the
+ * server's dedicated state read. `null` means the server answered and there
+ * is no Share; an error is surfaced so the UI can refuse to guess.
+ */
+export function useV2ActivityShareState(challengeId: string, activityEventId: string) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: [V2_CHALLENGE_FEED_SCOPE, user?.uid, challengeId, 'own-share', activityEventId] as const,
-    queryFn: async (): Promise<ChallengeFeedItem | null> => {
-      if (!user) throw new Error('Challenge Feed requires an authenticated member');
-      const page = await fetchChallengeFeed(
-        challengeId,
-        await user.getIdToken(),
-        { limit: V2_CHALLENGE_FEED_SHARE_SCAN_SIZE },
-      );
-      return page.items.find(
-        (item) => item.ownShare && item.activityEventId === activityEventId,
-      ) ?? null;
+    queryKey: v2ActivityShareStateKey(user?.uid, challengeId, activityEventId),
+    queryFn: async (): Promise<ActivityShareState | null> => {
+      if (!user) throw new Error('Share state requires an authenticated member');
+      try {
+        return await fetchActivityShareState(challengeId, activityEventId, await user.getIdToken());
+      } catch (error) {
+        // No Share exists (or this source is not shareable here): the owner
+        // may proceed to preview-and-confirm. Any other failure propagates so
+        // the UI never treats an outage as "not shared".
+        if (error instanceof ApiError && error.status === 404) return null;
+        throw error;
+      }
     },
     enabled: Boolean(user && challengeId && activityEventId),
   });
 }
 
-/** Invalidate every cached Challenge Feed page (publication or withdrawal). */
-export function invalidateV2ChallengeFeed(queryClient: QueryClient, challengeId: string): Promise<void> {
-  return Promise.resolve(
-    queryClient.removeQueries({ queryKey: [V2_CHALLENGE_FEED_SCOPE] }),
-  );
+/**
+ * Refetch every mounted Challenge Feed page and Share-state read after a
+ * publication or withdrawal, so the Feed view and the sharing panel agree
+ * with the server instead of showing stale cache.
+ */
+export function invalidateV2ChallengeFeed(queryClient: QueryClient): Promise<void> {
+  return queryClient.invalidateQueries({ queryKey: [V2_CHALLENGE_FEED_SCOPE] });
 }
 
-/** Publish (or idempotently confirm) the caller's own Share. */
+/** Publish (or idempotently confirm) the caller's own explicit choice. */
 export function useV2PublishActivityShare(challengeId: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (activityEventId: string): Promise<ActivityShareState> => {
+    mutationFn: async (input: { activityEventId: string; clientKey: string }): Promise<ActivityShareState> => {
       if (!user) throw new Error('Sharing requires an authenticated member');
-      return publishActivityShare(challengeId, activityEventId, await user.getIdToken());
+      return publishActivityShare(challengeId, input.activityEventId, input.clientKey, await user.getIdToken());
     },
     onSuccess: async () => {
-      await invalidateV2ChallengeFeed(queryClient, challengeId);
+      await invalidateV2ChallengeFeed(queryClient);
     },
   });
 }
@@ -112,12 +122,12 @@ export function useV2WithdrawActivityShare(challengeId: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (activityEventId: string) => {
+    mutationFn: async (activityEventId: string): Promise<ActivityShareState> => {
       if (!user) throw new Error('Withdrawing a Share requires an authenticated member');
       return withdrawActivityShare(challengeId, activityEventId, await user.getIdToken());
     },
     onSuccess: async () => {
-      await invalidateV2ChallengeFeed(queryClient, challengeId);
+      await invalidateV2ChallengeFeed(queryClient);
     },
   });
 }

@@ -17,15 +17,15 @@ vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => authState,
 }));
 const feed = vi.hoisted(() => ({
-  ownShare: { data: null, isLoading: false },
-  publish: { mutateAsync: vi.fn(async () => ({ withdrawn: false })), isPending: false, error: null },
-  withdraw: { mutateAsync: vi.fn(async () => ({ withdrawn: true })), isPending: false, error: null },
+  shareState: { data: null, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() },
+  publish: { mutate: vi.fn(), isPending: false, error: null },
+  withdraw: { mutate: vi.fn(), isPending: false, error: null },
 }));
 vi.mock('../profile/useV2MemberIdentity', () => ({
   useV2MemberIdentity: () => ({ displayName: 'Amara Test', isLoading: false }),
 }));
 vi.mock('./challengeFeedQuery', () => ({
-  useV2OwnActivityShare: () => feed.ownShare,
+  useV2ActivityShareState: () => feed.shareState,
   useV2PublishActivityShare: () => feed.publish,
   useV2WithdrawActivityShare: () => feed.withdraw,
 }));
