@@ -387,8 +387,9 @@ const revived = await publish(app, fx.challengeId, eventId, 30);
     const db = testDb();
     const app = appFor(fx, stubAuthority(true));
     const eventId = await acceptedActivity(fx, 22);
-await publish(app, fx.challengeId, eventId, 22);
 
+    // Correct BEFORE sharing: this is the UI path (Recent Activity keeps the
+    // accepted identity and displays the corrected value the member previews).
     const eventResolvers: ActivityEventResolvers = {
       resolveKnowledgePin: async () => fx.pin,
     };
@@ -408,6 +409,15 @@ await publish(app, fx.challengeId, eventId, 22);
       supersedes_event_id: eventId,
       correction_kind: 'correction',
     }, eventResolvers);
+
+    // The member previews the corrected value (55) and confirms under the
+    // accepted identity; a stale pre-correction preview is refused.
+    const stalePreview = await publish(app, fx.challengeId, eventId, 22);
+    expect(stalePreview.statusCode).toBe(409);
+    expect(((stalePreview.json() as { error: { code: string } }).error.code)).toBe('source_changed');
+
+    const published = await publish(app, fx.challengeId, eventId, 55);
+    expect(published.statusCode).toBe(200);
 
     // The read resolves the CURRENT lineage head: the Share displays the
     // corrected effective value (the same value the owner's History shows).
@@ -648,7 +658,19 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     expect(reversedState.visible).toBe(false);
     expect(reversedState.hiddenReason).toBe('reversed');
 
-    // Suppression is reported as suppression, never as a plain withdrawal.
+    // A withdrawal followed by reversal still reports REVERSAL — the more
+    // actionable reason — so the panel never offers a Share action for it.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const withdrawnThenReversed = (await app.inject({ method: 'GET', url: stateUrl, headers: authHeaders('token-sharer') })).json() as ShareState;
+    expect(withdrawnThenReversed.visible).toBe(false);
+    expect(withdrawnThenReversed.hiddenReason).toBe('reversed');
+
+    // Suppression is reported as suppression, never as a plain withdrawal
+    // reason (the earlier member withdrawal remains a truthful audit fact).
     await db.query(
       `UPDATE challenge_feed_shares SET suppressed_at = now(), suppression_reason_code = 'system_safety' WHERE member_id = $1 AND activity_event_id = $2`,
       [fx.sharerMemberId, eventId],
@@ -656,7 +678,13 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     const suppressedState = (await app.inject({ method: 'GET', url: stateUrl, headers: authHeaders('token-sharer') })).json() as ShareState;
     expect(suppressedState.visible).toBe(false);
     expect(suppressedState.hiddenReason).toBe('suppressed');
-    expect(suppressedState.withdrawn).toBe(false);
+    expect(suppressedState.withdrawn).toBe(true);
+
+    // Retention expiry hides the Share too, reported exactly.
+    await db.query(`UPDATE challenges SET ended_at = now() - interval '100 days' WHERE challenge_id = $1`, [fx.challengeId]);
+    const expiredState = (await app.inject({ method: 'GET', url: stateUrl, headers: authHeaders('token-sharer') })).json() as ShareState;
+    expect(expiredState.visible).toBe(false);
+    expect(expiredState.hiddenReason).toBe('expired');
   });
 
   it('discloses the canonical event ID only to the Share owner, and serves the owner an exact state read', async () => {

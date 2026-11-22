@@ -222,6 +222,10 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
             <p className="mt-1 text-sm text-slate-700">
               This Challenge Feed has expired.
             </p>
+          ) : source.revisionState === 'reversed' ? (
+            <p className="mt-1 text-sm text-slate-700">
+              This Activity was reversed and cannot be shared.
+            </p>
           ) : shared ? (
             <div>
               <p className="mt-1 text-sm text-emerald-800" role="status">

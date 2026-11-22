@@ -215,6 +215,19 @@ describe('V2ActivityShareChoices', () => {
     expect(document.activeElement).toBe(notice);
   });
 
+  it('offers no Share action for a reversed source, before any server state', () => {
+    resetFeed(null);
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={{ ...shareSourceFromHistoryItem(item), revisionState: 'reversed' }}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/reversed and cannot be shared/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share to Challenge Feed' })).toBeNull();
+  });
+
   it('states reversal and suppression honestly and offers no Share action for them', () => {
     resetFeed({
       shareId: '00000000-0000-4000-8000-00000000000a',

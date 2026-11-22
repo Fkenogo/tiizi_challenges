@@ -391,14 +391,17 @@ export async function readActivityShareState(
   if (!share) {
     throw new ChallengeFeedError(404, 'unknown_activity', 'Activity not found');
   }
+  // Precedence: expiry > suppression > REVERSAL > withdrawal. A reversed
+  // source is more actionable than the member's own earlier withdrawal (the
+  // panel must offer no Share action for it), so reversal outranks it.
   let hiddenReason: ActivityShareState['hiddenReason'] = null;
   if (feedExpired(endedAt, now)) hiddenReason = 'expired';
   if (hiddenReason === null && share.suppressed_at !== null) hiddenReason = 'suppressed';
-  if (hiddenReason === null && share.withdrawn_at !== null) hiddenReason = 'withdrawn';
   if (hiddenReason === null) {
     const head = await currentHead(db, activityEventId);
     if (head.correction_kind === 'reversal') hiddenReason = 'reversed';
   }
+  if (hiddenReason === null && share.withdrawn_at !== null) hiddenReason = 'withdrawn';
   return {
     shareId: String(share.share_id),
     challengeId,
@@ -438,12 +441,15 @@ async function currentHead(db: Db, eventId: string): Promise<ResolvedHead> {
   return head;
 }
 
-/** Bound the acknowledged-key history per Share: keep the newest 8. A
- * replay of a key older than that horizon would be treated as a fresh
- * choice — acceptable because a genuine delayed replay arrives within
- * seconds/minutes, while the bound keeps storage finite for a Share that
- * is repeatedly re-confirmed while already active. */
-const CHOICE_HISTORY_LIMIT = 8;
+/** Bound the acknowledged-key history per Share by TIME, not count: keys
+ * acknowledged within the last 24 hours are kept; older keys are pruned.
+ * The replay-protection horizon is therefore 24 hours — far beyond any
+ * genuine delayed retry (seconds to minutes) — while storage stays bounded
+ * by the member's own confirmation rate over one day. A key older than the
+ * horizon is treated as a new member action; the UI mints a fresh key per
+ * confirm click, and the owner's panel always reports the live Share
+ * state, so even that vanishing edge cannot hide a revival. */
+const CHOICE_HISTORY_HOURS = 24;
 
 /** Record an acknowledged publication request key for one Share row. */
 async function recordChoice(tx: Db, shareId: string, clientKey: string): Promise<void> {
@@ -456,13 +462,8 @@ async function recordChoice(tx: Db, shareId: string, clientKey: string): Promise
   await tx.query(
     `DELETE FROM challenge_feed_share_choices
       WHERE share_id = $1
-        AND client_key NOT IN (
-          SELECT client_key FROM challenge_feed_share_choices
-           WHERE share_id = $1
-           ORDER BY acknowledged_at DESC, client_key DESC
-           LIMIT $2
-        )`,
-    [shareId, CHOICE_HISTORY_LIMIT],
+        AND acknowledged_at < now() - ($2 || ' hours')::interval`,
+    [shareId, String(CHOICE_HISTORY_HOURS)],
   );
 }
 
@@ -558,6 +559,12 @@ export async function publishActivityShare(
       throw new ChallengeFeedError(404, 'unknown_activity', 'Activity not found');
     }
 
+    // Bounded convergence loop: a concurrent FIRST publication can commit
+    // between our row read and our insert; the losing request re-settles
+    // the winner's state instead of failing, so both requests converge on
+    // the same Share (Read Committed gives each iteration a fresh snapshot
+    // after the insert conflict wait).
+    for (let attempt = 0; attempt < 3; attempt += 1) {
     // Settle the existing Share-row state first (serialized against
     // withdrawal and concurrent publication by FOR UPDATE).
     const existing = await tx.query<ExistingShareRow>(
@@ -692,8 +699,10 @@ export async function publishActivityShare(
         hiddenReason: null,
       };
     }
-    // Lost a concurrent first-publication race on the same source: the
-    // state above has changed under us; the caller retries safely.
+    // No row read, none inserted: a concurrent first publication committed
+    // in between — loop once more and settle its state idempotently.
+    }
+    // Three consecutive lost races (pathological churn): fail closed.
     throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
   });
 }
