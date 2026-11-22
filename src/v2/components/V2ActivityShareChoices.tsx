@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { V2ActivityResult } from '../../api/v2ChallengeApi';
 import type {
   MemberRecentActivityItem,
@@ -70,6 +70,9 @@ function publishErrorMessage(error: unknown): string {
     if (error.code === 'source_reversed') {
       return 'This Activity was reversed and cannot be shared.';
     }
+    if (error.code === 'source_changed') {
+      return 'This Activity changed since you previewed it. Preview the current version and confirm again.';
+    }
     if (error.code === 'share_withdrawn') {
       return 'This Share was withdrawn. Confirm again to share it.';
     }
@@ -124,16 +127,33 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
   const withdraw = useV2WithdrawActivityShare(source.challengeId);
 
   const stateKnown = shareState.isSuccess;
-  const shared = stateKnown && shareState.data !== null && !shareState.data.withdrawn;
+  const state = stateKnown ? shareState.data : null;
+  const shared = state !== null && state.visible;
+  const hiddenReason = state !== null && !state.visible ? state.hiddenReason : null;
   const mutationPending = publish.isPending || withdraw.isPending;
   const publishError = publish.error;
   const withdrawError = withdraw.error;
 
+  // A withdrawal inside this panel removes the focused control; the outcome
+  // is announced and takes focus so keyboard flow continues from the panel.
+  const [withdrawnNotice, setWithdrawnNotice] = useState<string | null>(null);
+  const withdrawnNoticeRef = useRef<HTMLParagraphElement | null>(null);
+  useEffect(() => {
+    if (withdrawnNotice !== null) withdrawnNoticeRef.current?.focus({ preventScroll: true });
+  }, [withdrawnNotice]);
+
   const confirmShare = () => {
-    // A fresh explicit choice: the request key makes retries converge and
-    // lets the server refuse a delayed replay of an older choice.
+    setWithdrawnNotice(null);
+    // A fresh explicit choice, bound to exactly what the preview showed: the
+    // request key makes retries converge, and the previewed value/unit let
+    // the server refuse to publish anything the member never previewed.
     const clientKey = (globalThis.crypto?.randomUUID?.() ?? `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    publish.mutate({ activityEventId: source.activityId, clientKey });
+    publish.mutate({
+      activityEventId: source.activityId,
+      clientKey,
+      previewedValue: source.value,
+      previewedUnit: source.unit,
+    });
   };
 
   return (
@@ -165,7 +185,17 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
       <div className="mt-3 space-y-2">
         <div className="rounded-xl border border-violet-200 bg-white p-3">
           <p className="text-sm font-black text-slate-900">Challenge Feed</p>
-          {shareState.isLoading ? (
+          {withdrawnNotice !== null && (
+            <p
+              ref={withdrawnNoticeRef}
+              tabIndex={-1}
+              role="status"
+              className="mt-1 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800"
+            >
+              Your Share is withdrawn. Other members can no longer see it.
+            </p>
+          )}
+          {!stateKnown && !shareState.isError ? (
             <p className="mt-1 text-sm text-slate-600" role="status">Checking your current Share…</p>
           ) : shareState.isError ? (
             <div>
@@ -180,6 +210,18 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
                 Retry
               </V2Button>
             </div>
+          ) : hiddenReason === 'reversed' ? (
+            <p className="mt-1 text-sm text-slate-700">
+              This Activity was reversed and cannot be shared.
+            </p>
+          ) : hiddenReason === 'suppressed' ? (
+            <p className="mt-1 text-sm text-slate-700">
+              This Share was removed and cannot be republished.
+            </p>
+          ) : hiddenReason === 'expired' ? (
+            <p className="mt-1 text-sm text-slate-700">
+              This Challenge Feed has expired.
+            </p>
           ) : shared ? (
             <div>
               <p className="mt-1 text-sm text-emerald-800" role="status">
@@ -190,7 +232,12 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
               </p>
               <V2Button
                 variant="secondary"
-                onClick={() => withdraw.mutate(source.activityId)}
+                onClick={() => {
+                  setWithdrawnNotice(null);
+                  withdraw.mutate(source.activityId, {
+                    onSuccess: () => setWithdrawnNotice(source.activityId),
+                  });
+                }}
                 disabled={mutationPending}
                 className="mt-2 min-h-11"
               >

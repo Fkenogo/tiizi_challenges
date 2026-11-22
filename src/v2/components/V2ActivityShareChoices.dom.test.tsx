@@ -123,10 +123,18 @@ describe('V2ActivityShareChoices', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Share to Challenge Feed' }));
     await waitFor(() => expect(h.publish.mutate).toHaveBeenCalledTimes(1));
-    const call = h.publish.mutate.mock.calls[0][0] as { activityEventId: string; clientKey: string };
+    const call = h.publish.mutate.mock.calls[0][0] as {
+      activityEventId: string;
+      clientKey: string;
+      previewedValue: number;
+      previewedUnit: string;
+    };
     expect(call.activityEventId).toBe(item.activityId);
-    // Every confirm is a FRESH keyed choice (retries converge server-side).
+    // Every confirm is a FRESH keyed choice (retries converge server-side)…
     expect(call.clientKey).toMatch(/^[A-Za-z0-9-]{16,64}$/);
+    // …bound to exactly the value and unit the member previewed.
+    expect(call.previewedValue).toBe(25);
+    expect(call.previewedUnit).toBe('reps');
   });
 
   it('shows the withdrawable shared state when the Activity is already shared', () => {
@@ -136,6 +144,8 @@ describe('V2ActivityShareChoices', () => {
       activityEventId: item.activityId,
       publishedAt: '2026-06-10T12:10:00.000Z',
       withdrawn: false,
+      visible: true,
+      hiddenReason: null,
     });
     render(
       <V2ActivityShareChoices
@@ -150,9 +160,50 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.queryByRole('button', { name: 'Share to Challenge Feed' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Withdraw Share' }));
-    expect(h.withdraw.mutate).toHaveBeenCalledWith(item.activityId);
+    expect(h.withdraw.mutate).toHaveBeenCalledWith(item.activityId, expect.anything());
     // The continuation reflects that the private default no longer applies.
     expect(screen.getByRole('button', { name: 'Continue to Strength Challenge' })).toBeTruthy();
+  });
+
+  it('states reversal and suppression honestly and offers no Share action for them', () => {
+    resetFeed({
+      shareId: '00000000-0000-4000-8000-00000000000a',
+      challengeId: item.challenge.id,
+      activityEventId: item.activityId,
+      publishedAt: '2026-06-10T12:10:00.000Z',
+      withdrawn: false,
+      visible: false,
+      hiddenReason: 'reversed',
+    });
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/reversed and cannot be shared/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share to Challenge Feed' })).toBeNull();
+    cleanup();
+
+    resetFeed({
+      shareId: '00000000-0000-4000-8000-00000000000a',
+      challengeId: item.challenge.id,
+      activityEventId: item.activityId,
+      publishedAt: '2026-06-10T12:10:00.000Z',
+      withdrawn: false,
+      visible: false,
+      hiddenReason: 'suppressed',
+    });
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/removed and cannot be republished/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share to Challenge Feed' })).toBeNull();
   });
 
   it('never guesses an unknown Share state: an outage blocks sharing with a retry', () => {
@@ -189,7 +240,7 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.getByRole('button', { name: /Completing your choice/ }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('surfaces honest refusals for withdrawn and reversed sources', () => {
+  it('surfaces honest refusals for withdrawn, reversed and changed sources', () => {
     resetFeed();
     h.publish.error = new ApiError(
       409,
@@ -222,6 +273,23 @@ describe('V2ActivityShareChoices', () => {
     );
     expect(screen.getByRole('alert').textContent)
       .toContain('This Activity was reversed and cannot be shared.');
+    cleanup();
+
+    resetFeed();
+    h.publish.error = new ApiError(
+      409,
+      'source_changed',
+      'This Activity changed since you previewed it; preview the current version and confirm again',
+    );
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent)
+      .toContain('This Activity changed since you previewed it.');
   });
 
   it('uses distinct failure copy for withdrawals', () => {
@@ -231,6 +299,8 @@ describe('V2ActivityShareChoices', () => {
       activityEventId: item.activityId,
       publishedAt: '2026-06-10T12:10:00.000Z',
       withdrawn: false,
+      visible: true,
+      hiddenReason: null,
     });
     h.withdraw.error = new ApiError(503, 'feed_unavailable', 'Share withdrawal is unavailable');
     render(

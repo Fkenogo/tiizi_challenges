@@ -32,7 +32,9 @@ CREATE TABLE challenge_feed_shares (
   -- The explicit member choice that produced the current active Share.
   -- Retries of the SAME choice carry the same key and converge without
   -- re-publishing; a NEW choice mints a new key. A delayed retry of an
-  -- earlier choice can therefore never silently undo a later withdrawal.
+  -- earlier acknowledged choice can never silently undo a later withdrawal
+  -- (the full acknowledged-key history lives in
+  -- challenge_feed_share_choices below).
   last_publish_key TEXT,
   -- Withdrawal by the sharer hides the Share (CF-01 §6.1): canonical
   -- Activity evidence, score, progress and results are never altered.
@@ -61,3 +63,15 @@ CREATE UNIQUE INDEX challenge_feed_shares_active_uq
 CREATE INDEX challenge_feed_shares_challenge_order_idx
   ON challenge_feed_shares (challenge_id, published_at DESC, share_id DESC)
   WHERE withdrawn_at IS NULL AND suppressed_at IS NULL;
+
+-- Every acknowledged publication request key, per Share row. Publication
+-- replays are refused against this history: a request key that was EVER
+-- acknowledged while the Share was active can never silently re-publish
+-- the Share after a later withdrawal — only a genuinely fresh choice key
+-- (minted by a new explicit confirm) revives it.
+CREATE TABLE challenge_feed_share_choices (
+  share_id UUID NOT NULL,
+  client_key TEXT NOT NULL,
+  acknowledged_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT challenge_feed_share_choices_pk PRIMARY KEY (share_id, client_key)
+);

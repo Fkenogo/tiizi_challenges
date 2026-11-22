@@ -89,7 +89,13 @@ export interface ActivityShareState {
   challengeId: string;
   activityEventId: string;
   publishedAt: string;
+  /** The member's own withdrawal action (audit fact, never inferred). */
   withdrawn: boolean;
+  /** Whether the Share is currently visible in the Feed, resolved at read
+   * time from the same truth the Feed read applies. */
+  visible: boolean;
+  /** Why a hidden Share is hidden; null while visible. */
+  hiddenReason: 'withdrawn' | 'suppressed' | 'reversed' | 'expired' | null;
 }
 
 export class ChallengeFeedError extends Error {
@@ -355,21 +361,26 @@ export async function getChallengeFeedPage(
   return { challengeId, items, nextCursor };
 }
 
-/** The owner's exact current Share state for one source Activity. */
+/** The owner's exact current Share state for one source Activity. The
+ * visibility verdict applies the same truth the Feed read applies — a
+ * reversed source or an expired Feed is honestly reported hidden, never
+ * presented as an active Share. */
 export async function readActivityShareState(
   db: Db,
   authority: GroupMembershipAuthority,
   memberId: string,
   challengeId: string,
   activityEventId: string,
+  options: { now?: Date } = {},
 ): Promise<ActivityShareState> {
+  const now = options.now ?? new Date();
   if (!UUID_RE.test(challengeId)) {
     throw new ChallengeFeedError(400, 'invalid_challenge_id', 'challengeId must be a Tiizi challenge UUID');
   }
   if (!UUID_RE.test(activityEventId)) {
     throw new ChallengeFeedError(400, 'invalid_activity_id', 'activityEventId must be a Tiizi Activity UUID');
   }
-  await requireFeedAudience(db, authority, challengeId, memberId);
+  const { endedAt } = await requireFeedAudience(db, authority, challengeId, memberId);
   const found = await db.query<ExistingShareRow>(
     `SELECT share_id, published_at, withdrawn_at, suppressed_at, last_publish_key
        FROM challenge_feed_shares
@@ -380,31 +391,86 @@ export async function readActivityShareState(
   if (!share) {
     throw new ChallengeFeedError(404, 'unknown_activity', 'Activity not found');
   }
+  let hiddenReason: ActivityShareState['hiddenReason'] = null;
+  if (feedExpired(endedAt, now)) hiddenReason = 'expired';
+  if (hiddenReason === null && share.suppressed_at !== null) hiddenReason = 'suppressed';
+  if (hiddenReason === null && share.withdrawn_at !== null) hiddenReason = 'withdrawn';
+  if (hiddenReason === null) {
+    const head = await currentHead(db, activityEventId);
+    if (head.correction_kind === 'reversal') hiddenReason = 'reversed';
+  }
   return {
     shareId: String(share.share_id),
     challengeId,
     activityEventId,
     publishedAt: new Date(share.published_at).toISOString(),
-    withdrawn: share.withdrawn_at !== null || share.suppressed_at !== null,
+    withdrawn: share.withdrawn_at !== null,
+    visible: hiddenReason === null,
+    hiddenReason,
   };
 }
 
+interface ResolvedHead extends HeadRow {
+  event_id: string;
+  status: string;
+  value: number;
+  unit: string;
+}
+
 /** Resolve the current lineage head of an Activity (single chain: the ledger
- * forbids superseding an already-superseded event). Reversal at the head
- * means the Activity is not shareable. */
-async function currentHead(db: Db, eventId: string): Promise<HeadRow> {
-  const result = await db.query<HeadRow>(
+ * forbids superseding an already-superseded event). */
+async function currentHead(db: Db, eventId: string): Promise<ResolvedHead> {
+  const result = await db.query<ResolvedHead>(
     `WITH RECURSIVE chain AS (
-       SELECT event_id, correction_kind, supersedes_event_id, 0 AS depth
+       SELECT event_id, correction_kind, status, value, unit, supersedes_event_id, 0 AS depth
          FROM member_activity_events
         WHERE event_id = $1
        UNION ALL
-       SELECT c.event_id, c.correction_kind, c.supersedes_event_id, chain.depth + 1
+       SELECT c.event_id, c.correction_kind, c.status, c.value, c.unit, c.supersedes_event_id, chain.depth + 1
          FROM chain
          JOIN member_activity_events c ON c.supersedes_event_id = chain.event_id
      )
-     SELECT correction_kind FROM chain ORDER BY depth DESC LIMIT 1`,
+     SELECT event_id, correction_kind, status, value, unit FROM chain ORDER BY depth DESC LIMIT 1`,
     [eventId],
+  );
+  const head = result.rows[0];
+  if (!head) throw new ChallengeFeedError(404, 'unknown_activity', 'Activity not found');
+  return head;
+}
+
+/** Record an acknowledged publication request key for one Share row. */
+async function recordChoice(tx: Db, shareId: string, clientKey: string): Promise<void> {
+  await tx.query(
+    `INSERT INTO challenge_feed_share_choices (share_id, client_key)
+     VALUES ($1, $2)
+     ON CONFLICT (share_id, client_key) DO NOTHING`,
+    [shareId, clientKey],
+  );
+}
+
+/** Whether this request key was EVER acknowledged for the Share row. */
+async function choiceWasAcknowledged(tx: Db, shareId: string, clientKey: string): Promise<boolean> {
+  const found = await tx.query<{ present: boolean }>(
+    `SELECT TRUE AS present FROM challenge_feed_share_choices
+      WHERE share_id = $1 AND client_key = $2`,
+    [shareId, clientKey],
+  );
+  return found.rows.length > 0;
+}
+
+/**
+ * Lock the lineage HEAD row FOR SHARE. The ledger's correction trigger must
+ * UPDATE the superseded parent row when any new correction/reversal commits,
+ * so holding this lock keeps the resolved head stable through the caller's
+ * transaction — including heads reached through earlier corrections.
+ */
+async function lockHead(db: Db, headEventId: string): Promise<ResolvedHead> {
+  const result = await db.query<ResolvedHead>(
+    `SELECT event_id, correction_kind, status, value, unit
+       FROM member_activity_events
+      WHERE event_id = $1
+      FOR SHARE`,
+    [headEventId],
   );
   const head = result.rows[0];
   if (!head) throw new ChallengeFeedError(404, 'unknown_activity', 'Activity not found');
@@ -422,9 +488,10 @@ export async function publishActivityShare(
   memberId: string,
   challengeId: string,
   activityEventId: string,
-  clientKey: string,
+  input: { clientKey: string; previewedValue: number; previewedUnit: string },
   options: { now?: Date } = {},
 ): Promise<ActivityShareState> {
+  const { clientKey, previewedValue, previewedUnit } = input;
   const now = options.now ?? new Date();
   if (!UUID_RE.test(challengeId)) {
     throw new ChallengeFeedError(400, 'invalid_challenge_id', 'challengeId must be a Tiizi challenge UUID');
@@ -468,12 +535,28 @@ export async function publishActivityShare(
       throw new ChallengeFeedError(404, 'unknown_activity', 'Activity not found');
     }
 
-    const head = await currentHead(tx, activityEventId);
+    let head = await currentHead(tx, activityEventId);
+    // Hold the head row so a correction/reversal committed concurrently
+    // (whose ledger trigger must update this row) cannot slip between
+    // validation and the Share write — for the accepted event AND for any
+    // head reached through earlier corrections.
+    const locked = await lockHead(tx, head.event_id);
+    head = locked;
     if (head.correction_kind === 'reversal') {
       throw new ChallengeFeedError(
         409,
         'source_reversed',
         'This Activity was reversed and cannot be shared',
+      );
+    }
+    // The member confirmed exactly what the preview showed. If a correction
+    // changed the effective value after the preview opened, refuse: no
+    // value the member never previewed is ever published.
+    if (Number(head.value) !== previewedValue || String(head.unit) !== previewedUnit) {
+      throw new ChallengeFeedError(
+        409,
+        'source_changed',
+        'This Activity changed since you previewed it; preview the current version and confirm again',
       );
     }
 
@@ -487,12 +570,15 @@ export async function publishActivityShare(
     );
     const fresh = inserted.rows[0];
     if (fresh) {
+      await recordChoice(tx, String(fresh.share_id), clientKey);
       return {
         shareId: String(fresh.share_id),
         challengeId,
         activityEventId,
         publishedAt: new Date(fresh.published_at).toISOString(),
         withdrawn: false,
+        visible: true,
+        hiddenReason: null,
       };
     }
 
@@ -515,16 +601,28 @@ export async function publishActivityShare(
     if (active) {
       // Already shared: idempotent for both a retry and a repeat deliberate
       // choice — the existing Share is returned unchanged, never reordered.
+      // EVERY acknowledged key is recorded so a DELAYED REPLAY of any
+      // acknowledged request, arriving after a later withdrawal, is refused
+      // as stale instead of silently re-publishing.
+      await recordChoice(tx, String(share.share_id), clientKey);
+      if (share.last_publish_key !== clientKey) {
+        await tx.query(
+          `UPDATE challenge_feed_shares SET last_publish_key = $2 WHERE share_id = $1`,
+          [String(share.share_id), clientKey],
+        );
+      }
       return {
         shareId: String(share.share_id),
         challengeId,
         activityEventId,
         publishedAt: new Date(share.published_at).toISOString(),
         withdrawn: false,
+        visible: true,
+        hiddenReason: null,
       };
     }
-    if (share.last_publish_key === clientKey) {
-      // A delayed retry of the choice the member has since withdrawn can
+    if (await choiceWasAcknowledged(tx, String(share.share_id), clientKey)) {
+      // A delayed retry of ANY choice the member has since withdrawn can
       // never silently undo that withdrawal.
       throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
     }
@@ -540,12 +638,15 @@ export async function publishActivityShare(
     if (!back) {
       throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
     }
+    await recordChoice(tx, String(back.share_id), clientKey);
     return {
       shareId: String(back.share_id),
       challengeId,
       activityEventId,
       publishedAt: new Date(back.published_at).toISOString(),
       withdrawn: false,
+      visible: true,
+      hiddenReason: null,
     };
   });
 }
@@ -585,6 +686,8 @@ export async function withdrawActivityShare(
     activityEventId,
     publishedAt: new Date(share.published_at).toISOString(),
     withdrawn: true,
+    visible: false,
+    hiddenReason: 'withdrawn',
   };
 }
 
@@ -628,17 +731,21 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
   };
   const activityShareBodySchema = {
     type: 'object',
-    required: ['activityEventId', 'clientKey'],
+    required: ['activityEventId', 'clientKey', 'previewedValue', 'previewedUnit'],
     additionalProperties: false,
     properties: {
       activityEventId: { type: 'string', format: 'uuid' },
       /** Request-scoped choice key (UI-minted UUID): retries converge. */
       clientKey: { type: 'string', minLength: 16, maxLength: 64 },
+      /** The value/unit exactly as shown in the member's preview; the
+       * server refuses to publish a value the member never previewed. */
+      previewedValue: { type: 'number', minimum: 0 },
+      previewedUnit: { type: 'string', minLength: 1, maxLength: 40 },
     },
   };
   const shareStateResponseSchema = {
     type: 'object',
-    required: ['shareId', 'challengeId', 'activityEventId', 'publishedAt', 'withdrawn'],
+    required: ['shareId', 'challengeId', 'activityEventId', 'publishedAt', 'withdrawn', 'visible', 'hiddenReason'],
     additionalProperties: false,
     properties: {
       shareId: { type: 'string', format: 'uuid' },
@@ -646,6 +753,8 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
       activityEventId: { type: 'string', format: 'uuid' },
       publishedAt: { type: 'string', format: 'date-time' },
       withdrawn: { type: 'boolean' },
+      visible: { type: 'boolean' },
+      hiddenReason: { anyOf: [{ type: 'string', enum: ['withdrawn', 'suppressed', 'reversed', 'expired'] }, { type: 'null' }] },
     },
   };
 
@@ -717,6 +826,7 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
     const authority = requireAuthority(deps);
     return feedRoute(() => readActivityShareState(
       db, authority, member.memberId, params.challengeId, params.activityEventId,
+      { now: deps.now?.() },
     ), 'Share state authority is unavailable');
   });
 
@@ -729,10 +839,11 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
   }, async (request) => {
     const member = authenticatedMember(request);
     const params = request.params as { challengeId: string };
-    const body = request.body as { activityEventId: string; clientKey: string };
+    const body = request.body as { activityEventId: string; clientKey: string; previewedValue: number; previewedUnit: string };
     const authority = requireAuthority(deps);
     return feedRoute(() => publishActivityShare(
-      db, authority, member.memberId, params.challengeId, body.activityEventId, body.clientKey,
+      db, authority, member.memberId, params.challengeId, body.activityEventId,
+      { clientKey: body.clientKey, previewedValue: body.previewedValue, previewedUnit: body.previewedUnit },
       { now: deps.now?.() },
     ), 'Share publication is unavailable');
   });

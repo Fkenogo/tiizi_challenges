@@ -82,10 +82,13 @@ export function useV2ActivityShareState(challengeId: string, activityEventId: st
       try {
         return await fetchActivityShareState(challengeId, activityEventId, await user.getIdToken());
       } catch (error) {
-        // No Share exists (or this source is not shareable here): the owner
-        // may proceed to preview-and-confirm. Any other failure propagates so
-        // the UI never treats an outage as "not shared".
-        if (error instanceof ApiError && error.status === 404) return null;
+        // "No Share row exists for this owner" is the ONLY 404 that means
+        // "not shared" — its code is unknown_activity. An audience denial
+        // (unknown_challenge) or any outage propagates so the UI never
+        // guesses a hidden state as unshared.
+        if (error instanceof ApiError && error.status === 404 && error.code === 'unknown_activity') {
+          return null;
+        }
         throw error;
       }
     },
@@ -99,6 +102,10 @@ export function useV2ActivityShareState(challengeId: string, activityEventId: st
  * with the server instead of showing stale cache.
  */
 export function invalidateV2ChallengeFeed(queryClient: QueryClient): Promise<void> {
+  // Cancel any in-flight reads first: an initial fetch started before a
+  // mutation would otherwise land afterwards and be marked fresh, leaving
+  // the pre-mutation response in place.
+  void queryClient.cancelQueries({ queryKey: [V2_CHALLENGE_FEED_SCOPE] });
   return queryClient.invalidateQueries({ queryKey: [V2_CHALLENGE_FEED_SCOPE] });
 }
 
@@ -107,9 +114,14 @@ export function useV2PublishActivityShare(challengeId: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { activityEventId: string; clientKey: string }): Promise<ActivityShareState> => {
+    mutationFn: async (input: {
+      activityEventId: string;
+      clientKey: string;
+      previewedValue: number;
+      previewedUnit: string;
+    }): Promise<ActivityShareState> => {
       if (!user) throw new Error('Sharing requires an authenticated member');
-      return publishActivityShare(challengeId, input.activityEventId, input.clientKey, await user.getIdToken());
+      return publishActivityShare(challengeId, input, await user.getIdToken());
     },
     onSuccess: async () => {
       await invalidateV2ChallengeFeed(queryClient);

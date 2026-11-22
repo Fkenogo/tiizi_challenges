@@ -39,7 +39,12 @@ export interface ActivityShareState {
   challengeId: string;
   activityEventId: string;
   publishedAt: string;
+  /** The member's own withdrawal action (audit fact, never inferred). */
   withdrawn: boolean;
+  /** Whether the Share is currently visible in the Feed (read-time truth). */
+  visible: boolean;
+  /** Why a hidden Share is hidden; null while visible. */
+  hiddenReason: 'withdrawn' | 'suppressed' | 'reversed' | 'expired' | null;
 }
 
 export interface ChallengeFeedPageQuery {
@@ -76,13 +81,19 @@ export function fetchActivityShareState(
 
 export function publishActivityShare(
   challengeId: string,
-  activityEventId: string,
-  clientKey: string,
+  input: {
+    activityEventId: string;
+    clientKey: string;
+    /** The value/unit exactly as shown in the preview; the server refuses
+     * to publish a value the member never previewed. */
+    previewedValue: number;
+    previewedUnit: string;
+  },
   bearerToken: string,
 ): Promise<ActivityShareState> {
   return apiFetch<ActivityShareState>(
     apiPath(`/challenges/${encodeURIComponent(challengeId)}/feed/activity-shares`),
-    { method: 'POST', bearerToken, body: { activityEventId, clientKey } },
+    { method: 'POST', bearerToken, body: input },
   );
 }
 
