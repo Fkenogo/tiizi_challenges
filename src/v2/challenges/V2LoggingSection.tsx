@@ -5,7 +5,12 @@ import {
   mapV2ApiError,
   newClientKey,
 } from '../../services/v2ActivityPayload';
-import { V2ActivityShareChoices, shareSourceFromAcceptedActivity, type V2ActivityShareSource } from '../components/V2ActivityShareChoices';
+import {
+  V2ActivityShareChoices,
+  shareSourceFromAcceptedActivity,
+  type V2ActivityShareSource,
+  type V2ShareOutcome,
+} from '../components/V2ActivityShareChoices';
 import { V2Button, V2Field, V2Select, V2Sheet, V2TextInput } from '../components/V2Primitives';
 import { useLogActivityV2 } from './useChallengeCreation';
 import { useAuth } from '../../hooks/useAuth';
@@ -247,23 +252,40 @@ export function V2LogActivityForm({
   // Accepted outcome: always rendered once received, even when the
   // Challenge has since ended. New-entry controls appear ONLY while the
   // current read still permits logging.
+  //
+  // Visual authority: docs/ui-reference/log_activity/
+  // activity_recorded_confirmation.html (Founder direction, 2026-11-22):
+  // clean white sheet, emphasized Recorded card with an emerald check,
+  // the exact server-accepted copy in a compact points/day pill, a dark
+  // Log another button and the Tiizi-orange Done button.
   if (showAccepted && accepted) {
     return (
       <div role="status">
-        <p className="text-sm font-black text-slate-900">
-          {accepted.duplicate ? 'Already recorded.' : 'Recorded.'}
-        </p>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
-          {accepted.value} {accepted.unit} counted for this Challenge.
-        </p>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
-          Points awarded: {accepted.pointsAwarded} · Day: {accepted.occurredDay}
-        </p>
-        {accepted.duplicate && (
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            No duplicate was created.
-          </p>
-        )}
+        <div className="rounded-2xl border border-slate-200/90 bg-slate-50 p-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700" aria-hidden="true">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-black tracking-tight text-slate-900">
+              {accepted.duplicate ? 'Already recorded.' : 'Recorded.'}
+            </h2>
+          </div>
+          <div className="mt-2.5 space-y-1.5 pl-10">
+            <p className="text-sm font-bold leading-snug text-slate-800">
+              {accepted.value} {accepted.unit} counted for this Challenge.
+            </p>
+            <div className="inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+              <span>Points awarded: <strong className="text-slate-900">{accepted.pointsAwarded}</strong></span>
+              <span className="text-slate-300" aria-hidden="true">&middot;</span>
+              <span>Day: <strong className="text-slate-900">{accepted.occurredDay}</strong></span>
+            </div>
+            {accepted.duplicate && (
+              <p className="text-xs font-semibold text-slate-500">No duplicate was created.</p>
+            )}
+          </div>
+        </div>
         {showSupportAfterAccepted && !accepted.duplicate && (
           <section aria-label="Optional support opportunity" className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
             <h2 className="text-sm font-bold">Optional support</h2>
@@ -279,20 +301,25 @@ export function V2LogActivityForm({
           </section>
         )}
         {!allowNewEntry && (
-          <p className="mt-1 text-sm leading-6 text-slate-600">
+          <p className="mt-3 text-sm leading-6 text-slate-600">
             This Challenge is no longer open for new entries.
           </p>
         )}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {allowNewEntry && (
-            <V2Button variant="secondary" onClick={startFreshEntry}>
-              Log another
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {allowNewEntry ? (
+            <V2Button variant="dark" onClick={startFreshEntry}>
+              <span className="flex items-center justify-center gap-1.5">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Log another
+              </span>
             </V2Button>
+          ) : (
+            <span />
           )}
           {onClose && (
-            <V2Button onClick={onClose}>
-              Done
-            </V2Button>
+            <V2Button onClick={onClose}>Done</V2Button>
           )}
         </div>
       </div>
@@ -456,7 +483,7 @@ export function V2LogActivityDialog({
   detail: V2ChallengeDetail;
   open: boolean;
   onClose: () => void;
-  onKeepPrivate?: () => void;
+  onKeepPrivate?: (outcome?: V2ShareOutcome) => void;
 }) {
   const { user } = useAuth();
   const authUid = user?.uid ?? null;
@@ -482,9 +509,9 @@ export function V2LogActivityDialog({
     setShareSourceState(null);
   }, [authUid]);
 
-  const continuePrivate = () => {
+  const continuePrivate = (outcome?: V2ShareOutcome) => {
     onClose();
-    onKeepPrivate?.();
+    onKeepPrivate?.(outcome);
   };
 
   return (

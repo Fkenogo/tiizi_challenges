@@ -152,7 +152,7 @@ export function V2Button({
   children: React.ReactNode;
   onClick?: () => void;
   type?: 'button' | 'submit';
-  variant?: 'primary' | 'secondary' | 'ghost' | 'success';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'success' | 'dark';
   disabled?: boolean;
   className?: string;
 }) {
@@ -161,9 +161,11 @@ export function V2Button({
       ? 'bg-primary text-white hover:brightness-95'
       : variant === 'success'
         ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-        : variant === 'secondary'
-          ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
-          : 'text-slate-600 hover:bg-slate-100';
+        : variant === 'dark'
+          ? 'bg-slate-900 text-white hover:bg-slate-800'
+          : variant === 'secondary'
+            ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+            : 'text-slate-600 hover:bg-slate-100';
   return (
     <button
       type={type}

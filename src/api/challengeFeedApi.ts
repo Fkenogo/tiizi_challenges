@@ -19,6 +19,10 @@ export interface ChallengeFeedItem {
   unit: string;
   publishedAt: string;
   ownShare: boolean;
+  /** Aggregate Kudos count, visible to every Feed viewer (CF-01 §6.2). */
+  kudosCount: number;
+  /** Whether the VIEWER's own Kudos is active on this entry. */
+  viewerKudos: boolean;
 }
 
 export interface ChallengeFeedPage {
@@ -104,6 +108,36 @@ export function withdrawActivityShare(
 ): Promise<ActivityShareState> {
   return apiFetch<ActivityShareState>(
     apiPath(`/challenges/${encodeURIComponent(challengeId)}/feed/activity-shares/${encodeURIComponent(activityEventId)}`),
+    { method: 'DELETE', bearerToken },
+  );
+}
+
+export interface KudosState {
+  feedItemId: string;
+  kudosCount: number;
+  viewerKudos: boolean;
+}
+
+/** CF-01 §6.2 — add the member's single Kudos to a visible entry (idempotent). */
+export function addChallengeFeedKudos(
+  challengeId: string,
+  feedItemId: string,
+  bearerToken: string,
+): Promise<KudosState> {
+  return apiFetch<KudosState>(
+    apiPath(`/challenges/${encodeURIComponent(challengeId)}/feed/entries/${encodeURIComponent(feedItemId)}/kudos`),
+    { method: 'POST', bearerToken },
+  );
+}
+
+/** CF-01 §6.2 — remove the member's Kudos (idempotent; never deletes truth). */
+export function removeChallengeFeedKudos(
+  challengeId: string,
+  feedItemId: string,
+  bearerToken: string,
+): Promise<KudosState> {
+  return apiFetch<KudosState>(
+    apiPath(`/challenges/${encodeURIComponent(challengeId)}/feed/entries/${encodeURIComponent(feedItemId)}/kudos`),
     { method: 'DELETE', bearerToken },
   );
 }

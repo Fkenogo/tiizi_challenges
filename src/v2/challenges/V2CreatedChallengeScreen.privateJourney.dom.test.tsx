@@ -34,7 +34,7 @@ vi.mock('./V2LoggingSection', () => ({
   V2LogActivityDialog: ({ open, onClose, onKeepPrivate }: {
     open: boolean;
     onClose: () => void;
-    onKeepPrivate?: () => void;
+    onKeepPrivate?: (outcome?: { shared?: boolean; withdrawn?: boolean }) => void;
   }) => open ? (
     <div role="dialog" aria-label="Activity privacy choice">
       <button type="button" onClick={() => { onClose(); onKeepPrivate?.(); }}>Keep private</button>
@@ -100,7 +100,11 @@ describe('Challenge Details post-log private journey', () => {
 
     expect(h.navigate).toHaveBeenCalledWith(
       '/v2/challenges/challenge-1?via=group#activity',
-      { replace: true, state: originState },
+      expect.objectContaining({ replace: true }),
     );
+    // The plain Keep-private return carries no share toast.
+    const passedState = h.navigate.mock.calls[0][1].state as Record<string, unknown>;
+    expect(passedState.shareAction).toBeUndefined();
+    expect(passedState.source).toBe(originState.source);
   });
 });

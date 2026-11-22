@@ -371,7 +371,10 @@ export function V2TodayScreen() {
         <TodayLogActivity
           challengeId={loggingChallengeId}
           onClose={() => setLoggingChallengeId(null)}
-          onKeepPrivate={() => navigate(`/v2/challenges/${encodeURIComponent(loggingChallengeId)}`)}
+          onKeepPrivate={(outcome) => navigate(
+            `/v2/challenges/${encodeURIComponent(loggingChallengeId)}`,
+            { state: outcome?.shared ? { shareAction: 'shared' } : outcome?.withdrawn ? { shareAction: 'withdrawn' } : {} },
+          )}
         />
       )}
     </V2Page>
@@ -391,7 +394,7 @@ function TodayLogActivity({
 }: {
   challengeId: string;
   onClose: () => void;
-  onKeepPrivate: () => void;
+  onKeepPrivate: (outcome?: { shared?: boolean; withdrawn?: boolean }) => void;
 }) {
   const detail = useChallengeDetailV2(challengeId);
   const data = detail.data;

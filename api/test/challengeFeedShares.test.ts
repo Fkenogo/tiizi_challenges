@@ -38,7 +38,7 @@ const CURSOR_SECRET = 'a'.repeat(64);
 beforeEach(async () => {
   process.env.TIIZI_CHALLENGE_FEED_CURSOR_SECRET = CURSOR_SECRET;
   await testDb().query(
-    'TRUNCATE challenge_feed_share_choices, challenge_feed_shares, group_feed_projection_actions, group_feed_projection, group_feed_outbox, challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
+    'TRUNCATE challenge_feed_kudos, challenge_feed_share_choices, challenge_feed_shares, group_feed_projection_actions, group_feed_projection, group_feed_outbox, challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -193,6 +193,8 @@ interface FeedItem {
   feedItemId: string;
   kind: string;
   activityEventId?: string;
+  kudosCount: number;
+  viewerKudos: boolean;
   sharerDisplayName: string | null;
   activityName: string;
   value: number;
@@ -622,6 +624,92 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     const page2 = second.json() as { items: FeedItem[] };
     expect(page2.items).toHaveLength(1);
     expect(page2.items[0].value).toBe(3);
+  });
+
+  it('lets an eligible member toggle the single Kudos type on a visible entry', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos'));
+    const db = testDb();
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 24);
+    await publish(app, fx.challengeId, eventId, 24);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+
+    // Add (idempotent), read back through the Feed, then remove.
+    const add = await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(add.statusCode).toBe(200);
+    const first = add.json() as { kudosCount: number; viewerKudos: boolean };
+    expect(first.viewerKudos).toBe(true);
+    expect(first.kudosCount).toBe(1);
+
+    const addAgain = await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(addAgain.statusCode).toBe(200);
+    expect((addAgain.json() as { kudosCount: number }).kudosCount).toBe(1);
+
+    const feedWithKudos = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-fellow'),
+    })).json() as { items: FeedItem[] };
+    expect(feedWithKudos.items[0].kudosCount).toBe(1);
+    expect(feedWithKudos.items[0].viewerKudos).toBe(true);
+
+    const remove = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(remove.statusCode).toBe(200);
+    expect((remove.json() as { viewerKudos: boolean }).viewerKudos).toBe(false);
+    expect((remove.json() as { kudosCount: number }).kudosCount).toBe(0);
+
+    // Removal never touches the Share or the canonical Activity.
+    const shares = await db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM challenge_feed_shares');
+    expect(shares.rows[0].count).toBe('1');
+  });
+
+  it('refuses self-Kudos, denies non-members, and hides Kudos on withdrawn entries', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos-guards'));
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 26);
+    await publish(app, fx.challengeId, eventId, 26);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+    const kudosUrl = `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`;
+
+    // No self-Kudos (CF-01 §6.2).
+    const self = await app.inject({ method: 'POST', url: kudosUrl, headers: authHeaders('token-sharer') });
+    expect(self.statusCode).toBe(409);
+    expect(((self.json() as { error: { code: string } }).error.code)).toBe('self_kudos');
+
+    // An outsider with no Group membership is denied indistinguishably.
+    const outsider = await app.inject({ method: 'POST', url: kudosUrl, headers: authHeaders('token-outsider') });
+    expect(outsider.statusCode).toBe(404);
+
+    // A withdrawn entry is no longer Kudos-mutable.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const withdrawn = await app.inject({ method: 'POST', url: kudosUrl, headers: authHeaders('token-fellow') });
+    expect(withdrawn.statusCode).toBe(404);
   });
 
   it('serves the owner a state read that reports reversal, suppression and expiry honestly', async () => {

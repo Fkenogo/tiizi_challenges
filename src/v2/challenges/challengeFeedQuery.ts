@@ -8,11 +8,14 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError } from '../../api/apiClient';
 import {
+  addChallengeFeedKudos,
   fetchActivityShareState,
   fetchChallengeFeed,
   publishActivityShare,
+  removeChallengeFeedKudos,
   withdrawActivityShare,
   type ActivityShareState,
+  type KudosState,
 } from '../../api/challengeFeedApi';
 
 /**
@@ -137,6 +140,28 @@ export function useV2WithdrawActivityShare(challengeId: string) {
     mutationFn: async (activityEventId: string): Promise<ActivityShareState> => {
       if (!user) throw new Error('Withdrawing a Share requires an authenticated member');
       return withdrawActivityShare(challengeId, activityEventId, await user.getIdToken());
+    },
+    onSuccess: async () => {
+      await invalidateV2ChallengeFeed(queryClient);
+    },
+  });
+}
+
+/**
+ * CF-01 §6.2 — toggle the member's single Kudos on a visible entry. The
+ * mutation writes through the same audience-predicated server contract and
+ * refetches the mounted Feed pages so counts and viewer state stay true.
+ */
+export function useV2ToggleKudos(challengeId: string) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { feedItemId: string; active: boolean }): Promise<KudosState> => {
+      if (!user) throw new Error('Kudos requires an authenticated member');
+      const token = await user.getIdToken();
+      return input.active
+        ? removeChallengeFeedKudos(challengeId, input.feedItemId, token)
+        : addChallengeFeedKudos(challengeId, input.feedItemId, token);
     },
     onSuccess: async () => {
       await invalidateV2ChallengeFeed(queryClient);

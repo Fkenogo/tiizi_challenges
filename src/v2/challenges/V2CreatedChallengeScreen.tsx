@@ -72,10 +72,40 @@ import { challengeReturnPath } from './challengeReturnPath';
  * inside the Today's Daily Consistency surface.
  */
 
+/**
+ * Transient confirmation the sharing sheet asked the screen to show
+ * (Founder direction 2026-11-22): 'Shared to Challenge Feed' after a
+ * publication, 'Share removed' after a withdrawal. Passed through router
+ * location state on the return navigation and cleared after a brief pause.
+ */
+interface V2ShareToastState {
+  shareAction?: 'shared' | 'withdrawn';
+}
+
+function shareToastState(outcome?: { shared?: boolean; withdrawn?: boolean }): V2ShareToastState {
+  if (outcome?.shared) return { shareAction: 'shared' };
+  if (outcome?.withdrawn) return { shareAction: 'withdrawn' };
+  return {};
+}
+
 export function V2CreatedChallengeScreen() {
   const { challengeId } = useParams<{ challengeId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const shareToast = (location.state ?? null) as V2ShareToastState | null;
+  const [shareToastVisible, setShareToastVisible] = useState(false);
+  useEffect(() => {
+    if (shareToast?.shareAction) {
+      setShareToastVisible(true);
+      const timer = setTimeout(() => {
+        setShareToastVisible(false);
+        // Clear the one-shot state so a refresh does not replay the toast.
+        navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: {} });
+      }, 2600);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [shareToast?.shareAction, location.pathname, location.search, location.hash, navigate]);
   const detail = useChallengeDetailV2(challengeId);
   const memberships = useV2Memberships();
   const [logOpen, setLogOpen] = useState(false);
@@ -193,6 +223,16 @@ export function V2CreatedChallengeScreen() {
 
   return (
     <V2Page>
+      {shareToastVisible && (
+        <p
+          role="status"
+          className={`mb-3 rounded-2xl p-3 text-center text-sm font-bold text-white ${
+            shareToast?.shareAction === 'withdrawn' ? 'bg-slate-900' : 'bg-emerald-600'
+          }`}
+        >
+          {shareToast?.shareAction === 'withdrawn' ? 'Share removed.' : 'Shared to Challenge Feed.'}
+        </p>
+      )}
       <div className="mb-3">
         <button
           type="button"
@@ -289,9 +329,9 @@ export function V2CreatedChallengeScreen() {
         detail={challenge}
         open={logOpen}
         onClose={() => setLogOpen(false)}
-        onKeepPrivate={() => navigate(
+        onKeepPrivate={(outcome) => navigate(
           `${location.pathname}${location.search}${location.hash}`,
-          { replace: true, state: location.state },
+          { replace: true, state: { ...shareToastState(outcome) } },
         )}
       />
       <V2LeaveChallengeDialog detail={challenge} open={leaveOpen} onClose={() => setLeaveOpen(false)} />
