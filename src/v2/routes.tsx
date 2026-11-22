@@ -35,6 +35,7 @@ import { V2ChallengeStartScreen, V2ChallengeTemplateLibrary, V2ChallengeTemplate
 import { V2ActivityGuideDetailScreen, V2ActivityLibraryScreen } from './member/ActivityLibraryScreen';
 import { V2CreatedChallengeScreen } from './challenges/V2CreatedChallengeScreen';
 import { V2FinalizedStreakHistoryScreen } from './challenges/V2FinalizedStreakHistoryScreen';
+import { V2ChallengeFeedScreen } from './challenges/V2ChallengeFeedView';
 import { V2SupportTiiziScreen } from './support/V2SupportTiiziScreen';
 import { TemplateDraftEditor } from './operator/templates/TemplateDraftEditor';
 import { TemplatePreviewPage } from './operator/templates/TemplatePreviewPage';
@@ -117,6 +118,7 @@ export function V2Routes() {
             <Route path="challenges/templates" element={<V2ChallengeTemplateLibrary />} />
             <Route path="challenges/templates/:templateId" element={<V2ChallengeTemplatePreview />} />
             <Route path="challenges/:challengeId/history" element={<V2FinalizedStreakHistoryScreen />} />
+            <Route path="challenges/:challengeId/feed" element={<V2ChallengeFeedScreen />} />
             <Route path="challenges/:challengeId" element={<V2CreatedChallengeScreen />} />
             <Route path="groups" element={<V2GroupsScreen />} />
             <Route path="groups/new" element={<V2CreateGroupScreen />} />

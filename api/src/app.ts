@@ -32,6 +32,9 @@ import { registerSocialCauseApprovalRoutes, type SocialCauseApprovalDeps } from 
 import { registerOperatorConsoleRoutes } from './operatorConsoleRoutes.js';
 import { registerChallengeTemplateRoutes } from './challengeTemplateRoutes.js';
 import { registerGroupFeedRoutes } from './groupFeedReads.js';
+// CF-2/CF-3 (S1): Challenge-local Activity Share publication + Challenge
+// Feed read. Own storage (never group_feed_*); no automatic publication.
+import { registerChallengeFeedRoutes } from './challengeFeedShares.js';
 import { API_PREFIX } from './apiPrefix.js';
 import { isMemberBootstrapRequest, registerMemberBootstrapRoutes } from './memberBootstrap.js';
 import { registerMemberProfileRoutes } from './memberProfileRoutes.js';
@@ -140,6 +143,12 @@ export function buildApp(deps: AppDeps) {
   // GF-03 member Feed read: current PostgreSQL Group membership remains the
   // only audience authority; a missing seam fails closed.
   registerGroupFeedRoutes(app, deps.db, {
+    groupMembershipAuthority: deps.challengeActivity?.groupMembershipAuthority,
+  });
+  // CF-3 Challenge Feed read + CF-2 S1 Share publication/withdrawal. Same
+  // live authority seam; absent authority fails closed per-route. The
+  // Group Feed contract above is untouched by this registration.
+  registerChallengeFeedRoutes(app, deps.db, {
     groupMembershipAuthority: deps.challengeActivity?.groupMembershipAuthority,
   });
   // C3B V2 participation mutations (join/withdraw). Same live authority as

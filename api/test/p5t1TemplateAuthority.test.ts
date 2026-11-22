@@ -1347,6 +1347,7 @@ describe('P5T-1 migration compatibility', () => {
     expect(await runMigrations(db)).toEqual([
       '030_challenge_template_authority.sql',
       '031_member_preference_reminder_dismissals.sql',
+      '032_challenge_feed_activity_shares.sql',
     ]);
     const after = (await db.query<any>(`SELECT * FROM challenges WHERE challenge_id = $1`, [legacy])).rows[0];
     expect(after.source_template_id).toBeNull();

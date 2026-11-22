@@ -16,6 +16,19 @@ vi.mock('./useChallengeCreation', () => ({
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => authState,
 }));
+const feed = vi.hoisted(() => ({
+  ownShare: { data: null, isLoading: false },
+  publish: { mutateAsync: vi.fn(async () => ({ withdrawn: false })), isPending: false, error: null },
+  withdraw: { mutateAsync: vi.fn(async () => ({ withdrawn: true })), isPending: false, error: null },
+}));
+vi.mock('../profile/useV2MemberIdentity', () => ({
+  useV2MemberIdentity: () => ({ displayName: 'Amara Test', isLoading: false }),
+}));
+vi.mock('./challengeFeedQuery', () => ({
+  useV2OwnActivityShare: () => feed.ownShare,
+  useV2PublishActivityShare: () => feed.publish,
+  useV2WithdrawActivityShare: () => feed.withdraw,
+}));
 
 vi.mock('./activityNames', () => ({
   useActivityDisplayNames: () => new Map([['FIT-STR-001', 'Push-Up']]),
@@ -230,7 +243,9 @@ describe('V2LoggingSection — member-friendly error display', () => {
     expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
     expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
     expect(screen.getByText(/return you to Strength Challenge Details/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Challenge Feed — unavailable' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText('Challenge Feed')).toBeTruthy();
+    expect(screen.getByText(/Preview — not shared yet/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Share to Challenge Feed' }).hasAttribute('disabled')).toBe(false);
     expect(screen.getByRole('button', { name: 'External sharing — unavailable' }).hasAttribute('disabled')).toBe(true);
     expect(screen.queryByRole('button', { name: 'Share activity' })).toBeNull();
     // The panel replaces the focused Done button inside the open sheet, so

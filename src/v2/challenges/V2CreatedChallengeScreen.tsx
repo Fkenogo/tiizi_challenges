@@ -23,6 +23,9 @@ import { participationViewFor, V2LeaveChallengeDialog, V2ParticipationSection } 
 import { V2ProgressSection } from './V2ProgressSection';
 import { V2ChallengeResults } from './V2ChallengeResults';
 import { V2LatestChallengeContribution } from './V2LatestChallengeContribution';
+// CF-3: the Challenge-local Feed view (S1 activity Shares; a CF-4
+// experience pass may revisit placement and layout).
+import { V2ChallengeFeedSection } from './V2ChallengeFeedView';
 import { V2ChallengeHero } from './V2ChallengeHero';
 import { fetchKnowledgeByCode, fetchKnowledgeById } from '../../api/knowledgeApi';
 import { fetchActivityOptions } from '../../api/challengeCreationApi';
@@ -266,6 +269,8 @@ export function V2CreatedChallengeScreen() {
           : <V2ChallengeResults detail={challenge} endState={endState} />}
 
         <V2LatestChallengeContribution challengeId={challenge.challengeId} />
+
+        <V2ChallengeFeedSection challengeId={challenge.challengeId} />
 
         <V2ParticipationSection detail={challenge} />
 

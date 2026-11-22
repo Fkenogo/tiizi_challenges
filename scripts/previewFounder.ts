@@ -308,6 +308,10 @@ async function main(): Promise<void> {
 
   const groupFeedCursorSecret = process.env.TIIZI_GROUP_FEED_CURSOR_SECRET
     || randomBytes(32).toString('hex');
+  // CF-3: the Challenge Feed keeps its own signed-cursor secret (never the
+  // Group Feed's), so neither read contract can sign cursors for the other.
+  const challengeFeedCursorSecret = process.env.TIIZI_CHALLENGE_FEED_CURSOR_SECRET
+    || randomBytes(32).toString('hex');
 
   await assertLoopbackPortAvailable(apiPort, 'Tiizi API');
   const api = startService('Tiizi API', process.execPath, ['--import', 'tsx', 'api/src/index.ts'], localEnv({
@@ -318,6 +322,7 @@ async function main(): Promise<void> {
     PORT: String(apiPort),
     TIIZI_ALLOWED_ORIGINS: '',
     TIIZI_GROUP_FEED_CURSOR_SECRET: groupFeedCursorSecret,
+    TIIZI_CHALLENGE_FEED_CURSOR_SECRET: challengeFeedCursorSecret,
   }));
   await waitFor(`${apiTarget}/ready`, 'Tiizi API', api);
   // Process only the existing governed outbox batch for this disposable preview.
