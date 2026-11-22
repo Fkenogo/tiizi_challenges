@@ -687,6 +687,84 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     expect(expiredState.hiddenReason).toBe('expired');
   });
 
+  it('a withdrawal followed by a reversal still reports reversal as the actionable reason', async () => {
+    const fx = await setupFixture(next('cf-s1-wdr'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 31);
+    await publish(app, fx.challengeId, eventId, 31);
+
+    // The member withdraws FIRST…
+    const withdrawn = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    expect(withdrawn.statusCode).toBe(200);
+
+    // …and the Activity is then reversed.
+    const eventResolvers: ActivityEventResolvers = { resolveKnowledgePin: async () => fx.pin };
+    const original = await db.query<{ member_id: string; activity_kind: 'fitness'; canonical_key: string }>(
+      'SELECT member_id, activity_kind, canonical_key FROM member_activity_events WHERE event_id = $1',
+      [eventId],
+    );
+    await appendCorrectionEvent(db, {
+      member_id: String(original.rows[0].member_id),
+      activity_kind: original.rows[0].activity_kind,
+      canonical_key: original.rows[0].canonical_key,
+      occurred_at: new Date('2026-06-10T12:00:00Z'),
+      occurred_day: '2026-06-10',
+      value: 31,
+      unit: 'reps',
+      client_key: next('cf-wdr-rev'),
+      supersedes_event_id: eventId,
+      correction_kind: 'reversal',
+    }, eventResolvers);
+
+    const state = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    })).json() as ShareState;
+    expect(state.visible).toBe(false);
+    expect(state.hiddenReason).toBe('reversed');
+    expect(state.withdrawn).toBe(true);
+  });
+
+  it('a successful retry refreshes its own replay protection instead of pruning it', async () => {
+    const fx = await setupFixture(next('cf-s1-aged-key'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 16);
+    const agedKey = next('cf-choice-aged');
+
+    const first = await publish(app, fx.challengeId, eventId, 16, agedKey);
+    expect(first.statusCode).toBe(200);
+    const shareId = (first.json() as ShareState).shareId;
+
+    // Age the acknowledged key beyond the 24-hour horizon, then RETRY it
+    // while the Share is still active: the retry succeeds and must refresh
+    // its acknowledged timestamp rather than let the prune delete it.
+    await db.query(
+      `UPDATE challenge_feed_share_choices SET acknowledged_at = now() - interval '25 hours' WHERE share_id = $1`,
+      [shareId],
+    );
+    const retry = await publish(app, fx.challengeId, eventId, 16, agedKey);
+    expect(retry.statusCode).toBe(200);
+
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+
+    // The aged key's replay after the withdrawal is refused — its
+    // successful retry kept its replay protection alive.
+    const replay = await publish(app, fx.challengeId, eventId, 16, agedKey);
+    expect(replay.statusCode).toBe(409);
+    expect(((replay.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+  });
+
   it('discloses the canonical event ID only to the Share owner, and serves the owner an exact state read', async () => {
     const fx = await setupFixture(next('cf-s1-disclosure'));
     const app = appFor(fx, stubAuthority(true));

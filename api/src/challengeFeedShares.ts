@@ -451,12 +451,14 @@ async function currentHead(db: Db, eventId: string): Promise<ResolvedHead> {
  * state, so even that vanishing edge cannot hide a revival. */
 const CHOICE_HISTORY_HOURS = 24;
 
-/** Record an acknowledged publication request key for one Share row. */
+/** Record an acknowledged publication request key for one Share row. A
+ * RETRY of an already-recorded key refreshes its acknowledged timestamp, so
+ * a successful retry never prunes its own replay protection. */
 async function recordChoice(tx: Db, shareId: string, clientKey: string): Promise<void> {
   await tx.query(
     `INSERT INTO challenge_feed_share_choices (share_id, client_key)
      VALUES ($1, $2)
-     ON CONFLICT (share_id, client_key) DO NOTHING`,
+     ON CONFLICT (share_id, client_key) DO UPDATE SET acknowledged_at = now()`,
     [shareId, clientKey],
   );
   await tx.query(
@@ -563,7 +565,11 @@ export async function publishActivityShare(
     // between our row read and our insert; the losing request re-settles
     // the winner's state instead of failing, so both requests converge on
     // the same Share (Read Committed gives each iteration a fresh snapshot
-    // after the insert conflict wait).
+    // after the insert conflict wait). A request that has LOST such a race
+    // has been in flight across a concurrent state change: it may only
+    // converge idempotently or be refused — it can never revive a Share
+    // the member has since withdrawn (the member's latest action must win).
+    let lostRace = false;
     for (let attempt = 0; attempt < 3; attempt += 1) {
     // Settle the existing Share-row state first (serialized against
     // withdrawal and concurrent publication by FOR UPDATE).
@@ -653,6 +659,13 @@ export async function publishActivityShare(
         hiddenReason: null,
       };
     }
+    if (share && lostRace) {
+      // This request lost a concurrent first-publication race and the
+      // member withdrew the winner's Share while it was in flight: the
+      // member made NO fresh confirmation after that withdrawal, so the
+      // Share stays withdrawn. Only a genuinely new confirm revives it.
+      throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
+    }
     if (share) {
       // A FRESH explicit choice revives the same auditable row.
       const revived = await tx.query<ExistingShareRow>(
@@ -700,7 +713,9 @@ export async function publishActivityShare(
       };
     }
     // No row read, none inserted: a concurrent first publication committed
-    // in between — loop once more and settle its state idempotently.
+    // in between — loop once more and settle its state idempotently, with
+    // revival now forbidden (this request was in flight across the change).
+    lostRace = true;
     }
     // Three consecutive lost races (pathological churn): fail closed.
     throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
