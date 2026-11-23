@@ -9,6 +9,11 @@
  * safety at read time, the CF-01 §5 audience predicate on every read,
  * cursor paging, retention expiry, and strict Group Feed isolation.
  */
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { PGlite } from '@electric-sql/pglite';
+import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { appendCorrectionEvent, type ActivityEventResolvers, type KnowledgePin } from '../src/activityEvents.js';
 import {
@@ -22,7 +27,9 @@ import {
   type ChallengeCreationResolvers,
   type NewChallengeInput,
 } from '../src/challenges.js';
+import type { Db } from '../src/db.js';
 import type { GroupMembershipAuthority } from '../src/groupMembershipAuthority.js';
+import { listMigrationFiles, runMigrations, splitStatements } from '../src/migrate.js';
 import {
   authHeaders,
   buildTestApp,
@@ -1320,6 +1327,100 @@ await publish(app, fx.challengeId, eventId, 9);
     const evictedReplay = await publish(app, fx.challengeId, eventId, 19, firstCapKey, 'reps', 'token-sharer', 0);
     expect(evictedReplay.statusCode).toBe(409);
     expect(((evictedReplay.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+  });
+
+  it('upgrades a database already migrated at the prior PR #181 Kudos schema (033_challenge_feed_kudos.sql) while preserving existing Kudos and Share rows', async () => {
+    const pg = new PGlite({ extensions: { pgcrypto } });
+    const legacyDb: Db = {
+      query: async <T>(text: string, params?: unknown[]) => {
+        const res = await pg.query<T>(text, params);
+        return { rows: res.rows };
+      },
+      transaction: async <T>(fn: (tx: Db) => Promise<T>) => pg.transaction(async (tx) => fn({
+        query: async <U>(text: string, params?: unknown[]) => {
+          const res = await tx.query<U>(text, params);
+          return { rows: res.rows };
+        },
+        transaction: async () => {
+          throw new Error('nested transactions unsupported');
+        },
+        close: async () => {},
+      })),
+      close: () => pg.close(),
+    };
+
+    const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
+    const files = await listMigrationFiles();
+    const index033 = files.indexOf('033_challenge_feed_share_generation.sql');
+    expect(index033).toBeGreaterThan(0);
+
+    await legacyDb.query(`CREATE TABLE schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+    for (const file of files.slice(0, index033)) {
+      for (const statement of splitStatements(await readFile(join(migrationsDir, file), 'utf8'))) {
+        await legacyDb.query(statement);
+      }
+      await legacyDb.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [file]);
+    }
+
+    // Simulate the previous PR #181 head where Kudos occupied slot 033.
+    const priorKudosSql = `
+      CREATE TABLE challenge_feed_kudos (
+        kudos_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        share_id UUID NOT NULL,
+        member_id UUID NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CONSTRAINT challenge_feed_kudos_member_uq UNIQUE (share_id, member_id)
+      );
+      CREATE INDEX challenge_feed_kudos_share_idx ON challenge_feed_kudos (share_id);
+      CREATE INDEX challenge_feed_kudos_member_recent_idx ON challenge_feed_kudos (member_id, created_at);
+    `;
+    for (const statement of splitStatements(priorKudosSql)) {
+      await legacyDb.query(statement);
+    }
+    await legacyDb.query('INSERT INTO schema_migrations (filename) VALUES ($1)', ['033_challenge_feed_kudos.sql']);
+
+    const challengeId = '11111111-1111-4111-8111-111111111111';
+    const sharerId = '22222222-2222-4222-8222-222222222222';
+    const giverId = '33333333-3333-4333-8333-333333333333';
+    const eventId = '44444444-4444-4444-8444-444444444444';
+    const recordId = '55555555-5555-4555-8555-555555555555';
+    const shareRow = await legacyDb.query<{ share_id: string }>(
+      `INSERT INTO challenge_feed_shares
+         (challenge_id, member_id, activity_event_id, activity_record_id, event_family, last_publish_key)
+       VALUES ($1, $2, $3, $4, 'activity_share', 'legacy-key-0123456789')
+       RETURNING share_id`,
+      [challengeId, sharerId, eventId, recordId],
+    );
+    const shareId = String(shareRow.rows[0].share_id);
+    const kudosRow = await legacyDb.query<{ kudos_id: string }>(
+      `INSERT INTO challenge_feed_kudos (share_id, member_id) VALUES ($1, $2) RETURNING kudos_id`,
+      [shareId, giverId],
+    );
+    const kudosId = String(kudosRow.rows[0].kudos_id);
+
+    // Upgrade via runMigrations -> applies 033_challenge_feed_share_generation and 034_challenge_feed_kudos cleanly.
+    expect(await runMigrations(legacyDb)).toEqual([
+      '033_challenge_feed_share_generation.sql',
+      '034_challenge_feed_kudos.sql',
+    ]);
+
+    const upgradedShare = await legacyDb.query<{ share_generation: number }>(
+      `SELECT share_generation FROM challenge_feed_shares WHERE share_id = $1`,
+      [shareId],
+    );
+    expect(Number(upgradedShare.rows[0].share_generation)).toBe(1);
+
+    const preservedKudos = await legacyDb.query<{ kudos_id: string; share_id: string; member_id: string }>(
+      `SELECT kudos_id, share_id, member_id FROM challenge_feed_kudos WHERE share_id = $1`,
+      [shareId],
+    );
+    expect(preservedKudos.rows).toHaveLength(1);
+    expect(String(preservedKudos.rows[0].kudos_id)).toBe(kudosId);
+    expect(String(preservedKudos.rows[0].member_id)).toBe(giverId);
+
+    // Subsequent runs are no-ops.
+    expect(await runMigrations(legacyDb)).toEqual([]);
+    await legacyDb.close();
   });
 });
 

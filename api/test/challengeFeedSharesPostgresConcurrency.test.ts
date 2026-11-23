@@ -10,9 +10,12 @@ import { openGuardedDisposableDb, disposableTargetSpecFromEnv } from '../src/dis
 import { runMigrations } from '../src/migrate.js';
 import { createChallenge, activateChallenge } from '../src/challenges.js';
 import { applyChallengeActivity } from '../src/challengeActivityApplication.js';
+import { appendCorrectionEvent } from '../src/activityEvents.js';
 import {
+  addChallengeFeedKudos,
   publishActivityShare,
   readActivityShareState,
+  removeChallengeFeedKudos,
   withdrawActivityShare,
   ChallengeFeedError,
 } from '../src/challengeFeedShares.js';
@@ -144,7 +147,7 @@ async function seedShareSource() {
     },
     { now: new Date('2026-06-10T12:00:00Z') },
   );
-  return { memberId, challengeId: challenge.challenge_id, eventId: applied.record.event_id };
+  return { memberId, groupId, knowledgePin, challengeId: challenge.challenge_id, eventId: applied.record.event_id };
 }
 
 realDescribe('CF-2 S1 replay safety on independent PostgreSQL connections', () => {
@@ -308,5 +311,89 @@ realDescribe('CF-2 S1 replay safety on independent PostgreSQL connections', () =
     expect(finalState.withdrawn).toBe(true);
     expect(finalState.visible).toBe(false);
     expect(finalState.shareGeneration).toBe(expectedWithdrawnGen);
+  }, 60_000);
+
+  it('refuses Kudos add and remove when a source reversal commits between head resolution and head lock', async () => {
+    const setupKudosScenario = async () => {
+      const fx = await seedShareSource();
+      const fellow = await db.query<{ member_id: string }>(
+        `INSERT INTO members (auth_provider, auth_subject, display_name)
+         VALUES ('firebase', $1, 'Fellow Kudos') RETURNING member_id`,
+        [`cf-kudos-fellow-${crypto.randomUUID()}`],
+      );
+      const fellowId = String(fellow.rows[0].member_id);
+      await db.query(
+        `INSERT INTO group_memberships (group_id, member_id, role, status) VALUES ($1, $2, 'member', 'active')`,
+        [fx.groupId, fellowId],
+      );
+      const published = await publishActivityShare(db, activeAuthority, fx.memberId, fx.challengeId, fx.eventId, {
+        clientKey: `race-kudos-pub-${crypto.randomUUID()}`,
+        previewedValue: 25,
+        previewedUnit: 'reps',
+        expectedGeneration: 0,
+      });
+      return { ...fx, fellowId, shareId: published.shareId };
+    };
+
+    const runWithReversalBetweenHeadAndLock = (
+      knowledgePin: { knowledge_id: string; current_version: number },
+      eventId: string,
+    ): Db => {
+      let reversed = false;
+      return {
+        ...db,
+        transaction: async (fn) => db.transaction(async (tx) => fn({
+          ...tx,
+          query: async <T>(text: string, params?: unknown[]) => {
+            const res = await tx.query<T>(text, params);
+            if (!reversed && text.includes('WITH RECURSIVE chain AS')) {
+              reversed = true;
+              // Commit a reversal on an independent pool connection before lockHead runs.
+              await appendCorrectionEvent(db, {
+                member_id: String((await db.query<{ member_id: string }>(
+                  'SELECT member_id FROM member_activity_events WHERE event_id = $1',
+                  [eventId],
+                )).rows[0].member_id),
+                activity_kind: 'fitness',
+                canonical_key: 'push-up',
+                occurred_at: new Date('2026-06-10T12:00:00Z'),
+                occurred_day: '2026-06-10',
+                value: 25,
+                unit: 'reps',
+                client_key: `race-kudos-rev-${crypto.randomUUID()}`,
+                supersedes_event_id: eventId,
+                correction_kind: 'reversal',
+              }, { resolveKnowledgePin: async () => knowledgePin });
+            }
+            return res;
+          },
+        })),
+      };
+    };
+
+    // 1. Race during addChallengeFeedKudos -> refused with 404 unknown_entry, zero rows inserted.
+    const addFx = await setupKudosScenario();
+    const racingAddDb = runWithReversalBetweenHeadAndLock(addFx.knowledgePin, addFx.eventId);
+    await expect(
+      addChallengeFeedKudos(racingAddDb, activeAuthority, addFx.fellowId, addFx.challengeId, addFx.shareId),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'unknown_entry' });
+    const addCount = await db.query<{ count: string }>(
+      'SELECT COUNT(*)::text AS count FROM challenge_feed_kudos WHERE share_id = $1',
+      [addFx.shareId],
+    );
+    expect(Number(addCount.rows[0].count)).toBe(0);
+
+    // 2. Race during removeChallengeFeedKudos -> refused with 404 unknown_entry, existing row untouched.
+    const removeFx = await setupKudosScenario();
+    await addChallengeFeedKudos(db, activeAuthority, removeFx.fellowId, removeFx.challengeId, removeFx.shareId);
+    const racingRemoveDb = runWithReversalBetweenHeadAndLock(removeFx.knowledgePin, removeFx.eventId);
+    await expect(
+      removeChallengeFeedKudos(racingRemoveDb, activeAuthority, removeFx.fellowId, removeFx.challengeId, removeFx.shareId),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'unknown_entry' });
+    const removeCount = await db.query<{ count: string }>(
+      'SELECT COUNT(*)::text AS count FROM challenge_feed_kudos WHERE share_id = $1',
+      [removeFx.shareId],
+    );
+    expect(Number(removeCount.rows[0].count)).toBe(1);
   }, 60_000);
 });
