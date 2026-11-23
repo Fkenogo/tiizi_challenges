@@ -49,6 +49,8 @@ export interface ActivityShareState {
   visible: boolean;
   /** Why a hidden Share is hidden; null while visible. */
   hiddenReason: 'withdrawn' | 'suppressed' | 'reversed' | 'expired' | null;
+  /** Monotonic state generation (1 on first publish, +1 on each withdrawal and revival). */
+  shareGeneration: number;
 }
 
 export interface ChallengeFeedPageQuery {
@@ -92,6 +94,8 @@ export function publishActivityShare(
      * to publish a value the member never previewed. */
     previewedValue: number;
     previewedUnit: string;
+    /** Current Share generation observed before confirming (0 when unshared). */
+    expectedGeneration: number;
   },
   bearerToken: string,
 ): Promise<ActivityShareState> {

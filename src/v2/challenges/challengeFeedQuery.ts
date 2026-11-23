@@ -122,12 +122,18 @@ export function useV2PublishActivityShare(challengeId: string) {
       clientKey: string;
       previewedValue: number;
       previewedUnit: string;
+      expectedGeneration: number;
     }): Promise<ActivityShareState> => {
       if (!user) throw new Error('Sharing requires an authenticated member');
       return publishActivityShare(challengeId, input, await user.getIdToken());
     },
     onSuccess: async () => {
       await invalidateV2ChallengeFeed(queryClient);
+    },
+    onError: async (error) => {
+      if (error instanceof ApiError && error.status === 409) {
+        await invalidateV2ChallengeFeed(queryClient);
+      }
     },
   });
 }

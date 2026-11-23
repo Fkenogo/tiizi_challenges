@@ -60,6 +60,7 @@ function activeState(overrides?: Record<string, unknown>) {
     withdrawn: false,
     visible: true,
     hiddenReason: null,
+    shareGeneration: 1,
     ...overrides,
   };
 }
@@ -152,11 +153,13 @@ describe('V2ActivityShareChoices', () => {
       clientKey: string;
       previewedValue: number;
       previewedUnit: string;
+      expectedGeneration: number;
     };
     expect(call.activityEventId).toBe(item.activityId);
     expect(call.clientKey).toMatch(/^[A-Za-z0-9-]{16,64}$/);
     expect(call.previewedValue).toBe(25);
     expect(call.previewedUnit).toBe('reps');
+    expect(call.expectedGeneration).toBe(0);
 
     // Brief confirmation, then the automatic return to the originating page.
     expect(screen.getByText(/Shared to Challenge Feed!/)).toBeTruthy();
@@ -186,6 +189,26 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.getByText(/Share removed!/)).toBeTruthy();
     act(() => { vi.advanceTimersByTime(1400); });
     expect(onKeepPrivate).toHaveBeenCalledWith({ withdrawn: true });
+  });
+
+  it('sends the withdrawn shareGeneration on a fresh confirm after withdrawal', async () => {
+    resetFeed(activeState({ visible: false, withdrawn: true, hiddenReason: 'withdrawn', shareGeneration: 2 }));
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share to Challenge Feed' }));
+    expect(h.publish.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        activityEventId: item.activityId,
+        expectedGeneration: 2,
+      }),
+      expect.anything(),
+    );
   });
 
   it('share-later publishes and auto-closes in place', async () => {
@@ -308,7 +331,58 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.getByRole('button', { name: 'Keep private and continue' }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('surfaces honest refusals with terse copy', () => {
+  it('surfaces honest refusals with terse copy for withdrawn, state-changed, reversed and changed sources', () => {
+    resetFeed();
+    h.publish.error = new ApiError(
+      409,
+      'share_withdrawn',
+      'This Share was withdrawn; confirm to share it again',
+    );
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent)
+      .toContain('This Share was withdrawn. Confirm again to share it.');
+    cleanup();
+
+    resetFeed();
+    h.publish.error = new ApiError(
+      409,
+      'share_state_changed',
+      'This Share state changed; review the current state and confirm again',
+    );
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent)
+      .toContain('This Share state changed. Review the current state and confirm again.');
+    cleanup();
+
+    resetFeed();
+    h.publish.error = new ApiError(
+      409,
+      'source_reversed',
+      'This Activity was reversed and cannot be shared',
+    );
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent)
+      .toContain('This Activity was reversed and cannot be shared.');
+    cleanup();
+
     resetFeed();
     h.publish.error = new ApiError(
       409,

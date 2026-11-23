@@ -187,6 +187,7 @@ interface ShareState {
   withdrawn: boolean;
   visible: boolean;
   hiddenReason: string | null;
+  shareGeneration: number;
 }
 
 interface FeedItem {
@@ -212,12 +213,13 @@ async function publish(
   clientKey = `cf-choice-${(choiceSeq += 1)}-0123456789abcdef`,
   previewedUnit = 'reps',
   token = 'token-sharer',
+  expectedGeneration = 0,
 ) {
   return app.inject({
     method: 'POST',
     url: `/api/challenges/${challengeId}/feed/activity-shares`,
     headers: { ...authHeaders(token), 'content-type': 'application/json' },
-    payload: { activityEventId: eventId, clientKey, previewedValue, previewedUnit },
+    payload: { activityEventId: eventId, clientKey, previewedValue, previewedUnit, expectedGeneration },
   });
 }
 
@@ -330,16 +332,19 @@ describe('CF-2 S1 Activity Share publication', () => {
     const app = appFor(fx, stubAuthority(true));
     const eventId = await acceptedActivity(fx, 30);
     const first = (await publish(app, fx.challengeId, eventId, 30)).json() as ShareState;
-    await app.inject({
+    expect(first.shareGeneration).toBe(1);
+    const withdrawn = (await app.inject({
       method: 'DELETE',
       url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
       headers: authHeaders('token-sharer'),
-    });
-const revived = await publish(app, fx.challengeId, eventId, 30);
+    })).json() as ShareState;
+    expect(withdrawn.shareGeneration).toBe(2);
+    const revived = await publish(app, fx.challengeId, eventId, 30, undefined, 'reps', 'token-sharer', withdrawn.shareGeneration);
     expect(revived.statusCode).toBe(200);
     const state = revived.json() as ShareState;
     expect(state.shareId).toBe(first.shareId);
     expect(state.withdrawn).toBe(false);
+    expect(state.shareGeneration).toBe(3);
     const rows = await testDb().query<{ count: string }>(
       'SELECT COUNT(*)::text AS count FROM challenge_feed_shares',
     );
@@ -571,10 +576,12 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     });
     expect(((hidden.json() as { items: FeedItem[] }).items)).toHaveLength(0);
 
-    // A fresh explicit choice revives the same row with a new publication.
-    const revived = await publish(app, fx.challengeId, eventId, 9, next('cf-choice-new'));
+    // A fresh explicit choice matching the current withdrawn generation
+    // revives the same row with a new publication.
+    const revived = await publish(app, fx.challengeId, eventId, 9, next('cf-choice-new'), 'reps', 'token-sharer', 2);
     expect(revived.statusCode).toBe(200);
     expect(((revived.json() as ShareState)).shareId).toBe(firstState.shareId);
+    expect(((revived.json() as ShareState)).shareGeneration).toBe(3);
     const rows = await db.query<{ count: string }>(
       'SELECT COUNT(*)::text AS count FROM challenge_feed_shares',
     );
@@ -1100,4 +1107,190 @@ await publish(app, fx.challengeId, eventId, 9);
     const removedPublish = await publish(removed, fx.challengeId, eventId, 7);
     expect(removedPublish.statusCode).toBe(404);
   });
+
+  it('rejects replayed choice key after 24h pruning and withdrawal across a fresh session, while allowing genuine fresh confirmation', async () => {
+    const fx = await setupFixture(next('cf-s1-replay-pruned'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 42);
+    const keyA = next('cf-replay-key-a');
+    const keyB = next('cf-replay-key-b');
+    const keyC = next('cf-replay-key-c');
+
+    // Capture baseline Activity evidence & Challenge progress.
+    const progressBefore = await db.query(
+      `SELECT d.collective_total, p.logs_accepted, p.cumulative_total
+         FROM challenge_derived_state d
+         JOIN challenge_participation_derived p ON p.challenge_id = d.challenge_id
+        WHERE d.challenge_id = $1`,
+      [fx.challengeId],
+    );
+
+    // 1. Publish Activity with acknowledged choice key A (expectedGeneration = 0).
+    const first = await publish(app, fx.challengeId, eventId, 42, keyA, 'reps', 'token-sharer', 0);
+    expect(first.statusCode).toBe(200);
+    const firstState = first.json() as ShareState;
+    expect(firstState.visible).toBe(true);
+    expect(firstState.shareGeneration).toBe(1);
+
+    // 2. Withdraw publication.
+    const w1 = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    expect(w1.statusCode).toBe(200);
+    expect((w1.json() as ShareState).shareGeneration).toBe(2);
+
+    // 3. Advance clock beyond 24h retention horizon for choice key A.
+    await db.query(
+      `UPDATE challenge_feed_share_choices
+          SET acknowledged_at = now() - interval '25 hours'
+        WHERE share_id = $1 AND client_key = $2`,
+      [firstState.shareId, keyA],
+    );
+
+    // 4. Cause acknowledged-key pruning through an otherwise valid fresh publication (key B).
+    const republish = await publish(app, fx.challengeId, eventId, 42, keyB, 'reps', 'token-sharer', 2);
+    expect(republish.statusCode).toBe(200);
+    expect((republish.json() as ShareState).shareGeneration).toBe(3);
+
+    // Confirm key A really was pruned from challenge_feed_share_choices.
+    const remainingKeys = await db.query<{ client_key: string }>(
+      `SELECT client_key FROM challenge_feed_share_choices WHERE share_id = $1`,
+      [firstState.shareId],
+    );
+    expect(remainingKeys.rows.map((r) => r.client_key)).toEqual([keyB]);
+
+    // Also verify replaying key A while generation 3 is active is refused.
+    const replayWhileActive = await publish(app, fx.challengeId, eventId, 42, keyA, 'reps', 'token-sharer', 0);
+    expect(replayWhileActive.statusCode).toBe(409);
+    expect(((replayWhileActive.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+
+    // 5. Withdraw the subsequent publication.
+    const w2 = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    expect(w2.statusCode).toBe(200);
+    const withdrawn2 = w2.json() as ShareState;
+    expect(withdrawn2.withdrawn).toBe(true);
+    expect(withdrawn2.shareGeneration).toBe(4);
+
+    // 6. Replay previously acknowledged key A using a fresh valid authenticated session.
+    const freshSessionApp = buildTestApp(
+      { 'fresh-session-token': fx.sharerSubject },
+      { challengeActivity: { groupMembershipAuthority: memberScopedAuthority([fx.sharerMemberId, fx.fellowMemberId]) } },
+    );
+    const replayAfterPrune = await publish(
+      freshSessionApp,
+      fx.challengeId,
+      eventId,
+      42,
+      keyA,
+      'reps',
+      'fresh-session-token',
+      0,
+    );
+    expect(replayAfterPrune.statusCode).toBe(409);
+    expect(((replayAfterPrune.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+
+    // Feed remains empty; owner state remains withdrawn at generation 4.
+    const feedWhileWithdrawn = await freshSessionApp.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('fresh-session-token'),
+    });
+    expect(((feedWhileWithdrawn.json() as { items: FeedItem[] }).items)).toHaveLength(0);
+
+    // Genuine fresh confirmation with current shareGeneration succeeds.
+    const ownerState = (await freshSessionApp.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('fresh-session-token'),
+    })).json() as ShareState;
+    expect(ownerState.shareGeneration).toBe(4);
+
+    const freshConfirm = await publish(
+      freshSessionApp,
+      fx.challengeId,
+      eventId,
+      42,
+      keyC,
+      'reps',
+      'fresh-session-token',
+      ownerState.shareGeneration,
+    );
+    expect(freshConfirm.statusCode).toBe(200);
+    const finalState = freshConfirm.json() as ShareState;
+    expect(finalState.visible).toBe(true);
+    expect(finalState.withdrawn).toBe(false);
+    expect(finalState.shareGeneration).toBe(5);
+
+    const feedAfterFresh = await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(((feedAfterFresh.json() as { items: FeedItem[] }).items)).toHaveLength(1);
+
+    // Activity evidence and Challenge progress remain completely unchanged.
+    const progressAfter = await db.query(
+      `SELECT d.collective_total, p.logs_accepted, p.cumulative_total
+         FROM challenge_derived_state d
+         JOIN challenge_participation_derived p ON p.challenge_id = d.challenge_id
+        WHERE d.challenge_id = $1`,
+      [fx.challengeId],
+    );
+    expect(progressAfter.rows).toEqual(progressBefore.rows);
+  });
+
+  it('bounds choice-key storage per Share and rejects stale or invalid generations', async () => {
+    const fx = await setupFixture(next('cf-s1-bounded-choices'));
+    const db = testDb();
+    const app = appFor(fx, stubAuthority(true));
+    const eventId = await acceptedActivity(fx, 19);
+
+    // Mismatched generation when no Share exists yet -> 409 share_state_changed.
+    const wrongInitial = await publish(app, fx.challengeId, eventId, 19, next('cf-bad-gen-0123456789'), 'reps', 'token-sharer', 1);
+    expect(wrongInitial.statusCode).toBe(409);
+    expect(((wrongInitial.json() as { error: { code: string } }).error.code)).toBe('share_state_changed');
+
+    // Negative generation -> 400 validation error.
+    const negativeGen = await publish(app, fx.challengeId, eventId, 19, next('cf-neg-gen-0123456789'), 'reps', 'token-sharer', -1);
+    expect(negativeGen.statusCode).toBe(400);
+
+    // Publish 70 distinct keys on active Share -> choice table stays capped at 64 rows.
+    const firstCapKey = next('cf-cap-00-0123456789');
+    const first = await publish(app, fx.challengeId, eventId, 19, firstCapKey, 'reps', 'token-sharer', 0);
+    expect(first.statusCode).toBe(200);
+    const shareId = (first.json() as ShareState).shareId;
+    for (let i = 1; i < 70; i += 1) {
+      const res = await publish(app, fx.challengeId, eventId, 19, next(`cf-cap-${i}-0123456789`), 'reps', 'token-sharer', 1);
+      expect(res.statusCode).toBe(200);
+    }
+
+    const rowCount = await db.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM challenge_feed_share_choices WHERE share_id = $1`,
+      [shareId],
+    );
+    expect(Number(rowCount.rows[0].count)).toBeLessThanOrEqual(64);
+
+    // Future generation while active -> 409 share_state_changed.
+    const futureGen = await publish(app, fx.challengeId, eventId, 19, next('cf-future-gen-0123456789'), 'reps', 'token-sharer', 99);
+    expect(futureGen.statusCode).toBe(409);
+    expect(((futureGen.json() as { error: { code: string } }).error.code)).toBe('share_state_changed');
+
+    // Withdraw -> even key #0 (evicted by the 64-row cap) cannot replay.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const evictedReplay = await publish(app, fx.challengeId, eventId, 19, firstCapKey, 'reps', 'token-sharer', 0);
+    expect(evictedReplay.statusCode).toBe(409);
+    expect(((evictedReplay.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+  });
 });
+

@@ -76,6 +76,7 @@ function publishErrorMessage(error: unknown): string {
     if (error.code === 'source_reversed') return 'This Activity was reversed and cannot be shared.';
     if (error.code === 'source_changed') return 'This Activity changed since you previewed it. Preview the current version and confirm again.';
     if (error.code === 'share_withdrawn') return 'This Share was withdrawn. Confirm again to share it.';
+    if (error.code === 'share_state_changed') return 'This Share state changed. Review the current state and confirm again.';
     if (error.code === 'share_suppressed') return 'This Share was removed and cannot be republished.';
     if (error.code === 'feed_expired') return 'This Challenge Feed has expired.';
   }
@@ -151,7 +152,8 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
 
   const confirmShare = () => {
     setConfirmation(null);
-    // A fresh explicit choice, bound to exactly what the preview showed.
+    // A fresh explicit choice, bound to the observed Share generation and
+    // to exactly what the preview showed.
     const clientKey = (globalThis.crypto?.randomUUID?.() ?? `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     publish.mutate(
       {
@@ -159,6 +161,7 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
         clientKey,
         previewedValue: source.value,
         previewedUnit: source.unit,
+        expectedGeneration: state?.shareGeneration ?? 0,
       },
       {
         onSuccess: () => {
