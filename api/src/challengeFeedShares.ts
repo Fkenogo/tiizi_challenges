@@ -742,7 +742,7 @@ export async function publishActivityShare(
       `INSERT INTO challenge_feed_shares
          (challenge_id, member_id, activity_event_id, activity_record_id, event_family, last_publish_key)
        VALUES ($1, $2, $3, $4, 'activity_share', $5)
-       ON CONFLICT (member_id, activity_event_id) DO NOTHING
+       ON CONFLICT DO NOTHING
        RETURNING share_id, published_at, withdrawn_at, suppressed_at, last_publish_key, share_generation`,
       [challengeId, memberId, activityEventId, String(row.record_id), clientKey],
     );

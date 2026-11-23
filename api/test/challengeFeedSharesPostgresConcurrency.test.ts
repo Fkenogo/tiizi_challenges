@@ -238,14 +238,61 @@ realDescribe('CF-2 S1 replay safety on independent PostgreSQL connections', () =
       }),
       withdrawActivityShare(db, activeAuthority, memberId, challengeId, eventId),
     ]);
-    // At least the withdrawal fulfilled; final state matches DB truth cleanly.
+    // Assert every outcome is consistent with serialization (never a SQL error or 503).
     expect(raceResults[2].status).toBe('fulfilled');
+    const pubOutcomes = [raceResults[0], raceResults[1]];
+    let fulfilledCount = 0;
+    let rejectedCount = 0;
+    for (const outcome of pubOutcomes) {
+      if (outcome.status === 'fulfilled') {
+        fulfilledCount += 1;
+        expect(outcome.value.withdrawn).toBe(false);
+        expect(outcome.value.shareGeneration).toBe(5);
+      } else {
+        rejectedCount += 1;
+        expect(outcome.reason).toBeInstanceOf(ChallengeFeedError);
+        expect((outcome.reason as ChallengeFeedError).statusCode).toBe(409);
+        expect((outcome.reason as ChallengeFeedError).code).toBe('share_withdrawn');
+      }
+    }
+    // Starting from withdrawn gen 4, even if withdraw runs first it leaves gen at 4,
+    // so at least one fresh gen-4 revival must succeed at gen 5.
+    expect(fulfilledCount).toBeGreaterThanOrEqual(1);
 
-    // Bring to a known withdrawn end state and ensure stale keys A1, B, C1/C2 at old generations cannot revive.
-    const settledAfterRace = await withdrawActivityShare(db, activeAuthority, memberId, challengeId, eventId);
-    expect(settledAfterRace.withdrawn).toBe(true);
-    expect(settledAfterRace.shareGeneration).toBeGreaterThanOrEqual(4);
+    const afterRaceState = await readActivityShareState(db, activeAuthority, memberId, challengeId, eventId);
+    if (rejectedCount > 0) {
+      expect(afterRaceState.withdrawn).toBe(true);
+      expect(afterRaceState.shareGeneration).toBe(6);
+    } else if (afterRaceState.withdrawn) {
+      expect(afterRaceState.shareGeneration).toBe(6);
+    } else {
+      expect(afterRaceState.shareGeneration).toBe(5);
+    }
 
+    // Concurrent double-withdraw on separate pool connections must advance generation exactly once.
+    if (afterRaceState.withdrawn) {
+      const revived = await publishActivityShare(db, activeAuthority, memberId, challengeId, eventId, {
+        clientKey: `race-reconfirm-${crypto.randomUUID()}`,
+        previewedValue: 25,
+        previewedUnit: 'reps',
+        expectedGeneration: afterRaceState.shareGeneration,
+      });
+      expect(revived.shareGeneration).toBe(afterRaceState.shareGeneration + 1);
+    }
+    const activeBeforeDoubleWithdraw = await readActivityShareState(db, activeAuthority, memberId, challengeId, eventId);
+    expect(activeBeforeDoubleWithdraw.withdrawn).toBe(false);
+    const expectedWithdrawnGen = activeBeforeDoubleWithdraw.shareGeneration + 1;
+
+    const [dw1, dw2] = await Promise.all([
+      withdrawActivityShare(db, activeAuthority, memberId, challengeId, eventId),
+      withdrawActivityShare(db, activeAuthority, memberId, challengeId, eventId),
+    ]);
+    expect(dw1.withdrawn).toBe(true);
+    expect(dw2.withdrawn).toBe(true);
+    expect(dw1.shareGeneration).toBe(expectedWithdrawnGen);
+    expect(dw2.shareGeneration).toBe(expectedWithdrawnGen);
+
+    // Ensure stale keys A1, B, C1/C2 at old generations cannot revive after double-withdraw.
     for (const [oldKey, oldGen] of [[keyA1, 0], [keyB, 2], [keyC1, 4], [keyC2, 4]] as const) {
       await expect(
         publishActivityShare(db, activeAuthority, memberId, challengeId, eventId, {
@@ -260,6 +307,6 @@ realDescribe('CF-2 S1 replay safety on independent PostgreSQL connections', () =
     const finalState = await readActivityShareState(db, activeAuthority, memberId, challengeId, eventId);
     expect(finalState.withdrawn).toBe(true);
     expect(finalState.visible).toBe(false);
-    expect(finalState.shareGeneration).toBe(settledAfterRace.shareGeneration);
+    expect(finalState.shareGeneration).toBe(expectedWithdrawnGen);
   }, 60_000);
 });
