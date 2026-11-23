@@ -1228,6 +1228,22 @@ await publish(app, fx.challengeId, eventId, 9);
     expect(finalState.withdrawn).toBe(false);
     expect(finalState.shareGeneration).toBe(5);
 
+    // Same-key retry immediately after revival (still submitting expectedGeneration = 4)
+    // remains idempotent and keeps shareGeneration at 5.
+    const postRevivalRetry = await publish(
+      freshSessionApp,
+      fx.challengeId,
+      eventId,
+      42,
+      keyC,
+      'reps',
+      'fresh-session-token',
+      ownerState.shareGeneration,
+    );
+    expect(postRevivalRetry.statusCode).toBe(200);
+    expect((postRevivalRetry.json() as ShareState).shareGeneration).toBe(5);
+    expect((postRevivalRetry.json() as ShareState).publishedAt).toBe(finalState.publishedAt);
+
     const feedAfterFresh = await app.inject({
       method: 'GET',
       url: `/api/challenges/${fx.challengeId}/feed`,
@@ -1261,11 +1277,18 @@ await publish(app, fx.challengeId, eventId, 9);
     const negativeGen = await publish(app, fx.challengeId, eventId, 19, next('cf-neg-gen-0123456789'), 'reps', 'token-sharer', -1);
     expect(negativeGen.statusCode).toBe(400);
 
-    // Publish 70 distinct keys on active Share -> choice table stays capped at 64 rows.
+    // Publish 70 distinct keys on active Share -> choice table stays capped at 64 rows
+    // and oldest key is evicted even within the 24-hour window.
     const firstCapKey = next('cf-cap-00-0123456789');
     const first = await publish(app, fx.challengeId, eventId, 19, firstCapKey, 'reps', 'token-sharer', 0);
     expect(first.statusCode).toBe(200);
     const shareId = (first.json() as ShareState).shareId;
+    await db.query(
+      `UPDATE challenge_feed_share_choices
+          SET acknowledged_at = now() - interval '1 minute'
+        WHERE share_id = $1 AND client_key = $2`,
+      [shareId, firstCapKey],
+    );
     for (let i = 1; i < 70; i += 1) {
       const res = await publish(app, fx.challengeId, eventId, 19, next(`cf-cap-${i}-0123456789`), 'reps', 'token-sharer', 1);
       expect(res.statusCode).toBe(200);
@@ -1276,6 +1299,12 @@ await publish(app, fx.challengeId, eventId, 9);
       [shareId],
     );
     expect(Number(rowCount.rows[0].count)).toBeLessThanOrEqual(64);
+
+    const evictedPresence = await db.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM challenge_feed_share_choices WHERE share_id = $1 AND client_key = $2`,
+      [shareId, firstCapKey],
+    );
+    expect(Number(evictedPresence.rows[0].count)).toBe(0);
 
     // Future generation while active -> 409 share_state_changed.
     const futureGen = await publish(app, fx.challengeId, eventId, 19, next('cf-future-gen-0123456789'), 'reps', 'token-sharer', 99);
