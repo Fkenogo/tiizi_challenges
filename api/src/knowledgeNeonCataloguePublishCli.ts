@@ -22,6 +22,7 @@ import {
  *   DATABASE_URL=... (direct Neon endpoint, sslmode=verify-full + CA)
  *   TIIZI_REMOTE_DB_HOST=...
  *   TIIZI_REMOTE_DB_PROJECT=...
+ *   TIIZI_REMOTE_DB_PROJECT_ID=... (optional; required for project-scoped NEON_API_KEY)
  *   TIIZI_REMOTE_DB_BRANCH=...
  *   TIIZI_REMOTE_DB_NAME=...
  *
@@ -46,6 +47,7 @@ function parseArgs(argv: string[]): {
 } {
   let provider = '';
   let project = '';
+  let projectId = '';
   let branch = '';
   let database = '';
   let confirmTarget = '';
@@ -69,6 +71,9 @@ function parseArgs(argv: string[]): {
         break;
       case '--target-project':
         project = readValue(arg);
+        break;
+      case '--target-project-id':
+        projectId = readValue(arg);
         break;
       case '--target-branch':
         branch = readValue(arg);
@@ -103,6 +108,7 @@ function parseArgs(argv: string[]): {
     confirmation: {
       provider,
       project,
+      projectId: projectId || undefined,
       branch,
       database,
       confirmTarget,
@@ -120,6 +126,7 @@ async function main(): Promise<void> {
   // Fail closed before opening any database connection.
   const validatedParts = validateRemoteNeonTarget(rawUrl, confirmation, allowlist);
   const authStatus = await verifyAuthoritativeNeonTarget(validatedParts, mode, {
+    projectId: confirmation.projectId,
     receiptPath: confirmation.provisioningReceiptPath,
   });
 
