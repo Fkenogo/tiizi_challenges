@@ -177,17 +177,18 @@ describe('remote Neon catalogue publication — endpoint & TLS safety', () => {
 
 describe('remote Neon catalogue publication — authoritative project & branch verification', () => {
   const parts = validateRemoteNeonTarget(VALID_URL, VALID_CONFIRM, VALID_ALLOWLIST, {});
+  const TEST_API_KEY = 'neon-secret-api-key-999';
 
-  it('requires authoritative confirmation for --apply while allowing unverified dry-run preflight', async () => {
+  it('allows unverified dry-run preflight without NEON_API_KEY and rejects --apply without NEON_API_KEY', async () => {
     const dry = await verifyAuthoritativeNeonTarget(parts, 'dry-run', { env: {} });
     expect(dry).toEqual({ verified: false, method: 'unverified_dry_run_only' });
 
     await expect(
       verifyAuthoritativeNeonTarget(parts, 'apply', { env: {} }),
-    ).rejects.toThrow(/authoritative Neon project\/branch confirmation is required for --apply/);
+    ).rejects.toThrow(/authenticated Neon API verification \(NEON_API_KEY\) is required for --apply/);
   });
 
-  it('accepts a valid bound provisioning receipt and rejects mismatched or tampered receipts', async () => {
+  it('never allows a forged or checksum-valid provisioning receipt to authorize --apply, retaining it as audit evidence only', async () => {
     const baseReceipt = {
       provider: 'neon' as const,
       source: 'neonctl' as const,
@@ -197,43 +198,99 @@ describe('remote Neon catalogue publication — authoritative project & branch v
       endpointHost: VALID_HOST,
       issuedAt: '2026-11-23T12:00:00Z',
     };
-    const validPath = writeReceiptFile({
+    const checksumValidReceiptPath = writeReceiptFile({
       ...baseReceipt,
       receiptSha256: computeProvisioningReceiptSha256(baseReceipt),
     });
-    const verified = await verifyAuthoritativeNeonTarget(parts, 'apply', {
-      receiptPath: validPath,
+
+    // Even with a valid SHA-256 receipt, --apply MUST fail without NEON_API_KEY
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', {
+        receiptPath: checksumValidReceiptPath,
+        env: {},
+      }),
+    ).rejects.toThrow(/authenticated Neon API verification \(NEON_API_KEY\) is required for --apply/);
+
+    // Dry-run may attach the receipt as audit-only evidence (authorizesApply: false)
+    const dryWithAudit = await verifyAuthoritativeNeonTarget(parts, 'dry-run', {
+      receiptPath: checksumValidReceiptPath,
       env: {},
     });
-    expect(verified).toEqual({
-      verified: true,
-      method: 'provisioning-receipt',
-      issuedAt: '2026-11-23T12:00:00Z',
+    expect(dryWithAudit).toEqual({
+      verified: false,
+      method: 'unverified_dry_run_only',
+      auditReceipt: {
+        present: true,
+        source: 'neonctl',
+        issuedAt: '2026-11-23T12:00:00Z',
+        authorizesApply: false,
+      },
     });
 
+    // Mismatched or tampered audit receipts are still rejected
     const wrongBranchPath = writeReceiptFile({ ...baseReceipt, branch: 'staging' });
     await expect(
-      verifyAuthoritativeNeonTarget(parts, 'apply', { receiptPath: wrongBranchPath, env: {} }),
+      verifyAuthoritativeNeonTarget(parts, 'dry-run', { receiptPath: wrongBranchPath, env: {} }),
     ).rejects.toThrow(/provisioning receipt branch 'staging' does not match 'main'/);
 
     const tamperedShaPath = writeReceiptFile({ ...baseReceipt, receiptSha256: '0'.repeat(64) });
     await expect(
-      verifyAuthoritativeNeonTarget(parts, 'apply', { receiptPath: tamperedShaPath, env: {} }),
+      verifyAuthoritativeNeonTarget(parts, 'dry-run', { receiptPath: tamperedShaPath, env: {} }),
     ).rejects.toThrow(/SHA-256 digest mismatch/);
   });
 
-  it('verifies against authenticated Neon API metadata when NEON_API_KEY is supplied', async () => {
-    const mockFetch: typeof fetch = async (input) => {
-      const url = String(input);
-      if (url.endsWith('/projects')) {
-        return new Response(JSON.stringify({ projects: [{ id: 'proj-1', name: 'tiizi-v2' }] }), { status: 200 });
-      }
-      if (url.endsWith('/branches')) {
-        return new Response(JSON.stringify({ branches: [{ id: 'br-1', name: 'main' }] }), { status: 200 });
-      }
-      if (url.endsWith('/endpoints')) {
+  it('verifies paginated Neon API metadata when NEON_API_KEY is supplied and fails closed on API errors or mismatches', async () => {
+    const paginatedFetch: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      const cursor = url.searchParams.get('cursor');
+      if (url.pathname.endsWith('/projects')) {
+        if (!cursor) {
+          return new Response(
+            JSON.stringify({
+              projects: [{ id: 'proj-0', name: 'other-project' }],
+              pagination: { cursor: 'p2' },
+            }),
+            { status: 200 },
+          );
+        }
         return new Response(
-          JSON.stringify({ endpoints: [{ branch_id: 'br-1', host: VALID_HOST, type: 'read_write' }] }),
+          JSON.stringify({
+            projects: [{ id: 'proj-1', name: 'tiizi-v2' }],
+          }),
+          { status: 200 },
+        );
+      }
+      if (url.pathname.endsWith('/branches')) {
+        if (!cursor) {
+          return new Response(
+            JSON.stringify({
+              branches: [{ id: 'br-0', name: 'staging' }],
+              pagination: { cursor: 'b2' },
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            branches: [{ id: 'br-1', name: 'main' }],
+          }),
+          { status: 200 },
+        );
+      }
+      if (url.pathname.endsWith('/endpoints')) {
+        if (!cursor) {
+          return new Response(
+            JSON.stringify({
+              endpoints: [{ branch_id: 'br-1', host: 'ep-ro.eu-central-1.aws.neon.tech', type: 'read_only' }],
+              pagination: { cursor: 'e2' },
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            endpoints: [{ branch_id: 'br-1', host: VALID_HOST, type: 'read_write' }],
+          }),
           { status: 200 },
         );
       }
@@ -241,17 +298,24 @@ describe('remote Neon catalogue publication — authoritative project & branch v
     };
 
     const res = await verifyAuthoritativeNeonTarget(parts, 'apply', {
-      env: { NEON_API_KEY: 'neon-test-key' },
-      fetchFn: mockFetch,
+      env: { NEON_API_KEY: TEST_API_KEY },
+      fetchFn: paginatedFetch,
     });
-    expect(res).toEqual({ verified: true, method: 'neon-api' });
+    expect(res).toEqual({
+      verified: true,
+      method: 'neon-api',
+      projectId: 'proj-1',
+      branchId: 'br-1',
+      endpointHost: VALID_HOST,
+    });
 
+    // Wrong endpoint / read-only endpoint rejected
     const wrongEpFetch: typeof fetch = async (input) => {
-      const url = String(input);
-      if (url.endsWith('/projects')) {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/projects')) {
         return new Response(JSON.stringify({ projects: [{ id: 'proj-1', name: 'tiizi-v2' }] }), { status: 200 });
       }
-      if (url.endsWith('/branches')) {
+      if (url.pathname.endsWith('/branches')) {
         return new Response(JSON.stringify({ branches: [{ id: 'br-1', name: 'main' }] }), { status: 200 });
       }
       return new Response(
@@ -261,10 +325,54 @@ describe('remote Neon catalogue publication — authoritative project & branch v
     };
     await expect(
       verifyAuthoritativeNeonTarget(parts, 'apply', {
-        env: { NEON_API_KEY: 'neon-test-key' },
+        env: { NEON_API_KEY: TEST_API_KEY },
         fetchFn: wrongEpFetch,
       }),
-    ).rejects.toThrow(/not an active read_write endpoint/);
+    ).rejects.toThrow(/is not an active read_write direct endpoint/);
+
+    // Wrong branch rejected
+    const wrongBranchFetch: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/projects')) {
+        return new Response(JSON.stringify({ projects: [{ id: 'proj-1', name: 'tiizi-v2' }] }), { status: 200 });
+      }
+      if (url.pathname.endsWith('/branches')) {
+        return new Response(JSON.stringify({ branches: [{ id: 'br-9', name: 'staging' }] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ endpoints: [] }), { status: 200 });
+    };
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', {
+        env: { NEON_API_KEY: TEST_API_KEY },
+        fetchFn: wrongBranchFetch,
+      }),
+    ).rejects.toThrow(/branch 'main' not found/);
+
+    // API HTTP failure fails closed without leaking NEON_API_KEY
+    const unauthorizedFetch: typeof fetch = async () =>
+      new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+    let errMsg = '';
+    try {
+      await verifyAuthoritativeNeonTarget(parts, 'apply', {
+        env: { NEON_API_KEY: TEST_API_KEY },
+        fetchFn: unauthorizedFetch,
+      });
+    } catch (err) {
+      errMsg = err instanceof Error ? err.message : String(err);
+    }
+    expect(errMsg).toMatch(/failed with status 401/);
+    expect(errMsg).not.toContain(TEST_API_KEY);
+
+    // Network transport failure fails closed
+    const networkFailFetch: typeof fetch = async () => {
+      throw new Error('ECONNREFUSED');
+    };
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', {
+        env: { NEON_API_KEY: TEST_API_KEY },
+        fetchFn: networkFailFetch,
+      }),
+    ).rejects.toThrow(/Neon API projects request failed/);
   });
 });
 
@@ -277,7 +385,13 @@ describe('remote Neon catalogue publication — migration, catalogue baseline & 
     project: 'tiizi-v2',
     branch: 'main',
   };
-  const verifiedAuth = { verified: true as const, method: 'provisioning-receipt' as const, issuedAt: '2026-11-23T12:00:00Z' };
+  const verifiedAuth = {
+    verified: true as const,
+    method: 'neon-api' as const,
+    projectId: 'proj-1',
+    branchId: 'br-1',
+    endpointHost: VALID_HOST,
+  };
 
   it('rejects migration mismatch even when schema_migrations count equals 34', async () => {
     const migrations = await listMigrationFiles();
@@ -348,10 +462,15 @@ describe('remote Neon catalogue publication — migration, catalogue baseline & 
     expect(dry.import).toMatchObject({ mode: 'dry-run', readyForIngestion: true, applied: 0 });
     await expect(
       executeRemoteNeonCataloguePublish(db, unverifiedTarget, candidate, inventory, 'apply'),
-    ).rejects.toThrow(/authoritative Neon project\/branch verification is required/);
+    ).rejects.toThrow(/authenticated Neon API verification is required before --apply/);
 
     // Authoritatively verified initial apply
     const verifiedTarget = await verifyRemoteNeonBaseline(db, parts, verifiedAuth, codes);
+    expect(verifiedTarget.migrationIntegrity).toMatchObject({
+      mode: 'filename_set_equality',
+      checksumsVerified: false,
+    });
+    expect(verifiedTarget.migrationIntegrity.limitation).toMatch(/SQL content checksums are not recorded/);
     const applied = await executeRemoteNeonCataloguePublish(db, verifiedTarget, candidate, inventory, 'apply');
     expect(applied.publication).toMatchObject({
       mode: 'apply',

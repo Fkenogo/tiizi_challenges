@@ -1,6 +1,6 @@
 # TIIZI-COST-004A — Neon S6 Knowledge Catalogue Publication Runbook
 
-**Authority:** `TIIZI-COST-003` technical preparation / `TIIZI-COST-004A` + `TIIZI-COST-004A-CORR-001`  
+**Authority:** `TIIZI-COST-003` technical preparation / `TIIZI-COST-004A` + `CORR-001` + `CORR-002`  
 **Command:** `npm run knowledge:neon-publish --prefix api` ([knowledgeNeonCataloguePublishCli.ts](../../api/src/knowledgeNeonCataloguePublishCli.ts))  
 **Status:** Prepared for future Founder-authorized Neon provisioning. Zero cloud execution performed by this document.
 
@@ -19,28 +19,16 @@ Neon provides two distinct connection endpoints per compute branch. Using the wr
 
 ## 2. Authoritative Target Verification (Required Before `--apply`)
 
-Operator-supplied environment allowlists (`TIIZI_REMOTE_DB_*`) are necessary but **not sufficient** to prove Neon project and branch identity. Before `--apply` can execute, `verifyAuthoritativeNeonTarget` requires **independent authoritative proof** via one of two mechanisms:
+Operator-supplied environment allowlists (`TIIZI_REMOTE_DB_*`) are necessary but **not sufficient** to prove Neon project and branch identity. Before `--apply` can execute, `verifyAuthoritativeNeonTarget` requires **live authenticated Neon API verification**:
 
-1. **Authenticated Neon API (`NEON_API_KEY`):**
-   - Calls `https://console.neon.tech/api/v2/projects`, `/branches`, and `/endpoints` using `NEON_API_KEY`.
-   - Verifies that the project, branch, and an active `read_write` endpoint host match `--target-project`, `--target-branch`, and `DATABASE_URL` host.
-2. **Independently Generated Provisioning Receipt (`--provisioning-receipt <path>` or `TIIZI_NEON_PROVISIONING_RECEIPT`):**
-   - A JSON receipt emitted by `neonctl` or `neon-api` provisioning automation containing:
-     ```json
-     {
-       "provider": "neon",
-       "source": "neonctl",
-       "project": "<neon-project-name>",
-       "branch": "<neon-branch-name>",
-       "database": "<db>",
-       "endpointHost": "<ep-direct-host>",
-       "issuedAt": "2026-11-23T12:00:00Z",
-       "receiptSha256": "<optional-sha256-of-canonical-fields>"
-     }
-     ```
-   - Every field is verified against the target parameters and exact endpoint hostname.
+1. **Authenticated Neon API (`NEON_API_KEY` — Mandatory for `--apply`):**
+   - Calls `https://console.neon.tech/api/v2/projects`, `/branches`, and `/endpoints` using `NEON_API_KEY`, traversing all cursor-paginated pages.
+   - Verifies that the project ID/name, branch ID/name, and an active `read_write` endpoint host match `--target-project`, `--target-branch`, and `DATABASE_URL` host.
+   - Fails closed on missing `NEON_API_KEY`, API HTTP errors, network failures, incomplete JSON, or target mismatches.
+2. **Optional Provisioning Receipt (`--provisioning-receipt <path>` or `TIIZI_NEON_PROVISIONING_RECEIPT` — Audit Evidence Only):**
+   - Retained solely as optional audit metadata (`authorizesApply: false`). A self-declared receipt (even with a valid SHA-256) **never** substitutes for live Neon API verification.
 
-> **Dry-run preflight:** `--dry-run` (default) remains available for pre-provisioning validation without `NEON_API_KEY` or a provisioning receipt, and explicitly reports `authoritativeVerification.method = "unverified_dry_run_only"`. Any `--apply` invocation without authoritative confirmation **fails closed**.
+> **Dry-run preflight:** `--dry-run` (default) remains available for pre-provisioning validation without `NEON_API_KEY`, and explicitly reports `authoritativeVerification.method = "unverified_dry_run_only"`. Any `--apply` invocation without live `NEON_API_KEY` verification **fails closed**.
 
 ---
 
@@ -57,7 +45,7 @@ Before running `knowledge:neon-publish`:
    ```
    Confirm `migrate: already up to date` on re-run.
 4. **Baseline Integrity Gate (`verifyRemoteNeonBaseline`):** Before any write, the tool verifies:
-   - Exact set equality between `schema_migrations` and committed `api/migrations/*.sql` (no missing or unexpected migrations).
+   - Exact set equality between `schema_migrations` and committed `api/migrations/*.sql` (no missing or unexpected migrations). **Limitation:** `schema_migrations` records `(filename, applied_at)` only and does not store SQL content checksums (`migrationIntegrity.checksumsVerified = false`).
    - `members = 0`, `groups = 0`, `challenges = 0`.
    - `knowledge_items` matches **only** the initial migration-014 exemplar baseline (`FIT-STR-001` + `WEL-MND-003` published at v1) **or** a complete, previously published 118-activity S6 baseline (84 Fitness, 34 Wellness, all `published`).
 5. **Create a Pre-Publication Neon Branch Snapshot (Recommended):** Create a clean Neon restore point / branch (`pre-s6-publish`) so recovery is instant if any validation fails.
@@ -73,7 +61,7 @@ export TIIZI_REMOTE_DB_HOST="<ep-direct-host>"
 export TIIZI_REMOTE_DB_PROJECT="<neon-project-name>"
 export TIIZI_REMOTE_DB_BRANCH="<neon-branch-name>"
 export TIIZI_REMOTE_DB_NAME="<db>"
-# Supply either NEON_API_KEY or --provisioning-receipt <path>
+# Mandatory for --apply
 export NEON_API_KEY="<neon-api-key>"
 ```
 
@@ -109,7 +97,7 @@ Verify output:
 | Failure Condition | Guard Behavior | Recovery |
 | :--- | :--- | :--- |
 | Non-Neon host, `-pooler.` endpoint, non-5432 port, or conflicting TLS params | Fails closed in `validateRemoteNeonTarget` before opening any network connection. | Use the direct `ep-*.neon.tech:5432` endpoint with `uselibpqcompat=true&sslmode=verify-full` and a single CA source. |
-| Missing/mismatched `NEON_API_KEY` or `--provisioning-receipt` on `--apply` | Fails closed in `verifyAuthoritativeNeonTarget` before any DB write. | Provide valid `NEON_API_KEY` or a bound provisioning receipt matching project, branch, database, and endpointHost. |
+| Missing, failing, or mismatched `NEON_API_KEY` verification on `--apply` | Fails closed in `verifyAuthoritativeNeonTarget` before any DB write. | Provide a valid `NEON_API_KEY` matching the target Neon project, branch, and `read_write` endpoint host. |
 | `schema_migrations` mismatch or unexpected `knowledge_items` / domain rows | Fails closed in `verifyRemoteNeonBaseline` before any write. | Reconcile migrations or provision a clean empty Neon branch/database. |
 | Partial failure during `--apply` | `importS6Catalogue` and `publishDevCatalogue` are idempotent and preserve UUIDs and `knowledgeVersion`. | Re-run `--apply` once resolved, or reset the Neon branch to the `pre-s6-publish` snapshot. |
 

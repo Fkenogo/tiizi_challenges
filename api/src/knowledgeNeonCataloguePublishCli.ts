@@ -26,8 +26,8 @@ import {
  *   TIIZI_REMOTE_DB_NAME=...
  *
  * Authoritative project/branch verification (required for --apply):
- *   --provisioning-receipt <path> (or TIIZI_NEON_PROVISIONING_RECEIPT)
- *   OR NEON_API_KEY (authenticated Neon REST API verification)
+ *   NEON_API_KEY (authenticated Neon REST API verification; mandatory for --apply)
+ *   --provisioning-receipt <path> (or TIIZI_NEON_PROVISIONING_RECEIPT) optional audit evidence only
  *
  * Usage:
  *   npm run knowledge:neon-publish -- \

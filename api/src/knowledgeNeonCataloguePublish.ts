@@ -15,24 +15,21 @@ import {
 import { listMigrationFiles } from './migrate.js';
 
 /**
- * Governed remote Neon S6 Catalogue publication (TIIZI-COST-004A / CORR-001).
+ * Governed remote Neon S6 Catalogue publication (TIIZI-COST-004A / CORR-001 / CORR-002).
  *
  * - Preserves `openGuardedDisposableDb` and `knowledgeDevCataloguePublishCli`
  *   unchanged for disposable local databases.
- * - Dry-run by default.
- * - Strictly requires a valid Neon direct-endpoint hostname (`ep-*.neon.tech`,
- *   never `-pooler.`, never arbitrary external hosts or IP literals), port 5432,
- *   no duplicate/conflicting TLS or connection-override parameters, and
- *   `sslmode=verify-full` with a single trusted CA source.
- * - Requires authoritative Neon project & branch confirmation before `--apply`
- *   via either `NEON_API_KEY` (authenticated Neon API check) or an independently
- *   generated provisioning receipt (`--provisioning-receipt` /
- *   `TIIZI_NEON_PROVISIONING_RECEIPT`) bound to the exact endpoint.
- * - Verifies exact migration identities (`schema_migrations` == `api/migrations/*.sql`),
- *   empty domain tables (`members=0`, `groups=0`, `challenges=0`), and that
- *   `knowledge_items` matches ONLY the migration-014 exemplar baseline or an
- *   already-published 118-activity S6 baseline.
- * - Never logs or includes connection strings, credentials, or secrets in errors.
+ * - Dry-run by default (remains available without provider authorization).
+ * - Requires authenticated Neon API verification (`NEON_API_KEY`) before any
+ *   remote `--apply`, verifying project ID, branch ID, and direct read-write
+ *   endpoint against paginated provider metadata.
+ * - Optional provisioning receipts (`--provisioning-receipt` /
+ *   `TIIZI_NEON_PROVISIONING_RECEIPT`) are retained as audit evidence only and
+ *   NEVER substitute for live Neon API verification.
+ * - Verifies exact migration filename set equality (`schema_migrations` ==
+ *   `api/migrations/*.sql`); explicitly reports that `schema_migrations` does
+ *   not record SQL content checksums.
+ * - Never logs or includes API keys, connection strings, or credentials in errors.
  */
 
 export const REMOTE_NEON_ENV = {
@@ -85,14 +82,40 @@ export interface NeonProvisioningReceipt {
   receiptSha256?: string;
 }
 
+export interface AuditReceiptSummary {
+  present: true;
+  source: 'neon-api' | 'neonctl';
+  issuedAt: string;
+  authorizesApply: false;
+}
+
 export type AuthoritativeVerificationStatus =
-  | { verified: true; method: 'neon-api' | 'provisioning-receipt'; issuedAt?: string }
-  | { verified: false; method: 'unverified_dry_run_only' };
+  | {
+      verified: true;
+      method: 'neon-api';
+      projectId: string;
+      branchId: string;
+      endpointHost: string;
+      auditReceipt?: AuditReceiptSummary;
+    }
+  | {
+      verified: false;
+      method: 'unverified_dry_run_only';
+      auditReceipt?: AuditReceiptSummary;
+    };
+
+export interface MigrationIntegrityReport {
+  mode: 'filename_set_equality';
+  migrationsCount: number;
+  checksumsVerified: false;
+  limitation: string;
+}
 
 export interface RemoteNeonBaselineIdentity extends RemoteNeonTargetParts {
   connectedDatabase: string;
   connectedUser: string;
   migrationsCount: number;
+  migrationIntegrity: MigrationIntegrityReport;
   memberCount: number;
   groupCount: number;
   challengeCount: number;
@@ -132,8 +155,10 @@ export function remoteNeonAllowlistFromEnv(
   };
 }
 
-/** Compute canonical SHA-256 fingerprint for an independent Neon provisioning receipt. */
-export function computeProvisioningReceiptSha256(receipt: Omit<NeonProvisioningReceipt, 'receiptSha256'>): string {
+/** Compute canonical SHA-256 fingerprint for an optional Neon audit receipt. */
+export function computeProvisioningReceiptSha256(
+  receipt: Omit<NeonProvisioningReceipt, 'receiptSha256'>,
+): string {
   const canonical = [
     receipt.provider,
     receipt.source,
@@ -239,7 +264,6 @@ export function validateRemoteNeonTarget(
     refuse(`connection database '${urlDb}' does not equal --target-db '${database}'`);
   }
 
-  // Strict TLS parameter checks (prevent duplicate/conflicting TLS params).
   for (const key of url.searchParams.keys()) {
     if (TLS_PARAM.test(key) && key.toLowerCase() === 'ssl') {
       refuse("conflicting TLS parameter 'ssl' is not allowed; use sslmode=verify-full only");
@@ -268,7 +292,122 @@ export function validateRemoteNeonTarget(
   };
 }
 
-/** Verify authoritative project/branch identity via receipt file or Neon API. */
+async function parseOptionalAuditReceipt(
+  receiptPath: string,
+  target: RemoteNeonTargetParts,
+): Promise<AuditReceiptSummary> {
+  let parsed: Partial<NeonProvisioningReceipt>;
+  try {
+    const text = await readFile(receiptPath, 'utf8');
+    parsed = JSON.parse(text) as Partial<NeonProvisioningReceipt>;
+  } catch {
+    refuse(`unable to read or parse audit provisioning receipt at '${receiptPath}'`);
+  }
+  if (parsed.provider !== 'neon') {
+    refuse(`audit provisioning receipt provider mismatch (expected 'neon')`);
+  }
+  if (parsed.source !== 'neon-api' && parsed.source !== 'neonctl') {
+    refuse(`audit provisioning receipt source must be 'neon-api' or 'neonctl'`);
+  }
+  if (parsed.project !== target.project) {
+    refuse(`audit provisioning receipt project '${parsed.project ?? 'unset'}' does not match '${target.project}'`);
+  }
+  if (parsed.branch !== target.branch) {
+    refuse(`audit provisioning receipt branch '${parsed.branch ?? 'unset'}' does not match '${target.branch}'`);
+  }
+  if (parsed.database !== target.database) {
+    refuse(`audit provisioning receipt database '${parsed.database ?? 'unset'}' does not match '${target.database}'`);
+  }
+  if ((parsed.endpointHost ?? '').toLowerCase() !== target.host) {
+    refuse(`audit provisioning receipt endpointHost '${parsed.endpointHost ?? 'unset'}' does not match '${target.host}'`);
+  }
+  if (!parsed.issuedAt || Number.isNaN(Date.parse(parsed.issuedAt))) {
+    refuse('audit provisioning receipt issuedAt must be a valid ISO-8601 timestamp');
+  }
+  if (parsed.receiptSha256) {
+    const expectedSha = computeProvisioningReceiptSha256({
+      provider: parsed.provider,
+      source: parsed.source,
+      project: parsed.project,
+      branch: parsed.branch,
+      database: parsed.database,
+      endpointHost: parsed.endpointHost!,
+      issuedAt: parsed.issuedAt,
+    });
+    if (parsed.receiptSha256.toLowerCase() !== expectedSha) {
+      refuse('audit provisioning receipt SHA-256 digest mismatch');
+    }
+  }
+  return {
+    present: true,
+    source: parsed.source,
+    issuedAt: parsed.issuedAt,
+    authorizesApply: false,
+  };
+}
+
+async function fetchAllNeonPages<T>(
+  baseUrl: string,
+  collectionKey: string,
+  headers: Record<string, string>,
+  fetchImpl: typeof fetch,
+  label: string,
+): Promise<T[]> {
+  const items: T[] = [];
+  let cursor: string | undefined;
+  const seenCursors = new Set<string>();
+
+  for (let page = 0; page < 100; page += 1) {
+    const url = new URL(baseUrl);
+    url.searchParams.set('limit', '100');
+    if (cursor) url.searchParams.set('cursor', cursor);
+
+    let res: Response;
+    try {
+      res = await fetchImpl(url.toString(), { headers });
+    } catch {
+      refuse(`Neon API ${label} request failed (network or transport error)`);
+    }
+    if (!res.ok) {
+      refuse(`Neon API ${label} verification failed with status ${res.status}`);
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      body = (await res.json()) as Record<string, unknown>;
+    } catch {
+      refuse(`Neon API ${label} response was not valid JSON`);
+    }
+
+    const pageItems = body[collectionKey];
+    if (!Array.isArray(pageItems)) {
+      refuse(`Neon API ${label} response missing '${collectionKey}' array`);
+    }
+    items.push(...(pageItems as T[]));
+
+    const pagination = body.pagination as { cursor?: unknown } | undefined;
+    const nextCursor = typeof pagination?.cursor === 'string' && pagination.cursor.trim()
+      ? pagination.cursor.trim()
+      : undefined;
+    if (!nextCursor) break;
+    if (seenCursors.has(nextCursor)) {
+      refuse(`Neon API ${label} pagination cursor loop detected`);
+    }
+    seenCursors.add(nextCursor);
+    cursor = nextCursor;
+  }
+
+  return items;
+}
+
+/**
+ * Authoritatively verify Neon project ID, branch ID, and active read-write
+ * direct endpoint against the authenticated Neon REST API (`NEON_API_KEY`).
+ *
+ * Provisioning receipts are retained strictly as optional audit evidence and
+ * NEVER authorize `--apply`. `--dry-run` remains available without provider
+ * authorization.
+ */
 export async function verifyAuthoritativeNeonTarget(
   target: RemoteNeonTargetParts,
   mode: 'dry-run' | 'apply',
@@ -282,114 +421,92 @@ export async function verifyAuthoritativeNeonTarget(
   const receiptPath = options.receiptPath?.trim() || env[REMOTE_NEON_ENV.receipt]?.trim();
   const apiKey = env[REMOTE_NEON_ENV.apiKey]?.trim();
 
-  if (receiptPath) {
-    let parsed: Partial<NeonProvisioningReceipt>;
-    try {
-      const text = await readFile(receiptPath, 'utf8');
-      parsed = JSON.parse(text) as Partial<NeonProvisioningReceipt>;
-    } catch {
-      refuse(`unable to read or parse provisioning receipt at '${receiptPath}'`);
+  const auditReceipt = receiptPath
+    ? await parseOptionalAuditReceipt(receiptPath, target)
+    : undefined;
+
+  if (!apiKey) {
+    if (mode === 'apply') {
+      refuse(
+        `authenticated Neon API verification (${REMOTE_NEON_ENV.apiKey}) is required for --apply; audit receipts alone cannot authorize writes`,
+      );
     }
-    if (parsed.provider !== 'neon') {
-      refuse(`provisioning receipt provider mismatch (expected 'neon')`);
-    }
-    if (parsed.source !== 'neon-api' && parsed.source !== 'neonctl') {
-      refuse(`provisioning receipt source must be 'neon-api' or 'neonctl'`);
-    }
-    if (parsed.project !== target.project) {
-      refuse(`provisioning receipt project '${parsed.project ?? 'unset'}' does not match '${target.project}'`);
-    }
-    if (parsed.branch !== target.branch) {
-      refuse(`provisioning receipt branch '${parsed.branch ?? 'unset'}' does not match '${target.branch}'`);
-    }
-    if (parsed.database !== target.database) {
-      refuse(`provisioning receipt database '${parsed.database ?? 'unset'}' does not match '${target.database}'`);
-    }
-    if ((parsed.endpointHost ?? '').toLowerCase() !== target.host) {
-      refuse(`provisioning receipt endpointHost '${parsed.endpointHost ?? 'unset'}' does not match '${target.host}'`);
-    }
-    if (!parsed.issuedAt || Number.isNaN(Date.parse(parsed.issuedAt))) {
-      refuse('provisioning receipt issuedAt must be a valid ISO-8601 timestamp');
-    }
-    if (parsed.receiptSha256) {
-      const expectedSha = computeProvisioningReceiptSha256({
-        provider: parsed.provider,
-        source: parsed.source,
-        project: parsed.project,
-        branch: parsed.branch,
-        database: parsed.database,
-        endpointHost: parsed.endpointHost!,
-        issuedAt: parsed.issuedAt,
-      });
-      if (parsed.receiptSha256.toLowerCase() !== expectedSha) {
-        refuse('provisioning receipt SHA-256 digest mismatch');
-      }
-    }
-    return { verified: true, method: 'provisioning-receipt', issuedAt: parsed.issuedAt };
+    return {
+      verified: false,
+      method: 'unverified_dry_run_only',
+      ...(auditReceipt ? { auditReceipt } : {}),
+    };
   }
 
-  if (apiKey) {
-    const fetchImpl = options.fetchFn ?? fetch;
-    const headers = { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' };
-    const projRes = await fetchImpl('https://console.neon.tech/api/v2/projects', { headers });
-    if (!projRes.ok) {
-      refuse(`Neon API project verification failed with status ${projRes.status}`);
-    }
-    const projBody = (await projRes.json()) as {
-      projects?: Array<{ id: string; name: string }>;
-    };
-    const matchedProject = (projBody.projects ?? []).find(
-      (p) => p.id === target.project || p.name === target.project,
-    );
-    if (!matchedProject) {
-      refuse(`Neon project '${target.project}' not found in authenticated Neon account`);
-    }
+  const fetchImpl = options.fetchFn ?? fetch;
+  const headers = { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' };
 
-    const [branchRes, epRes] = await Promise.all([
-      fetchImpl(`https://console.neon.tech/api/v2/projects/${encodeURIComponent(matchedProject.id)}/branches`, { headers }),
-      fetchImpl(`https://console.neon.tech/api/v2/projects/${encodeURIComponent(matchedProject.id)}/endpoints`, { headers }),
-    ]);
-    if (!branchRes.ok || !epRes.ok) {
-      refuse('Neon API branch/endpoint verification request failed');
-    }
-    const branchBody = (await branchRes.json()) as {
-      branches?: Array<{ id: string; name: string }>;
-    };
-    const matchedBranch = (branchBody.branches ?? []).find(
-      (b) => b.id === target.branch || b.name === target.branch,
-    );
-    if (!matchedBranch) {
-      refuse(`Neon branch '${target.branch}' not found in project '${target.project}'`);
-    }
-
-    const epBody = (await epRes.json()) as {
-      endpoints?: Array<{ branch_id: string; host: string; type: string }>;
-    };
-    const matchedEndpoint = (epBody.endpoints ?? []).find(
-      (e) =>
-        e.branch_id === matchedBranch.id &&
-        e.type === 'read_write' &&
-        e.host.toLowerCase() === target.host,
-    );
-    if (!matchedEndpoint) {
-      refuse(`Neon endpoint '${target.host}' is not an active read_write endpoint for project '${target.project}' branch '${target.branch}'`);
-    }
-    return { verified: true, method: 'neon-api' };
+  const projects = await fetchAllNeonPages<{ id?: string; name?: string }>(
+    'https://console.neon.tech/api/v2/projects',
+    'projects',
+    headers,
+    fetchImpl,
+    'projects',
+  );
+  const matchedProject = projects.find(
+    (p) => (p.id === target.project || p.name === target.project) && typeof p.id === 'string' && p.id.trim().length > 0,
+  );
+  if (!matchedProject?.id) {
+    refuse(`Neon project '${target.project}' not found in authenticated Neon account`);
   }
 
-  if (mode === 'apply') {
+  const [branches, endpoints] = await Promise.all([
+    fetchAllNeonPages<{ id?: string; name?: string }>(
+      `https://console.neon.tech/api/v2/projects/${encodeURIComponent(matchedProject.id)}/branches`,
+      'branches',
+      headers,
+      fetchImpl,
+      'branches',
+    ),
+    fetchAllNeonPages<{ branch_id?: string; host?: string; type?: string; pooler_enabled?: boolean }>(
+      `https://console.neon.tech/api/v2/projects/${encodeURIComponent(matchedProject.id)}/endpoints`,
+      'endpoints',
+      headers,
+      fetchImpl,
+      'endpoints',
+    ),
+  ]);
+
+  const matchedBranch = branches.find(
+    (b) => (b.id === target.branch || b.name === target.branch) && typeof b.id === 'string' && b.id.trim().length > 0,
+  );
+  if (!matchedBranch?.id) {
+    refuse(`Neon branch '${target.branch}' not found in project '${target.project}'`);
+  }
+
+  const matchedEndpoint = endpoints.find(
+    (e) =>
+      e.branch_id === matchedBranch.id &&
+      e.type === 'read_write' &&
+      typeof e.host === 'string' &&
+      e.host.toLowerCase() === target.host,
+  );
+  if (!matchedEndpoint?.host) {
     refuse(
-      `authoritative Neon project/branch confirmation is required for --apply (provide --provisioning-receipt <path> / ${REMOTE_NEON_ENV.receipt} or ${REMOTE_NEON_ENV.apiKey})`,
+      `Neon endpoint '${target.host}' is not an active read_write direct endpoint for project '${target.project}' (${matchedProject.id}) branch '${target.branch}' (${matchedBranch.id})`,
     );
   }
 
-  return { verified: false, method: 'unverified_dry_run_only' };
+  return {
+    verified: true,
+    method: 'neon-api',
+    projectId: matchedProject.id,
+    branchId: matchedBranch.id,
+    endpointHost: matchedEndpoint.host.toLowerCase(),
+    ...(auditReceipt ? { auditReceipt } : {}),
+  };
 }
 
 /**
  * Live baseline verification:
  * 1. Confirms database identity.
- * 2. Verifies exact expected migration filenames in `schema_migrations`.
+ * 2. Verifies exact expected migration filenames in `schema_migrations`
+ *    (explicitly noting `schema_migrations` records filenames only, not SQL checksums).
  * 3. Verifies `members`, `groups`, and `challenges` are empty.
  * 4. Verifies existing `knowledge_items` match ONLY the migration-014 exemplar
  *    state or a valid idempotent previously published 118-activity S6 baseline.
@@ -513,6 +630,13 @@ export async function verifyRemoteNeonBaseline(
     connectedDatabase: idRow.db,
     connectedUser: idRow.usr,
     migrationsCount: appliedFiles.length,
+    migrationIntegrity: {
+      mode: 'filename_set_equality',
+      migrationsCount: appliedFiles.length,
+      checksumsVerified: false,
+      limitation:
+        'schema_migrations records filename and applied_at only; SQL content checksums are not recorded by migrate.ts',
+    },
     memberCount,
     groupCount,
     challengeCount,
@@ -533,7 +657,7 @@ export async function executeRemoteNeonCataloguePublish(
   mode: 'dry-run' | 'apply',
 ): Promise<RemoteNeonPublicationResult> {
   if (mode === 'apply' && !target.authoritativeVerification.verified) {
-    refuse('authoritative Neon project/branch verification is required before --apply');
+    refuse('authenticated Neon API verification is required before --apply');
   }
 
   const codes = new Set<string>(
