@@ -46,6 +46,12 @@ vi.mock('./V2ParticipationSection', () => ({
   V2LeaveChallengeDialog: () => null,
   V2ParticipationSection: () => null,
 }));
+// CF-3 feed section: exercised by its own suite; this journey test only
+// covers the Keep-private navigation contract.
+vi.mock('./V2ChallengeFeedView', () => ({
+  V2ChallengeFeedSection: () => null,
+  V2ChallengeFeedScreen: () => null,
+}));
 vi.mock('./V2ProgressSection', () => ({ V2ProgressSection: () => null }));
 vi.mock('./V2ChallengeResults', () => ({ V2ChallengeResults: () => null }));
 vi.mock('./V2LatestChallengeContribution', () => ({ V2LatestChallengeContribution: () => null }));

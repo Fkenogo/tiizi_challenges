@@ -525,6 +525,26 @@ async function requireChallengeVisible(
   readFail(404, 'unknown_challenge', 'Challenge not found');
 }
 
+/**
+ * CF-2/CF-3 Challenge Feed reads reuse the exact Challenge read and
+ * visibility authority (CF-01 v0.2 §5: the Feed never expands visibility;
+ * one shared predicate). These thin exports exist so the Challenge Feed
+ * contract cannot drift from the Challenge read contract; they add no
+ * new authority of their own.
+ */
+export async function readChallengeForFeed(db: Db, challengeId: string): Promise<ChallengeRow> {
+  return readChallenge(db, challengeId);
+}
+
+export async function requireChallengeFeedVisible(
+  db: Db,
+  challenge: ChallengeRow,
+  memberId: string,
+  authority: GroupMembershipAuthority,
+): Promise<void> {
+  await requireChallengeVisible(db, challenge, memberId, authority);
+}
+
 function toOwnParticipation(
   episode: ParticipationRow,
   derived: ParticipationTruthState | undefined,

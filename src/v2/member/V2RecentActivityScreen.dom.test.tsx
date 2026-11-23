@@ -24,11 +24,22 @@ interface MockPreviewState {
 const h = vi.hoisted(() => ({
   history: {} as MockHistoryState,
   preview: {} as MockPreviewState,
+  ownShare: { data: null, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() },
+  publish: { mutate: vi.fn(), isPending: false, error: null },
+  withdraw: { mutate: vi.fn(), isPending: false, error: null },
 }));
 
 vi.mock('./recentActivityQuery', () => ({
   useV2RecentActivityHistory: () => h.history,
   useV2RecentActivityPreview: () => h.preview,
+}));
+vi.mock('../profile/useV2MemberIdentity', () => ({
+  useV2MemberIdentity: () => ({ displayName: 'Amara Test', isLoading: false }),
+}));
+vi.mock('../challenges/challengeFeedQuery', () => ({
+  useV2ActivityShareState: () => h.ownShare,
+  useV2PublishActivityShare: () => h.publish,
+  useV2WithdrawActivityShare: () => h.withdraw,
 }));
 
 import { V2RecentActivityPreview, V2RecentActivityScreen } from './V2RecentActivityScreen';
@@ -112,7 +123,9 @@ describe('Personal Recent Activity presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share Push-Up activity' }));
     expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
     expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Challenge Feed — unavailable' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText('Challenge Feed')).toBeTruthy();
+    expect(screen.getByText(/Preview — not shared yet/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Share to Challenge Feed' }).hasAttribute('disabled')).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Close sharing options' }));
     expect(screen.queryByRole('region', { name: 'Sharing destinations' })).toBeNull();
   });
