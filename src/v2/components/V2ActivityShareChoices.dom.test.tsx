@@ -128,13 +128,15 @@ describe('V2ActivityShareChoices', () => {
       clientKey: string;
       previewedValue: number;
       previewedUnit: string;
+      expectedGeneration: number;
     };
     expect(call.activityEventId).toBe(item.activityId);
     // Every confirm is a FRESH keyed choice (retries converge server-side)…
     expect(call.clientKey).toMatch(/^[A-Za-z0-9-]{16,64}$/);
-    // …bound to exactly the value and unit the member previewed.
+    // …bound to exactly the value, unit and generation the member observed.
     expect(call.previewedValue).toBe(25);
     expect(call.previewedUnit).toBe('reps');
+    expect(call.expectedGeneration).toBe(0);
   });
 
   it('shows the withdrawable shared state when the Activity is already shared', () => {
@@ -146,6 +148,7 @@ describe('V2ActivityShareChoices', () => {
       withdrawn: false,
       visible: true,
       hiddenReason: null,
+      shareGeneration: 1,
     });
     render(
       <V2ActivityShareChoices
@@ -165,7 +168,7 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.getByRole('button', { name: 'Continue to Strength Challenge' })).toBeTruthy();
   });
 
-  it('announces and focuses the withdrawal outcome inside the panel', () => {
+  it('announces and focuses the withdrawal outcome inside the panel, then sends the withdrawn generation on a fresh confirm', () => {
     resetFeed({
       shareId: '00000000-0000-4000-8000-00000000000a',
       challengeId: item.challenge.id,
@@ -174,6 +177,7 @@ describe('V2ActivityShareChoices', () => {
       withdrawn: false,
       visible: true,
       hiddenReason: null,
+      shareGeneration: 1,
     });
     h.withdraw = {
       // Simulate the real flow: the mutation's invalidation refetches the
@@ -189,6 +193,7 @@ describe('V2ActivityShareChoices', () => {
             withdrawn: true,
             visible: false,
             hiddenReason: 'withdrawn',
+            shareGeneration: 2,
           },
           isLoading: false,
           isError: false,
@@ -213,6 +218,11 @@ describe('V2ActivityShareChoices', () => {
     const notice = screen.getByText('Your Share is withdrawn. Other members can no longer see it.');
     expect(notice.getAttribute('role')).toBe('status');
     expect(document.activeElement).toBe(notice);
+    fireEvent.click(screen.getByRole('button', { name: 'Share to Challenge Feed' }));
+    expect(h.publish.mutate).toHaveBeenCalledWith(expect.objectContaining({
+      activityEventId: item.activityId,
+      expectedGeneration: 2,
+    }));
   });
 
   it('offers no Share action for a reversed source, before any server state', () => {
@@ -237,6 +247,7 @@ describe('V2ActivityShareChoices', () => {
       withdrawn: false,
       visible: false,
       hiddenReason: 'reversed',
+      shareGeneration: 1,
     });
     render(
       <V2ActivityShareChoices
@@ -257,6 +268,7 @@ describe('V2ActivityShareChoices', () => {
       withdrawn: false,
       visible: false,
       hiddenReason: 'suppressed',
+      shareGeneration: 1,
     });
     render(
       <V2ActivityShareChoices
@@ -303,7 +315,7 @@ describe('V2ActivityShareChoices', () => {
     expect(screen.getByRole('button', { name: /Completing your choice/ }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('surfaces honest refusals for withdrawn, reversed and changed sources', () => {
+  it('surfaces honest refusals for withdrawn, state-changed, reversed and changed sources', () => {
     resetFeed();
     h.publish.error = new ApiError(
       409,
@@ -319,6 +331,23 @@ describe('V2ActivityShareChoices', () => {
     );
     expect(screen.getByRole('alert').textContent)
       .toContain('This Share was withdrawn. Confirm again to share it.');
+    cleanup();
+
+    resetFeed();
+    h.publish.error = new ApiError(
+      409,
+      'share_state_changed',
+      'This Share state changed; review the current state and confirm again',
+    );
+    render(
+      <V2ActivityShareChoices
+        mode="later"
+        source={shareSourceFromHistoryItem(item)}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent)
+      .toContain('This Share state changed. Review the current state and confirm again.');
     cleanup();
 
     resetFeed();
@@ -364,6 +393,7 @@ describe('V2ActivityShareChoices', () => {
       withdrawn: false,
       visible: true,
       hiddenReason: null,
+      shareGeneration: 1,
     });
     h.withdraw.error = new ApiError(503, 'feed_unavailable', 'Share withdrawal is unavailable');
     render(

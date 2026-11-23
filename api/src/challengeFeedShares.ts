@@ -96,6 +96,11 @@ export interface ActivityShareState {
   visible: boolean;
   /** Why a hidden Share is hidden; null while visible. */
   hiddenReason: 'withdrawn' | 'suppressed' | 'reversed' | 'expired' | null;
+  /** Monotonic state generation (1 on first publish, +1 on each withdrawal
+   * and each revival). Callers supply this as expectedGeneration when
+   * publishing so stale requests from an earlier generation can never undo
+   * a later withdrawal even after time-bounded choice-key pruning. */
+  shareGeneration: number;
 }
 
 export class ChallengeFeedError extends Error {
@@ -146,6 +151,7 @@ interface ExistingShareRow extends Record<string, unknown> {
   withdrawn_at: string | Date | null;
   suppressed_at: string | Date | null;
   last_publish_key: string | null;
+  share_generation: number;
 }
 
 interface HeadRow extends Record<string, unknown> {
@@ -382,7 +388,7 @@ export async function readActivityShareState(
   }
   const { endedAt } = await requireFeedAudience(db, authority, challengeId, memberId);
   const found = await db.query<ExistingShareRow>(
-    `SELECT share_id, published_at, withdrawn_at, suppressed_at, last_publish_key
+    `SELECT share_id, published_at, withdrawn_at, suppressed_at, last_publish_key, share_generation
        FROM challenge_feed_shares
       WHERE member_id = $1 AND challenge_id = $2 AND activity_event_id = $3`,
     [memberId, challengeId, activityEventId],
@@ -410,6 +416,7 @@ export async function readActivityShareState(
     withdrawn: share.withdrawn_at !== null,
     visible: hiddenReason === null,
     hiddenReason,
+    shareGeneration: Number(share.share_generation),
   };
 }
 
@@ -441,15 +448,13 @@ async function currentHead(db: Db, eventId: string): Promise<ResolvedHead> {
   return head;
 }
 
-/** Bound the acknowledged-key history per Share by TIME, not count: keys
- * acknowledged within the last 24 hours are kept; older keys are pruned.
- * The replay-protection horizon is therefore 24 hours — far beyond any
- * genuine delayed retry (seconds to minutes) — while storage stays bounded
- * by the member's own confirmation rate over one day. A key older than the
- * horizon is treated as a new member action; the UI mints a fresh key per
- * confirm click, and the owner's panel always reports the live Share
- * state, so even that vanishing edge cannot hide a revival. */
+/** Bound the acknowledged-key history per Share by BOTH time (24 hours) and
+ * count (newest 64 keys) so storage per Share stays strictly bounded.
+ * Durable replay safety across pruning is enforced by `share_generation`:
+ * an old request carries an earlier `expectedGeneration`, so even after its
+ * choice key is pruned it can never silently revive a withdrawn Share. */
 const CHOICE_HISTORY_HOURS = 24;
+const CHOICE_HISTORY_MAX_ROWS = 64;
 
 /** Record an acknowledged publication request key for one Share row. A
  * RETRY of an already-recorded key refreshes its acknowledged timestamp, so
@@ -464,8 +469,16 @@ async function recordChoice(tx: Db, shareId: string, clientKey: string): Promise
   await tx.query(
     `DELETE FROM challenge_feed_share_choices
       WHERE share_id = $1
-        AND acknowledged_at < now() - ($2 || ' hours')::interval`,
-    [shareId, String(CHOICE_HISTORY_HOURS)],
+        AND (
+          acknowledged_at < now() - ($2 || ' hours')::interval
+          OR client_key NOT IN (
+            SELECT client_key FROM challenge_feed_share_choices
+             WHERE share_id = $1
+             ORDER BY acknowledged_at DESC, client_key DESC
+             LIMIT $3
+          )
+        )`,
+    [shareId, String(CHOICE_HISTORY_HOURS), CHOICE_HISTORY_MAX_ROWS],
   );
 }
 
@@ -509,10 +522,15 @@ export async function publishActivityShare(
   memberId: string,
   challengeId: string,
   activityEventId: string,
-  input: { clientKey: string; previewedValue: number; previewedUnit: string },
+  input: {
+    clientKey: string;
+    previewedValue: number;
+    previewedUnit: string;
+    expectedGeneration: number;
+  },
   options: { now?: Date } = {},
 ): Promise<ActivityShareState> {
-  const { clientKey, previewedValue, previewedUnit } = input;
+  const { clientKey, previewedValue, previewedUnit, expectedGeneration } = input;
   const now = options.now ?? new Date();
   if (!UUID_RE.test(challengeId)) {
     throw new ChallengeFeedError(400, 'invalid_challenge_id', 'challengeId must be a Tiizi challenge UUID');
@@ -522,6 +540,9 @@ export async function publishActivityShare(
   }
   if (!PUBLISH_KEY_RE.test(clientKey)) {
     throw new ChallengeFeedError(400, 'invalid_client_key', 'clientKey must be a request-scoped key');
+  }
+  if (!Number.isInteger(expectedGeneration) || expectedGeneration < 0) {
+    throw new ChallengeFeedError(400, 'invalid_generation', 'expectedGeneration must be a non-negative integer');
   }
 
   // CF-01 §5 audience: the sharer must still be an authorized viewer.
@@ -533,11 +554,11 @@ export async function publishActivityShare(
   // State-explicit publication inside one transaction. The source event row
   // is locked FOR SHARE and the lineage HEAD is resolved, LOCKED and
   // re-verified, so no correction/reversal can slip between validation and
-  // the write. Share-row state is settled BEFORE the measurement checks, so
-  // the error contract is exact: a suppressed Share answers share_suppressed,
-  // an acknowledged-key replay after withdrawal answers share_withdrawn, and
-  // only a genuinely fresh choice reaches the reversal / changed-source
-  // checks.
+  // the write. Share-row state and monotonic generation are settled BEFORE
+  // the measurement checks, so the error contract is exact: a suppressed
+  // Share answers share_suppressed, an older-generation or acknowledged-key
+  // replay answers share_withdrawn, and only a genuinely fresh choice for
+  // the current generation reaches the reversal / changed-source checks.
   return db.transaction(async (tx) => {
     // S1 source authority: the caller's own DIRECT application of this exact
     // event to this exact Challenge (self-only by construction; a foreign or
@@ -574,7 +595,7 @@ export async function publishActivityShare(
     // Settle the existing Share-row state first (serialized against
     // withdrawal and concurrent publication by FOR UPDATE).
     const existing = await tx.query<ExistingShareRow>(
-      `SELECT share_id, published_at, withdrawn_at, suppressed_at, last_publish_key
+      `SELECT share_id, published_at, withdrawn_at, suppressed_at, last_publish_key, share_generation
          FROM challenge_feed_shares
         WHERE member_id = $1 AND activity_event_id = $2
         FOR UPDATE`,
@@ -585,14 +606,36 @@ export async function publishActivityShare(
       // Operator suppression is projection-only; republishing needs review.
       throw new ChallengeFeedError(409, 'share_suppressed', 'This Share was removed and cannot be republished');
     }
-    if (share && share.withdrawn_at !== null
-        && (await choiceWasAcknowledged(tx, String(share.share_id), clientKey))) {
-      // A delayed retry of ANY choice the member has since WITHDRAWN can
-      // never silently undo that withdrawal — this precedence is exact and
-      // never masked by a later measurement change. (An acknowledged key
-      // retried while the Share is still active is an ordinary idempotent
-      // retry and converges below.)
-      throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
+    if (share) {
+      const currentGeneration = Number(share.share_generation);
+      if (share.withdrawn_at !== null) {
+        if (expectedGeneration !== currentGeneration
+            || (await choiceWasAcknowledged(tx, String(share.share_id), clientKey))) {
+          // Any request from an earlier generation (even if its choice key was
+          // pruned after 24h) or any acknowledged key from the current cycle
+          // can never silently undo a withdrawal.
+          throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
+        }
+      } else {
+        if (expectedGeneration < currentGeneration - 1) {
+          // Delayed replay of a choice from before a withdrawal + later
+          // republish: refuse as withdrawn rather than converging.
+          throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
+        }
+        if (expectedGeneration > currentGeneration) {
+          throw new ChallengeFeedError(
+            409,
+            'share_state_changed',
+            'This Share state changed; review the current state and confirm again',
+          );
+        }
+      }
+    } else if (expectedGeneration !== 0) {
+      throw new ChallengeFeedError(
+        409,
+        'share_state_changed',
+        'This Share state changed; review the current state and confirm again',
+      );
     }
 
     // Resolve the current lineage head, LOCK it, and VERIFY the lock still
@@ -634,14 +677,9 @@ export async function publishActivityShare(
     }
 
     if (share && share.withdrawn_at === null) {
-      // Already shared: idempotent for both a retry and a repeat deliberate
-      // choice — the existing Share is returned unchanged, never reordered.
-      // (The reversal / changed-source checks above still refuse an active
-      // Share whose source was corrected or reversed since, so the returned
-      // visible:true is always read-truth.) EVERY acknowledged key is
-      // recorded so a DELAYED REPLAY of any acknowledged request, arriving
-      // after a later withdrawal, is refused as stale instead of silently
-      // re-publishing.
+      // Already shared: idempotent for both a retry of the current transition
+      // (expectedGeneration === currentGeneration - 1) and a repeat active
+      // confirmation (expectedGeneration === currentGeneration).
       await recordChoice(tx, String(share.share_id), clientKey);
       if (share.last_publish_key !== clientKey) {
         await tx.query(
@@ -657,6 +695,7 @@ export async function publishActivityShare(
         withdrawn: false,
         visible: true,
         hiddenReason: null,
+        shareGeneration: Number(share.share_generation),
       };
     }
     if (share && lostRace) {
@@ -667,17 +706,24 @@ export async function publishActivityShare(
       throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
     }
     if (share) {
-      // A FRESH explicit choice revives the same auditable row.
+      // A FRESH explicit choice matching the current withdrawn generation
+      // revives the same auditable row and advances share_generation.
       const revived = await tx.query<ExistingShareRow>(
         `UPDATE challenge_feed_shares
-            SET withdrawn_at = NULL, published_at = now(), last_publish_key = $4
+            SET withdrawn_at = NULL,
+                published_at = now(),
+                last_publish_key = $4,
+                share_generation = share_generation + 1
           WHERE member_id = $1 AND activity_event_id = $2 AND challenge_id = $3
-          RETURNING share_id, published_at, withdrawn_at, suppressed_at, last_publish_key`,
-        [memberId, activityEventId, challengeId, clientKey],
+            AND withdrawn_at IS NOT NULL
+            AND suppressed_at IS NULL
+            AND share_generation = $5
+          RETURNING share_id, published_at, withdrawn_at, suppressed_at, last_publish_key, share_generation`,
+        [memberId, activityEventId, challengeId, clientKey, expectedGeneration],
       );
       const back = revived.rows[0];
       if (!back) {
-        throw new ChallengeFeedError(503, 'feed_unavailable', 'Share publication is unavailable');
+        throw new ChallengeFeedError(409, 'share_withdrawn', 'This Share was withdrawn; confirm to share it again');
       }
       await recordChoice(tx, String(back.share_id), clientKey);
       return {
@@ -688,6 +734,7 @@ export async function publishActivityShare(
         withdrawn: false,
         visible: true,
         hiddenReason: null,
+        shareGeneration: Number(back.share_generation),
       };
     }
 
@@ -696,7 +743,7 @@ export async function publishActivityShare(
          (challenge_id, member_id, activity_event_id, activity_record_id, event_family, last_publish_key)
        VALUES ($1, $2, $3, $4, 'activity_share', $5)
        ON CONFLICT (member_id, activity_event_id) DO NOTHING
-       RETURNING share_id, published_at, withdrawn_at, suppressed_at, last_publish_key`,
+       RETURNING share_id, published_at, withdrawn_at, suppressed_at, last_publish_key, share_generation`,
       [challengeId, memberId, activityEventId, String(row.record_id), clientKey],
     );
     const fresh = inserted.rows[0];
@@ -710,6 +757,7 @@ export async function publishActivityShare(
         withdrawn: false,
         visible: true,
         hiddenReason: null,
+        shareGeneration: Number(fresh.share_generation),
       };
     }
     // No row read, none inserted: a concurrent first publication committed
@@ -723,7 +771,9 @@ export async function publishActivityShare(
 }
 
 /** Withdraw the sharer's own Share: hides the Feed item, never deletes or
- * rewrites the canonical Activity. Idempotent. */
+ * rewrites the canonical Activity. Idempotent. Advances share_generation
+ * once per active->withdrawn transition so stale publish requests can never
+ * undo the withdrawal even after choice-key pruning. */
 export async function withdrawActivityShare(
   db: Db,
   authority: GroupMembershipAuthority,
@@ -739,11 +789,20 @@ export async function withdrawActivityShare(
   }
   await requireFeedAudience(db, authority, challengeId, memberId);
 
-  const updated = await db.query<{ share_id: string; published_at: string | Date; withdrawn_at: string | Date | null }>(
+  const updated = await db.query<{
+    share_id: string;
+    published_at: string | Date;
+    withdrawn_at: string | Date | null;
+    share_generation: number;
+  }>(
     `UPDATE challenge_feed_shares
-        SET withdrawn_at = COALESCE(withdrawn_at, now())
+        SET withdrawn_at = COALESCE(withdrawn_at, now()),
+            share_generation = CASE
+              WHEN withdrawn_at IS NULL THEN share_generation + 1
+              ELSE share_generation
+            END
       WHERE member_id = $1 AND activity_event_id = $2 AND challenge_id = $3
-      RETURNING share_id, published_at, withdrawn_at`,
+      RETURNING share_id, published_at, withdrawn_at, share_generation`,
     [memberId, activityEventId, challengeId],
   );
   const share = updated.rows[0];
@@ -759,6 +818,7 @@ export async function withdrawActivityShare(
     withdrawn: true,
     visible: false,
     hiddenReason: 'withdrawn',
+    shareGeneration: Number(share.share_generation),
   };
 }
 
@@ -802,7 +862,7 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
   };
   const activityShareBodySchema = {
     type: 'object',
-    required: ['activityEventId', 'clientKey', 'previewedValue', 'previewedUnit'],
+    required: ['activityEventId', 'clientKey', 'previewedValue', 'previewedUnit', 'expectedGeneration'],
     additionalProperties: false,
     properties: {
       activityEventId: { type: 'string', format: 'uuid' },
@@ -812,11 +872,14 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
        * server refuses to publish a value the member never previewed. */
       previewedValue: { type: 'number', minimum: 0 },
       previewedUnit: { type: 'string', minLength: 1, maxLength: 40 },
+      /** The Share generation observed by the caller before confirming
+       * (0 when no Share exists yet). */
+      expectedGeneration: { type: 'integer', minimum: 0 },
     },
   };
   const shareStateResponseSchema = {
     type: 'object',
-    required: ['shareId', 'challengeId', 'activityEventId', 'publishedAt', 'withdrawn', 'visible', 'hiddenReason'],
+    required: ['shareId', 'challengeId', 'activityEventId', 'publishedAt', 'withdrawn', 'visible', 'hiddenReason', 'shareGeneration'],
     additionalProperties: false,
     properties: {
       shareId: { type: 'string', format: 'uuid' },
@@ -826,6 +889,7 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
       withdrawn: { type: 'boolean' },
       visible: { type: 'boolean' },
       hiddenReason: { anyOf: [{ type: 'string', enum: ['withdrawn', 'suppressed', 'reversed', 'expired'] }, { type: 'null' }] },
+      shareGeneration: { type: 'integer', minimum: 1 },
     },
   };
 
@@ -910,11 +974,22 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
   }, async (request) => {
     const member = authenticatedMember(request);
     const params = request.params as { challengeId: string };
-    const body = request.body as { activityEventId: string; clientKey: string; previewedValue: number; previewedUnit: string };
+    const body = request.body as {
+      activityEventId: string;
+      clientKey: string;
+      previewedValue: number;
+      previewedUnit: string;
+      expectedGeneration: number;
+    };
     const authority = requireAuthority(deps);
     return feedRoute(() => publishActivityShare(
       db, authority, member.memberId, params.challengeId, body.activityEventId,
-      { clientKey: body.clientKey, previewedValue: body.previewedValue, previewedUnit: body.previewedUnit },
+      {
+        clientKey: body.clientKey,
+        previewedValue: body.previewedValue,
+        previewedUnit: body.previewedUnit,
+        expectedGeneration: body.expectedGeneration,
+      },
       { now: deps.now?.() },
     ), 'Share publication is unavailable');
   });
