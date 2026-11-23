@@ -11,7 +11,7 @@
 -- only, resolved at read time, so engagement can never fail or block a
 -- source-truth write.
 
-CREATE TABLE challenge_feed_kudos (
+CREATE TABLE IF NOT EXISTS challenge_feed_kudos (
   kudos_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   share_id UUID NOT NULL,
   member_id UUID NOT NULL,
@@ -20,9 +20,9 @@ CREATE TABLE challenge_feed_kudos (
   CONSTRAINT challenge_feed_kudos_member_uq UNIQUE (share_id, member_id)
 );
 
-CREATE INDEX challenge_feed_kudos_share_idx ON challenge_feed_kudos (share_id);
+CREATE INDEX IF NOT EXISTS challenge_feed_kudos_share_idx ON challenge_feed_kudos (share_id);
 
 -- Serves the per-member sliding-window rate check (CF-01 §6.2 abuse
 -- protection) and future per-member maintenance.
-CREATE INDEX challenge_feed_kudos_member_recent_idx
+CREATE INDEX IF NOT EXISTS challenge_feed_kudos_member_recent_idx
   ON challenge_feed_kudos (member_id, created_at);

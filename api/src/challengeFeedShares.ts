@@ -897,12 +897,25 @@ async function requireKudosEntry(
   const share = found.rows[0];
   if (!share) throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
   // Reversal safety: a Feed entry whose source lineage was reversed is not
-  // currently visible, so it cannot be Kudos-mutated either. The head row is
-  // locked FOR SHARE exactly as publication does, so a concurrent reversal
-  // cannot commit between this check and the Kudos write; the lookup never
-  // fails open — an unreadable lineage refuses the mutation.
-  const resolvedHead = await currentHead(db, String(share.activity_event_id));
-  const head = await lockHead(db, resolvedHead.event_id);
+  // currently visible, so it cannot be Kudos-mutated either. Resolve the
+  // lineage head, LOCK it FOR SHARE, and VERIFY the locked row is still the
+  // committed head (re-resolving up to 5 times if a concurrent correction or
+  // reversal won the race between resolution and lock acquisition). Never
+  // fails open — an unreadable or continuously churning lineage refuses the
+  // mutation.
+  let head: ResolvedHead | null = null;
+  for (let attempt = 0; attempt < 5 && head === null; attempt += 1) {
+    const resolved = await currentHead(db, String(share.activity_event_id));
+    const locked = await lockHead(db, resolved.event_id);
+    if (locked.status === 'committed') head = locked;
+  }
+  if (!head) {
+    throw new ChallengeFeedError(
+      503,
+      'feed_unavailable',
+      'Activity lineage is changing; try again',
+    );
+  }
   if (head.correction_kind === 'reversal') {
     throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
   }
