@@ -76,6 +76,16 @@ export interface ChallengeFeedItem {
   unit: string;
   publishedAt: string;
   ownShare: boolean;
+  /** Aggregate Kudos count, visible to every Feed viewer (CF-01 §6.2). */
+  kudosCount: number;
+  /** Whether the VIEWER's own Kudos is active on this entry. */
+  viewerKudos: boolean;
+}
+
+export interface KudosState {
+  feedItemId: string;
+  kudosCount: number;
+  viewerKudos: boolean;
 }
 
 export interface ChallengeFeedPage {
@@ -139,6 +149,8 @@ interface FeedRow extends Record<string, unknown> {
   head_knowledge_id: string | null;
   head_knowledge_version: number | null;
   activity_name: string | null;
+  kudos_count: string | number;
+  viewer_kudos: boolean;
 }
 
 interface ShareSourceRow extends Record<string, unknown> {
@@ -301,7 +313,9 @@ export async function getChallengeFeedPage(
             m.display_name,
             head.value AS head_value, head.unit AS head_unit, head.canonical_key AS head_canonical_key,
             head.knowledge_id AS head_knowledge_id, head.knowledge_version AS head_knowledge_version,
-            COALESCE(kv.name, k.name, head.canonical_key) AS activity_name
+            COALESCE(kv.name, k.name, head.canonical_key) AS activity_name,
+            kudos.count AS kudos_count,
+            (viewer.kudos_id IS NOT NULL) AS viewer_kudos
        FROM challenge_feed_shares s
        JOIN members m ON m.member_id = s.member_id
        CROSS JOIN LATERAL (
@@ -321,6 +335,11 @@ export async function getChallengeFeedPage(
        LEFT JOIN knowledge_item_versions kv
          ON kv.item_id = head.knowledge_id AND kv.version = head.knowledge_version
        LEFT JOIN knowledge_items k ON k.knowledge_id = head.knowledge_id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*) AS count FROM challenge_feed_kudos kk WHERE kk.share_id = s.share_id
+       ) kudos ON TRUE
+       LEFT JOIN challenge_feed_kudos viewer
+         ON viewer.share_id = s.share_id AND viewer.member_id = $5
       WHERE s.challenge_id = $1
         AND s.event_family = 'activity_share'
         AND s.withdrawn_at IS NULL
@@ -329,7 +348,7 @@ export async function getChallengeFeedPage(
         AND ($2::text IS NULL OR (s.published_at, s.share_id) < ($2::timestamptz, $3::uuid))
       ORDER BY s.published_at DESC, s.share_id DESC
       LIMIT $4`,
-    [challengeId, cursor?.lastScannedAt ?? null, cursor?.lastScannedId ?? null, limit + 1],
+    [challengeId, cursor?.lastScannedAt ?? null, cursor?.lastScannedId ?? null, limit + 1, memberId],
   );
 
   const hasMore = result.rows.length > limit;
@@ -345,6 +364,8 @@ export async function getChallengeFeedPage(
       unit: String(row.head_unit),
       publishedAt: new Date(row.published_at).toISOString(),
       ownShare,
+      kudosCount: Number(row.kudos_count ?? 0),
+      viewerKudos: Boolean(row.viewer_kudos),
     };
     // The canonical event ID is the owner's withdrawal reference; other
     // viewers never receive it (CF-01 §3.6 minimum disclosure).
@@ -842,6 +863,165 @@ async function feedRoute<T>(run: () => Promise<T>, fallback: string): Promise<T>
   }
 }
 
+/** CF-01 §6.2 — resolve a currently-visible Feed entry for a Kudos
+ * mutation, under the SAME audience and visibility truth as the Feed read,
+ * with the entry row LOCKED so a concurrent withdrawal or suppression
+ * serializes against this decision. Denials stay indistinguishable from
+ * not-found. Never fails open: an unreadable source lineage is a 503, not
+ * an implicit pass. */
+async function requireKudosEntry(
+  db: Db,
+  authority: GroupMembershipAuthority,
+  memberId: string,
+  challengeId: string,
+  feedItemId: string,
+): Promise<{ shareId: string; sharerMemberId: string; activityEventId: string }> {
+  if (!UUID_RE.test(challengeId)) {
+    throw new ChallengeFeedError(400, 'invalid_challenge_id', 'challengeId must be a Tiizi challenge UUID');
+  }
+  if (!UUID_RE.test(feedItemId)) {
+    throw new ChallengeFeedError(400, 'invalid_entry', 'feedItemId must be a Tiizi Feed entry UUID');
+  }
+  const { endedAt } = await requireFeedAudience(db, authority, challengeId, memberId);
+  if (feedExpired(endedAt, new Date())) {
+    throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
+  }
+  const found = await db.query<{ share_id: string; member_id: string; activity_event_id: string; withdrawn_at: Date | null; suppressed_at: Date | null }>(
+    `SELECT s.share_id, s.member_id, s.activity_event_id, s.withdrawn_at, s.suppressed_at
+       FROM challenge_feed_shares s
+      WHERE s.share_id = $1 AND s.challenge_id = $2
+        AND s.withdrawn_at IS NULL AND s.suppressed_at IS NULL
+      FOR UPDATE`,
+    [feedItemId, challengeId],
+  );
+  const share = found.rows[0];
+  if (!share) throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
+  // Reversal safety: a Feed entry whose source lineage was reversed is not
+  // currently visible, so it cannot be Kudos-mutated either. Resolve the
+  // lineage head, LOCK it FOR SHARE, and VERIFY the locked row is still the
+  // committed head (re-resolving up to 5 times if a concurrent correction or
+  // reversal won the race between resolution and lock acquisition). Never
+  // fails open — an unreadable or continuously churning lineage refuses the
+  // mutation.
+  let head: ResolvedHead | null = null;
+  for (let attempt = 0; attempt < 5 && head === null; attempt += 1) {
+    const resolved = await currentHead(db, String(share.activity_event_id));
+    const locked = await lockHead(db, resolved.event_id);
+    if (locked.status === 'committed') head = locked;
+  }
+  if (!head) {
+    throw new ChallengeFeedError(
+      503,
+      'feed_unavailable',
+      'Activity lineage is changing; try again',
+    );
+  }
+  if (head.correction_kind === 'reversal') {
+    throw new ChallengeFeedError(404, 'unknown_entry', 'Feed entry not found');
+  }
+  return {
+    shareId: String(share.share_id),
+    sharerMemberId: String(share.member_id),
+    activityEventId: String(share.activity_event_id),
+  };
+}
+
+/** CF-01 §6.2 required abuse protection: a member may not exceed a bounded
+ * rate of Kudos MUTATIONS (adds and removals alike — toggling add/remove on
+ * one entry is still one mutation per call, so a hard-deleted row can never
+ * reset the counter). Enforced per member over an in-process sliding
+ * window; the API today runs as a single process (preview/CI/standalone),
+ * and the bound is per process by design — a cross-instance limiter is a
+ * deployment-scale decision, not a pilot safeguard. */
+const KUDOS_RATE_LIMIT_PER_MINUTE = 30;
+const KUDOS_RATE_WINDOW_MS = 60_000;
+
+const kudosRateWindow = new Map<string, number[]>();
+
+function requireKudosRateAllowed(memberId: string): void {
+  const now = Date.now();
+  const window = (kudosRateWindow.get(memberId) ?? []).filter(
+    (stamp) => now - stamp < KUDOS_RATE_WINDOW_MS,
+  );
+  if (window.length >= KUDOS_RATE_LIMIT_PER_MINUTE) {
+    kudosRateWindow.set(memberId, window);
+    throw new ChallengeFeedError(429, 'kudos_rate_limited', 'Slow down — try again in a minute');
+  }
+  window.push(now);
+  kudosRateWindow.set(memberId, window);
+}
+
+async function readKudosState(db: Db, feedItemId: string, memberId: string): Promise<KudosState> {
+  const state = await db.query<{ count: string | number; viewer: boolean }>(
+    `SELECT COALESCE(kc.count, 0) AS count,
+            (vk.kudos_id IS NOT NULL) AS viewer
+       FROM challenge_feed_shares s
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*) AS count FROM challenge_feed_kudos kk WHERE kk.share_id = s.share_id
+       ) kc ON TRUE
+       LEFT JOIN challenge_feed_kudos vk ON vk.share_id = s.share_id AND vk.member_id = $2
+      WHERE s.share_id = $1`,
+    [feedItemId, memberId],
+  );
+  const row = state.rows[0];
+  return {
+    feedItemId,
+    kudosCount: Number(row?.count ?? 0),
+    viewerKudos: Boolean(row?.viewer),
+  };
+}
+
+/** Add the member's single Kudos to a visible Feed entry (idempotent). */
+export async function addChallengeFeedKudos(
+  db: Db,
+  authority: GroupMembershipAuthority,
+  memberId: string,
+  challengeId: string,
+  feedItemId: string,
+): Promise<KudosState> {
+  requireKudosRateAllowed(memberId);
+  return db.transaction(async (tx) => {
+    // Entry authorization and the insert share ONE transaction with the
+    // entry row locked, so a concurrent withdrawal/suppression serializes
+    // before this decision rather than racing it.
+    const entry = await requireKudosEntry(tx, authority, memberId, challengeId, feedItemId);
+    if (entry.sharerMemberId === memberId) {
+      // CF-01 §6.2: no self-Kudos. The entry is visible to the sharer, so an
+      // honest policy refusal discloses nothing.
+      throw new ChallengeFeedError(409, 'self_kudos', 'You cannot add Kudos to your own Share');
+    }
+    await tx.query(
+      `INSERT INTO challenge_feed_kudos (share_id, member_id) VALUES ($1, $2)
+       ON CONFLICT (share_id, member_id) DO NOTHING`,
+      [entry.shareId, memberId],
+    );
+    return readKudosState(tx, feedItemId, memberId);
+  });
+}
+
+/** Remove the member's Kudos from a Feed entry (idempotent). Uses the
+ * SAME entry authorization as the add: a cross-Challenge, withdrawn,
+ * suppressed, reversed or expired entry is not-found, never a silent zero
+ * state, and a Kudos can never be removed for an entry the caller cannot
+ * currently view. */
+export async function removeChallengeFeedKudos(
+  db: Db,
+  authority: GroupMembershipAuthority,
+  memberId: string,
+  challengeId: string,
+  feedItemId: string,
+): Promise<KudosState> {
+  requireKudosRateAllowed(memberId);
+  return db.transaction(async (tx) => {
+    const entry = await requireKudosEntry(tx, authority, memberId, challengeId, feedItemId);
+    await tx.query(
+      'DELETE FROM challenge_feed_kudos WHERE share_id = $1 AND member_id = $2',
+      [entry.shareId, memberId],
+    );
+    return readKudosState(tx, feedItemId, memberId);
+  });
+}
+
 export interface ChallengeFeedRouteDeps {
   groupMembershipAuthority?: GroupMembershipAuthority;
   now?: () => Date;
@@ -911,7 +1091,7 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
             items: {
               type: 'array', items: {
                 type: 'object', additionalProperties: false,
-                required: ['feedItemId', 'kind', 'sharerDisplayName', 'activityName', 'value', 'unit', 'publishedAt', 'ownShare'],
+                required: ['feedItemId', 'kind', 'sharerDisplayName', 'activityName', 'value', 'unit', 'publishedAt', 'ownShare', 'kudosCount', 'viewerKudos'],
                 properties: {
                   feedItemId: { type: 'string', format: 'uuid' },
                   kind: { const: 'activity_share' },
@@ -923,6 +1103,8 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
                   unit: { type: 'string' },
                   publishedAt: { type: 'string', format: 'date-time' },
                   ownShare: { type: 'boolean' },
+                  kudosCount: { type: 'integer', minimum: 0 },
+                  viewerKudos: { type: 'boolean' },
                 },
               },
             },
@@ -992,6 +1174,57 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
       },
       { now: deps.now?.() },
     ), 'Share publication is unavailable');
+  });
+
+  const kudosResponseSchema = {
+    type: 'object',
+    required: ['feedItemId', 'kudosCount', 'viewerKudos'],
+    additionalProperties: false,
+    properties: {
+      feedItemId: { type: 'string', format: 'uuid' },
+      kudosCount: { type: 'integer', minimum: 0 },
+      viewerKudos: { type: 'boolean' },
+    },
+  };
+
+  app.post(apiPath('/challenges/:challengeId/feed/entries/:feedItemId/kudos'), {
+    schema: {
+      params: {
+        type: 'object', required: ['challengeId', 'feedItemId'],
+        properties: {
+          challengeId: { type: 'string', format: 'uuid' },
+          feedItemId: { type: 'string', format: 'uuid' },
+        },
+      },
+      response: { 200: kudosResponseSchema },
+    },
+  }, async (request) => {
+    const member = authenticatedMember(request);
+    const params = request.params as { challengeId: string; feedItemId: string };
+    const authority = requireAuthority(deps);
+    return feedRoute(() => addChallengeFeedKudos(
+      db, authority, member.memberId, params.challengeId, params.feedItemId,
+    ), 'Kudos authority is unavailable');
+  });
+
+  app.delete(apiPath('/challenges/:challengeId/feed/entries/:feedItemId/kudos'), {
+    schema: {
+      params: {
+        type: 'object', required: ['challengeId', 'feedItemId'],
+        properties: {
+          challengeId: { type: 'string', format: 'uuid' },
+          feedItemId: { type: 'string', format: 'uuid' },
+        },
+      },
+      response: { 200: kudosResponseSchema },
+    },
+  }, async (request) => {
+    const member = authenticatedMember(request);
+    const params = request.params as { challengeId: string; feedItemId: string };
+    const authority = requireAuthority(deps);
+    return feedRoute(() => removeChallengeFeedKudos(
+      db, authority, member.memberId, params.challengeId, params.feedItemId,
+    ), 'Kudos authority is unavailable');
   });
 
   app.delete(apiPath('/challenges/:challengeId/feed/activity-shares/:activityEventId'), {

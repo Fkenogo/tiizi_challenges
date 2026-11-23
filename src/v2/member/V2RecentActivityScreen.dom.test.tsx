@@ -121,13 +121,14 @@ describe('Personal Recent Activity presentation', () => {
     render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
 
     fireEvent.click(screen.getByRole('button', { name: 'Share Push-Up activity' }));
-    expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
-    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
-    expect(screen.getByText('Challenge Feed')).toBeTruthy();
-    expect(screen.getByText(/Preview — not shared yet/)).toBeTruthy();
+    expect(screen.getByRole('region', { name: /Activity Recorded/ })).toBeTruthy();
+    const panel = document.querySelector('[aria-labelledby="activity-share-title"]');
+    expect(panel?.textContent).toContain('25 reps');
+    expect(screen.getByText(/Challenge Feed preview/)).toBeTruthy();
+    expect(screen.getByText('Not shared yet')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Share to Challenge Feed' }).hasAttribute('disabled')).toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: 'Close sharing options' }));
-    expect(screen.queryByRole('region', { name: 'Sharing destinations' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Close sharing options|Close/ }));
+    expect(screen.queryByRole('region', { name: /Activity Recorded/ })).toBeNull();
   });
 
   it('requests the next page only when the member selects Load more', () => {

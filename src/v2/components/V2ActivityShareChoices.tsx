@@ -24,6 +24,12 @@ export interface V2ActivityShareSource {
   revisionState: MemberRecentActivityRevisionState;
 }
 
+/** How the immediate post-log sheet completed, for the returning screen. */
+export interface V2ShareOutcome {
+  shared?: boolean;
+  withdrawn?: boolean;
+}
+
 /** The accepted event ID, not the database record ID, is the history identity. */
 export function shareSourceFromAcceptedActivity(
   result: Pick<V2ActivityResult, 'eventId' | 'challengeId' | 'value' | 'unit'>,
@@ -55,9 +61,9 @@ type V2ActivityShareChoicesProps =
   | {
       source: V2ActivityShareSource;
       mode: 'immediate';
-      /** Post-log context: the originating Challenge the Keep-private path returns to. */
+      /** Post-log context: the originating Challenge the return path opens. */
       challengeTitle: string;
-      onKeepPrivate: () => void;
+      onKeepPrivate: (outcome?: V2ShareOutcome) => void;
     }
   | {
       source: V2ActivityShareSource;
@@ -67,57 +73,44 @@ type V2ActivityShareChoicesProps =
 
 function publishErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.code === 'source_reversed') {
-      return 'This Activity was reversed and cannot be shared.';
-    }
-    if (error.code === 'source_changed') {
-      return 'This Activity changed since you previewed it. Preview the current version and confirm again.';
-    }
-    if (error.code === 'share_withdrawn') {
-      return 'This Share was withdrawn. Confirm again to share it.';
-    }
-    if (error.code === 'share_state_changed') {
-      return 'This Share state changed. Review the current state and confirm again.';
-    }
-    if (error.code === 'share_suppressed') {
-      return 'This Share was removed and cannot be republished.';
-    }
-    if (error.code === 'feed_expired') {
-      return 'This Challenge Feed has expired.';
-    }
+    if (error.code === 'source_reversed') return 'This Activity was reversed and cannot be shared.';
+    if (error.code === 'source_changed') return 'This Activity changed since you previewed it. Preview the current version and confirm again.';
+    if (error.code === 'share_withdrawn') return 'This Share was withdrawn. Confirm again to share it.';
+    if (error.code === 'share_state_changed') return 'This Share state changed. Review the current state and confirm again.';
+    if (error.code === 'share_suppressed') return 'This Share was removed and cannot be republished.';
+    if (error.code === 'feed_expired') return 'This Challenge Feed has expired.';
   }
-  return 'Sharing to the Challenge Feed failed. Please try again.';
+  return 'Sharing failed. Please try again.';
 }
 
 function withdrawErrorMessage(): string {
-  return 'Withdrawing your Share failed. Please try again.';
+  return 'Removing your Share failed. Please try again.';
 }
 
+function initialsOf(name: string | null): string {
+  if (!name) return '?';
+  return name.trim().charAt(0).toUpperCase() || '?';
+}
+
+const CONFIRMATION_PAUSE_MS = 1400;
+
 /**
- * Shared immediate and share-later destination selector.
+ * The compact sharing sheet (Founder direction, 2026-11-22; visual authority
+ * docs/ui-reference/log_activity/activity_sharing_modal.html).
  *
- * CF-01 v0.2 §6.1 (Founder-authorized CF-2/S1): the Challenge Feed is a
- * FUNCTIONAL destination. Publication is an explicit, previewed, self-only,
- * withdrawable member action keyed to a fresh choice; only the S1 allow-list
- * is published (display name, Activity name, own accepted value, unit — the
- * Challenge title is preview-only and never published). Publication never
- * modifies Activity evidence or Challenge progress. The current Share state
- * comes from the server's exact owner read — an outage is never presented
- * as "not shared", and the Keep-private path is disabled while a Share
- * choice is in flight so a completed publication can never be described as
- * private.
- *
- * External sharing remains honestly unavailable; Group Feed is not a
- * destination for individual Activity.
+ * The real CF-2/S1 publication contract is unchanged: self-only, explicit,
+ * preview-bound and withdrawable. The sheet shows exactly what the Feed
+ * preview will contain, the single primary Share action, and the Keep-private
+ * default. A successful publication shows a brief confirmation and returns
+ * to the originating Challenge; a withdrawal closes the sheet with a brief
+ * confirmation — never another full choice screen.
  */
 export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
   const { source } = props;
   // The post-log transition replaces the focused Done button while the
   // sheet stays open; the sheet's own initial-focus effect does not re-run,
   // so the immediate panel takes focus itself when it mounts. Share-later
-  // panels never take focus: Challenge Details unmounts and remounts them
-  // during background refreshes, and a remount must not pull keyboard
-  // focus away from whatever unrelated control the member is using.
+  // panels never take focus: remounts must not steal keyboard focus.
   const panelRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (props.mode !== 'immediate') return;
@@ -137,189 +130,261 @@ export function V2ActivityShareChoices(props: V2ActivityShareChoicesProps) {
   const publishError = publish.error;
   const withdrawError = withdraw.error;
 
-  // A withdrawal inside this panel removes the focused control; the outcome
-  // is announced and takes focus so keyboard flow continues from the panel.
-  const [withdrawnNotice, setWithdrawnNotice] = useState<string | null>(null);
-  const withdrawnNoticeRef = useRef<HTMLParagraphElement | null>(null);
+  const [confirmation, setConfirmation] = useState<null | 'shared' | 'withdrawn'>(null);
+  const confirmationRef = useRef<HTMLParagraphElement | null>(null);
+  const autoActionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (withdrawnNotice !== null) withdrawnNoticeRef.current?.focus({ preventScroll: true });
-  }, [withdrawnNotice]);
+    if (confirmation !== null) confirmationRef.current?.focus({ preventScroll: true });
+  }, [confirmation]);
+  // Cancel a pending auto-return on unmount (never on a confirmation
+  // transition, which would clear the just-scheduled timer).
+  useEffect(() => () => {
+    if (autoActionRef.current) clearTimeout(autoActionRef.current);
+  }, []);
+  const scheduleAutoAction = (action: () => void) => {
+    // A second success can never leave the first timer dangling: clear
+    // before reschedule so exactly ONE pending return exists at a time.
+    if (autoActionRef.current) clearTimeout(autoActionRef.current);
+    autoActionRef.current = setTimeout(action, CONFIRMATION_PAUSE_MS);
+  };
+
+  const previewName = displayName ?? 'Your display name';
 
   const confirmShare = () => {
-    setWithdrawnNotice(null);
+    setConfirmation(null);
     // A fresh explicit choice, bound to the observed Share generation and
-    // to exactly what the preview showed: the request key makes retries
-    // converge, expectedGeneration blocks stale replays across withdrawals
-    // even after key pruning, and previewed value/unit prevent mismatch.
+    // to exactly what the preview showed.
     const clientKey = (globalThis.crypto?.randomUUID?.() ?? `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    publish.mutate({
-      activityEventId: source.activityId,
-      clientKey,
-      previewedValue: source.value,
-      previewedUnit: source.unit,
-      expectedGeneration: state?.shareGeneration ?? 0,
+    publish.mutate(
+      {
+        activityEventId: source.activityId,
+        clientKey,
+        previewedValue: source.value,
+        previewedUnit: source.unit,
+        expectedGeneration: state?.shareGeneration ?? 0,
+      },
+      {
+        onSuccess: () => {
+          setConfirmation('shared');
+          scheduleAutoAction(() => {
+            if (props.mode === 'immediate') props.onKeepPrivate({ shared: true });
+            else props.onClose();
+          });
+        },
+      },
+    );
+  };
+
+  const confirmWithdraw = () => {
+    setConfirmation(null);
+    withdraw.mutate(source.activityId, {
+      onSuccess: () => {
+        setConfirmation('withdrawn');
+        scheduleAutoAction(() => {
+          if (props.mode === 'immediate') props.onKeepPrivate({ withdrawn: true });
+          else props.onClose();
+        });
+      },
     });
   };
+
+  const notShareable =
+    source.revisionState === 'reversed'
+    || hiddenReason === 'reversed'
+    || hiddenReason === 'suppressed'
+    || hiddenReason === 'expired';
 
   return (
     <section
       ref={panelRef}
       tabIndex={-1}
-      aria-labelledby="activity-share-choices-title"
-      className="mt-3 rounded-2xl border border-violet-200 bg-violet-50 p-4"
+      aria-labelledby="activity-share-title"
+      className="space-y-4"
     >
-      <p className="text-xs font-black uppercase tracking-wide text-violet-800">Private by default</p>
-      <h3 id="activity-share-choices-title" className="mt-1 text-base font-black text-slate-900">
-        Sharing destinations
-      </h3>
-      <p className="mt-1 break-words text-sm font-semibold text-slate-800">
-        {source.activityName} · {source.value} {source.unit}
-      </p>
-      {props.mode === 'immediate' && (
-        <p className="mt-1 text-sm leading-6 text-slate-700">
-          Your Activity has been recorded. Keeping it private will return you to {props.challengeTitle} Details with refreshed progress.
-        </p>
-      )}
-      {source.revisionState === 'updated' && (
-        <p className="mt-1 text-sm text-amber-900">Updated Activity — showing the current effective value.</p>
-      )}
-      {source.revisionState === 'reversed' && (
-        <p className="mt-1 text-sm text-slate-700">Reversed Activity — kept in your history, not active toward progress.</p>
-      )}
-
-      <div className="mt-3 space-y-2">
-        <div className="rounded-xl border border-violet-200 bg-white p-3">
-          <p className="text-sm font-black text-slate-900">Challenge Feed</p>
-          {withdrawnNotice !== null && !shared && (
-            <p
-              ref={withdrawnNoticeRef}
-              tabIndex={-1}
-              role="status"
-              className="mt-1 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800"
-            >
-              Your Share is withdrawn. Other members can no longer see it.
-            </p>
-          )}
-          {!stateKnown && !shareState.isError ? (
-            <p className="mt-1 text-sm text-slate-600" role="status">Checking your current Share…</p>
-          ) : shareState.isError ? (
-            <div>
-              <p className="mt-1 text-sm text-slate-600">
-                We couldn&apos;t confirm whether this Activity is shared. Sharing stays blocked until the state is known.
-              </p>
-              <V2Button
-                variant="secondary"
-                onClick={() => void shareState.refetch()}
-                className="mt-2 min-h-11"
-              >
-                Retry
-              </V2Button>
-            </div>
-          ) : hiddenReason === 'reversed' ? (
-            <p className="mt-1 text-sm text-slate-700">
-              This Activity was reversed and cannot be shared.
-            </p>
-          ) : hiddenReason === 'suppressed' ? (
-            <p className="mt-1 text-sm text-slate-700">
-              This Share was removed and cannot be republished.
-            </p>
-          ) : hiddenReason === 'expired' ? (
-            <p className="mt-1 text-sm text-slate-700">
-              This Challenge Feed has expired.
-            </p>
-          ) : source.revisionState === 'reversed' ? (
-            <p className="mt-1 text-sm text-slate-700">
-              This Activity was reversed and cannot be shared.
-            </p>
-          ) : shared ? (
-            <div>
-              <p className="mt-1 text-sm text-emerald-800" role="status">
-                Shared with the Challenge Feed.
-              </p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">
-                Withdrawing hides it from other members. Your Activity stays in your private history and nothing about your progress changes.
-              </p>
-              <V2Button
-                variant="secondary"
-                onClick={() => {
-                  setWithdrawnNotice(null);
-                  withdraw.mutate(source.activityId, {
-                    onSuccess: () => setWithdrawnNotice(source.activityId),
-                  });
-                }}
-                disabled={mutationPending}
-                className="mt-2 min-h-11"
-              >
-                {withdraw.isPending ? 'Withdrawing…' : 'Withdraw Share'}
-              </V2Button>
-              {withdrawError && (
-                <p role="alert" className="mt-2 text-sm font-medium text-red-800">
-                  {withdrawErrorMessage()}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div>
-              <p className="mt-1 text-sm font-bold text-slate-800">Preview — not shared yet</p>
-              <p className="mt-1 break-words text-sm leading-6 text-slate-700">
-                Other members of this Challenge would see:{' '}
-                <strong>{displayName ?? 'Your display name'}</strong> · {source.activityName} ·{' '}
-                {source.value} {source.unit}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">
-                Only your display name, the Activity name and your own accepted value and unit are published. The Challenge title is not published.
-              </p>
-              <V2Button
-                variant="secondary"
-                onClick={confirmShare}
-                disabled={mutationPending}
-                className="mt-2 min-h-11"
-              >
-                {publish.isPending ? 'Sharing…' : 'Share to Challenge Feed'}
-              </V2Button>
-              {publishError && (
-                <p role="alert" className="mt-2 text-sm font-medium text-red-800">
-                  {publishErrorMessage(publishError)}
-                </p>
-              )}
-            </div>
-          )}
+      {/* Header: success confirmation and status */}
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600" aria-hidden="true">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
         </div>
-        <div>
-          <V2Button variant="secondary" disabled className="min-h-11 w-full">
-            External sharing — unavailable
-          </V2Button>
-          <p className="mt-1 text-xs leading-5 text-slate-600">
-            External sharing is not available; no public link or external post is created.
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <h3 id="activity-share-title" className="text-base font-extrabold tracking-tight text-slate-900">
+              Activity Recorded
+            </h3>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                shared
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : stateKnown
+                    ? 'bg-slate-100 text-slate-600'
+                    : 'bg-amber-100 text-amber-900'
+              }`}
+            >
+              {shared ? 'Shared' : stateKnown ? 'Private' : 'Checking'}
+            </span>
+          </div>
+          <p className="mt-0.5 text-xs font-semibold text-slate-600">
+            {source.activityName} &bull; {source.value} {source.unit}
           </p>
         </div>
       </div>
-      <p className="mt-2 text-xs leading-5 text-slate-600">
-        Group Feed is not a destination for individual Activity. Viewing these options creates no Activity and does not change Challenge progress.
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {props.mode === 'immediate' ? (
-          <V2Button
-            onClick={props.onKeepPrivate}
-            disabled={mutationPending}
-            className="min-h-11 w-full"
+
+      {/* Compact Feed preview */}
+      <div className="space-y-2.5 rounded-2xl border border-slate-200/80 bg-slate-50 p-3.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Challenge Feed preview
+          </span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              shared || confirmation === 'shared'
+                ? 'bg-emerald-100 text-emerald-800'
+                : stateKnown
+                  ? 'bg-amber-100 text-amber-900'
+                  : 'bg-slate-100 text-slate-500'
+            }`}
           >
-            {mutationPending
-              ? 'Completing your choice…'
-              : shared
-                ? `Continue to ${props.challengeTitle}`
-                : 'Keep private and continue'}
-          </V2Button>
+            {shared || confirmation === 'shared'
+              ? 'Shared to Feed'
+              : stateKnown ? 'Not shared yet' : 'Checking your Share…'}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white"
+            aria-hidden="true"
+          >
+            {initialsOf(displayName)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-slate-900">{previewName}</p>
+            <p className="truncate text-xs text-slate-500">
+              {source.activityName} &bull; {source.value} {source.unit}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Brief completion confirmation */}
+      {confirmation === 'shared' && (
+        <p
+          ref={confirmationRef}
+          tabIndex={-1}
+          role="status"
+          className="rounded-xl bg-emerald-600 p-3 text-center text-xs font-bold text-white"
+        >
+          Shared to Challenge Feed!{props.mode === 'immediate' ? ' Returning to details…' : ''}
+        </p>
+      )}
+      {confirmation === 'withdrawn' && (
+        <p
+          ref={confirmationRef}
+          tabIndex={-1}
+          role="status"
+          className="rounded-xl bg-slate-900 p-3 text-center text-xs font-bold text-white"
+        >
+          Share removed!{props.mode === 'immediate' ? ' Returning to details…' : ''}
+        </p>
+      )}
+
+      {mutationPending && !confirmation && (
+        <p role="status" className="rounded-xl bg-slate-100 p-2.5 text-center text-xs font-bold text-slate-600">
+          {publish.isPending ? 'Sharing…' : 'Removing…'}
+        </p>
+      )}
+      {publishError && !confirmation && (
+        <p role="alert" className="rounded-xl bg-red-50 p-2.5 text-center text-xs font-bold text-red-800">
+          {publishErrorMessage(publishError)}
+        </p>
+      )}
+      {withdrawError && !confirmation && (
+        <p role="alert" className="rounded-xl bg-red-50 p-2.5 text-center text-xs font-bold text-red-800">
+          {withdrawErrorMessage()}
+        </p>
+      )}
+      {shareState.isError && (
+        <p role="alert" className="rounded-xl bg-red-50 p-2.5 text-center text-xs font-bold text-red-800">
+          Couldn&apos;t confirm your Share state.{' '}
+          <button type="button" onClick={() => void shareState.refetch()} className="underline">
+            Retry
+          </button>
+        </p>
+      )}
+
+      {/* Action stack: an unconfirmed or failed state read never offers a
+      Share action — the server state must be known before any choice. A
+      showing confirmation renders no further actions until it completes. */}
+      {shareState.isError || confirmation !== null ? null : (
+      <div className="space-y-2.5 pt-1">
+        {!stateKnown ? (
+          <>
+            <p role="status" className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500">
+              Checking your current Share…
+            </p>
+            {props.mode === 'immediate' ? (
+              <V2Button variant="secondary" onClick={() => props.onKeepPrivate()} className="min-h-11 w-full">
+                Continue without sharing
+              </V2Button>
+            ) : (
+              <V2Button variant="secondary" onClick={props.onClose} className="min-h-11 w-full">
+                Close
+              </V2Button>
+            )}
+          </>
+        ) : notShareable ? (
+          <>
+            <p className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-600">
+              {source.revisionState === 'reversed' || hiddenReason === 'reversed'
+                ? 'This Activity was reversed and cannot be shared.'
+                : hiddenReason === 'suppressed'
+                  ? 'This Share was removed and cannot be republished.'
+                  : 'This Challenge Feed has expired.'}
+            </p>
+            {props.mode === 'immediate' ? (
+              <V2Button variant="secondary" onClick={() => props.onKeepPrivate()} className="min-h-11 w-full">
+                Continue to {props.challengeTitle}
+              </V2Button>
+            ) : (
+              <V2Button variant="secondary" onClick={props.onClose} className="min-h-11 w-full">
+                Close
+              </V2Button>
+            )}
+          </>
+        ) : shared ? (
+          <>
+            <V2Button variant="secondary" onClick={confirmWithdraw} disabled={mutationPending} className="min-h-11 w-full">
+              {withdraw.isPending ? 'Removing…' : 'Withdraw Share'}
+            </V2Button>
+            {props.mode === 'immediate' ? (
+              <V2Button variant="ghost" onClick={() => props.onKeepPrivate()} disabled={mutationPending} className="min-h-11 w-full">
+                Continue to {props.challengeTitle}
+              </V2Button>
+            ) : (
+              <V2Button variant="ghost" onClick={props.onClose} className="min-h-11 w-full">
+                Close
+              </V2Button>
+            )}
+          </>
         ) : (
-          <V2Button
-            variant="secondary"
-            onClick={props.onClose}
-            className="min-h-11"
-          >
-            Close sharing options
-          </V2Button>
+          <>
+            <V2Button onClick={confirmShare} disabled={mutationPending} className="min-h-11 w-full">
+              {publish.isPending ? 'Sharing…' : 'Share to Challenge Feed'}
+            </V2Button>
+            {props.mode === 'immediate' ? (
+              <V2Button variant="secondary" onClick={() => props.onKeepPrivate()} disabled={mutationPending} className="min-h-11 w-full">
+                Keep private and continue
+              </V2Button>
+            ) : (
+              <V2Button variant="secondary" onClick={props.onClose} disabled={mutationPending} className="min-h-11 w-full">
+                Close sharing options
+              </V2Button>
+            )}
+          </>
         )}
       </div>
+      )}
     </section>
   );
 }

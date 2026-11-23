@@ -9,6 +9,11 @@
  * safety at read time, the CF-01 §5 audience predicate on every read,
  * cursor paging, retention expiry, and strict Group Feed isolation.
  */
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { PGlite } from '@electric-sql/pglite';
+import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { appendCorrectionEvent, type ActivityEventResolvers, type KnowledgePin } from '../src/activityEvents.js';
 import {
@@ -22,7 +27,9 @@ import {
   type ChallengeCreationResolvers,
   type NewChallengeInput,
 } from '../src/challenges.js';
+import type { Db } from '../src/db.js';
 import type { GroupMembershipAuthority } from '../src/groupMembershipAuthority.js';
+import { listMigrationFiles, runMigrations, splitStatements } from '../src/migrate.js';
 import {
   authHeaders,
   buildTestApp,
@@ -38,7 +45,7 @@ const CURSOR_SECRET = 'a'.repeat(64);
 beforeEach(async () => {
   process.env.TIIZI_CHALLENGE_FEED_CURSOR_SECRET = CURSOR_SECRET;
   await testDb().query(
-    'TRUNCATE challenge_feed_share_choices, challenge_feed_shares, group_feed_projection_actions, group_feed_projection, group_feed_outbox, challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
+    'TRUNCATE challenge_feed_kudos, challenge_feed_share_choices, challenge_feed_shares, group_feed_projection_actions, group_feed_projection, group_feed_outbox, challenge_social_cause_decisions, challenge_social_causes, challenge_derived_state, challenge_participation_derived, challenge_activity_records, challenge_activity_configs, challenge_config_versions, challenge_participations, challenges, challenge_establishment_keys, member_activity_events, activity_submission_intents, challenge_finalizations, challenge_participation_finals',
   );
 });
 
@@ -194,6 +201,8 @@ interface FeedItem {
   feedItemId: string;
   kind: string;
   activityEventId?: string;
+  kudosCount: number;
+  viewerKudos: boolean;
   sharerDisplayName: string | null;
   activityName: string;
   value: number;
@@ -631,6 +640,92 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     expect(page2.items[0].value).toBe(3);
   });
 
+  it('lets an eligible member toggle the single Kudos type on a visible entry', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos'));
+    const db = testDb();
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 24);
+    await publish(app, fx.challengeId, eventId, 24);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+
+    // Add (idempotent), read back through the Feed, then remove.
+    const add = await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(add.statusCode).toBe(200);
+    const first = add.json() as { kudosCount: number; viewerKudos: boolean };
+    expect(first.viewerKudos).toBe(true);
+    expect(first.kudosCount).toBe(1);
+
+    const addAgain = await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(addAgain.statusCode).toBe(200);
+    expect((addAgain.json() as { kudosCount: number }).kudosCount).toBe(1);
+
+    const feedWithKudos = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-fellow'),
+    })).json() as { items: FeedItem[] };
+    expect(feedWithKudos.items[0].kudosCount).toBe(1);
+    expect(feedWithKudos.items[0].viewerKudos).toBe(true);
+
+    const remove = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(remove.statusCode).toBe(200);
+    expect((remove.json() as { viewerKudos: boolean }).viewerKudos).toBe(false);
+    expect((remove.json() as { kudosCount: number }).kudosCount).toBe(0);
+
+    // Removal never touches the Share or the canonical Activity.
+    const shares = await db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM challenge_feed_shares');
+    expect(shares.rows[0].count).toBe('1');
+  });
+
+  it('refuses self-Kudos, denies non-members, and hides Kudos on withdrawn entries', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos-guards'));
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 26);
+    await publish(app, fx.challengeId, eventId, 26);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+    const kudosUrl = `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`;
+
+    // No self-Kudos (CF-01 §6.2).
+    const self = await app.inject({ method: 'POST', url: kudosUrl, headers: authHeaders('token-sharer') });
+    expect(self.statusCode).toBe(409);
+    expect(((self.json() as { error: { code: string } }).error.code)).toBe('self_kudos');
+
+    // An outsider with no Group membership is denied indistinguishably.
+    const outsider = await app.inject({ method: 'POST', url: kudosUrl, headers: authHeaders('token-outsider') });
+    expect(outsider.statusCode).toBe(404);
+
+    // A withdrawn entry is no longer Kudos-mutable.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const withdrawn = await app.inject({ method: 'POST', url: kudosUrl, headers: authHeaders('token-fellow') });
+    expect(withdrawn.statusCode).toBe(404);
+  });
+
   it('serves the owner a state read that reports reversal, suppression and expiry honestly', async () => {
     const fx = await setupFixture(next('cf-s1-hidden-reasons'));
     const db = testDb();
@@ -770,6 +865,100 @@ const stale = await publish(app, fx.challengeId, eventId, 9, choiceKey);
     const replay = await publish(app, fx.challengeId, eventId, 16, agedKey);
     expect(replay.statusCode).toBe(409);
     expect(((replay.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+  });
+
+  it('authorizes Kudos REMOVAL with the same entry predicate as the add', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos-remove'));
+    const db = testDb();
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 28);
+    await publish(app, fx.challengeId, eventId, 28);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+    await app.inject({
+      method: 'POST',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+
+    // Removal succeeds on the visible entry…
+    const removed = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(removed.statusCode).toBe(200);
+    expect(((removed.json() as { viewerKudos: boolean })).viewerKudos).toBe(false);
+
+    // …but a cross-Challenge entry id is not-found, never a silent zero state.
+    const other = await setupFixture(next('cf-s1-kudos-remove-other'));
+    const crossChallenge = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${other.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(crossChallenge.statusCode).toBe(404);
+
+    // A withdrawn entry is not Kudos-mutable for removal either.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/activity-shares/${eventId}`,
+      headers: authHeaders('token-sharer'),
+    });
+    const withdrawnRemove = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(withdrawnRemove.statusCode).toBe(404);
+
+    // A missing entry id is not-found (never a 200 zero-count).
+    const missing = await app.inject({
+      method: 'DELETE',
+      url: `/api/challenges/${fx.challengeId}/feed/entries/00000000-0000-4000-8000-0000000000ff/kudos`,
+      headers: authHeaders('token-fellow'),
+    });
+    expect(missing.statusCode).toBe(404);
+
+  });
+
+  it('rate-limits every Kudos mutation call, including add/remove toggling', async () => {
+    const fx = await setupFixture(next('cf-s1-kudos-rate'));
+    const app = appFor(fx);
+    const eventId = await acceptedActivity(fx, 19);
+    await publish(app, fx.challengeId, eventId, 19);
+    const feed = (await app.inject({
+      method: 'GET',
+      url: `/api/challenges/${fx.challengeId}/feed`,
+      headers: authHeaders('token-sharer'),
+    })).json() as { items: FeedItem[] };
+    const entry = feed.items[0];
+
+    // The in-process sliding window counts EVERY mutation call — including
+    // idempotent re-adds and add/remove toggling on one entry — so a
+    // hard-deleted row can never reset the counter: the 31st mutation in a
+    // minute is refused with 429.
+    let limitedSeen = false;
+    let succeeded = 0;
+    for (let i = 0; i < 40 && !limitedSeen; i += 1) {
+      const attempt = await app.inject({
+        method: i % 2 === 0 ? 'POST' : 'DELETE',
+        url: `/api/challenges/${fx.challengeId}/feed/entries/${entry.feedItemId}/kudos`,
+        headers: authHeaders('token-fellow'),
+      });
+      if (attempt.statusCode === 429) {
+        limitedSeen = true;
+        expect(((attempt.json() as { error: { code: string } }).error.code)).toBe('kudos_rate_limited');
+      } else {
+        succeeded += 1;
+      }
+    }
+    expect(limitedSeen).toBe(true);
+    expect(succeeded).toBe(30);
   });
 
   it('discloses the canonical event ID only to the Share owner, and serves the owner an exact state read', async () => {
@@ -1138,6 +1327,100 @@ await publish(app, fx.challengeId, eventId, 9);
     const evictedReplay = await publish(app, fx.challengeId, eventId, 19, firstCapKey, 'reps', 'token-sharer', 0);
     expect(evictedReplay.statusCode).toBe(409);
     expect(((evictedReplay.json() as { error: { code: string } }).error.code)).toBe('share_withdrawn');
+  });
+
+  it('upgrades a database already migrated at the prior PR #181 Kudos schema (033_challenge_feed_kudos.sql) while preserving existing Kudos and Share rows', async () => {
+    const pg = new PGlite({ extensions: { pgcrypto } });
+    const legacyDb: Db = {
+      query: async <T>(text: string, params?: unknown[]) => {
+        const res = await pg.query<T>(text, params);
+        return { rows: res.rows };
+      },
+      transaction: async <T>(fn: (tx: Db) => Promise<T>) => pg.transaction(async (tx) => fn({
+        query: async <U>(text: string, params?: unknown[]) => {
+          const res = await tx.query<U>(text, params);
+          return { rows: res.rows };
+        },
+        transaction: async () => {
+          throw new Error('nested transactions unsupported');
+        },
+        close: async () => {},
+      })),
+      close: () => pg.close(),
+    };
+
+    const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
+    const files = await listMigrationFiles();
+    const index033 = files.indexOf('033_challenge_feed_share_generation.sql');
+    expect(index033).toBeGreaterThan(0);
+
+    await legacyDb.query(`CREATE TABLE schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+    for (const file of files.slice(0, index033)) {
+      for (const statement of splitStatements(await readFile(join(migrationsDir, file), 'utf8'))) {
+        await legacyDb.query(statement);
+      }
+      await legacyDb.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [file]);
+    }
+
+    // Simulate the previous PR #181 head where Kudos occupied slot 033.
+    const priorKudosSql = `
+      CREATE TABLE challenge_feed_kudos (
+        kudos_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        share_id UUID NOT NULL,
+        member_id UUID NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        CONSTRAINT challenge_feed_kudos_member_uq UNIQUE (share_id, member_id)
+      );
+      CREATE INDEX challenge_feed_kudos_share_idx ON challenge_feed_kudos (share_id);
+      CREATE INDEX challenge_feed_kudos_member_recent_idx ON challenge_feed_kudos (member_id, created_at);
+    `;
+    for (const statement of splitStatements(priorKudosSql)) {
+      await legacyDb.query(statement);
+    }
+    await legacyDb.query('INSERT INTO schema_migrations (filename) VALUES ($1)', ['033_challenge_feed_kudos.sql']);
+
+    const challengeId = '11111111-1111-4111-8111-111111111111';
+    const sharerId = '22222222-2222-4222-8222-222222222222';
+    const giverId = '33333333-3333-4333-8333-333333333333';
+    const eventId = '44444444-4444-4444-8444-444444444444';
+    const recordId = '55555555-5555-4555-8555-555555555555';
+    const shareRow = await legacyDb.query<{ share_id: string }>(
+      `INSERT INTO challenge_feed_shares
+         (challenge_id, member_id, activity_event_id, activity_record_id, event_family, last_publish_key)
+       VALUES ($1, $2, $3, $4, 'activity_share', 'legacy-key-0123456789')
+       RETURNING share_id`,
+      [challengeId, sharerId, eventId, recordId],
+    );
+    const shareId = String(shareRow.rows[0].share_id);
+    const kudosRow = await legacyDb.query<{ kudos_id: string }>(
+      `INSERT INTO challenge_feed_kudos (share_id, member_id) VALUES ($1, $2) RETURNING kudos_id`,
+      [shareId, giverId],
+    );
+    const kudosId = String(kudosRow.rows[0].kudos_id);
+
+    // Upgrade via runMigrations -> applies 033_challenge_feed_share_generation and 034_challenge_feed_kudos cleanly.
+    expect(await runMigrations(legacyDb)).toEqual([
+      '033_challenge_feed_share_generation.sql',
+      '034_challenge_feed_kudos.sql',
+    ]);
+
+    const upgradedShare = await legacyDb.query<{ share_generation: number }>(
+      `SELECT share_generation FROM challenge_feed_shares WHERE share_id = $1`,
+      [shareId],
+    );
+    expect(Number(upgradedShare.rows[0].share_generation)).toBe(1);
+
+    const preservedKudos = await legacyDb.query<{ kudos_id: string; share_id: string; member_id: string }>(
+      `SELECT kudos_id, share_id, member_id FROM challenge_feed_kudos WHERE share_id = $1`,
+      [shareId],
+    );
+    expect(preservedKudos.rows).toHaveLength(1);
+    expect(String(preservedKudos.rows[0].kudos_id)).toBe(kudosId);
+    expect(String(preservedKudos.rows[0].member_id)).toBe(giverId);
+
+    // Subsequent runs are no-ops.
+    expect(await runMigrations(legacyDb)).toEqual([]);
+    await legacyDb.close();
   });
 });
 

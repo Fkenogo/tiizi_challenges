@@ -236,21 +236,19 @@ describe('V2LoggingSection — member-friendly error display', () => {
     await screen.findByText('Recorded.');
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
 
-    // Founder direction: sharing options appear immediately after logging.
-    // Done opens the destination list directly — no intermediate screen and
-    // no extra click is required to see the destinations.
+    // Founder direction (2026-11-22): Done opens the compact sharing sheet
+    // directly — no intermediate screen and no extra click.
     expect(await screen.findByRole('dialog', { name: 'Activity sharing options' })).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
-    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
-    expect(screen.getByText(/return you to Strength Challenge Details/)).toBeTruthy();
-    expect(screen.getByText('Challenge Feed')).toBeTruthy();
-    expect(screen.getByText(/Preview — not shared yet/)).toBeTruthy();
+    expect(screen.getByRole('region', { name: /Activity Recorded/ })).toBeTruthy();
+    expect(screen.getByText('Private')).toBeTruthy();
+    expect(screen.getByText(/Challenge Feed preview/)).toBeTruthy();
+    expect(screen.getByText('Not shared yet')).toBeTruthy();
+    expect(screen.getByText('Amara Test')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Share to Challenge Feed' }).hasAttribute('disabled')).toBe(false);
-    expect(screen.getByRole('button', { name: 'External sharing — unavailable' }).hasAttribute('disabled')).toBe(true);
     expect(screen.queryByRole('button', { name: 'Share activity' })).toBeNull();
     // The panel replaces the focused Done button inside the open sheet, so
     // it must take focus itself instead of dropping it to the body.
-    expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('activity-share-choices-title');
+    expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('activity-share-title');
 
     fireEvent.click(screen.getByRole('button', { name: 'Keep private and continue' }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -289,8 +287,9 @@ describe('V2LoggingSection — member-friendly error display', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
     await screen.findByText('Recorded.');
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-    expect(await screen.findByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
-    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(await screen.findByRole('region', { name: /Activity Recorded/ })).toBeTruthy();
+    const panel = document.querySelector('[aria-labelledby="activity-share-title"]');
+    expect(panel?.textContent).toContain('25 reps');
 
     // The stale first response arrives after its form was unmounted; it
     // must not replace the confirmed share source of the open Activity.
@@ -305,7 +304,8 @@ describe('V2LoggingSection — member-friendly error display', () => {
       duplicate: false,
     });
     await act(async () => { await Promise.resolve(); });
-    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    const panelNow = document.querySelector('[aria-labelledby="activity-share-title"]');
+    expect(panelNow?.textContent).toContain('25 reps');
     expect(screen.queryByText('Push-Up · 11 reps')).toBeNull();
   });
 
@@ -330,14 +330,16 @@ describe('V2LoggingSection — member-friendly error display', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
     await screen.findByText('Recorded.');
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-    expect(await screen.findByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
-    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(await screen.findByRole('region', { name: /Activity Recorded/ })).toBeTruthy();
+    const panel = document.querySelector('[aria-labelledby="activity-share-title"]');
+    expect(panel?.textContent).toContain('25 reps');
 
     authState.user = { uid: 'owner-2' };
     view.rerender(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('region', { name: 'Sharing destinations' })).toBeNull();
-    expect(screen.queryByText('Push-Up · 25 reps')).toBeNull();
+    expect(screen.queryByRole('region', { name: /Activity Recorded/ })).toBeNull();
+    const panelGone = document.querySelector('[aria-labelledby="activity-share-title"]');
+    expect(panelGone?.textContent ?? '').not.toContain('25 reps');
     expect(screen.queryByText('Recorded.')).toBeNull();
   });
 
