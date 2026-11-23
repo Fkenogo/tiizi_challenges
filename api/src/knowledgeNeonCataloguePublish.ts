@@ -35,6 +35,7 @@ import { listMigrationFiles } from './migrate.js';
 export const REMOTE_NEON_ENV = {
   host: 'TIIZI_REMOTE_DB_HOST',
   project: 'TIIZI_REMOTE_DB_PROJECT',
+  projectId: 'TIIZI_REMOTE_DB_PROJECT_ID',
   branch: 'TIIZI_REMOTE_DB_BRANCH',
   name: 'TIIZI_REMOTE_DB_NAME',
   receipt: 'TIIZI_NEON_PROVISIONING_RECEIPT',
@@ -49,6 +50,7 @@ const TLS_PARAM = /^(ssl|sslmode|sslrootcert|uselibpqcompat|sslcert|sslkey)$/i;
 export interface RemoteNeonTargetConfirmation {
   provider: string;
   project: string;
+  projectId?: string;
   branch: string;
   database: string;
   confirmTarget: string;
@@ -400,9 +402,44 @@ async function fetchAllNeonPages<T>(
   return items;
 }
 
+async function fetchNeonProjectById(
+  projectId: string,
+  headers: Record<string, string>,
+  fetchImpl: typeof fetch,
+): Promise<{ id: string; name?: string }> {
+  const url = `https://console.neon.tech/api/v2/projects/${encodeURIComponent(projectId)}`;
+  let res: Response;
+  try {
+    res = await fetchImpl(url, { headers });
+  } catch {
+    refuse('Neon API project request failed (network or transport error)');
+  }
+  if (!res.ok) {
+    refuse(`Neon API project verification failed with status ${res.status}`);
+  }
+  let body: Record<string, unknown>;
+  try {
+    body = (await res.json()) as Record<string, unknown>;
+  } catch {
+    refuse('Neon API project response was not valid JSON');
+  }
+  const project = body.project as { id?: unknown; name?: unknown } | undefined;
+  if (!project || typeof project !== 'object' || typeof project.id !== 'string' || !project.id.trim()) {
+    refuse('Neon API project response missing project metadata');
+  }
+  return {
+    id: project.id,
+    name: typeof project.name === 'string' ? project.name : undefined,
+  };
+}
+
 /**
- * Authoritatively verify Neon project ID, branch ID, and active read-write
- * direct endpoint against the authenticated Neon REST API (`NEON_API_KEY`).
+ * Authoritatively verify Neon project ID, branch ID, database, and active
+ * read-write direct endpoint against the authenticated Neon REST API (`NEON_API_KEY`).
+ *
+ * Supports both project-scoped API keys (when `options.projectId` or
+ * `TIIZI_REMOTE_DB_PROJECT_ID` is explicitly configured) and broader-scope
+ * keys via `GET /api/v2/projects`.
  *
  * Provisioning receipts are retained strictly as optional audit evidence and
  * NEVER authorize `--apply`. `--dry-run` remains available without provider
@@ -412,6 +449,7 @@ export async function verifyAuthoritativeNeonTarget(
   target: RemoteNeonTargetParts,
   mode: 'dry-run' | 'apply',
   options: {
+    projectId?: string;
     receiptPath?: string;
     env?: Record<string, string | undefined>;
     fetchFn?: typeof fetch;
@@ -440,19 +478,36 @@ export async function verifyAuthoritativeNeonTarget(
 
   const fetchImpl = options.fetchFn ?? fetch;
   const headers = { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' };
+  const explicitProjectId = options.projectId?.trim() || env[REMOTE_NEON_ENV.projectId]?.trim();
 
-  const projects = await fetchAllNeonPages<{ id?: string; name?: string }>(
-    'https://console.neon.tech/api/v2/projects',
-    'projects',
-    headers,
-    fetchImpl,
-    'projects',
-  );
-  const matchedProject = projects.find(
-    (p) => (p.id === target.project || p.name === target.project) && typeof p.id === 'string' && p.id.trim().length > 0,
-  );
-  if (!matchedProject?.id) {
-    refuse(`Neon project '${target.project}' not found in authenticated Neon account`);
+  let matchedProject: { id: string; name?: string };
+  if (explicitProjectId) {
+    if (!IDENTIFIER_PATTERN.test(explicitProjectId)) {
+      refuse(`expected Neon project ID '${explicitProjectId}' has invalid format`);
+    }
+    const project = await fetchNeonProjectById(explicitProjectId, headers, fetchImpl);
+    if (project.id !== explicitProjectId) {
+      refuse(`Neon project ID mismatch: expected '${explicitProjectId}', got '${project.id}'`);
+    }
+    if (project.id !== target.project && project.name !== target.project) {
+      refuse(`Neon project '${project.id}' (${project.name ?? 'unnamed'}) does not match target '${target.project}'`);
+    }
+    matchedProject = project;
+  } else {
+    const projects = await fetchAllNeonPages<{ id?: string; name?: string }>(
+      'https://console.neon.tech/api/v2/projects',
+      'projects',
+      headers,
+      fetchImpl,
+      'projects',
+    );
+    const found = projects.find(
+      (p) => (p.id === target.project || p.name === target.project) && typeof p.id === 'string' && p.id.trim().length > 0,
+    );
+    if (!found?.id) {
+      refuse(`Neon project '${target.project}' not found in authenticated Neon account`);
+    }
+    matchedProject = { id: found.id, name: found.name };
   }
 
   const [branches, endpoints] = await Promise.all([
@@ -477,6 +532,20 @@ export async function verifyAuthoritativeNeonTarget(
   );
   if (!matchedBranch?.id) {
     refuse(`Neon branch '${target.branch}' not found in project '${target.project}'`);
+  }
+
+  const databases = await fetchAllNeonPages<{ name?: string }>(
+    `https://console.neon.tech/api/v2/projects/${encodeURIComponent(matchedProject.id)}/branches/${encodeURIComponent(matchedBranch.id)}/databases`,
+    'databases',
+    headers,
+    fetchImpl,
+    'databases',
+  );
+  const matchedDatabase = databases.find((d) => d.name === target.database);
+  if (!matchedDatabase?.name) {
+    refuse(
+      `Neon database '${target.database}' not found on branch '${target.branch}' (${matchedBranch.id}) of project '${target.project}' (${matchedProject.id})`,
+    );
   }
 
   const matchedEndpoint = endpoints.find(

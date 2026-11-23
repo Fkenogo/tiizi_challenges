@@ -277,6 +277,14 @@ describe('remote Neon catalogue publication — authoritative project & branch v
           { status: 200 },
         );
       }
+      if (url.pathname.endsWith('/databases')) {
+        return new Response(
+          JSON.stringify({
+            databases: [{ id: 1, name: 'tiizi', owner_name: 'neondb_owner' }],
+          }),
+          { status: 200 },
+        );
+      }
       if (url.pathname.endsWith('/endpoints')) {
         if (!cursor) {
           return new Response(
@@ -317,6 +325,9 @@ describe('remote Neon catalogue publication — authoritative project & branch v
       }
       if (url.pathname.endsWith('/branches')) {
         return new Response(JSON.stringify({ branches: [{ id: 'br-1', name: 'main' }] }), { status: 200 });
+      }
+      if (url.pathname.endsWith('/databases')) {
+        return new Response(JSON.stringify({ databases: [{ id: 1, name: 'tiizi' }] }), { status: 200 });
       }
       return new Response(
         JSON.stringify({ endpoints: [{ branch_id: 'br-1', host: 'ep-other.eu-central-1.aws.neon.tech', type: 'read_write' }] }),
@@ -373,6 +384,112 @@ describe('remote Neon catalogue publication — authoritative project & branch v
         fetchFn: networkFailFetch,
       }),
     ).rejects.toThrow(/Neon API projects request failed/);
+  });
+
+  it('supports project-scoped NEON_API_KEY via TIIZI_REMOTE_DB_PROJECT_ID and fails closed on mismatches, missing metadata, and auth errors', async () => {
+    const projectScopedFetch: typeof fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/api/v2/projects') {
+        return new Response(
+          JSON.stringify({ message: 'not allowed to perform actions outside the project this key is scoped to' }),
+          { status: 404 },
+        );
+      }
+      if (url.pathname === '/api/v2/projects/proj-scoped-1') {
+        return new Response(
+          JSON.stringify({ project: { id: 'proj-scoped-1', name: 'tiizi-v2' } }),
+          { status: 200 },
+        );
+      }
+      if (url.pathname === '/api/v2/projects/proj-scoped-1/branches') {
+        return new Response(
+          JSON.stringify({ branches: [{ id: 'br-scoped-1', name: 'main' }] }),
+          { status: 200 },
+        );
+      }
+      if (url.pathname === '/api/v2/projects/proj-scoped-1/branches/br-scoped-1/databases') {
+        return new Response(
+          JSON.stringify({ databases: [{ id: 1, name: 'tiizi' }] }),
+          { status: 200 },
+        );
+      }
+      if (url.pathname === '/api/v2/projects/proj-scoped-1/endpoints') {
+        return new Response(
+          JSON.stringify({ endpoints: [{ branch_id: 'br-scoped-1', host: VALID_HOST, type: 'read_write' }] }),
+          { status: 200 },
+        );
+      }
+      return new Response('{}', { status: 404 });
+    };
+
+    const ok = await verifyAuthoritativeNeonTarget(parts, 'apply', {
+      env: { NEON_API_KEY: TEST_API_KEY, TIIZI_REMOTE_DB_PROJECT_ID: 'proj-scoped-1' },
+      fetchFn: projectScopedFetch,
+    });
+    expect(ok).toEqual({
+      verified: true,
+      method: 'neon-api',
+      projectId: 'proj-scoped-1',
+      branchId: 'br-scoped-1',
+      endpointHost: VALID_HOST,
+    });
+
+    // Wrong project ID returned by API -> FAIL
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', {
+        projectId: 'proj-scoped-1',
+        env: { NEON_API_KEY: TEST_API_KEY },
+        fetchFn: async () =>
+          new Response(JSON.stringify({ project: { id: 'proj-other-999', name: 'tiizi-v2' } }), { status: 200 }),
+      }),
+    ).rejects.toThrow(/Neon project ID mismatch/);
+
+    // Missing project metadata -> FAIL
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', {
+        projectId: 'proj-scoped-1',
+        env: { NEON_API_KEY: TEST_API_KEY },
+        fetchFn: async () => new Response(JSON.stringify({ project: {} }), { status: 200 }),
+      }),
+    ).rejects.toThrow(/missing project metadata/);
+
+    // Missing database on branch -> FAIL
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', {
+        projectId: 'proj-scoped-1',
+        env: { NEON_API_KEY: TEST_API_KEY },
+        fetchFn: async (input) => {
+          const url = new URL(String(input));
+          if (url.pathname.endsWith('/proj-scoped-1')) {
+            return new Response(JSON.stringify({ project: { id: 'proj-scoped-1', name: 'tiizi-v2' } }), { status: 200 });
+          }
+          if (url.pathname.endsWith('/branches')) {
+            return new Response(JSON.stringify({ branches: [{ id: 'br-scoped-1', name: 'main' }] }), { status: 200 });
+          }
+          if (url.pathname.endsWith('/databases')) {
+            return new Response(JSON.stringify({ databases: [{ id: 1, name: 'other_db' }] }), { status: 200 });
+          }
+          return new Response(
+            JSON.stringify({ endpoints: [{ branch_id: 'br-scoped-1', host: VALID_HOST, type: 'read_write' }] }),
+            { status: 200 },
+          );
+        },
+      }),
+    ).rejects.toThrow(/Neon database 'tiizi' not found/);
+
+    // API authentication failure on project endpoint -> FAIL without leaking key
+    let authErr = '';
+    try {
+      await verifyAuthoritativeNeonTarget(parts, 'apply', {
+        projectId: 'proj-scoped-1',
+        env: { NEON_API_KEY: TEST_API_KEY },
+        fetchFn: async () => new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 }),
+      });
+    } catch (err) {
+      authErr = err instanceof Error ? err.message : String(err);
+    }
+    expect(authErr).toMatch(/Neon API project verification failed with status 401/);
+    expect(authErr).not.toContain(TEST_API_KEY);
   });
 });
 
@@ -463,6 +580,7 @@ describe('remote Neon catalogue publication — migration, catalogue baseline & 
     await expect(
       executeRemoteNeonCataloguePublish(db, unverifiedTarget, candidate, inventory, 'apply'),
     ).rejects.toThrow(/authenticated Neon API verification is required before --apply/);
+    expect((await listKnowledgeForAdmin(db, {})).length).toBe(2);
 
     // Authoritatively verified initial apply
     const verifiedTarget = await verifyRemoteNeonBaseline(db, parts, verifiedAuth, codes);
