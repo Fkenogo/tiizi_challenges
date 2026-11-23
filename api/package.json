@@ -19,6 +19,7 @@
     "knowledge:import": "tsx src/knowledgeImportCli.ts",
     "knowledge:import-s6": "tsx src/knowledgeCatalogueImportCli.ts",
     "knowledge:dev-catalogue": "tsx src/knowledgeDevCataloguePublishCli.ts",
+    "knowledge:neon-publish": "tsx src/knowledgeNeonCataloguePublishCli.ts",
     "parity:knowledge": "tsx src/knowledgeParityCli.ts"
   },
   "dependencies": {
