@@ -8,6 +8,7 @@ import {
   executeRemoteNeonCataloguePublish,
   remoteNeonAllowlistFromEnv,
   validateRemoteNeonTarget,
+  verifyAuthoritativeNeonTarget,
   verifyRemoteNeonBaseline,
   type RemoteNeonTargetConfirmation,
 } from './knowledgeNeonCataloguePublish.js';
@@ -24,6 +25,10 @@ import {
  *   TIIZI_REMOTE_DB_BRANCH=...
  *   TIIZI_REMOTE_DB_NAME=...
  *
+ * Authoritative project/branch verification (required for --apply):
+ *   --provisioning-receipt <path> (or TIIZI_NEON_PROVISIONING_RECEIPT)
+ *   OR NEON_API_KEY (authenticated Neon REST API verification)
+ *
  * Usage:
  *   npm run knowledge:neon-publish -- \
  *     --target-provider neon \
@@ -31,6 +36,7 @@ import {
  *     --target-branch <branch> \
  *     --target-db <database> \
  *     --confirm-target neon:<project>:<branch>:<database> \
+ *     [--provisioning-receipt <path>] \
  *     [--dry-run | --apply]
  */
 
@@ -43,6 +49,7 @@ function parseArgs(argv: string[]): {
   let branch = '';
   let database = '';
   let confirmTarget = '';
+  let provisioningReceiptPath = '';
   let apply = false;
   let dryRun = false;
 
@@ -72,6 +79,9 @@ function parseArgs(argv: string[]): {
       case '--confirm-target':
         confirmTarget = readValue(arg);
         break;
+      case '--provisioning-receipt':
+        provisioningReceiptPath = readValue(arg);
+        break;
       case '--apply':
         apply = true;
         break;
@@ -80,7 +90,7 @@ function parseArgs(argv: string[]): {
         break;
       default:
         throw new Error(
-          `Unknown argument '${arg}'. Accepted flags: --target-provider, --target-project, --target-branch, --target-db, --confirm-target, --dry-run (default), --apply`,
+          `Unknown argument '${arg}'. Accepted flags: --target-provider, --target-project, --target-branch, --target-db, --confirm-target, --provisioning-receipt, --dry-run (default), --apply`,
         );
     }
   }
@@ -90,7 +100,14 @@ function parseArgs(argv: string[]): {
   }
 
   return {
-    confirmation: { provider, project, branch, database, confirmTarget },
+    confirmation: {
+      provider,
+      project,
+      branch,
+      database,
+      confirmTarget,
+      provisioningReceiptPath: provisioningReceiptPath || undefined,
+    },
     mode: apply ? 'apply' : 'dry-run',
   };
 }
@@ -101,21 +118,27 @@ async function main(): Promise<void> {
   const allowlist = remoteNeonAllowlistFromEnv();
 
   // Fail closed before opening any database connection.
-  validateRemoteNeonTarget(rawUrl, confirmation, allowlist);
+  const validatedParts = validateRemoteNeonTarget(rawUrl, confirmation, allowlist);
+  const authStatus = await verifyAuthoritativeNeonTarget(validatedParts, mode, {
+    receiptPath: confirmation.provisioningReceiptPath,
+  });
+
+  const base = fileURLToPath(new URL('../../docs/programme/working/s6-content', import.meta.url));
+  const [candidate, inventory] = await Promise.all([
+    readFile(resolve(base, 'tiizi-118-activity-reconciled-content.json'), 'utf8').then(
+      (text) => JSON.parse(text) as S6Candidate,
+    ),
+    readFile(resolve(base, 'activity-master-inventory.json'), 'utf8').then(
+      (text) => JSON.parse(text) as S6Inventory,
+    ),
+  ]);
+  const expectedCodes = new Set<string>(
+    (candidate.records ?? []).map((record) => record.activityCode).filter(Boolean),
+  );
 
   const db = createPool(rawUrl);
   try {
-    const target = await verifyRemoteNeonBaseline(db, rawUrl, confirmation, allowlist);
-    const base = fileURLToPath(new URL('../../docs/programme/working/s6-content', import.meta.url));
-    const [candidate, inventory] = await Promise.all([
-      readFile(resolve(base, 'tiizi-118-activity-reconciled-content.json'), 'utf8').then(
-        (text) => JSON.parse(text) as S6Candidate,
-      ),
-      readFile(resolve(base, 'activity-master-inventory.json'), 'utf8').then(
-        (text) => JSON.parse(text) as S6Inventory,
-      ),
-    ]);
-
+    const target = await verifyRemoteNeonBaseline(db, validatedParts, authStatus, expectedCodes);
     const result = await executeRemoteNeonCataloguePublish(db, target, candidate, inventory, mode);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 

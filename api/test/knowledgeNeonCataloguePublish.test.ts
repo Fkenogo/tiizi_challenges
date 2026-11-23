@@ -1,13 +1,19 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { Db } from '../src/db.js';
 import type { S6Candidate, S6Inventory } from '../src/knowledgeCatalogueImport.js';
-import { listKnowledgeForAdmin } from '../src/knowledge.js';
+import { listMigrationFiles, splitStatements } from '../src/migrate.js';
+import { createKnowledgeItem, listKnowledgeForAdmin } from '../src/knowledge.js';
 import {
+  computeProvisioningReceiptSha256,
   executeRemoteNeonCataloguePublish,
   validateRemoteNeonTarget,
+  verifyAuthoritativeNeonTarget,
   verifyRemoteNeonBaseline,
+  type NeonProvisioningReceipt,
   type RemoteNeonAllowlist,
   type RemoteNeonTargetConfirmation,
 } from '../src/knowledgeNeonCataloguePublish.js';
@@ -36,9 +42,31 @@ const VALID_ALLOWLIST: RemoteNeonAllowlist = {
   allowedDatabase: 'tiizi',
 };
 
-describe('remote Neon catalogue publication — target & allowlist safety', () => {
-  it('accepts a valid direct Neon target with matching confirmation and allowlist', () => {
-    expect(validateRemoteNeonTarget(VALID_URL, VALID_CONFIRM, VALID_ALLOWLIST)).toEqual({
+const tempDirs: string[] = [];
+afterEach(() => {
+  for (const dir of tempDirs.splice(0)) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+function writeReceiptFile(receipt: NeonProvisioningReceipt): string {
+  const dir = mkdtempSync(join(tmpdir(), 'tiizi-neon-receipt-'));
+  tempDirs.push(dir);
+  const path = join(dir, 'receipt.json');
+  writeFileSync(path, JSON.stringify(receipt, null, 2));
+  return path;
+}
+
+async function seedMigration014Exemplars(db: Db): Promise<void> {
+  const sql = await readFile(resolve(process.cwd(), 'migrations/014_pf01_exemplar_activities.sql'), 'utf8');
+  for (const stmt of splitStatements(sql)) {
+    await db.query(stmt);
+  }
+}
+
+describe('remote Neon catalogue publication — endpoint & TLS safety', () => {
+  it('accepts a valid Neon direct endpoint with verify-full and single CA', () => {
+    expect(validateRemoteNeonTarget(VALID_URL, VALID_CONFIRM, VALID_ALLOWLIST, {})).toEqual({
       host: VALID_HOST,
       port: '5432',
       database: 'tiizi',
@@ -48,51 +76,96 @@ describe('remote Neon catalogue publication — target & allowlist safety', () =
     });
   });
 
-  it('rejects missing/mismatched confirmation, allowlist, pooler host, unverified TLS, and overrides without leaking secrets', () => {
-    const cases: Array<[string | undefined, RemoteNeonTargetConfirmation, RemoteNeonAllowlist, RegExp]> = [
-      [undefined, VALID_CONFIRM, VALID_ALLOWLIST, /DATABASE_URL is unset/],
-      [VALID_URL, { ...VALID_CONFIRM, provider: 'cloudsql' }, VALID_ALLOWLIST, /--target-provider must be 'neon'/],
-      [VALID_URL, { ...VALID_CONFIRM, confirmTarget: 'neon:tiizi-v2:other:tiizi' }, VALID_ALLOWLIST, /--confirm-target/],
-      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedHost: undefined }, /TIIZI_REMOTE_DB_HOST is unset/],
-      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedProject: 'other-proj' }, /does not match TIIZI_REMOTE_DB_PROJECT/],
-      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedBranch: 'preview' }, /does not match TIIZI_REMOTE_DB_BRANCH/],
-      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedDatabase: 'other_db' }, /does not match TIIZI_REMOTE_DB_NAME/],
+  it('rejects non-Neon hostnames, pooled endpoints, bad ports, duplicate/conflicting TLS params, and overrides without leaking secrets', () => {
+    const cases: Array<[string | undefined, RemoteNeonTargetConfirmation, RemoteNeonAllowlist, Record<string, string>, RegExp]> = [
+      [undefined, VALID_CONFIRM, VALID_ALLOWLIST, {}, /DATABASE_URL is unset/],
+      [VALID_URL, { ...VALID_CONFIRM, provider: 'cloudsql' }, VALID_ALLOWLIST, {}, /--target-provider must be 'neon'/],
+      [VALID_URL, { ...VALID_CONFIRM, confirmTarget: 'neon:tiizi-v2:other:tiizi' }, VALID_ALLOWLIST, {}, /--confirm-target/],
+      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedHost: undefined }, {}, /TIIZI_REMOTE_DB_HOST is unset/],
+      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedProject: 'other-proj' }, {}, /does not match TIIZI_REMOTE_DB_PROJECT/],
+      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedBranch: 'preview' }, {}, /does not match TIIZI_REMOTE_DB_BRANCH/],
+      [VALID_URL, VALID_CONFIRM, { ...VALID_ALLOWLIST, allowedDatabase: 'other_db' }, {}, /does not match TIIZI_REMOTE_DB_NAME/],
+      // Non-Neon hostnames rejected
       [
-        `postgresql://tiizi_owner:${SECRET_PW}@ep-cool-brook-123456-pooler.eu-central-1.aws.neon.tech:5432/tiizi?sslmode=verify-full`,
+        `postgresql://tiizi_owner:${SECRET_PW}@db.example.com:5432/tiizi?sslmode=verify-full&sslrootcert=/tmp/ca.pem`,
+        VALID_CONFIRM,
+        { ...VALID_ALLOWLIST, allowedHost: 'db.example.com' },
+        {},
+        /not a valid Neon direct-endpoint hostname/,
+      ],
+      [
+        `postgresql://tiizi_owner:${SECRET_PW}@127.0.0.1:5432/tiizi?sslmode=verify-full&sslrootcert=/tmp/ca.pem`,
+        VALID_CONFIRM,
+        { ...VALID_ALLOWLIST, allowedHost: '127.0.0.1' },
+        {},
+        /not a valid Neon direct-endpoint hostname/,
+      ],
+      // Pooled endpoint rejected
+      [
+        `postgresql://tiizi_owner:${SECRET_PW}@ep-cool-brook-123456-pooler.eu-central-1.aws.neon.tech:5432/tiizi?sslmode=verify-full&sslrootcert=/tmp/ca.pem`,
         VALID_CONFIRM,
         { ...VALID_ALLOWLIST, allowedHost: 'ep-cool-brook-123456-pooler.eu-central-1.aws.neon.tech' },
+        {},
         /pooled \(-pooler\) endpoint/,
       ],
+      // Unexpected port rejected
       [
-        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=require`,
+        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:6432/tiizi?sslmode=verify-full&sslrootcert=/tmp/ca.pem`,
         VALID_CONFIRM,
         VALID_ALLOWLIST,
+        {},
+        /unexpected port '6432'/,
+      ],
+      // Duplicate / conflicting TLS parameters rejected
+      [
+        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=verify-full&sslmode=require&sslrootcert=/tmp/ca.pem`,
+        VALID_CONFIRM,
+        VALID_ALLOWLIST,
+        {},
+        /duplicate query parameter 'sslmode'/,
+      ],
+      [
+        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?ssl=true&sslmode=verify-full&sslrootcert=/tmp/ca.pem`,
+        VALID_CONFIRM,
+        VALID_ALLOWLIST,
+        {},
+        /conflicting TLS parameter 'ssl'/,
+      ],
+      [
+        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=verify-ca&sslrootcert=/tmp/ca.pem`,
+        VALID_CONFIRM,
+        VALID_ALLOWLIST,
+        {},
         /requires sslmode=verify-full/,
       ],
       [
-        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=verify-ca`,
+        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=verify-full&sslrootcert=/tmp/ca.pem`,
         VALID_CONFIRM,
         VALID_ALLOWLIST,
-        /requires sslmode=verify-full/,
+        { TIIZI_DB_SERVER_CA_PEM: '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----' },
+        /conflicting trust anchor/,
       ],
       [
-        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/other_db?sslmode=verify-full`,
+        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=verify-full`,
         VALID_CONFIRM,
         VALID_ALLOWLIST,
-        /does not equal --target-db/,
+        {},
+        /requires a trusted CA/,
       ],
+      // Connection override rejected
       [
-        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=verify-full&host=evil.example.com`,
+        `postgresql://tiizi_owner:${SECRET_PW}@${VALID_HOST}:5432/tiizi?sslmode=verify-full&sslrootcert=/tmp/ca.pem&host=evil.example.com`,
         VALID_CONFIRM,
         VALID_ALLOWLIST,
+        {},
         /connection override 'host'/,
       ],
     ];
 
-    for (const [url, confirm, allowlist, pattern] of cases) {
+    for (const [url, confirm, allowlist, env, pattern] of cases) {
       let msg = '';
       try {
-        validateRemoteNeonTarget(url, confirm, allowlist);
+        validateRemoteNeonTarget(url, confirm, allowlist, env);
       } catch (err) {
         msg = err instanceof Error ? err.message : String(err);
       }
@@ -102,102 +175,191 @@ describe('remote Neon catalogue publication — target & allowlist safety', () =
   });
 });
 
-describe('remote Neon catalogue publication — empty baseline & governed execution', () => {
-  it('accepts a clean empty 34-migration baseline and refuses existing members, groups, or challenges', async () => {
-    const db = testDb();
-    const localUrl = 'postgresql://tiizi@127.0.0.1:55439/postgres';
-    const localConfirm: RemoteNeonTargetConfirmation = {
-      provider: 'neon',
+describe('remote Neon catalogue publication — authoritative project & branch verification', () => {
+  const parts = validateRemoteNeonTarget(VALID_URL, VALID_CONFIRM, VALID_ALLOWLIST, {});
+
+  it('requires authoritative confirmation for --apply while allowing unverified dry-run preflight', async () => {
+    const dry = await verifyAuthoritativeNeonTarget(parts, 'dry-run', { env: {} });
+    expect(dry).toEqual({ verified: false, method: 'unverified_dry_run_only' });
+
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', { env: {} }),
+    ).rejects.toThrow(/authoritative Neon project\/branch confirmation is required for --apply/);
+  });
+
+  it('accepts a valid bound provisioning receipt and rejects mismatched or tampered receipts', async () => {
+    const baseReceipt = {
+      provider: 'neon' as const,
+      source: 'neonctl' as const,
       project: 'tiizi-v2',
       branch: 'main',
-      database: 'postgres',
-      confirmTarget: 'neon:tiizi-v2:main:postgres',
+      database: 'tiizi',
+      endpointHost: VALID_HOST,
+      issuedAt: '2026-11-23T12:00:00Z',
     };
-    const localAllowlist: RemoteNeonAllowlist = {
-      allowedHost: '127.0.0.1',
-      allowedProject: 'tiizi-v2',
-      allowedBranch: 'main',
-      allowedDatabase: 'postgres',
-    };
+    const validPath = writeReceiptFile({
+      ...baseReceipt,
+      receiptSha256: computeProvisioningReceiptSha256(baseReceipt),
+    });
+    const verified = await verifyAuthoritativeNeonTarget(parts, 'apply', {
+      receiptPath: validPath,
+      env: {},
+    });
+    expect(verified).toEqual({
+      verified: true,
+      method: 'provisioning-receipt',
+      issuedAt: '2026-11-23T12:00:00Z',
+    });
 
-    const identity = await verifyRemoteNeonBaseline(db, localUrl, localConfirm, localAllowlist);
-    expect(identity.connectedDatabase).toBe('postgres');
-    expect(identity.migrationsCount).toBeGreaterThanOrEqual(34);
-    expect(identity.memberCount).toBe(0);
-    expect(identity.groupCount).toBe(0);
-    expect(identity.challengeCount).toBe(0);
-
-    await db.query(
-      `INSERT INTO members (member_id, auth_provider, auth_subject, display_name)
-       VALUES ('11111111-1111-4111-8111-111111111111', 'firebase', 'uid-1', 'Existing User')`,
-    );
+    const wrongBranchPath = writeReceiptFile({ ...baseReceipt, branch: 'staging' });
     await expect(
-      verifyRemoteNeonBaseline(db, localUrl, localConfirm, localAllowlist),
-    ).rejects.toThrow(/not an empty baseline \(members=1, groups=0, challenges=0\)/);
+      verifyAuthoritativeNeonTarget(parts, 'apply', { receiptPath: wrongBranchPath, env: {} }),
+    ).rejects.toThrow(/provisioning receipt branch 'staging' does not match 'main'/);
+
+    const tamperedShaPath = writeReceiptFile({ ...baseReceipt, receiptSha256: '0'.repeat(64) });
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', { receiptPath: tamperedShaPath, env: {} }),
+    ).rejects.toThrow(/SHA-256 digest mismatch/);
   });
 
-  it('refuses mismatched connected database or insufficient migrations', async () => {
-    const fake = (migCount: number, dbName = 'tiizi'): Db =>
-      ({
-        query: async (sql: string) => {
-          if (sql.includes('current_database()')) return { rows: [{ db: dbName, usr: 'tiizi_owner' }] };
-          if (sql.includes('schema_migrations')) return { rows: [{ cnt: migCount }] };
-          return { rows: [{ members_cnt: 0, groups_cnt: 0, challenges_cnt: 0 }] };
-        },
-      }) as unknown as Db;
+  it('verifies against authenticated Neon API metadata when NEON_API_KEY is supplied', async () => {
+    const mockFetch: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.endsWith('/projects')) {
+        return new Response(JSON.stringify({ projects: [{ id: 'proj-1', name: 'tiizi-v2' }] }), { status: 200 });
+      }
+      if (url.endsWith('/branches')) {
+        return new Response(JSON.stringify({ branches: [{ id: 'br-1', name: 'main' }] }), { status: 200 });
+      }
+      if (url.endsWith('/endpoints')) {
+        return new Response(
+          JSON.stringify({ endpoints: [{ branch_id: 'br-1', host: VALID_HOST, type: 'read_write' }] }),
+          { status: 200 },
+        );
+      }
+      return new Response('{}', { status: 404 });
+    };
+
+    const res = await verifyAuthoritativeNeonTarget(parts, 'apply', {
+      env: { NEON_API_KEY: 'neon-test-key' },
+      fetchFn: mockFetch,
+    });
+    expect(res).toEqual({ verified: true, method: 'neon-api' });
+
+    const wrongEpFetch: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.endsWith('/projects')) {
+        return new Response(JSON.stringify({ projects: [{ id: 'proj-1', name: 'tiizi-v2' }] }), { status: 200 });
+      }
+      if (url.endsWith('/branches')) {
+        return new Response(JSON.stringify({ branches: [{ id: 'br-1', name: 'main' }] }), { status: 200 });
+      }
+      return new Response(
+        JSON.stringify({ endpoints: [{ branch_id: 'br-1', host: 'ep-other.eu-central-1.aws.neon.tech', type: 'read_write' }] }),
+        { status: 200 },
+      );
+    };
+    await expect(
+      verifyAuthoritativeNeonTarget(parts, 'apply', {
+        env: { NEON_API_KEY: 'neon-test-key' },
+        fetchFn: wrongEpFetch,
+      }),
+    ).rejects.toThrow(/not an active read_write endpoint/);
+  });
+});
+
+describe('remote Neon catalogue publication — migration, catalogue baseline & idempotent execution', () => {
+  const parts = {
+    host: VALID_HOST,
+    port: '5432',
+    database: 'postgres',
+    provider: 'neon' as const,
+    project: 'tiizi-v2',
+    branch: 'main',
+  };
+  const verifiedAuth = { verified: true as const, method: 'provisioning-receipt' as const, issuedAt: '2026-11-23T12:00:00Z' };
+
+  it('rejects migration mismatch even when schema_migrations count equals 34', async () => {
+    const migrations = await listMigrationFiles();
+    expect(migrations.length).toBeGreaterThanOrEqual(34);
+    const tamperedMigrations = [...migrations.slice(0, -1), '034_unexpected_migration.sql'];
+    expect(tamperedMigrations.length).toBe(migrations.length);
+
+    const fakeDb = {
+      query: async (sql: string) => {
+        if (sql.includes('current_database()')) return { rows: [{ db: 'postgres', usr: 'tiizi_owner' }] };
+        if (sql.includes('FROM schema_migrations')) {
+          return { rows: tamperedMigrations.map((filename) => ({ filename })) };
+        }
+        return { rows: [{ members_cnt: 0, groups_cnt: 0, challenges_cnt: 0 }] };
+      },
+    } as unknown as Db;
 
     await expect(
-      verifyRemoteNeonBaseline(fake(34, 'wrong_db'), VALID_URL, VALID_CONFIRM, VALID_ALLOWLIST),
-    ).rejects.toThrow(/does not equal 'tiizi'/);
-
-    await expect(
-      verifyRemoteNeonBaseline(fake(33, 'tiizi'), VALID_URL, VALID_CONFIRM, VALID_ALLOWLIST),
-    ).rejects.toThrow(/at least 34 applied migrations/);
+      verifyRemoteNeonBaseline(fakeDb, parts, verifiedAuth, new Set(['FIT-STR-001']), migrations),
+    ).rejects.toThrow(/schema_migrations mismatch/);
   });
 
-  it('rejects incomplete catalogues, respects dry-run default, publishes 118 activities cleanly, and is idempotent', async () => {
+  it('rejects unexpected catalogue content and existing domain rows before writing', async () => {
     const db = testDb();
+    const candidate = await readJson<S6Candidate>(`${base}tiizi-118-activity-reconciled-content.json`);
+    const codes = new Set<string>(candidate.records.map((r) => r.activityCode));
+
+    // 0 rows in knowledge_items (missing migration-014 exemplars) -> rejected
+    await expect(
+      verifyRemoteNeonBaseline(db, parts, verifiedAuth, codes),
+    ).rejects.toThrow(/unexpected knowledge_items baseline \(count=0\)/);
+
+    // Seed valid migration-014 exemplars + an unexpected custom item -> rejected
+    await seedMigration014Exemplars(db);
+    await createKnowledgeItem(db, {
+      kind: 'fitness',
+      activityCode: 'FIT-UNK-999',
+      name: 'Rogue Activity',
+      category: 'Strength',
+      description: 'Unexpected activity',
+      metricUnit: 'reps',
+      primaryMetrics: ['repetitions'],
+      compatibleUnits: ['reps'],
+    });
+    await expect(
+      verifyRemoteNeonBaseline(db, parts, verifiedAuth, codes),
+    ).rejects.toThrow(/unexpected knowledge_items baseline \(count=3\)/);
+  });
+
+  it('publishes all 118 activities from migration-014 baseline and supports idempotent reruns', async () => {
+    const db = testDb();
+    await seedMigration014Exemplars(db);
     const [candidate, inventory] = await Promise.all([
       readJson<S6Candidate>(`${base}tiizi-118-activity-reconciled-content.json`),
       readJson<S6Inventory>(`${base}activity-master-inventory.json`),
     ]);
+    const codes = new Set<string>(candidate.records.map((r) => r.activityCode));
 
-    const localUrl = 'postgresql://tiizi@127.0.0.1:55439/postgres';
-    const localConfirm: RemoteNeonTargetConfirmation = {
-      provider: 'neon',
-      project: 'tiizi-v2',
-      branch: 'main',
-      database: 'postgres',
-      confirmTarget: 'neon:tiizi-v2:main:postgres',
-    };
-    const localAllowlist: RemoteNeonAllowlist = {
-      allowedHost: '127.0.0.1',
-      allowedProject: 'tiizi-v2',
-      allowedBranch: 'main',
-      allowedDatabase: 'postgres',
-    };
-    const target = await verifyRemoteNeonBaseline(db, localUrl, localConfirm, localAllowlist);
-
-    // Incomplete candidate rejected without mutating
-    const shortCandidate: S6Candidate = { ...candidate, records: candidate.records.slice(0, 10) };
-    await expect(
-      executeRemoteNeonCataloguePublish(db, target, shortCandidate, inventory, 'apply'),
-    ).rejects.toThrow(/expected 118 canonical activity codes/);
-
-    // Dry-run does not publish drafts
-    const beforePublished = (await listKnowledgeForAdmin(db, {})).filter((i) => i.lifecycle === 'published').length;
-    const dry = await executeRemoteNeonCataloguePublish(db, target, candidate, inventory, 'dry-run');
+    // Unverified dry-run is allowed, unverified apply is refused
+    const unverifiedTarget = await verifyRemoteNeonBaseline(
+      db,
+      parts,
+      { verified: false, method: 'unverified_dry_run_only' },
+      codes,
+    );
+    expect(unverifiedTarget.catalogueBaseline).toBe('initial-migration-seeded');
+    const dry = await executeRemoteNeonCataloguePublish(db, unverifiedTarget, candidate, inventory, 'dry-run');
     expect(dry.import).toMatchObject({ mode: 'dry-run', readyForIngestion: true, applied: 0 });
-    expect((await listKnowledgeForAdmin(db, {})).filter((i) => i.lifecycle === 'published').length).toBe(beforePublished);
+    await expect(
+      executeRemoteNeonCataloguePublish(db, unverifiedTarget, candidate, inventory, 'apply'),
+    ).rejects.toThrow(/authoritative Neon project\/branch verification is required/);
 
-    // Apply imports and publishes all 118 (84 Fitness, 34 Wellness)
-    const applied = await executeRemoteNeonCataloguePublish(db, target, candidate, inventory, 'apply');
-    expect(applied.import).toMatchObject({ mode: 'apply', readyForIngestion: true, conflicts: 0 });
+    // Authoritatively verified initial apply
+    const verifiedTarget = await verifyRemoteNeonBaseline(db, parts, verifiedAuth, codes);
+    const applied = await executeRemoteNeonCataloguePublish(db, verifiedTarget, candidate, inventory, 'apply');
     expect(applied.publication).toMatchObject({
       mode: 'apply',
       expected: 118,
       found: 118,
-      published: 118 - beforePublished,
+      alreadyPublished: 2,
+      toPublish: 116,
+      published: 116,
       errors: [],
       verification: {
         total: 118,
@@ -208,8 +370,10 @@ describe('remote Neon catalogue publication — empty baseline & governed execut
       },
     });
 
-    // Idempotent re-run
-    const rerun = await executeRemoteNeonCataloguePublish(db, target, candidate, inventory, 'apply');
+    // Re-verify baseline as 'published-s6-baseline' and confirm idempotent rerun
+    const rerunTarget = await verifyRemoteNeonBaseline(db, parts, verifiedAuth, codes);
+    expect(rerunTarget.catalogueBaseline).toBe('published-s6-baseline');
+    const rerun = await executeRemoteNeonCataloguePublish(db, rerunTarget, candidate, inventory, 'apply');
     expect(rerun.import).toMatchObject({ created: 0, updated: 0, unchanged: 118, applied: 0 });
     expect(rerun.publication).toMatchObject({
       alreadyPublished: 118,
@@ -217,5 +381,6 @@ describe('remote Neon catalogue publication — empty baseline & governed execut
       published: 0,
       errors: [],
     });
+    expect((await listKnowledgeForAdmin(db, {})).filter((i) => i.lifecycle === 'published').length).toBe(118);
   });
 });
