@@ -157,6 +157,7 @@ export function V2ChallengeTemplateLibrary() {
   const lookup: TemplateActivityLookup = Object.fromEntries(Object.entries(names).map(([id, n]) => [id, { name: n.name, kind: n.kind }]));
   const [filter, setFilter] = useState<TemplateFilterState>({ search: '', type: 'all', interest: 'all', domain: 'all' });
   const shown = filterTemplates(templates, filter, lookup);
+  const hasSimulatedTemplates = templates.some((t) => t.simulatedPublication === true);
   const domainOptions: Array<[string, string]> = [['all', 'All'], ...(['fitness', 'wellness'] as const).filter((d) => templates.some((t) => domainsOf(t, lookup).includes(d))).map((d): [string, string] => [d, DOMAIN_LABEL[d]])];
   const typeOptions: Array<[string, string]> = [['all', 'All'], ...TYPE_ORDER.filter((t) => templates.some((x) => x.challengeType === t)).map((t): [string, string] => [t, challengeTypeLabel(t)])];
   const filtersActive = filter.search.trim() !== '' || filter.type !== 'all' || (filter.domain ?? 'all') !== 'all';
@@ -170,7 +171,7 @@ export function V2ChallengeTemplateLibrary() {
   return (
     <V2Page>
       <V2SectionHeader eyebrow="Create a Challenge" title="Choose a template" description="Pick a starting point. Next you will choose a hosting Group and can change anything." />
-      <div className="mb-3"><SimulatedBadge /></div>
+      {hasSimulatedTemplates && <div className="mb-3"><SimulatedBadge /></div>}
       {query.isLoading && <V2LoadingState label="Loading templates…" />}
       {query.isError && <V2ErrorState title="We couldn’t load templates" message="Please try again." onRetry={() => void query.refetch()} />}
       {query.isSuccess && (
@@ -311,7 +312,7 @@ export function V2ChallengeTemplatePreview() {
       <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
         Using a template fills in the Challenge for you. Nothing is created yet: you will choose a hosting Group, can change the name, goals, length and dates, and review everything first.
       </p>
-      <div className="mt-3"><SimulatedBadge /></div>
+      {template.simulatedPublication === true && <div className="mt-3"><SimulatedBadge /></div>}
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-red-700">{error}</p>}
       <div className="mt-4 flex flex-wrap gap-2">
         <V2Button onClick={() => void useTemplate(template)} disabled={adopting}>{adopting ? 'Preparing…' : 'Use this template'}</V2Button>

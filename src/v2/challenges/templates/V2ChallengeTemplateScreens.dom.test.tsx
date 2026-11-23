@@ -16,7 +16,7 @@ vi.mock('../../../api/challengeCreationApi', () => ({
   fetchActivityOptions: vi.fn(async () => ({ knowledgeId: '11111111-1111-4111-8111-111111111111', activityCode: 'FIT-STR-001', kind: 'fitness', currentVersion: 1, primaryMetrics: ['repetitions'], secondaryMetrics: [], compatibleUnits: ['reps'], components: [], supportedLoadBases: [], unitsByMetric: { repetitions: ['reps'] } })),
 }));
 
-import { V2ChallengeStartScreen, V2ChallengeTemplatePreview } from './V2ChallengeTemplateScreens';
+import { V2ChallengeStartScreen, V2ChallengeTemplateLibrary, V2ChallengeTemplatePreview } from './V2ChallengeTemplateScreens';
 
 function LocationProbe() {
   const location = useLocation();
@@ -78,5 +78,65 @@ describe('approved Challenge entry choices', () => {
       description: 'Reach 3,000 together within 30 days.', coverId: 'challenge-5', durationDays: 30,
       activities: [{ activityCode: 'FIT-STR-001', metric: 'repetitions', unit: 'reps', targetValue: '3000' }],
     });
+  });
+
+  it('shows the simulation warning only when simulatedPublication is true', async () => {
+    const baseTemplate = {
+      templateId: 'tpl-1', version: 1, title: 'Daily Push-Up Starter',
+      summary: 'Daily push-ups.', description: 'Build a daily habit.',
+      challengeType: 'collective', durationDays: 14, durationPresetDays: [14],
+      coverId: null, focusTags: ['Strength'], publishedAt: '2026-11-23T00:00:00Z',
+      adoptable: true, unavailableReason: null,
+      composer: { draftKind: 'pf04-v1', mode: 'CHALLENGE', challengeType: 'collective', activities: [
+        { activity: '11111111-1111-4111-8111-111111111111', observedVersion: 1, kind: 'fitness', metric: 'repetitions', unit: 'reps', targetValue: 20, position: 0 },
+      ] },
+    };
+
+    // Live API template in Library -> no simulation badge
+    previewApi.template = { ...baseTemplate, simulatedPublication: false };
+    const { fetchMemberTemplates } = await import('../../../api/challengeTemplatesApi');
+    vi.mocked(fetchMemberTemplates).mockResolvedValueOnce({ templates: [previewApi.template], nextCursor: null });
+    render(<QueryClientProvider client={makeQueryClient()}><MemoryRouter initialEntries={['/v2/challenges/templates']}>
+      <Routes><Route path="/v2/challenges/templates" element={<V2ChallengeTemplateLibrary />} /></Routes>
+    </MemoryRouter></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByText('Daily Push-Up Starter')).toBeTruthy());
+    expect(document.querySelector('[data-simulated-publication]')).toBeNull();
+    cleanup();
+
+    // Empty live API Library -> preserves empty state and no simulation badge
+    vi.mocked(fetchMemberTemplates).mockResolvedValueOnce({ templates: [], nextCursor: null });
+    render(<QueryClientProvider client={makeQueryClient()}><MemoryRouter initialEntries={['/v2/challenges/templates']}>
+      <Routes><Route path="/v2/challenges/templates" element={<V2ChallengeTemplateLibrary />} /></Routes>
+    </MemoryRouter></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByText(/No templates available/i)).toBeTruthy());
+    expect(document.querySelector('[data-simulated-publication]')).toBeNull();
+    cleanup();
+
+    // Simulated template in Library -> renders simulation badge
+    previewApi.template = { ...baseTemplate, simulatedPublication: true };
+    vi.mocked(fetchMemberTemplates).mockResolvedValueOnce({ templates: [previewApi.template], nextCursor: null });
+    render(<QueryClientProvider client={makeQueryClient()}><MemoryRouter initialEntries={['/v2/challenges/templates']}>
+      <Routes><Route path="/v2/challenges/templates" element={<V2ChallengeTemplateLibrary />} /></Routes>
+    </MemoryRouter></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByText('Daily Push-Up Starter')).toBeTruthy());
+    expect(document.querySelector('[data-simulated-publication]')).not.toBeNull();
+    cleanup();
+
+    // Live API template in Preview -> no simulation badge
+    previewApi.template = { ...baseTemplate, simulatedPublication: false };
+    render(<QueryClientProvider client={makeQueryClient()}><MemoryRouter initialEntries={['/v2/challenges/templates/tpl-1']}>
+      <Routes><Route path="/v2/challenges/templates/:templateId" element={<V2ChallengeTemplatePreview />} /></Routes>
+    </MemoryRouter></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Use this template' })).toBeTruthy());
+    expect(document.querySelector('[data-simulated-publication]')).toBeNull();
+    cleanup();
+
+    // Simulated template in Preview -> renders simulation badge
+    previewApi.template = { ...baseTemplate, simulatedPublication: true };
+    render(<QueryClientProvider client={makeQueryClient()}><MemoryRouter initialEntries={['/v2/challenges/templates/tpl-1']}>
+      <Routes><Route path="/v2/challenges/templates/:templateId" element={<V2ChallengeTemplatePreview />} /></Routes>
+    </MemoryRouter></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Use this template' })).toBeTruthy());
+    expect(document.querySelector('[data-simulated-publication]')).not.toBeNull();
   });
 });
