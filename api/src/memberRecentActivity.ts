@@ -34,6 +34,7 @@ export interface RecentActivityPage {
 export interface RecentActivityQuery {
   limit?: number;
   cursor?: string;
+  challengeId?: string;
 }
 
 interface PageCursor {
@@ -42,6 +43,7 @@ interface PageCursor {
   occurredAt: string;
   recordedAt: string;
   activityId: string;
+  challengeId: string | null;
 }
 
 interface RecentActivityRow {
@@ -75,12 +77,13 @@ function memberBinding(memberId: string): string {
   return createHash('sha256').update(memberId).digest('base64url');
 }
 
-function decodeCursor(cursor: string, memberId: string): PageCursor {
+function decodeCursor(cursor: string, memberId: string, challengeId: string | null): PageCursor {
   try {
     if (cursor.length > 2048) throw new Error('cursor too long');
     const json = Buffer.from(cursor, 'base64url').toString('utf8');
     if (Buffer.from(json, 'utf8').toString('base64url') !== cursor) throw new Error('non-canonical cursor');
     const value = JSON.parse(json) as Partial<PageCursor>;
+    const cursorChallengeId = value.challengeId ?? null;
     if (
       value.version !== CURSOR_VERSION
       || value.memberBinding !== memberBinding(memberId)
@@ -90,25 +93,29 @@ function decodeCursor(cursor: string, memberId: string): PageCursor {
       || !Number.isFinite(Date.parse(value.recordedAt))
       || typeof value.activityId !== 'string'
       || !UUID_RE.test(value.activityId)
+      || (cursorChallengeId !== null && (typeof cursorChallengeId !== 'string' || !UUID_RE.test(cursorChallengeId)))
+      || cursorChallengeId !== challengeId
     ) {
       throw new Error('invalid cursor payload');
     }
-    return value as PageCursor;
+    return { ...value, challengeId: cursorChallengeId } as PageCursor;
   } catch {
     throw new InvalidRecentActivityCursorError();
   }
 }
 
-function encodeCursor(row: RecentActivityRow, memberId: string): string {
+function encodeCursor(row: RecentActivityRow, memberId: string, challengeId: string | null): string {
   const value: PageCursor = {
     version: CURSOR_VERSION,
     memberBinding: memberBinding(memberId),
     occurredAt: row.occurred_at_cursor,
     recordedAt: row.recorded_at_cursor,
     activityId: row.activity_id,
+    challengeId,
   };
   return Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
 }
+
 
 function toIsoTimestamp(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
@@ -130,10 +137,14 @@ export async function listMemberRecentActivity(
   query: RecentActivityQuery = {},
 ): Promise<RecentActivityPage> {
   const limit = query.limit ?? DEFAULT_PAGE_SIZE;
+  const challengeId = query.challengeId ?? null;
   if (!Number.isInteger(limit) || limit < 1 || limit > MAX_PAGE_SIZE) {
     throw new Error('Recent Activity page size is outside the supported range');
   }
-  const cursor = query.cursor ? decodeCursor(query.cursor, memberId) : null;
+  if (challengeId !== null && !UUID_RE.test(challengeId)) {
+    throw new Error('Recent Activity Challenge filter is invalid');
+  }
+  const cursor = query.cursor ? decodeCursor(query.cursor, memberId, challengeId) : null;
   const result = await db.query<RecentActivityRow>(
     `WITH RECURSIVE current_events AS (
        SELECT event_id, member_id, activity_kind, canonical_key, activity_variant,
@@ -216,6 +227,7 @@ export async function listMemberRecentActivity(
       WHERE ($2::timestamptz IS NULL OR
              (display.occurred_at, effective.recorded_at, accepted.event_id) <
              ($2::timestamptz, $3::timestamptz, $4::uuid))
+        AND ($6::uuid IS NULL OR challenge.challenge_id = $6::uuid)
       ORDER BY display.occurred_at DESC, effective.recorded_at DESC, accepted.event_id DESC
       LIMIT $5`,
     [
@@ -224,6 +236,7 @@ export async function listMemberRecentActivity(
       cursor?.recordedAt ?? null,
       cursor?.activityId ?? null,
       limit + 1,
+      challengeId,
     ],
   );
 
@@ -249,7 +262,7 @@ export async function listMemberRecentActivity(
 
   return {
     items,
-    nextCursor: hasMore ? encodeCursor(rows[rows.length - 1], memberId) : null,
+    nextCursor: hasMore ? encodeCursor(rows[rows.length - 1], memberId, challengeId) : null,
   };
 }
 
@@ -264,6 +277,7 @@ export function registerMemberRecentActivityRoutes(app: FastifyInstance, db: Db)
           properties: {
             limit: { type: 'integer', minimum: 1, maximum: MAX_PAGE_SIZE },
             cursor: { type: 'string', maxLength: 2048 },
+            challengeId: { type: 'string', pattern: UUID_RE.source },
           },
         },
       },

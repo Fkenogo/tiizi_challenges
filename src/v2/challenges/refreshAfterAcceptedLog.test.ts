@@ -5,6 +5,7 @@ import {
   V2_RECENT_ACTIVITY_PAGE_SIZE,
   V2_RECENT_ACTIVITY_PREVIEW_SIZE,
   v2RecentActivityKey,
+  v2ChallengeRecentActivityKey,
 } from '../member/recentActivityQueryKeys';
 
 describe('refreshAfterAcceptedLog', () => {
@@ -13,14 +14,17 @@ describe('refreshAfterAcceptedLog', () => {
     const previewKey = v2RecentActivityKey('member-uid', V2_RECENT_ACTIVITY_PREVIEW_SIZE);
     const historyKey = v2RecentActivityKey('member-uid', V2_RECENT_ACTIVITY_PAGE_SIZE);
     const otherMemberKey = v2RecentActivityKey('other-member', V2_RECENT_ACTIVITY_PREVIEW_SIZE);
+    const challengeKey = v2ChallengeRecentActivityKey('member-uid', 'challenge-id');
     queryClient.setQueryData(previewKey, { items: [] });
     queryClient.setQueryData(historyKey, { pages: [] });
+    queryClient.setQueryData(challengeKey, { item: 'private-contribution' });
     queryClient.setQueryData(otherMemberKey, { items: [] });
 
     const result = await refreshAfterAcceptedLog(queryClient, 'member-uid', 'challenge-id');
 
     expect(result.refreshed).toBe(true);
     expect(queryClient.getQueryState(previewKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(challengeKey)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(historyKey)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(otherMemberKey)?.isInvalidated).toBe(false);
     queryClient.clear();

@@ -1,18 +1,25 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveLoggingOccurredAt } from './V2LoggingSection';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
-import { V2LogActivityForm } from './V2LoggingSection';
+import { V2LogActivityDialog, V2LogActivityForm } from './V2LoggingSection';
+import { useLogActivityV2 } from './useChallengeCreation';
 
+const authState = vi.hoisted(() => ({ user: { uid: 'owner-1' } as { uid: string } | null }));
 vi.mock('./useChallengeCreation', () => ({
   useLogActivityV2: vi.fn(() => ({
     mutateAsync: vi.fn(),
     isPending: false,
   })),
 }));
+vi.mock('../../hooks/useAuth', () => ({
+  useAuth: () => authState,
+}));
 
 vi.mock('./activityNames', () => ({
   useActivityDisplayNames: () => new Map([['FIT-STR-001', 'Push-Up']]),
+  resolveActivityDisplayName: (canonicalKey: string, names: Map<string, string>) => names.get(canonicalKey) ?? 'Push-Up',
   resolvedChoiceOptionLabel: () => 'Push-Up (reps)',
   V2ActivityName: ({ canonicalKey }: { canonicalKey: string }) => <span>{canonicalKey}</span>,
 }));
@@ -20,6 +27,7 @@ vi.mock('./activityNames', () => ({
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  authState.user = { uid: 'owner-1' };
 });
 
 describe('V2LoggingSection — timestamp resolution', () => {
@@ -150,7 +158,6 @@ describe('V2LoggingSection — member-friendly error display', () => {
   };
 
   it('renders friendly error message and NEVER renders raw internal API error codes', async () => {
-    const { useLogActivityV2 } = await import('./useChallengeCreation');
     const mutateAsyncMock = vi.fn().mockRejectedValue({
       status: 422,
       code: 'no_participation_episode',
@@ -167,7 +174,6 @@ describe('V2LoggingSection — member-friendly error display', () => {
     const amountInput = screen.getByPlaceholderText('e.g. 50');
     expect(amountInput).toBeTruthy();
 
-    const { fireEvent } = await import('@testing-library/react');
     fireEvent.change(amountInput, { target: { value: '25' } });
 
     // Click submit
@@ -184,5 +190,171 @@ describe('V2LoggingSection — member-friendly error display', () => {
     expect(alert.textContent).not.toContain('no_participation_episode');
     expect(screen.queryByText(/Code:/i)).toBeNull();
     expect(screen.queryByText(/no_participation_episode/i)).toBeNull();
+  });
+
+  it('shows sharing destinations immediately after Done and keeps the private continuation functional', async () => {
+    const mutateAsyncMock = vi.fn().mockResolvedValue({
+      recordId: 'record-0001',
+      eventId: 'event-0001',
+      challengeId: detail.challengeId,
+      value: 25,
+      unit: 'reps',
+      pointsAwarded: 5,
+      occurredDay: '2026-11-10',
+      duplicate: false,
+    });
+    const onClose = vi.fn();
+    const onKeepPrivate = vi.fn();
+    vi.mocked(useLogActivityV2).mockReturnValue({
+      mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as any);
+
+    // StrictMode double-invokes effects in the real app shell; the mounted
+    // guard must not swallow the accepted result after that simulated
+    // remount.
+    render(
+      <React.StrictMode>
+        <V2LogActivityDialog detail={detail} open onClose={onClose} onKeepPrivate={onKeepPrivate} />
+      </React.StrictMode>,
+    );
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findByText('Recorded.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+    // Founder direction: sharing options appear immediately after logging.
+    // Done opens the destination list directly — no intermediate screen and
+    // no extra click is required to see the destinations.
+    expect(await screen.findByRole('dialog', { name: 'Activity sharing options' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(screen.getByText(/return you to Strength Challenge Details/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Challenge Feed — unavailable' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'External sharing — unavailable' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Share activity' })).toBeNull();
+    // The panel replaces the focused Done button inside the open sheet, so
+    // it must take focus itself instead of dropping it to the body.
+    expect(document.activeElement?.getAttribute('aria-labelledby')).toBe('activity-share-choices-title');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep private and continue' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onKeepPrivate).toHaveBeenCalledTimes(1);
+    expect(mutateAsyncMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('a late response from a closed sheet cannot overwrite the reopened Activity share source', async () => {
+    let resolveFirst!: (value: unknown) => void;
+    const firstSubmission = new Promise<unknown>((resolve) => { resolveFirst = resolve; });
+    const mutateAsyncMock = vi.fn()
+      .mockImplementationOnce(() => firstSubmission)
+      .mockResolvedValueOnce({
+        recordId: 'record-0002',
+        eventId: 'event-0002',
+        challengeId: detail.challengeId,
+        value: 25,
+        unit: 'reps',
+        pointsAwarded: 5,
+        occurredDay: '2026-11-10',
+        duplicate: false,
+      });
+    vi.mocked(useLogActivityV2).mockReturnValue({
+      mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as any);
+
+    const view = render(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+    // First submission stays pending; the member closes the sheet mid-flight.
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '11' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    view.rerender(<V2LogActivityDialog detail={detail} open={false} onClose={vi.fn()} />);
+    // Reopen: a fresh form mounts (closing unmounts the previous one).
+    view.rerender(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findByText('Recorded.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(await screen.findByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+
+    // The stale first response arrives after its form was unmounted; it
+    // must not replace the confirmed share source of the open Activity.
+    resolveFirst({
+      recordId: 'record-0001',
+      eventId: 'event-0001',
+      challengeId: detail.challengeId,
+      value: 11,
+      unit: 'reps',
+      pointsAwarded: 2,
+      occurredDay: '2026-11-10',
+      duplicate: false,
+    });
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+    expect(screen.queryByText('Push-Up · 11 reps')).toBeNull();
+  });
+
+  it('clears accepted Activity and sharing choices when the authenticated owner changes', async () => {
+    const mutateAsyncMock = vi.fn().mockResolvedValue({
+      recordId: 'record-owner-1',
+      eventId: 'event-owner-1',
+      challengeId: detail.challengeId,
+      value: 25,
+      unit: 'reps',
+      pointsAwarded: 5,
+      occurredDay: '2026-11-10',
+      duplicate: false,
+    });
+    vi.mocked(useLogActivityV2).mockReturnValue({
+      mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as any);
+
+    const view = render(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findByText('Recorded.');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(await screen.findByRole('region', { name: 'Sharing destinations' })).toBeTruthy();
+    expect(screen.getByText('Push-Up · 25 reps')).toBeTruthy();
+
+    authState.user = { uid: 'owner-2' };
+    view.rerender(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+
+    expect(screen.queryByRole('region', { name: 'Sharing destinations' })).toBeNull();
+    expect(screen.queryByText('Push-Up · 25 reps')).toBeNull();
+    expect(screen.queryByText('Recorded.')).toBeNull();
+  });
+
+  it('keeps Log another as a separate deliberate Activity intent', async () => {
+    const mutateAsyncMock = vi.fn().mockResolvedValue({
+      value: 25,
+      unit: 'reps',
+      pointsAwarded: 5,
+      occurredDay: '2026-11-10',
+      duplicate: false,
+    });
+    vi.mocked(useLogActivityV2).mockReturnValue({
+      mutateAsync: mutateAsyncMock,
+      isPending: false,
+    } as any);
+
+    render(<V2LogActivityDialog detail={detail} open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('e.g. 50'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findByText('Recorded.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Log another' }));
+    expect(screen.queryByLabelText('Activity privacy choice')).toBeNull();
+    const amountInput = screen.getByPlaceholderText('e.g. 50');
+    expect((amountInput as HTMLInputElement).value).toBe('');
+    fireEvent.change(amountInput, { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log activity' }));
+    await screen.findAllByText('Recorded.');
+
+    expect(mutateAsyncMock).toHaveBeenCalledTimes(2);
+    const firstKey = mutateAsyncMock.mock.calls[0][0].payload.client_key;
+    const secondKey = mutateAsyncMock.mock.calls[1][0].payload.client_key;
+    expect(secondKey).not.toBe(firstKey);
   });
 });

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { V2ActivityResult, V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import {
   buildS3bActivityPayload,
   mapV2ApiError,
   newClientKey,
 } from '../../services/v2ActivityPayload';
+import { V2ActivityShareChoices, shareSourceFromAcceptedActivity, type V2ActivityShareSource } from '../components/V2ActivityShareChoices';
 import { V2Button, V2Field, V2Select, V2Sheet, V2TextInput } from '../components/V2Primitives';
 import { useLogActivityV2 } from './useChallengeCreation';
+import { useAuth } from '../../hooks/useAuth';
 import {
   isNewEntryAllowed,
   loggingViewFor,
@@ -21,6 +23,7 @@ import {
   type LoggingAttempt,
 } from './loggingIntent';
 import {
+  resolveActivityDisplayName,
   useActivityDisplayNames,
   V2ActivityName,
 } from './activityNames';
@@ -98,11 +101,15 @@ export function resolveLoggingOccurredAt(params: {
 export function V2LogActivityForm({
   detail,
   onClose,
+  onActivityAccepted,
 }: {
   detail: V2ChallengeDetail;
   onClose?: () => void;
+  onActivityAccepted?: (source: V2ActivityShareSource) => void;
 }) {
   const view = loggingViewFor(detail);
+  const configuredChoices = view.kind === 'loggable' ? view.choices : [];
+  const names = useActivityDisplayNames(configuredChoices.map((choice) => choice.canonicalKey));
   const log = useLogActivityV2();
   const [optionId, setOptionId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -113,6 +120,17 @@ export function V2LogActivityForm({
   const [localError, setLocalError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState<V2ActivityResult | null>(null);
   const [denial, setDenial] = useState<{ message: string; retryable: boolean; code?: string } | null>(null);
+  // Closing the sheet unmounts this form while a submission may still be
+  // in flight. A response that lands after unmounting belongs to a closed
+  // intent; it must never call back into the live dialog and overwrite the
+  // share source of a newer, currently-open Activity. (The effect body
+  // re-asserts the flag so React StrictMode's simulated remount cannot
+  // leave a stale false value.)
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const showAccepted = shouldShowAcceptedResult(accepted);
   const allowNewEntry = isNewEntryAllowed(detail);
@@ -130,8 +148,7 @@ export function V2LogActivityForm({
     return <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>;
   }
 
-  const choices: S3bLoggableChoice[] =
-    view.kind === 'loggable' ? view.choices : [];
+  const choices: S3bLoggableChoice[] = configuredChoices;
   const selected: S3bLoggableChoice | undefined =
     choices.find((c) => c.optionId === optionId) ?? choices[0];
 
@@ -205,9 +222,14 @@ export function V2LogActivityForm({
     }
     try {
       const result = await log.mutateAsync({ challengeId: detail.challengeId, payload });
+      if (!mountedRef.current) return;
       setLastAttempt({ key: submitKey, facts: currentFacts });
       setAccepted(result);
+      onActivityAccepted?.(
+        shareSourceFromAcceptedActivity(result, resolveActivityDisplayName(selected.canonicalKey, names)),
+      );
     } catch (error) {
+      if (!mountedRef.current) return;
       // Record the attempt so a same-facts retry reuses the key while a
       // corrected-facts resubmit mints a new one.
       setLastAttempt({ key: submitKey, facts: currentFacts });
@@ -293,6 +315,7 @@ export function V2LogActivityForm({
       localError={localError}
       denial={denial}
       onRetry={handleRetry}
+      names={names}
       onFreshEntry={startFreshEntry}
     />
   );
@@ -307,6 +330,7 @@ export function V2LogActivityForm({
 function LogActivityFields({
   choices,
   selected,
+  names,
   onSelect,
   amount,
   onAmount,
@@ -321,6 +345,7 @@ function LogActivityFields({
 }: {
   choices: S3bLoggableChoice[];
   selected: S3bLoggableChoice;
+  names: Map<string, string>;
   onSelect: (optionId: string) => void;
   amount: string;
   onAmount: (next: string) => void;
@@ -333,7 +358,6 @@ function LogActivityFields({
   onRetry: () => void;
   onFreshEntry: () => void;
 }) {
-  const names = useActivityDisplayNames(choices.map((choice) => choice.canonicalKey));
   return (
     <div>
       <div className="space-y-3">
@@ -427,18 +451,75 @@ export function V2LogActivityDialog({
   detail,
   open,
   onClose,
+  onKeepPrivate,
 }: {
   detail: V2ChallengeDetail;
   open: boolean;
   onClose: () => void;
+  onKeepPrivate?: () => void;
 }) {
+  const { user } = useAuth();
+  const authUid = user?.uid ?? null;
   const view = loggingViewFor(detail);
+  const [shareChoiceOpen, setShareChoiceOpen] = useState(false);
+  const [shareChoiceOwnerUid, setShareChoiceOwnerUid] = useState<string | null>(null);
+  const [shareSourceState, setShareSourceState] = useState<{
+    ownerUid: string | null;
+    source: V2ActivityShareSource;
+  } | null>(null);
+  const shareSource = shareSourceState?.ownerUid === authUid ? shareSourceState.source : null;
+  const showShareChoices = shareChoiceOpen && shareChoiceOwnerUid === authUid && shareSource !== null;
+  useEffect(() => {
+    if (!open) {
+      setShareChoiceOpen(false);
+      setShareChoiceOwnerUid(null);
+      setShareSourceState(null);
+    }
+  }, [open]);
+  useEffect(() => {
+    setShareChoiceOpen(false);
+    setShareChoiceOwnerUid(null);
+    setShareSourceState(null);
+  }, [authUid]);
+
+  const continuePrivate = () => {
+    onClose();
+    onKeepPrivate?.();
+  };
+
   return (
-    <V2Sheet open={open} onClose={onClose} title="Log activity" variant="focused">
+    <V2Sheet
+      open={open}
+      onClose={onClose}
+      title={showShareChoices ? 'Activity sharing options' : 'Log activity'}
+      variant="focused"
+    >
       {view.kind === 'empty' ? (
         <p className="text-sm leading-6 text-slate-600">{NO_CONFIGURED_ACTIVITIES_COPY}</p>
+      ) : showShareChoices && shareSource ? (
+        <V2ActivityShareChoices
+          mode="immediate"
+          source={shareSource}
+          challengeTitle={detail.title}
+          onKeepPrivate={continuePrivate}
+        />
       ) : (
-        <V2LogActivityForm detail={detail} onClose={onClose} />
+        <V2LogActivityForm
+          key={authUid ?? 'signed-out'}
+          detail={detail}
+          onClose={() => {
+            // Founder direction: sharing options appear immediately after
+            // logging. Done opens the destination list directly; Keep
+            // private remains the default continuation inside it.
+            setShareChoiceOwnerUid(authUid);
+            if (shareSource !== null) {
+              setShareChoiceOpen(true);
+            } else {
+              continuePrivate();
+            }
+          }}
+          onActivityAccepted={(source) => setShareSourceState({ ownerUid: authUid, source })}
+        />
       )}
     </V2Sheet>
   );

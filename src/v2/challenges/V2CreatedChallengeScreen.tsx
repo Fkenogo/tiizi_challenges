@@ -22,6 +22,7 @@ import { V2LogActivityDialog } from './V2LoggingSection';
 import { participationViewFor, V2LeaveChallengeDialog, V2ParticipationSection } from './V2ParticipationSection';
 import { V2ProgressSection } from './V2ProgressSection';
 import { V2ChallengeResults } from './V2ChallengeResults';
+import { V2LatestChallengeContribution } from './V2LatestChallengeContribution';
 import { V2ChallengeHero } from './V2ChallengeHero';
 import { fetchKnowledgeByCode, fetchKnowledgeById } from '../../api/knowledgeApi';
 import { fetchActivityOptions } from '../../api/challengeCreationApi';
@@ -264,6 +265,8 @@ export function V2CreatedChallengeScreen() {
           ? <V2ProgressSection detail={challenge} />
           : <V2ChallengeResults detail={challenge} endState={endState} />}
 
+        <V2LatestChallengeContribution challengeId={challenge.challengeId} />
+
         <V2ParticipationSection detail={challenge} />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -277,7 +280,15 @@ export function V2CreatedChallengeScreen() {
         {reuseError && <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">{reuseError}</p>}
       </div>
 
-      <V2LogActivityDialog detail={challenge} open={logOpen} onClose={() => setLogOpen(false)} />
+      <V2LogActivityDialog
+        detail={challenge}
+        open={logOpen}
+        onClose={() => setLogOpen(false)}
+        onKeepPrivate={() => navigate(
+          `${location.pathname}${location.search}${location.hash}`,
+          { replace: true, state: location.state },
+        )}
+      />
       <V2LeaveChallengeDialog detail={challenge} open={leaveOpen} onClose={() => setLeaveOpen(false)} />
     </V2Page>
   );

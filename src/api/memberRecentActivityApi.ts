@@ -23,6 +23,7 @@ export interface MemberRecentActivityPage {
 export interface MemberRecentActivityRequest {
   limit: number;
   cursor?: string;
+  challengeId?: string;
 }
 
 /** Authenticated owner-only read; the client never selects an owner. */
@@ -32,5 +33,6 @@ export function fetchMemberRecentActivity(
 ): Promise<MemberRecentActivityPage> {
   const params = new URLSearchParams({ limit: String(request.limit) });
   if (request.cursor) params.set('cursor', request.cursor);
+  if (request.challengeId) params.set('challengeId', request.challengeId);
   return apiFetch<MemberRecentActivityPage>(`${apiPath('/me/activity')}?${params.toString()}`, { bearerToken });
 }
