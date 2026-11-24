@@ -1,47 +1,53 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const LOCAL_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const LOCAL_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
 
 const ALLOWED_IMAGE_TYPES = new Set(LOCAL_IMAGE_ACCEPT.split(','));
 
-/** A browser-memory-only image draft. The object URL is revoked on replace, remove, and unmount. */
+/** A browser-memory-only image draft. The object URL is created and revoked strictly in useEffect (React 18 StrictMode safe). */
 export function useLocalImagePreview(initialFile?: File | null) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(() => (initialFile ? URL.createObjectURL(initialFile) : null));
   const [file, setFile] = useState<File | null>(() => initialFile ?? null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const prevInitialFileRef = useRef<File | null | undefined>(initialFile);
 
   useEffect(() => {
-    if (initialFile && !file) {
-      setFile(initialFile);
-      const url = URL.createObjectURL(initialFile);
-      setPreviewUrl(url);
+    if (initialFile !== prevInitialFileRef.current) {
+      prevInitialFileRef.current = initialFile;
+      setFile(initialFile ?? null);
+      setError(null);
     }
   }, [initialFile]);
 
-  useEffect(() => () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
 
-  const selectFile = useCallback((file: File) => {
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+  const selectFile = useCallback((nextFile: File) => {
+    if (!ALLOWED_IMAGE_TYPES.has(nextFile.type)) {
       setError('Choose a JPG, PNG or WebP image.');
       return false;
     }
-    if (file.size > LOCAL_IMAGE_MAX_BYTES) {
+    if (nextFile.size > LOCAL_IMAGE_MAX_BYTES) {
       setError('Choose an image smaller than 5 MB.');
       return false;
     }
     setError(null);
-    setFile(file);
-    const nextUrl = URL.createObjectURL(file);
-    setPreviewUrl(nextUrl);
+    setFile(nextFile);
     return true;
   }, []);
 
   const remove = useCallback(() => {
     setFile(null);
-    setPreviewUrl(null);
     setError(null);
   }, []);
 
