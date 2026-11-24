@@ -39,7 +39,7 @@ export function V2ChallengeCard({
 
   return (
     <li {...surfaceAttribute} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-44 sm:h-48">
+      <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverImage={challenge.coverImage} heightClass="h-44 sm:h-48">
         {!getLocalChallengeCoverPreview(challenge.challengeId) && (
           <div className="absolute left-3 top-11 sm:left-4 sm:top-12">
             <span className="rounded-full bg-slate-900/60 px-2.5 py-1 text-[10px] font-bold text-slate-200 shadow-sm backdrop-blur-sm">

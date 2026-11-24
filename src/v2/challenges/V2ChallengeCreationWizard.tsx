@@ -79,6 +79,7 @@ import {
   type ApiKnowledgeItemLike,
 } from './wizardSteps';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { saveChallengeCoverImage } from '../../api/mediaApi';
 import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
 import { setLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 
@@ -294,6 +295,10 @@ export function V2ChallengeCreationWizard() {
       );
       if (challengeCoverPhoto.file) {
         setLocalChallengeCoverPreview(established.challengeId, challengeCoverPhoto.file);
+        await saveChallengeCoverImage(established.challengeId, challengeCoverPhoto.file, {
+          initialBind: true,
+          groupId: established.groupId,
+        }).catch(() => {});
       }
       clearChallengeCoverPhotoDraft(uid);
       clearChallengeDraft(uid);
@@ -538,6 +543,7 @@ export function StepHosting({
                   groupId={membership.groupId}
                   title={membership.group.name}
                   coverId={membership.group.coverId}
+                  coverImage={membership.group.coverImage}
                   heightClass="h-14"
                   className="w-14 shrink-0 rounded-lg"
                   overlay={false}

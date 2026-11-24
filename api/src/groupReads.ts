@@ -37,6 +37,12 @@ import { GroupMutationError } from './groupErrors.js';
 import { listDiscoverableGroups } from './groupDiscovery.js';
 import { getMemberPreferenceIds } from './memberPreferences.js';
 import { GROUP_COMMUNITY_NORMS, GROUP_FOCUS_AREAS, GROUP_GOALS, labelsForIds } from './groupVocabulary.js';
+import {
+  projectMediaAsset,
+  resolveReadyMediaAssetsByIds,
+  type MediaImageProjection,
+} from './mediaService.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -50,6 +56,7 @@ export type GroupReadStore = Pick<GroupMutationStore, 'getGroup' | 'getMembershi
 
 export interface GroupReadRouteDeps {
   store?: GroupReadStore;
+  mediaDeps?: MediaRouteDeps;
 }
 
 /**
@@ -175,6 +182,7 @@ export interface ApiGroupDetail {
    * on both projections; rules bind members, so the subset hides them.
    */
   coverId: string | null;
+  coverImage?: MediaImageProjection;
   tagline: string;
   location: string;
   focusTags: string[];
@@ -224,6 +232,7 @@ export async function getGroupDetail(
   store: GroupReadStore,
   memberId: string,
   groupId: string,
+  mediaDeps?: MediaRouteDeps,
 ): Promise<ApiGroupDetail> {
   if (!UUID_RE.test(groupId)) {
     readFail(400, 'invalid_group', 'groupId must be a Tiizi group UUID');
@@ -233,7 +242,8 @@ export async function getGroupDetail(
     legacy_firestore_id: string | null;
     invite_code: string | null;
     original_creator_member_id: string | null;
-  }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id, invite_code, original_creator_member_id FROM groups WHERE group_id = $1`, [groupId]);
+    cover_asset_id: string | null;
+  }>(`SELECT COALESCE(legacy_firestore_id, group_id::text) AS legacy_firestore_id, invite_code, original_creator_member_id, cover_asset_id FROM groups WHERE group_id = $1`, [groupId]);
   const legacyId = identityRow.rows[0]?.legacy_firestore_id ?? null;
   if (!legacyId) readFail(404, 'unknown_group', 'Group not found');
   // Live authority decides existence and liveness; outages fail closed.
@@ -267,6 +277,16 @@ export async function getGroupDetail(
     : null;
   // CORR-001 richer identity, read-model only (live-document mirror).
   const coverId = typeof live.coverId === 'string' ? live.coverId : null;
+  const coverAssetId = identityRow.rows[0]?.cover_asset_id ?? null;
+  let coverImage: MediaImageProjection | undefined;
+  if (mediaDeps?.objectStore) {
+    const assets = coverAssetId ? await resolveReadyMediaAssetsByIds(db, [coverAssetId]) : new Map();
+    coverImage = projectMediaAsset(
+      coverAssetId ? assets.get(coverAssetId) : null,
+      mediaDeps.objectStore,
+      mediaDeps.readUrlTtlSeconds,
+    );
+  }
   const tagline = typeof live.tagline === 'string' ? live.tagline : '';
   const location = typeof live.location === 'string' ? live.location : '';
   const focusTags = Array.isArray(live.focusTags)
@@ -300,6 +320,7 @@ export async function getGroupDetail(
       viewerRelationship: relationship,
       createdAt: null,
       coverId,
+      ...(coverImage !== undefined ? { coverImage } : {}),
       tagline,
       location,
       focusTags,
@@ -336,6 +357,7 @@ export async function getGroupDetail(
     viewerRelationship: relationship,
     createdAt: typeof live.createdAt === 'string' ? live.createdAt : null,
     coverId,
+    ...(coverImage !== undefined ? { coverImage } : {}),
     tagline,
     location,
     focusTags,
@@ -420,6 +442,7 @@ const groupDetailResponseSchema = {
     viewerRelationship: { type: 'string', enum: ['steward', 'member', 'pending', 'none'] },
     createdAt: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    coverImage: { type: 'object', additionalProperties: true },
     tagline: { type: 'string' },
     location: { type: 'string' },
     focusTags: { type: 'array', items: { type: 'string' } },
@@ -463,7 +486,7 @@ export function registerGroupReadRoutes(
       const preferences = query.rank === 'general'
         ? null
         : await getMemberPreferenceIds(db, member.memberId).catch(() => null);
-      return await listDiscoverableGroups(db, member.memberId, query, preferences);
+      return await listDiscoverableGroups(db, member.memberId, { ...query, mediaDeps: deps.mediaDeps }, preferences);
     } catch (error) {
       if (error instanceof GroupMutationError) throw error;
       throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group discovery authority unavailable');
@@ -501,7 +524,7 @@ export function registerGroupReadRoutes(
       const member = authenticatedMember(request);
       const params = request.params as { groupId: string };
       try {
-        return await getGroupDetail(db, store, member.memberId, params.groupId);
+        return await getGroupDetail(db, store, member.memberId, params.groupId, deps.mediaDeps);
       } catch (error) {
         if (error instanceof GroupMutationError) throw error;
         throw new GroupMutationError(503, 'group_store_unavailable', 'PostgreSQL Group authority unavailable');

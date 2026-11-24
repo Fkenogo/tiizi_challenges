@@ -1,4 +1,5 @@
 import { API_PREFIX, apiFetch } from './apiClient';
+import type { V2MediaImageProjection } from './mediaApi';
 
 export interface ApiMembershipGroup {
   id: string;
@@ -8,6 +9,7 @@ export interface ApiMembershipGroup {
   allowMemberChallenges?: boolean;
   /** S4a CORR-001 richer identity (server mirror; absent on legacy rows). */
   coverId?: string | null;
+  coverImage?: V2MediaImageProjection;
   tagline?: string;
   location?: string;
   focusTags?: string[];

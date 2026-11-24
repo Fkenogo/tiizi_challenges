@@ -6,6 +6,7 @@ import { findMemberByAuth } from './members.js';
 export interface MemberProfileIdentity {
   memberId: string;
   displayName: string | null;
+  profileImageAssetId?: string | null;
 }
 
 export class UnauthenticatedProfileMutationError extends AuthError {
@@ -44,12 +45,12 @@ export async function getMemberProfileIdentityById(
   db: Db,
   memberId: string,
 ): Promise<MemberProfileIdentity> {
-  const result = await db.query<{ display_name: string | null }>(
-    'SELECT display_name FROM members WHERE member_id = $1', [memberId],
+  const result = await db.query<{ display_name: string | null; profile_image_asset_id: string | null }>(
+    'SELECT display_name, profile_image_asset_id FROM members WHERE member_id = $1', [memberId],
   );
   const row = result.rows[0];
   if (!row) throw new AuthError(401, 'unknown_member', 'Authenticated member is not registered');
-  return { memberId, displayName: row.display_name };
+  return { memberId, displayName: row.display_name, profileImageAssetId: row.profile_image_asset_id };
 }
 
 /** Resolve a verified authentication identity through the sole canonical member map. */

@@ -49,6 +49,7 @@ function DiscoverRow({ group, onOpen }: { group: V2DiscoverableGroup; onOpen: (i
     groupId={group.id}
     name={group.name}
     coverId={group.coverId}
+    coverImage={group.coverImage}
     location={group.location}
     description={group.tagline || group.description}
     status={relationship}

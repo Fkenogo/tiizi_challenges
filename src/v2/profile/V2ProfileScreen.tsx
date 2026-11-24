@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { QueryClientContext } from '@tanstack/react-query';
 import { ApiError } from '../../api/apiClient';
+import { removeOwnProfileImage, saveOwnProfileImage } from '../../api/mediaApi';
 import type { V2ProfileChallengeItem } from '../../api/profileApi';
 import {
   V2Button,
@@ -19,6 +21,7 @@ import { ProfilePreferencesSection } from '../preferences/ProfilePreferencesSect
 import { V2SupportTiiziCard } from '../support/V2SupportTiiziCard';
 import { WELCOME_PATH } from '../welcome/welcomeContent';
 import { ProfileSaveUncertainError } from './profileWriteState';
+import { v2MemberIdentityKey } from './memberIdentityQuery';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
 import {
@@ -69,7 +72,10 @@ export function V2ProfileScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const signOut = useV2SignOut();
+  const queryClient = useContext(QueryClientContext);
   const profilePhoto = useLocalImagePreview();
+  const [photoSaving, setPhotoSaving] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const uid = user?.uid ?? null;
@@ -178,6 +184,51 @@ export function V2ProfileScreen() {
     }
   };
 
+  const persistedProfilePhotoUrl =
+    profile?.profileImage?.status === 'ready' ? profile.profileImage.url : null;
+  const durablePhotoEnabled = profile?.profileImage?.status !== 'not_configured';
+
+  const handlePhotoUpload = async (file: File) => {
+    const uidAtUpload = uidRef.current;
+    setPhotoError(null);
+    setPhotoSaving(true);
+    try {
+      await saveOwnProfileImage(file);
+      if (uidRef.current !== uidAtUpload) return;
+      profilePhoto.remove();
+      await Promise.all([
+        reload(),
+        queryClient?.invalidateQueries({ queryKey: v2MemberIdentityKey(uidAtUpload ?? undefined) }),
+      ]);
+    } catch (err) {
+      if (uidRef.current !== uidAtUpload) return;
+      profilePhoto.remove();
+      setPhotoError(err instanceof ApiError ? err.message : 'Could not save your profile photo. Please try again.');
+    } finally {
+      if (uidRef.current === uidAtUpload) setPhotoSaving(false);
+    }
+  };
+
+  const handlePhotoRemove = async () => {
+    if (!persistedProfilePhotoUrl) return;
+    const uidAtRemove = uidRef.current;
+    setPhotoError(null);
+    setPhotoSaving(true);
+    try {
+      await removeOwnProfileImage();
+      if (uidRef.current !== uidAtRemove) return;
+      await Promise.all([
+        reload(),
+        queryClient?.invalidateQueries({ queryKey: v2MemberIdentityKey(uidAtRemove ?? undefined) }),
+      ]);
+    } catch (err) {
+      if (uidRef.current !== uidAtRemove) return;
+      setPhotoError(err instanceof ApiError ? err.message : 'Could not remove your profile photo. Please try again.');
+    } finally {
+      if (uidRef.current === uidAtRemove) setPhotoSaving(false);
+    }
+  };
+
   return (
     <V2Page>
       <V2SectionHeader
@@ -209,14 +260,25 @@ export function V2ProfileScreen() {
       <div className="space-y-4">
         <V2Card>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <V2LocalImagePicker
-              subject="Profile picture"
-              preview={profilePhoto}
-              className="w-full sm:w-36 sm:shrink-0"
-              previewClassName="mx-auto h-16 w-16 rounded-2xl bg-orange-50 sm:ml-0 sm:mr-auto"
-              imageClassName="h-full w-full rounded-2xl object-cover"
-              fallback={<ProfileAvatar name={displayName} />}
-            />
+            <div className="w-full sm:w-36 sm:shrink-0">
+              <V2LocalImagePicker
+                subject="Profile picture"
+                preview={profilePhoto}
+                persistedUrl={persistedProfilePhotoUrl}
+                durable={durablePhotoEnabled}
+                isSaving={photoSaving}
+                onSelectFile={durablePhotoEnabled ? handlePhotoUpload : undefined}
+                onRemove={durablePhotoEnabled ? handlePhotoRemove : undefined}
+                previewClassName="mx-auto h-16 w-16 rounded-2xl bg-orange-50 sm:ml-0 sm:mr-auto"
+                imageClassName="h-full w-full rounded-2xl object-cover"
+                fallback={<ProfileAvatar name={displayName} />}
+              />
+              {photoError && (
+                <p role="alert" className="mt-1 text-xs font-bold text-red-700">
+                  {photoError}
+                </p>
+              )}
+            </div>
             <div className="flex min-w-0 flex-1 items-start gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">

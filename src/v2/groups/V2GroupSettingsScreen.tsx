@@ -7,6 +7,7 @@ import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor, isGroupCoverId 
 import { GroupInterestsPicker } from './GroupInterestsPicker';
 import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet } from './groupInterests';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { removeGroupCoverImage, saveGroupCoverImage } from '../../api/mediaApi';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
 
 export function V2GroupSettingsScreen() {
@@ -78,6 +79,10 @@ export function V2GroupSettingsScreen() {
               <V2LocalImagePicker
                 subject="Group cover"
                 preview={coverPhoto}
+                persistedUrl={group.coverImage?.status === 'ready' ? group.coverImage.url : null}
+                durable={group.coverImage?.status !== 'not_configured'}
+                onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => void saveGroupCoverImage(group.id, file).catch(() => {}) : undefined}
+                onRemove={group.coverImage?.status === 'ready' ? () => void removeGroupCoverImage(group.id).catch(() => {}) : undefined}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"
                 fallback={
                   isGroupCoverId(coverId) ? (

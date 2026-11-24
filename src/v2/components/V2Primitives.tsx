@@ -587,16 +587,28 @@ export function V2Sheet({
 }
 
 /** Profile trigger: the avatar opens the member's full Profile page. */
-export function V2AccountTrigger({ name, onOpen }: { name: string; onOpen: () => void }) {
+export function V2AccountTrigger({
+  name,
+  imageUrl,
+  onOpen,
+}: {
+  name: string;
+  imageUrl?: string | null;
+  onOpen: () => void;
+}) {
   const initial = (name.trim()[0] ?? 'T').toUpperCase();
   return (
     <button
       type="button"
       onClick={onOpen}
       aria-label={`Open profile for ${name}`}
-      className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white hover:bg-slate-700"
+      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-sm font-black text-white hover:bg-slate-700"
     >
-      {initial}
+      {imageUrl ? (
+        <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+      ) : (
+        initial
+      )}
     </button>
   );
 }

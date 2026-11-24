@@ -2,6 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
 import { GROUP_GOALS, labelsForIds } from './groupVocabulary.js';
+import {
+  projectMediaAsset,
+  resolveReadyMediaAssetsByIds,
+  type MediaImageProjection,
+} from './mediaService.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
 
 export interface ApiMembershipGroup {
   id: string;
@@ -11,6 +17,7 @@ export interface ApiMembershipGroup {
   allowMemberChallenges: boolean;
   /** Governed Group presentation fields read from authoritative PostgreSQL. */
   coverId: string | null;
+  coverImage?: MediaImageProjection;
   tagline: string;
   location: string;
   focusTags: string[];
@@ -47,6 +54,7 @@ interface MembershipRow {
   group_is_private: boolean;
   group_allow_member_challenges: boolean;
   group_cover_id: string | null;
+  group_cover_asset_id: string | null;
   group_tagline: string | null;
   group_location: string | null;
   group_focus_tags: unknown;
@@ -58,13 +66,17 @@ function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((t): t is string => typeof t === 'string') : [];
 }
 
-export async function listMembershipsForMember(db: Db, memberId: string): Promise<ApiMembership[]> {
+export async function listMembershipsForMember(
+  db: Db,
+  memberId: string,
+  mediaDeps?: MediaRouteDeps,
+): Promise<ApiMembership[]> {
   const result = await db.query<MembershipRow>(
     `SELECT m.group_id, m.role, m.status, m.joined_at,
             g.name AS group_name, g.description AS group_description,
             g.is_private AS group_is_private,
             g.allow_member_challenges AS group_allow_member_challenges,
-            g.cover_id AS group_cover_id, g.tagline AS group_tagline,
+            g.cover_id AS group_cover_id, g.cover_asset_id AS group_cover_asset_id, g.tagline AS group_tagline,
             g.location AS group_location, g.focus_tags AS group_focus_tags,
             g.goal_ids AS group_goal_ids, g.custom_goal AS group_custom_goal
      FROM group_memberships m
@@ -74,24 +86,35 @@ export async function listMembershipsForMember(db: Db, memberId: string): Promis
      ORDER BY g.name ASC`,
     [memberId],
   );
-  return result.rows.map((row) => ({
-    groupId: String(row.group_id),
-    role: row.role,
-    status: row.status,
-    joinedAt: new Date(row.joined_at).toISOString(),
-    group: {
-      id: String(row.group_id),
-      name: row.group_name,
-      description: row.group_description ?? '',
-      isPrivate: Boolean(row.group_is_private),
-      allowMemberChallenges: row.group_allow_member_challenges !== false,
-      coverId: typeof row.group_cover_id === 'string' ? row.group_cover_id : null,
-      tagline: typeof row.group_tagline === 'string' ? row.group_tagline : '',
-      location: typeof row.group_location === 'string' ? row.group_location : '',
-      focusTags: toStringArray(row.group_focus_tags),
-      goals: [...labelsForIds(row.group_goal_ids, GROUP_GOALS), ...(typeof row.group_custom_goal === 'string' && row.group_custom_goal ? [row.group_custom_goal] : [])],
-    },
-  }));
+  const store = mediaDeps?.objectStore ?? null;
+  const ttl = mediaDeps?.readUrlTtlSeconds ?? 60;
+  const assets = store
+    ? await resolveReadyMediaAssetsByIds(db, result.rows.map((r) => r.group_cover_asset_id))
+    : new Map();
+  return result.rows.map((row) => {
+    const coverImage = store
+      ? projectMediaAsset(row.group_cover_asset_id ? assets.get(row.group_cover_asset_id) : null, store, ttl)
+      : undefined;
+    return {
+      groupId: String(row.group_id),
+      role: row.role,
+      status: row.status,
+      joinedAt: new Date(row.joined_at).toISOString(),
+      group: {
+        id: String(row.group_id),
+        name: row.group_name,
+        description: row.group_description ?? '',
+        isPrivate: Boolean(row.group_is_private),
+        allowMemberChallenges: row.group_allow_member_challenges !== false,
+        coverId: typeof row.group_cover_id === 'string' ? row.group_cover_id : null,
+        ...(coverImage !== undefined ? { coverImage } : {}),
+        tagline: typeof row.group_tagline === 'string' ? row.group_tagline : '',
+        location: typeof row.group_location === 'string' ? row.group_location : '',
+        focusTags: toStringArray(row.group_focus_tags),
+        goals: [...labelsForIds(row.group_goal_ids, GROUP_GOALS), ...(typeof row.group_custom_goal === 'string' && row.group_custom_goal ? [row.group_custom_goal] : [])],
+      },
+    };
+  });
 }
 
 export async function listPendingMembershipsForMember(db: Db, memberId: string): Promise<ApiPendingMembership[]> {
@@ -129,7 +152,11 @@ export async function listPendingMembershipsForMember(db: Db, memberId: string):
   }));
 }
 
-export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
+export function registerMembershipRoutes(
+  app: FastifyInstance,
+  db: Db,
+  mediaDeps?: MediaRouteDeps,
+): void {
   app.get(
     '/api/memberships/me',
     {
@@ -166,6 +193,7 @@ export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
                         isPrivate: { type: 'boolean' },
                         allowMemberChallenges: { type: 'boolean' },
                         coverId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                        coverImage: { type: 'object', additionalProperties: true },
                         tagline: { type: 'string' },
                         location: { type: 'string' },
                         focusTags: { type: 'array', items: { type: 'string' } },
@@ -185,7 +213,7 @@ export function registerMembershipRoutes(app: FastifyInstance, db: Db): void {
       const pendingMemberships = await listPendingMembershipsForMember(db, member.memberId);
       return {
         memberId: member.memberId,
-        memberships: await listMembershipsForMember(db, member.memberId),
+        memberships: await listMembershipsForMember(db, member.memberId, mediaDeps),
         ...(pendingMemberships.length > 0 ? { pendingMemberships } : {}),
       };
     },

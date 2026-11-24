@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
+import type { V2MediaImageProjection } from '../../api/mediaApi';
 import { V2GroupCover } from './V2GroupCover';
 
 export function V2GroupPhotoCard({
   groupId,
   name,
   coverId,
+  coverImage,
   location,
   description,
   status,
@@ -20,6 +22,7 @@ export function V2GroupPhotoCard({
   groupId: string;
   name: string;
   coverId?: string | null;
+  coverImage?: V2MediaImageProjection | null;
   location?: string | null;
   description: string;
   status: string;
@@ -35,7 +38,7 @@ export function V2GroupPhotoCard({
   return (
     <li className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <button type="button" onClick={onOpen} className="block w-full text-left" aria-label={`Open ${name}`}>
-        <V2GroupCover groupId={groupId} title={name} coverId={coverId} heightClass="h-44 sm:h-48" className="w-full">
+        <V2GroupCover groupId={groupId} title={name} coverId={coverId} coverImage={coverImage} heightClass="h-44 sm:h-48" className="w-full">
           {location?.trim() && <span className="absolute left-4 top-4 max-w-[75%] truncate rounded-full border border-white/20 bg-slate-950/65 px-3 py-1 text-xs font-bold text-white">⌖ {location.trim()}</span>}
           <span className="absolute bottom-4 left-4 right-4">
             <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-white/80">Tiizi Group</span>

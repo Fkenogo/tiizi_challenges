@@ -78,7 +78,7 @@ export function V2ChallengeHero({
 
   return (
     <section aria-label="Challenge overview" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <V2ChallengeCover challengeId={detail.challengeId} title={detail.title} heightClass="min-h-56 sm:min-h-64" className="px-5 pb-5 pt-4 text-white sm:px-6">
+      <V2ChallengeCover challengeId={detail.challengeId} title={detail.title} coverImage={detail.coverImage} heightClass="min-h-56 sm:min-h-64" className="px-5 pb-5 pt-4 text-white sm:px-6">
         <div className="relative flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-black uppercase tracking-wider backdrop-blur-sm">
             {challengeTypeLabel(detail.challengeType)} challenge

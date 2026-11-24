@@ -115,10 +115,18 @@ export function ChallengeFeedEntries({
           <article className="rounded-2xl border border-slate-200 bg-white p-3">
             <div className="flex items-center gap-3">
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold text-white"
                 aria-hidden="true"
               >
-                {initialsOf(item.sharerDisplayName)}
+                {item.sharerProfileImage?.status === 'ready' ? (
+                  <img
+                    src={item.sharerProfileImage.url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  initialsOf(item.sharerDisplayName)
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-slate-900">

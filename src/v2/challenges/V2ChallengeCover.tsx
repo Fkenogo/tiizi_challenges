@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import type { V2MediaImageProjection } from '../../api/mediaApi';
 import { getLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 
-/** Shared, tab-local cover rendering for every active V2 Challenge surface. */
+/** Shared cover rendering for every active V2 Challenge surface. */
 export function V2ChallengeCover({
   challengeId,
   title,
+  coverImage,
   heightClass,
   children,
   className = '',
@@ -12,6 +14,7 @@ export function V2ChallengeCover({
 }: {
   challengeId: string;
   title: string;
+  coverImage?: V2MediaImageProjection | null;
   heightClass: string;
   children?: ReactNode;
   className?: string;
@@ -30,14 +33,16 @@ export function V2ChallengeCover({
     return () => URL.revokeObjectURL(url);
   }, [challengeId, localCover]);
 
+  const effectiveUrl = photoUrl ?? (coverImage?.status === 'ready' ? coverImage.url : null);
+
   return (
     <div
       data-challenge-cover-id={challengeId}
-      data-local-cover={photoUrl ? 'true' : 'false'}
+      data-local-cover={effectiveUrl ? 'true' : 'false'}
       className={`relative isolate overflow-hidden bg-slate-200 ${heightClass} ${className}`}
     >
-      {photoUrl ? (
-        <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
+      {effectiveUrl ? (
+        <img src={effectiveUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />
       )}

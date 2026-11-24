@@ -1,12 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import type { V2MediaImageProjection } from '../../api/mediaApi';
 import { getLocalGroupCoverPreview } from './localGroupCoverPreviews';
 import { coverGradientFor, isGroupCoverId } from './groupCovers';
 
-/** Shared, tab-local Group cover rendering for active V2 Group surfaces. */
+/** Shared Group cover rendering for active V2 Group surfaces. */
 export function V2GroupCover({
   groupId,
   title,
   coverId,
+  coverImage,
   heightClass,
   children,
   className = '',
@@ -15,6 +17,7 @@ export function V2GroupCover({
   groupId: string;
   title: string;
   coverId?: string | null;
+  coverImage?: V2MediaImageProjection | null;
   heightClass: string;
   children?: ReactNode;
   className?: string;
@@ -33,20 +36,21 @@ export function V2GroupCover({
     return () => URL.revokeObjectURL(url);
   }, [groupId, localCover]);
 
+  const effectiveUrl = photoUrl ?? (coverImage?.status === 'ready' ? coverImage.url : null);
   const explicitCover = isGroupCoverId(coverId) ? coverId : null;
-  const bgClass = !photoUrl && explicitCover
+  const bgClass = !effectiveUrl && explicitCover
     ? `bg-gradient-to-br ${coverGradientFor(explicitCover)}`
     : 'bg-slate-200';
 
   return (
     <div
       data-group-cover-id={groupId}
-      data-local-cover={photoUrl ? 'true' : 'false'}
+      data-local-cover={effectiveUrl ? 'true' : 'false'}
       data-catalogue-cover={explicitCover ?? ''}
       className={`relative isolate overflow-hidden ${bgClass} ${heightClass} ${className}`}
     >
-      {photoUrl ? (
-        <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
+      {effectiveUrl ? (
+        <img src={effectiveUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
       ) : !explicitCover ? (
         <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />
       ) : null}

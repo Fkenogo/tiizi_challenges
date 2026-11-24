@@ -142,6 +142,13 @@ export interface ApiOwnParticipation {
   final: ApiParticipationFinal | null;
 }
 
+import {
+  projectMediaAsset,
+  resolveReadyMediaAssetsByIds,
+  type MediaImageProjection,
+} from './mediaService.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
+
 export interface ApiChallengeSummary {
   challengeId: string;
   groupId: string;
@@ -151,6 +158,7 @@ export interface ApiChallengeSummary {
   activities: ApiChallengeActivityDiscovery[];
   title: string;
   coverId: string | null;
+  coverImage?: MediaImageProjection;
   supportTiiziEnabled: boolean;
   description: string;
   challengeType: 'collective' | 'competitive' | 'streak';
@@ -646,6 +654,7 @@ async function toSummary(
   participationFinals: Map<string, ParticipationFinalRow>,
   challengeFinal: ChallengeFinalRow | null,
   now: Date,
+  coverImage?: MediaImageProjection,
 ): Promise<ApiChallengeSummary> {
   const derived = challengeDerived.get(challenge.challenge_id) ?? zeroChallengeDerived(challenge);
   const episodes = episodesByChallenge.get(challenge.challenge_id) ?? [];
@@ -670,6 +679,7 @@ async function toSummary(
     activities: discovery.activities,
     title: challenge.title,
     coverId: challenge.cover_id ?? null,
+    ...(coverImage !== undefined ? { coverImage } : {}),
     supportTiiziEnabled: challenge.support_tiizi_enabled === true,
     description: challenge.description,
     challengeType: challenge.challenge_type,
@@ -714,6 +724,7 @@ export interface ChallengeReadDeps {
    * the unfiltered list is unaffected.
    */
   groupStore?: Pick<GroupMutationStore, 'getGroup'>;
+  mediaDeps?: MediaRouteDeps;
 }
 
 /**
@@ -759,7 +770,7 @@ export async function listVisibleChallenges(
   for (const challengeId of ids) {
     episodesByChallenge.set(challengeId, await listParticipations(db, challengeId, memberId));
   }
-  return assembleChallengeSummaries(db, ids, episodesByChallenge, deps.now ?? new Date());
+  return assembleChallengeSummaries(db, ids, episodesByChallenge, deps.now ?? new Date(), deps.mediaDeps);
 }
 
 /**
@@ -773,6 +784,7 @@ export async function assembleChallengeSummaries(
   ids: string[],
   episodesByChallenge: Map<string, ParticipationRow[]>,
   now: Date,
+  mediaDeps?: MediaRouteDeps,
 ): Promise<ApiChallengeSummary[]> {
   const challenges = await fetchChallenges(db, ids);
   const discoveryByChallenge = new Map<string, { groupName: string | null; activities: ApiChallengeActivityDiscovery[] }>();
@@ -825,6 +837,11 @@ export async function assembleChallengeSummaries(
   // list (challenge-level fields only — the S3d results experience is the
   // detail read, which additionally reconstructs per-participation truth).
   const challengeFinals = await getChallengeFinals(db, ids);
+  const mediaStore = mediaDeps?.objectStore ?? null;
+  const mediaTtl = mediaDeps?.readUrlTtlSeconds ?? 60;
+  const coverAssets = mediaStore
+    ? await resolveReadyMediaAssetsByIds(db, challenges.map((c) => c.cover_asset_id))
+    : new Map();
   const summaries = await Promise.all(
     challenges.map((challenge) =>
       toSummary(
@@ -836,6 +853,13 @@ export async function assembleChallengeSummaries(
         participationFinals,
         challengeFinals.get(challenge.challenge_id) ?? null,
         now,
+        mediaStore
+          ? projectMediaAsset(
+              challenge.cover_asset_id ? coverAssets.get(challenge.cover_asset_id) : null,
+              mediaStore,
+              mediaTtl,
+            )
+          : undefined,
       ),
     ),
   );
@@ -925,7 +949,7 @@ export async function listVisibleChallengesInGroup(
   return {
     memberId,
     groupId,
-    challenges: await assembleChallengeSummaries(db, ids, episodesByChallenge, now),
+    challenges: await assembleChallengeSummaries(db, ids, episodesByChallenge, now, deps.mediaDeps),
   };
 }
 
@@ -1014,6 +1038,19 @@ export async function getChallengeDetail(
     [challengeId],
   );
   const cause = causeResult.rows[0];
+  const mediaStore = deps.mediaDeps?.objectStore ?? null;
+  const mediaTtl = deps.mediaDeps?.readUrlTtlSeconds ?? 60;
+  let coverImage: MediaImageProjection | undefined;
+  if (mediaStore) {
+    const assets = challenge.cover_asset_id
+      ? await resolveReadyMediaAssetsByIds(db, [challenge.cover_asset_id])
+      : new Map();
+    coverImage = projectMediaAsset(
+      challenge.cover_asset_id ? assets.get(challenge.cover_asset_id) : null,
+      mediaStore,
+      mediaTtl,
+    );
+  }
   return {
     challengeId: challenge.challenge_id,
     groupId: challenge.group_id,
@@ -1021,6 +1058,7 @@ export async function getChallengeDetail(
     activities,
     title: challenge.title,
     coverId: challenge.cover_id ?? null,
+    ...(coverImage !== undefined ? { coverImage } : {}),
     supportTiiziEnabled: challenge.support_tiizi_enabled === true,
     description: challenge.description,
     challengeType: challenge.challenge_type,
@@ -1342,6 +1380,7 @@ export interface ChallengeReadRouteDeps {
   groupMembershipAuthority?: GroupMembershipAuthority;
   /** S4a — PostgreSQL Group projection for the governed `groupId` filter. */
   groupStore?: Pick<GroupMutationStore, 'getGroup'>;
+  mediaDeps?: MediaRouteDeps;
 }
 
 function missingAuthority(): GroupMembershipAuthority {
@@ -1358,7 +1397,11 @@ export function registerChallengeReadRoutes(
   deps: ChallengeReadRouteDeps = {},
 ): void {
   const authority = deps.groupMembershipAuthority ?? missingAuthority();
-  const readDeps: ChallengeReadDeps = { groupMembershipAuthority: authority, groupStore: deps.groupStore };
+  const readDeps: ChallengeReadDeps = {
+    groupMembershipAuthority: authority,
+    groupStore: deps.groupStore,
+    mediaDeps: deps.mediaDeps,
+  };
 
   app.get(
     '/api/challenges',

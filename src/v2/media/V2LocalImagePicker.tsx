@@ -6,6 +6,11 @@ type PreviewState = ReturnType<typeof useLocalImagePreview>;
 export function V2LocalImagePicker({
   subject,
   preview,
+  persistedUrl,
+  onSelectFile,
+  onRemove,
+  isSaving = false,
+  durable = false,
   className = '',
   previewClassName,
   imageClassName = 'h-full w-full object-cover',
@@ -15,6 +20,11 @@ export function V2LocalImagePicker({
 }: {
   subject: string;
   preview: PreviewState;
+  persistedUrl?: string | null;
+  onSelectFile?: (file: File) => void | Promise<void>;
+  onRemove?: () => void | Promise<void>;
+  isSaving?: boolean;
+  durable?: boolean;
   className?: string;
   previewClassName: string;
   imageClassName?: string;
@@ -23,18 +33,26 @@ export function V2LocalImagePicker({
   fallback: ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const displayUrl = preview.previewUrl ?? persistedUrl ?? null;
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
-    if (file) preview.selectFile(file);
+    if (file && preview.selectFile(file)) {
+      void onSelectFile?.(file);
+    }
     // Let the same image be selected again after removal or a rejected file.
     event.currentTarget.value = '';
+  };
+
+  const handleRemove = () => {
+    preview.remove();
+    void onRemove?.();
   };
 
   return (
     <div className={`min-w-0 space-y-2 ${className}`}>
       <div className={`${previewClassName} overflow-hidden`}>
-        {preview.previewUrl ? (
-          <img src={preview.previewUrl} alt={`${subject} local preview`} className={imageClassName} />
+        {displayUrl ? (
+          <img src={displayUrl} alt={durable ? subject : `${subject} local preview`} className={imageClassName} />
         ) : fallback}
       </div>
       <input
@@ -48,25 +66,31 @@ export function V2LocalImagePicker({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
+          disabled={isSaving}
           onClick={() => inputRef.current?.click()}
-          className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-orange-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-700"
+          className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-700"
         >
-          {preview.previewUrl ? 'Change Photo' : 'Add Photo'}
+          {isSaving ? 'Saving…' : displayUrl ? 'Change Photo' : 'Add Photo'}
         </button>
-        {preview.previewUrl && (
+        {displayUrl && (
           <button
             type="button"
-            onClick={preview.remove}
-            className="min-h-10 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
+            disabled={isSaving}
+            onClick={handleRemove}
+            className="min-h-10 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500"
           >
             Remove Photo
           </button>
         )}
       </div>
       <p className={`text-xs leading-5 ${messageClassName}`} role="status" aria-live="polite">
-        {preview.previewUrl
-          ? 'Local preview only. This photo is not permanently saved.'
-        : 'JPG, PNG or WebP · 5 MB or smaller. This photo will not be permanently saved.'}
+        {durable
+          ? displayUrl
+            ? 'JPG, PNG or WebP · Saved to your account.'
+            : 'JPG, PNG or WebP · 5 MB or smaller.'
+          : displayUrl
+            ? 'Local preview only. This photo is not permanently saved.'
+            : 'JPG, PNG or WebP · 5 MB or smaller. This photo will not be permanently saved.'}
       </p>
       {preview.error && <p role="alert" className={`text-xs font-bold ${errorClassName}`}>{preview.error}</p>}
     </div>

@@ -1,4 +1,5 @@
 import { apiFetch, apiPath } from './apiClient';
+import type { V2MediaImageProjection } from './mediaApi';
 
 /**
  * CF-3 — Challenge Feed read contract (S1 activity_shares only).
@@ -14,6 +15,7 @@ export interface ChallengeFeedItem {
   /** Withdrawal reference, present only on the viewer's own Share. */
   activityEventId?: string;
   sharerDisplayName: string | null;
+  sharerProfileImage?: V2MediaImageProjection;
   activityName: string;
   value: number;
   unit: string;
