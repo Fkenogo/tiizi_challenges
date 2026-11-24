@@ -80,4 +80,31 @@ describe('V2LocalImagePicker', () => {
     expect(revoked).toContain('blob:mount-1');
     expect(revoked).not.toContain('blob:mount-2');
   });
+
+  it('allows removing an initialFile without restoring it and allows selecting another image afterward', async () => {
+    const NativeURL = URL;
+    class URLWithRemove extends NativeURL {}
+    Object.defineProperty(URLWithRemove, 'createObjectURL', {
+      value: vi.fn().mockReturnValueOnce('blob:initial-photo').mockReturnValueOnce('blob:replacement-photo'),
+    });
+    Object.defineProperty(URLWithRemove, 'revokeObjectURL', { value: vi.fn() });
+    vi.stubGlobal('URL', URLWithRemove);
+
+    const user = userEvent.setup();
+    const initial = new File(['initial-bytes'], 'initial.png', { type: 'image/png' });
+    render(<PickerHarness initialFile={initial} />);
+
+    expect(screen.getByRole('img', { name: 'Challenge cover local preview' }).getAttribute('src')).toBe('blob:initial-photo');
+    expect(screen.getByTestId('selected-file').textContent).toBe('initial.png');
+
+    await user.click(screen.getByRole('button', { name: 'Remove Photo' }));
+    expect(screen.queryByRole('img', { name: 'Challenge cover local preview' })).toBeNull();
+    expect(screen.getByTestId('selected-file').textContent).toBe('No file selected');
+    expect(screen.getByText('No photo selected')).toBeTruthy();
+
+    const input = screen.getByLabelText('Choose challenge cover') as HTMLInputElement;
+    await user.upload(input, new File(['replacement-bytes'], 'replacement.png', { type: 'image/png' }));
+    expect(screen.getByTestId('selected-file').textContent).toBe('replacement.png');
+    expect(screen.getByRole('img', { name: 'Challenge cover local preview' }).getAttribute('src')).toBe('blob:replacement-photo');
+  });
 });

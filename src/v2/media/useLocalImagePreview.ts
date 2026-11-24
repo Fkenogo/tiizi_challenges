@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const LOCAL_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 export const LOCAL_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
@@ -10,12 +10,15 @@ export function useLocalImagePreview(initialFile?: File | null) {
   const [file, setFile] = useState<File | null>(() => initialFile ?? null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const prevInitialFileRef = useRef<File | null | undefined>(initialFile);
 
   useEffect(() => {
-    if (initialFile && !file) {
-      setFile(initialFile);
+    if (initialFile !== prevInitialFileRef.current) {
+      prevInitialFileRef.current = initialFile;
+      setFile(initialFile ?? null);
+      setError(null);
     }
-  }, [initialFile, file]);
+  }, [initialFile]);
 
   useEffect(() => {
     if (!file) {

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { V2Button, V2Page } from '../components/V2Primitives';
 import { useV2GroupDetail, useUpdateV2GroupSettings, useV2GroupOptions } from './useV2Groups';
 import { useV2GroupId } from '../group/V2GroupScope';
-import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor } from './groupCovers';
+import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor, isGroupCoverId } from './groupCovers';
 import { GroupInterestsPicker } from './GroupInterestsPicker';
 import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet } from './groupInterests';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
@@ -79,7 +79,13 @@ export function V2GroupSettingsScreen() {
                 subject="Group cover"
                 preview={coverPhoto}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"
-                fallback={<div className="flex h-full w-full items-center justify-center bg-slate-100 px-4 text-center text-sm font-medium text-slate-500">No photo selected</div>}
+                fallback={
+                  isGroupCoverId(coverId) ? (
+                    <div className={`h-full w-full bg-gradient-to-br ${coverGradientFor(coverId)}`} aria-hidden="true" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-slate-100 px-4 text-center text-sm font-medium text-slate-500">No photo selected</div>
+                  )
+                }
               />
             </div>
             <p className="mb-2 mt-4 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>
