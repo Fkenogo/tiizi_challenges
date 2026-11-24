@@ -53,3 +53,13 @@ ALTER TABLE groups
 
 ALTER TABLE challenges
   ADD COLUMN IF NOT EXISTS cover_asset_id UUID REFERENCES media_assets(asset_id) ON DELETE SET NULL;
+
+-- Ensure the least-privileged runtime role can read/write media ownership and
+-- intent records without granting DDL, role creation, or RLS bypass.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tiizi_runtime') THEN
+    GRANT SELECT, INSERT, UPDATE, DELETE ON media_assets, media_upload_intents TO tiizi_runtime;
+  END IF;
+END
+$$;

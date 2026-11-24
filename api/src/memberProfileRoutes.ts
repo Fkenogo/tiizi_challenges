@@ -34,6 +34,7 @@ import { API_PREFIX } from './apiPrefix.js';
 import type { Db } from './db.js';
 import {
   getMemberProfileIdentityById,
+  getMemberProfileImageAssetId,
   updateOwnDisplayName,
   type MemberProfileIdentity,
 } from './memberProfileIdentity.js';
@@ -80,7 +81,7 @@ async function composeProfile(
 ): Promise<MemberProfileResponse> {
   let profileImage: MediaImageProjection = { status: 'not_configured' };
   if (mediaDeps?.objectStore) {
-    const assetId = identity.profileImageAssetId ?? null;
+    const assetId = await getMemberProfileImageAssetId(db, identity.memberId);
     const assets = assetId ? await resolveReadyMediaAssetsByIds(db, [assetId]) : new Map();
     profileImage = projectMediaAsset(
       assetId ? assets.get(assetId) : null,

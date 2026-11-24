@@ -265,6 +265,7 @@ export function V2ProfileScreen() {
                 subject="Profile picture"
                 preview={profilePhoto}
                 persistedUrl={persistedProfilePhotoUrl}
+                onPersistedImageExpired={() => void reload()}
                 durable={durablePhotoEnabled}
                 isSaving={photoSaving}
                 onSelectFile={durablePhotoEnabled ? handlePhotoUpload : undefined}

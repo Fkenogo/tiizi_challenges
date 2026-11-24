@@ -50,6 +50,8 @@ export function V2GroupSettingsScreen() {
     || isPrivate !== group.isPrivate
     || requireAdminApproval !== (group.requireAdminApproval ?? false)
     || allowMemberChallenges !== (group.allowMemberChallenges ?? true);
+  const [coverSaving, setCoverSaving] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!focusTagsValid) return;
@@ -81,8 +83,25 @@ export function V2GroupSettingsScreen() {
                 preview={coverPhoto}
                 persistedUrl={group.coverImage?.status === 'ready' ? group.coverImage.url : null}
                 durable={group.coverImage?.status !== 'not_configured'}
-                onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => void saveGroupCoverImage(group.id, file).catch(() => {}) : undefined}
-                onRemove={group.coverImage?.status === 'ready' ? () => void removeGroupCoverImage(group.id).catch(() => {}) : undefined}
+                isSaving={coverSaving}
+                onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => {
+                  setCoverError(null);
+                  setCoverSaving(true);
+                  void saveGroupCoverImage(group.id, file)
+                    .then(() => { coverPhoto.remove(); })
+                    .catch(() => {
+                      coverPhoto.remove();
+                      setCoverError('Could not save the Group cover photo. Please try again.');
+                    })
+                    .finally(() => setCoverSaving(false));
+                } : undefined}
+                onRemove={group.coverImage?.status === 'ready' ? () => {
+                  setCoverError(null);
+                  setCoverSaving(true);
+                  void removeGroupCoverImage(group.id)
+                    .catch(() => setCoverError('Could not remove the Group cover photo. Please try again.'))
+                    .finally(() => setCoverSaving(false));
+                } : undefined}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"
                 fallback={
                   isGroupCoverId(coverId) ? (
@@ -96,6 +115,7 @@ export function V2GroupSettingsScreen() {
             <p className="mb-2 mt-4 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>
             <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div>
             <p className="mt-1 text-xs text-slate-500">Catalogue covers save with Group settings. A chosen photo is only a local preview and is not saved.</p>
+            {coverError && <p role="alert" className="mt-1 text-xs font-bold text-red-700">{coverError}</p>}
           </fieldset>
         </section>
         <section className="space-y-3"><h2 className="text-base font-black">Privacy & joining</h2>{choice('Private Group', isPrivate, setIsPrivate, 'People outside the Group cannot discover it normally. A valid invite code may still resolve it. Existing members are unaffected.')}{choice('Require approval to join', requireAdminApproval, setRequireAdminApproval, 'New join attempts require Steward approval. Existing pending requests remain pending until explicitly decided.')}</section>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { V2SignedImage } from '../media/V2SignedImage';
 
 /**
  * TIIZI S1 — shared V2 experience primitives.
@@ -590,10 +591,12 @@ export function V2Sheet({
 export function V2AccountTrigger({
   name,
   imageUrl,
+  onImageExpired,
   onOpen,
 }: {
   name: string;
   imageUrl?: string | null;
+  onImageExpired?: () => void;
   onOpen: () => void;
 }) {
   const initial = (name.trim()[0] ?? 'T').toUpperCase();
@@ -605,7 +608,14 @@ export function V2AccountTrigger({
       className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-sm font-black text-white hover:bg-slate-700"
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+        <V2SignedImage
+          src={imageUrl}
+          alt={name}
+          className="h-full w-full object-cover"
+          refreshKey="v2-member-identity"
+          onExpired={onImageExpired}
+          fallback={initial}
+        />
       ) : (
         initial
       )}

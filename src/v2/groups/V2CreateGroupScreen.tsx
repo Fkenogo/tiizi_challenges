@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
+import { removeGroupCoverImage, saveGroupCoverImage } from '../../api/mediaApi';
 import {
   V2Button,
   V2Card,
@@ -32,9 +33,8 @@ import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor, type GroupCover
 import { useCreateGroup, useV2GroupOptions } from './useV2Groups';
 import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
-import { saveGroupCoverImage } from '../../api/mediaApi';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
-import { setLocalGroupCoverPreview } from './localGroupCoverPreviews';
+import { removeLocalGroupCoverPreview, setLocalGroupCoverPreview } from './localGroupCoverPreviews';
 
 /**
  * TIIZI S4a CORR-001 — progressive Group formation wizard.
@@ -116,6 +116,9 @@ export function V2CreateGroupScreen() {
   const [step, setStep] = useState(0);
   const [tagInput, setTagInput] = useState('');
   const [focusSearch, setFocusSearch] = useState('');
+  const [createdGroup, setCreatedGroup] = useState<{ id: string; name: string } | null>(null);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
   const coverPhoto = useLocalImagePreview();
 
   const issues = validateCreateGroupDraft(draft);
@@ -134,21 +137,50 @@ export function V2CreateGroupScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!submittable) return;
-    try {
-      const created = await createGroup.mutateAsync(toCreateGroupInput(draft));
-      if (coverPhoto.file) {
-        setLocalGroupCoverPreview(created.id, coverPhoto.file);
-        await saveGroupCoverImage(created.id, coverPhoto.file).catch(() => {});
+    if (!submittable && !createdGroup) return;
+    setCoverUploadError(null);
+    let target = createdGroup;
+    if (!target) {
+      try {
+        const created = await createGroup.mutateAsync(toCreateGroupInput(draft));
+        target = { id: created.id, name: created.name };
+        setCreatedGroup(target);
+      } catch {
+        // Failure is rendered from createGroup.error below.
+        return;
       }
-      // Canonical returned identity — the Home re-proves it from the server.
-      navigate(`/v2/groups/${created.id}`, {
-        replace: true,
-        state: { createdGroupName: created.name },
-      });
-    } catch {
-      // Failure is rendered from createGroup.error below.
     }
+    if (coverPhoto.file) {
+      setCoverUploading(true);
+      try {
+        await saveGroupCoverImage(target.id, coverPhoto.file);
+        setLocalGroupCoverPreview(target.id, coverPhoto.file);
+      } catch (err) {
+        setCoverUploading(false);
+        setCoverUploadError(
+          err instanceof ApiError
+            ? `Your Group was created, but the cover photo could not be saved: ${err.message}`
+            : 'Your Group was created, but the cover photo could not be saved. You can retry or continue without a cover.',
+        );
+        return;
+      }
+      setCoverUploading(false);
+    }
+    navigate(`/v2/groups/${target.id}`, {
+      replace: true,
+      state: { createdGroupName: target.name },
+    });
+  };
+
+  const handleContinueWithoutCover = () => {
+    if (!createdGroup) return;
+    removeLocalGroupCoverPreview(createdGroup.id);
+    coverPhoto.remove();
+    void removeGroupCoverImage(createdGroup.id).catch(() => {});
+    navigate(`/v2/groups/${createdGroup.id}`, {
+      replace: true,
+      state: { createdGroupName: createdGroup.name },
+    });
   };
 
   const go = (next: number) => setStep(Math.max(0, Math.min(STEPS.length - 1, next)));
@@ -464,14 +496,40 @@ export function V2CreateGroupScreen() {
         </V2Card>
       )}
 
-      {createGroup.isError && (
+      {createGroup.isError && !createdGroup && (
         <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
           {createGroupErrorMessage(createGroup.error)}
         </p>
       )}
 
+      {coverUploadError && createdGroup && (
+        <div role="alert" className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+          <p className="font-bold">{coverUploadError}</p>
+          <div className="flex flex-wrap gap-2">
+            <V2Button
+              variant="secondary"
+              disabled={coverUploading}
+              onClick={() => void handleSubmit()}
+            >
+              {coverUploading ? 'Retrying upload…' : 'Retry Cover Upload'}
+            </V2Button>
+            <V2Button
+              variant="ghost"
+              disabled={coverUploading}
+              onClick={handleContinueWithoutCover}
+            >
+              Continue without Cover
+            </V2Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2 pt-1">
-        <V2Button variant="ghost" onClick={() => (step === 0 ? navigate('/v2/groups') : go(step - 1))}>
+        <V2Button
+          variant="ghost"
+          disabled={Boolean(createdGroup)}
+          onClick={() => (step === 0 ? navigate('/v2/groups') : go(step - 1))}
+        >
           {step === 0 ? 'Cancel' : 'Back'}
         </V2Button>
         {step < STEPS.length - 1 ? (
@@ -479,8 +537,14 @@ export function V2CreateGroupScreen() {
             Continue
           </V2Button>
         ) : (
-          <V2Button onClick={() => void handleSubmit()} disabled={!submittable}>
-            {createGroup.isPending ? 'Creating your Group…' : 'Establish Group'}
+          <V2Button onClick={() => void handleSubmit()} disabled={(!submittable && !createdGroup) || coverUploading}>
+            {createGroup.isPending
+              ? 'Creating your Group…'
+              : coverUploading
+                ? 'Saving cover photo…'
+                : createdGroup
+                  ? 'Retry Cover Upload'
+                  : 'Establish Group'}
           </V2Button>
         )}
       </div>

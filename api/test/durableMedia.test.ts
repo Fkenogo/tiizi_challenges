@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
 import type { Db } from '../src/db.js';
 import { validateAndOptimizeImage, ImageValidationError } from '../src/imageProcessing.js';
+import { cleanupMediaLifecycle, createMediaUploadIntent, uploadMediaIntentContent } from '../src/mediaService.js';
 import { CloudflareR2ObjectStore, resolveR2ConfigFromEnv, type ObjectStore } from '../src/r2ObjectStore.js';
 import { seedGroup, seedMembership, testDb } from './helpers.js';
 
@@ -404,5 +405,106 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
       expect(chListRes.json().challenges[0].coverImage.status).toBe('ready');
 
       await app.close();
+  });
+
+  it('cleans up expired/unbound intents, retries failed deletes, rolls back R2 on DB failure, and enforces least-privilege tiizi_runtime grants', async () => {
+    const db = testDb();
+    const store = createInMemoryObjectStore();
+    const memberA = await seedMember(db, 'uid-cleanup', 'Cleanup Member');
+    const png = await makeTestPng();
+
+    // 1. Expired open intent + expired uploaded unbound intent
+    const openIntent = await createMediaUploadIntent(db, {
+      actorMemberId: memberA,
+      purpose: 'profile_image',
+      idempotencyKey: 'cleanup-open-1',
+    });
+    const uploadedIntent = await createMediaUploadIntent(db, {
+      actorMemberId: memberA,
+      purpose: 'profile_image',
+      idempotencyKey: 'cleanup-uploaded-1',
+    });
+    const uploaded = await uploadMediaIntentContent(db, store, {
+      intentId: uploadedIntent.intentId,
+      actorMemberId: memberA,
+      rawBytes: png,
+    });
+    expect(store.objects.size).toBe(1);
+
+    await db.query(
+      `UPDATE media_upload_intents SET expires_at = now() - interval '1 hour' WHERE intent_id = ANY($1::uuid[])`,
+      [[openIntent.intentId, uploadedIntent.intentId]],
+    );
+
+    // Simulate transient delete failure first, then retry success
+    const origDelete = store.deleteObject.bind(store);
+    let failOnce = true;
+    store.deleteObject = async (p) => {
+      if (failOnce) {
+        failOnce = false;
+        throw new Error('transient R2 error');
+      }
+      return origDelete(p);
+    };
+
+    const firstCleanup = await cleanupMediaLifecycle(db, store);
+    expect(firstCleanup).toEqual({
+      expiredOpenIntents: 1,
+      expiredUploadedIntents: 1,
+      deletedObjects: 0,
+      failedDeletes: 1,
+    });
+    expect(store.objects.size).toBe(1);
+
+    const retryCleanup = await cleanupMediaLifecycle(db, store);
+    expect(retryCleanup).toEqual({
+      expiredOpenIntents: 0,
+      expiredUploadedIntents: 0,
+      deletedObjects: 1,
+      failedDeletes: 0,
+    });
+    expect(store.objects.size).toBe(0);
+
+    const assetRow = await db.query<{ status: string }>(
+      `SELECT status FROM media_assets WHERE asset_id = $1`,
+      [uploaded.assetId],
+    );
+    expect(assetRow.rows[0].status).toBe('deleted');
+
+    // 2. DB failure after R2 write cleans up R2 object immediately
+    const failIntent = await createMediaUploadIntent(db, {
+      actorMemberId: memberA,
+      purpose: 'profile_image',
+      idempotencyKey: 'cleanup-dbfail-1',
+    });
+    const failingTxDb: Db = {
+      query: db.query.bind(db),
+      close: db.close.bind(db),
+      async transaction() {
+        throw new Error('simulated DB failure after putObject');
+      },
+    };
+    await expect(
+      uploadMediaIntentContent(failingTxDb, store, {
+        intentId: failIntent.intentId,
+        actorMemberId: memberA,
+        rawBytes: png,
+      }),
+    ).rejects.toThrow('simulated DB failure');
+    expect(store.objects.size).toBe(0);
+
+    // 3. Least-privilege tiizi_runtime role grant verification
+    await db.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tiizi_runtime') THEN CREATE ROLE tiizi_runtime; END IF; END $$;`);
+    await db.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON media_assets, media_upload_intents TO tiizi_runtime`);
+    const privs = await db.query<{ privilege_type: string }>(
+      `SELECT privilege_type FROM information_schema.role_table_grants
+        WHERE grantee = 'tiizi_runtime' AND table_name = 'media_assets'`,
+    );
+    const granted = new Set(privs.rows.map((r) => r.privilege_type));
+    expect(granted.has('SELECT')).toBe(true);
+    expect(granted.has('INSERT')).toBe(true);
+    expect(granted.has('UPDATE')).toBe(true);
+    expect(granted.has('DELETE')).toBe(true);
+    expect(granted.has('TRUNCATE')).toBe(false);
   });
 });

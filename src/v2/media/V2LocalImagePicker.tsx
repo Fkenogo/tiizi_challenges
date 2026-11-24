@@ -1,5 +1,6 @@
 import { useRef, type ReactNode, type ChangeEvent } from 'react';
 import { LOCAL_IMAGE_ACCEPT, useLocalImagePreview } from './useLocalImagePreview';
+import { V2SignedImage } from './V2SignedImage';
 
 type PreviewState = ReturnType<typeof useLocalImagePreview>;
 
@@ -7,6 +8,7 @@ export function V2LocalImagePicker({
   subject,
   preview,
   persistedUrl,
+  onPersistedImageExpired,
   onSelectFile,
   onRemove,
   isSaving = false,
@@ -21,6 +23,7 @@ export function V2LocalImagePicker({
   subject: string;
   preview: PreviewState;
   persistedUrl?: string | null;
+  onPersistedImageExpired?: () => void;
   onSelectFile?: (file: File) => void | Promise<void>;
   onRemove?: () => void | Promise<void>;
   isSaving?: boolean;
@@ -34,6 +37,7 @@ export function V2LocalImagePicker({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const displayUrl = preview.previewUrl ?? persistedUrl ?? null;
+  const isPersistedUrl = !preview.previewUrl && Boolean(persistedUrl);
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.currentTarget.files?.[0];
     if (file && preview.selectFile(file)) {
@@ -51,7 +55,16 @@ export function V2LocalImagePicker({
   return (
     <div className={`min-w-0 space-y-2 ${className}`}>
       <div className={`${previewClassName} overflow-hidden`}>
-        {displayUrl ? (
+        {isPersistedUrl && persistedUrl ? (
+          <V2SignedImage
+            src={persistedUrl}
+            alt={durable ? subject : `${subject} local preview`}
+            className={imageClassName}
+            refreshKey={`picker-${subject}`}
+            onExpired={onPersistedImageExpired}
+            fallback={fallback}
+          />
+        ) : displayUrl ? (
           <img src={displayUrl} alt={durable ? subject : `${subject} local preview`} className={imageClassName} />
         ) : fallback}
       </div>

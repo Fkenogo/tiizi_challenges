@@ -79,9 +79,9 @@ import {
   type ApiKnowledgeItemLike,
 } from './wizardSteps';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
-import { saveChallengeCoverImage } from '../../api/mediaApi';
+import { removeChallengeCoverImage, saveChallengeCoverImage } from '../../api/mediaApi';
+import { removeLocalChallengeCoverPreview, setLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
-import { setLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 
 /**
  * S2b — the seven-step V2 Challenge Creation experience.
@@ -132,6 +132,9 @@ export function V2ChallengeCreationWizard() {
   const [previewState, setPreviewState] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
   const [previewIssues, setPreviewIssues] = useState<MappedPreviewIssue[] | null>(null);
   const [submitError, setSubmitError] = useState('');
+  const [establishedChallenge, setEstablishedChallenge] = useState<{ challengeId: string; groupId: string } | null>(null);
+  const [coverUploadError, setCoverUploadError] = useState('');
+  const [coverUploading, setCoverUploading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
@@ -286,27 +289,55 @@ export function V2ChallengeCreationWizard() {
         setCreating(false);
         return;
       }
-      const established = await establish.mutateAsync(
-        toEstablishmentBody(state, {
-          activate: shouldActivateOnCreate(state),
-          joinCreator: state.creatorJoins,
-          idempotencyKey: keyRef.current,
-        }),
-      );
+      let target = establishedChallenge;
+      if (!target) {
+        const established = await establish.mutateAsync(
+          toEstablishmentBody(state, {
+            activate: shouldActivateOnCreate(state),
+            joinCreator: state.creatorJoins,
+            idempotencyKey: keyRef.current,
+          }),
+        );
+        target = { challengeId: established.challengeId, groupId: established.groupId };
+        setEstablishedChallenge(target);
+        clearChallengeDraft(uid);
+      }
+      setCoverUploadError('');
       if (challengeCoverPhoto.file) {
-        setLocalChallengeCoverPreview(established.challengeId, challengeCoverPhoto.file);
-        await saveChallengeCoverImage(established.challengeId, challengeCoverPhoto.file, {
-          initialBind: true,
-          groupId: established.groupId,
-        }).catch(() => {});
+        setCoverUploading(true);
+        try {
+          await saveChallengeCoverImage(target.challengeId, challengeCoverPhoto.file, {
+            initialBind: true,
+            groupId: target.groupId,
+          });
+          setLocalChallengeCoverPreview(target.challengeId, challengeCoverPhoto.file);
+        } catch (err) {
+          setCoverUploading(false);
+          setCreating(false);
+          setCoverUploadError(
+            err instanceof ApiError
+              ? `Your Challenge was created, but the cover photo could not be saved: ${err.message}`
+              : 'Your Challenge was created, but the cover photo could not be saved. You can retry or continue without a cover.',
+          );
+          return;
+        }
+        setCoverUploading(false);
       }
       clearChallengeCoverPhotoDraft(uid);
-      clearChallengeDraft(uid);
-      navigate(`/v2/challenges/${established.challengeId}`, { replace: true });
+      navigate(`/v2/challenges/${target.challengeId}`, { replace: true });
     } catch (error) {
       setSubmitError(creationErrorMessage(error instanceof ApiError ? error.code : null));
       setCreating(false);
     }
+  }
+
+  function continueWithoutChallengeCover() {
+    if (!establishedChallenge) return;
+    removeLocalChallengeCoverPreview(establishedChallenge.challengeId);
+    challengeCoverPhoto.remove();
+    clearChallengeCoverPhotoDraft(uid);
+    void removeChallengeCoverImage(establishedChallenge.challengeId).catch(() => {});
+    navigate(`/v2/challenges/${establishedChallenge.challengeId}`, { replace: true });
   }
 
   const stepItems = VISIBLE_STEPS.map((step) => ({ id: step, label: VISIBLE_STEP_META[step].eyebrow }));
@@ -429,10 +460,32 @@ export function V2ChallengeCreationWizard() {
         </p>
       )}
 
-      {currentStep === 'REVIEW_AND_CREATE' && submitError && (
+      {currentStep === 'REVIEW_AND_CREATE' && submitError && !establishedChallenge && (
         <p role="alert" className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
           {submitError}
         </p>
+      )}
+
+      {currentStep === 'REVIEW_AND_CREATE' && coverUploadError && establishedChallenge && (
+        <div role="alert" className="mt-4 space-y-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+          <p className="font-bold">{coverUploadError}</p>
+          <div className="flex flex-wrap gap-2">
+            <V2Button
+              variant="secondary"
+              disabled={coverUploading}
+              onClick={() => void createChallenge()}
+            >
+              {coverUploading ? 'Retrying upload…' : 'Retry Cover Upload'}
+            </V2Button>
+            <V2Button
+              variant="ghost"
+              disabled={coverUploading}
+              onClick={continueWithoutChallengeCover}
+            >
+              Continue without Cover
+            </V2Button>
+          </div>
+        </div>
       )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">

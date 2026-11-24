@@ -730,3 +730,96 @@ export async function removeChallengeCoverImage(
   }
   return store ? { status: 'none' } : { status: 'not_configured' };
 }
+
+export interface MediaCleanupReport {
+  expiredOpenIntents: number;
+  expiredUploadedIntents: number;
+  deletedObjects: number;
+  failedDeletes: number;
+}
+
+/**
+ * Bounded, idempotent lifecycle cleanup for expired upload intents, unbound
+ * pending assets, and replaced/delete-pending R2 objects whose grace window
+ * has elapsed. Safe to re-run; verifies zero live DB references before delete.
+ */
+export async function cleanupMediaLifecycle(
+  db: Db,
+  store: ObjectStore | null,
+  options: { now?: Date; batchLimit?: number } = {},
+): Promise<MediaCleanupReport> {
+  const nowIso = (options.now ?? new Date()).toISOString();
+  const limit = Math.max(1, Math.min(500, options.batchLimit ?? 100));
+
+  const expiredOpenRes = await db.query<{ intent_id: string }>(
+    `UPDATE media_upload_intents
+        SET status = 'expired'
+      WHERE status = 'open' AND expires_at <= $1::timestamptz
+      RETURNING intent_id`,
+    [nowIso],
+  );
+
+  const expiredUploadedRes = await db.query<{ intent_id: string; asset_id: string | null }>(
+    `UPDATE media_upload_intents
+        SET status = 'expired'
+      WHERE status = 'uploaded' AND expires_at <= $1::timestamptz
+      RETURNING intent_id, asset_id`,
+    [nowIso],
+  );
+
+  const unboundAssetIds = expiredUploadedRes.rows
+    .map((r) => r.asset_id)
+    .filter((id): id is string => typeof id === 'string');
+
+  if (unboundAssetIds.length > 0) {
+    await db.query(
+      `UPDATE media_assets
+          SET status = 'delete_pending',
+              suppressed_at = COALESCE(suppressed_at, $2::timestamptz),
+              delete_after = COALESCE(delete_after, $2::timestamptz)
+        WHERE asset_id = ANY($1::uuid[]) AND status = 'pending'`,
+      [unboundAssetIds, nowIso],
+    );
+  }
+
+  let deletedObjects = 0;
+  let failedDeletes = 0;
+
+  if (store) {
+    const candidates = await db.query<{ asset_id: string; object_key: string }>(
+      `SELECT ma.asset_id, ma.object_key
+         FROM media_assets ma
+        WHERE ma.status IN ('replaced', 'delete_pending')
+          AND ma.delete_after IS NOT NULL
+          AND ma.delete_after <= $1::timestamptz
+          AND NOT EXISTS (SELECT 1 FROM members m WHERE m.profile_image_asset_id = ma.asset_id)
+          AND NOT EXISTS (SELECT 1 FROM groups g WHERE g.cover_asset_id = ma.asset_id)
+          AND NOT EXISTS (SELECT 1 FROM challenges c WHERE c.cover_asset_id = ma.asset_id)
+        ORDER BY ma.delete_after ASC
+        LIMIT $2`,
+      [nowIso, limit],
+    );
+
+    for (const row of candidates.rows) {
+      try {
+        await store.deleteObject({ key: row.object_key });
+        await db.query(
+          `UPDATE media_assets
+              SET status = 'deleted', deleted_at = $2::timestamptz
+            WHERE asset_id = $1`,
+          [row.asset_id, nowIso],
+        );
+        deletedObjects += 1;
+      } catch {
+        failedDeletes += 1;
+      }
+    }
+  }
+
+  return {
+    expiredOpenIntents: expiredOpenRes.rows.length,
+    expiredUploadedIntents: expiredUploadedRes.rows.length,
+    deletedObjects,
+    failedDeletes,
+  };
+}
