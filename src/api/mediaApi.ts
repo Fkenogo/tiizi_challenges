@@ -1,4 +1,4 @@
-import { apiFetch, apiPath } from './apiClient';
+import { apiFetch, apiPath, apiUploadBinary } from './apiClient';
 
 export type V2MediaPurpose = 'profile_image' | 'group_cover' | 'challenge_cover';
 
@@ -30,22 +30,22 @@ export async function uploadDurableImage(params: {
     apiPath('/media/intents'),
     {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         purpose: params.purpose,
         ...(params.targetScopeId ? { targetScopeId: params.targetScopeId } : {}),
         idempotencyKey: newIdempotencyKey(),
-      }),
+      },
     },
   );
 
-  const uploaded = await apiFetch<{ intentId: string; assetId: string; status: 'uploaded' }>(
+  const uploaded = await apiUploadBinary<{ intentId: string; assetId: string; status: 'uploaded' }>(
     apiPath(`/media/intents/${encodeURIComponent(intent.intentId)}/content`),
+    params.file,
     {
       method: 'PUT',
       headers: {
         'Content-Type': params.file.type || 'application/octet-stream',
       },
-      body: params.file,
     },
   );
 
@@ -58,7 +58,7 @@ export async function saveOwnProfileImage(file: File): Promise<V2MediaImageProje
     apiPath('/me/profile-image'),
     {
       method: 'PUT',
-      body: JSON.stringify({ intentId }),
+      body: { intentId },
     },
   );
   return res.profileImage;
@@ -85,7 +85,7 @@ export async function saveGroupCoverImage(
     apiPath(`/groups/${encodeURIComponent(groupId)}/cover-image`),
     {
       method: 'PUT',
-      body: JSON.stringify({ intentId }),
+      body: { intentId },
     },
   );
   return res.coverImage;
@@ -113,10 +113,10 @@ export async function saveChallengeCoverImage(
     apiPath(`/challenges/${encodeURIComponent(challengeId)}/cover-image`),
     {
       method: 'PUT',
-      body: JSON.stringify({
+      body: {
         intentId,
         ...(options?.initialBind ? { initialBind: true } : {}),
-      }),
+      },
     },
   );
   return res.coverImage;

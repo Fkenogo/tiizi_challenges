@@ -40,7 +40,7 @@ export function V2ChallengeCard({
   return (
     <li {...surfaceAttribute} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverImage={challenge.coverImage} heightClass="h-44 sm:h-48">
-        {!getLocalChallengeCoverPreview(challenge.challengeId) && (
+        {!getLocalChallengeCoverPreview(challenge.challengeId) && challenge.coverImage?.status !== 'ready' && (
           <div className="absolute left-3 top-11 sm:left-4 sm:top-12">
             <span className="rounded-full bg-slate-900/60 px-2.5 py-1 text-[10px] font-bold text-slate-200 shadow-sm backdrop-blur-sm">
               No cover photo
@@ -66,7 +66,7 @@ export function V2ChallengeCard({
         <p className="line-clamp-3 text-sm leading-6 text-slate-600">
           {challenge.description.trim() || 'No description provided.'}
         </p>
-        {getLocalChallengeCoverPreview(challenge.challengeId) && <p className="-mt-2 text-[11px] font-medium text-slate-500">Local photo preview · not saved to the Challenge</p>}
+        {getLocalChallengeCoverPreview(challenge.challengeId) && challenge.coverImage?.status !== 'ready' && <p className="-mt-2 text-[11px] font-medium text-slate-500">Local photo preview · not saved to the Challenge</p>}
         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3.5 sm:p-4" aria-label="Challenge progress">
           {progress}
         </div>

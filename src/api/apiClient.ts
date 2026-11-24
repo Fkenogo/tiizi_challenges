@@ -68,10 +68,15 @@ export interface ApiRequestInit {
   headers?: Record<string, string>;
 }
 
+async function resolveBearerToken(explicitToken?: string): Promise<string> {
+  const token = explicitToken ?? (await auth.currentUser?.getIdToken());
+  if (!token) throw new ApiError(401, 'not_signed_in', 'Sign-in is required');
+  return token;
+}
+
 /** Authenticated transport shared by apiFetch and apiFetchRaw. */
 async function authorizedFetch(path: string, init?: ApiRequestInit): Promise<Response> {
-  const token = init?.bearerToken ?? (await auth.currentUser?.getIdToken());
-  if (!token) throw new ApiError(401, 'not_signed_in', 'Sign-in is required');
+  const token = await resolveBearerToken(init?.bearerToken);
 
   try {
     return await fetch(`${apiBaseUrl()}${path}`, {
@@ -88,9 +93,7 @@ async function authorizedFetch(path: string, init?: ApiRequestInit): Promise<Res
   }
 }
 
-export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<T> {
-  const response = await authorizedFetch(path, init);
-
+async function parseApiResponse<T>(path: string, response: Response): Promise<T> {
   if (!response.ok) {
     let code = 'request_error';
     let message = `Request failed (${response.status})`;
@@ -120,6 +123,39 @@ export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<
     }
     throw new ApiError(response.status, 'invalid_response', 'The API returned an invalid response');
   }
+}
+
+export async function apiFetch<T>(path: string, init?: ApiRequestInit): Promise<T> {
+  const response = await authorizedFetch(path, init);
+  return parseApiResponse<T>(path, response);
+}
+
+/** Authenticated raw-binary upload transport for File/Blob payloads. */
+export async function apiUploadBinary<T>(
+  path: string,
+  file: Blob,
+  init?: {
+    method?: 'PUT' | 'POST';
+    bearerToken?: string;
+    headers?: Record<string, string>;
+  },
+): Promise<T> {
+  const token = await resolveBearerToken(init?.bearerToken);
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl()}${path}`, {
+      method: init?.method ?? 'PUT',
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+        ...init?.headers,
+        Authorization: `Bearer ${token}`,
+      },
+      body: file,
+    });
+  } catch {
+    throw new ApiError(503, 'api_unreachable', 'Tiizi API is unreachable');
+  }
+  return parseApiResponse<T>(path, response);
 }
 
 /** Non-throwing transport result for endpoints whose error body carries data. */
