@@ -7,6 +7,7 @@
  * DATABASE_URL or server credential ever appears client-side.
  */
 import { API_PREFIX, apiFetch } from './apiClient';
+import type { V2MediaImageProjection } from './mediaApi';
 
 export type V2ChallengeType = 'collective' | 'competitive' | 'streak';
 export type V2ChallengeStatus = 'establishment' | 'active' | 'ended';
@@ -82,6 +83,7 @@ export interface V2ChallengeSummary {
   activities: Array<{ name: string; domain: 'fitness' | 'wellness'; category: string; subcategory: string }>;
   title: string;
   coverId?: string | null;
+  coverImage?: V2MediaImageProjection;
   supportTiiziEnabled?: boolean;
   description: string;
   challengeType: V2ChallengeType;

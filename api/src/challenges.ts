@@ -67,6 +67,7 @@ export interface ChallengeRow {
   status: ChallengeStatus;
   title: string;
   cover_id: string | null;
+  cover_asset_id?: string | null;
   support_tiizi_enabled: boolean;
   description: string;
   instructions: string;
@@ -196,6 +197,7 @@ export function normalizeChallengeRow(row: {
   status: ChallengeStatus;
   title: unknown;
   cover_id?: unknown;
+  cover_asset_id?: unknown;
   support_tiizi_enabled?: unknown;
   description: unknown;
   instructions: unknown;
@@ -221,6 +223,7 @@ export function normalizeChallengeRow(row: {
     status: row.status,
     title: String(row.title),
     cover_id: typeof row.cover_id === 'string' ? row.cover_id : null,
+    cover_asset_id: typeof row.cover_asset_id === 'string' ? row.cover_asset_id : null,
     support_tiizi_enabled: row.support_tiizi_enabled === true,
     description: row.description == null ? '' : String(row.description),
     instructions: row.instructions == null ? '' : String(row.instructions),

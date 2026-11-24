@@ -1350,11 +1350,13 @@ describe('P5T-1 migration compatibility', () => {
       '032_challenge_feed_activity_shares.sql',
       '033_challenge_feed_share_generation.sql',
       '034_challenge_feed_kudos.sql',
+      '035_media_assets_and_references.sql',
     ]);
     const after = (await db.query<any>(`SELECT * FROM challenges WHERE challenge_id = $1`, [legacy])).rows[0];
     expect(after.source_template_id).toBeNull();
     expect(after.source_template_version).toBeNull();
-    const { source_template_id: _a, source_template_version: _b, ...rest } = after;
+    expect(after.cover_asset_id).toBeNull();
+    const { source_template_id: _a, source_template_version: _b, cover_asset_id: _c, ...rest } = after;
     expect(JSON.stringify([rest])).toBe(JSON.stringify([JSON.parse(before)[0]]));
     // Legacy rows remain updatable.
     await db.query(`UPDATE challenges SET title = 'Legacy Renamed' WHERE challenge_id = $1`, [legacy]);

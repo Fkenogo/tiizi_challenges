@@ -118,7 +118,7 @@ export function V2TodayDiscoveryRecommendations() {
             const reason = recommendationReason(challenge.relevance);
             return <li key={challenge.challengeId} className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex items-start gap-3">
-                <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} heightClass="h-16" className="w-20 shrink-0 rounded-lg" overlay={false} />
+                <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverImage={challenge.coverImage} heightClass="h-16" className="w-20 shrink-0 rounded-lg" overlay={false} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap gap-2 text-xs font-bold">
                     <span className="rounded-full bg-orange-50 px-2 py-1 text-primary">{challengeTypeLabel(challenge.challengeType)}</span>

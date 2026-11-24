@@ -1402,6 +1402,7 @@ await publish(app, fx.challengeId, eventId, 9);
     expect(await runMigrations(legacyDb)).toEqual([
       '033_challenge_feed_share_generation.sql',
       '034_challenge_feed_kudos.sql',
+      '035_media_assets_and_references.sql',
     ]);
 
     const upgradedShare = await legacyDb.query<{ share_generation: number }>(

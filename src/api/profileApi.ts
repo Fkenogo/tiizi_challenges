@@ -19,13 +19,12 @@
  * `/api` is the canonical active namespace (see `AGENTS.md` §2).
  */
 import { apiFetch, apiPath } from './apiClient';
+import type { V2MediaImageProjection } from './mediaApi';
 
 export type V2ProfileChallengeStatus = 'active' | 'withdrawn' | 'removed';
 export type V2ProfileChallengeBucket = 'active' | 'history';
 
-export interface V2ProfileImageSlot {
-  status: 'not_configured';
-}
+export type V2ProfileImageSlot = V2MediaImageProjection;
 
 export interface V2ProfileGroupItem {
   groupId: string;

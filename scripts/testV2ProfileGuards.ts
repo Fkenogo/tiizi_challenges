@@ -196,7 +196,7 @@ check('email comes from Firebase user', screen.includes('user?.email'));
 check('never reads AuthContext.profile.email', !/profile\??\.email/.test(screen));
 check('never imports AuthContext directly', !/AuthContext/.test(screen));
 check('does not import the legacy profile cache', !/tiizi_profile/.test(screen));
-check('no upload or media control', !/type=["']file["']|upload|media_assets/i.test(screen));
+check('profile media uses governed mediaApi only (no raw storage SDK or media_assets)', !/media_assets|r2\.cloudflarestorage|firebase\/storage/i.test(screen));
 check('no V1 or legal routes', !/\/app\/|\/v1|\/terms|\/privacy/i.test(screen));
 check('challenge rows keyed by participationId', screen.includes('key={item.participationId}'));
 check('Profile shows at most the latest three history rows', /buckets\.history\.slice\(0, 3\)/.test(screen));

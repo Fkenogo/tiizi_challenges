@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useV2GroupDiscovery } from './useV2Groups';
 import type { ApiMembership } from '../../api/membershipsApi';
 import type { V2DiscoverableGroup, V2ViewerRelationship } from '../../api/groupsApi';
+import type { V2MediaImageProjection } from '../../api/mediaApi';
 import { V2Button, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
 import { V2GroupCover } from './V2GroupCover';
 import { stewardBadgeFor } from './groupDraft';
@@ -12,6 +13,7 @@ type GroupSearchResult = {
   description: string;
   tagline: string;
   coverId: string | null;
+  coverImage?: V2MediaImageProjection | null;
   focusTags: string[];
   goals: string[];
   memberCount?: number;
@@ -114,7 +116,7 @@ export function V2GroupGlobalSearch({
               className="flex w-full min-w-0 items-center gap-3 p-3 text-left sm:gap-4"
               aria-label={`Open ${group.name}, ${group.relationship}`}
             >
-              <V2GroupCover groupId={group.id} title={group.name} coverId={group.coverId} heightClass="h-12" className="w-12 shrink-0 rounded-lg" overlay={false} />
+              <V2GroupCover groupId={group.id} title={group.name} coverId={group.coverId} coverImage={group.coverImage} heightClass="h-12" className="w-12 shrink-0 rounded-lg" overlay={false} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-black text-slate-900">{group.name}</span>
                 <span className="mt-0.5 block text-xs font-bold text-slate-600">{group.relationship}</span>

@@ -34,6 +34,7 @@ import { API_PREFIX } from './apiPrefix.js';
 import type { Db } from './db.js';
 import {
   getMemberProfileIdentityById,
+  getMemberProfileImageAssetId,
   updateOwnDisplayName,
   type MemberProfileIdentity,
 } from './memberProfileIdentity.js';
@@ -42,6 +43,12 @@ import {
   type MemberProfileSummaries,
   type MemberProfileSummaryOptions,
 } from './memberProfileSummaries.js';
+import {
+  projectMediaAsset,
+  resolveReadyMediaAssetsByIds,
+  type MediaImageProjection,
+} from './mediaService.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
 
 export interface MemberProfileQuery {
   groupsLimit?: unknown;
@@ -53,7 +60,7 @@ export interface MemberProfileQuery {
 export interface MemberProfileResponse {
   memberId: string;
   displayName: string | null;
-  profileImage: { status: 'not_configured' };
+  profileImage: MediaImageProjection;
   groups: MemberProfileSummaries['groups'];
   challenges: MemberProfileSummaries['challenges'];
 }
@@ -66,14 +73,26 @@ function summaryOptionsFromQuery(raw: unknown): MemberProfileSummaryOptions {
   };
 }
 
-function composeProfile(
+async function composeProfile(
+  db: Db,
   identity: MemberProfileIdentity,
   summaries: MemberProfileSummaries,
-): MemberProfileResponse {
+  mediaDeps?: MediaRouteDeps,
+): Promise<MemberProfileResponse> {
+  let profileImage: MediaImageProjection = { status: 'not_configured' };
+  if (mediaDeps?.objectStore) {
+    const assetId = await getMemberProfileImageAssetId(db, identity.memberId);
+    const assets = assetId ? await resolveReadyMediaAssetsByIds(db, [assetId]) : new Map();
+    profileImage = projectMediaAsset(
+      assetId ? assets.get(assetId) : null,
+      mediaDeps.objectStore,
+      mediaDeps.readUrlTtlSeconds,
+    );
+  }
   return {
     memberId: identity.memberId,
     displayName: identity.displayName,
-    profileImage: { status: 'not_configured' },
+    profileImage,
     groups: summaries.groups,
     challenges: summaries.challenges,
   };
@@ -83,26 +102,32 @@ async function readOwnProfile(
   db: Db,
   member: RequestMember,
   options: MemberProfileSummaryOptions,
+  mediaDeps?: MediaRouteDeps,
 ): Promise<MemberProfileResponse> {
   const identity = await getMemberProfileIdentityById(db, member.memberId);
   const summaries = await getMemberProfileSummaries(db, member, options);
-  return composeProfile(identity, summaries);
+  return composeProfile(db, identity, summaries, mediaDeps);
 }
 
-export function registerMemberProfileRoutes(app: FastifyInstance, db: Db): void {
+export function registerMemberProfileRoutes(
+  app: FastifyInstance,
+  db: Db,
+  mediaDeps?: MediaRouteDeps,
+): void {
   const path = `${API_PREFIX}/me`;
 
   app.get(path, async (request): Promise<MemberProfileResponse> => {
     const member = authenticatedMember(request);
-    return readOwnProfile(db, member, summaryOptionsFromQuery(request.query));
+    return readOwnProfile(db, member, summaryOptionsFromQuery(request.query), mediaDeps);
   });
 
   app.patch(path, async (request): Promise<MemberProfileResponse> => {
     const member = authenticatedMember(request);
     // This commits the canonical value + history atomically before any
     // independent summary read below. A later read failure cannot undo it.
-    const identity = await updateOwnDisplayName(db, member, request.body);
+    await updateOwnDisplayName(db, member, request.body);
+    const identity = await getMemberProfileIdentityById(db, member.memberId);
     const summaries = await getMemberProfileSummaries(db, member);
-    return composeProfile(identity, summaries);
+    return composeProfile(db, identity, summaries, mediaDeps);
   });
 }

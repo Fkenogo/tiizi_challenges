@@ -1,12 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useContext, useEffect, useState, type ReactNode } from 'react';
+import { QueryClientContext } from '@tanstack/react-query';
+import type { V2MediaImageProjection } from '../../api/mediaApi';
+import { V2SignedImage } from '../media/V2SignedImage';
 import { getLocalGroupCoverPreview } from './localGroupCoverPreviews';
 import { coverGradientFor, isGroupCoverId } from './groupCovers';
 
-/** Shared, tab-local Group cover rendering for active V2 Group surfaces. */
+/** Shared Group cover rendering for active V2 Group surfaces. */
 export function V2GroupCover({
   groupId,
   title,
   coverId,
+  coverImage,
   heightClass,
   children,
   className = '',
@@ -15,11 +19,13 @@ export function V2GroupCover({
   groupId: string;
   title: string;
   coverId?: string | null;
+  coverImage?: V2MediaImageProjection | null;
   heightClass: string;
   children?: ReactNode;
   className?: string;
   overlay?: boolean;
 }) {
+  const queryClient = useContext(QueryClientContext);
   const localCover = getLocalGroupCoverPreview(groupId);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
@@ -33,20 +39,37 @@ export function V2GroupCover({
     return () => URL.revokeObjectURL(url);
   }, [groupId, localCover]);
 
+  const persistedUrl = coverImage?.status === 'ready' ? coverImage.url : null;
+  const effectiveUrl = photoUrl ?? persistedUrl;
   const explicitCover = isGroupCoverId(coverId) ? coverId : null;
-  const bgClass = !photoUrl && explicitCover
+  const bgClass = !effectiveUrl && explicitCover
     ? `bg-gradient-to-br ${coverGradientFor(explicitCover)}`
     : 'bg-slate-200';
+  const fallbackNode = !explicitCover
+    ? <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />
+    : <div aria-hidden="true" className={`absolute inset-0 bg-gradient-to-br ${coverGradientFor(explicitCover)}`} />;
 
   return (
     <div
       data-group-cover-id={groupId}
-      data-local-cover={photoUrl ? 'true' : 'false'}
+      data-local-cover={effectiveUrl ? 'true' : 'false'}
       data-catalogue-cover={explicitCover ?? ''}
       className={`relative isolate overflow-hidden ${bgClass} ${heightClass} ${className}`}
     >
       {photoUrl ? (
         <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
+      ) : persistedUrl ? (
+        <V2SignedImage
+          src={persistedUrl}
+          alt={`${title} cover photo`}
+          className="absolute inset-0 h-full w-full object-cover"
+          refreshKey={`group-cover-${groupId}`}
+          onExpired={() => void queryClient?.invalidateQueries({
+            predicate: (q) => Array.isArray(q.queryKey) && typeof q.queryKey[0] === 'string'
+              && (q.queryKey[0].includes('group') || q.queryKey[0].includes('membership')),
+          })}
+          fallback={fallbackNode}
+        />
       ) : !explicitCover ? (
         <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />
       ) : null}

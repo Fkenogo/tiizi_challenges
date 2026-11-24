@@ -52,6 +52,17 @@ export async function getMemberProfileIdentityById(
   return { memberId, displayName: row.display_name };
 }
 
+export async function getMemberProfileImageAssetId(
+  db: Db,
+  memberId: string,
+): Promise<string | null> {
+  const result = await db.query<{ profile_image_asset_id: string | null }>(
+    'SELECT profile_image_asset_id FROM members WHERE member_id = $1',
+    [memberId],
+  );
+  return result.rows[0]?.profile_image_asset_id ?? null;
+}
+
 /** Resolve a verified authentication identity through the sole canonical member map. */
 export async function getMemberProfileIdentity(
   db: Db,

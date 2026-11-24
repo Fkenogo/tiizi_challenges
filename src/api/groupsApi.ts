@@ -1,4 +1,5 @@
 import { API_PREFIX, apiFetch } from './apiClient';
+import type { V2MediaImageProjection } from './mediaApi';
 import { fetchMyMemberships, type MyMembershipsResponse } from './membershipsApi';
 
 /**
@@ -112,6 +113,7 @@ export interface V2GroupDetail {
   createdAt: string | null;
   /** CORR-001 richer identity (rules stay member-only: null on the subset). */
   coverId: string | null;
+  coverImage?: V2MediaImageProjection;
   tagline: string;
   location: string;
   focusTags: string[];
@@ -139,6 +141,7 @@ export interface V2DiscoverableGroup {
   description: string;
   tagline: string;
   coverId: string | null;
+  coverImage?: V2MediaImageProjection;
   location: string;
   focusTags: string[];
   goals: string[];

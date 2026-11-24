@@ -283,7 +283,7 @@ function GroupHomeBody({
 
       {/* Hero: what community is this, who is here, what can I do. */}
       <section aria-label="Group overview" className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <V2GroupCover groupId={detail.id} title={detail.name} coverId={detail.coverId} heightClass="h-56 sm:h-72" className="w-full">
+        <V2GroupCover groupId={detail.id} title={detail.name} coverId={detail.coverId} coverImage={detail.coverImage} heightClass="h-56 sm:h-72" className="w-full">
           {detail.location.trim() && (
             <span className="absolute left-4 top-4 rounded-full bg-black/60 px-3 py-1 text-[11px] font-bold text-white">
               {detail.location.trim()}

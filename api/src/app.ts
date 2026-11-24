@@ -40,6 +40,8 @@ import { isMemberBootstrapRequest, registerMemberBootstrapRoutes } from './membe
 import { registerMemberProfileRoutes } from './memberProfileRoutes.js';
 import { registerMemberRecentActivityRoutes } from './memberRecentActivity.js';
 import { registerMemberPreferenceRoutes } from './memberPreferences.js';
+import { registerMediaRoutes, type MediaRouteDeps } from './mediaRoutes.js';
+import { createR2ObjectStoreFromEnv } from './r2ObjectStore.js';
 /* AEC-005A owner-only Personal Recent Activity reads accepted V2 applications
  * and their valid correction/reversal lineage. It does not read or publish Feed events. */
 
@@ -60,6 +62,8 @@ export interface AppDeps {
   groupMutation?: GroupMutationRouteDeps;
   /** EBC-01 governed Challenge establishment. Absent: route fails closed. */
   challengeCreation?: ChallengeCreationRouteDeps;
+  /** Durable media storage (Cloudflare R2 in runtime, or test double). */
+  media?: MediaRouteDeps;
 }
 
 export function buildApp(deps: AppDeps) {
@@ -119,11 +123,17 @@ export function buildApp(deps: AppDeps) {
     await auth(request, reply);
   });
 
+  const mediaDeps: MediaRouteDeps = deps.media ?? (() => {
+    const r2 = createR2ObjectStoreFromEnv();
+    return { objectStore: r2.store, readUrlTtlSeconds: r2.readUrlTtlSeconds };
+  })();
+
   registerMemberBootstrapRoutes(app, deps.db, deps.verifier);
   registerMemberRecentActivityRoutes(app, deps.db);
-  registerMemberProfileRoutes(app, deps.db);
+  registerMemberProfileRoutes(app, deps.db, mediaDeps);
+  registerMediaRoutes(app, deps.db, mediaDeps);
   registerMemberPreferenceRoutes(app, deps.db);
-  registerMembershipRoutes(app, deps.db);
+  registerMembershipRoutes(app, deps.db, mediaDeps);
   registerGroupIdentityRoutes(app, deps.db);
   registerKnowledgeRoutes(app, deps.db);
   registerChallengeActivityRoutes(app, deps.db, deps.challengeActivity ?? {});
@@ -134,12 +144,13 @@ export function buildApp(deps: AppDeps) {
   registerChallengeReadRoutes(app, deps.db, {
     ...(deps.challengeActivity ?? {}),
     groupStore: groupReadStore,
+    mediaDeps,
   });
   registerChallengeDiscoveryRoutes(app, deps.db);
   registerTodayRoutes(app, deps.db, deps.challengeActivity ?? {});
   // S4a governed Group detail read (Group Home). Same live store seam as
   // the governed mutations; absent store fails closed per-route.
-  registerGroupReadRoutes(app, deps.db, { store: groupReadStore });
+  registerGroupReadRoutes(app, deps.db, { store: groupReadStore, mediaDeps });
   // GF-03 member Feed read: current PostgreSQL Group membership remains the
   // only audience authority; a missing seam fails closed.
   registerGroupFeedRoutes(app, deps.db, {
@@ -150,6 +161,7 @@ export function buildApp(deps: AppDeps) {
   // Group Feed contract above is untouched by this registration.
   registerChallengeFeedRoutes(app, deps.db, {
     groupMembershipAuthority: deps.challengeActivity?.groupMembershipAuthority,
+    mediaDeps,
   });
   // C3B V2 participation mutations (join/withdraw). Same live authority as
   // C2B; absent authority fails closed per-route instead of authorizing.

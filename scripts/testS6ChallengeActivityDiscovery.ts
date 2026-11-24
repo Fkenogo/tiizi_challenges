@@ -93,7 +93,7 @@ assert.match(wizard, /disarmChallengeDraft\(uid\)/, 'disarm happens in an effect
 assert.match(wizard, /function handleGuideTrip\(\) \{/, 'Guide-trip handler takes no event/draft argument');
 assert.match(wizard, /onGuideTrip=\{handleGuideTrip\}/, 'the member wrapper supplies the Guide-trip handler');
 assert.match(guide, /releaseAbandonedChallengeDraft\(uid, window\.location\.pathname\)/, 'abandoned Guide trips release the armed backup');
-assert.match(wizard, /clearChallengeDraft\(uid\);\s*navigate\(`\/v2\/challenges\/\$\{established\.challengeId\}`/, 'established Challenge clears the session draft');
+assert.match(wizard, /clearChallengeDraft\(uid\);[\s\S]*navigate\(`\/v2\/challenges\/\$\{target\.challengeId\}`/, 'established Challenge clears the session draft');
 assert.doesNotMatch(wizard + guide, /firestore|collection\(|setDoc/i, 'no Firestore draft persistence');
 
 // Session backup behaviour (in-memory storage stub).

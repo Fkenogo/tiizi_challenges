@@ -49,6 +49,12 @@ import type { Db } from './db.js';
 import { apiPath } from './apiPrefix.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
 import { readChallengeForFeed, requireChallengeFeedVisible } from './challengeReads.js';
+import {
+  projectMediaAsset,
+  resolveReadyMediaAssetsByIds,
+  type MediaImageProjection,
+} from './mediaService.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
 
 export const CHALLENGE_FEED_EVENT_FAMILIES = ['activity_share'] as const;
 export type ChallengeFeedEventFamily = (typeof CHALLENGE_FEED_EVENT_FAMILIES)[number];
@@ -71,6 +77,7 @@ export interface ChallengeFeedItem {
   /** Withdrawal reference, present ONLY on the viewer's own Share. */
   activityEventId?: string;
   sharerDisplayName: string | null;
+  sharerProfileImage?: MediaImageProjection;
   activityName: string;
   value: number;
   unit: string;
@@ -143,6 +150,7 @@ interface FeedRow extends Record<string, unknown> {
   published_at: string | Date;
   published_at_cursor: string;
   display_name: string | null;
+  profile_image_asset_id: string | null;
   head_value: number;
   head_unit: string;
   head_canonical_key: string;
@@ -293,7 +301,7 @@ export async function getChallengeFeedPage(
   authority: GroupMembershipAuthority,
   memberId: string,
   challengeId: string,
-  options: { limit?: unknown; cursor?: unknown; now?: Date; secret?: string } = {},
+  options: { limit?: unknown; cursor?: unknown; now?: Date; secret?: string; mediaDeps?: MediaRouteDeps } = {},
 ): Promise<ChallengeFeedPage> {
   const limit = parseLimit(options.limit);
   const now = options.now ?? new Date();
@@ -310,7 +318,7 @@ export async function getChallengeFeedPage(
   const result = await db.query<FeedRow>(
     `SELECT s.share_id, s.member_id, s.activity_event_id, s.published_at,
             to_char(s.published_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS published_at_cursor,
-            m.display_name,
+            m.display_name, m.profile_image_asset_id,
             head.value AS head_value, head.unit AS head_unit, head.canonical_key AS head_canonical_key,
             head.knowledge_id AS head_knowledge_id, head.knowledge_version AS head_knowledge_version,
             COALESCE(kv.name, k.name, head.canonical_key) AS activity_name,
@@ -353,12 +361,25 @@ export async function getChallengeFeedPage(
 
   const hasMore = result.rows.length > limit;
   const pageRows = result.rows.slice(0, limit);
+  const mediaStore = options.mediaDeps?.objectStore ?? null;
+  const readUrlTtlSeconds = options.mediaDeps?.readUrlTtlSeconds ?? 60;
+  const sharerAssets = mediaStore
+    ? await resolveReadyMediaAssetsByIds(db, pageRows.map((row) => row.profile_image_asset_id))
+    : new Map();
   const items = pageRows.map((row): ChallengeFeedItem => {
     const ownShare = String(row.member_id) === memberId;
+    const sharerProfileImage = mediaStore
+      ? projectMediaAsset(
+          row.profile_image_asset_id ? sharerAssets.get(String(row.profile_image_asset_id)) : null,
+          mediaStore,
+          readUrlTtlSeconds,
+        )
+      : undefined;
     const base: ChallengeFeedItem = {
       feedItemId: String(row.share_id),
       kind: 'activity_share',
       sharerDisplayName: row.display_name === null ? null : String(row.display_name),
+      ...(sharerProfileImage !== undefined ? { sharerProfileImage } : {}),
       activityName: String(row.activity_name),
       value: Number(row.head_value),
       unit: String(row.head_unit),
@@ -1026,6 +1047,7 @@ export interface ChallengeFeedRouteDeps {
   groupMembershipAuthority?: GroupMembershipAuthority;
   now?: () => Date;
   cursorSecret?: () => string | undefined;
+  mediaDeps?: MediaRouteDeps;
 }
 
 export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: ChallengeFeedRouteDeps = {}): void {
@@ -1098,6 +1120,10 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
                   /** Present only on the viewer's own Share. */
                   activityEventId: { type: 'string', format: 'uuid' },
                   sharerDisplayName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                  sharerProfileImage: {
+                    type: 'object',
+                    additionalProperties: true,
+                  },
                   activityName: { type: 'string' },
                   value: { type: 'number' },
                   unit: { type: 'string' },
@@ -1123,6 +1149,7 @@ export function registerChallengeFeedRoutes(app: FastifyInstance, db: Db, deps: 
       cursor: query.cursor,
       now: deps.now?.(),
       secret: deps.cursorSecret?.(),
+      mediaDeps: deps.mediaDeps,
     }), 'Feed read authority is unavailable');
   });
 

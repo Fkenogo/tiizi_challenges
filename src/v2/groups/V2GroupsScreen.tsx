@@ -114,6 +114,7 @@ function V2GroupRow({ membership, onOpen }: { membership: ApiMembership; onOpen:
       groupId={group.id}
       name={group.name}
       coverId={group.coverId}
+      coverImage={group.coverImage}
       location={group.location}
       description={group.tagline || group.description}
       status={`${stewardBadgeFor(membership.role)} · ${accessLabel}`}

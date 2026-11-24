@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { QueryClientContext } from '@tanstack/react-query';
 import { ApiError } from '../../api/apiClient';
 import type { ChallengeFeedItem } from '../../api/challengeFeedApi';
 import { V2Button, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
+import { V2SignedImage } from '../media/V2SignedImage';
 import {
+  V2_CHALLENGE_FEED_SCOPE,
   useV2ChallengeFeedHistory,
   useV2ChallengeFeedPreview,
   useV2ToggleKudos,
@@ -62,6 +65,7 @@ export function ChallengeFeedEntries({
   withdrawing?: boolean;
   onWithdraw?: (activityEventId: string) => void;
 }) {
+  const queryClient = useContext(QueryClientContext);
   const toggleKudos = useV2ToggleKudos(challengeId);
   const [copiedEntry, setCopiedEntry] = useState<string | null>(null);
   const [shareMenuEntry, setShareMenuEntry] = useState<string | null>(null);
@@ -115,10 +119,21 @@ export function ChallengeFeedEntries({
           <article className="rounded-2xl border border-slate-200 bg-white p-3">
             <div className="flex items-center gap-3">
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white"
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold text-white"
                 aria-hidden="true"
               >
-                {initialsOf(item.sharerDisplayName)}
+                {item.sharerProfileImage?.status === 'ready' ? (
+                  <V2SignedImage
+                    src={item.sharerProfileImage.url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    refreshKey={`challenge-feed-${challengeId}`}
+                    onExpired={() => void queryClient?.invalidateQueries({ queryKey: [V2_CHALLENGE_FEED_SCOPE] })}
+                    fallback={initialsOf(item.sharerDisplayName)}
+                  />
+                ) : (
+                  initialsOf(item.sharerDisplayName)
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-slate-900">

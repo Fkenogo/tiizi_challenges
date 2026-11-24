@@ -43,7 +43,12 @@ export function V2MemberShell() {
           <div className="flex h-14 w-full items-center gap-3 px-4">
             <div role="group" aria-label="Member tools" className="ml-auto flex items-center gap-2">
               <V2NotificationTrigger unread={false} onOpen={() => navigate('/v2/notifications')} />
-              <V2AccountTrigger name={displayName} onOpen={() => navigate('/v2/profile')} />
+              <V2AccountTrigger
+                name={displayName}
+                imageUrl={identity.profileImage?.status === 'ready' ? identity.profileImage.url : null}
+                onImageExpired={() => void identity.refetch()}
+                onOpen={() => navigate('/v2/profile')}
+              />
             </div>
           </div>
         </header>

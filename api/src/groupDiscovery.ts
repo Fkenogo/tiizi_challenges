@@ -16,12 +16,20 @@ export const GROUP_GOAL_WEIGHT = 2;
 export const DISCOVERY_DEFAULT_LIMIT = 12;
 export const DISCOVERY_MAX_LIMIT = 30;
 
+import {
+  projectMediaAsset,
+  resolveReadyMediaAssetsByIds,
+  type MediaImageProjection,
+} from './mediaService.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
+
 export interface DiscoverableGroup {
   id: string;
   name: string;
   description: string;
   tagline: string;
   coverId: string | null;
+  coverImage?: MediaImageProjection;
   location: string;
   focusTags: string[];
   goals: string[];
@@ -44,6 +52,7 @@ interface DiscoverRow {
   description: string | null;
   tagline: string | null;
   cover_id: string | null;
+  cover_asset_id: string | null;
   location: string | null;
   focus_tags: unknown;
   goal_ids?: unknown;
@@ -93,7 +102,11 @@ function relationship(row: DiscoverRow): DiscoverableGroup['viewerRelationship']
   return 'none';
 }
 
-function toGroup(row: DiscoverRow, prefs: PreferenceMatch | null = null): DiscoverableGroup {
+function toGroup(
+  row: DiscoverRow,
+  prefs: PreferenceMatch | null = null,
+  coverImage?: MediaImageProjection,
+): DiscoverableGroup {
   const focusTags = Array.isArray(row.focus_tags) ? row.focus_tags.filter((item): item is string => typeof item === 'string') : [];
   const goalLabels = labelsForIds(row.goal_ids, GROUP_GOALS);
   return {
@@ -102,6 +115,7 @@ function toGroup(row: DiscoverRow, prefs: PreferenceMatch | null = null): Discov
     description: row.description ?? '',
     tagline: row.tagline ?? '',
     coverId: row.cover_id,
+    ...(coverImage !== undefined ? { coverImage } : {}),
     location: row.location ?? '',
     focusTags,
     goals: [...goalLabels, ...(row.custom_goal ? [row.custom_goal] : [])],
@@ -130,7 +144,7 @@ export function preferenceMatchFor(prefs: MemberPreferenceIds | null | undefined
 export async function listDiscoverableGroups(
   db: Db,
   viewerMemberId: string,
-  options: { q?: string; limit?: string; cursor?: string; rank?: string },
+  options: { q?: string; limit?: string; cursor?: string; rank?: string; mediaDeps?: MediaRouteDeps },
   preferences: MemberPreferenceIds | null = null,
 ): Promise<{ groups: DiscoverableGroup[]; nextCursor: string | null; ranking: GroupDiscoveryRanking }> {
   if (options.rank !== undefined && options.rank !== 'general' && options.rank !== 'relevance') inputError("rank must be 'relevance' or 'general'");
@@ -147,7 +161,7 @@ export async function listDiscoverableGroups(
   // reduces the ordering and cursor to the original (created_at, group_id).
   const result = await db.query<DiscoverRow>(
     `SELECT * FROM (
-       SELECT g.group_id, g.name, g.description, g.tagline, g.cover_id, g.location,
+       SELECT g.group_id, g.name, g.description, g.tagline, g.cover_id, g.cover_asset_id, g.location,
          g.focus_tags, g.goal_ids, g.custom_goal, g.require_admin_approval, g.created_at,
          gm.status AS viewer_status, (g.steward_member_id=$1) AS viewer_is_steward,
          (SELECT count(*)::int FROM group_memberships active_members
@@ -175,8 +189,19 @@ export async function listDiscoverableGroups(
   );
   const hasMore = result.rows.length > rawLimit;
   const pageRows = result.rows.slice(0, rawLimit);
+  const store = options.mediaDeps?.objectStore ?? null;
+  const ttl = options.mediaDeps?.readUrlTtlSeconds ?? 60;
+  const assets = store
+    ? await resolveReadyMediaAssetsByIds(db, pageRows.map((r) => r.cover_asset_id))
+    : new Map();
   return {
-    groups: pageRows.map((row) => toGroup(row, match_)),
+    groups: pageRows.map((row) =>
+      toGroup(
+        row,
+        match_,
+        store ? projectMediaAsset(row.cover_asset_id ? assets.get(row.cover_asset_id) : null, store, ttl) : undefined,
+      ),
+    ),
     nextCursor: hasMore && pageRows.length ? encodeCursor(pageRows[pageRows.length - 1]) : null,
     ranking: { applied: match_ !== null },
   };
