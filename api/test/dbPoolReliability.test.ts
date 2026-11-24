@@ -93,7 +93,7 @@ describe('PostgreSQL pool idle error & reliability', () => {
     }
   });
 
-  it('sanitizes idle pool errors without leaking credentials or connection URLs', () => {
+  it('maps allowlisted idle pool errors to static credential-safe diagnostics and drops arbitrary messages/codes', () => {
     const err = Object.assign(
       new Error('read ETIMEDOUT postgresql://tiizi_runtime:super-secret@ep-x.neon.tech:5432/tiizi'),
       { code: 'ETIMEDOUT', client: { password: 'super-secret' } },
@@ -101,9 +101,47 @@ describe('PostgreSQL pool idle error & reliability', () => {
     const info = sanitizePoolError(err);
     expect(info).toEqual({
       code: 'ETIMEDOUT',
-      message: 'read ETIMEDOUT [redacted-url]',
+      message: 'Idle PostgreSQL client connection timed out',
     });
     expect(JSON.stringify(info)).not.toContain('super-secret');
+    expect(JSON.stringify(info)).not.toContain('ep-x.neon.tech');
+
+    expect(sanitizePoolError(Object.assign(new Error('socket hang up'), { errno: 'econnreset' }))).toEqual({
+      code: 'ECONNRESET',
+      message: 'Idle PostgreSQL client connection reset by peer',
+    });
+
+    expect(sanitizePoolError(Object.assign(new Error('terminating connection'), { code: '57P01' }))).toEqual({
+      code: '57P01',
+      message: 'PostgreSQL server terminated connection (admin shutdown)',
+    });
+
+    const arbitraryErr = Object.assign(
+      new Error('password=plain-secret Bearer tok_12345 host=db.internal'),
+      {
+        code: 'SECRET_CODE_LEAK_tok_999',
+        token: 'tok_999',
+        client: { connectionString: 'postgres://user:pass@host/db' },
+      },
+    );
+    const arbitraryInfo = sanitizePoolError(arbitraryErr);
+    expect(arbitraryInfo).toEqual({
+      code: 'UNKNOWN',
+      message: 'Idle PostgreSQL client connection failed',
+    });
+    expect(JSON.stringify(arbitraryInfo)).not.toContain('plain-secret');
+    expect(JSON.stringify(arbitraryInfo)).not.toContain('tok_12345');
+    expect(JSON.stringify(arbitraryInfo)).not.toContain('SECRET_CODE_LEAK');
+    expect(JSON.stringify(arbitraryInfo)).not.toContain('db.internal');
+
+    expect(sanitizePoolError(null)).toEqual({
+      code: 'UNKNOWN',
+      message: 'Idle PostgreSQL client connection failed',
+    });
+    expect(sanitizePoolError('postgres://user:pass@host/db')).toEqual({
+      code: 'UNKNOWN',
+      message: 'Idle PostgreSQL client connection failed',
+    });
   });
 
   it('handles idle pool errors without crashing, discards the dead socket, and reconnects on next query', async () => {
@@ -169,7 +207,9 @@ describe('PostgreSQL pool idle error & reliability', () => {
     const captured: PoolIdleErrorInfo[] = [];
     attachPoolErrorHandler(fakePool as never, (info) => captured.push(info));
     fakePool.emit('error', Object.assign(new Error('read ETIMEDOUT'), { code: 'ETIMEDOUT' }));
-    expect(captured).toEqual([{ code: 'ETIMEDOUT', message: 'read ETIMEDOUT' }]);
+    expect(captured).toEqual([
+      { code: 'ETIMEDOUT', message: 'Idle PostgreSQL client connection timed out' },
+    ]);
 
     const pgServer = await startMinimalPgServer();
     cleanups.push(() => pgServer.close());

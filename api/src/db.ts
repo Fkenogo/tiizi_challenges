@@ -48,19 +48,59 @@ export interface PoolIdleErrorInfo {
   message: string;
 }
 
+const ALLOWLISTED_POOL_ERRORS: Readonly<Record<string, string>> = {
+  ETIMEDOUT: 'Idle PostgreSQL client connection timed out',
+  ECONNRESET: 'Idle PostgreSQL client connection reset by peer',
+  ECONNREFUSED: 'PostgreSQL connection refused',
+  EPIPE: 'Idle PostgreSQL client pipe closed',
+  ENOTFOUND: 'PostgreSQL host lookup failed',
+  EAI_AGAIN: 'PostgreSQL host lookup temporarily failed',
+  EHOSTUNREACH: 'PostgreSQL host unreachable',
+  ENETUNREACH: 'PostgreSQL network unreachable',
+  ECONNABORTED: 'Idle PostgreSQL client connection aborted',
+  ERR_SSL_WRONG_VERSION_NUMBER: 'PostgreSQL TLS handshake failed',
+  DEPTH_ZERO_SELF_SIGNED_CERT: 'PostgreSQL TLS certificate verification failed',
+  SELF_SIGNED_CERT_IN_CHAIN: 'PostgreSQL TLS certificate chain verification failed',
+  UNABLE_TO_VERIFY_LEAF_SIGNATURE: 'PostgreSQL TLS certificate signature verification failed',
+  CERT_HAS_EXPIRED: 'PostgreSQL TLS certificate expired',
+  ERR_TLS_CERT_ALTNAME_INVALID: 'PostgreSQL TLS certificate hostname mismatch',
+  '57P01': 'PostgreSQL server terminated connection (admin shutdown)',
+  '57P02': 'PostgreSQL server terminated connection (crash shutdown)',
+  '57P03': 'PostgreSQL server cannot connect now',
+  '08000': 'PostgreSQL connection exception',
+  '08001': 'PostgreSQL client unable to establish connection',
+  '08003': 'PostgreSQL connection does not exist',
+  '08004': 'PostgreSQL server rejected connection',
+  '08006': 'PostgreSQL connection failure',
+};
+
+const DEFAULT_POOL_ERROR_INFO: PoolIdleErrorInfo = {
+  code: 'UNKNOWN',
+  message: 'Idle PostgreSQL client connection failed',
+};
+
 /**
- * Sanitize an idle pool error so diagnostics never leak connection strings,
- * passwords, TLS CA material, or raw `pg` client objects.
+ * Map an idle pool error to an allowlisted, credential-safe diagnostic so logs
+ * never leak connection strings, standalone secrets, tokens, or raw `pg` objects.
  */
 export function sanitizePoolError(error: unknown): PoolIdleErrorInfo {
-  const errObj = error as { code?: unknown; message?: unknown } | null | undefined;
-  const code = typeof errObj?.code === 'string' && errObj.code.trim() ? errObj.code.trim() : undefined;
-  const rawMessage = error instanceof Error ? error.message : String(error ?? 'Unknown pool error');
-  const redactedMessage = rawMessage.replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted-url]');
-  return {
-    ...(code ? { code } : {}),
-    message: redactedMessage,
-  };
+  if (!error || typeof error !== 'object') {
+    return { ...DEFAULT_POOL_ERROR_INFO };
+  }
+
+  const errObj = error as { code?: unknown; errno?: unknown };
+  for (const rawCode of [errObj.code, errObj.errno]) {
+    if (typeof rawCode !== 'string') continue;
+    const normalizedCode = rawCode.trim().toUpperCase();
+    if (Object.prototype.hasOwnProperty.call(ALLOWLISTED_POOL_ERRORS, normalizedCode)) {
+      return {
+        code: normalizedCode,
+        message: ALLOWLISTED_POOL_ERRORS[normalizedCode],
+      };
+    }
+  }
+
+  return { ...DEFAULT_POOL_ERROR_INFO };
 }
 
 /**
