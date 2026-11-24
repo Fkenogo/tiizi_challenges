@@ -43,7 +43,51 @@ export function resolveDbPoolMax(raw: string | undefined = process.env[DB_POOL_M
   return parsed;
 }
 
-export function createPool(connectionString: string, options?: { max?: number }): Db {
+export interface PoolIdleErrorInfo {
+  code?: string;
+  message: string;
+}
+
+/**
+ * Sanitize an idle pool error so diagnostics never leak connection strings,
+ * passwords, TLS CA material, or raw `pg` client objects.
+ */
+export function sanitizePoolError(error: unknown): PoolIdleErrorInfo {
+  const errObj = error as { code?: unknown; message?: unknown } | null | undefined;
+  const code = typeof errObj?.code === 'string' && errObj.code.trim() ? errObj.code.trim() : undefined;
+  const rawMessage = error instanceof Error ? error.message : String(error ?? 'Unknown pool error');
+  const redactedMessage = rawMessage.replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted-url]');
+  return {
+    ...(code ? { code } : {}),
+    message: redactedMessage,
+  };
+}
+
+/**
+ * Attach an `'error'` listener to a `pg.Pool` so idle-client socket failures
+ * (e.g., Neon compute scale-to-zero `read ETIMEDOUT`) are logged safely and
+ * discarded by `pg-pool` instead of crashing the Node process.
+ */
+export function attachPoolErrorHandler(
+  pool: Pick<Pool, 'on'>,
+  onIdleError: (info: PoolIdleErrorInfo) => void = (info) => {
+    console.error(
+      `[pg-pool] idle client error${info.code ? ` (${info.code})` : ''}: ${info.message}`,
+    );
+  },
+): void {
+  pool.on('error', (error: unknown) => {
+    onIdleError(sanitizePoolError(error));
+  });
+}
+
+export function createPool(
+  connectionString: string,
+  options?: {
+    max?: number;
+    onIdleError?: (info: PoolIdleErrorInfo) => void;
+  },
+): Db {
   // Fail closed before pg ever sees the URL: unverified TLS modes and remote
   // plaintext throw here. Every consumer (API, migrate/parity/import CLIs)
   // inherits the verified-TLS contract through this single seam.
@@ -54,6 +98,7 @@ export function createPool(connectionString: string, options?: { max?: number })
     connectionTimeoutMillis: 10_000,
     idleTimeoutMillis: 30_000,
   });
+  attachPoolErrorHandler(pool, options?.onIdleError);
   return {
     async query(text, params) {
       const result = await pool.query(text, params);
@@ -61,6 +106,7 @@ export function createPool(connectionString: string, options?: { max?: number })
     },
     async transaction(fn) {
       const client = await pool.connect();
+      let discardClientError: Error | undefined;
       try {
         await client.query('BEGIN');
         const tx: Db = {
@@ -75,10 +121,15 @@ export function createPool(connectionString: string, options?: { max?: number })
         await client.query('COMMIT');
         return value;
       } catch (error) {
-        await client.query('ROLLBACK');
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackError) {
+          discardClientError =
+            rollbackError instanceof Error ? rollbackError : new Error(String(rollbackError));
+        }
         throw error;
       } finally {
-        client.release();
+        client.release(discardClientError);
       }
     },
     async close() {

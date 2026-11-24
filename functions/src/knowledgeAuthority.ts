@@ -156,6 +156,14 @@ export class PgKnowledgeAuthorityReader implements KnowledgeAuthorityReader {
     if (!this.pool) {
       const { Pool } = await import('pg');
       const pool = new Pool({ connectionString: this.verifiedConnectionString, max: this.maxConnections });
+      pool.on('error', (error: unknown) => {
+        const code = typeof (error as { code?: unknown })?.code === 'string'
+          ? (error as { code: string }).code
+          : undefined;
+        const rawMessage = error instanceof Error ? error.message : String(error ?? 'Unknown pool error');
+        const message = rawMessage.replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted-url]');
+        console.error(`[pg-pool] idle client error${code ? ` (${code})` : ''}: ${message}`);
+      });
       this.pool = {
         query: (queryText: string, queryParams: unknown[]) => pool.query(queryText, queryParams as never[]) as Promise<{ rows: AuthorityRow[] }>,
         end: () => pool.end(),
