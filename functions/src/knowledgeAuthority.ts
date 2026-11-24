@@ -18,6 +18,52 @@
 
 import { resolveVerifiedTls } from './dbSsl.js';
 
+const ALLOWLISTED_POOL_ERRORS: Readonly<Record<string, string>> = {
+  ETIMEDOUT: 'Idle PostgreSQL client connection timed out',
+  ECONNRESET: 'Idle PostgreSQL client connection reset by peer',
+  ECONNREFUSED: 'PostgreSQL connection refused',
+  EPIPE: 'Idle PostgreSQL client pipe closed',
+  ENOTFOUND: 'PostgreSQL host lookup failed',
+  EAI_AGAIN: 'PostgreSQL host lookup temporarily failed',
+  EHOSTUNREACH: 'PostgreSQL host unreachable',
+  ENETUNREACH: 'PostgreSQL network unreachable',
+  ECONNABORTED: 'Idle PostgreSQL client connection aborted',
+  ERR_SSL_WRONG_VERSION_NUMBER: 'PostgreSQL TLS handshake failed',
+  DEPTH_ZERO_SELF_SIGNED_CERT: 'PostgreSQL TLS certificate verification failed',
+  SELF_SIGNED_CERT_IN_CHAIN: 'PostgreSQL TLS certificate chain verification failed',
+  UNABLE_TO_VERIFY_LEAF_SIGNATURE: 'PostgreSQL TLS certificate signature verification failed',
+  CERT_HAS_EXPIRED: 'PostgreSQL TLS certificate expired',
+  ERR_TLS_CERT_ALTNAME_INVALID: 'PostgreSQL TLS certificate hostname mismatch',
+  '57P01': 'PostgreSQL server terminated connection (admin shutdown)',
+  '57P02': 'PostgreSQL server terminated connection (crash shutdown)',
+  '57P03': 'PostgreSQL server cannot connect now',
+  '08000': 'PostgreSQL connection exception',
+  '08001': 'PostgreSQL client unable to establish connection',
+  '08003': 'PostgreSQL connection does not exist',
+  '08004': 'PostgreSQL server rejected connection',
+  '08006': 'PostgreSQL connection failure',
+};
+
+export function sanitizeAuthorityPoolError(error: unknown): { code: string; message: string } {
+  if (error && typeof error === 'object') {
+    const errObj = error as { code?: unknown; errno?: unknown };
+    for (const rawCode of [errObj.code, errObj.errno]) {
+      if (typeof rawCode !== 'string') continue;
+      const normalizedCode = rawCode.trim().toUpperCase();
+      if (Object.prototype.hasOwnProperty.call(ALLOWLISTED_POOL_ERRORS, normalizedCode)) {
+        return {
+          code: normalizedCode,
+          message: ALLOWLISTED_POOL_ERRORS[normalizedCode],
+        };
+      }
+    }
+  }
+  return {
+    code: 'UNKNOWN',
+    message: 'Idle PostgreSQL client connection failed',
+  };
+}
+
 export type KnowledgeAuthorityKind = 'fitness' | 'wellness';
 
 /**
@@ -156,6 +202,10 @@ export class PgKnowledgeAuthorityReader implements KnowledgeAuthorityReader {
     if (!this.pool) {
       const { Pool } = await import('pg');
       const pool = new Pool({ connectionString: this.verifiedConnectionString, max: this.maxConnections });
+      pool.on('error', (error: unknown) => {
+        const info = sanitizeAuthorityPoolError(error);
+        console.error(`[pg-pool] idle client error (${info.code}): ${info.message}`);
+      });
       this.pool = {
         query: (queryText: string, queryParams: unknown[]) => pool.query(queryText, queryParams as never[]) as Promise<{ rows: AuthorityRow[] }>,
         end: () => pool.end(),

@@ -26,6 +26,15 @@ async function main(): Promise<void> {
     },
     socialCauseApproval: createPostgresSocialCauseReviewerAuthority(db),
   });
+  let closing = false;
+  const shutdown = async () => {
+    if (closing) return;
+    closing = true;
+    await Promise.allSettled([app.close(), db.close()]);
+  };
+  process.once('SIGINT', () => void shutdown());
+  process.once('SIGTERM', () => void shutdown());
+
   const port = Number(process.env.PORT ?? 4000);
   const host = process.env.HOST ?? '0.0.0.0';
   await app.listen({ port, host });
