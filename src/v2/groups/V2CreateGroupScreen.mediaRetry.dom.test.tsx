@@ -76,7 +76,10 @@ describe('V2CreateGroupScreen cover upload failure & retry', () => {
     // Step 2: Community & privacy -> Continue
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    // Step 3: Review -> Establish Group
+    // Step 3: Our culture -> Continue
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    // Step 4: Review -> Establish Group
     fireEvent.click(screen.getByRole('button', { name: 'Establish Group' }));
 
     await waitFor(() => {

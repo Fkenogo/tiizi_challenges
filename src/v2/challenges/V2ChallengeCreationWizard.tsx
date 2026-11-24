@@ -473,7 +473,7 @@ export function V2ChallengeCreationWizard() {
             <V2Button
               variant="secondary"
               disabled={coverUploading}
-              onClick={() => void createChallenge()}
+              onClick={() => void handleCreate()}
             >
               {coverUploading ? 'Retrying upload…' : 'Retry Cover Upload'}
             </V2Button>
