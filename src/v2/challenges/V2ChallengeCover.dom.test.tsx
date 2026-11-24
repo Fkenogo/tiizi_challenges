@@ -46,6 +46,7 @@ describe('V2ChallengeCover', () => {
           challenge={{
             challengeId: 'challenge-r2',
             groupId: 'group-1',
+            groupName: 'Morning Club',
             title: 'Persisted Cover Challenge',
             description: 'Has R2 cover',
             challengeType: 'collective',
@@ -54,10 +55,14 @@ describe('V2ChallengeCover', () => {
             startDate: '2026-11-24',
             endDate: '2026-12-01',
             timezone: 'UTC',
+            governingToday: '2026-11-24',
+            currentConfigVersion: 1,
+            activities: [],
             goalValue: 10,
             goalUnit: 'km',
             collectiveTotal: 0,
-            requiredConsecutiveDays: null,
+            collectiveGoalReached: false,
+            completionsCount: 0,
             coverId: null,
             coverImage: {
               status: 'ready',
