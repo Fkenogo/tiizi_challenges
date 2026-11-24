@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { V2ChallengeCard } from './V2ChallengeCard';
 import { V2ChallengeCover } from './V2ChallengeCover';
 import { setLocalChallengeCoverPreview, removeLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 
@@ -36,5 +37,55 @@ describe('V2ChallengeCover', () => {
     expect(screen.getByRole('img', { name: 'Other cover photo' }).getAttribute('src')).toBe('blob:other.jpg');
     expect(screen.queryByRole('img', { name: 'Missing cover photo' })).toBeNull();
     expect(screen.getByLabelText('Missing has no cover photo')).toBeTruthy();
+  });
+
+  it('hides the "No cover photo" badge on V2ChallengeCard when persisted R2 coverImage is ready', () => {
+    render(
+      <ul>
+        <V2ChallengeCard
+          challenge={{
+            challengeId: 'challenge-r2',
+            groupId: 'group-1',
+            groupName: 'Morning Club',
+            title: 'Persisted Cover Challenge',
+            description: 'Has R2 cover',
+            challengeType: 'collective',
+            status: 'active',
+            finalized: false,
+            startDate: '2026-11-24',
+            endDate: '2026-12-01',
+            timezone: 'UTC',
+            governingToday: '2026-11-24',
+            currentConfigVersion: 1,
+            activities: [],
+            goalValue: 10,
+            goalUnit: 'km',
+            collectiveTotal: 0,
+            collectiveGoalReached: false,
+            completionsCount: 0,
+            coverId: null,
+            coverImage: {
+              status: 'ready',
+              assetId: 'asset-1',
+              url: 'https://r2.example.invalid/cover.webp',
+              contentType: 'image/webp',
+              width: 100,
+              height: 100,
+            },
+            myParticipation: null,
+          }}
+          surface="my"
+          statusLabel="Active"
+          statusTone="bg-emerald-100 text-emerald-950"
+          groupLine="Morning Club"
+          progress={<span>Progress</span>}
+          actions={<button type="button">Open</button>}
+        />
+      </ul>,
+    );
+
+    const img = screen.getByRole('img', { name: 'Persisted Cover Challenge cover photo' });
+    expect(img.getAttribute('src')).toBe('https://r2.example.invalid/cover.webp');
+    expect(screen.queryByText('No cover photo')).toBeNull();
   });
 });
