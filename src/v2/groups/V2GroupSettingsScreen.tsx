@@ -79,7 +79,7 @@ export function V2GroupSettingsScreen() {
                 subject="Group cover"
                 preview={coverPhoto}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"
-                fallback={<div className={`h-full w-full bg-gradient-to-br ${coverGradientFor((coverId as (typeof GROUP_COVER_CATALOGUE)[number] | null) ?? GROUP_COVER_CATALOGUE[0])}`} aria-hidden="true" />}
+                fallback={<div className="flex h-full w-full items-center justify-center bg-slate-100 px-4 text-center text-sm font-medium text-slate-500">No photo selected</div>}
               />
             </div>
             <p className="mb-2 mt-4 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>

@@ -1,11 +1,12 @@
+import { StrictMode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { V2LocalImagePicker } from './V2LocalImagePicker';
 import { useLocalImagePreview } from './useLocalImagePreview';
 
-function PickerHarness() {
-  const preview = useLocalImagePreview();
+function PickerHarness({ initialFile }: { initialFile?: File | null }) {
+  const preview = useLocalImagePreview(initialFile);
   return (
     <>
       <output data-testid="selected-file">{preview.file?.name ?? 'No file selected'}</output>
@@ -54,5 +55,29 @@ describe('V2LocalImagePicker', () => {
     expect(screen.getByTestId('selected-file').textContent).toBe('No file selected');
     expect(screen.getByText('No photo selected')).toBeTruthy();
     expect(container.querySelector('input[type="file"]')).toBeTruthy();
+  });
+
+  it('creates a fresh non-revoked object URL after React StrictMode remounts with an initialFile', () => {
+    const NativeURL = URL;
+    class URLWithStrictMode extends NativeURL {}
+    const revoked: string[] = [];
+    const createMock = vi.fn().mockReturnValueOnce('blob:mount-1').mockReturnValueOnce('blob:mount-2');
+    Object.defineProperty(URLWithStrictMode, 'createObjectURL', { value: createMock });
+    Object.defineProperty(URLWithStrictMode, 'revokeObjectURL', {
+      value: vi.fn((url: string) => revoked.push(url)),
+    });
+    vi.stubGlobal('URL', URLWithStrictMode);
+
+    const initial = new File(['cover-bytes'], 'cover.png', { type: 'image/png' });
+    render(
+      <StrictMode>
+        <PickerHarness initialFile={initial} />
+      </StrictMode>,
+    );
+
+    const src = screen.getByRole('img', { name: 'Challenge cover local preview' }).getAttribute('src');
+    expect(src).toBe('blob:mount-2');
+    expect(revoked).toContain('blob:mount-1');
+    expect(revoked).not.toContain('blob:mount-2');
   });
 });

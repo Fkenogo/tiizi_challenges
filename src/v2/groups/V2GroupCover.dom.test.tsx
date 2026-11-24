@@ -37,6 +37,10 @@ describe('V2 Group local cover previews', () => {
     expect(screen.getAllByRole('img', { name: 'Shared Group cover photo' })).toHaveLength(2);
     expect(screen.getAllByRole('img', { name: 'Shared Group cover photo' }).map((image) => image.getAttribute('src'))).toEqual(['blob:group-photo', 'blob:group-photo']);
     expect(screen.queryByRole('img', { name: 'Other Group cover photo' })).toBeNull();
-    expect(document.querySelector('[data-group-cover-id="group-other"][data-local-cover="false"]')).toBeTruthy();
+    const otherEl = document.querySelector('[data-group-cover-id="group-other"][data-local-cover="false"]');
+    expect(otherEl).toBeTruthy();
+    expect(otherEl?.className).toContain('bg-slate-200');
+    expect(otherEl?.className).not.toContain('bg-gradient-to-br');
+    expect(screen.getByLabelText('Other Group has no cover photo')).toBeTruthy();
   });
 });
