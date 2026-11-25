@@ -335,10 +335,18 @@ export async function getParticipationFinals(
   db: Db,
   challengeId: string,
 ): Promise<Map<string, ParticipationFinalRow>> {
+  return getParticipationFinalsForChallenges(db, [challengeId]);
+}
+
+export async function getParticipationFinalsForChallenges(
+  db: Db,
+  challengeIds: readonly string[],
+): Promise<Map<string, ParticipationFinalRow>> {
   const out = new Map<string, ParticipationFinalRow>();
+  if (challengeIds.length === 0) return out;
   const result = await db.query(
-    `SELECT * FROM challenge_participation_finals WHERE challenge_id = $1`,
-    [challengeId],
+    `SELECT * FROM challenge_participation_finals WHERE challenge_id = ANY($1::uuid[])`,
+    [challengeIds],
   );
   for (const row of result.rows as Record<string, unknown>[]) {
     const final = normalizeParticipationFinal(row);

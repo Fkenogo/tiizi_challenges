@@ -24,7 +24,7 @@ vi.mock('./challengeEndState', () => ({
   endStateFor: () => 'live',
   loggingAvailableForEndState: () => true,
   participationMutableForEndState: () => true,
-  statusLabelForEndState: () => 'Running',
+  statusLabelForEndState: () => 'Active',
 }));
 vi.mock('./loggingView', () => ({ loggingViewFor: () => ({ kind: 'loggable', choices: [] }) }));
 vi.mock('./challengeReturnPath', () => ({ challengeReturnPath: () => '/v2/challenges' }));

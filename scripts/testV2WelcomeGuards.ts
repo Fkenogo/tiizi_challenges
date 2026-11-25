@@ -86,7 +86,7 @@ check('welcome route is public (declared before the protected scope)',
   routes.indexOf('path="welcome"') < routes.indexOf('element={<V2ProtectedScope'));
 check('page makes no data/API/query calls', !/fetch\(|useQuery|useMutation|queryClient|api\/|Firestore|firebase\/firestore/i.test(page));
 check('page has Skip (Close for members), Sign up and Sign in exits', /Skip/.test(page) && /Create an account/.test(page) && /Sign in/.test(page) && /\/v2\/sign-up/.test(page) && /\/v2\/sign-in/.test(page));
-check('Skip leads to Sign up for visitors', /navigate\(member \? '\/v2\/profile' : signUpPath\)/.test(page));
+check('Skip leads to Sign up for visitors', /navigate\(member \? next : signUpPath\)/.test(page));
 check('return path is preserved through the exits', /v2NextQuery\(next\)/.test(page) && /resolveV2NextPath/.test(page));
 check('swipe is native scroll-snap', /snap-x/.test(page) && /snap-mandatory/.test(page));
 check('keyboard: arrows/Home/End', /ArrowRight/.test(page) && /ArrowLeft/.test(page) && /Home/.test(page) && /End/.test(page));

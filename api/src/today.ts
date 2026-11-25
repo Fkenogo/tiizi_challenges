@@ -3,9 +3,9 @@
 import type { FastifyInstance } from 'fastify';
 import { authenticatedMember } from './auth.js';
 import type { Db } from './db.js';
-import { getChallengeDetail, listVisibleChallenges, type ChallengeReadDeps } from './challengeReads.js';
+import { listVisibleChallenges, type ChallengeReadDeps } from './challengeReads.js';
 import { dayInTimezone } from './activityEvents.js';
-import { canonicalActivityIdentity } from './challengeConfigs.js';
+import { canonicalActivityIdentity, getGoverningVersionsForChallenges } from './challengeConfigs.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
 import { API_PREFIX } from './apiPrefix.js';
 
@@ -44,20 +44,22 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
   // configured terms. Together totals and goals are already complete in the
   // list projection, so no detail read is needed for Together.
   const configuredProgress = active.filter((row) => row.challengeType === 'streak' || row.challengeType === 'competitive');
-  const configuredDetails = await Promise.all(configuredProgress.map((row) => getChallengeDetail(db, memberId, row.challengeId, readDeps)));
-  const details = new Map(configuredDetails.map((row) => [row.challengeId, row]));
+  const configs = await getGoverningVersionsForChallenges(
+    db,
+    configuredProgress.map((row) => ({ challengeId: row.challengeId, version: row.currentConfigVersion })),
+  );
   const streaks = active.filter((row) => row.challengeType === 'streak');
   const requiredToday = streaks.map((row) => {
-    const detail = details.get(row.challengeId)!;
+    const config = configs.get(row.challengeId)!;
     const state = row.myParticipation!.progress;
     const dayState = state.dayStates[row.governingToday];
     const completed = new Set(dayState?.activities ?? []);
-    const requirements = detail.config.activities.map((activity, index) => {
-      const identity = canonicalActivityIdentity(activity.canonicalKey, activity.activityVariant);
+    const requirements = config.activities.map((activity, index) => {
+      const identity = canonicalActivityIdentity(activity.canonical_key, activity.activity_variant);
       return {
         activity: identity,
         ...(row.activities[index]?.name ? { label: row.activities[index].name } : {}),
-        targetValue: activity.targetValue,
+        targetValue: activity.target_value,
         unit: activity.unit,
         state: completed.has(identity) ? 'completed' as const : 'pending' as const,
       };
@@ -77,7 +79,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
 
   const joinedChallengeProgress = active.map((row) => {
     const progress = row.myParticipation!.progress;
-    const detail = details.get(row.challengeId);
+    const config = configs.get(row.challengeId);
     const base = {
       challengeId: row.challengeId, title: row.title, challengeType: row.challengeType,
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
@@ -91,11 +93,11 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
     if (row.challengeType === 'competitive') return { ...base, progress: {
       completionStatus: progress.completionStatus,
       completedAt: progress.completedAt, finalPosition: row.finalized ? progress.finalPosition : null,
-      activities: (detail?.config.activities ?? []).map((activity, index) => ({
-        activity: canonicalActivityIdentity(activity.canonicalKey, activity.activityVariant),
+      activities: (config?.activities ?? []).map((activity, index) => ({
+        activity: canonicalActivityIdentity(activity.canonical_key, activity.activity_variant),
         ...(row.activities[index]?.name ? { label: row.activities[index].name } : {}),
-        memberProgress: progress.cumulativeValues[canonicalActivityIdentity(activity.canonicalKey, activity.activityVariant)] ?? 0,
-        targetValue: activity.targetValue, unit: activity.unit,
+        memberProgress: progress.cumulativeValues[canonicalActivityIdentity(activity.canonical_key, activity.activity_variant)] ?? 0,
+        targetValue: activity.target_value, unit: activity.unit,
       })),
     } };
     return { ...base, progress: {

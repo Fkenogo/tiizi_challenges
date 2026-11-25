@@ -426,10 +426,10 @@ console.log('CORR-002 outcome hierarchy');
     && participationMutableForEndState('finalized') === false);
 
   // 9. Ended-pending hero does not say Running.
-  check('CORR-002 ended-pending status label is never "Running"',
+  check('CORR-002 ended-pending status label is never "Active"',
     statusLabelForEndState('active', 'ended-pending') === 'Finished'
-    && statusLabelForEndState('active', 'ended-pending') !== 'Running'
-    && statusLabelForEndState('active', 'live') === 'Running'
+    && statusLabelForEndState('active', 'ended-pending') !== 'Active'
+    && statusLabelForEndState('active', 'live') === 'Active'
     && statusLabelForEndState('ended', 'finalized') === 'Finished');
 
   // 10. Ended-pending state still renders "Final results are being confirmed".
@@ -469,9 +469,9 @@ console.log('G-2b list lifecycle presentation');
   check('window-expired unprocessed list item resolves to Finished, never Running',
     endStateFor(expired) === 'ended-pending'
     && statusLabelForEndState('active', endStateFor(expired)) === 'Finished');
-  check('live list item still reads Running',
+  check('live list item still reads Active',
     endStateFor({ status: 'active', finalized: false, governingToday: '2026-06-10', endDate: '2026-06-10' }) === 'live'
-    && statusLabelForEndState('active', 'live') === 'Running');
+    && statusLabelForEndState('active', 'live') === 'Active');
   check('finalized list item reads Finished',
     endStateFor({ status: 'ended', finalized: true, governingToday: '2026-06-11', endDate: '2026-06-10' }) === 'finalized'
     && statusLabelForEndState('ended', 'finalized') === 'Finished');

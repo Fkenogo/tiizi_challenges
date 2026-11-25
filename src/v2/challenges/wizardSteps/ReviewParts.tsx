@@ -1,6 +1,7 @@
 import type { ComposerChallengeType } from '../../../api/challengeCreationApi';
 import { V2Card } from '../../components/V2Primitives';
 import { whatCountsExplanation } from '../challengeCreationDraft';
+import { isStaleActivityIssue } from './activityRefresh';
 
 export function ReviewCard({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
   return (
@@ -36,10 +37,14 @@ export function PreviewStatus<TStep extends string>({
   state,
   issues,
   onEditStep,
+  onReviewStaleActivity,
+  refreshingIndex = null,
 }: {
   state: 'idle' | 'checking' | 'valid' | 'invalid';
-  issues: ReadonlyArray<{ code: string; friendly: string; step: TStep }> | null;
+  issues: ReadonlyArray<{ code: string; friendly: string; step: TStep; activityIndex?: number; raw?: string }> | null;
   onEditStep: (step: TStep) => void;
+  onReviewStaleActivity?: (issue: { code: string; activityIndex?: number; raw?: string }) => void;
+  refreshingIndex?: number | null;
 }) {
   if (state === 'checking') {
     return (
@@ -62,18 +67,32 @@ export function PreviewStatus<TStep extends string>({
       <V2Card className="border-red-200 bg-red-50">
         <p className="text-sm font-black text-red-800">Let us fix these before creating</p>
         <ul className="mt-2 space-y-2">
-          {issues.map((issue, index) => (
-            <li key={`${issue.code}-${index}`} className="text-sm leading-6 text-red-800">
-              <span>{issue.friendly}</span>{' '}
-              <button
-                type="button"
-                onClick={() => onEditStep(issue.step)}
-                className="font-bold underline"
-              >
-                Go to step
-              </button>
-            </li>
-          ))}
+          {issues.map((issue, index) => {
+            const stale = isStaleActivityIssue(issue);
+            return (
+              <li key={`${issue.code}-${index}`} className="text-sm leading-6 text-red-800">
+                <span>{issue.friendly}</span>{' '}
+                {stale && onReviewStaleActivity ? (
+                  <button
+                    type="button"
+                    disabled={refreshingIndex !== null}
+                    onClick={() => onReviewStaleActivity(issue)}
+                    className="font-bold underline disabled:opacity-50"
+                  >
+                    {refreshingIndex !== null ? 'Loading update…' : 'Review & refresh activity'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onEditStep(issue.step)}
+                    className="font-bold underline"
+                  >
+                    Go to step
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </V2Card>
     );

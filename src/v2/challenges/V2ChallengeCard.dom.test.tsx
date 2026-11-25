@@ -25,8 +25,8 @@ describe('V2ChallengeCard local cover previews', () => {
 
     render(
       <ul>
-        <V2ChallengeCard challenge={challenge('photo-owner')} surface="my" statusLabel="Running" statusTone="" groupLine="Local Group" progress={<p>Preview progress</p>} actions={<button>View Challenge</button>} />
-        <V2ChallengeCard challenge={challenge('other-challenge')} surface="find" statusLabel="Running" statusTone="" groupLine="Local Group" progress={<p>Preview progress</p>} actions={<button>View Challenge</button>} />
+        <V2ChallengeCard challenge={challenge('photo-owner')} surface="my" statusLabel="Active" statusTone="" groupLine="Local Group" progress={<p>Preview progress</p>} actions={<button>View Challenge</button>} />
+        <V2ChallengeCard challenge={challenge('other-challenge')} surface="find" statusLabel="Active" statusTone="" groupLine="Local Group" progress={<p>Preview progress</p>} actions={<button>View Challenge</button>} />
       </ul>,
     );
 

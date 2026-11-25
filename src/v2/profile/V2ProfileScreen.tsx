@@ -517,7 +517,7 @@ export function V2ProfileScreen() {
               <HelpRow label="Activity Guide" hint="How each activity works and is recorded" onClick={() => navigate('/v2/guide')} />
             </li>
             <li>
-              <HelpRow label="How Tiizi works" hint="Replay the quick welcome" onClick={() => navigate(WELCOME_PATH)} />
+              <HelpRow label="How Tiizi works" hint="Replay the quick welcome" onClick={() => navigate(`${WELCOME_PATH}?next=${encodeURIComponent('/v2/profile')}`)} />
             </li>
           </ul>
         </V2Card>
