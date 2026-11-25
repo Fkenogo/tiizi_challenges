@@ -10,6 +10,7 @@ import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { removeGroupCoverImage, saveGroupCoverImage, type V2MediaImageProjection } from '../../api/mediaApi';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
+import { useFileUploadIdentity } from '../media/useFileUploadIdentity';
 import { useAuth } from '../../hooks/useAuth';
 import type { V2GroupDetail } from '../../api/groupsApi';
 import { invalidateV2GroupCoverReads, v2GroupDetailKey } from './groupQueryKeys';
@@ -30,6 +31,7 @@ export function V2GroupSettingsScreen() {
   const [focusTags, setFocusTags] = useState<string[]>([]);
   const [coverId, setCoverId] = useState<string | null>(null);
   const coverPhoto = useLocalImagePreview();
+  const coverUploadIdentity = useFileUploadIdentity();
   const [isPrivate, setIsPrivate] = useState(false);
   const [requireAdminApproval, setRequireAdminApproval] = useState(false);
   const [allowMemberChallenges, setAllowMemberChallenges] = useState(true);
@@ -38,6 +40,8 @@ export function V2GroupSettingsScreen() {
   const initializedIdentityRef = useRef<string | null>(null);
   const uidRef = useRef(user?.uid);
   const groupIdRef = useRef(groupId);
+  const coverOperationSeqRef = useRef(0);
+  const coverInFlightRef = useRef(false);
   uidRef.current = user?.uid;
   groupIdRef.current = groupId;
   useEffect(() => {
@@ -45,6 +49,9 @@ export function V2GroupSettingsScreen() {
     const identityKey = `${user?.uid ?? 'signed-out'}:${group?.id ?? 'none'}`;
     if (!group || initializedIdentityRef.current === identityKey) return;
     initializedIdentityRef.current = identityKey;
+    coverOperationSeqRef.current += 1;
+    coverInFlightRef.current = false;
+    coverUploadIdentity.reset();
     coverPhoto.remove();
     setCoverSaving(false);
     setCoverError(null);
@@ -52,7 +59,7 @@ export function V2GroupSettingsScreen() {
     setLocation(group.location); setFocusTags(group.focusTags); setCoverId(group.coverId);
     setIsPrivate(group.isPrivate); setRequireAdminApproval(group.requireAdminApproval ?? false);
     setAllowMemberChallenges(group.allowMemberChallenges ?? true);
-  }, [detail.data, user?.uid]);
+  }, [detail.data, user?.uid, coverUploadIdentity.reset]);
 
   if (detail.isLoading) return <V2Page><p className="text-sm text-slate-600">Loading Group settings…</p></V2Page>;
   if (!detail.data || detail.data.viewerRelationship !== 'steward') return <V2Page><h1 className="text-lg font-black">Settings unavailable</h1><p className="mt-2 text-sm text-slate-600">These settings are available to the Accountable Steward.</p></V2Page>;
@@ -69,13 +76,13 @@ export function V2GroupSettingsScreen() {
     || isPrivate !== group.isPrivate
     || requireAdminApproval !== (group.requireAdminApproval ?? false)
     || allowMemberChallenges !== (group.allowMemberChallenges ?? true);
-  const reconcileCover = async (coverImage: V2MediaImageProjection) => {
+  const reconcileCover = async (coverImage: V2MediaImageProjection, uidAtMutation: string | undefined) => {
     removeLocalGroupCoverPreview(group.id);
     queryClient.setQueryData<V2GroupDetail>(
-      v2GroupDetailKey(group.id, user?.uid),
+      v2GroupDetailKey(group.id, uidAtMutation),
       (current) => current ? { ...current, coverImage } : current,
     );
-    await invalidateV2GroupCoverReads(queryClient, user?.uid, group.id);
+    await invalidateV2GroupCoverReads(queryClient, uidAtMutation, group.id);
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -114,40 +121,55 @@ export function V2GroupSettingsScreen() {
                   if (groupId) void invalidateV2GroupCoverReads(queryClient, user?.uid, groupId);
                 }}
                 onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => {
+                  if (coverInFlightRef.current) return;
                   const uidAtMutation = uidRef.current;
+                  const operation = ++coverOperationSeqRef.current;
+                  const idempotencyKey = coverUploadIdentity.keyForFile(file);
+                  coverInFlightRef.current = true;
                   setCoverError(null);
                   setCoverSaving(true);
-                  void saveGroupCoverImage(group.id, file)
+                  void saveGroupCoverImage(group.id, file, { idempotencyKey })
                     .then(async (coverImage) => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+                      coverUploadIdentity.reset();
                       coverPhoto.remove();
-                      await reconcileCover(coverImage);
+                      await reconcileCover(coverImage, uidAtMutation);
                     })
                     .catch(() => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
                       coverPhoto.remove();
                       setCoverError('Could not save the Group cover photo. Please try again.');
                     })
                     .finally(() => {
-                      if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                      if (coverOperationSeqRef.current === operation) {
+                        coverInFlightRef.current = false;
+                        if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                      }
                     });
                 } : undefined}
                 onRemove={group.coverImage?.status === 'ready' ? () => {
+                  if (coverInFlightRef.current) return;
                   const uidAtMutation = uidRef.current;
+                  const operation = ++coverOperationSeqRef.current;
+                  coverInFlightRef.current = true;
                   setCoverError(null);
                   setCoverSaving(true);
                   void removeGroupCoverImage(group.id)
                     .then(async (coverImage) => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+                      coverUploadIdentity.reset();
                       coverPhoto.remove();
-                      await reconcileCover(coverImage);
+                      await reconcileCover(coverImage, uidAtMutation);
                     })
                     .catch(() => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
                       setCoverError('Could not remove the Group cover photo. Please try again.');
                     })
                     .finally(() => {
-                      if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                      if (coverOperationSeqRef.current === operation) {
+                        coverInFlightRef.current = false;
+                        if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                      }
                     });
                 } : undefined}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"

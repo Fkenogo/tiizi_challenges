@@ -43,6 +43,7 @@ export function V2LocalImagePicker({
   const displayUrl = preview.previewUrl ?? persistedUrl ?? null;
   const isPersistedUrl = !preview.previewUrl && Boolean(persistedUrl);
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
+    if (isSaving) return;
     const file = event.currentTarget.files?.[0];
     if (file && preview.selectFile(file)) {
       void onSelectFile?.(file);
@@ -52,6 +53,7 @@ export function V2LocalImagePicker({
   };
 
   const handleRemove = () => {
+    if (isSaving) return;
     preview.remove();
     void onRemove?.();
   };
@@ -78,6 +80,7 @@ export function V2LocalImagePicker({
         accept={LOCAL_IMAGE_ACCEPT}
         aria-label={`Choose ${subject.toLowerCase()}`}
         className="sr-only"
+        disabled={isSaving}
         onChange={handleFile}
       />
       <div className="flex flex-wrap items-center gap-2">

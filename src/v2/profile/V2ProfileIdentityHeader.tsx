@@ -40,6 +40,7 @@ export function V2ProfileIdentityHeader({
   const initials = initialsFor(displayName);
 
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
+    if (isSaving) return;
     const file = event.currentTarget.files?.[0];
     if (file && preview.selectFile(file)) void onSelectFile?.(file);
     event.currentTarget.value = '';
@@ -108,6 +109,7 @@ export function V2ProfileIdentityHeader({
                 type="button"
                 disabled={isSaving}
                 onClick={() => {
+                  if (isSaving) return;
                   menuRef.current?.removeAttribute('open');
                   preview.remove();
                   void onRemove();
@@ -127,6 +129,7 @@ export function V2ProfileIdentityHeader({
         accept={LOCAL_IMAGE_ACCEPT}
         aria-label="Choose profile photo"
         className="sr-only"
+        disabled={isSaving}
         onChange={handleFile}
       />
 

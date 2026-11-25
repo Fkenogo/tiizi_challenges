@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../api/apiClient';
@@ -35,6 +35,7 @@ import { useCreateGroup, useV2GroupOptions } from './useV2Groups';
 import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
+import { useFileUploadIdentity } from '../media/useFileUploadIdentity';
 import { removeLocalGroupCoverPreview } from './localGroupCoverPreviews';
 import { useAuth } from '../../hooks/useAuth';
 import type { V2GroupDetail } from '../../api/groupsApi';
@@ -126,6 +127,18 @@ export function V2CreateGroupScreen() {
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const coverPhoto = useLocalImagePreview();
+  const coverUploadIdentity = useFileUploadIdentity();
+  const uidRef = useRef(user?.uid);
+  const submitInFlightRef = useRef(false);
+  uidRef.current = user?.uid;
+
+  useEffect(() => {
+    submitInFlightRef.current = false;
+    coverUploadIdentity.reset();
+    setCreatedGroup(null);
+    setCoverUploadError(null);
+    setCoverUploading(false);
+  }, [user?.uid, coverUploadIdentity.reset]);
 
   const issues = validateCreateGroupDraft(draft);
   const submittable = isCreateGroupDraftSubmittable(draft) && !createGroup.isPending;
@@ -143,48 +156,61 @@ export function V2CreateGroupScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!submittable && !createdGroup) return;
+    if (submitInFlightRef.current || (!submittable && !createdGroup)) return;
+    submitInFlightRef.current = true;
+    const uidAtSubmit = uidRef.current;
     setCoverUploadError(null);
-    let target = createdGroup;
-    if (!target) {
-      try {
-        const created = await createGroup.mutateAsync(toCreateGroupInput(draft));
-        target = { id: created.id, name: created.name };
-        setCreatedGroup(target);
-      } catch {
-        // Failure is rendered from createGroup.error below.
-        return;
+    try {
+      let target = createdGroup;
+      if (!target) {
+        try {
+          const created = await createGroup.mutateAsync(toCreateGroupInput(draft));
+          if (uidRef.current !== uidAtSubmit) return;
+          target = { id: created.id, name: created.name };
+          setCreatedGroup(target);
+        } catch {
+          // Failure is rendered from createGroup.error below.
+          return;
+        }
       }
-    }
-    if (coverPhoto.file) {
-      setCoverUploading(true);
-      try {
-        const coverImage = await saveGroupCoverImage(target.id, coverPhoto.file);
-        removeLocalGroupCoverPreview(target.id);
-        queryClient.setQueryData<V2GroupDetail>(
-          v2GroupDetailKey(target.id, user?.uid),
-          (current) => current ? { ...current, coverImage } : current,
-        );
-        await invalidateV2GroupCoverReads(queryClient, user?.uid, target.id);
-      } catch (err) {
-        setCoverUploading(false);
-        setCoverUploadError(
-          err instanceof ApiError
-            ? `Your Group was created, but the cover photo could not be saved: ${err.message}`
-            : 'Your Group was created, but the cover photo could not be saved. You can retry or continue without a cover.',
-        );
-        return;
+      if (coverPhoto.file) {
+        const idempotencyKey = coverUploadIdentity.keyForFile(coverPhoto.file);
+        setCoverUploading(true);
+        try {
+          const coverImage = await saveGroupCoverImage(target.id, coverPhoto.file, { idempotencyKey });
+          if (uidRef.current !== uidAtSubmit) return;
+          coverUploadIdentity.reset();
+          removeLocalGroupCoverPreview(target.id);
+          queryClient.setQueryData<V2GroupDetail>(
+            v2GroupDetailKey(target.id, uidAtSubmit),
+            (current) => current ? { ...current, coverImage } : current,
+          );
+          await invalidateV2GroupCoverReads(queryClient, uidAtSubmit, target.id);
+        } catch (err) {
+          if (uidRef.current !== uidAtSubmit) return;
+          setCoverUploadError(
+            err instanceof ApiError
+              ? `Your Group was created, but the cover photo could not be saved: ${err.message}`
+              : 'Your Group was created, but the cover photo could not be saved. You can retry or continue without a cover.',
+          );
+          return;
+        } finally {
+          if (uidRef.current === uidAtSubmit) setCoverUploading(false);
+        }
       }
-      setCoverUploading(false);
+      if (uidRef.current !== uidAtSubmit) return;
+      navigate(`/v2/groups/${target.id}`, {
+        replace: true,
+        state: { createdGroupName: target.name },
+      });
+    } finally {
+      submitInFlightRef.current = false;
     }
-    navigate(`/v2/groups/${target.id}`, {
-      replace: true,
-      state: { createdGroupName: target.name },
-    });
   };
 
   const handleContinueWithoutCover = () => {
-    if (!createdGroup) return;
+    if (!createdGroup || submitInFlightRef.current || coverUploading) return;
+    coverUploadIdentity.reset();
     removeLocalGroupCoverPreview(createdGroup.id);
     coverPhoto.remove();
     void removeGroupCoverImage(createdGroup.id).catch(() => {});
@@ -212,7 +238,7 @@ export function V2CreateGroupScreen() {
         <V2StepProgress
           steps={STEPS.map((entry) => ({ id: entry.id, label: entry.label }))}
           current={step}
-          onSelect={(index) => go(index)}
+          onSelect={createdGroup ? undefined : (index) => go(index)}
         />
       </div>
 
@@ -268,6 +294,7 @@ export function V2CreateGroupScreen() {
             <V2LocalImagePicker
               subject="Group cover"
               preview={coverPhoto}
+              isSaving={createGroup.isPending || coverUploading}
               draftPersistenceMessage="JPG, PNG or WebP · Preview only. This photo will be saved when you create the Group."
               previewClassName="h-28 w-full rounded-xl bg-slate-100"
               fallback={<div className={`h-full w-full bg-gradient-to-br ${coverGradientFor((draft.coverId as GroupCoverId | null) ?? GROUP_COVER_CATALOGUE[0])}`} aria-hidden="true" />}
@@ -515,8 +542,16 @@ export function V2CreateGroupScreen() {
       )}
 
       {coverUploadError && createdGroup && (
-        <div role="alert" className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+        <div role="alert" className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
           <p className="font-bold">{coverUploadError}</p>
+          <V2LocalImagePicker
+            subject="Group cover"
+            preview={coverPhoto}
+            isSaving={coverUploading}
+            draftPersistenceMessage="JPG, PNG or WebP · Choose a different photo or retry your upload."
+            previewClassName="h-24 w-full rounded-xl bg-white"
+            fallback={<div className="flex h-full w-full items-center justify-center bg-white px-4 text-center text-xs font-medium text-slate-500">No photo selected</div>}
+          />
           <div className="flex flex-wrap gap-2">
             <V2Button
               variant="secondary"

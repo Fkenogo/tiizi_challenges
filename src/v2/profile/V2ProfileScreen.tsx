@@ -23,6 +23,7 @@ import { WELCOME_PATH } from '../welcome/welcomeContent';
 import { ProfileSaveUncertainError } from './profileWriteState';
 import { V2ProfileIdentityHeader } from './V2ProfileIdentityHeader';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
+import { useFileUploadIdentity } from '../media/useFileUploadIdentity';
 import { invalidateV2ChallengeFeed } from '../challenges/challengeFeedQuery';
 import {
   bucketProfileChallenges,
@@ -74,6 +75,7 @@ export function V2ProfileScreen() {
   const signOut = useV2SignOut();
   const queryClient = useContext(QueryClientContext);
   const profilePhoto = useLocalImagePreview();
+  const photoUploadIdentity = useFileUploadIdentity();
   const [photoSaving, setPhotoSaving] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoSuccess, setPhotoSuccess] = useState<string | null>(null);
@@ -81,6 +83,8 @@ export function V2ProfileScreen() {
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const uid = user?.uid ?? null;
   const uidRef = useRef(uid);
+  const photoOperationSeqRef = useRef(0);
+  const photoInFlightRef = useRef(false);
 
   // An account switch must not leave one member's editor, draft or feedback
   // on screen for the next member.
@@ -91,11 +95,14 @@ export function V2ProfileScreen() {
     setFieldError(null);
     setSaveError(null);
     setSaved(false);
+    photoOperationSeqRef.current += 1;
+    photoInFlightRef.current = false;
+    photoUploadIdentity.reset();
     setPhotoSaving(false);
     setPhotoError(null);
     setPhotoSuccess(null);
     profilePhoto.remove();
-  }, [uid, profilePhoto.remove]);
+  }, [uid, profilePhoto.remove, photoUploadIdentity.reset]);
 
   const loadedBuckets = bucketProfileChallenges(profile?.challenges.items ?? []);
   useEffect(() => {
@@ -193,44 +200,58 @@ export function V2ProfileScreen() {
   const durablePhotoEnabled = profile?.profileImage?.status !== 'not_configured';
 
   const handlePhotoUpload = async (file: File) => {
+    if (photoInFlightRef.current) return;
     const uidAtUpload = uidRef.current;
+    const operation = ++photoOperationSeqRef.current;
+    const idempotencyKey = photoUploadIdentity.keyForFile(file);
+    photoInFlightRef.current = true;
     setPhotoError(null);
     setPhotoSuccess(null);
     setPhotoSaving(true);
     try {
-      const profileImage = await saveOwnProfileImage(file);
-      if (uidRef.current !== uidAtUpload) return;
+      const profileImage = await saveOwnProfileImage(file, { idempotencyKey });
+      if (uidRef.current !== uidAtUpload || photoOperationSeqRef.current !== operation) return;
+      photoUploadIdentity.reset();
       profilePhoto.remove();
       applyProfileImage(profileImage);
       setPhotoSuccess('Profile photo updated.');
       if (queryClient) void invalidateV2ChallengeFeed(queryClient);
     } catch (err) {
-      if (uidRef.current !== uidAtUpload) return;
+      if (uidRef.current !== uidAtUpload || photoOperationSeqRef.current !== operation) return;
       profilePhoto.remove();
       setPhotoError(err instanceof ApiError ? err.message : 'Could not save your profile photo. Please try again.');
     } finally {
-      if (uidRef.current === uidAtUpload) setPhotoSaving(false);
+      if (photoOperationSeqRef.current === operation) {
+        photoInFlightRef.current = false;
+        if (uidRef.current === uidAtUpload) setPhotoSaving(false);
+      }
     }
   };
 
   const handlePhotoRemove = async () => {
-    if (!persistedProfilePhotoUrl) return;
+    if (!persistedProfilePhotoUrl || photoInFlightRef.current) return;
     const uidAtRemove = uidRef.current;
+    const operation = ++photoOperationSeqRef.current;
+    photoInFlightRef.current = true;
     setPhotoError(null);
     setPhotoSuccess(null);
     setPhotoSaving(true);
     try {
       const profileImage = await removeOwnProfileImage();
-      if (uidRef.current !== uidAtRemove) return;
+      if (uidRef.current !== uidAtRemove || photoOperationSeqRef.current !== operation) return;
+      photoUploadIdentity.reset();
       profilePhoto.remove();
       applyProfileImage(profileImage);
       setPhotoSuccess('Profile photo removed.');
       if (queryClient) void invalidateV2ChallengeFeed(queryClient);
     } catch (err) {
-      if (uidRef.current !== uidAtRemove) return;
+      if (uidRef.current !== uidAtRemove || photoOperationSeqRef.current !== operation) return;
       setPhotoError(err instanceof ApiError ? err.message : 'Could not remove your profile photo. Please try again.');
     } finally {
-      if (uidRef.current === uidAtRemove) setPhotoSaving(false);
+      if (photoOperationSeqRef.current === operation) {
+        photoInFlightRef.current = false;
+        if (uidRef.current === uidAtRemove) setPhotoSaving(false);
+      }
     }
   };
 
