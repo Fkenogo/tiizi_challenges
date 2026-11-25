@@ -14,7 +14,7 @@ export type V2MediaImageProjection =
       height: number;
     };
 
-function newIdempotencyKey(): string {
+export function createMediaIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
@@ -25,6 +25,7 @@ export async function uploadDurableImage(params: {
   purpose: V2MediaPurpose;
   file: File;
   targetScopeId?: string;
+  idempotencyKey?: string;
 }): Promise<{ intentId: string; assetId: string }> {
   const intent = await apiFetch<{ intentId: string; status: string; expiresAt: string }>(
     apiPath('/media/intents'),
@@ -33,7 +34,7 @@ export async function uploadDurableImage(params: {
       body: {
         purpose: params.purpose,
         ...(params.targetScopeId ? { targetScopeId: params.targetScopeId } : {}),
-        idempotencyKey: newIdempotencyKey(),
+        idempotencyKey: params.idempotencyKey ?? createMediaIdempotencyKey(),
       },
     },
   );
@@ -52,8 +53,15 @@ export async function uploadDurableImage(params: {
   return { intentId: uploaded.intentId, assetId: uploaded.assetId };
 }
 
-export async function saveOwnProfileImage(file: File): Promise<V2MediaImageProjection> {
-  const { intentId } = await uploadDurableImage({ purpose: 'profile_image', file });
+export async function saveOwnProfileImage(
+  file: File,
+  options?: { idempotencyKey?: string },
+): Promise<V2MediaImageProjection> {
+  const { intentId } = await uploadDurableImage({
+    purpose: 'profile_image',
+    file,
+    idempotencyKey: options?.idempotencyKey,
+  });
   const res = await apiFetch<{ profileImage: V2MediaImageProjection }>(
     apiPath('/me/profile-image'),
     {
@@ -75,11 +83,13 @@ export async function removeOwnProfileImage(): Promise<V2MediaImageProjection> {
 export async function saveGroupCoverImage(
   groupId: string,
   file: File,
+  options?: { idempotencyKey?: string },
 ): Promise<V2MediaImageProjection> {
   const { intentId } = await uploadDurableImage({
     purpose: 'group_cover',
     file,
     targetScopeId: groupId,
+    idempotencyKey: options?.idempotencyKey,
   });
   const res = await apiFetch<{ coverImage: V2MediaImageProjection }>(
     apiPath(`/groups/${encodeURIComponent(groupId)}/cover-image`),
@@ -102,12 +112,13 @@ export async function removeGroupCoverImage(groupId: string): Promise<V2MediaIma
 export async function saveChallengeCoverImage(
   challengeId: string,
   file: File,
-  options?: { initialBind?: boolean; groupId?: string },
+  options?: { initialBind?: boolean; groupId?: string; idempotencyKey?: string },
 ): Promise<V2MediaImageProjection> {
   const { intentId } = await uploadDurableImage({
     purpose: 'challenge_cover',
     file,
     targetScopeId: options?.initialBind ? options.groupId : challengeId,
+    idempotencyKey: options?.idempotencyKey,
   });
   const res = await apiFetch<{ coverImage: V2MediaImageProjection }>(
     apiPath(`/challenges/${encodeURIComponent(challengeId)}/cover-image`),
@@ -115,7 +126,7 @@ export async function saveChallengeCoverImage(
       method: 'PUT',
       body: {
         intentId,
-        ...(options?.initialBind ? { initialBind: true } : {}),
+        ...(options?.initialBind ? { initialBind: true, groupId: options.groupId } : {}),
       },
     },
   );

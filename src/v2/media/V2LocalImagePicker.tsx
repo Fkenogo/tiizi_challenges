@@ -13,6 +13,8 @@ export function V2LocalImagePicker({
   onRemove,
   isSaving = false,
   durable = false,
+  refreshKey = `picker-${subject}`,
+  draftPersistenceMessage,
   className = '',
   previewClassName,
   imageClassName = 'h-full w-full object-cover',
@@ -28,6 +30,8 @@ export function V2LocalImagePicker({
   onRemove?: () => void | Promise<void>;
   isSaving?: boolean;
   durable?: boolean;
+  refreshKey?: string;
+  draftPersistenceMessage?: string;
   className?: string;
   previewClassName: string;
   imageClassName?: string;
@@ -39,6 +43,7 @@ export function V2LocalImagePicker({
   const displayUrl = preview.previewUrl ?? persistedUrl ?? null;
   const isPersistedUrl = !preview.previewUrl && Boolean(persistedUrl);
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
+    if (isSaving) return;
     const file = event.currentTarget.files?.[0];
     if (file && preview.selectFile(file)) {
       void onSelectFile?.(file);
@@ -48,6 +53,7 @@ export function V2LocalImagePicker({
   };
 
   const handleRemove = () => {
+    if (isSaving) return;
     preview.remove();
     void onRemove?.();
   };
@@ -60,7 +66,7 @@ export function V2LocalImagePicker({
             src={persistedUrl}
             alt={durable ? subject : `${subject} local preview`}
             className={imageClassName}
-            refreshKey={`picker-${subject}`}
+            refreshKey={refreshKey}
             onExpired={onPersistedImageExpired}
             fallback={fallback}
           />
@@ -74,6 +80,7 @@ export function V2LocalImagePicker({
         accept={LOCAL_IMAGE_ACCEPT}
         aria-label={`Choose ${subject.toLowerCase()}`}
         className="sr-only"
+        disabled={isSaving}
         onChange={handleFile}
       />
       <div className="flex flex-wrap items-center gap-2">
@@ -97,13 +104,17 @@ export function V2LocalImagePicker({
         )}
       </div>
       <p className={`text-xs leading-5 ${messageClassName}`} role="status" aria-live="polite">
-        {durable
-          ? displayUrl
-            ? 'JPG, PNG or WebP · Saved to your account.'
-            : 'JPG, PNG or WebP · 5 MB or smaller.'
-          : displayUrl
-            ? 'Local preview only. This photo is not permanently saved.'
-            : 'JPG, PNG or WebP · 5 MB or smaller. This photo will not be permanently saved.'}
+        {isSaving
+          ? 'Saving photo…'
+          : durable
+            ? displayUrl
+              ? 'JPG, PNG or WebP · Saved to your account.'
+              : 'JPG, PNG or WebP · 5 MB or smaller.'
+            : draftPersistenceMessage
+              ? draftPersistenceMessage
+              : displayUrl
+                ? 'Local preview only. This photo is not permanently saved.'
+                : 'JPG, PNG or WebP · 5 MB or smaller. This photo will not be permanently saved.'}
       </p>
       {preview.error && <p role="alert" className={`text-xs font-bold ${errorClassName}`}>{preview.error}</p>}
     </div>

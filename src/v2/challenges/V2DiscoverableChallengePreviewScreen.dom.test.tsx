@@ -61,6 +61,15 @@ describe('discoverable Challenge preview route', () => {
     expect(screen.getByText('Governed Group detail')).toBeTruthy();
   });
 
+  it('renders the authorized persisted cover before Group joining', () => {
+    h.query = {
+      data: { pages: [{ challenges: [challenge({ coverImage: { status: 'ready', assetId: 'asset-1', url: 'https://r2.example.invalid/preview.webp', contentType: 'image/webp', width: 960, height: 540 } })] }] },
+      isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn(),
+    };
+    const { container } = render(tree());
+    expect(container.querySelector('img[alt="Morning Walk cover photo"]')?.getAttribute('src')).toBe('https://r2.example.invalid/preview.webp');
+  });
+
   it('shows a truthful pending-approval state and keeps the hosting Group action available', () => {
     h.query = { data: { pages: [{ challenges: [challenge({ host: { groupId: 'group-1', groupName: 'Public Group', admissionMode: 'approval', viewerRelationship: 'pending' } })] }] }, isLoading: false, isError: false, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: vi.fn(), refetch: vi.fn() };
     render(tree());

@@ -10,6 +10,7 @@ describe('V2ChallengeCover', () => {
     removeLocalChallengeCoverPreview('challenge-shared');
     removeLocalChallengeCoverPreview('challenge-other');
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('resolves the same local photo by Challenge ID and isolates other Challenges', async () => {
@@ -37,6 +38,26 @@ describe('V2ChallengeCover', () => {
     expect(screen.getByRole('img', { name: 'Other cover photo' }).getAttribute('src')).toBe('blob:other.jpg');
     expect(screen.queryByRole('img', { name: 'Missing cover photo' })).toBeNull();
     expect(screen.getByLabelText('Missing has no cover photo')).toBeTruthy();
+  });
+
+  it('never hides a ready persisted cover behind a stale tab-local File', () => {
+    const selected = new File(['stale local preview'], 'stale.jpg', { type: 'image/jpeg' });
+    setLocalChallengeCoverPreview('challenge-shared', selected);
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn(() => 'blob:stale'),
+      revokeObjectURL: vi.fn(),
+    });
+    const { container } = render(
+      <V2ChallengeCover
+        challengeId="challenge-shared"
+        title="Persisted Challenge"
+        coverImage={{ status: 'ready', assetId: 'asset-1', url: 'https://r2.example.invalid/challenge.webp', contentType: 'image/webp', width: 100, height: 100 }}
+        heightClass="h-20"
+      />,
+    );
+
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('https://r2.example.invalid/challenge.webp');
+    expect(container.querySelector('[data-challenge-cover-id="challenge-shared"]')?.getAttribute('data-local-cover')).toBe('false');
   });
 
   it('hides the "No cover photo" badge on V2ChallengeCard when persisted R2 coverImage is ready', () => {

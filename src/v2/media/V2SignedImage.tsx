@@ -1,17 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-const REFRESH_COOLDOWN_MS = 10_000;
-const lastRefreshByKey = new Map<string, number>();
-
-export function resetSignedImageRefreshCooldowns(): void {
-  lastRefreshByKey.clear();
-}
+const RETRY_DELAY_MS = 300;
 
 /**
- * Renders an authenticated, short-lived signed image URL with bounded
- * expiration recovery. Never polls; on load error (e.g., expired 60s R2
- * signature), triggers at most one refresh per URL within a 10s cooldown.
- * Falls back cleanly if the image was removed or remains unavailable.
+ * Renders an authenticated, short-lived signed image URL with bounded,
+ * instance-local expiry recovery. A failed load shows the neutral fallback
+ * while one authenticated refresh is requested; a same-URL refresh can retry
+ * the load once, but a persistent failure never loops.
  */
 export function V2SignedImage({
   src,
@@ -28,30 +23,76 @@ export function V2SignedImage({
   onExpired?: () => void;
   fallback?: ReactNode;
 }) {
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const retriedSrcsRef = useRef<Set<string>>(new Set());
+  const [retrying, setRetrying] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const hasRefreshedRef = useRef(false);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    hasRefreshedRef.current = false;
+  }, [refreshKey]);
+
+  useEffect(() => {
+    setLoadedSrc(null);
     setFailedSrc(null);
+    setRetrying(false);
+    setAttempt((current) => current + 1);
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    retryTimerRef.current = null;
   }, [src]);
 
-  if (failedSrc === src) {
-    return <>{fallback}</>;
-  }
+  useEffect(() => () => {
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+  }, []);
 
   const handleError = () => {
-    if (onExpired && !retriedSrcsRef.current.has(src)) {
-      const now = Date.now();
-      const last = lastRefreshByKey.get(refreshKey) ?? 0;
-      if (now - last >= REFRESH_COOLDOWN_MS) {
-        retriedSrcsRef.current.add(src);
-        lastRefreshByKey.set(refreshKey, now);
-        onExpired();
-        return;
-      }
+    if (!hasRefreshedRef.current && onExpired) {
+      hasRefreshedRef.current = true;
+      setLoadedSrc(null);
+      setRetrying(true);
+      onExpired();
+      retryTimerRef.current = setTimeout(() => {
+        retryTimerRef.current = null;
+        setRetrying(false);
+        setAttempt((current) => current + 1);
+      }, RETRY_DELAY_MS);
+      return;
     }
+    setRetrying(false);
     setFailedSrc(src);
   };
 
-  return <img src={src} alt={alt} className={className} onError={handleError} />;
+  if (failedSrc === src) {
+    return (
+      <>
+        {fallback}
+        <span className="sr-only" role="status" aria-live="polite">{`${alt} is unavailable.`}</span>
+      </>
+    );
+  }
+
+  const ready = loadedSrc === src;
+  return (
+    <>
+      {!ready && fallback}
+      <img
+        key={`${refreshKey}:${src}:${attempt}`}
+        src={src}
+        alt={alt}
+        className={ready ? className : 'hidden'}
+        onLoad={() => {
+          hasRefreshedRef.current = false;
+          setLoadedSrc(src);
+        }}
+        onError={handleError}
+      />
+      {!ready && (
+        <span className="sr-only" role="status" aria-live="polite">
+          {retrying ? `Refreshing ${alt}…` : `Loading ${alt}…`}
+        </span>
+      )}
+    </>
+  );
 }

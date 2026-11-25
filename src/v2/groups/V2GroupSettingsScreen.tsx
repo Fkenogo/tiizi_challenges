@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { V2Button, V2Page } from '../components/V2Primitives';
 import { useV2GroupDetail, useUpdateV2GroupSettings, useV2GroupOptions } from './useV2Groups';
 import { useV2GroupId } from '../group/V2GroupScope';
@@ -7,14 +8,21 @@ import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor, isGroupCoverId 
 import { GroupInterestsPicker } from './GroupInterestsPicker';
 import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet } from './groupInterests';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
-import { removeGroupCoverImage, saveGroupCoverImage } from '../../api/mediaApi';
+import { removeGroupCoverImage, saveGroupCoverImage, type V2MediaImageProjection } from '../../api/mediaApi';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
+import { useFileUploadIdentity } from '../media/useFileUploadIdentity';
+import { useAuth } from '../../hooks/useAuth';
+import type { V2GroupDetail } from '../../api/groupsApi';
+import { invalidateV2GroupCoverReads, v2GroupDetailKey } from './groupQueryKeys';
+import { removeLocalGroupCoverPreview } from './localGroupCoverPreviews';
 
 export function V2GroupSettingsScreen() {
   const groupId = useV2GroupId();
   const detail = useV2GroupDetail(groupId);
   const update = useUpdateV2GroupSettings(groupId ?? '');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tagline, setTagline] = useState('');
@@ -23,17 +31,35 @@ export function V2GroupSettingsScreen() {
   const [focusTags, setFocusTags] = useState<string[]>([]);
   const [coverId, setCoverId] = useState<string | null>(null);
   const coverPhoto = useLocalImagePreview();
+  const coverUploadIdentity = useFileUploadIdentity();
   const [isPrivate, setIsPrivate] = useState(false);
   const [requireAdminApproval, setRequireAdminApproval] = useState(false);
   const [allowMemberChallenges, setAllowMemberChallenges] = useState(true);
+  const [coverSaving, setCoverSaving] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const initializedIdentityRef = useRef<string | null>(null);
+  const uidRef = useRef(user?.uid);
+  const groupIdRef = useRef(groupId);
+  const coverOperationSeqRef = useRef(0);
+  const coverInFlightRef = useRef(false);
+  uidRef.current = user?.uid;
+  groupIdRef.current = groupId;
   useEffect(() => {
     const group = detail.data;
-    if (!group) return;
+    const identityKey = `${user?.uid ?? 'signed-out'}:${group?.id ?? 'none'}`;
+    if (!group || initializedIdentityRef.current === identityKey) return;
+    initializedIdentityRef.current = identityKey;
+    coverOperationSeqRef.current += 1;
+    coverInFlightRef.current = false;
+    coverUploadIdentity.reset();
+    coverPhoto.remove();
+    setCoverSaving(false);
+    setCoverError(null);
     setName(group.name); setDescription(group.description); setTagline(group.tagline);
     setLocation(group.location); setFocusTags(group.focusTags); setCoverId(group.coverId);
     setIsPrivate(group.isPrivate); setRequireAdminApproval(group.requireAdminApproval ?? false);
     setAllowMemberChallenges(group.allowMemberChallenges ?? true);
-  }, [detail.data]);
+  }, [detail.data, user?.uid, coverUploadIdentity.reset]);
 
   if (detail.isLoading) return <V2Page><p className="text-sm text-slate-600">Loading Group settings…</p></V2Page>;
   if (!detail.data || detail.data.viewerRelationship !== 'steward') return <V2Page><h1 className="text-lg font-black">Settings unavailable</h1><p className="mt-2 text-sm text-slate-600">These settings are available to the Accountable Steward.</p></V2Page>;
@@ -50,8 +76,14 @@ export function V2GroupSettingsScreen() {
     || isPrivate !== group.isPrivate
     || requireAdminApproval !== (group.requireAdminApproval ?? false)
     || allowMemberChallenges !== (group.allowMemberChallenges ?? true);
-  const [coverSaving, setCoverSaving] = useState(false);
-  const [coverError, setCoverError] = useState<string | null>(null);
+  const reconcileCover = async (coverImage: V2MediaImageProjection, uidAtMutation: string | undefined) => {
+    removeLocalGroupCoverPreview(group.id);
+    queryClient.setQueryData<V2GroupDetail>(
+      v2GroupDetailKey(group.id, uidAtMutation),
+      (current) => current ? { ...current, coverImage } : current,
+    );
+    await invalidateV2GroupCoverReads(queryClient, uidAtMutation, group.id);
+  };
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!focusTagsValid) return;
@@ -84,23 +116,61 @@ export function V2GroupSettingsScreen() {
                 persistedUrl={group.coverImage?.status === 'ready' ? group.coverImage.url : null}
                 durable={group.coverImage?.status !== 'not_configured'}
                 isSaving={coverSaving}
+                refreshKey={`group-cover-picker-${group.id}`}
+                onPersistedImageExpired={() => {
+                  if (groupId) void invalidateV2GroupCoverReads(queryClient, user?.uid, groupId);
+                }}
                 onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => {
+                  if (coverInFlightRef.current) return;
+                  const uidAtMutation = uidRef.current;
+                  const operation = ++coverOperationSeqRef.current;
+                  const idempotencyKey = coverUploadIdentity.keyForFile(file);
+                  coverInFlightRef.current = true;
                   setCoverError(null);
                   setCoverSaving(true);
-                  void saveGroupCoverImage(group.id, file)
-                    .then(() => { coverPhoto.remove(); })
+                  void saveGroupCoverImage(group.id, file, { idempotencyKey })
+                    .then(async (coverImage) => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+                      coverUploadIdentity.reset();
+                      coverPhoto.remove();
+                      await reconcileCover(coverImage, uidAtMutation);
+                    })
                     .catch(() => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
                       coverPhoto.remove();
                       setCoverError('Could not save the Group cover photo. Please try again.');
                     })
-                    .finally(() => setCoverSaving(false));
+                    .finally(() => {
+                      if (coverOperationSeqRef.current === operation) {
+                        coverInFlightRef.current = false;
+                        if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                      }
+                    });
                 } : undefined}
                 onRemove={group.coverImage?.status === 'ready' ? () => {
+                  if (coverInFlightRef.current) return;
+                  const uidAtMutation = uidRef.current;
+                  const operation = ++coverOperationSeqRef.current;
+                  coverInFlightRef.current = true;
                   setCoverError(null);
                   setCoverSaving(true);
                   void removeGroupCoverImage(group.id)
-                    .catch(() => setCoverError('Could not remove the Group cover photo. Please try again.'))
-                    .finally(() => setCoverSaving(false));
+                    .then(async (coverImage) => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+                      coverUploadIdentity.reset();
+                      coverPhoto.remove();
+                      await reconcileCover(coverImage, uidAtMutation);
+                    })
+                    .catch(() => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+                      setCoverError('Could not remove the Group cover photo. Please try again.');
+                    })
+                    .finally(() => {
+                      if (coverOperationSeqRef.current === operation) {
+                        coverInFlightRef.current = false;
+                        if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                      }
+                    });
                 } : undefined}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"
                 fallback={
@@ -114,7 +184,7 @@ export function V2GroupSettingsScreen() {
             </div>
             <p className="mb-2 mt-4 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>
             <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div>
-            <p className="mt-1 text-xs text-slate-500">Catalogue covers save with Group settings. A chosen photo is only a local preview and is not saved.</p>
+            <p className="mt-1 text-xs text-slate-500">Uploaded photos save immediately. Catalogue covers save with Group settings.</p>
             {coverError && <p role="alert" className="mt-1 text-xs font-bold text-red-700">{coverError}</p>}
           </fieldset>
         </section>

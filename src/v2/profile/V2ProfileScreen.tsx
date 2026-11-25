@@ -21,15 +21,15 @@ import { ProfilePreferencesSection } from '../preferences/ProfilePreferencesSect
 import { V2SupportTiiziCard } from '../support/V2SupportTiiziCard';
 import { WELCOME_PATH } from '../welcome/welcomeContent';
 import { ProfileSaveUncertainError } from './profileWriteState';
-import { v2MemberIdentityKey } from './memberIdentityQuery';
-import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
+import { V2ProfileIdentityHeader } from './V2ProfileIdentityHeader';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
+import { useFileUploadIdentity } from '../media/useFileUploadIdentity';
+import { invalidateV2ChallengeFeed } from '../challenges/challengeFeedQuery';
 import {
   bucketProfileChallenges,
   challengeStatusLabel,
   displayNameLength,
   groupRoleLabel,
-  initialsFor,
   PROFILE_DISPLAY_NAME_MAX,
   validateDisplayName,
 } from './profileView';
@@ -43,8 +43,8 @@ import {
  *   `active`/`history` bucket are rendered exactly as served;
  * - the email is read directly from the raw Firebase `user.email`, never from
  *   the local `AuthContext.profile` cache and never from the API response;
- * - profile photo changes use the accepted browser-local preview only; no
- *   image is uploaded or permanently saved;
+ * - profile photo changes use the governed durable media API; the local
+ *   preview is only a temporary selection state;
  * - no legal text or links are invented here (MC-2C-2 / legal authority);
  * - Group and Challenge pages advance independently and are keyed by
  *   participationId, so withdrawal + rejoin episodes stay distinct.
@@ -58,6 +58,7 @@ export function V2ProfileScreen() {
     error,
     isSaving,
     saveDisplayName,
+    applyProfileImage,
     reload,
     loadMoreGroups,
     loadMoreChallenges,
@@ -74,12 +75,16 @@ export function V2ProfileScreen() {
   const signOut = useV2SignOut();
   const queryClient = useContext(QueryClientContext);
   const profilePhoto = useLocalImagePreview();
+  const photoUploadIdentity = useFileUploadIdentity();
   const [photoSaving, setPhotoSaving] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoSuccess, setPhotoSuccess] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const uid = user?.uid ?? null;
   const uidRef = useRef(uid);
+  const photoOperationSeqRef = useRef(0);
+  const photoInFlightRef = useRef(false);
 
   // An account switch must not leave one member's editor, draft or feedback
   // on screen for the next member.
@@ -90,8 +95,14 @@ export function V2ProfileScreen() {
     setFieldError(null);
     setSaveError(null);
     setSaved(false);
+    photoOperationSeqRef.current += 1;
+    photoInFlightRef.current = false;
+    photoUploadIdentity.reset();
+    setPhotoSaving(false);
+    setPhotoError(null);
+    setPhotoSuccess(null);
     profilePhoto.remove();
-  }, [uid, profilePhoto.remove]);
+  }, [uid, profilePhoto.remove, photoUploadIdentity.reset]);
 
   const loadedBuckets = bucketProfileChallenges(profile?.challenges.items ?? []);
   useEffect(() => {
@@ -189,43 +200,58 @@ export function V2ProfileScreen() {
   const durablePhotoEnabled = profile?.profileImage?.status !== 'not_configured';
 
   const handlePhotoUpload = async (file: File) => {
+    if (photoInFlightRef.current) return;
     const uidAtUpload = uidRef.current;
+    const operation = ++photoOperationSeqRef.current;
+    const idempotencyKey = photoUploadIdentity.keyForFile(file);
+    photoInFlightRef.current = true;
     setPhotoError(null);
+    setPhotoSuccess(null);
     setPhotoSaving(true);
     try {
-      await saveOwnProfileImage(file);
-      if (uidRef.current !== uidAtUpload) return;
+      const profileImage = await saveOwnProfileImage(file, { idempotencyKey });
+      if (uidRef.current !== uidAtUpload || photoOperationSeqRef.current !== operation) return;
+      photoUploadIdentity.reset();
       profilePhoto.remove();
-      await Promise.all([
-        reload(),
-        queryClient?.invalidateQueries({ queryKey: v2MemberIdentityKey(uidAtUpload ?? undefined) }),
-      ]);
+      applyProfileImage(profileImage);
+      setPhotoSuccess('Profile photo updated.');
+      if (queryClient) void invalidateV2ChallengeFeed(queryClient);
     } catch (err) {
-      if (uidRef.current !== uidAtUpload) return;
+      if (uidRef.current !== uidAtUpload || photoOperationSeqRef.current !== operation) return;
       profilePhoto.remove();
       setPhotoError(err instanceof ApiError ? err.message : 'Could not save your profile photo. Please try again.');
     } finally {
-      if (uidRef.current === uidAtUpload) setPhotoSaving(false);
+      if (photoOperationSeqRef.current === operation) {
+        photoInFlightRef.current = false;
+        if (uidRef.current === uidAtUpload) setPhotoSaving(false);
+      }
     }
   };
 
   const handlePhotoRemove = async () => {
-    if (!persistedProfilePhotoUrl) return;
+    if (!persistedProfilePhotoUrl || photoInFlightRef.current) return;
     const uidAtRemove = uidRef.current;
+    const operation = ++photoOperationSeqRef.current;
+    photoInFlightRef.current = true;
     setPhotoError(null);
+    setPhotoSuccess(null);
     setPhotoSaving(true);
     try {
-      await removeOwnProfileImage();
-      if (uidRef.current !== uidAtRemove) return;
-      await Promise.all([
-        reload(),
-        queryClient?.invalidateQueries({ queryKey: v2MemberIdentityKey(uidAtRemove ?? undefined) }),
-      ]);
+      const profileImage = await removeOwnProfileImage();
+      if (uidRef.current !== uidAtRemove || photoOperationSeqRef.current !== operation) return;
+      photoUploadIdentity.reset();
+      profilePhoto.remove();
+      applyProfileImage(profileImage);
+      setPhotoSuccess('Profile photo removed.');
+      if (queryClient) void invalidateV2ChallengeFeed(queryClient);
     } catch (err) {
-      if (uidRef.current !== uidAtRemove) return;
+      if (uidRef.current !== uidAtRemove || photoOperationSeqRef.current !== operation) return;
       setPhotoError(err instanceof ApiError ? err.message : 'Could not remove your profile photo. Please try again.');
     } finally {
-      if (uidRef.current === uidAtRemove) setPhotoSaving(false);
+      if (photoOperationSeqRef.current === operation) {
+        photoInFlightRef.current = false;
+        if (uidRef.current === uidAtRemove) setPhotoSaving(false);
+      }
     }
   };
 
@@ -258,50 +284,20 @@ export function V2ProfileScreen() {
       ) : null}
 
       <div className="space-y-4">
-        <V2Card>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="w-full sm:w-36 sm:shrink-0">
-              <V2LocalImagePicker
-                subject="Profile picture"
-                preview={profilePhoto}
-                persistedUrl={persistedProfilePhotoUrl}
-                onPersistedImageExpired={() => void reload()}
-                durable={durablePhotoEnabled}
-                isSaving={photoSaving}
-                onSelectFile={durablePhotoEnabled ? handlePhotoUpload : undefined}
-                onRemove={durablePhotoEnabled ? handlePhotoRemove : undefined}
-                previewClassName="mx-auto h-16 w-16 rounded-2xl bg-orange-50 sm:ml-0 sm:mr-auto"
-                imageClassName="h-full w-full rounded-2xl object-cover"
-                fallback={<ProfileAvatar name={displayName} />}
-              />
-              {photoError && (
-                <p role="alert" className="mt-1 text-xs font-bold text-red-700">
-                  {photoError}
-                </p>
-              )}
-            </div>
-            <div className="flex min-w-0 flex-1 items-start gap-4">
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  Display name
-                </p>
-                <p className="mt-0.5 break-words text-lg font-black text-slate-900">
-                  {displayName ?? 'No display name yet'}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  {displayName
-                    ? 'You can change your name at any time.'
-                    : 'Add a name so Tiizi can greet you properly.'}
-                </p>
-              </div>
-              {!editing && (
-                <V2Button variant="secondary" onClick={startEditing}>
-                  {displayName ? 'Edit' : 'Add name'}
-                </V2Button>
-              )}
-            </div>
-          </div>
-
+        <V2ProfileIdentityHeader
+          displayName={displayName}
+          persistedUrl={persistedProfilePhotoUrl}
+          preview={profilePhoto}
+          durable={durablePhotoEnabled}
+          isSaving={photoSaving}
+          error={photoError}
+          success={photoSuccess}
+          refreshKey={`profile-photo-${uid ?? 'signed-out'}`}
+          onSelectFile={durablePhotoEnabled ? handlePhotoUpload : undefined}
+          onRemove={durablePhotoEnabled ? handlePhotoRemove : undefined}
+          onPersistedImageExpired={() => void reload()}
+          onEditName={startEditing}
+        >
           {editing && (
             <form
               className="mt-4 space-y-3 border-t border-slate-200 pt-4"
@@ -368,7 +364,7 @@ export function V2ProfileScreen() {
               </div>
             </form>
           )}
-        </V2Card>
+        </V2ProfileIdentityHeader>
 
         <V2Card>
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Email</p>
@@ -549,28 +545,6 @@ function HelpRow({ label, hint, onClick }: { label: string; hint: string; onClic
       </span>
       <span className="shrink-0 text-lg leading-none text-slate-300" aria-hidden="true">›</span>
     </button>
-  );
-}
-
-function ProfileAvatar({ name }: { name: string | null }) {
-  const initials = initialsFor(name);
-  return (
-    <div
-      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-xl font-black text-primary"
-      aria-hidden
-    >
-      {initials || (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
-          <path
-            d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      )}
-    </div>
   );
 }
 

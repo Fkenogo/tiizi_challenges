@@ -16,6 +16,8 @@ import {
 } from './mediaService.js';
 import type { ObjectStore } from './r2ObjectStore.js';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface MediaRouteDeps {
   objectStore: ObjectStore | null;
   readUrlTtlSeconds: number;
@@ -87,7 +89,7 @@ export function registerMediaRoutes(
   app.put(apiPath('/me/profile-image'), async (request, reply) => {
     const member = authenticatedMember(request);
     const body = (request.body ?? {}) as { intentId?: unknown };
-    if (typeof body.intentId !== 'string') {
+    if (typeof body.intentId !== 'string' || !UUID_RE.test(body.intentId)) {
       return reply.status(400).send({ error: { code: 'invalid_intent', message: 'intentId is required' } });
     }
     try {
@@ -125,7 +127,7 @@ export function registerMediaRoutes(
     const member = authenticatedMember(request);
     const { groupId } = request.params as { groupId: string };
     const body = (request.body ?? {}) as { intentId?: unknown };
-    if (typeof body.intentId !== 'string') {
+    if (typeof body.intentId !== 'string' || !UUID_RE.test(body.intentId)) {
       return reply.status(400).send({ error: { code: 'invalid_intent', message: 'intentId is required' } });
     }
     try {
@@ -164,8 +166,8 @@ export function registerMediaRoutes(
   app.put(apiPath('/challenges/:challengeId/cover-image'), async (request, reply) => {
     const member = authenticatedMember(request);
     const { challengeId } = request.params as { challengeId: string };
-    const body = (request.body ?? {}) as { intentId?: unknown; initialBind?: unknown };
-    if (typeof body.intentId !== 'string') {
+    const body = (request.body ?? {}) as { intentId?: unknown; initialBind?: unknown; groupId?: unknown };
+    if (typeof body.intentId !== 'string' || !UUID_RE.test(body.intentId)) {
       return reply.status(400).send({ error: { code: 'invalid_intent', message: 'intentId is required' } });
     }
     try {
@@ -177,6 +179,7 @@ export function registerMediaRoutes(
           actorMemberId: member.memberId,
           intentId: body.intentId,
           allowCreatorInitialBind: body.initialBind === true,
+          groupId: typeof body.groupId === 'string' ? body.groupId : undefined,
         },
         mediaDeps.readUrlTtlSeconds,
       );

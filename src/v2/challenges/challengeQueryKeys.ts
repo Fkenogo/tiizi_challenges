@@ -56,8 +56,9 @@ export const V2_CHALLENGE_DISCOVERY_SCOPE = 'v2-challenge-discovery';
 export function v2ChallengeDiscoveryKey(
   uid: string | undefined,
   rank: 'relevance' | 'general' = 'relevance',
-): [string, string | undefined, string] {
-  return [V2_CHALLENGE_DISCOVERY_SCOPE, uid, rank];
+  includeMedia = true,
+): [string, string | undefined, string, boolean] {
+  return [V2_CHALLENGE_DISCOVERY_SCOPE, uid, rank, includeMedia];
 }
 
 /**
@@ -160,4 +161,29 @@ export async function invalidateV2ChallengeReads(
     queryClient.invalidateQueries({ queryKey: [V2_GROUP_CHALLENGES_SCOPE] }),
   ];
   await Promise.all(tasks);
+}
+
+/** Re-prove only the reads that project a Challenge cover URL. */
+export async function invalidateV2ChallengeCoverReads(
+  queryClient: QueryClient,
+  uid?: string,
+  challengeId?: string,
+): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: uid === undefined ? [V2_CHALLENGE_LIST_SCOPE] : v2ChallengeListKey(uid),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: challengeId === undefined
+        ? [V2_CHALLENGE_DETAIL_SCOPE]
+        : uid === undefined
+          ? [V2_CHALLENGE_DETAIL_SCOPE, challengeId]
+          : v2ChallengeDetailKey(challengeId, uid),
+    }),
+    queryClient.invalidateQueries({ queryKey: [V2_GROUP_CHALLENGES_SCOPE] }),
+    queryClient.invalidateQueries({
+      queryKey: [V2_CHALLENGE_DISCOVERY_SCOPE],
+      predicate: (query) => query.queryKey[3] === true,
+    }),
+  ]);
 }

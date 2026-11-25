@@ -3,6 +3,7 @@ import { QueryClientContext } from '@tanstack/react-query';
 import type { V2MediaImageProjection } from '../../api/mediaApi';
 import { V2SignedImage } from '../media/V2SignedImage';
 import { getLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
+import { invalidateV2ChallengeCoverReads } from './challengeQueryKeys';
 
 /** Shared cover rendering for every active V2 Challenge surface. */
 export function V2ChallengeCover({
@@ -37,29 +38,27 @@ export function V2ChallengeCover({
   }, [challengeId, localCover]);
 
   const persistedUrl = coverImage?.status === 'ready' ? coverImage.url : null;
-  const effectiveUrl = photoUrl ?? persistedUrl;
   const fallbackNode = <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />;
 
   return (
     <div
       data-challenge-cover-id={challengeId}
-      data-local-cover={effectiveUrl ? 'true' : 'false'}
+      data-local-cover={photoUrl && !persistedUrl ? 'true' : 'false'}
       className={`relative isolate overflow-hidden bg-slate-200 ${heightClass} ${className}`}
     >
-      {photoUrl ? (
-        <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
-      ) : persistedUrl ? (
+      {persistedUrl ? (
         <V2SignedImage
           src={persistedUrl}
           alt={`${title} cover photo`}
           className="absolute inset-0 h-full w-full object-cover"
           refreshKey={`challenge-cover-${challengeId}`}
-          onExpired={() => void queryClient?.invalidateQueries({
-            predicate: (q) => Array.isArray(q.queryKey) && typeof q.queryKey[0] === 'string'
-              && q.queryKey[0].includes('challenge'),
-          })}
+          onExpired={() => {
+            if (queryClient) void invalidateV2ChallengeCoverReads(queryClient, undefined, challengeId);
+          }}
           fallback={fallbackNode}
         />
+      ) : photoUrl ? (
+        <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         fallbackNode
       )}

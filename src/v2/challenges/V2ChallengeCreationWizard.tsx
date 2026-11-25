@@ -8,6 +8,7 @@ import {
 } from '../../api/challengeCreationApi';
 import { ApiError } from '../../api/apiClient';
 import { useAuth } from '../../hooks/useAuth';
+import { useFileUploadIdentity } from '../media/useFileUploadIdentity';
 import {
   clearChallengeCoverPhotoDraft,
   clearChallengeDraft,
@@ -79,8 +80,10 @@ import {
   type ApiKnowledgeItemLike,
 } from './wizardSteps';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
-import { removeChallengeCoverImage, saveChallengeCoverImage } from '../../api/mediaApi';
-import { removeLocalChallengeCoverPreview, setLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
+import { saveChallengeCoverImage } from '../../api/mediaApi';
+import { removeLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
+import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
+import { invalidateV2ChallengeCoverReads, v2ChallengeDetailKey } from './challengeQueryKeys';
 import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
 
 /**
@@ -109,9 +112,12 @@ export function V2ChallengeCreationWizard() {
   const uid = user?.uid ?? '';
   const initialPhoto = useMemo(() => (uid ? peekChallengeCoverPhotoDraft(uid) : null), [uid]);
   const challengeCoverPhoto = useLocalImagePreview(initialPhoto);
+  const prevUidRef = useRef(uid);
 
   useEffect(() => {
-    if (uid) stashChallengeCoverPhotoDraft(uid, challengeCoverPhoto.file);
+    if (uid && prevUidRef.current === uid) {
+      stashChallengeCoverPhotoDraft(uid, challengeCoverPhoto.file);
+    }
   }, [uid, challengeCoverPhoto.file]);
 
   // Router history state is the primary draft carrier. If it was dropped on
@@ -139,7 +145,28 @@ export function V2ChallengeCreationWizard() {
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
   const keyRef = useRef(createEstablishmentKey());
+  const coverUploadIdentity = useFileUploadIdentity();
+  const uidRef = useRef(uid);
+  const createOperationSeqRef = useRef(0);
+  const createInFlightRef = useRef(false);
   const preselected = useRef(false);
+  uidRef.current = uid;
+
+  useEffect(() => {
+    const accountChanged = prevUidRef.current !== uid;
+    prevUidRef.current = uid;
+    createOperationSeqRef.current += 1;
+    createInFlightRef.current = false;
+    coverUploadIdentity.reset();
+    if (accountChanged) {
+      if (initialPhoto) challengeCoverPhoto.selectFile(initialPhoto);
+      else challengeCoverPhoto.remove();
+    }
+    setEstablishedChallenge(null);
+    setCoverUploadError('');
+    setCoverUploading(false);
+    setCreating(false);
+  }, [uid, initialPhoto, challengeCoverPhoto.selectFile, challengeCoverPhoto.remove, coverUploadIdentity.reset]);
 
   const currentStep = VISIBLE_STEPS[stepIndex];
 
@@ -279,10 +306,16 @@ export function V2ChallengeCreationWizard() {
   }
 
   async function handleCreate() {
+    if (createInFlightRef.current) return;
+    createInFlightRef.current = true;
+    const operation = ++createOperationSeqRef.current;
+    const uidAtCreate = uidRef.current;
+    const isCurrent = () => uidRef.current === uidAtCreate && createOperationSeqRef.current === operation;
     setSubmitError('');
     setCreating(true);
     try {
       const preview = await previewChallengeDefinition(toComposerDraft(state));
+      if (!isCurrent()) return;
       if (!preview.ok) {
         setPreviewState('invalid');
         setPreviewIssues(mapPreviewIssues(preview.issues));
@@ -298,45 +331,62 @@ export function V2ChallengeCreationWizard() {
             idempotencyKey: keyRef.current,
           }),
         );
+        if (!isCurrent()) return;
         target = { challengeId: established.challengeId, groupId: established.groupId };
         setEstablishedChallenge(target);
-        clearChallengeDraft(uid);
+        clearChallengeDraft(uidAtCreate);
       }
       setCoverUploadError('');
       if (challengeCoverPhoto.file) {
+        const idempotencyKey = coverUploadIdentity.keyForFile(challengeCoverPhoto.file);
         setCoverUploading(true);
         try {
-          await saveChallengeCoverImage(target.challengeId, challengeCoverPhoto.file, {
+          const coverImage = await saveChallengeCoverImage(target.challengeId, challengeCoverPhoto.file, {
             initialBind: true,
             groupId: target.groupId,
+            idempotencyKey,
           });
-          setLocalChallengeCoverPreview(target.challengeId, challengeCoverPhoto.file);
+          if (!isCurrent()) return;
+          coverUploadIdentity.reset();
+          removeLocalChallengeCoverPreview(target.challengeId);
+          queryClient.setQueryData<V2ChallengeDetail>(
+            v2ChallengeDetailKey(target.challengeId, uidAtCreate),
+            (current) => current ? { ...current, coverImage } : current,
+          );
+          await invalidateV2ChallengeCoverReads(queryClient, uidAtCreate, target.challengeId);
         } catch (err) {
+          if (!isCurrent()) return;
           setCoverUploading(false);
           setCreating(false);
           setCoverUploadError(
             err instanceof ApiError
               ? `Your Challenge was created, but the cover photo could not be saved: ${err.message}`
-              : 'Your Challenge was created, but the cover photo could not be saved. You can retry or continue without a cover.',
+              : 'Your Challenge was created, but the cover photo could not be saved. You can retry or continue to the Challenge.',
           );
           return;
         }
-        setCoverUploading(false);
+        if (isCurrent()) setCoverUploading(false);
       }
-      clearChallengeCoverPhotoDraft(uid);
+      if (!isCurrent()) return;
+      clearChallengeCoverPhotoDraft(uidAtCreate);
       navigate(`/v2/challenges/${target.challengeId}`, { replace: true });
     } catch (error) {
+      if (!isCurrent()) return;
       setSubmitError(creationErrorMessage(error instanceof ApiError ? error.code : null));
       setCreating(false);
+    } finally {
+      if (createOperationSeqRef.current === operation) {
+        createInFlightRef.current = false;
+      }
     }
   }
 
-  function continueWithoutChallengeCover() {
-    if (!establishedChallenge) return;
+  function continueToChallengeAfterCoverError() {
+    if (!establishedChallenge || createInFlightRef.current || coverUploading) return;
+    coverUploadIdentity.reset();
     removeLocalChallengeCoverPreview(establishedChallenge.challengeId);
     challengeCoverPhoto.remove();
     clearChallengeCoverPhotoDraft(uid);
-    void removeChallengeCoverImage(establishedChallenge.challengeId).catch(() => {});
     navigate(`/v2/challenges/${establishedChallenge.challengeId}`, { replace: true });
   }
 
@@ -398,7 +448,7 @@ export function V2ChallengeCreationWizard() {
         />
       )}
 
-      {currentStep === 'CHALLENGE_DETAILS' && <StepChallengeDetails state={state} onUpdate={update} coverPhoto={challengeCoverPhoto} />}
+      {currentStep === 'CHALLENGE_DETAILS' && <StepChallengeDetails state={state} onUpdate={update} coverPhoto={challengeCoverPhoto} isSaving={creating || coverUploading} />}
 
       {currentStep === 'WHAT_ARE_WE_DOING' && (
         <StepActivities
@@ -450,6 +500,7 @@ export function V2ChallengeCreationWizard() {
           previewIssues={previewIssues}
           onUpdate={update}
           coverPhoto={challengeCoverPhoto}
+          isSaving={creating || coverUploading}
           onEditStep={(step) => goToStep(VISIBLE_STEPS.indexOf(step))}
         />
       )}
@@ -467,8 +518,16 @@ export function V2ChallengeCreationWizard() {
       )}
 
       {currentStep === 'REVIEW_AND_CREATE' && coverUploadError && establishedChallenge && (
-        <div role="alert" className="mt-4 space-y-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+        <div role="alert" className="mt-4 space-y-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
           <p className="font-bold">{coverUploadError}</p>
+          <V2LocalImagePicker
+            subject="Challenge cover"
+            preview={challengeCoverPhoto}
+            isSaving={coverUploading}
+            draftPersistenceMessage="JPG, PNG or WebP · Choose a different photo or retry your upload."
+            previewClassName="h-24 w-full rounded-xl bg-white"
+            fallback={<div className="flex h-full w-full items-center justify-center bg-white px-4 text-center text-xs font-medium text-slate-500">No photo selected</div>}
+          />
           <div className="flex flex-wrap gap-2">
             <V2Button
               variant="secondary"
@@ -480,9 +539,9 @@ export function V2ChallengeCreationWizard() {
             <V2Button
               variant="ghost"
               disabled={coverUploading}
-              onClick={continueWithoutChallengeCover}
+              onClick={continueToChallengeAfterCoverError}
             >
-              Continue without Cover
+              Continue to Challenge
             </V2Button>
           </div>
         </div>
@@ -618,12 +677,13 @@ export function StepHosting({
   );
 }
 
-export function StepChallengeDetails({ state, onUpdate, coverPhoto }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void; coverPhoto?: LocalImagePreviewState }) {
+export function StepChallengeDetails({ state, onUpdate, coverPhoto, isSaving = false }: { state: WizardState; onUpdate: (patch: Partial<WizardState>) => void; coverPhoto?: LocalImagePreviewState; isSaving?: boolean }) {
   return <div className="space-y-4">
     <NameAppearanceFields
       state={state}
       onUpdate={onUpdate}
       coverPhoto={coverPhoto}
+      isSaving={isSaving}
       intro={<p className="text-sm leading-6 text-slate-600">Give the Challenge a clear name and a short description for your Group.</p>}
     />
     <section className="rounded-2xl border border-slate-200 p-4"><h3 className="text-sm font-black">Optional support</h3><p className="mt-1 text-xs text-slate-600">Support a Cause is for a cause this Challenge raises support for. Support Tiizi is separate: voluntary support for the Tiizi platform itself.</p><label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={state.socialCauseEnabled} onChange={(event) => onUpdate({ socialCauseEnabled: event.target.checked })} />Support a Cause</label>
@@ -739,6 +799,7 @@ export function StepReview({
   previewIssues,
   onUpdate,
   coverPhoto,
+  isSaving = false,
   onEditStep,
 }: {
   state: WizardState;
@@ -746,6 +807,7 @@ export function StepReview({
   previewIssues: MappedPreviewIssue[] | null;
   onUpdate: (patch: Partial<WizardState>) => void;
   coverPhoto?: LocalImagePreviewState;
+  isSaving?: boolean;
   onEditStep: (step: (typeof VISIBLE_STEPS)[number]) => void;
 }) {
   const endDate = state.endDate;
@@ -756,6 +818,8 @@ export function StepReview({
           <V2LocalImagePicker
             subject="Challenge cover"
             preview={coverPhoto}
+            isSaving={isSaving}
+            draftPersistenceMessage="JPG, PNG or WebP · Preview only. This photo will be saved when you create the Challenge."
             previewClassName="mb-3 h-28 rounded-xl bg-slate-800"
             messageClassName="text-white/70"
             errorClassName="text-red-200"

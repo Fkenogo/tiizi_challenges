@@ -591,11 +591,13 @@ export function V2Sheet({
 export function V2AccountTrigger({
   name,
   imageUrl,
+  refreshKey = 'v2-member-identity',
   onImageExpired,
   onOpen,
 }: {
   name: string;
   imageUrl?: string | null;
+  refreshKey?: string;
   onImageExpired?: () => void;
   onOpen: () => void;
 }) {
@@ -612,7 +614,7 @@ export function V2AccountTrigger({
           src={imageUrl}
           alt={name}
           className="h-full w-full object-cover"
-          refreshKey="v2-member-identity"
+          refreshKey={refreshKey}
           onExpired={onImageExpired}
           fallback={initial}
         />

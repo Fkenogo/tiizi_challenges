@@ -16,3 +16,7 @@ export function getLocalGroupCoverPreview(groupId: string): File | null {
 export function removeLocalGroupCoverPreview(groupId: string): void {
   previews.delete(groupId);
 }
+
+export function clearLocalGroupCoverPreviews(): void {
+  previews.clear();
+}

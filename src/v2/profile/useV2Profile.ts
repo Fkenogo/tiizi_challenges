@@ -22,7 +22,9 @@ import {
   type V2Profile,
 } from '../../api/profileApi';
 import { useAuth } from '../../hooks/useAuth';
-import { invalidateV2MemberIdentity } from './memberIdentityQuery';
+import { invalidateV2MemberIdentity, setV2MemberIdentity } from './memberIdentityQuery';
+import type { V2MediaImageProjection } from '../../api/mediaApi';
+import { invalidateV2ChallengeFeed } from '../challenges/challengeFeedQuery';
 import {
   isUncertainProfileWriteFailure,
   ProfileSaveUncertainError,
@@ -61,10 +63,13 @@ export function useV2Profile() {
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [isLoadingChallenges, setIsLoadingChallenges] = useState(false);
   const [pageError, setPageError] = useState<PageError | null>(null);
+  const loadedRef = useRef<LoadedProfile | null>(loaded);
+  loadedRef.current = loaded;
 
   // Increments on every identity change, explicit reload, or name save so
   // late responses from a superseded read can never overwrite current state.
   const requestSeq = useRef(0);
+  const photoSeq = useRef(0);
   const activeUid = useRef<string | null>(uid);
   const groupsInFlight = useRef(false);
   const challengesInFlight = useRef(false);
@@ -81,7 +86,9 @@ export function useV2Profile() {
   useEffect(() => {
     activeUid.current = uid;
     requestSeq.current += 1;
+    photoSeq.current += 1;
     const seq = requestSeq.current;
+    const photoSeqAtRead = photoSeq.current;
 
     setLoaded(null);
     setReadFailure(null);
@@ -102,14 +109,14 @@ export function useV2Profile() {
     void (async () => {
       try {
         const next = await fetchV2Profile();
-        if (requestSeq.current !== seq) return;
+        if (requestSeq.current !== seq || photoSeq.current !== photoSeqAtRead) return;
         setLoaded({ uid, profile: next });
         setReadFailure(null);
       } catch (readError) {
-        if (requestSeq.current !== seq) return;
+        if (requestSeq.current !== seq || photoSeq.current !== photoSeqAtRead) return;
         setReadFailure({ uid, error: readError });
       } finally {
-        if (requestSeq.current === seq) setIsLoading(false);
+        if (requestSeq.current === seq && photoSeq.current === photoSeqAtRead) setIsLoading(false);
       }
     })();
   }, [uid]);
@@ -118,18 +125,19 @@ export function useV2Profile() {
     if (!uid) return;
     requestSeq.current += 1;
     const seq = requestSeq.current;
+    const photoSeqAtRead = photoSeq.current;
     setIsLoading(true);
     setReadFailure(null);
     setPageError(null);
     try {
       const next = await fetchV2Profile();
-      if (requestSeq.current !== seq) return;
+      if (requestSeq.current !== seq || photoSeq.current !== photoSeqAtRead) return;
       setLoaded({ uid, profile: next });
     } catch (readError) {
-      if (requestSeq.current !== seq) return;
+      if (requestSeq.current !== seq || photoSeq.current !== photoSeqAtRead) return;
       setReadFailure({ uid, error: readError });
     } finally {
-      if (requestSeq.current === seq) setIsLoading(false);
+      if (requestSeq.current === seq && photoSeq.current === photoSeqAtRead) setIsLoading(false);
     }
   }, [uid]);
 
@@ -236,6 +244,7 @@ export function useV2Profile() {
       const uidAtSave = uid;
       requestSeq.current += 1;
       const seq = requestSeq.current;
+      const photoSeqAtSave = photoSeq.current;
       const saveId = ++saveSeq.current;
       savingRef.current = true;
       setIsLoading(false);
@@ -253,19 +262,23 @@ export function useV2Profile() {
       try {
         const next = await updateV2DisplayName(displayName);
         if (responseIsCurrent()) {
-          setLoaded((current) =>
-            current && current.uid === uidAtSave
-              ? { uid: uidAtSave, profile: mergeProfileIdentity(current.profile, next) }
-              : { uid: uidAtSave, profile: next },
-          );
+          const current = loadedRef.current?.uid === uidAtSave ? loadedRef.current.profile : null;
+          const nextIdentity = current && photoSeq.current !== photoSeqAtSave
+            ? { ...next, profileImage: current.profileImage }
+            : next;
+          const merged = current ? mergeProfileIdentity(current, nextIdentity) : nextIdentity;
+          loadedRef.current = { uid: uidAtSave, profile: merged };
+          setLoaded(loadedRef.current);
           writeOwnedV2MemberIdentity(queryClient, {
             responseUid: uidAtSave,
             activeUid: activeUid.current,
             responseSeq: seq,
             activeSeq: requestSeq.current,
-            profile: next,
+            profile: nextIdentity,
           });
           void invalidateV2MemberIdentity(queryClient, uidAtSave);
+          void invalidateV2ChallengeFeed(queryClient);
+          return nextIdentity;
         }
         return next;
       } catch (saveFailure) {
@@ -275,29 +288,27 @@ export function useV2Profile() {
         try {
           const canonical = await reconcileProfileIdentity({
             current:
-              loaded?.uid === uidAtSave
-                ? loaded.profile
+              loadedRef.current?.uid === uidAtSave
+                ? loadedRef.current.profile
                 : null,
             readCanonical: () => fetchV2Profile(),
           });
           if (responseIsCurrent()) {
-            setLoaded((current) => {
-              const retained =
-                current && current.uid === uidAtSave ? current.profile : null;
-              return {
-                uid: uidAtSave,
-                profile: retained
-                  ? mergeProfileIdentity(retained, canonical)
-                  : canonical,
-              };
-            });
+            const retained = loadedRef.current?.uid === uidAtSave ? loadedRef.current.profile : null;
+            const canonicalIdentity = retained && photoSeq.current !== photoSeqAtSave
+              ? { ...canonical, profileImage: retained.profileImage }
+              : canonical;
+            const merged = retained ? mergeProfileIdentity(retained, canonicalIdentity) : canonicalIdentity;
+            loadedRef.current = { uid: uidAtSave, profile: merged };
+            setLoaded(loadedRef.current);
             writeOwnedV2MemberIdentity(queryClient, {
               responseUid: uidAtSave,
               activeUid: activeUid.current,
               responseSeq: seq,
               activeSeq: requestSeq.current,
-              profile: canonical,
+              profile: canonicalIdentity,
             });
+            void invalidateV2ChallengeFeed(queryClient);
             setReadFailure(null);
             setPageError(null);
             reconciled = true;
@@ -319,12 +330,26 @@ export function useV2Profile() {
     [isSaving, loaded, queryClient, uid],
   );
 
+  const applyProfileImage = useCallback((profileImage: V2MediaImageProjection) => {
+    if (!uid) return;
+    photoSeq.current += 1;
+    const current = loadedRef.current;
+    if (!current || current.uid !== uid) return;
+    const nextProfile = { ...current.profile, profileImage };
+    loadedRef.current = { uid, profile: nextProfile };
+    setLoaded(loadedRef.current);
+    setReadFailure(null);
+    setIsLoading(false);
+    setV2MemberIdentity(queryClient, uid, nextProfile);
+  }, [queryClient, uid]);
+
   return {
     profile,
     isLoading: showLoading,
     error,
     isSaving,
     saveDisplayName,
+    applyProfileImage,
     reload,
     loadMoreGroups,
     loadMoreChallenges,

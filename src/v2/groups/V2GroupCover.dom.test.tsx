@@ -21,6 +21,25 @@ describe('V2 Group local cover previews', () => {
     expect(getLocalGroupCoverPreview('group-other')).toBeNull();
   });
 
+  it('never hides a ready persisted cover behind a stale tab-local File', () => {
+    const selected = new File(['stale local preview'], 'stale.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn().mockReturnValue('blob:stale') });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: vi.fn() });
+    setLocalGroupCoverPreview('group-shared', selected);
+    const { container } = render(
+      <V2GroupCover
+        groupId="group-shared"
+        title="Persisted Group"
+        coverId="cover-2"
+        coverImage={{ status: 'ready', assetId: 'asset-1', url: 'https://r2.example.invalid/group.webp', contentType: 'image/webp', width: 100, height: 100 }}
+        heightClass="h-24"
+      />,
+    );
+
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('https://r2.example.invalid/group.webp');
+    expect(container.querySelector('[data-group-cover-id="group-shared"]')?.getAttribute('data-local-cover')).toBe('false');
+  });
+
   it('renders uploaded photos, preserves explicit catalogue covers, and uses a neutral fallback when neither exists', () => {
     const selected = new File(['fictional preview photo'], 'group.jpg', { type: 'image/jpeg' });
     Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: vi.fn().mockReturnValue('blob:group-photo') });

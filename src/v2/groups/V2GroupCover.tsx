@@ -4,6 +4,7 @@ import type { V2MediaImageProjection } from '../../api/mediaApi';
 import { V2SignedImage } from '../media/V2SignedImage';
 import { getLocalGroupCoverPreview } from './localGroupCoverPreviews';
 import { coverGradientFor, isGroupCoverId } from './groupCovers';
+import { invalidateV2GroupCoverReads } from './groupQueryKeys';
 
 /** Shared Group cover rendering for active V2 Group surfaces. */
 export function V2GroupCover({
@@ -40,7 +41,7 @@ export function V2GroupCover({
   }, [groupId, localCover]);
 
   const persistedUrl = coverImage?.status === 'ready' ? coverImage.url : null;
-  const effectiveUrl = photoUrl ?? persistedUrl;
+  const effectiveUrl = persistedUrl ?? photoUrl;
   const explicitCover = isGroupCoverId(coverId) ? coverId : null;
   const bgClass = !effectiveUrl && explicitCover
     ? `bg-gradient-to-br ${coverGradientFor(explicitCover)}`
@@ -52,24 +53,23 @@ export function V2GroupCover({
   return (
     <div
       data-group-cover-id={groupId}
-      data-local-cover={effectiveUrl ? 'true' : 'false'}
+      data-local-cover={photoUrl && !persistedUrl ? 'true' : 'false'}
       data-catalogue-cover={explicitCover ?? ''}
       className={`relative isolate overflow-hidden ${bgClass} ${heightClass} ${className}`}
     >
-      {photoUrl ? (
-        <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
-      ) : persistedUrl ? (
+      {persistedUrl ? (
         <V2SignedImage
           src={persistedUrl}
           alt={`${title} cover photo`}
           className="absolute inset-0 h-full w-full object-cover"
           refreshKey={`group-cover-${groupId}`}
-          onExpired={() => void queryClient?.invalidateQueries({
-            predicate: (q) => Array.isArray(q.queryKey) && typeof q.queryKey[0] === 'string'
-              && (q.queryKey[0].includes('group') || q.queryKey[0].includes('membership')),
-          })}
+          onExpired={() => {
+            if (queryClient) void invalidateV2GroupCoverReads(queryClient, undefined, groupId);
+          }}
           fallback={fallbackNode}
         />
+      ) : photoUrl ? (
+        <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />
       ) : !explicitCover ? (
         <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />
       ) : null}

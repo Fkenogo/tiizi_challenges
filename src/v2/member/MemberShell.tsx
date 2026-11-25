@@ -46,6 +46,7 @@ export function V2MemberShell() {
               <V2AccountTrigger
                 name={displayName}
                 imageUrl={identity.profileImage?.status === 'ready' ? identity.profileImage.url : null}
+                refreshKey={`member-identity-${identity.identity?.memberId ?? 'pending'}`}
                 onImageExpired={() => void identity.refetch()}
                 onOpen={() => navigate('/v2/profile')}
               />

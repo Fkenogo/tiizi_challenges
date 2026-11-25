@@ -135,36 +135,39 @@ export async function createMediaUploadIntent(
       throw new MediaServiceError(403, 'forbidden', 'Cannot create a profile image intent for another member');
     }
     targetScopeId = params.actorMemberId;
-  } else if (targetScopeId) {
-    // Verify current Group / Challenge relationship if pre-scoped
+  } else {
+    if (!targetScopeId) {
+      throw new MediaServiceError(400, 'invalid_target_scope', 'targetScopeId is required for Group and Challenge covers');
+    }
     if (purpose === 'group_cover') {
-      const roleCheck = await db.query<{ is_steward: boolean }>(
-        `SELECT (
-           g.steward_member_id = $2
-           OR (gm.status IN ('active', 'joined') AND gm.role IN ('owner', 'admin'))
-         ) AS is_steward
+      const roleCheck = await db.query<{ allowed: boolean }>(
+        `SELECT (g.status = 'active' AND g.steward_member_id = $2) AS allowed
            FROM groups g
-           LEFT JOIN group_memberships gm
-             ON gm.group_id = g.group_id AND gm.member_id = $2
           WHERE g.group_id = $1`,
         [targetScopeId, params.actorMemberId],
       );
-      if (roleCheck.rows[0]?.is_steward !== true) {
+      if (roleCheck.rows[0]?.allowed !== true) {
         throw new MediaServiceError(403, 'forbidden', 'Only the Group Steward can upload a Group cover');
       }
     } else if (purpose === 'challenge_cover') {
       const groupOrChallenge = await db.query<{ allowed: boolean }>(
         `SELECT (
            EXISTS (
-             SELECT 1 FROM group_memberships gm
-              WHERE gm.group_id = $1 AND gm.member_id = $2 AND gm.status IN ('active', 'joined')
+             SELECT 1 FROM groups g
+              WHERE g.group_id = $1 AND g.status = 'active' AND g.steward_member_id = $2
+           )
+           OR EXISTS (
+             SELECT 1 FROM groups g
+             LEFT JOIN group_memberships gm
+               ON gm.group_id = g.group_id AND gm.member_id = $2
+              WHERE g.group_id = $1 AND g.status = 'active'
+                AND gm.status IN ('active', 'joined')
+                AND (g.steward_member_id = $2 OR g.allow_member_challenges = true)
            )
            OR EXISTS (
              SELECT 1 FROM challenges c
-               JOIN groups g ON g.group_id = c.group_id
-               LEFT JOIN group_memberships gm ON gm.group_id = c.group_id AND gm.member_id = $2
-              WHERE c.challenge_id = $1
-                AND (g.steward_member_id = $2 OR (gm.status IN ('active', 'joined') AND gm.role IN ('owner', 'admin')))
+             JOIN groups g ON g.group_id = c.group_id
+              WHERE c.challenge_id = $1 AND g.status = 'active' AND g.steward_member_id = $2
            )
          ) AS allowed`,
         [targetScopeId, params.actorMemberId],
@@ -242,12 +245,34 @@ export async function uploadMediaIntentContent(
   if (!intent || intent.actor_member_id !== params.actorMemberId) {
     throw new MediaServiceError(404, 'intent_not_found', 'Upload intent not found');
   }
+  const expiresMs = new Date(intent.expires_at).getTime();
+  if ((intent.status === 'open' || intent.status === 'uploaded')
+      && (!Number.isFinite(expiresMs) || expiresMs <= Date.now())) {
+    throw new MediaServiceError(410, 'intent_expired', 'Upload intent has expired');
+  }
+  if (intent.status === 'uploaded' || intent.status === 'bound') {
+    if (!intent.asset_id) {
+      throw new MediaServiceError(409, 'intent_not_open', 'Upload intent has no uploaded image ready');
+    }
+    const existing = await db.query<{ width: number; height: number; byte_size: number }>(
+      `SELECT width, height, byte_size FROM media_assets WHERE asset_id = $1`,
+      [intent.asset_id],
+    );
+    const asset = existing.rows[0];
+    if (!asset) {
+      throw new MediaServiceError(409, 'asset_not_bindable', 'Media asset is no longer bindable');
+    }
+    return {
+      intentId: intent.intent_id,
+      assetId: intent.asset_id,
+      status: 'uploaded',
+      width: asset.width,
+      height: asset.height,
+      byteSize: asset.byte_size,
+    };
+  }
   if (intent.status !== 'open') {
     throw new MediaServiceError(409, 'intent_not_open', `Upload intent is already ${intent.status}`);
-  }
-  const expiresMs = new Date(intent.expires_at).getTime();
-  if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
-    throw new MediaServiceError(410, 'intent_expired', 'Upload intent has expired');
   }
 
   let processed;
@@ -322,6 +347,7 @@ export async function bindIntentInTransaction(
     intentId: string;
     actorMemberId: string;
     expectedPurpose: MediaPurpose;
+    expectedTargetScopeId: string;
     ownerScope: 'member' | 'group' | 'challenge';
     ownerId: string;
   },
@@ -335,9 +361,10 @@ export async function bindIntentInTransaction(
     purpose: string;
     status: string;
     asset_id: string | null;
+    target_scope_id: string | null;
     expires_at: Date | string;
   }>(
-    `SELECT intent_id, actor_member_id, purpose, status, asset_id, expires_at
+    `SELECT intent_id, actor_member_id, purpose, status, asset_id, target_scope_id, expires_at
        FROM media_upload_intents
       WHERE intent_id = $1
       FOR UPDATE`,
@@ -349,6 +376,9 @@ export async function bindIntentInTransaction(
   }
   if (intent.purpose !== params.expectedPurpose) {
     throw new MediaServiceError(400, 'intent_purpose_mismatch', 'Upload intent purpose does not match');
+  }
+  if (intent.target_scope_id !== params.expectedTargetScopeId) {
+    throw new MediaServiceError(403, 'intent_scope_mismatch', 'Upload intent does not belong to this scope');
   }
   if (intent.status !== 'uploaded' || !intent.asset_id) {
     throw new MediaServiceError(409, 'intent_not_uploaded', 'Upload intent has no uploaded image ready');
@@ -428,6 +458,7 @@ export async function setOwnProfileImage(
       intentId: params.intentId,
       actorMemberId: params.memberId,
       expectedPurpose: 'profile_image',
+      expectedTargetScopeId: params.memberId,
       ownerScope: 'member',
       ownerId: params.memberId,
     });
@@ -504,14 +535,9 @@ export async function setGroupCoverImage(
 
   const { newAssetId, oldAssetId } = await db.transaction(async (tx) => {
     const authRes = await tx.query<{ is_steward: boolean; cover_asset_id: string | null }>(
-      `SELECT (
-           g.steward_member_id = $2
-           OR (gm.status IN ('active', 'joined') AND gm.role IN ('owner', 'admin'))
-         ) AS is_steward,
+      `SELECT (g.status = 'active' AND g.steward_member_id = $2) AS is_steward,
          g.cover_asset_id
          FROM groups g
-         LEFT JOIN group_memberships gm
-           ON gm.group_id = g.group_id AND gm.member_id = $2
         WHERE g.group_id = $1
         FOR UPDATE OF g`,
       [params.groupId, params.actorMemberId],
@@ -527,6 +553,7 @@ export async function setGroupCoverImage(
       intentId: params.intentId,
       actorMemberId: params.actorMemberId,
       expectedPurpose: 'group_cover',
+      expectedTargetScopeId: params.groupId,
       ownerScope: 'group',
       ownerId: params.groupId,
     });
@@ -563,14 +590,9 @@ export async function removeGroupCoverImage(
   }
   const oldAssetId = await db.transaction(async (tx) => {
     const authRes = await tx.query<{ is_steward: boolean; cover_asset_id: string | null }>(
-      `SELECT (
-           g.steward_member_id = $2
-           OR (gm.status IN ('active', 'joined') AND gm.role IN ('owner', 'admin'))
-         ) AS is_steward,
+      `SELECT (g.status = 'active' AND g.steward_member_id = $2) AS is_steward,
          g.cover_asset_id
          FROM groups g
-         LEFT JOIN group_memberships gm
-           ON gm.group_id = g.group_id AND gm.member_id = $2
         WHERE g.group_id = $1
         FOR UPDATE OF g`,
       [params.groupId, params.actorMemberId],
@@ -602,10 +624,64 @@ export async function removeGroupCoverImage(
   return store ? { status: 'none' } : { status: 'not_configured' };
 }
 
+interface ChallengeCoverAuthorityRow {
+  groupId: string;
+  createdByMemberId: string;
+  coverAssetId: string | null;
+  isSteward: boolean;
+  allowMemberChallenges: boolean;
+  membershipStatus: string | null;
+}
+
+/** Lock Group → membership → Challenge in the canonical mutation order. */
+async function lockChallengeCoverAuthority(
+  tx: Db,
+  challengeId: string,
+  actorMemberId: string,
+): Promise<ChallengeCoverAuthorityRow> {
+  const scope = await tx.query<{ group_id: string }>(
+    `SELECT group_id FROM challenges WHERE challenge_id = $1`,
+    [challengeId],
+  );
+  if (scope.rows.length === 0) {
+    throw new MediaServiceError(404, 'challenge_not_found', 'Challenge not found');
+  }
+  const groupId = scope.rows[0].group_id;
+  const group = await tx.query<{ status: string; steward_member_id: string | null; allow_member_challenges: boolean }>(
+    `SELECT status, steward_member_id, allow_member_challenges
+       FROM groups WHERE group_id = $1 FOR UPDATE`,
+    [groupId],
+  );
+  if (!group.rows[0] || group.rows[0].status !== 'active') {
+    throw new MediaServiceError(404, 'challenge_not_found', 'Challenge not found');
+  }
+  const membership = await tx.query<{ status: string }>(
+    `SELECT status FROM group_memberships
+      WHERE group_id = $1 AND member_id = $2 FOR SHARE`,
+    [groupId, actorMemberId],
+  );
+  const challenge = await tx.query<{ group_id: string; created_by_member_id: string; cover_asset_id: string | null }>(
+    `SELECT group_id, created_by_member_id, cover_asset_id
+       FROM challenges WHERE challenge_id = $1 FOR UPDATE`,
+    [challengeId],
+  );
+  if (!challenge.rows[0] || challenge.rows[0].group_id !== groupId) {
+    throw new MediaServiceError(404, 'challenge_not_found', 'Challenge not found');
+  }
+  return {
+    groupId,
+    createdByMemberId: challenge.rows[0].created_by_member_id,
+    coverAssetId: challenge.rows[0].cover_asset_id,
+    isSteward: group.rows[0].steward_member_id === actorMemberId,
+    allowMemberChallenges: group.rows[0].allow_member_challenges,
+    membershipStatus: membership.rows[0]?.status ?? null,
+  };
+}
+
 export async function setChallengeCoverImage(
   db: Db,
   store: ObjectStore | null,
-  params: { challengeId: string; actorMemberId: string; intentId: string; allowCreatorInitialBind?: boolean },
+  params: { challengeId: string; actorMemberId: string; intentId: string; allowCreatorInitialBind?: boolean; groupId?: string },
   readUrlTtlSeconds: number,
 ): Promise<MediaImageProjection> {
   if (!store) {
@@ -614,47 +690,71 @@ export async function setChallengeCoverImage(
   if (!UUID_RE.test(params.challengeId)) {
     throw new MediaServiceError(400, 'invalid_challenge', 'challengeId must be a valid UUID');
   }
+  if (!UUID_RE.test(params.intentId)) {
+    throw new MediaServiceError(400, 'invalid_intent', 'intentId must be a valid UUID');
+  }
 
   const { newAssetId, oldAssetId } = await db.transaction(async (tx) => {
-    const authRes = await tx.query<{
-      created_by_member_id: string;
-      cover_asset_id: string | null;
-      is_steward: boolean;
-      membership_status: string | null;
+    const row = await lockChallengeCoverAuthority(tx, params.challengeId, params.actorMemberId);
+    const isSteward = row.isSteward;
+    const intentForRetry = await tx.query<{
+      actor_member_id: string;
+      purpose: string;
+      status: string;
+      asset_id: string | null;
+      target_scope_id: string | null;
+      expires_at: Date | string;
     }>(
-      `SELECT c.created_by_member_id,
-              c.cover_asset_id,
-              (
-                g.steward_member_id = $2
-                OR (gm.status IN ('active', 'joined') AND gm.role IN ('owner', 'admin'))
-              ) AS is_steward,
-              gm.status AS membership_status
-         FROM challenges c
-         JOIN groups g ON g.group_id = c.group_id
-         LEFT JOIN group_memberships gm
-           ON gm.group_id = c.group_id AND gm.member_id = $2
-        WHERE c.challenge_id = $1
-        FOR UPDATE OF c`,
-      [params.challengeId, params.actorMemberId],
+      `SELECT actor_member_id, purpose, status, asset_id, target_scope_id, expires_at
+         FROM media_upload_intents WHERE intent_id = $1 FOR UPDATE`,
+      [params.intentId],
     );
-    if (authRes.rows.length === 0) {
-      throw new MediaServiceError(404, 'challenge_not_found', 'Challenge not found');
-    }
-    const row = authRes.rows[0];
-    const isSteward = row.is_steward === true;
+    const retryIntent = intentForRetry.rows[0];
+    const sameInitialIntentApplied =
+      params.allowCreatorInitialBind === true &&
+      Boolean(params.groupId) &&
+      params.groupId === row.groupId &&
+      row.createdByMemberId === params.actorMemberId &&
+      (row.membershipStatus === 'active' || row.membershipStatus === 'joined') &&
+      (isSteward || row.allowMemberChallenges) &&
+      retryIntent?.actor_member_id === params.actorMemberId &&
+      retryIntent?.purpose === 'challenge_cover' &&
+      retryIntent?.status === 'bound' &&
+      Boolean(retryIntent.asset_id) &&
+      retryIntent.asset_id === row.coverAssetId &&
+      retryIntent.target_scope_id === row.groupId &&
+      new Date(retryIntent.expires_at).getTime() > Date.now();
+    const priorCreatorCover = sameInitialIntentApplied ? false : (await tx.query<{ intent_id: string }>(
+      `SELECT i.intent_id
+         FROM media_upload_intents i
+         JOIN media_assets a ON a.asset_id = i.asset_id
+        WHERE a.owner_scope = 'challenge' AND a.owner_id = $1
+          AND i.actor_member_id = $2 AND i.purpose = 'challenge_cover' AND i.status = 'bound'
+          AND i.intent_id <> $3
+        LIMIT 1`,
+      [params.challengeId, params.actorMemberId, params.intentId],
+    )).rows.length > 0;
     const isEligibleCreatorOnInitialBind =
       params.allowCreatorInitialBind === true &&
-      row.created_by_member_id === params.actorMemberId &&
-      (row.membership_status === 'active' || row.membership_status === 'joined') &&
-      row.cover_asset_id === null;
-    if (!isSteward && !isEligibleCreatorOnInitialBind) {
+      Boolean(params.groupId) &&
+      params.groupId === row.groupId &&
+      row.createdByMemberId === params.actorMemberId &&
+      (row.membershipStatus === 'active' || row.membershipStatus === 'joined') &&
+      (isSteward || row.allowMemberChallenges) &&
+      (row.coverAssetId === null || sameInitialIntentApplied) &&
+      !priorCreatorCover;
+    if (!isSteward && !isEligibleCreatorOnInitialBind && !sameInitialIntentApplied) {
       throw new MediaServiceError(403, 'forbidden', 'Only an authorized Group Steward can update the Challenge cover');
     }
-    const previousId = row.cover_asset_id;
+    const previousId = row.coverAssetId;
+    if (sameInitialIntentApplied) {
+      return { newAssetId: retryIntent.asset_id!, oldAssetId: previousId };
+    }
     const { assetId } = await bindIntentInTransaction(tx, {
       intentId: params.intentId,
       actorMemberId: params.actorMemberId,
       expectedPurpose: 'challenge_cover',
+      expectedTargetScopeId: isEligibleCreatorOnInitialBind ? params.groupId! : params.challengeId,
       ownerScope: 'challenge',
       ownerId: params.challengeId,
     });
@@ -690,27 +790,11 @@ export async function removeChallengeCoverImage(
     throw new MediaServiceError(400, 'invalid_challenge', 'challengeId must be a valid UUID');
   }
   const oldAssetId = await db.transaction(async (tx) => {
-    const authRes = await tx.query<{ cover_asset_id: string | null; is_steward: boolean }>(
-      `SELECT c.cover_asset_id,
-              (
-                g.steward_member_id = $2
-                OR (gm.status IN ('active', 'joined') AND gm.role IN ('owner', 'admin'))
-              ) AS is_steward
-         FROM challenges c
-         JOIN groups g ON g.group_id = c.group_id
-         LEFT JOIN group_memberships gm
-           ON gm.group_id = c.group_id AND gm.member_id = $2
-        WHERE c.challenge_id = $1
-        FOR UPDATE OF c`,
-      [params.challengeId, params.actorMemberId],
-    );
-    if (authRes.rows.length === 0) {
-      throw new MediaServiceError(404, 'challenge_not_found', 'Challenge not found');
-    }
-    if (authRes.rows[0].is_steward !== true) {
+    const row = await lockChallengeCoverAuthority(tx, params.challengeId, params.actorMemberId);
+    if (!row.isSteward) {
       throw new MediaServiceError(403, 'forbidden', 'Only the Group Steward can remove the Challenge cover');
     }
-    const previousId = authRes.rows[0].cover_asset_id;
+    const previousId = row.coverAssetId;
     if (!previousId) return null;
     await tx.query(
       `UPDATE challenges SET cover_asset_id = NULL, updated_at = now() WHERE challenge_id = $1`,
