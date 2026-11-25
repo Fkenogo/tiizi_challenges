@@ -881,6 +881,63 @@ export async function getGoverningVersion(
   return { version, snapshot, activities };
 }
 
+/**
+ * Batch-load and verify governing config versions for multiple Challenges in
+ * two queries while keeping the exact fail-closed snapshot/row consistency check.
+ */
+export async function getGoverningVersionsForChallenges(
+  db: Db,
+  refs: readonly { challengeId: string; version: number }[],
+): Promise<Map<string, GoverningVersion>> {
+  const out = new Map<string, GoverningVersion>();
+  if (refs.length === 0) return out;
+  for (const ref of refs) {
+    if (!Number.isInteger(ref.version) || ref.version < 1) {
+      fail(`config version must be an integer >= 1`);
+    }
+  }
+  const challengeIds = Array.from(new Set(refs.map((r) => r.challengeId)));
+  const [versionRows, activityRows] = await Promise.all([
+    db.query<{ challenge_id: string; version: number; snapshot: unknown }>(
+      `SELECT challenge_id, version, snapshot
+         FROM challenge_config_versions
+        WHERE challenge_id = ANY($1::uuid[])`,
+      [challengeIds],
+    ),
+    db.query(
+      `SELECT *
+         FROM challenge_activity_configs
+        WHERE challenge_id = ANY($1::uuid[])
+        ORDER BY position ASC, canonical_key ASC`,
+      [challengeIds],
+    ),
+  ]);
+  const snapshotByKey = new Map<string, unknown>();
+  for (const row of versionRows.rows) {
+    snapshotByKey.set(`${row.challenge_id}:${row.version}`, row.snapshot);
+  }
+  const activitiesByKey = new Map<string, ActivityConfigRow[]>();
+  for (const rawRow of activityRows.rows as never[]) {
+    const row = normalizeActivityRow(rawRow);
+    const key = `${row.challenge_id}:${row.version}`;
+    const list = activitiesByKey.get(key) ?? [];
+    list.push(row);
+    activitiesByKey.set(key, list);
+  }
+  for (const ref of refs) {
+    const key = `${ref.challengeId}:${ref.version}`;
+    if (!snapshotByKey.has(key)) {
+      fail(`unknown config version ${ref.version} for challenge ${ref.challengeId}`);
+    }
+    const raw = snapshotByKey.get(key);
+    const snapshot = parseGoverningSnapshot(typeof raw === 'string' ? JSON.parse(raw) : raw);
+    const activities = activitiesByKey.get(key) ?? [];
+    assertSnapshotActivitiesConsistent(ref.version, snapshot, activities);
+    out.set(ref.challengeId, { version: ref.version, snapshot, activities });
+  }
+  return out;
+}
+
 /** Every snapshot activity must project to exactly one normalized row. */
 export function assertSnapshotActivitiesConsistent(
   version: number,

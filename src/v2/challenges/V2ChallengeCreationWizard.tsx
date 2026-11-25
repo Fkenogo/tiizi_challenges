@@ -85,6 +85,13 @@ import { removeLocalChallengeCoverPreview } from './localChallengeCoverPreviews'
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { invalidateV2ChallengeCoverReads, v2ChallengeDetailKey } from './challengeQueryKeys';
 import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
+import {
+  activityDraftSnapshot,
+  isRefreshPlanFresh,
+  planActivityRefresh,
+  resolveStaleActivityIndex,
+  type ActivityRefreshPlan,
+} from './wizardSteps/activityRefresh';
 
 /**
  * S2b — the seven-step V2 Challenge Creation experience.
@@ -137,6 +144,13 @@ export function V2ChallengeCreationWizard() {
   const leavingForGuide = useRef(false);
   const [previewState, setPreviewState] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
   const [previewIssues, setPreviewIssues] = useState<MappedPreviewIssue[] | null>(null);
+  const [refreshingIndex, setRefreshingIndex] = useState<number | null>(null);
+  const [pendingRefresh, setPendingRefresh] = useState<ActivityRefreshPlan | null>(null);
+  const [refreshError, setRefreshError] = useState('');
+  const [refreshNeedsWhatCounts, setRefreshNeedsWhatCounts] = useState(false);
+  const refreshSeqRef = useRef(0);
+  const latestStateRef = useRef(state);
+  latestStateRef.current = state;
   const [submitError, setSubmitError] = useState('');
   const [establishedChallenge, setEstablishedChallenge] = useState<{ challengeId: string; groupId: string } | null>(null);
   const [coverUploadError, setCoverUploadError] = useState('');
@@ -231,6 +245,72 @@ export function V2ChallengeCreationWizard() {
 
   function update(patch: Partial<WizardState>) {
     setState((prev) => ({ ...prev, ...patch }));
+  }
+
+  useEffect(() => {
+    if (!pendingRefresh) return;
+    const check = isRefreshPlanFresh(pendingRefresh, state);
+    if (!check.fresh) {
+      setPendingRefresh(null);
+      if (check.reason === 'changed') {
+        setRefreshError('Your Challenge setup changed while reviewing this update. Review the update again to apply it to your latest settings.');
+      }
+    }
+  }, [pendingRefresh, state.activities, state.challengeType]);
+
+  async function handleReviewStaleActivity(issue: { code: string; activityIndex?: number; raw?: string }) {
+    const idx = resolveStaleActivityIndex(issue, state.activities);
+    const targetActivity = state.activities[idx];
+    if (!targetActivity) return;
+    const reqSeq = ++refreshSeqRef.current;
+    const expectedSnapshot = activityDraftSnapshot(targetActivity, state.challengeType);
+    setRefreshError('');
+    setRefreshingIndex(idx);
+    try {
+      const options = await fetchActivityOptions(targetActivity.activity);
+      if (reqSeq !== refreshSeqRef.current) return;
+      const latest = latestStateRef.current;
+      const currentTarget = latest.activities.find((a) => a.activity === targetActivity.activity);
+      if (!currentTarget || activityDraftSnapshot(currentTarget, latest.challengeType) !== expectedSnapshot) {
+        setPendingRefresh(null);
+        setRefreshError('Your Challenge setup changed while loading this update. Review the update again to apply it to your latest settings.');
+        return;
+      }
+      setPendingRefresh(planActivityRefresh(currentTarget, options, latest.challengeType));
+    } catch {
+      if (reqSeq !== refreshSeqRef.current) return;
+      setRefreshError(`We couldn't load the latest details for ${targetActivity.name}. Please try again.`);
+    } finally {
+      if (reqSeq === refreshSeqRef.current) {
+        setRefreshingIndex(null);
+      }
+    }
+  }
+
+  function handleAcceptActivityRefresh() {
+    if (!pendingRefresh) return;
+    const plan = pendingRefresh;
+    setPendingRefresh(null);
+    setState((prev) => {
+      const check = isRefreshPlanFresh(plan, prev);
+      if (!check.fresh) {
+        if (check.reason === 'changed') {
+          setRefreshError('Your Challenge setup changed while reviewing this update. Review the update again to apply it to your latest settings.');
+        }
+        return prev;
+      }
+      setRefreshError('');
+      const nextActivities = prev.activities.map((activity, idx) =>
+        idx === check.currentIndex ? plan.updated : activity,
+      );
+      const nextState = { ...prev, activities: nextActivities };
+      setRefreshNeedsWhatCounts(plan.missingRequiredFields.length > 0 || !isWizardComplete(nextState));
+      return nextState;
+    });
+  }
+
+  function handleDeclineActivityRefresh() {
+    setPendingRefresh(null);
   }
 
   function goToStep(index: number) {
@@ -502,6 +582,13 @@ export function V2ChallengeCreationWizard() {
           coverPhoto={challengeCoverPhoto}
           isSaving={creating || coverUploading}
           onEditStep={(step) => goToStep(VISIBLE_STEPS.indexOf(step))}
+          onReviewStaleActivity={handleReviewStaleActivity}
+          refreshingIndex={refreshingIndex}
+          pendingRefresh={pendingRefresh}
+          refreshError={refreshError}
+          refreshNeedsWhatCounts={refreshNeedsWhatCounts && !isWizardComplete(state)}
+          onAcceptRefresh={handleAcceptActivityRefresh}
+          onDeclineRefresh={handleDeclineActivityRefresh}
         />
       )}
 
@@ -801,6 +888,13 @@ export function StepReview({
   coverPhoto,
   isSaving = false,
   onEditStep,
+  onReviewStaleActivity,
+  refreshingIndex = null,
+  pendingRefresh = null,
+  refreshError = '',
+  refreshNeedsWhatCounts = false,
+  onAcceptRefresh,
+  onDeclineRefresh,
 }: {
   state: WizardState;
   previewState: 'idle' | 'checking' | 'valid' | 'invalid';
@@ -809,6 +903,13 @@ export function StepReview({
   coverPhoto?: LocalImagePreviewState;
   isSaving?: boolean;
   onEditStep: (step: (typeof VISIBLE_STEPS)[number]) => void;
+  onReviewStaleActivity?: (issue: { code: string; activityIndex?: number; raw?: string }) => void;
+  refreshingIndex?: number | null;
+  pendingRefresh?: ActivityRefreshPlan | null;
+  refreshError?: string;
+  refreshNeedsWhatCounts?: boolean;
+  onAcceptRefresh?: () => void;
+  onDeclineRefresh?: () => void;
 }) {
   const endDate = state.endDate;
   return (
@@ -866,7 +967,63 @@ export function StepReview({
 
       <WhatCountsExplanation challengeType={state.challengeType} />
 
-      <PreviewStatus state={previewState} issues={previewIssues} onEditStep={onEditStep} />
+      <PreviewStatus
+        state={previewState}
+        issues={previewIssues}
+        onEditStep={onEditStep}
+        onReviewStaleActivity={onReviewStaleActivity}
+        refreshingIndex={refreshingIndex}
+      />
+
+      {refreshNeedsWhatCounts && !pendingRefresh && (
+        <V2Card className="border-amber-200 bg-amber-50">
+          <p className="text-sm font-black text-amber-950">Additional measurement details required</p>
+          <p className="mt-1 text-xs leading-5 text-amber-900">
+            The updated activity requires additional selection in What counts before this Challenge can be created.
+          </p>
+          <div className="mt-2">
+            <V2Button type="button" variant="secondary" onClick={() => onEditStep('WHAT_COUNTS')}>
+              Go to What counts
+            </V2Button>
+          </div>
+        </V2Card>
+      )}
+
+      {refreshError && (
+        <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+          {refreshError}
+        </p>
+      )}
+
+      {pendingRefresh && (
+        <V2Card className="border-amber-200 bg-amber-50">
+          <p className="text-sm font-black text-amber-950">
+            Review update for {pendingRefresh.activityName}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-amber-900">
+            This activity guide was updated from version {pendingRefresh.previousVersion} to version {pendingRefresh.nextVersion}.
+          </p>
+          {pendingRefresh.changes.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-xs text-amber-900">
+              {pendingRefresh.changes.map((line) => (
+                <li key={line}>• {line}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-xs text-amber-900">
+              Your selected measurement, target, and schedule remain compatible.
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <V2Button type="button" variant="primary" onClick={onAcceptRefresh}>
+              Accept &amp; refresh
+            </V2Button>
+            <V2Button type="button" variant="secondary" onClick={onDeclineRefresh}>
+              Keep current
+            </V2Button>
+          </div>
+        </V2Card>
+      )}
     </div>
   );
 }

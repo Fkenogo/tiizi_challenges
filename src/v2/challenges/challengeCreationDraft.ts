@@ -176,7 +176,7 @@ export function statusLabel(status: string | null | undefined): string {
     case 'establishment':
       return 'Getting ready';
     case 'active':
-      return 'Running';
+      return 'Active';
     case 'ended':
       return 'Finished';
     default:
@@ -657,8 +657,11 @@ const STAGE_TO_STEP: Record<string, VisibleStep> = {
 
 /** Strip internal machine tokens before showing a message to a Member. */
 export function humanizePreviewMessage(message: string): string {
+  if (/explicit refresh required/i.test(message)) {
+    return 'An activity in this Challenge has an updated guide version. Review and refresh it to continue.';
+  }
   return message
-    .replace(/^(challenge-definition|challenge-composer|challenge-configs|knowledge-eligibility):\s*/i, '')
+    .replace(/^(challenge-definition|challenge-composer|challenge-configs|knowledge-eligibility|composer):\s*/i, '')
     .replace(/\[[a-z0-9_[\]]+\]\s*/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -683,6 +686,7 @@ function stepForIssue(issue: ComposerPreviewIssue): VisibleStep {
 export interface MappedPreviewIssue {
   step: VisibleStep;
   field?: string;
+  activityIndex?: number;
   code: string;
   /** Member-facing message (internal codes removed). */
   friendly: string;
@@ -695,6 +699,7 @@ export function mapPreviewIssues(issues: ComposerPreviewIssue[]): MappedPreviewI
   return issues.map((issue) => ({
     step: stepForIssue(issue),
     field: issue.field,
+    activityIndex: issue.activityIndex,
     code: issue.code,
     friendly: humanizePreviewMessage(issue.message),
     raw: issue.message,

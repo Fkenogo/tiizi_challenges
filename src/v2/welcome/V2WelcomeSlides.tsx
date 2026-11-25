@@ -105,7 +105,7 @@ export function V2WelcomeSlides() {
 
   function skip() {
     markWelcomeSeen();
-    navigate(member ? '/v2/profile' : signUpPath);
+    navigate(member ? next : signUpPath);
   }
 
   // Wait for the local session check so a signed-in replay never flashes the visitor exits.
@@ -184,10 +184,10 @@ export function V2WelcomeSlides() {
             member ? (
               <Link
                 ref={primaryExitRef}
-                to="/v2/profile"
+                to={next}
                 className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-bold text-white shadow-sm hover:bg-primary-dark"
               >
-                Back to your profile
+                {next === '/v2/profile' ? 'Back to your profile' : 'Continue to Today'}
               </Link>
             ) : (
               <>

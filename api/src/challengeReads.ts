@@ -39,6 +39,7 @@ import type { Db } from './db.js';
 import { normalizeChallengeRow, type ChallengeRow } from './challenges.js';
 import {
   getGoverningVersion,
+  getGoverningVersionsForChallenges,
   type ActivityConfigRow,
   type GoverningSnapshot,
 } from './challengeConfigs.js';
@@ -65,6 +66,7 @@ import {
   getChallengeFinal,
   getChallengeFinals,
   getParticipationFinals,
+  getParticipationFinalsForChallenges,
   type ChallengeFinalRow,
   type ParticipationFinalRow,
 } from './challengeFinalization.js';
@@ -822,26 +824,29 @@ export async function assembleChallengeSummaries(
   for (const episodes of episodesByChallenge.values()) {
     for (const episode of episodes) participationIds.push(episode.participation_id);
   }
-  const [challengeDerived, participationDerived] = await Promise.all([
-    fetchChallengeDerived(db, ids),
-    fetchParticipationDerived(db, participationIds),
-  ]);
-  // EBC-04 frozen ranks for the displayed episodes (empty when unfinalized).
-  const participationFinals = new Map<string, ParticipationFinalRow>();
-  for (const challengeId of ids) {
-    for (const [participationId, final] of await getParticipationFinals(db, challengeId)) {
-      participationFinals.set(participationId, final);
-    }
-  }
-  // CORR-001: sealed Challenge-level results for finalized Challenges in the
-  // list (challenge-level fields only — the S3d results experience is the
-  // detail read, which additionally reconstructs per-participation truth).
-  const challengeFinals = await getChallengeFinals(db, ids);
   const mediaStore = mediaDeps?.objectStore ?? null;
   const mediaTtl = mediaDeps?.readUrlTtlSeconds ?? 60;
-  const coverAssets = mediaStore
-    ? await resolveReadyMediaAssetsByIds(db, challenges.map((c) => c.cover_asset_id))
-    : new Map();
+  const [
+    challengeDerived,
+    participationDerived,
+    participationFinals,
+    challengeFinals,
+    coverAssets,
+  ] = await Promise.all([
+    fetchChallengeDerived(db, ids),
+    fetchParticipationDerived(db, participationIds),
+    getParticipationFinalsForChallenges(db, ids),
+    getChallengeFinals(db, ids),
+    mediaStore
+      ? resolveReadyMediaAssetsByIds(db, challenges.map((c) => c.cover_asset_id))
+      : Promise.resolve(new Map()),
+    // A corrupt governing version fails the whole list closed (loud integrity
+    // signal, never a silent skip).
+    getGoverningVersionsForChallenges(
+      db,
+      challenges.map((c) => ({ challengeId: c.challenge_id, version: c.current_config_version })),
+    ),
+  ]);
   const summaries = await Promise.all(
     challenges.map((challenge) =>
       toSummary(
@@ -863,11 +868,6 @@ export async function assembleChallengeSummaries(
       ),
     ),
   );
-  // A corrupt governing version fails the whole list closed (loud integrity
-  // signal, never a silent skip); validate after assembly so ordering is stable.
-  for (const challenge of challenges) {
-    await getGoverningVersion(db, challenge.challenge_id, challenge.current_config_version);
-  }
   summaries.sort((a, b) =>
     a.startDate < b.startDate ? 1 : a.startDate > b.startDate ? -1 : 0,
   );

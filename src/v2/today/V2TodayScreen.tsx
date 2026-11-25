@@ -497,7 +497,7 @@ function RequiredTodayCard({
   onLog: () => void;
 }) {
   const { completed, total, allComplete } = requirementProgress(challenge);
-  const lifecycleLabel = challenge.lifecycleState === 'establishment' ? 'Upcoming' : challenge.lifecycleState === 'ended' ? 'Ended' : 'Running';
+  const lifecycleLabel = challenge.lifecycleState === 'establishment' ? 'Upcoming' : challenge.lifecycleState === 'ended' ? 'Ended' : 'Active';
   return (
     <V2Card>
       <div className="flex items-start justify-between gap-3">
@@ -590,7 +590,7 @@ function ActiveChallengeCard({
   onOpen: () => void;
   onLog: () => void;
 }) {
-  const lifecycleLabel = challenge.lifecycleState === 'establishment' ? 'Upcoming' : challenge.lifecycleState === 'ended' ? 'Ended' : 'Running';
+  const lifecycleLabel = challenge.lifecycleState === 'establishment' ? 'Upcoming' : challenge.lifecycleState === 'ended' ? 'Ended' : 'Active';
   return (
     <V2Card>
       <div className="flex items-start justify-between gap-3">
@@ -703,7 +703,7 @@ function OpportunityCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{challengeTypeLabel(opportunity.challengeType)}</p>
-            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-900">{opportunity.lifecycleState === 'establishment' ? 'Upcoming' : opportunity.lifecycleState === 'ended' ? 'Ended' : 'Running'}</span>
+            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-900">{opportunity.lifecycleState === 'establishment' ? 'Upcoming' : opportunity.lifecycleState === 'ended' ? 'Ended' : 'Active'}</span>
           </div>
           <h3 className="mt-0.5 truncate text-base font-black text-slate-900">{opportunity.title}</h3>
           <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
