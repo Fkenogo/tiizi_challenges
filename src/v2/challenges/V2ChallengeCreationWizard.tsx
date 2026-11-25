@@ -112,9 +112,12 @@ export function V2ChallengeCreationWizard() {
   const uid = user?.uid ?? '';
   const initialPhoto = useMemo(() => (uid ? peekChallengeCoverPhotoDraft(uid) : null), [uid]);
   const challengeCoverPhoto = useLocalImagePreview(initialPhoto);
+  const prevUidRef = useRef(uid);
 
   useEffect(() => {
-    if (uid) stashChallengeCoverPhotoDraft(uid, challengeCoverPhoto.file);
+    if (uid && prevUidRef.current === uid) {
+      stashChallengeCoverPhotoDraft(uid, challengeCoverPhoto.file);
+    }
   }, [uid, challengeCoverPhoto.file]);
 
   // Router history state is the primary draft carrier. If it was dropped on
@@ -144,17 +147,26 @@ export function V2ChallengeCreationWizard() {
   const keyRef = useRef(createEstablishmentKey());
   const coverUploadIdentity = useFileUploadIdentity();
   const uidRef = useRef(uid);
+  const createOperationSeqRef = useRef(0);
   const createInFlightRef = useRef(false);
   const preselected = useRef(false);
   uidRef.current = uid;
 
   useEffect(() => {
+    const accountChanged = prevUidRef.current !== uid;
+    prevUidRef.current = uid;
+    createOperationSeqRef.current += 1;
     createInFlightRef.current = false;
     coverUploadIdentity.reset();
+    if (accountChanged) {
+      if (initialPhoto) challengeCoverPhoto.selectFile(initialPhoto);
+      else challengeCoverPhoto.remove();
+    }
     setEstablishedChallenge(null);
     setCoverUploadError('');
     setCoverUploading(false);
-  }, [uid, coverUploadIdentity.reset]);
+    setCreating(false);
+  }, [uid, initialPhoto, challengeCoverPhoto.selectFile, challengeCoverPhoto.remove, coverUploadIdentity.reset]);
 
   const currentStep = VISIBLE_STEPS[stepIndex];
 
@@ -296,12 +308,14 @@ export function V2ChallengeCreationWizard() {
   async function handleCreate() {
     if (createInFlightRef.current) return;
     createInFlightRef.current = true;
+    const operation = ++createOperationSeqRef.current;
     const uidAtCreate = uidRef.current;
+    const isCurrent = () => uidRef.current === uidAtCreate && createOperationSeqRef.current === operation;
     setSubmitError('');
     setCreating(true);
     try {
       const preview = await previewChallengeDefinition(toComposerDraft(state));
-      if (uidRef.current !== uidAtCreate) return;
+      if (!isCurrent()) return;
       if (!preview.ok) {
         setPreviewState('invalid');
         setPreviewIssues(mapPreviewIssues(preview.issues));
@@ -317,7 +331,7 @@ export function V2ChallengeCreationWizard() {
             idempotencyKey: keyRef.current,
           }),
         );
-        if (uidRef.current !== uidAtCreate) return;
+        if (!isCurrent()) return;
         target = { challengeId: established.challengeId, groupId: established.groupId };
         setEstablishedChallenge(target);
         clearChallengeDraft(uidAtCreate);
@@ -332,7 +346,7 @@ export function V2ChallengeCreationWizard() {
             groupId: target.groupId,
             idempotencyKey,
           });
-          if (uidRef.current !== uidAtCreate) return;
+          if (!isCurrent()) return;
           coverUploadIdentity.reset();
           removeLocalChallengeCoverPreview(target.challengeId);
           queryClient.setQueryData<V2ChallengeDetail>(
@@ -341,7 +355,7 @@ export function V2ChallengeCreationWizard() {
           );
           await invalidateV2ChallengeCoverReads(queryClient, uidAtCreate, target.challengeId);
         } catch (err) {
-          if (uidRef.current !== uidAtCreate) return;
+          if (!isCurrent()) return;
           setCoverUploading(false);
           setCreating(false);
           setCoverUploadError(
@@ -351,17 +365,19 @@ export function V2ChallengeCreationWizard() {
           );
           return;
         }
-        setCoverUploading(false);
+        if (isCurrent()) setCoverUploading(false);
       }
-      if (uidRef.current !== uidAtCreate) return;
+      if (!isCurrent()) return;
       clearChallengeCoverPhotoDraft(uidAtCreate);
       navigate(`/v2/challenges/${target.challengeId}`, { replace: true });
     } catch (error) {
-      if (uidRef.current !== uidAtCreate) return;
+      if (!isCurrent()) return;
       setSubmitError(creationErrorMessage(error instanceof ApiError ? error.code : null));
       setCreating(false);
     } finally {
-      createInFlightRef.current = false;
+      if (createOperationSeqRef.current === operation) {
+        createInFlightRef.current = false;
+      }
     }
   }
 
@@ -484,6 +500,7 @@ export function V2ChallengeCreationWizard() {
           previewIssues={previewIssues}
           onUpdate={update}
           coverPhoto={challengeCoverPhoto}
+          isSaving={creating || coverUploading}
           onEditStep={(step) => goToStep(VISIBLE_STEPS.indexOf(step))}
         />
       )}
@@ -782,6 +799,7 @@ export function StepReview({
   previewIssues,
   onUpdate,
   coverPhoto,
+  isSaving = false,
   onEditStep,
 }: {
   state: WizardState;
@@ -789,6 +807,7 @@ export function StepReview({
   previewIssues: MappedPreviewIssue[] | null;
   onUpdate: (patch: Partial<WizardState>) => void;
   coverPhoto?: LocalImagePreviewState;
+  isSaving?: boolean;
   onEditStep: (step: (typeof VISIBLE_STEPS)[number]) => void;
 }) {
   const endDate = state.endDate;
@@ -799,6 +818,7 @@ export function StepReview({
           <V2LocalImagePicker
             subject="Challenge cover"
             preview={coverPhoto}
+            isSaving={isSaving}
             draftPersistenceMessage="JPG, PNG or WebP · Preview only. This photo will be saved when you create the Challenge."
             previewClassName="mb-3 h-28 rounded-xl bg-slate-800"
             messageClassName="text-white/70"

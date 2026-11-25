@@ -6,13 +6,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { V2CreateGroupScreen } from './V2CreateGroupScreen';
 
 const h = vi.hoisted(() => ({
+  uid: 'member-1',
   mutateAsync: vi.fn(),
   saveGroupCoverImage: vi.fn(),
   removeGroupCoverImage: vi.fn(),
   navigate: vi.fn(),
 }));
 
-vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'member-1' } }) }));
+vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: h.uid } }) }));
 vi.mock('react-router-dom', async (orig) => {
   const actual = await orig<typeof import('react-router-dom')>();
   return { ...actual, useNavigate: () => h.navigate };
@@ -36,6 +37,7 @@ vi.mock('../../api/mediaApi', () => ({
 }));
 
 beforeEach(() => {
+  h.uid = 'member-1';
   h.mutateAsync.mockReset();
   h.saveGroupCoverImage.mockReset();
   h.removeGroupCoverImage.mockReset();
@@ -187,6 +189,37 @@ describe('V2CreateGroupScreen cover upload failure & retry', () => {
     resolveCreate({ id: 'grp-rapid', name: 'Rapid Club' });
     await waitFor(() => {
       expect(h.navigate).toHaveBeenCalledWith('/v2/groups/grp-rapid', expect.objectContaining({ replace: true }));
+    });
+  });
+
+  it('clears the previous user selected cover photo when the account switches', async () => {
+    const queryClient = new QueryClient();
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <V2CreateGroupScreen />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.change(screen.getByLabelText(/Group name/i), { target: { value: 'Account A Group' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    const fileA = new File([new Uint8Array([1, 2, 3])], 'a.png', { type: 'image/png' });
+    fireEvent.change(screen.getByLabelText(/Choose group cover/i), { target: { files: [fileA] } });
+    expect(screen.getByRole('img', { name: 'Group cover local preview' })).toBeTruthy();
+
+    h.uid = 'member-2';
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <V2CreateGroupScreen />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole('img', { name: 'Group cover local preview' })).toBeNull();
     });
   });
 });

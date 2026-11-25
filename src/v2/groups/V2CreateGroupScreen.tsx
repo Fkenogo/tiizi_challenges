@@ -129,16 +129,19 @@ export function V2CreateGroupScreen() {
   const coverPhoto = useLocalImagePreview();
   const coverUploadIdentity = useFileUploadIdentity();
   const uidRef = useRef(user?.uid);
+  const submitOperationSeqRef = useRef(0);
   const submitInFlightRef = useRef(false);
   uidRef.current = user?.uid;
 
   useEffect(() => {
+    submitOperationSeqRef.current += 1;
     submitInFlightRef.current = false;
     coverUploadIdentity.reset();
+    coverPhoto.remove();
     setCreatedGroup(null);
     setCoverUploadError(null);
     setCoverUploading(false);
-  }, [user?.uid, coverUploadIdentity.reset]);
+  }, [user?.uid, coverPhoto.remove, coverUploadIdentity.reset]);
 
   const issues = validateCreateGroupDraft(draft);
   const submittable = isCreateGroupDraftSubmittable(draft) && !createGroup.isPending;
@@ -158,14 +161,16 @@ export function V2CreateGroupScreen() {
   const handleSubmit = async () => {
     if (submitInFlightRef.current || (!submittable && !createdGroup)) return;
     submitInFlightRef.current = true;
+    const operation = ++submitOperationSeqRef.current;
     const uidAtSubmit = uidRef.current;
+    const isCurrent = () => uidRef.current === uidAtSubmit && submitOperationSeqRef.current === operation;
     setCoverUploadError(null);
     try {
       let target = createdGroup;
       if (!target) {
         try {
           const created = await createGroup.mutateAsync(toCreateGroupInput(draft));
-          if (uidRef.current !== uidAtSubmit) return;
+          if (!isCurrent()) return;
           target = { id: created.id, name: created.name };
           setCreatedGroup(target);
         } catch {
@@ -178,7 +183,7 @@ export function V2CreateGroupScreen() {
         setCoverUploading(true);
         try {
           const coverImage = await saveGroupCoverImage(target.id, coverPhoto.file, { idempotencyKey });
-          if (uidRef.current !== uidAtSubmit) return;
+          if (!isCurrent()) return;
           coverUploadIdentity.reset();
           removeLocalGroupCoverPreview(target.id);
           queryClient.setQueryData<V2GroupDetail>(
@@ -187,7 +192,7 @@ export function V2CreateGroupScreen() {
           );
           await invalidateV2GroupCoverReads(queryClient, uidAtSubmit, target.id);
         } catch (err) {
-          if (uidRef.current !== uidAtSubmit) return;
+          if (!isCurrent()) return;
           setCoverUploadError(
             err instanceof ApiError
               ? `Your Group was created, but the cover photo could not be saved: ${err.message}`
@@ -195,16 +200,18 @@ export function V2CreateGroupScreen() {
           );
           return;
         } finally {
-          if (uidRef.current === uidAtSubmit) setCoverUploading(false);
+          if (isCurrent()) setCoverUploading(false);
         }
       }
-      if (uidRef.current !== uidAtSubmit) return;
+      if (!isCurrent()) return;
       navigate(`/v2/groups/${target.id}`, {
         replace: true,
         state: { createdGroupName: target.name },
       });
     } finally {
-      submitInFlightRef.current = false;
+      if (submitOperationSeqRef.current === operation) {
+        submitInFlightRef.current = false;
+      }
     }
   };
 
