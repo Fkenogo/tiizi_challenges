@@ -27,11 +27,14 @@ export function V2SignedImage({
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const retriedSrcRef = useRef<string | null>(null);
+  const hasRefreshedRef = useRef(false);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    retriedSrcRef.current = null;
+    hasRefreshedRef.current = false;
+  }, [refreshKey]);
+
+  useEffect(() => {
     setLoadedSrc(null);
     setFailedSrc(null);
     setRetrying(false);
@@ -45,8 +48,8 @@ export function V2SignedImage({
   }, []);
 
   const handleError = () => {
-    if (retriedSrcRef.current !== src && onExpired) {
-      retriedSrcRef.current = src;
+    if (!hasRefreshedRef.current && onExpired) {
+      hasRefreshedRef.current = true;
       setLoadedSrc(null);
       setRetrying(true);
       onExpired();
@@ -79,7 +82,10 @@ export function V2SignedImage({
         src={src}
         alt={alt}
         className={ready ? className : 'hidden'}
-        onLoad={() => setLoadedSrc(src)}
+        onLoad={() => {
+          hasRefreshedRef.current = false;
+          setLoadedSrc(src);
+        }}
         onError={handleError}
       />
       {!ready && (

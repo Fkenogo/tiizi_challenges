@@ -25,6 +25,7 @@ export async function uploadDurableImage(params: {
   purpose: V2MediaPurpose;
   file: File;
   targetScopeId?: string;
+  idempotencyKey?: string;
 }): Promise<{ intentId: string; assetId: string }> {
   const intent = await apiFetch<{ intentId: string; status: string; expiresAt: string }>(
     apiPath('/media/intents'),
@@ -33,7 +34,7 @@ export async function uploadDurableImage(params: {
       body: {
         purpose: params.purpose,
         ...(params.targetScopeId ? { targetScopeId: params.targetScopeId } : {}),
-        idempotencyKey: newIdempotencyKey(),
+        idempotencyKey: params.idempotencyKey ?? newIdempotencyKey(),
       },
     },
   );
@@ -102,12 +103,13 @@ export async function removeGroupCoverImage(groupId: string): Promise<V2MediaIma
 export async function saveChallengeCoverImage(
   challengeId: string,
   file: File,
-  options?: { initialBind?: boolean; groupId?: string },
+  options?: { initialBind?: boolean; groupId?: string; idempotencyKey?: string },
 ): Promise<V2MediaImageProjection> {
   const { intentId } = await uploadDurableImage({
     purpose: 'challenge_cover',
     file,
     targetScopeId: options?.initialBind ? options.groupId : challengeId,
+    idempotencyKey: options?.idempotencyKey,
   });
   const res = await apiFetch<{ coverImage: V2MediaImageProjection }>(
     apiPath(`/challenges/${encodeURIComponent(challengeId)}/cover-image`),

@@ -70,6 +70,20 @@ describe('V2SignedImage expiration & fallback', () => {
     expect(container.querySelector('img')).toBeNull();
   });
 
+  it('stops after one failed refresh even when the server keeps rotating signed URLs', () => {
+    const onExpired = vi.fn();
+    const { container, rerender } = render(
+      <V2SignedImage src="https://signed.example.test/one.webp" alt="Cover" refreshKey="rotating" onExpired={onExpired} fallback={<span>Fallback</span>} />,
+    );
+    fireEvent.error(container.querySelector('img')!);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+
+    rerender(<V2SignedImage src="https://signed.example.test/two.webp" alt="Cover" refreshKey="rotating" onExpired={onExpired} fallback={<span>Fallback</span>} />);
+    fireEvent.error(container.querySelector('img')!);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain('Cover is unavailable.');
+  });
+
   it('does not let one sibling instance suppress another instance recovery', () => {
     const firstExpired = vi.fn();
     const secondExpired = vi.fn();

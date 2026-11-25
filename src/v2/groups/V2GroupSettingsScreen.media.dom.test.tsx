@@ -12,9 +12,10 @@ const h = vi.hoisted(() => ({
   save: vi.fn(),
   remove: vi.fn(),
   update: { mutate: vi.fn(), isPending: false, isError: false },
+  uid: 'member-1',
 }));
 
-vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'member-1' } }) }));
+vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: h.uid } }) }));
 vi.mock('../group/V2GroupScope', () => ({ useV2GroupId: () => 'group-1' }));
 vi.mock('./useV2Groups', () => ({
   useV2GroupDetail: () => h.detail,
@@ -59,6 +60,7 @@ const savedCover: V2MediaImageProjection = {
 };
 
 beforeEach(() => {
+  h.uid = 'member-1';
   h.detail = { isLoading: true, data: undefined };
   h.save.mockReset().mockResolvedValue(savedCover);
   h.remove.mockReset().mockResolvedValue({ status: 'none' });
@@ -114,5 +116,32 @@ describe('V2GroupSettingsScreen media reliability', () => {
     });
     expect(getLocalGroupCoverPreview('group-1')).toBeNull();
     expect((screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement).value).toBe('Unsaved Group name');
+  });
+
+  it('rehydrates form state when the same Group is opened by another account', async () => {
+    h.detail = { isLoading: false, data: group };
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(v2GroupDetailKey('group-1', 'member-1'), group);
+    const tree = (
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <V2GroupSettingsScreen />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+    const view = render(tree);
+    const name = await screen.findByRole('textbox', { name: 'Name' });
+    fireEvent.change(name, { target: { value: 'Member one unsaved edit' } });
+
+    h.uid = 'member-2';
+    queryClient.setQueryData(v2GroupDetailKey('group-1', 'member-2'), group);
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <V2GroupSettingsScreen />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect((screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement).value).toBe('Original Group'));
   });
 });

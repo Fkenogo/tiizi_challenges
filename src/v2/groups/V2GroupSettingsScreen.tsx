@@ -35,11 +35,16 @@ export function V2GroupSettingsScreen() {
   const [allowMemberChallenges, setAllowMemberChallenges] = useState(true);
   const [coverSaving, setCoverSaving] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
-  const initializedGroupIdRef = useRef<string | null>(null);
+  const initializedIdentityRef = useRef<string | null>(null);
+  const uidRef = useRef(user?.uid);
+  const groupIdRef = useRef(groupId);
+  uidRef.current = user?.uid;
+  groupIdRef.current = groupId;
   useEffect(() => {
     const group = detail.data;
-    if (!group || initializedGroupIdRef.current === group.id) return;
-    initializedGroupIdRef.current = group.id;
+    const identityKey = `${user?.uid ?? 'signed-out'}:${group?.id ?? 'none'}`;
+    if (!group || initializedIdentityRef.current === identityKey) return;
+    initializedIdentityRef.current = identityKey;
     coverPhoto.remove();
     setCoverSaving(false);
     setCoverError(null);
@@ -47,7 +52,7 @@ export function V2GroupSettingsScreen() {
     setLocation(group.location); setFocusTags(group.focusTags); setCoverId(group.coverId);
     setIsPrivate(group.isPrivate); setRequireAdminApproval(group.requireAdminApproval ?? false);
     setAllowMemberChallenges(group.allowMemberChallenges ?? true);
-  }, [detail.data]);
+  }, [detail.data, user?.uid]);
 
   if (detail.isLoading) return <V2Page><p className="text-sm text-slate-600">Loading Group settings…</p></V2Page>;
   if (!detail.data || detail.data.viewerRelationship !== 'steward') return <V2Page><h1 className="text-lg font-black">Settings unavailable</h1><p className="mt-2 text-sm text-slate-600">These settings are available to the Accountable Steward.</p></V2Page>;
@@ -109,29 +114,41 @@ export function V2GroupSettingsScreen() {
                   if (groupId) void invalidateV2GroupCoverReads(queryClient, user?.uid, groupId);
                 }}
                 onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => {
+                  const uidAtMutation = uidRef.current;
                   setCoverError(null);
                   setCoverSaving(true);
                   void saveGroupCoverImage(group.id, file)
                     .then(async (coverImage) => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
                       coverPhoto.remove();
                       await reconcileCover(coverImage);
                     })
                     .catch(() => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
                       coverPhoto.remove();
                       setCoverError('Could not save the Group cover photo. Please try again.');
                     })
-                    .finally(() => setCoverSaving(false));
+                    .finally(() => {
+                      if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                    });
                 } : undefined}
                 onRemove={group.coverImage?.status === 'ready' ? () => {
+                  const uidAtMutation = uidRef.current;
                   setCoverError(null);
                   setCoverSaving(true);
                   void removeGroupCoverImage(group.id)
                     .then(async (coverImage) => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
                       coverPhoto.remove();
                       await reconcileCover(coverImage);
                     })
-                    .catch(() => setCoverError('Could not remove the Group cover photo. Please try again.'))
-                    .finally(() => setCoverSaving(false));
+                    .catch(() => {
+                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id) return;
+                      setCoverError('Could not remove the Group cover photo. Please try again.');
+                    })
+                    .finally(() => {
+                      if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+                    });
                 } : undefined}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"
                 fallback={

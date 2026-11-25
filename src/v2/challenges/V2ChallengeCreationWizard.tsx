@@ -79,7 +79,7 @@ import {
   type ApiKnowledgeItemLike,
 } from './wizardSteps';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
-import { removeChallengeCoverImage, saveChallengeCoverImage } from '../../api/mediaApi';
+import { saveChallengeCoverImage } from '../../api/mediaApi';
 import { removeLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
 import { invalidateV2ChallengeCoverReads, v2ChallengeDetailKey } from './challengeQueryKeys';
@@ -141,6 +141,7 @@ export function V2ChallengeCreationWizard() {
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState('');
   const keyRef = useRef(createEstablishmentKey());
+  const coverUploadKeyRef = useRef(createEstablishmentKey());
   const preselected = useRef(false);
 
   const currentStep = VISIBLE_STEPS[stepIndex];
@@ -311,6 +312,7 @@ export function V2ChallengeCreationWizard() {
           const coverImage = await saveChallengeCoverImage(target.challengeId, challengeCoverPhoto.file, {
             initialBind: true,
             groupId: target.groupId,
+            idempotencyKey: coverUploadKeyRef.current,
           });
           removeLocalChallengeCoverPreview(target.challengeId);
           queryClient.setQueryData<V2ChallengeDetail>(
@@ -324,7 +326,7 @@ export function V2ChallengeCreationWizard() {
           setCoverUploadError(
             err instanceof ApiError
               ? `Your Challenge was created, but the cover photo could not be saved: ${err.message}`
-              : 'Your Challenge was created, but the cover photo could not be saved. You can retry or continue without a cover.',
+              : 'Your Challenge was created, but the cover photo could not be saved. You can retry or continue to the Challenge.',
           );
           return;
         }
@@ -338,12 +340,11 @@ export function V2ChallengeCreationWizard() {
     }
   }
 
-  function continueWithoutChallengeCover() {
+  function continueToChallengeAfterCoverError() {
     if (!establishedChallenge) return;
     removeLocalChallengeCoverPreview(establishedChallenge.challengeId);
     challengeCoverPhoto.remove();
     clearChallengeCoverPhotoDraft(uid);
-    void removeChallengeCoverImage(establishedChallenge.challengeId).catch(() => {});
     navigate(`/v2/challenges/${establishedChallenge.challengeId}`, { replace: true });
   }
 
@@ -487,9 +488,9 @@ export function V2ChallengeCreationWizard() {
             <V2Button
               variant="ghost"
               disabled={coverUploading}
-              onClick={continueWithoutChallengeCover}
+              onClick={continueToChallengeAfterCoverError}
             >
-              Continue without Cover
+              Continue to Challenge
             </V2Button>
           </div>
         </div>

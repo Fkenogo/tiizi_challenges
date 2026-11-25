@@ -63,8 +63,9 @@ describe('mediaApi + real shared apiClient transport', () => {
       {
         purpose: 'challenge_cover' as const,
         invoke: (file: File) =>
-          saveChallengeCoverImage('chal-456', file, { initialBind: true, groupId: 'group-123' }),
+          saveChallengeCoverImage('chal-456', file, { initialBind: true, groupId: 'group-123', idempotencyKey: 'stable-cover-key' }),
         expectedIntentScope: 'group-123',
+        expectedIntentKey: 'stable-cover-key',
         expectedBindPath: '/api/challenges/chal-456/cover-image',
         expectedBindBody: { intentId: 'intent-1', initialBind: true, groupId: 'group-123' },
         responseKey: 'coverImage',
@@ -122,6 +123,7 @@ describe('mediaApi + real shared apiClient transport', () => {
         ...(c.expectedIntentScope ? { targetScopeId: c.expectedIntentScope } : {}),
       });
       expect(typeof parsedIntent.idempotencyKey).toBe('string');
+      if ('expectedIntentKey' in c) expect(parsedIntent.idempotencyKey).toBe(c.expectedIntentKey);
 
       // 2. Binary content upload sends the actual File/Blob bytes (never "{}")
       const uploadHeaders = calls[1].init.headers as Record<string, string>;

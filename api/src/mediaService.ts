@@ -245,12 +245,34 @@ export async function uploadMediaIntentContent(
   if (!intent || intent.actor_member_id !== params.actorMemberId) {
     throw new MediaServiceError(404, 'intent_not_found', 'Upload intent not found');
   }
+  const expiresMs = new Date(intent.expires_at).getTime();
+  if ((intent.status === 'open' || intent.status === 'uploaded')
+      && (!Number.isFinite(expiresMs) || expiresMs <= Date.now())) {
+    throw new MediaServiceError(410, 'intent_expired', 'Upload intent has expired');
+  }
+  if (intent.status === 'uploaded' || intent.status === 'bound') {
+    if (!intent.asset_id) {
+      throw new MediaServiceError(409, 'intent_not_open', 'Upload intent has no uploaded image ready');
+    }
+    const existing = await db.query<{ width: number; height: number; byte_size: number }>(
+      `SELECT width, height, byte_size FROM media_assets WHERE asset_id = $1`,
+      [intent.asset_id],
+    );
+    const asset = existing.rows[0];
+    if (!asset) {
+      throw new MediaServiceError(409, 'asset_not_bindable', 'Media asset is no longer bindable');
+    }
+    return {
+      intentId: intent.intent_id,
+      assetId: intent.asset_id,
+      status: 'uploaded',
+      width: asset.width,
+      height: asset.height,
+      byteSize: asset.byte_size,
+    };
+  }
   if (intent.status !== 'open') {
     throw new MediaServiceError(409, 'intent_not_open', `Upload intent is already ${intent.status}`);
-  }
-  const expiresMs = new Date(intent.expires_at).getTime();
-  if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
-    throw new MediaServiceError(410, 'intent_expired', 'Upload intent has expired');
   }
 
   let processed;
@@ -668,6 +690,9 @@ export async function setChallengeCoverImage(
   if (!UUID_RE.test(params.challengeId)) {
     throw new MediaServiceError(400, 'invalid_challenge', 'challengeId must be a valid UUID');
   }
+  if (!UUID_RE.test(params.intentId)) {
+    throw new MediaServiceError(400, 'invalid_intent', 'intentId must be a valid UUID');
+  }
 
   const { newAssetId, oldAssetId } = await db.transaction(async (tx) => {
     const row = await lockChallengeCoverAuthority(tx, params.challengeId, params.actorMemberId);
@@ -678,8 +703,9 @@ export async function setChallengeCoverImage(
       status: string;
       asset_id: string | null;
       target_scope_id: string | null;
+      expires_at: Date | string;
     }>(
-      `SELECT actor_member_id, purpose, status, asset_id, target_scope_id
+      `SELECT actor_member_id, purpose, status, asset_id, target_scope_id, expires_at
          FROM media_upload_intents WHERE intent_id = $1 FOR UPDATE`,
       [params.intentId],
     );
@@ -689,12 +715,15 @@ export async function setChallengeCoverImage(
       Boolean(params.groupId) &&
       params.groupId === row.groupId &&
       row.createdByMemberId === params.actorMemberId &&
+      (row.membershipStatus === 'active' || row.membershipStatus === 'joined') &&
+      (isSteward || row.allowMemberChallenges) &&
       retryIntent?.actor_member_id === params.actorMemberId &&
       retryIntent?.purpose === 'challenge_cover' &&
       retryIntent?.status === 'bound' &&
       Boolean(retryIntent.asset_id) &&
       retryIntent.asset_id === row.coverAssetId &&
-      retryIntent.target_scope_id === row.groupId;
+      retryIntent.target_scope_id === row.groupId &&
+      new Date(retryIntent.expires_at).getTime() > Date.now();
     const priorCreatorCover = sameInitialIntentApplied ? false : (await tx.query<{ intent_id: string }>(
       `SELECT i.intent_id
          FROM media_upload_intents i

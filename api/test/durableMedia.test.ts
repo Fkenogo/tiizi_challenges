@@ -414,11 +414,13 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
     const steward = await seedMember(db, 'uid-steward-scope', 'Scope Steward');
     const admin = await seedMember(db, 'uid-admin-scope', 'Scope Admin');
     const outsider = await seedMember(db, 'uid-outsider-scope', 'Scope Outsider');
+    const creator = await seedMember(db, 'uid-creator-scope', 'Scope Creator');
     const groupA = await seedGroup(db, { name: 'Scope Group A', isPrivate: false });
     const groupB = await seedGroup(db, { name: 'Scope Group B', isPrivate: false });
     await seedMembership(db, groupA, steward, { role: 'owner', status: 'active' });
     await seedMembership(db, groupB, steward, { role: 'owner', status: 'active' });
     await seedMembership(db, groupB, admin, { role: 'admin', status: 'active' });
+    await seedMembership(db, groupB, creator, { role: 'member', status: 'active' });
     await db.query(`UPDATE groups SET steward_member_id = $2 WHERE group_id = ANY($1::uuid[])`, [[groupA, groupB], steward]);
 
     const challengeId = randomUUID();
@@ -428,7 +430,7 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
          title, description, instructions, start_date, end_date, current_config_version, timezone,
          goal_value, goal_unit
        ) VALUES ($1, $2, $3, 'collective', 'active', 'Scope Discovery Challenge', '', '', '2026-11-01', '2026-11-30', 1, 'UTC', 10, 'km')`,
-      [challengeId, groupB, steward],
+      [challengeId, groupB, creator],
     );
     const knowledgeId = randomUUID();
     await db.query(
@@ -501,22 +503,31 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
     expect(adminRemoveGroup.statusCode).toBe(403);
 
     const challengeIntent = await app.inject({
-      method: 'POST', url: '/api/media/intents', headers: { authorization: 'Bearer uid-steward-scope' },
+      method: 'POST', url: '/api/media/intents', headers: { authorization: 'Bearer uid-creator-scope' },
       payload: { purpose: 'challenge_cover', targetScopeId: groupB, idempotencyKey: 'scope-challenge' },
     });
     const challengeIntentId = challengeIntent.json().intentId;
-    await app.inject({
+    const challengeUpload = await app.inject({
       method: 'PUT', url: `/api/media/intents/${challengeIntentId}/content`,
-      headers: { authorization: 'Bearer uid-steward-scope', 'content-type': 'image/png' }, payload: png,
+      headers: { authorization: 'Bearer uid-creator-scope', 'content-type': 'image/png' }, payload: png,
     });
+    expect(challengeUpload.statusCode).toBe(200);
+    const challengeAssetId = challengeUpload.json().assetId;
     const challengeBind = await app.inject({
-      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-steward-scope' },
+      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-creator-scope' },
       payload: { intentId: challengeIntentId, initialBind: true, groupId: groupB },
     });
     expect(challengeBind.statusCode).toBe(200);
     const objectsAfterBind = store.objects.size;
+    const challengeContentRetry = await app.inject({
+      method: 'PUT', url: `/api/media/intents/${challengeIntentId}/content`,
+      headers: { authorization: 'Bearer uid-creator-scope', 'content-type': 'image/png' }, payload: png,
+    });
+    expect(challengeContentRetry.statusCode).toBe(200);
+    expect(challengeContentRetry.json().assetId).toBe(challengeAssetId);
+    expect(store.objects.size).toBe(objectsAfterBind);
     const challengeBindRetry = await app.inject({
-      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-steward-scope' },
+      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-creator-scope' },
       payload: { intentId: challengeIntentId, initialBind: true, groupId: groupB },
     });
     expect(challengeBindRetry.statusCode).toBe(200);
@@ -525,6 +536,13 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
       method: 'DELETE', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-admin-scope' },
     });
     expect(adminRemoveChallenge.statusCode).toBe(403);
+
+    const malformedIntent = await app.inject({
+      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-steward-scope' },
+      payload: { intentId: 'not-a-uuid', initialBind: true, groupId: groupB },
+    });
+    expect(malformedIntent.statusCode).toBe(400);
+    expect(malformedIntent.json().error.code).toBe('invalid_intent');
 
     const discovery = await app.inject({
       method: 'GET', url: '/api/challenges/discover', headers: { authorization: 'Bearer uid-outsider-scope' },
@@ -537,6 +555,13 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
     });
     expect(todayDiscovery.statusCode).toBe(200);
     expect(todayDiscovery.json().challenges.find((item: { challengeId: string }) => item.challengeId === challengeId)?.coverImage).toBeUndefined();
+
+    await db.query(`UPDATE group_memberships SET status = 'left' WHERE group_id = $1 AND member_id = $2`, [groupB, creator]);
+    const departedCreatorReplay = await app.inject({
+      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-creator-scope' },
+      payload: { intentId: challengeIntentId, initialBind: true, groupId: groupB },
+    });
+    expect(departedCreatorReplay.statusCode).toBe(403);
 
     await app.close();
   });
