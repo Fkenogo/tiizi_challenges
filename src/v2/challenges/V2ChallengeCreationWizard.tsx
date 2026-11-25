@@ -147,6 +147,7 @@ export function V2ChallengeCreationWizard() {
   const [refreshingIndex, setRefreshingIndex] = useState<number | null>(null);
   const [pendingRefresh, setPendingRefresh] = useState<ActivityRefreshPlan | null>(null);
   const [refreshError, setRefreshError] = useState('');
+  const [refreshNeedsWhatCounts, setRefreshNeedsWhatCounts] = useState(false);
   const refreshSeqRef = useRef(0);
   const latestStateRef = useRef(state);
   latestStateRef.current = state;
@@ -299,12 +300,12 @@ export function V2ChallengeCreationWizard() {
         return prev;
       }
       setRefreshError('');
-      return {
-        ...prev,
-        activities: prev.activities.map((activity, idx) =>
-          idx === check.currentIndex ? plan.updated : activity,
-        ),
-      };
+      const nextActivities = prev.activities.map((activity, idx) =>
+        idx === check.currentIndex ? plan.updated : activity,
+      );
+      const nextState = { ...prev, activities: nextActivities };
+      setRefreshNeedsWhatCounts(plan.missingRequiredFields.length > 0 || !isWizardComplete(nextState));
+      return nextState;
     });
   }
 
@@ -585,6 +586,7 @@ export function V2ChallengeCreationWizard() {
           refreshingIndex={refreshingIndex}
           pendingRefresh={pendingRefresh}
           refreshError={refreshError}
+          refreshNeedsWhatCounts={refreshNeedsWhatCounts && !isWizardComplete(state)}
           onAcceptRefresh={handleAcceptActivityRefresh}
           onDeclineRefresh={handleDeclineActivityRefresh}
         />
@@ -890,6 +892,7 @@ export function StepReview({
   refreshingIndex = null,
   pendingRefresh = null,
   refreshError = '',
+  refreshNeedsWhatCounts = false,
   onAcceptRefresh,
   onDeclineRefresh,
 }: {
@@ -904,6 +907,7 @@ export function StepReview({
   refreshingIndex?: number | null;
   pendingRefresh?: ActivityRefreshPlan | null;
   refreshError?: string;
+  refreshNeedsWhatCounts?: boolean;
   onAcceptRefresh?: () => void;
   onDeclineRefresh?: () => void;
 }) {
@@ -971,7 +975,7 @@ export function StepReview({
         refreshingIndex={refreshingIndex}
       />
 
-      {!isWizardComplete(state) && !pendingRefresh && (
+      {refreshNeedsWhatCounts && !pendingRefresh && (
         <V2Card className="border-amber-200 bg-amber-50">
           <p className="text-sm font-black text-amber-950">Additional measurement details required</p>
           <p className="mt-1 text-xs leading-5 text-amber-900">
