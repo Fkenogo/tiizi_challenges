@@ -3,7 +3,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { V2ChallengeCreationWizard } from './V2ChallengeCreationWizard';
-import { createChallengeWizardRouteState, createInitialWizardState } from './challengeCreationDraft';
+import { createChallengeWizardRouteState, createInitialWizardState, isWizardComplete } from './challengeCreationDraft';
+import { isRefreshPlanFresh, planActivityRefresh } from './wizardSteps/activityRefresh';
 
 const h = vi.hoisted(() => ({
   previewChallengeDefinition: vi.fn(),
@@ -56,49 +57,50 @@ vi.mock('../../api/mediaApi', () => ({
   removeChallengeCoverImage: vi.fn(),
 }));
 
-function makeStaleStreakRouteState() {
+function makeStaleStreakDraft() {
   const base = createInitialWizardState();
-  return createChallengeWizardRouteState(
-    {
-      ...base,
-      groupId: '11111111-1111-4111-8111-111111111111',
-      groupName: 'Morning Club',
-      challengeType: 'streak',
-      title: '7-Day Breathing Practice',
-      description: 'Daily breathing habit',
-      durationDays: 7,
-      startDate: '2026-11-25',
-      endDate: '2026-12-01',
-      activities: [
-        {
-          activity: '22222222-2222-4222-8222-222222222222',
-          observedVersion: 1,
-          name: 'Breathing Practice',
-          kind: 'wellness',
-          metric: 'duration',
-          unit: 'minutes',
-          targetValue: '10',
-          durationMode: 'ACCUMULATED',
-          completionOccurrence: '',
-          loadBasis: '',
-          options: {
-            knowledgeId: '22222222-2222-4222-8222-222222222222',
-            activityCode: 'breathing',
-            kind: 'wellness',
-            currentVersion: 1,
-            primaryMetrics: ['duration'],
-            secondaryMetrics: [],
-            compatibleUnits: ['minutes'],
-            components: [],
-            supportedLoadBases: [],
-            unitsByMetric: { duration: ['minutes'] },
-          },
+  return {
+    ...base,
+    groupId: '11111111-1111-4111-8111-111111111111',
+    groupName: 'Morning Club',
+    challengeType: 'streak' as const,
+    title: '7-Day Breathing Practice',
+    description: 'Daily breathing habit',
+    durationDays: 7,
+    startDate: '2026-11-25',
+    endDate: '2026-12-01',
+    activities: [
+      {
+        activity: '22222222-2222-4222-8222-222222222222',
+        observedVersion: 1,
+        name: 'Breathing Practice',
+        kind: 'wellness' as const,
+        metric: 'duration',
+        unit: 'minutes',
+        targetValue: '10',
+        durationMode: 'ACCUMULATED',
+        completionOccurrence: '',
+        loadBasis: '',
+        options: {
+          knowledgeId: '22222222-2222-4222-8222-222222222222',
+          activityCode: 'breathing',
+          kind: 'wellness' as const,
+          currentVersion: 1,
+          primaryMetrics: ['duration'],
+          secondaryMetrics: [],
+          compatibleUnits: ['minutes'],
+          components: [],
+          supportedLoadBases: [],
+          unitsByMetric: { duration: ['minutes'] },
         },
-      ],
-      templateRef: { templateId: 'tpl-breathing', version: 1, title: '7-Day Breathing Practice' },
-    },
-    6,
-  );
+      },
+    ],
+    templateRef: { templateId: 'tpl-breathing', version: 1, title: '7-Day Breathing Practice' },
+  };
+}
+
+function makeStaleStreakRouteState() {
+  return createChallengeWizardRouteState(makeStaleStreakDraft(), 6);
 }
 
 function renderWizard() {
@@ -224,5 +226,146 @@ describe('V2ChallengeCreationWizard stale activity explicit refresh', () => {
       expect(screen.getByRole('alert').textContent).toContain('Breathing Practice');
     });
     expect((screen.getByRole('button', { name: 'Create Challenge' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('invalidates a pending refresh proposal when the member goes back and changes the activity target, preserving the newer edit', async () => {
+    h.previewChallengeDefinition.mockImplementation(async (draft: { activities: Array<{ observedVersion: number }> }) => {
+      if (draft.activities[0].observedVersion === 1) {
+        return {
+          ok: false,
+          issues: [
+            {
+              code: 'STALE_ACTIVITY',
+              activityIndex: 0,
+              field: 'activities[].observedVersion',
+              message: "composer: activity '22222222-2222-4222-8222-222222222222' observed v1 but current is v2 (explicit refresh required; silent upgrade is never performed)",
+            },
+          ],
+        };
+      }
+      return { ok: true, definition: {} };
+    });
+    h.fetchActivityOptions.mockResolvedValue({
+      knowledgeId: '22222222-2222-4222-8222-222222222222',
+      activityCode: 'breathing',
+      kind: 'wellness',
+      currentVersion: 2,
+      primaryMetrics: ['duration'],
+      secondaryMetrics: [],
+      compatibleUnits: ['minutes'],
+      components: [],
+      supportedLoadBases: [],
+      unitsByMetric: { duration: ['minutes'] },
+    });
+
+    renderWizard();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Review & refresh activity' })).toBeTruthy();
+    });
+
+    // Open refresh proposal
+    fireEvent.click(screen.getByRole('button', { name: 'Review & refresh activity' }));
+    await waitFor(() => {
+      expect(screen.getByText(/Review update for Breathing Practice/i)).toBeTruthy();
+    });
+
+    // Go back to What counts, change target from 10 to 25, then return to Review
+    fireEvent.click(screen.getByRole('button', { name: 'Back' })); // Step 6 -> Step 5 (Schedule)
+    fireEvent.click(screen.getByRole('button', { name: 'Back' })); // Step 5 -> Step 4 (What counts)
+    const targetInput = screen.getByLabelText(/Daily requirement/i) as HTMLInputElement;
+    fireEvent.change(targetInput, { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' })); // -> Schedule
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' })); // -> Review
+
+    // Old proposal was invalidated and member sees clear prompt to review again
+    await waitFor(() => {
+      expect(screen.queryByText(/Review update for Breathing Practice/i)).toBeNull();
+      expect(screen.getByText(/Review the update again/i)).toBeTruthy();
+    });
+
+    // Re-review and accept: newer target 25 is preserved!
+    fireEvent.click(screen.getByRole('button', { name: 'Review & refresh activity' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Accept & refresh/i })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Accept & refresh/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Everything checks out/i)).toBeTruthy();
+    });
+    expect(screen.getAllByText(/25 .*Breathing Practice/i).length).toBeGreaterThan(0);
+  });
+
+  it('reconciles fallback to duration with CONTINUOUS durationMode, flags newly required completionOccurrence, and tracks source identity across index shifts', () => {
+    const baseDraft = makeStaleStreakDraft();
+    const baseActivity = baseDraft.activities[0];
+
+    // 1. Fallback from repetitions (empty durationMode) to duration initializes durationMode='CONTINUOUS'
+    const repActivity = {
+      ...baseActivity,
+      metric: 'repetitions',
+      unit: 'reps',
+      durationMode: '',
+    };
+    const durationPlan = planActivityRefresh(
+      repActivity,
+      {
+        knowledgeId: repActivity.activity,
+        activityCode: 'breathing',
+        kind: 'wellness',
+        currentVersion: 2,
+        primaryMetrics: ['duration'],
+        secondaryMetrics: [],
+        compatibleUnits: ['minutes'],
+        components: [],
+        supportedLoadBases: [],
+        unitsByMetric: { duration: ['minutes'] },
+      },
+      'streak',
+    );
+    expect(durationPlan.updated.metric).toBe('duration');
+    expect(durationPlan.updated.durationMode).toBe('CONTINUOUS');
+    expect(durationPlan.missingRequiredFields).toEqual([]);
+    const stateAfterDuration = {
+      ...baseDraft,
+      activities: [durationPlan.updated],
+    };
+    expect(isWizardComplete(stateAfterDuration)).toBe(true);
+
+    // 2. Fallback to completion flags missing completionOccurrence explicitly
+    const completionPlan = planActivityRefresh(
+      repActivity,
+      {
+        knowledgeId: repActivity.activity,
+        activityCode: 'breathing',
+        kind: 'wellness',
+        currentVersion: 2,
+        primaryMetrics: ['completion'],
+        secondaryMetrics: [],
+        compatibleUnits: ['sessions'],
+        components: [],
+        supportedLoadBases: [],
+        unitsByMetric: { completion: ['sessions'] },
+      },
+      'streak',
+    );
+    expect(completionPlan.missingRequiredFields).toContain('completionOccurrence');
+
+    // 3. Index shift when an earlier activity is removed still resolves by sourceActivityId, while replacing/removing rejects
+    const earlierActivity = { ...baseActivity, activity: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: 'Warmup' };
+    const planAtEnd = planActivityRefresh(
+      baseActivity,
+      { ...baseActivity.options, currentVersion: 2 },
+      'streak',
+    );
+    expect(isRefreshPlanFresh(planAtEnd, { activities: [baseActivity], challengeType: 'streak' })).toEqual({
+      fresh: true,
+      currentIndex: 0,
+      reason: 'ok',
+    });
+    expect(isRefreshPlanFresh(planAtEnd, { activities: [earlierActivity], challengeType: 'streak' })).toEqual({
+      fresh: false,
+      currentIndex: -1,
+      reason: 'removed',
+    });
   });
 });
