@@ -13,6 +13,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { clearChallengeDraft } from '../challenges/challengeDraftSession';
 import { clearChallengeIntent } from '../challenges/challengeIntent';
 import { clearAccountRecovery } from '../operator/templates/templateDraftRecovery';
+import { clearLocalGroupCoverPreviews } from '../groups/localGroupCoverPreviews';
+import { clearLocalChallengeCoverPreviews } from '../challenges/localChallengeCoverPreviews';
 
 export function useV2SignOut() {
   const { logout, user } = useAuth();
@@ -22,6 +24,8 @@ export function useV2SignOut() {
     const uid = user?.uid;
     await queryClient.cancelQueries();
     queryClient.clear();
+    clearLocalGroupCoverPreviews();
+    clearLocalChallengeCoverPreviews();
     await logout();
     // Signing out ends this member's Challenge-draft session backup too —
     // only once sign-out has actually succeeded (a failed sign-out keeps the

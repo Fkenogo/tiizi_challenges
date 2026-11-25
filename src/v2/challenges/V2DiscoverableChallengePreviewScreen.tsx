@@ -9,6 +9,7 @@ import { endStateFor, statusLabelForEndState } from './challengeEndState';
 import { statusTone } from './challengePresentation';
 import { lifecycleBucket } from './challengeDiscovery';
 import { useChallengeDetailV2, useJoinChallengeV2 } from './useChallengeCreation';
+import { V2ChallengeCover } from './V2ChallengeCover';
 
 /** Safe outsider preview. The participant-only detail API remains membership-gated. */
 export function V2DiscoverableChallengePreviewScreen() {
@@ -67,7 +68,14 @@ export function V2DiscoverableChallengePreviewScreen() {
   const joinFailedForCurrentChallenge = joinChallenge.isError && joinChallenge.variables === challenge.challengeId;
   return <V2Page>
     <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Challenge preview</p>
-    <h1 className="mt-1 text-2xl font-black text-slate-900">{challenge.title}</h1>
+    <V2ChallengeCover
+      challengeId={challenge.challengeId}
+      title={challenge.title}
+      coverImage={challenge.coverImage}
+      heightClass="mt-3 h-40 rounded-2xl"
+      overlay={false}
+    />
+    <h1 className="mt-4 text-2xl font-black text-slate-900">{challenge.title}</h1>
     <p className="mt-2 text-sm text-slate-600">Hosted by {challenge.host.groupName ?? challenge.groupName ?? 'a Group'}</p>
     <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
       <span className="rounded-full bg-orange-50 px-2 py-1 text-primary">{challengeTypeLabel(challenge.challengeType)}</span>

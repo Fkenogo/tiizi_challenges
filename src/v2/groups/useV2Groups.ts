@@ -28,6 +28,7 @@ import {
 } from '../../api/groupsApi';
 import { listGroupChallengesV2, type V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import { removeV2GroupFeed } from './groupFeedQueryKeys';
+import { MEDIA_QUERY_STALE_MS } from '../media/mediaQuery';
 import { invalidateV2DiscoveryReads, invalidateV2ChallengeReads } from '../challenges/challengeQueryKeys';
 import {
   invalidateV2GroupReads,
@@ -64,6 +65,7 @@ export function useV2Groups() {
     queryKey: v2MembershipsKey(user?.uid),
     queryFn: () => fetchMyMemberships(),
     enabled: !!user,
+    staleTime: MEDIA_QUERY_STALE_MS,
   });
 }
 
@@ -74,6 +76,7 @@ export function useV2GroupDetail(groupId: string | null) {
     queryKey: v2GroupDetailKey(groupId ?? undefined, user?.uid),
     queryFn: () => fetchGroupDetail(groupId as string),
     enabled: !!user && !!groupId,
+    staleTime: MEDIA_QUERY_STALE_MS,
   });
 }
 
@@ -84,6 +87,7 @@ export function useV2GroupChallenges(groupId: string | null, enabled = true) {
     queryKey: v2GroupChallengesKey(groupId ?? undefined, user?.uid),
     queryFn: () => listGroupChallengesV2(groupId as string),
     enabled: !!user && !!groupId && enabled,
+    staleTime: MEDIA_QUERY_STALE_MS,
   });
 }
 
@@ -95,6 +99,7 @@ export function useV2GroupDiscovery(q: string, rank: 'relevance' | 'general' = '
     queryFn: ({ pageParam }) => fetchDiscoverableGroups({ q, cursor: pageParam, limit: 12, rank }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!user,
+    staleTime: MEDIA_QUERY_STALE_MS,
   });
 }
 

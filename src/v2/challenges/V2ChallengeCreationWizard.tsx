@@ -80,7 +80,9 @@ import {
 } from './wizardSteps';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { removeChallengeCoverImage, saveChallengeCoverImage } from '../../api/mediaApi';
-import { removeLocalChallengeCoverPreview, setLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
+import { removeLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
+import type { V2ChallengeDetail } from '../../api/v2ChallengeApi';
+import { invalidateV2ChallengeCoverReads, v2ChallengeDetailKey } from './challengeQueryKeys';
 import { useLocalImagePreview, type LocalImagePreviewState } from '../media/useLocalImagePreview';
 
 /**
@@ -306,11 +308,16 @@ export function V2ChallengeCreationWizard() {
       if (challengeCoverPhoto.file) {
         setCoverUploading(true);
         try {
-          await saveChallengeCoverImage(target.challengeId, challengeCoverPhoto.file, {
+          const coverImage = await saveChallengeCoverImage(target.challengeId, challengeCoverPhoto.file, {
             initialBind: true,
             groupId: target.groupId,
           });
-          setLocalChallengeCoverPreview(target.challengeId, challengeCoverPhoto.file);
+          removeLocalChallengeCoverPreview(target.challengeId);
+          queryClient.setQueryData<V2ChallengeDetail>(
+            v2ChallengeDetailKey(target.challengeId, uid),
+            (current) => current ? { ...current, coverImage } : current,
+          );
+          await invalidateV2ChallengeCoverReads(queryClient, uid, target.challengeId);
         } catch (err) {
           setCoverUploading(false);
           setCreating(false);
@@ -756,6 +763,7 @@ export function StepReview({
           <V2LocalImagePicker
             subject="Challenge cover"
             preview={coverPhoto}
+            draftPersistenceMessage="JPG, PNG or WebP · Preview only. This photo will be saved when you create the Challenge."
             previewClassName="mb-3 h-28 rounded-xl bg-slate-800"
             messageClassName="text-white/70"
             errorClassName="text-red-200"

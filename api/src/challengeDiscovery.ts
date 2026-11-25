@@ -10,6 +10,7 @@ import type { ParticipationRow } from './challengeParticipations.js';
 import { GROUP_GOALS, labelsForIds } from './groupVocabulary.js';
 import { GROUP_GOAL_WEIGHT, GROUP_INTEREST_WEIGHT, preferenceMatchFor } from './groupDiscovery.js';
 import { MEMBER_INTEREST_OPTIONS, getMemberPreferenceIds, type MemberPreferenceIds } from './memberPreferences.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
 
 /**
  * TIIZI-FER-P2-001 — Challenge discovery across discoverable Groups.
@@ -114,7 +115,8 @@ export async function listDiscoverableChallenges(
   db: Db,
   memberId: string,
   preferences: MemberPreferenceIds | null,
-  options: { rank?: string; limit?: string; cursor?: string } = {},
+  options: { rank?: string; limit?: string; cursor?: string; includeMedia?: boolean } = {},
+  mediaDeps?: MediaRouteDeps,
 ): Promise<DiscoverableChallengeList> {
   if (options.rank !== undefined && options.rank !== 'general' && options.rank !== 'relevance') {
     discoveryError("rank must be 'relevance' or 'general'");
@@ -177,7 +179,7 @@ export async function listDiscoverableChallenges(
   const noEpisodes = new Map<string, ParticipationRow[]>(ids.map((id) => [id, []]));
   const summaries = ids.length === 0
     ? []
-    : await assembleChallengeSummaries(db, ids, noEpisodes, new Date());
+    : await assembleChallengeSummaries(db, ids, noEpisodes, new Date(), options.includeMedia === false ? undefined : mediaDeps);
 
 
   // The SQL order IS the response order (and the cursor's order); the summaries
@@ -211,15 +213,18 @@ export async function listDiscoverableChallenges(
   };
 }
 
-export function registerChallengeDiscoveryRoutes(app: FastifyInstance, db: Db): void {
+export function registerChallengeDiscoveryRoutes(app: FastifyInstance, db: Db, mediaDeps?: MediaRouteDeps): void {
   app.get(apiPath('/challenges/discover'), async (request, reply) => {
     const member = authenticatedMember(request);
-    const query = (request.query ?? {}) as { rank?: string; limit?: string; cursor?: string };
+    const query = (request.query ?? {}) as { rank?: string; limit?: string; cursor?: string; includeMedia?: string };
     const preferences = query.rank === 'general'
       ? null
       : await getMemberPreferenceIds(db, member.memberId).catch(() => null);
     try {
-      return await listDiscoverableChallenges(db, member.memberId, preferences, query);
+      return await listDiscoverableChallenges(db, member.memberId, preferences, {
+        ...query,
+        includeMedia: query.includeMedia !== '0' && query.includeMedia !== 'false',
+      }, mediaDeps);
     } catch (error) {
       const e = error as { statusCode?: number; code?: string; message: string };
       if (e.statusCode === 400) return reply.code(400).send({ error: e.code, message: e.message });

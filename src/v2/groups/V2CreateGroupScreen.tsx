@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../api/apiClient';
 import { removeGroupCoverImage, saveGroupCoverImage } from '../../api/mediaApi';
 import {
@@ -34,7 +35,10 @@ import { useCreateGroup, useV2GroupOptions } from './useV2Groups';
 import { focusAreaMatchesSearch, GROUP_FOCUS_AREAS, GROUP_FOCUS_AREA_LABELS } from './groupFocusAreas';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
-import { removeLocalGroupCoverPreview, setLocalGroupCoverPreview } from './localGroupCoverPreviews';
+import { removeLocalGroupCoverPreview } from './localGroupCoverPreviews';
+import { useAuth } from '../../hooks/useAuth';
+import type { V2GroupDetail } from '../../api/groupsApi';
+import { invalidateV2GroupCoverReads, v2GroupDetailKey } from './groupQueryKeys';
 
 /**
  * TIIZI S4a CORR-001 — progressive Group formation wizard.
@@ -109,6 +113,8 @@ function stepBlocked(step: number, issues: GroupDraftIssue[]): boolean {
 
 export function V2CreateGroupScreen() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const createGroup = useCreateGroup();
   const optionsQuery = useV2GroupOptions();
   const options = optionsQuery.data;
@@ -153,8 +159,13 @@ export function V2CreateGroupScreen() {
     if (coverPhoto.file) {
       setCoverUploading(true);
       try {
-        await saveGroupCoverImage(target.id, coverPhoto.file);
-        setLocalGroupCoverPreview(target.id, coverPhoto.file);
+        const coverImage = await saveGroupCoverImage(target.id, coverPhoto.file);
+        removeLocalGroupCoverPreview(target.id);
+        queryClient.setQueryData<V2GroupDetail>(
+          v2GroupDetailKey(target.id, user?.uid),
+          (current) => current ? { ...current, coverImage } : current,
+        );
+        await invalidateV2GroupCoverReads(queryClient, user?.uid, target.id);
       } catch (err) {
         setCoverUploading(false);
         setCoverUploadError(
@@ -257,6 +268,7 @@ export function V2CreateGroupScreen() {
             <V2LocalImagePicker
               subject="Group cover"
               preview={coverPhoto}
+              draftPersistenceMessage="JPG, PNG or WebP · Preview only. This photo will be saved when you create the Group."
               previewClassName="h-28 w-full rounded-xl bg-slate-100"
               fallback={<div className={`h-full w-full bg-gradient-to-br ${coverGradientFor((draft.coverId as GroupCoverId | null) ?? GROUP_COVER_CATALOGUE[0])}`} aria-hidden="true" />}
             />

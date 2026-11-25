@@ -16,3 +16,7 @@ export function getLocalChallengeCoverPreview(challengeId: string): File | null 
 export function removeLocalChallengeCoverPreview(challengeId: string): void {
   previews.delete(challengeId);
 }
+
+export function clearLocalChallengeCoverPreviews(): void {
+  previews.clear();
+}

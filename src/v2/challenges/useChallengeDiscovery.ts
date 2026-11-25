@@ -13,12 +13,12 @@ function apiConfigured(): boolean {
 export const CHALLENGE_DISCOVERY_PAGE_SIZE = 20;
 
 /** Cross-Group Challenge discovery; preferences only order it. Cursor-paged: Load more reaches every eligible Challenge. */
-export function useV2ChallengeDiscovery(rank: V2DiscoveryRank = 'relevance') {
+export function useV2ChallengeDiscovery(rank: V2DiscoveryRank = 'relevance', includeMedia = true) {
   const { user } = useAuth();
   return useInfiniteQuery({
-    queryKey: v2ChallengeDiscoveryKey(user?.uid, rank),
+    queryKey: v2ChallengeDiscoveryKey(user?.uid, rank, includeMedia),
     initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => fetchDiscoverableChallenges({ rank, cursor: pageParam, limit: CHALLENGE_DISCOVERY_PAGE_SIZE }),
+    queryFn: ({ pageParam }) => fetchDiscoverableChallenges({ rank, cursor: pageParam, limit: CHALLENGE_DISCOVERY_PAGE_SIZE, includeMedia }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!user?.uid && apiConfigured(),
     staleTime: 30 * 1000,

@@ -95,3 +95,21 @@ export async function invalidateV2GroupReads(
     invalidateV2Memberships(queryClient, uid),
   ]);
 }
+
+/** Re-prove only the reads that project a Group cover URL. */
+export async function invalidateV2GroupCoverReads(
+  queryClient: QueryClient,
+  uid?: string,
+  groupId?: string,
+): Promise<void> {
+  const detailKey = groupId === undefined
+    ? [V2_GROUP_DETAIL_SCOPE]
+    : uid === undefined
+      ? [V2_GROUP_DETAIL_SCOPE, groupId]
+      : v2GroupDetailKey(groupId, uid);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: detailKey }),
+    queryClient.invalidateQueries({ queryKey: [V2_GROUP_DISCOVERY_SCOPE] }),
+    invalidateV2Memberships(queryClient, uid),
+  ]);
+}

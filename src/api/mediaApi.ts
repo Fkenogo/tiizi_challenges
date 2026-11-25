@@ -115,7 +115,7 @@ export async function saveChallengeCoverImage(
       method: 'PUT',
       body: {
         intentId,
-        ...(options?.initialBind ? { initialBind: true } : {}),
+        ...(options?.initialBind ? { initialBind: true, groupId: options.groupId } : {}),
       },
     },
   );

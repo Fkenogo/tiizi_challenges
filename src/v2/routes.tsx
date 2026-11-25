@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth';
 import { removeV2GroupFeed } from './groups/groupFeedQueryKeys';
 import { removeV2MemberIdentity } from './profile/memberIdentityQuery';
 import { removeV2RecentActivity } from './member/recentActivityQuery';
+import { clearLocalGroupCoverPreviews } from './groups/localGroupCoverPreviews';
+import { clearLocalChallengeCoverPreviews } from './challenges/localChallengeCoverPreviews';
 import { V2LocaleProvider } from './i18n/V2Locale';
 import { V2GroupScope } from './group/V2GroupScope';
 import { V2Authenticated } from './auth/V2AuthGuard';
@@ -67,6 +69,8 @@ function V2ProtectedScope() {
       void removeV2MemberPreferences(queryClient, priorUid);
       void removeV2GroupFeed(queryClient);
       void removeV2RecentActivity(queryClient, priorUid);
+      clearLocalGroupCoverPreviews();
+      clearLocalChallengeCoverPreviews();
     }
     previousUid.current = user?.uid;
   }, [queryClient, user?.uid]);

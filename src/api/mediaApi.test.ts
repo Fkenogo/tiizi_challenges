@@ -66,7 +66,7 @@ describe('mediaApi + real shared apiClient transport', () => {
           saveChallengeCoverImage('chal-456', file, { initialBind: true, groupId: 'group-123' }),
         expectedIntentScope: 'group-123',
         expectedBindPath: '/api/challenges/chal-456/cover-image',
-        expectedBindBody: { intentId: 'intent-1', initialBind: true },
+        expectedBindBody: { intentId: 'intent-1', initialBind: true, groupId: 'group-123' },
         responseKey: 'coverImage',
       },
     ];

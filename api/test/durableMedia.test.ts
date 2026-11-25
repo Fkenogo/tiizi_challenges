@@ -147,6 +147,7 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
 
       const groupId = await seedGroup(db, { name: 'Sunrise Runners', isPrivate: false });
       await seedMembership(db, groupId, memberA, { role: 'owner', status: 'active' });
+      await db.query(`UPDATE groups SET steward_member_id = $2 WHERE group_id = $1`, [groupId, memberA]);
       await seedMembership(db, groupId, memberB, { role: 'member', status: 'active' });
 
       const challengeId = randomUUID();
@@ -405,6 +406,139 @@ describe('Durable media API, ownership, replacement, removal, and Feed attributi
       expect(chListRes.json().challenges[0].coverImage.status).toBe('ready');
 
       await app.close();
+  });
+
+  it('binds cover intents to their exact scope, denies non-Steward admins, and projects discovery media without expanding Today', async () => {
+    const db = testDb();
+    const store = createInMemoryObjectStore();
+    const steward = await seedMember(db, 'uid-steward-scope', 'Scope Steward');
+    const admin = await seedMember(db, 'uid-admin-scope', 'Scope Admin');
+    const outsider = await seedMember(db, 'uid-outsider-scope', 'Scope Outsider');
+    const groupA = await seedGroup(db, { name: 'Scope Group A', isPrivate: false });
+    const groupB = await seedGroup(db, { name: 'Scope Group B', isPrivate: false });
+    await seedMembership(db, groupA, steward, { role: 'owner', status: 'active' });
+    await seedMembership(db, groupB, steward, { role: 'owner', status: 'active' });
+    await seedMembership(db, groupB, admin, { role: 'admin', status: 'active' });
+    await db.query(`UPDATE groups SET steward_member_id = $2 WHERE group_id = ANY($1::uuid[])`, [[groupA, groupB], steward]);
+
+    const challengeId = randomUUID();
+    await db.query(
+      `INSERT INTO challenges (
+         challenge_id, group_id, created_by_member_id, challenge_type, status,
+         title, description, instructions, start_date, end_date, current_config_version, timezone,
+         goal_value, goal_unit
+       ) VALUES ($1, $2, $3, 'collective', 'active', 'Scope Discovery Challenge', '', '', '2026-11-01', '2026-11-30', 1, 'UTC', 10, 'km')`,
+      [challengeId, groupB, steward],
+    );
+    const knowledgeId = randomUUID();
+    await db.query(
+      `INSERT INTO knowledge_items (knowledge_id, kind, name, category, subcategory, difficulty, description, metric_unit, target_value, target_type, frequency, points, lifecycle)
+       VALUES ($1, 'fitness', 'Walking', 'Cardio', 'Walk', 'Beginner', 'Walk daily', 'km', 10, 'count', 'daily', 10, 'published')`,
+      [knowledgeId],
+    );
+    await db.query(
+      `INSERT INTO challenge_config_versions (challenge_id, version, snapshot) VALUES ($1, 1, $2::jsonb)`,
+      [challengeId, JSON.stringify({
+        challenge_type: 'collective',
+        period: { start_date: '2026-11-01', end_date: '2026-11-30' },
+        type_params: { goal_value: 10, goal_unit: 'km', required_consecutive_days: null, reset_on_miss: false },
+        activities: [{
+          canonical_key: 'walking', activity_variant: null, knowledge_id: knowledgeId,
+          knowledge_version: 1, target_value: 10, unit: 'km', position: 0, conditions: {},
+        }],
+      })],
+    );
+    await db.query(
+      `INSERT INTO challenge_activity_configs
+         (challenge_id, version, canonical_key, knowledge_id, knowledge_version, target_value, unit, position, conditions)
+       VALUES ($1, 1, 'walking', $2, 1, 10, 'km', 0, '{}')`,
+      [challengeId, knowledgeId],
+    );
+
+    const app = buildApp({
+      db,
+      verifier: { verify: async (token) => ({ uid: token }) },
+      media: { objectStore: store, readUrlTtlSeconds: 60 },
+    });
+    const png = await makeTestPng();
+
+    const unscoped = await app.inject({
+      method: 'POST', url: '/api/media/intents', headers: { authorization: 'Bearer uid-admin-scope' },
+      payload: { purpose: 'group_cover', idempotencyKey: 'scope-unscoped' },
+    });
+    expect(unscoped.statusCode).toBe(400);
+
+    const adminIntent = await app.inject({
+      method: 'POST', url: '/api/media/intents', headers: { authorization: 'Bearer uid-admin-scope' },
+      payload: { purpose: 'group_cover', targetScopeId: groupB, idempotencyKey: 'scope-admin' },
+    });
+    expect(adminIntent.statusCode).toBe(403);
+
+    const groupIntent = await app.inject({
+      method: 'POST', url: '/api/media/intents', headers: { authorization: 'Bearer uid-steward-scope' },
+      payload: { purpose: 'group_cover', targetScopeId: groupA, idempotencyKey: 'scope-group-a' },
+    });
+    const groupIntentId = groupIntent.json().intentId;
+    await app.inject({
+      method: 'PUT', url: `/api/media/intents/${groupIntentId}/content`,
+      headers: { authorization: 'Bearer uid-steward-scope', 'content-type': 'image/png' }, payload: png,
+    });
+    const wrongBind = await app.inject({
+      method: 'PUT', url: `/api/groups/${groupB}/cover-image`, headers: { authorization: 'Bearer uid-steward-scope' },
+      payload: { intentId: groupIntentId },
+    });
+    expect(wrongBind.statusCode).toBe(403);
+    expect(wrongBind.json().error.code).toBe('intent_scope_mismatch');
+    const correctBind = await app.inject({
+      method: 'PUT', url: `/api/groups/${groupA}/cover-image`, headers: { authorization: 'Bearer uid-steward-scope' },
+      payload: { intentId: groupIntentId },
+    });
+    expect(correctBind.statusCode).toBe(200);
+
+    const adminRemoveGroup = await app.inject({
+      method: 'DELETE', url: `/api/groups/${groupB}/cover-image`, headers: { authorization: 'Bearer uid-admin-scope' },
+    });
+    expect(adminRemoveGroup.statusCode).toBe(403);
+
+    const challengeIntent = await app.inject({
+      method: 'POST', url: '/api/media/intents', headers: { authorization: 'Bearer uid-steward-scope' },
+      payload: { purpose: 'challenge_cover', targetScopeId: groupB, idempotencyKey: 'scope-challenge' },
+    });
+    const challengeIntentId = challengeIntent.json().intentId;
+    await app.inject({
+      method: 'PUT', url: `/api/media/intents/${challengeIntentId}/content`,
+      headers: { authorization: 'Bearer uid-steward-scope', 'content-type': 'image/png' }, payload: png,
+    });
+    const challengeBind = await app.inject({
+      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-steward-scope' },
+      payload: { intentId: challengeIntentId, initialBind: true, groupId: groupB },
+    });
+    expect(challengeBind.statusCode).toBe(200);
+    const objectsAfterBind = store.objects.size;
+    const challengeBindRetry = await app.inject({
+      method: 'PUT', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-steward-scope' },
+      payload: { intentId: challengeIntentId, initialBind: true, groupId: groupB },
+    });
+    expect(challengeBindRetry.statusCode).toBe(200);
+    expect(store.objects.size).toBe(objectsAfterBind);
+    const adminRemoveChallenge = await app.inject({
+      method: 'DELETE', url: `/api/challenges/${challengeId}/cover-image`, headers: { authorization: 'Bearer uid-admin-scope' },
+    });
+    expect(adminRemoveChallenge.statusCode).toBe(403);
+
+    const discovery = await app.inject({
+      method: 'GET', url: '/api/challenges/discover', headers: { authorization: 'Bearer uid-outsider-scope' },
+    });
+    expect(discovery.statusCode).toBe(200);
+    expect(discovery.json().challenges.find((item: { challengeId: string }) => item.challengeId === challengeId)?.coverImage.status).toBe('ready');
+
+    const todayDiscovery = await app.inject({
+      method: 'GET', url: '/api/challenges/discover?includeMedia=0', headers: { authorization: 'Bearer uid-outsider-scope' },
+    });
+    expect(todayDiscovery.statusCode).toBe(200);
+    expect(todayDiscovery.json().challenges.find((item: { challengeId: string }) => item.challengeId === challengeId)?.coverImage).toBeUndefined();
+
+    await app.close();
   });
 
   it('cleans up expired/unbound intents, retries failed deletes, rolls back R2 on DB failure, and enforces least-privilege tiizi_runtime grants', async () => {

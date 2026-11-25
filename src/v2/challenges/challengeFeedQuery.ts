@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError } from '../../api/apiClient';
+import { MEDIA_QUERY_STALE_MS } from '../media/mediaQuery';
 import {
   addChallengeFeedKudos,
   fetchActivityShareState,
@@ -50,6 +51,7 @@ export function useV2ChallengeFeedPreview(challengeId: string) {
       );
     },
     enabled: Boolean(user && challengeId),
+    staleTime: MEDIA_QUERY_STALE_MS,
   });
 }
 
@@ -66,6 +68,7 @@ export function useV2ChallengeFeedHistory(challengeId: string) {
       );
     },
     enabled: Boolean(user && challengeId),
+    staleTime: MEDIA_QUERY_STALE_MS,
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage): string | undefined => lastPage.nextCursor ?? undefined,
   });

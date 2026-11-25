@@ -123,5 +123,6 @@ describe('Challenge creation cover UX regressions', () => {
     expect(img.getAttribute('src')).toBe('blob:review-2');
     expect(revoked).toContain('blob:review-1');
     expect(revoked).not.toContain('blob:review-2');
+    expect(screen.getByText('JPG, PNG or WebP · Preview only. This photo will be saved when you create the Challenge.')).toBeTruthy();
   });
 });

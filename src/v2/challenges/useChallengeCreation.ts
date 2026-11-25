@@ -39,6 +39,7 @@ import {
 } from './challengeQueryKeys';
 import { competitiveLeaderboardEnabledForS3c } from './progressView';
 import { useAuth } from '../../hooks/useAuth';
+import { MEDIA_QUERY_STALE_MS } from '../media/mediaQuery';
 
 /**
  * S2b — V2 Challenge Creation query/mutation hooks.
@@ -61,7 +62,7 @@ export function useV2Memberships() {
     queryKey: v2MembershipsKey(user?.uid),
     queryFn: () => fetchMyMemberships(),
     enabled: !!user?.uid && apiConfigured(),
-    staleTime: 60 * 1000,
+    staleTime: MEDIA_QUERY_STALE_MS,
   });
 }
 

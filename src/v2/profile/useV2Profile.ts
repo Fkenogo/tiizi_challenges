@@ -22,7 +22,9 @@ import {
   type V2Profile,
 } from '../../api/profileApi';
 import { useAuth } from '../../hooks/useAuth';
-import { invalidateV2MemberIdentity } from './memberIdentityQuery';
+import { invalidateV2MemberIdentity, setV2MemberIdentity } from './memberIdentityQuery';
+import type { V2MediaImageProjection } from '../../api/mediaApi';
+import { invalidateV2ChallengeFeed } from '../challenges/challengeFeedQuery';
 import {
   isUncertainProfileWriteFailure,
   ProfileSaveUncertainError,
@@ -61,6 +63,8 @@ export function useV2Profile() {
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
   const [isLoadingChallenges, setIsLoadingChallenges] = useState(false);
   const [pageError, setPageError] = useState<PageError | null>(null);
+  const loadedRef = useRef<LoadedProfile | null>(loaded);
+  loadedRef.current = loaded;
 
   // Increments on every identity change, explicit reload, or name save so
   // late responses from a superseded read can never overwrite current state.
@@ -266,6 +270,7 @@ export function useV2Profile() {
             profile: next,
           });
           void invalidateV2MemberIdentity(queryClient, uidAtSave);
+          void invalidateV2ChallengeFeed(queryClient);
         }
         return next;
       } catch (saveFailure) {
@@ -298,6 +303,7 @@ export function useV2Profile() {
               activeSeq: requestSeq.current,
               profile: canonical,
             });
+            void invalidateV2ChallengeFeed(queryClient);
             setReadFailure(null);
             setPageError(null);
             reconciled = true;
@@ -319,12 +325,26 @@ export function useV2Profile() {
     [isSaving, loaded, queryClient, uid],
   );
 
+  const applyProfileImage = useCallback((profileImage: V2MediaImageProjection) => {
+    if (!uid) return;
+    requestSeq.current += 1;
+    const current = loadedRef.current;
+    if (!current || current.uid !== uid) return;
+    const nextProfile = { ...current.profile, profileImage };
+    loadedRef.current = { uid, profile: nextProfile };
+    setLoaded(loadedRef.current);
+    setReadFailure(null);
+    setIsLoading(false);
+    setV2MemberIdentity(queryClient, uid, nextProfile);
+  }, [queryClient, uid]);
+
   return {
     profile,
     isLoading: showLoading,
     error,
     isSaving,
     saveDisplayName,
+    applyProfileImage,
     reload,
     loadMoreGroups,
     loadMoreChallenges,

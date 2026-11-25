@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { V2SignedImage, resetSignedImageRefreshCooldowns } from './V2SignedImage';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { V2SignedImage } from './V2SignedImage';
 
 afterEach(() => {
   cleanup();
-  resetSignedImageRefreshCooldowns();
+  vi.useRealTimers();
 });
 
 describe('V2SignedImage expiration & fallback', () => {
-  it('triggers a bounded refresh once on expired URL error and swaps to the new signed URL', () => {
+  it('shows a neutral loading state, refreshes once, and swaps to a fresh signed URL', () => {
     const onExpired = vi.fn();
-    const { rerender } = render(
+    const { container, rerender } = render(
       <V2SignedImage
         src="https://signed.example.test/old.webp?expires=60"
         alt="Profile"
@@ -21,16 +21,16 @@ describe('V2SignedImage expiration & fallback', () => {
       />,
     );
 
-    const img = screen.getByRole('img', { name: 'Profile' });
-    fireEvent.error(img);
-    expect(onExpired).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain('Fallback');
+    const firstImage = container.querySelector('img')!;
+    expect(firstImage.className).toBe('hidden');
+    fireEvent.load(firstImage);
+    expect(container.textContent).not.toContain('Fallback');
 
-    // Firing error again immediately within cooldown does not spam refreshes and falls back cleanly
-    fireEvent.error(img);
+    fireEvent.error(firstImage);
     expect(onExpired).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Fallback')).toBeTruthy();
+    expect(container.textContent).toContain('Fallback');
 
-    // When the query returns a fresh signed URL, the image renders again
     rerender(
       <V2SignedImage
         src="https://signed.example.test/new.webp?expires=60"
@@ -40,8 +40,50 @@ describe('V2SignedImage expiration & fallback', () => {
         fallback={<span>Fallback</span>}
       />,
     );
-    expect(screen.getByRole('img', { name: 'Profile' }).getAttribute('src')).toBe(
-      'https://signed.example.test/new.webp?expires=60',
+    const freshImage = container.querySelector('img')!;
+    expect(freshImage.getAttribute('src')).toBe('https://signed.example.test/new.webp?expires=60');
+    fireEvent.load(freshImage);
+    expect(container.textContent).not.toContain('Fallback');
+  });
+
+  it('retries a same-URL refresh once and then stops without a permanent error loop', () => {
+    vi.useFakeTimers();
+    const onExpired = vi.fn();
+    const { container } = render(
+      <V2SignedImage
+        src="https://signed.example.test/same.webp?expires=60"
+        alt="Group cover"
+        refreshKey="same-url"
+        onExpired={onExpired}
+        fallback={<span>Fallback</span>}
+      />,
     );
+
+    fireEvent.error(container.querySelector('img')!);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(300));
+    const retriedImage = container.querySelector('img')!;
+    fireEvent.error(retriedImage);
+
+    expect(onExpired).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain('Group cover is unavailable.');
+    expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('does not let one sibling instance suppress another instance recovery', () => {
+    const firstExpired = vi.fn();
+    const secondExpired = vi.fn();
+    const { container } = render(
+      <>
+        <V2SignedImage src="https://signed.example.test/a.webp" alt="A" refreshKey="shared" onExpired={firstExpired} fallback={<span>A fallback</span>} />
+        <V2SignedImage src="https://signed.example.test/b.webp" alt="B" refreshKey="shared" onExpired={secondExpired} fallback={<span>B fallback</span>} />
+      </>,
+    );
+
+    const images = container.querySelectorAll('img');
+    fireEvent.error(images[0]);
+    fireEvent.error(images[1]);
+    expect(firstExpired).toHaveBeenCalledTimes(1);
+    expect(secondExpired).toHaveBeenCalledTimes(1);
   });
 });

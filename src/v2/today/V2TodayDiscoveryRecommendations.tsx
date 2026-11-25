@@ -13,7 +13,7 @@ import { recommendedChallenges, recommendedGroups, recommendationReason } from '
 export function V2TodayDiscoveryRecommendations() {
   const navigate = useNavigate();
   const groups = useV2GroupDiscovery('', 'relevance');
-  const challenges = useV2ChallengeDiscovery('relevance');
+  const challenges = useV2ChallengeDiscovery('relevance', false);
   const groupPages = groups.data?.pages ?? [];
   const groupRows = recommendedGroups(groupPages.flatMap((page) => page.groups)).slice(0, 3);
   const challengeRows = recommendedChallenges(flattenDiscoveryPages(challenges.data?.pages)).slice(0, 3);

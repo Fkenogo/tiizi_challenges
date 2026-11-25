@@ -18,6 +18,8 @@ import {
   statusLabelForEndState,
 } from './challengeEndState';
 import { useChallengeDetailV2, useV2Memberships } from './useChallengeCreation';
+import { useV2GroupDetail } from '../groups/useV2Groups';
+import { V2ChallengeCoverEditor } from './V2ChallengeCoverEditor';
 import { V2LogActivityDialog } from './V2LoggingSection';
 import { participationViewFor, V2LeaveChallengeDialog, V2ParticipationSection } from './V2ParticipationSection';
 import { V2ProgressSection } from './V2ProgressSection';
@@ -125,6 +127,7 @@ export function V2CreatedChallengeScreen() {
   }, [shareToast?.shareAction, location.pathname, location.search, location.hash, location.state, navigate]);
   const detail = useChallengeDetailV2(challengeId);
   const memberships = useV2Memberships();
+  const hostGroup = useV2GroupDetail(detail.data?.groupId ?? null);
   const [logOpen, setLogOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [reuseLoading, setReuseLoading] = useState(false);
@@ -271,6 +274,7 @@ export function V2CreatedChallengeScreen() {
           showLeave={joined}
           onLeave={() => setLeaveOpen(true)}
         />
+        {hostGroup.data?.viewerRelationship === 'steward' && <V2ChallengeCoverEditor detail={challenge} />}
 
         {challenge.socialCause?.approvalStatus === 'pending_approval' && (
           <section role="status" aria-label="Cause approval pending" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">

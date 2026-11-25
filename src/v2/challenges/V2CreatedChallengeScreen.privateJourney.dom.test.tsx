@@ -17,6 +17,9 @@ vi.mock('./useChallengeCreation', () => ({
   useChallengeDetailV2: () => h.detail,
   useV2Memberships: () => h.memberships,
 }));
+vi.mock('../groups/useV2Groups', () => ({
+  useV2GroupDetail: () => ({ data: { viewerRelationship: 'none' } }),
+}));
 vi.mock('./challengeEndState', () => ({
   endStateFor: () => 'live',
   loggingAvailableForEndState: () => true,

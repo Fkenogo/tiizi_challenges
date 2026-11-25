@@ -16,7 +16,10 @@ vi.mock('../../hooks/useAuth', () => ({
 }));
 vi.mock('./useV2Profile', () => ({ useV2Profile: () => h.profileState }));
 vi.mock('./useV2SignOut', () => ({ useV2SignOut: () => h.signOut }));
-vi.mock('../media/useLocalImagePreview', () => ({ useLocalImagePreview: () => ({ remove: h.remove }) }));
+vi.mock('../media/useLocalImagePreview', () => ({
+  LOCAL_IMAGE_ACCEPT: 'image/jpeg,image/png,image/webp',
+  useLocalImagePreview: () => ({ remove: h.remove }),
+}));
 vi.mock('../media/V2LocalImagePicker', () => ({ V2LocalImagePicker: () => null }));
 vi.mock('../preferences/ProfilePreferencesSection', () => ({ ProfilePreferencesSection: () => null }));
 vi.mock('../support/V2SupportTiiziCard', () => ({ V2SupportTiiziCard: () => null }));
@@ -73,6 +76,7 @@ beforeEach(() => {
     error: null,
     isSaving: false,
     saveDisplayName: vi.fn(),
+    applyProfileImage: vi.fn(),
     reload: vi.fn(),
     loadMoreGroups: vi.fn(),
     loadMoreChallenges: vi.fn(),

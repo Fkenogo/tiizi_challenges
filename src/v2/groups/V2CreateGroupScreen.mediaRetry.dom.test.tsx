@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { V2CreateGroupScreen } from './V2CreateGroupScreen';
 
 const h = vi.hoisted(() => ({
@@ -11,6 +12,7 @@ const h = vi.hoisted(() => ({
   navigate: vi.fn(),
 }));
 
+vi.mock('../../hooks/useAuth', () => ({ useAuth: () => ({ user: { uid: 'member-1' } }) }));
 vi.mock('react-router-dom', async (orig) => {
   const actual = await orig<typeof import('react-router-dom')>();
   return { ...actual, useNavigate: () => h.navigate };
@@ -57,9 +59,11 @@ describe('V2CreateGroupScreen cover upload failure & retry', () => {
       .mockResolvedValueOnce({ status: 'ready', assetId: 'a1', url: 'https://signed/a1', contentType: 'image/webp', width: 960, height: 540 });
 
     render(
-      <MemoryRouter>
-        <V2CreateGroupScreen />
-      </MemoryRouter>,
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <V2CreateGroupScreen />
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
 
     // Step 0: Name & description
@@ -68,6 +72,7 @@ describe('V2CreateGroupScreen cover upload failure & retry', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     // Step 1: Purpose & cover
+    expect(screen.getByText('JPG, PNG or WebP · Preview only. This photo will be saved when you create the Group.')).toBeTruthy();
     const fileInput = screen.getByLabelText(/Choose group cover/i);
     const file = new File([new Uint8Array([1, 2, 3])], 'cover.png', { type: 'image/png' });
     fireEvent.change(fileInput, { target: { files: [file] } });

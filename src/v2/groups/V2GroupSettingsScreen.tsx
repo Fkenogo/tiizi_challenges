@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { V2Button, V2Page } from '../components/V2Primitives';
 import { useV2GroupDetail, useUpdateV2GroupSettings, useV2GroupOptions } from './useV2Groups';
 import { useV2GroupId } from '../group/V2GroupScope';
@@ -7,14 +8,20 @@ import { GROUP_COVER_CATALOGUE, coverGradientFor, coverLabelFor, isGroupCoverId 
 import { GroupInterestsPicker } from './GroupInterestsPicker';
 import { INTEREST_ISSUE_COPY, interestIssue, interestVocabulary, sameInterestSet } from './groupInterests';
 import { V2LocalImagePicker } from '../media/V2LocalImagePicker';
-import { removeGroupCoverImage, saveGroupCoverImage } from '../../api/mediaApi';
+import { removeGroupCoverImage, saveGroupCoverImage, type V2MediaImageProjection } from '../../api/mediaApi';
 import { useLocalImagePreview } from '../media/useLocalImagePreview';
+import { useAuth } from '../../hooks/useAuth';
+import type { V2GroupDetail } from '../../api/groupsApi';
+import { invalidateV2GroupCoverReads, v2GroupDetailKey } from './groupQueryKeys';
+import { removeLocalGroupCoverPreview } from './localGroupCoverPreviews';
 
 export function V2GroupSettingsScreen() {
   const groupId = useV2GroupId();
   const detail = useV2GroupDetail(groupId);
   const update = useUpdateV2GroupSettings(groupId ?? '');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tagline, setTagline] = useState('');
@@ -26,9 +33,16 @@ export function V2GroupSettingsScreen() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [requireAdminApproval, setRequireAdminApproval] = useState(false);
   const [allowMemberChallenges, setAllowMemberChallenges] = useState(true);
+  const [coverSaving, setCoverSaving] = useState(false);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const initializedGroupIdRef = useRef<string | null>(null);
   useEffect(() => {
     const group = detail.data;
-    if (!group) return;
+    if (!group || initializedGroupIdRef.current === group.id) return;
+    initializedGroupIdRef.current = group.id;
+    coverPhoto.remove();
+    setCoverSaving(false);
+    setCoverError(null);
     setName(group.name); setDescription(group.description); setTagline(group.tagline);
     setLocation(group.location); setFocusTags(group.focusTags); setCoverId(group.coverId);
     setIsPrivate(group.isPrivate); setRequireAdminApproval(group.requireAdminApproval ?? false);
@@ -50,8 +64,14 @@ export function V2GroupSettingsScreen() {
     || isPrivate !== group.isPrivate
     || requireAdminApproval !== (group.requireAdminApproval ?? false)
     || allowMemberChallenges !== (group.allowMemberChallenges ?? true);
-  const [coverSaving, setCoverSaving] = useState(false);
-  const [coverError, setCoverError] = useState<string | null>(null);
+  const reconcileCover = async (coverImage: V2MediaImageProjection) => {
+    removeLocalGroupCoverPreview(group.id);
+    queryClient.setQueryData<V2GroupDetail>(
+      v2GroupDetailKey(group.id, user?.uid),
+      (current) => current ? { ...current, coverImage } : current,
+    );
+    await invalidateV2GroupCoverReads(queryClient, user?.uid, group.id);
+  };
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!focusTagsValid) return;
@@ -84,11 +104,18 @@ export function V2GroupSettingsScreen() {
                 persistedUrl={group.coverImage?.status === 'ready' ? group.coverImage.url : null}
                 durable={group.coverImage?.status !== 'not_configured'}
                 isSaving={coverSaving}
+                refreshKey={`group-cover-picker-${group.id}`}
+                onPersistedImageExpired={() => {
+                  if (groupId) void invalidateV2GroupCoverReads(queryClient, user?.uid, groupId);
+                }}
                 onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => {
                   setCoverError(null);
                   setCoverSaving(true);
                   void saveGroupCoverImage(group.id, file)
-                    .then(() => { coverPhoto.remove(); })
+                    .then(async (coverImage) => {
+                      coverPhoto.remove();
+                      await reconcileCover(coverImage);
+                    })
                     .catch(() => {
                       coverPhoto.remove();
                       setCoverError('Could not save the Group cover photo. Please try again.');
@@ -99,6 +126,10 @@ export function V2GroupSettingsScreen() {
                   setCoverError(null);
                   setCoverSaving(true);
                   void removeGroupCoverImage(group.id)
+                    .then(async (coverImage) => {
+                      coverPhoto.remove();
+                      await reconcileCover(coverImage);
+                    })
                     .catch(() => setCoverError('Could not remove the Group cover photo. Please try again.'))
                     .finally(() => setCoverSaving(false));
                 } : undefined}
@@ -114,7 +145,7 @@ export function V2GroupSettingsScreen() {
             </div>
             <p className="mb-2 mt-4 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>
             <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div>
-            <p className="mt-1 text-xs text-slate-500">Catalogue covers save with Group settings. A chosen photo is only a local preview and is not saved.</p>
+            <p className="mt-1 text-xs text-slate-500">Uploaded photos save immediately. Catalogue covers save with Group settings.</p>
             {coverError && <p role="alert" className="mt-1 text-xs font-bold text-red-700">{coverError}</p>}
           </fieldset>
         </section>

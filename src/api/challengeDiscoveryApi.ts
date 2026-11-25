@@ -29,12 +29,13 @@ export interface V2ChallengeDiscovery {
 }
 
 export function fetchDiscoverableChallenges(
-  options: { rank?: V2DiscoveryRank; cursor?: string; limit?: number } = {},
+  options: { rank?: V2DiscoveryRank; cursor?: string; limit?: number; includeMedia?: boolean } = {},
 ): Promise<V2ChallengeDiscovery> {
   const params = new URLSearchParams();
   if (options.rank === 'general') params.set('rank', 'general');
   if (options.cursor) params.set('cursor', options.cursor);
   if (options.limit !== undefined) params.set('limit', String(options.limit));
+  if (options.includeMedia === false) params.set('includeMedia', '0');
   const queryString = params.toString();
   const query = queryString ? `?${queryString}` : '';
   return apiFetch<V2ChallengeDiscovery>(apiPath(`/challenges/discover${query}`));

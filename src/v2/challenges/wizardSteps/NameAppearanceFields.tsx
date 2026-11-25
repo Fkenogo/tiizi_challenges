@@ -34,6 +34,7 @@ export function NameAppearanceFields({
         <V2LocalImagePicker
           subject="Challenge cover"
           preview={coverPhoto}
+          draftPersistenceMessage="JPG, PNG or WebP · Preview only. This photo will be saved when you create the Challenge."
           previewClassName="h-28 w-full rounded-xl bg-slate-100"
           fallback={<div className="flex h-full w-full items-center justify-center bg-slate-100 px-4 text-center text-sm font-medium text-slate-500">No photo selected</div>}
         />
