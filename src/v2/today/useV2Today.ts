@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { fetchTodayProjection, type V2TodayProjection } from '../../api/todayApi';
+import { MEDIA_QUERY_STALE_MS } from '../media/mediaQuery';
 import { v2TodayKey } from './todayQueryKeys';
 
 export { v2TodayKey, invalidateV2Today, V2_TODAY_SCOPE } from './todayQueryKeys';
@@ -19,5 +20,6 @@ export function useV2Today() {
     queryKey: v2TodayKey(user?.uid),
     queryFn: () => fetchTodayProjection(),
     enabled: !!user,
+    staleTime: MEDIA_QUERY_STALE_MS,
   });
 }

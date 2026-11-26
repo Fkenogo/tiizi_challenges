@@ -94,8 +94,8 @@ check('Profile seeds the editor once per member and never wipes a save confirmat
 check('Profile saves only the side(s) that changed (never records an untouched side as decided)', /const change = editingCategory === 'interests' \? \{ interestIds: interests \} : \{ goalIds: goals \};/.test(section) && /if \(sameSelection\(selected, current\)\) \{[\s\S]{0,120}?setEditingCategory\(null\);[\s\S]{0,40}?return;/.test(section));
 check('Profile uses the same pickers as onboarding', /InterestsPicker/.test(section) && /GoalsPicker/.test(section) && /InterestsPicker/.test(setup));
 const profile = read('src/v2/profile/V2ProfileScreen.tsx');
-check('Profile renders the section in its agreed slot (before Support Tiizi and the journey)',
-  profile.indexOf('<ProfilePreferencesSection') > 0 && profile.indexOf('<ProfilePreferencesSection') < profile.indexOf('data-profile-slot="support-tiizi"') && profile.indexOf('data-profile-slot="support-tiizi"') < profile.indexOf('My Tiizi Journey'));
+check('Profile renders the section in its agreed slot (before Support Tiizi and History)',
+  profile.indexOf('<ProfilePreferencesSection') > 0 && profile.indexOf('<ProfilePreferencesSection') < profile.indexOf('data-profile-slot="support-tiizi"') && profile.indexOf('data-profile-slot="support-tiizi"') < profile.indexOf('View Activity History'));
 check('Support Tiizi is the P8a navigation card; no Interests & Goals dev marker remains', /data-profile-slot="support-tiizi"/.test(profile) && /<V2SupportTiiziCard \/>/.test(profile) && !/slot="interests-goals"/.test(profile));
 check('no member-facing "coming soon" wording', !/coming soon/i.test(prefFiles + profile));
 const pickers = read('src/v2/preferences/PreferencePickers.tsx');

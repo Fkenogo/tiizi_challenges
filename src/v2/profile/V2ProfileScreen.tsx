@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { QueryClientContext } from '@tanstack/react-query';
 import { ApiError } from '../../api/apiClient';
 import { removeOwnProfileImage, saveOwnProfileImage } from '../../api/mediaApi';
-import type { V2ProfileChallengeItem } from '../../api/profileApi';
 import {
   V2Button,
   V2Card,
@@ -26,10 +25,7 @@ import { useLocalImagePreview } from '../media/useLocalImagePreview';
 import { useFileUploadIdentity } from '../media/useFileUploadIdentity';
 import { invalidateV2ChallengeFeed } from '../challenges/challengeFeedQuery';
 import {
-  bucketProfileChallenges,
-  challengeStatusLabel,
   displayNameLength,
-  groupRoleLabel,
   PROFILE_DISPLAY_NAME_MAX,
   validateDisplayName,
 } from './profileView';
@@ -60,12 +56,7 @@ export function V2ProfileScreen() {
     saveDisplayName,
     applyProfileImage,
     reload,
-    loadMoreGroups,
-    loadMoreChallenges,
-    isLoadingGroups,
-    isLoadingChallenges,
-    pageError,
-  } = useV2Profile();
+  } = useV2Profile({ includeSummaries: false });
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -104,15 +95,6 @@ export function V2ProfileScreen() {
     profilePhoto.remove();
   }, [uid, profilePhoto.remove, photoUploadIdentity.reset]);
 
-  const loadedBuckets = bucketProfileChallenges(profile?.challenges.items ?? []);
-  useEffect(() => {
-    const needed = Math.min(3, profile?.challenges.historyCount ?? 0);
-    if (loadedBuckets.history.length < needed && profile?.challenges.nextCursor && !isLoadingChallenges
-        && pageError?.section !== 'challenges') {
-      void loadMoreChallenges();
-    }
-  }, [isLoadingChallenges, loadMoreChallenges, loadedBuckets.history.length, pageError?.section, profile?.challenges.historyCount, profile?.challenges.nextCursor]);
-
   if (isLoading && !profile) {
     return (
       <V2Page>
@@ -145,8 +127,6 @@ export function V2ProfileScreen() {
   const draftLength = displayNameLength(draft);
   const draftOverLimit = draftLength > PROFILE_DISPLAY_NAME_MAX;
   const email = user?.email ?? null;
-  const buckets = bucketProfileChallenges(profile.challenges.items);
-  const recentHistory = buckets.history.slice(0, 3);
 
   const startEditing = () => {
     setDraft(displayName ?? '');
@@ -383,102 +363,8 @@ export function V2ProfileScreen() {
           <V2SupportTiiziCard />
         </div>
 
-        <SectionLabel>My Tiizi Journey</SectionLabel>
+        <SectionLabel>History</SectionLabel>
 
-        <V2Card>
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-base font-black text-slate-900">Groups</h3>
-            <p className="text-xs font-bold text-slate-500">
-              {profile.groups.count} {profile.groups.count === 1 ? 'group' : 'groups'}
-            </p>
-          </div>
-          {profile.groups.items.length === 0 ? (
-            <div className="mt-3">
-              <p className="text-sm leading-6 text-slate-600">
-                You haven&apos;t joined a Group yet.
-              </p>
-              <V2Button
-                variant="secondary"
-                className="mt-3"
-                onClick={() => navigate('/v2/groups')}
-              >
-                Go to Groups
-              </V2Button>
-            </div>
-          ) : (
-            <ul className="mt-3 divide-y divide-slate-100">
-              {profile.groups.items.map((item) => (
-                <li key={item.groupId} className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="min-w-0 break-words text-sm font-bold text-slate-900">
-                    {item.name}
-                  </span>
-                  <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                    {groupRoleLabel(item.role)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {profile.groups.nextCursor && (
-            <div className="mt-3">
-              <V2Button
-                variant="secondary"
-                onClick={() => void loadMoreGroups()}
-                disabled={isLoadingGroups}
-              >
-                {isLoadingGroups ? 'Loading…' : 'Show more Groups'}
-              </V2Button>
-            </div>
-          )}
-          {pageError?.section === 'groups' && (
-            <PageError onRetry={() => void loadMoreGroups()} />
-          )}
-        </V2Card>
-
-        <V2Card>
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-base font-black text-slate-900">Challenges</h3>
-            <p className="text-xs font-bold text-slate-500">
-              {profile.challenges.activeCount} active · {profile.challenges.historyCount} in history
-            </p>
-          </div>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
-            Only Challenges you actually took part in appear here.
-          </p>
-
-          {profile.challenges.items.length === 0 ? (
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              You haven&apos;t taken part in a Challenge yet.
-            </p>
-          ) : (
-            <div className="mt-3 space-y-4">
-              {buckets.active.length > 0 && (
-                <ChallengeGroup title="Active" items={buckets.active} />
-              )}
-              {buckets.history.length > 0 && (
-                <ChallengeGroup title="History" items={recentHistory} />
-              )}
-            </div>
-          )}
-          <Link to="/v2/profile/challenges" className="mt-3 inline-flex py-2 text-sm font-bold text-primary underline underline-offset-2">
-            View Challenge History
-          </Link>
-
-          {profile.challenges.nextCursor && (
-            <div className="mt-3">
-              <V2Button
-                variant="secondary"
-                onClick={() => void loadMoreChallenges()}
-                disabled={isLoadingChallenges}
-              >
-                {isLoadingChallenges ? 'Loading…' : 'Show more Challenges'}
-              </V2Button>
-            </div>
-          )}
-          {pageError?.section === 'challenges' && (
-            <PageError onRetry={() => void loadMoreChallenges()} />
-          )}
-        </V2Card>
         <V2Card>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <div>
@@ -487,6 +373,15 @@ export function V2ProfileScreen() {
             </div>
             <Link to="/v2/activity" className="inline-flex min-h-11 items-center self-start text-sm font-bold text-primary underline underline-offset-2">
               View Activity History
+            </Link>
+          </div>
+          <div className="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-900">Challenge History</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Past Challenges you took part in.</p>
+            </div>
+            <Link to="/v2/profile/challenges" className="inline-flex min-h-11 items-center self-start text-sm font-bold text-primary underline underline-offset-2">
+              View Challenge History
             </Link>
           </div>
         </V2Card>
@@ -545,44 +440,6 @@ function HelpRow({ label, hint, onClick }: { label: string; hint: string; onClic
       </span>
       <span className="shrink-0 text-lg leading-none text-slate-300" aria-hidden="true">›</span>
     </button>
-  );
-}
-
-function ChallengeGroup({ title, items }: { title: string; items: V2ProfileChallengeItem[] }) {
-  return (
-    <section aria-label={title}>
-      <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</h3>
-      <ul className="mt-1 divide-y divide-slate-100">
-        {items.map((item) => (
-          <li
-            key={item.participationId}
-            className="flex items-center justify-between gap-3 py-2.5"
-          >
-            {item.bucket === 'history' ? (
-              <Link to={`/v2/challenges/${encodeURIComponent(item.challengeId)}`} className="min-w-0 break-words text-sm font-bold text-primary underline underline-offset-2">
-                {item.title}
-              </Link>
-            ) : (
-              <span className="min-w-0 break-words text-sm font-bold text-slate-900">{item.title}</span>
-            )}
-            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-              {challengeStatusLabel(item)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function PageError({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-      <p>We couldn&apos;t load more. Please try again.</p>
-      <button type="button" onClick={onRetry} className="mt-1 font-bold underline">
-        Try again
-      </button>
-    </div>
   );
 }
 

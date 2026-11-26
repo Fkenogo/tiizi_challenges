@@ -51,7 +51,8 @@ interface PageError {
   error: unknown;
 }
 
-export function useV2Profile() {
+export function useV2Profile(options?: { includeSummaries?: boolean }) {
+  const includeSummaries = options?.includeSummaries ?? true;
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const uid = user?.uid ?? null;
@@ -108,7 +109,9 @@ export function useV2Profile() {
     setIsLoading(true);
     void (async () => {
       try {
-        const next = await fetchV2Profile();
+        const next = await fetchV2Profile(
+          includeSummaries ? undefined : { groupsLimit: 1, challengesLimit: 1 },
+        );
         if (requestSeq.current !== seq || photoSeq.current !== photoSeqAtRead) return;
         setLoaded({ uid, profile: next });
         setReadFailure(null);

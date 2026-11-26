@@ -144,4 +144,89 @@ describe('V2GroupSettingsScreen media reliability', () => {
     );
     await waitFor(() => expect((screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement).value).toBe('Original Group'));
   });
+
+  it('shows Cover photo saved after cover-only update, Done footer, and clarifies Save changes', async () => {
+    h.detail = { isLoading: false, data: group };
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(v2GroupDetailKey('group-1', 'member-1'), group);
+    const NativeURL = URL;
+    class URLWithPreview extends NativeURL {}
+    Object.defineProperty(URLWithPreview, 'createObjectURL', { value: vi.fn(() => 'blob:cover-only') });
+    Object.defineProperty(URLWithPreview, 'revokeObjectURL', { value: vi.fn() });
+    vi.stubGlobal('URL', URLWithPreview);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <V2GroupSettingsScreen />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await userEvent.setup().upload(
+      screen.getByLabelText('Choose group cover'),
+      new File(['cover'], 'cover.png', { type: 'image/png' }),
+    );
+
+    await waitFor(() => expect(screen.getByText('Cover photo saved')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save changes' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText(/Cover photo uploads save immediately/i)).toBeTruthy();
+  });
+
+  it('allows retrying a failed cover upload and preserves unsaved description edits', async () => {
+    h.detail = { isLoading: false, data: group };
+    h.save.mockRejectedValueOnce(new Error('network_error')).mockResolvedValueOnce(savedCover);
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(v2GroupDetailKey('group-1', 'member-1'), group);
+    const NativeURL = URL;
+    class URLWithPreview extends NativeURL {}
+    Object.defineProperty(URLWithPreview, 'createObjectURL', { value: vi.fn(() => 'blob:retry-cover') });
+    Object.defineProperty(URLWithPreview, 'revokeObjectURL', { value: vi.fn() });
+    vi.stubGlobal('URL', URLWithPreview);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <V2GroupSettingsScreen />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const desc = screen.getByRole('textbox', { name: 'Description' });
+    fireEvent.change(desc, { target: { value: 'Updated group description' } });
+    expect(screen.getByRole('button', { name: 'Save changes' }).hasAttribute('disabled')).toBe(false);
+
+    await userEvent.setup().upload(
+      screen.getByLabelText('Choose group cover'),
+      new File(['retry'], 'retry.png', { type: 'image/png' }),
+    );
+
+    await waitFor(() => expect(screen.getByText('Could not save the Group cover photo. Please try again.')).toBeTruthy());
+    const retryBtn = screen.getByRole('button', { name: 'Retry' });
+    fireEvent.click(retryBtn);
+
+    await waitFor(() => expect(h.save).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByText('Cover photo saved')).toBeTruthy());
+    expect((screen.getByRole('textbox', { name: 'Description' }) as HTMLTextAreaElement).value).toBe('Updated group description');
+    expect(screen.getByText(/Cancel discards unsaved Group detail edits only/i)).toBeTruthy();
+  });
+
+  it('shows Cover photo removed after durable removal', async () => {
+    h.detail = { isLoading: false, data: group };
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(v2GroupDetailKey('group-1', 'member-1'), group);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <V2GroupSettingsScreen />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Photo' }));
+    await waitFor(() => expect(h.remove).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByText('Cover photo removed')).toBeTruthy());
+  });
 });

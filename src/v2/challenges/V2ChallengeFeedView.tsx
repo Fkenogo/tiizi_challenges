@@ -128,6 +128,7 @@ export function ChallengeFeedEntries({
                     alt=""
                     className="h-full w-full object-cover"
                     refreshKey={`challenge-feed-${challengeId}`}
+                    assetKey={item.sharerProfileImage.assetId}
                     onExpired={() => void queryClient?.invalidateQueries({ queryKey: [V2_CHALLENGE_FEED_SCOPE] })}
                     fallback={initialsOf(item.sharerDisplayName)}
                   />

@@ -147,7 +147,10 @@ export function buildApp(deps: AppDeps) {
     mediaDeps,
   });
   registerChallengeDiscoveryRoutes(app, deps.db, mediaDeps);
-  registerTodayRoutes(app, deps.db, deps.challengeActivity ?? {});
+  registerTodayRoutes(app, deps.db, {
+    ...(deps.challengeActivity ?? {}),
+    mediaDeps,
+  });
   // S4a governed Group detail read (Group Home). Same live store seam as
   // the governed mutations; absent store fails closed per-route.
   registerGroupReadRoutes(app, deps.db, { store: groupReadStore, mediaDeps });

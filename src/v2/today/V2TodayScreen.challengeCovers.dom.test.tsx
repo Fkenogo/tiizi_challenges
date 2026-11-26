@@ -107,4 +107,29 @@ describe('Today Challenge cover alignment', () => {
     await userEvent.click(screen.getAllByRole('button', { name: 'View Challenge' })[0]);
     expect(screen.getByTestId('location').textContent).toBe('/v2/challenges/streak-photo');
   });
+
+  it('renders persisted R2 coverImage URLs from Today projection across all sections', async () => {
+    setToday();
+    const proj = h.today.data as V2TodayProjection;
+    proj.requiredToday[0].coverImage = {
+      status: 'ready', assetId: 'a1', url: 'https://r2.example.test/streak.webp', contentType: 'image/webp', width: 100, height: 100,
+    };
+    proj.joinedChallengeProgress[0].coverImage = {
+      status: 'ready', assetId: 'a2', url: 'https://r2.example.test/together.webp', contentType: 'image/webp', width: 100, height: 100,
+    };
+    proj.groupChallengeOpportunities[0].coverImage = {
+      status: 'ready', assetId: 'a3', url: 'https://r2.example.test/opp.webp', contentType: 'image/webp', width: 100, height: 100,
+    };
+    proj.upcoming[0].coverImage = {
+      status: 'ready', assetId: 'a4', url: 'https://r2.example.test/upcoming.webp', contentType: 'image/webp', width: 100, height: 100,
+    };
+
+    render(<MemoryRouter><LocationProbe /><V2TodayScreen /></MemoryRouter>);
+
+    expect(screen.getByAltText('Morning Momentum cover photo').getAttribute('src')).toBe('https://r2.example.test/streak.webp');
+    expect(screen.getByAltText('Summit Steps Together cover photo').getAttribute('src')).toBe('https://r2.example.test/together.webp');
+    expect(screen.getByAltText('Sunrise Reset cover photo').getAttribute('src')).toBe('https://r2.example.test/opp.webp');
+    expect(screen.getByAltText('Fresh Start cover photo').getAttribute('src')).toBe('https://r2.example.test/upcoming.webp');
+    expect(screen.getByLabelText('Reps Race has no cover photo')).toBeTruthy();
+  });
 });

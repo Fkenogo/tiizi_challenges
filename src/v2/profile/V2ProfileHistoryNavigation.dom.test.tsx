@@ -116,6 +116,10 @@ describe('Profile history navigation', () => {
   it('keeps Challenge History separate and opens participation history', () => {
     renderProfileRoutes();
 
+    expect(screen.queryByText('Show more Groups')).toBeNull();
+    expect(screen.queryByText('Show more Challenges')).toBeNull();
+    expect(screen.queryByText(/Only Challenges you actually took part in/)).toBeNull();
+
     const link = screen.getByRole('link', { name: 'View Challenge History' });
     expect(link.getAttribute('href')).toBe('/v2/profile/challenges');
     fireEvent.click(link);

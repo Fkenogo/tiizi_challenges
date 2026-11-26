@@ -37,6 +37,9 @@ export function V2GroupSettingsScreen() {
   const [allowMemberChallenges, setAllowMemberChallenges] = useState(true);
   const [coverSaving, setCoverSaving] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
+  const [coverSuccess, setCoverSuccess] = useState<string | null>(null);
+  const [failedCoverAction, setFailedCoverAction] = useState<{ type: 'upload'; file: File } | { type: 'remove' } | null>(null);
+  const [coverSavedInSession, setCoverSavedInSession] = useState(false);
   const initializedIdentityRef = useRef<string | null>(null);
   const uidRef = useRef(user?.uid);
   const groupIdRef = useRef(groupId);
@@ -55,6 +58,9 @@ export function V2GroupSettingsScreen() {
     coverPhoto.remove();
     setCoverSaving(false);
     setCoverError(null);
+    setCoverSuccess(null);
+    setFailedCoverAction(null);
+    setCoverSavedInSession(false);
     setName(group.name); setDescription(group.description); setTagline(group.tagline);
     setLocation(group.location); setFocusTags(group.focusTags); setCoverId(group.coverId);
     setIsPrivate(group.isPrivate); setRequireAdminApproval(group.requireAdminApproval ?? false);
@@ -83,6 +89,70 @@ export function V2GroupSettingsScreen() {
       (current) => current ? { ...current, coverImage } : current,
     );
     await invalidateV2GroupCoverReads(queryClient, uidAtMutation, group.id);
+  };
+  const uploadCoverFile = (file: File) => {
+    if (coverInFlightRef.current) return;
+    const uidAtMutation = uidRef.current;
+    const operation = ++coverOperationSeqRef.current;
+    const idempotencyKey = coverUploadIdentity.keyForFile(file);
+    coverInFlightRef.current = true;
+    setCoverError(null);
+    setCoverSuccess(null);
+    setFailedCoverAction(null);
+    setCoverSaving(true);
+    void saveGroupCoverImage(group.id, file, { idempotencyKey })
+      .then(async (coverImage) => {
+        if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+        coverUploadIdentity.reset();
+        coverPhoto.remove();
+        await reconcileCover(coverImage, uidAtMutation);
+        if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+        setCoverSuccess('Cover photo saved');
+        setCoverSavedInSession(true);
+      })
+      .catch(() => {
+        if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+        coverPhoto.remove();
+        setCoverError('Could not save the Group cover photo. Please try again.');
+        setFailedCoverAction({ type: 'upload', file });
+      })
+      .finally(() => {
+        if (coverOperationSeqRef.current === operation) {
+          coverInFlightRef.current = false;
+          if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+        }
+      });
+  };
+  const removeCoverFile = () => {
+    if (coverInFlightRef.current) return;
+    const uidAtMutation = uidRef.current;
+    const operation = ++coverOperationSeqRef.current;
+    coverInFlightRef.current = true;
+    setCoverError(null);
+    setCoverSuccess(null);
+    setFailedCoverAction(null);
+    setCoverSaving(true);
+    void removeGroupCoverImage(group.id)
+      .then(async (coverImage) => {
+        if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+        coverUploadIdentity.reset();
+        coverPhoto.remove();
+        await reconcileCover(coverImage, uidAtMutation);
+        if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+        setCoverSuccess('Cover photo removed');
+        setCoverSavedInSession(true);
+      })
+      .catch(() => {
+        if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
+        setCoverError('Could not remove the Group cover photo. Please try again.');
+        setFailedCoverAction({ type: 'remove' });
+      })
+      .finally(() => {
+        if (coverOperationSeqRef.current === operation) {
+          coverInFlightRef.current = false;
+          if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
+        }
+      });
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -120,58 +190,8 @@ export function V2GroupSettingsScreen() {
                 onPersistedImageExpired={() => {
                   if (groupId) void invalidateV2GroupCoverReads(queryClient, user?.uid, groupId);
                 }}
-                onSelectFile={group.coverImage?.status !== 'not_configured' ? (file) => {
-                  if (coverInFlightRef.current) return;
-                  const uidAtMutation = uidRef.current;
-                  const operation = ++coverOperationSeqRef.current;
-                  const idempotencyKey = coverUploadIdentity.keyForFile(file);
-                  coverInFlightRef.current = true;
-                  setCoverError(null);
-                  setCoverSaving(true);
-                  void saveGroupCoverImage(group.id, file, { idempotencyKey })
-                    .then(async (coverImage) => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
-                      coverUploadIdentity.reset();
-                      coverPhoto.remove();
-                      await reconcileCover(coverImage, uidAtMutation);
-                    })
-                    .catch(() => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
-                      coverPhoto.remove();
-                      setCoverError('Could not save the Group cover photo. Please try again.');
-                    })
-                    .finally(() => {
-                      if (coverOperationSeqRef.current === operation) {
-                        coverInFlightRef.current = false;
-                        if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
-                      }
-                    });
-                } : undefined}
-                onRemove={group.coverImage?.status === 'ready' ? () => {
-                  if (coverInFlightRef.current) return;
-                  const uidAtMutation = uidRef.current;
-                  const operation = ++coverOperationSeqRef.current;
-                  coverInFlightRef.current = true;
-                  setCoverError(null);
-                  setCoverSaving(true);
-                  void removeGroupCoverImage(group.id)
-                    .then(async (coverImage) => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
-                      coverUploadIdentity.reset();
-                      coverPhoto.remove();
-                      await reconcileCover(coverImage, uidAtMutation);
-                    })
-                    .catch(() => {
-                      if (uidRef.current !== uidAtMutation || groupIdRef.current !== group.id || coverOperationSeqRef.current !== operation) return;
-                      setCoverError('Could not remove the Group cover photo. Please try again.');
-                    })
-                    .finally(() => {
-                      if (coverOperationSeqRef.current === operation) {
-                        coverInFlightRef.current = false;
-                        if (uidRef.current === uidAtMutation && groupIdRef.current === group.id) setCoverSaving(false);
-                      }
-                    });
-                } : undefined}
+                onSelectFile={group.coverImage?.status !== 'not_configured' ? uploadCoverFile : undefined}
+                onRemove={group.coverImage?.status === 'ready' ? removeCoverFile : undefined}
                 previewClassName="h-28 w-full rounded-xl bg-slate-100"
                 fallback={
                   isGroupCoverId(coverId) ? (
@@ -184,14 +204,51 @@ export function V2GroupSettingsScreen() {
             </div>
             <p className="mb-2 mt-4 text-xs font-bold text-slate-600">Or choose a Tiizi cover</p>
             <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-8">{GROUP_COVER_CATALOGUE.map(id => <button key={id} type="button" aria-label={`Select ${coverLabelFor(id)}`} aria-pressed={coverId === id} onClick={() => setCoverId(coverId === id ? null : id)} className={`h-12 rounded-xl bg-gradient-to-br ${coverGradientFor(id)} ring-offset-2 ${coverId === id ? 'ring-2 ring-orange-600' : ''}`}><span className="sr-only">{coverLabelFor(id)}</span></button>)}</div>
-            <p className="mt-1 text-xs text-slate-500">Uploaded photos save immediately. Catalogue covers save with Group settings.</p>
-            {coverError && <p role="alert" className="mt-1 text-xs font-bold text-red-700">{coverError}</p>}
+            <p className="mt-1 text-xs text-slate-500">Cover photo uploads save immediately. Save changes below applies to Group information, catalogue cover, privacy, and Challenge settings.</p>
+            {coverSuccess && <p role="status" aria-live="polite" className="mt-1 text-xs font-bold text-emerald-700">{coverSuccess}</p>}
+            {coverError && (
+              <div role="alert" className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-red-700">
+                <span>{coverError}</span>
+                {failedCoverAction && (
+                  <button
+                    type="button"
+                    disabled={coverSaving}
+                    onClick={() => {
+                      if (failedCoverAction.type === 'upload') {
+                        uploadCoverFile(failedCoverAction.file);
+                      } else {
+                        removeCoverFile();
+                      }
+                    }}
+                    className="underline underline-offset-2 hover:text-red-900 disabled:opacity-60"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            )}
           </fieldset>
         </section>
         <section className="space-y-3"><h2 className="text-base font-black">Privacy & joining</h2>{choice('Private Group', isPrivate, setIsPrivate, 'People outside the Group cannot discover it normally. A valid invite code may still resolve it. Existing members are unaffected.')}{choice('Require approval to join', requireAdminApproval, setRequireAdminApproval, 'New join attempts require Steward approval. Existing pending requests remain pending until explicitly decided.')}</section>
         <section className="space-y-3"><h2 className="text-base font-black">Member Challenges</h2>{choice('Allow ordinary members to create Challenges', allowMemberChallenges, setAllowMemberChallenges, 'When off, ordinary members cannot establish new Group Challenges. Existing Challenges remain unchanged; you can still create them.')}</section>
         {update.isError && <p role="alert" className="text-sm text-red-700">We could not save these changes. Please review the fields and try again.</p>}
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${group.id}`)}>Cancel</V2Button><V2Button type="submit" disabled={update.isPending || !hasChanges || !focusTagsValid}>{update.isPending ? 'Saving…' : 'Save changes'}</V2Button></div>
+        <div className="space-y-2 border-t border-slate-100 pt-4">
+          {coverSavedInSession && (
+            <p className="text-xs text-slate-600 sm:text-right">
+              {hasChanges
+                ? 'Your cover photo is already saved. Cancel discards unsaved Group detail edits only.'
+                : 'Your cover photo is already saved. Save changes is for Group information and settings.'}
+            </p>
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <V2Button variant="secondary" onClick={() => navigate(`/v2/groups/${group.id}`)}>
+              {hasChanges || !coverSavedInSession ? 'Cancel' : 'Done'}
+            </V2Button>
+            <V2Button type="submit" disabled={update.isPending || !hasChanges || !focusTagsValid}>
+              {update.isPending ? 'Saving…' : 'Save changes'}
+            </V2Button>
+          </div>
+        </div>
       </form>
     </div>
   </V2Page>;

@@ -20,6 +20,7 @@
  * `/api` is the canonical active namespace (see `AGENTS.md` §2).
  */
 import { API_PREFIX, apiFetch } from './apiClient';
+import type { V2MediaImageProjection } from './mediaApi';
 
 export type V2TodayChallengeType = 'collective' | 'competitive' | 'streak';
 export type V2TodayLifecycleState = 'establishment' | 'active' | 'ended';
@@ -72,6 +73,7 @@ export interface V2TodayRequiredChallenge {
   governingToday: string;
   timezone: string;
   detailPath: string;
+  coverImage?: V2MediaImageProjection | null;
   requirements: V2TodayRequirement[];
   streak: V2TodayStreakState;
 }
@@ -117,6 +119,7 @@ interface V2TodayJoinedChallengeBase {
   startDate: string;
   endDate: string;
   detailPath: string;
+  coverImage?: V2MediaImageProjection | null;
 }
 
 export type V2TodayJoinedChallenge =
@@ -137,6 +140,7 @@ export interface V2TodayOpportunity {
   governingToday: string;
   activities: Array<{ domain?: string; name?: string }>;
   detailPath: string;
+  coverImage?: V2MediaImageProjection | null;
   /**
    * Always `'not_asserted'` under the current projection: the server does not
    * assert that the member may join. The UI must therefore offer discovery,
@@ -152,6 +156,7 @@ export interface V2TodayUpcoming {
   lifecycleDate: string;
   timezone: string;
   detailPath: string;
+  coverImage?: V2MediaImageProjection | null;
 }
 
 export interface V2TodayFinalizedResult {

@@ -117,6 +117,25 @@ describe('Cloudflare R2 config & SigV4 signing', () => {
     expect(url).toContain('response-cache-control=private%2C%20no-store');
     expect(url).not.toContain('super-secret-r2-key');
   });
+
+  it('enforces PRIV-05 signed URL TTL policy bounds without silent clamping', async () => {
+    const { resolveR2ReadUrlTtlSeconds } = await import('../src/r2ObjectStore.js');
+
+    // Default when unset or blank
+    expect(resolveR2ReadUrlTtlSeconds(undefined)).toBe(60);
+    expect(resolveR2ReadUrlTtlSeconds('')).toBe(60);
+    expect(resolveR2ReadUrlTtlSeconds('   ')).toBe(60);
+
+    // Valid values within [15, 60]
+    expect(resolveR2ReadUrlTtlSeconds('15')).toBe(15);
+    expect(resolveR2ReadUrlTtlSeconds('45')).toBe(45);
+    expect(resolveR2ReadUrlTtlSeconds('60')).toBe(60);
+
+    // Invalid values above policy max (60), below min (15), or non-integer must reject
+    for (const invalid of ['61', '300', '14', '0', '-5', '60.5', '60s', 'abc']) {
+      expect(() => resolveR2ReadUrlTtlSeconds(invalid)).toThrow(/15 and 60/);
+    }
+  });
 });
 
 describe('Image validation & EXIF stripping', () => {

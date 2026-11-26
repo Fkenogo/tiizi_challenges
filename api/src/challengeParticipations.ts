@@ -284,6 +284,30 @@ export async function listParticipations(
   return (result.rows as never[]).map(normalizeParticipationRow);
 }
 
+/** Batched episodes for multiple challenges for one member, oldest first per challenge. */
+export async function listParticipationsForChallenges(
+  db: Db,
+  challengeIds: readonly string[],
+  memberId: string,
+): Promise<Map<string, ParticipationRow[]>> {
+  const byChallenge = new Map<string, ParticipationRow[]>();
+  for (const id of challengeIds) byChallenge.set(id, []);
+  if (challengeIds.length === 0) return byChallenge;
+  const result = await db.query(
+    `SELECT * FROM challenge_participations
+     WHERE challenge_id = ANY($1::uuid[]) AND member_id = $2
+     ORDER BY challenge_id ASC, joined_at ASC, participation_id ASC`,
+    [challengeIds, memberId],
+  );
+  for (const raw of result.rows as never[]) {
+    const row = normalizeParticipationRow(raw);
+    const list = byChallenge.get(row.challenge_id);
+    if (list) list.push(row);
+    else byChallenge.set(row.challenge_id, [row]);
+  }
+  return byChallenge;
+}
+
 /** The currently active episode, if any. */
 export async function getActiveParticipation(
   db: Db,
