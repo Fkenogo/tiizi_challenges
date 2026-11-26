@@ -69,6 +69,7 @@ export function V2LocalImagePicker({
             refreshKey={refreshKey}
             onExpired={onPersistedImageExpired}
             fallback={fallback}
+            loadingFallback={<div aria-hidden="true" className="h-full w-full animate-pulse bg-slate-200/80" />}
           />
         ) : displayUrl ? (
           <img src={displayUrl} alt={durable ? subject : `${subject} local preview`} className={imageClassName} />

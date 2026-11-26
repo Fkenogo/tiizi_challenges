@@ -39,6 +39,7 @@ export function V2ChallengeCover({
 
   const persistedUrl = coverImage?.status === 'ready' ? coverImage.url : null;
   const fallbackNode = <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />;
+  const loadingNode = <div aria-hidden="true" className="absolute inset-0 animate-pulse bg-slate-200/80" />;
 
   return (
     <div
@@ -56,6 +57,7 @@ export function V2ChallengeCover({
             if (queryClient) void invalidateV2ChallengeCoverReads(queryClient, undefined, challengeId);
           }}
           fallback={fallbackNode}
+          loadingFallback={loadingNode}
         />
       ) : photoUrl ? (
         <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />

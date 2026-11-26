@@ -49,6 +49,7 @@ export function V2GroupCover({
   const fallbackNode = !explicitCover
     ? <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />
     : <div aria-hidden="true" className={`absolute inset-0 bg-gradient-to-br ${coverGradientFor(explicitCover)}`} />;
+  const loadingNode = <div aria-hidden="true" className="absolute inset-0 animate-pulse bg-slate-200/80" />;
 
   return (
     <div
@@ -67,6 +68,7 @@ export function V2GroupCover({
             if (queryClient) void invalidateV2GroupCoverReads(queryClient, undefined, groupId);
           }}
           fallback={fallbackNode}
+          loadingFallback={loadingNode}
         />
       ) : photoUrl ? (
         <img src={photoUrl} alt={`${title} cover photo`} className="absolute inset-0 h-full w-full object-cover" />

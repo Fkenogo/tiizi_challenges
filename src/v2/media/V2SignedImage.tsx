@@ -15,6 +15,7 @@ export function V2SignedImage({
   refreshKey,
   onExpired,
   fallback = null,
+  loadingFallback,
 }: {
   src: string;
   alt: string;
@@ -22,8 +23,10 @@ export function V2SignedImage({
   refreshKey: string;
   onExpired?: () => void;
   fallback?: ReactNode;
+  loadingFallback?: ReactNode;
 }) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [lastLoadedSrc, setLastLoadedSrc] = useState<string | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -32,6 +35,7 @@ export function V2SignedImage({
 
   useEffect(() => {
     hasRefreshedRef.current = false;
+    setLastLoadedSrc(null);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -48,6 +52,7 @@ export function V2SignedImage({
   }, []);
 
   const handleError = () => {
+    setLastLoadedSrc(null);
     if (!hasRefreshedRef.current && onExpired) {
       hasRefreshedRef.current = true;
       setLoadedSrc(null);
@@ -74,9 +79,18 @@ export function V2SignedImage({
   }
 
   const ready = loadedSrc === src;
+  const keepPreviousVisible = !ready && lastLoadedSrc !== null && lastLoadedSrc !== src;
   return (
     <>
-      {!ready && fallback}
+      {!ready && (keepPreviousVisible ? (
+        <img
+          src={lastLoadedSrc}
+          alt={alt}
+          className={className}
+        />
+      ) : (
+        loadingFallback ?? fallback
+      ))}
       <img
         key={`${refreshKey}:${src}:${attempt}`}
         src={src}
@@ -85,6 +99,7 @@ export function V2SignedImage({
         onLoad={() => {
           hasRefreshedRef.current = false;
           setLoadedSrc(src);
+          setLastLoadedSrc(src);
         }}
         onError={handleError}
       />

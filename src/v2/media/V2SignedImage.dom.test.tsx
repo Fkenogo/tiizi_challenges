@@ -100,4 +100,50 @@ describe('V2SignedImage expiration & fallback', () => {
     expect(firstExpired).toHaveBeenCalledTimes(1);
     expect(secondExpired).toHaveBeenCalledTimes(1);
   });
+
+  it('uses loadingFallback on initial load and keeps the previous image visible when src rotates', () => {
+    const { container, rerender } = render(
+      <V2SignedImage
+        src="https://signed.example.test/v1.webp"
+        alt="Challenge cover"
+        className="h-full w-full object-cover"
+        refreshKey="cover-1"
+        loadingFallback={<div data-testid="shimmer">Loading…</div>}
+        fallback={<span>No cover photo</span>}
+      />,
+    );
+
+    expect(container.querySelector('[data-testid="shimmer"]')).toBeTruthy();
+    expect(container.textContent).not.toContain('No cover photo');
+
+    const firstImg = container.querySelector('img')!;
+    fireEvent.load(firstImg);
+    expect(container.querySelector('[data-testid="shimmer"]')).toBeNull();
+
+    rerender(
+      <V2SignedImage
+        src="https://signed.example.test/v2.webp"
+        alt="Challenge cover"
+        className="h-full w-full object-cover"
+        refreshKey="cover-1"
+        loadingFallback={<div data-testid="shimmer">Loading…</div>}
+        fallback={<span>No cover photo</span>}
+      />,
+    );
+
+    expect(container.querySelector('[data-testid="shimmer"]')).toBeNull();
+    expect(container.textContent).not.toContain('No cover photo');
+    const imgs = container.querySelectorAll('img');
+    expect(imgs.length).toBe(2);
+    expect(imgs[0].getAttribute('src')).toBe('https://signed.example.test/v1.webp');
+    expect(imgs[0].className).toBe('h-full w-full object-cover');
+    expect(imgs[1].getAttribute('src')).toBe('https://signed.example.test/v2.webp');
+    expect(imgs[1].className).toBe('hidden');
+
+    fireEvent.load(imgs[1]);
+    const finalImgs = container.querySelectorAll('img');
+    expect(finalImgs.length).toBe(1);
+    expect(finalImgs[0].getAttribute('src')).toBe('https://signed.example.test/v2.webp');
+    expect(finalImgs[0].className).toBe('h-full w-full object-cover');
+  });
 });

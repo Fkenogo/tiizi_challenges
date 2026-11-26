@@ -45,6 +45,7 @@ import {
 } from './challengeConfigs.js';
 import {
   listParticipations,
+  listParticipationsForChallenges,
   normalizeParticipationRow,
   type ParticipationRow,
 } from './challengeParticipations.js';
@@ -741,24 +742,24 @@ export async function listVisibleChallenges(
   deps: ChallengeReadDeps,
 ): Promise<ApiChallengeSummary[]> {
   if (!UUID_RE.test(memberId)) readFail(400, 'invalid_member', 'member must be a member UUID');
-  const mine = await db.query<{ challenge_id: string }>(
-    `SELECT DISTINCT challenge_id FROM challenge_participations WHERE member_id = $1`,
-    [memberId],
-  );
+  const [mine, memberGroups] = await Promise.all([
+    db.query<{ challenge_id: string }>(
+      `SELECT DISTINCT challenge_id FROM challenge_participations WHERE member_id = $1`,
+      [memberId],
+    ),
+    db.query<{ group_id: string }>(
+      `SELECT DISTINCT group_id FROM group_memberships
+       WHERE member_id = $1 AND status IN ('joined', 'active')`,
+      [memberId],
+    ),
+  ]);
   const visible = new Set<string>(mine.rows.map((r) => String(r.challenge_id)));
 
-  const memberGroups = await db.query<{ group_id: string }>(
-    `SELECT DISTINCT group_id FROM group_memberships
-     WHERE member_id = $1 AND status IN ('joined', 'active')`,
-    [memberId],
+  const groupIds = memberGroups.rows.map((row) => String(row.group_id));
+  const eligibilityFlags = await Promise.all(
+    groupIds.map((groupId) => liveEligibility(deps.groupMembershipAuthority, groupId, memberId)),
   );
-  const eligibleGroups: string[] = [];
-  for (const row of memberGroups.rows) {
-    const groupId = String(row.group_id);
-    if (await liveEligibility(deps.groupMembershipAuthority, groupId, memberId)) {
-      eligibleGroups.push(groupId);
-    }
-  }
+  const eligibleGroups = groupIds.filter((_, index) => eligibilityFlags[index]);
   if (eligibleGroups.length > 0) {
     const inGroups = await db.query<{ challenge_id: string }>(
       `SELECT challenge_id FROM challenges WHERE ${inClause('group_id', eligibleGroups.length)}`,
@@ -768,10 +769,7 @@ export async function listVisibleChallenges(
   }
 
   const ids = [...visible];
-  const episodesByChallenge = new Map<string, ParticipationRow[]>();
-  for (const challengeId of ids) {
-    episodesByChallenge.set(challengeId, await listParticipations(db, challengeId, memberId));
-  }
+  const episodesByChallenge = await listParticipationsForChallenges(db, ids, memberId);
   return assembleChallengeSummaries(db, ids, episodesByChallenge, deps.now ?? new Date(), deps.mediaDeps);
 }
 
@@ -788,37 +786,39 @@ export async function assembleChallengeSummaries(
   now: Date,
   mediaDeps?: MediaRouteDeps,
 ): Promise<ApiChallengeSummary[]> {
-  const challenges = await fetchChallenges(db, ids);
+  const [challenges, discoveryRows] = await Promise.all([
+    fetchChallenges(db, ids),
+    ids.length > 0
+      ? db.query<{
+          challenge_id: string; group_name: string | null; position: number | null;
+          name: string | null; kind: string | null; category: string | null; subcategory: string | null;
+        }>(
+          `SELECT c.challenge_id, g.name AS group_name, ac.position,
+                  COALESCE(kiv.name, ki.name) AS name, ki.kind,
+                  COALESCE(kiv.category, ki.category) AS category,
+                  COALESCE(kiv.subcategory, ki.subcategory) AS subcategory
+           FROM challenges c
+           LEFT JOIN groups g ON g.group_id = c.group_id
+           LEFT JOIN challenge_activity_configs ac
+             ON ac.challenge_id = c.challenge_id AND ac.version = c.current_config_version
+           LEFT JOIN knowledge_items ki ON ki.knowledge_id = ac.knowledge_id
+           LEFT JOIN knowledge_item_versions kiv
+             ON kiv.item_id = ac.knowledge_id AND kiv.version = ac.knowledge_version
+           WHERE c.challenge_id = ANY($1::uuid[])
+           ORDER BY c.challenge_id ASC, ac.position ASC`,
+          [ids],
+        )
+      : Promise.resolve({ rows: [] }),
+  ]);
   const discoveryByChallenge = new Map<string, { groupName: string | null; activities: ApiChallengeActivityDiscovery[] }>();
-  if (ids.length > 0) {
-    const discoveryRows = await db.query<{
-      challenge_id: string; group_name: string | null; position: number | null;
-      name: string | null; kind: string | null; category: string | null; subcategory: string | null;
-    }>(
-      `SELECT c.challenge_id, g.name AS group_name, ac.position,
-              COALESCE(kiv.name, ki.name) AS name, ki.kind,
-              COALESCE(kiv.category, ki.category) AS category,
-              COALESCE(kiv.subcategory, ki.subcategory) AS subcategory
-       FROM challenges c
-       LEFT JOIN groups g ON g.group_id = c.group_id
-       LEFT JOIN challenge_activity_configs ac
-         ON ac.challenge_id = c.challenge_id AND ac.version = c.current_config_version
-       LEFT JOIN knowledge_items ki ON ki.knowledge_id = ac.knowledge_id
-       LEFT JOIN knowledge_item_versions kiv
-         ON kiv.item_id = ac.knowledge_id AND kiv.version = ac.knowledge_version
-       WHERE c.challenge_id = ANY($1::uuid[])
-       ORDER BY c.challenge_id ASC, ac.position ASC`,
-      [ids],
-    );
-    for (const row of discoveryRows.rows) {
-      const id = String(row.challenge_id);
-      const entry = discoveryByChallenge.get(id) ?? { groupName: row.group_name, activities: [] };
-      if (entry.groupName === null && row.group_name) entry.groupName = row.group_name;
-      if (row.name && (row.kind === 'fitness' || row.kind === 'wellness')) {
-        entry.activities.push({ name: row.name, domain: row.kind, category: row.category ?? '', subcategory: row.subcategory ?? '' });
-      }
-      discoveryByChallenge.set(id, entry);
+  for (const row of discoveryRows.rows) {
+    const id = String(row.challenge_id);
+    const entry = discoveryByChallenge.get(id) ?? { groupName: row.group_name, activities: [] };
+    if (entry.groupName === null && row.group_name) entry.groupName = row.group_name;
+    if (row.name && (row.kind === 'fitness' || row.kind === 'wellness')) {
+      entry.activities.push({ name: row.name, domain: row.kind, category: row.category ?? '', subcategory: row.subcategory ?? '' });
     }
+    discoveryByChallenge.set(id, entry);
   }
   const participationIds: string[] = [];
   for (const episodes of episodesByChallenge.values()) {

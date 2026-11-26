@@ -78,10 +78,13 @@ async function composeProfile(
   identity: MemberProfileIdentity,
   summaries: MemberProfileSummaries,
   mediaDeps?: MediaRouteDeps,
+  preloadedAssetId?: string | null,
 ): Promise<MemberProfileResponse> {
   let profileImage: MediaImageProjection = { status: 'not_configured' };
   if (mediaDeps?.objectStore) {
-    const assetId = await getMemberProfileImageAssetId(db, identity.memberId);
+    const assetId = preloadedAssetId !== undefined
+      ? preloadedAssetId
+      : await getMemberProfileImageAssetId(db, identity.memberId);
     const assets = assetId ? await resolveReadyMediaAssetsByIds(db, [assetId]) : new Map();
     profileImage = projectMediaAsset(
       assetId ? assets.get(assetId) : null,
@@ -104,9 +107,14 @@ async function readOwnProfile(
   options: MemberProfileSummaryOptions,
   mediaDeps?: MediaRouteDeps,
 ): Promise<MemberProfileResponse> {
-  const identity = await getMemberProfileIdentityById(db, member.memberId);
-  const summaries = await getMemberProfileSummaries(db, member, options);
-  return composeProfile(db, identity, summaries, mediaDeps);
+  const [identity, summaries, assetId] = await Promise.all([
+    getMemberProfileIdentityById(db, member.memberId),
+    getMemberProfileSummaries(db, member, options),
+    mediaDeps?.objectStore
+      ? getMemberProfileImageAssetId(db, member.memberId)
+      : Promise.resolve(null),
+  ]);
+  return composeProfile(db, identity, summaries, mediaDeps, assetId);
 }
 
 export function registerMemberProfileRoutes(

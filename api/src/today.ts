@@ -7,10 +7,12 @@ import { listVisibleChallenges, type ChallengeReadDeps } from './challengeReads.
 import { dayInTimezone } from './activityEvents.js';
 import { canonicalActivityIdentity, getGoverningVersionsForChallenges } from './challengeConfigs.js';
 import type { GroupMembershipAuthority } from './groupMembershipAuthority.js';
+import type { MediaRouteDeps } from './mediaRoutes.js';
 import { API_PREFIX } from './apiPrefix.js';
 
 export interface TodayRouteDeps extends Omit<Partial<ChallengeReadDeps>, 'now'> {
   groupMembershipAuthority?: GroupMembershipAuthority;
+  mediaDeps?: MediaRouteDeps;
   now?: () => Date;
 }
 
@@ -35,6 +37,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
     },
     now,
     groupStore: deps.groupStore,
+    mediaDeps: deps.mediaDeps,
   };
   const summaries = await listVisibleChallenges(db, memberId, readDeps);
   const joined = summaries.filter((row) => row.myParticipation?.status === 'active');
@@ -68,6 +71,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
       challengeId: row.challengeId, title: row.title, challengeType: row.challengeType,
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
       governingToday: row.governingToday, timezone: row.timezone, detailPath: detailPath(row.challengeId),
+      coverImage: row.coverImage,
       requirements,
       streak: {
         currentStreak: state.currentStreak, bestStreak: state.bestStreak,
@@ -85,6 +89,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
       governingToday: row.governingToday, timezone: row.timezone, startDate: row.startDate,
       endDate: row.endDate, detailPath: detailPath(row.challengeId),
+      coverImage: row.coverImage,
     };
     if (row.challengeType === 'collective') return { ...base, progress: {
       groupTotal: row.collectiveTotal, target: row.goalValue, unit: row.goalUnit,
@@ -112,6 +117,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
       startDate: row.startDate, endDate: row.endDate, timezone: row.timezone,
       governingToday: row.governingToday, activities: row.activities, detailPath: detailPath(row.challengeId),
+      coverImage: row.coverImage,
       joinability: 'not_asserted' as const }));
   const upcoming = summaries.flatMap((row) => {
     const horizon = addLocalCalendarDays(row.governingToday, 7);
@@ -120,7 +126,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
     if (!kind || row.status === 'ended' || row.finalized
       || (row.myParticipation?.status !== 'active' && !opportunities.some((x) => x.challengeId === row.challengeId))) return [];
     return [{ challengeId: row.challengeId, title: row.title, kind, lifecycleDate: kind === 'starts' ? row.startDate : row.endDate,
-      timezone: row.timezone, detailPath: detailPath(row.challengeId) }];
+      timezone: row.timezone, detailPath: detailPath(row.challengeId), coverImage: row.coverImage }];
   });
   const finalizedResults = joined.filter((row) => row.finalized).map((row) => ({
     challengeId: row.challengeId, title: row.title, finalized: true as const, detailPath: detailPath(row.challengeId),

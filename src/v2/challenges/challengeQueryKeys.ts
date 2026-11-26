@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { V2_GROUP_CHALLENGES_SCOPE } from '../groups/groupQueryKeys';
+import { invalidateV2Today } from '../today/todayQueryKeys';
 
 /**
  * S3a — canonical V2 Challenge query-key contract
@@ -185,5 +186,6 @@ export async function invalidateV2ChallengeCoverReads(
       queryKey: [V2_CHALLENGE_DISCOVERY_SCOPE],
       predicate: (query) => query.queryKey[3] === true,
     }),
+    invalidateV2Today(queryClient, uid),
   ]);
 }
