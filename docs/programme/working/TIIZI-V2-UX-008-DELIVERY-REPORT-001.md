@@ -12,9 +12,12 @@
 | Fact | Value |
 | --- | --- |
 | Branch | `feat/v2-ux-008` |
-| Head SHA | `12050b484f59b5592fb633c3e9d0a27c3cd8df79` |
+| Implementation SHA | `1d04657` (`feat(v2-ux-008): unified Suggested for you on Today and persisted-cover projection fixes`) |
+| Review-fix + records SHA | `643e401` (`fix(v2-ux-008): address the independent review findings and add the governance records`) |
+| Measured-timings SHA | `61834ab` (`docs(v2-ux-008): record the measured before/after timings from the final E2E runs`) |
+| **Branch head SHA** | The tip of `feat/v2-ux-008` — the authoritative value is the head of the pull request opened for this task (the tip is this report's own commit, whose SHA cannot be written into the file it creates) |
 | Merge-base with `origin/main` | `0f23e3d008f93db7c639175639666a9f81797da1` |
-| Commits | 2 — `1d04657` (implementation) and `12050b4` (review findings + governance records) |
+| Commits | 4 — implementation, review findings + governance records, measured timings, and this report's final SHA note |
 
 ## 2. Root-cause diagnosis
 
