@@ -26,6 +26,25 @@ const challenge = (
   host: { groupId: 'g', groupName: 'Host Group', admissionMode: 'approval' as const, viewerRelationship: 'none' as const }, relevance,
 });
 
+type ChallengePage = { challenges: V2DiscoverableChallenge[]; nextCursor: string | null; ranking?: { applied: boolean } };
+const challengePage = (challenges: V2DiscoverableChallenge[], nextCursor: string | null = null): ChallengePage => ({
+  challenges, nextCursor, ranking: { applied: true },
+});
+const closedChallenge = (id: string): V2DiscoverableChallenge => ({
+  ...challenge(id), status: 'ended', governingToday: '2026-11-21', finalized: true,
+});
+
+function setChallengePages(pages: ChallengePage[], state: Record<string, unknown> = {}) {
+  const fetchNextPage = vi.fn().mockResolvedValue(undefined);
+  mocks.challenges = {
+    data: { pages: pages.map((page) => ({ ranking: { applied: true }, ...page })), pageParams: [undefined] },
+    isLoading: false, isError: false, isSuccess: true, hasNextPage: false,
+    isFetchingNextPage: false, isFetchNextPageError: false, fetchNextPage,
+    ...state,
+  };
+  return fetchNextPage;
+}
+
 function setLoaded(groups: any[], challenges: any[], groupState: Record<string, unknown> = {}) {
   const fetchNextPage = vi.fn().mockResolvedValue(undefined);
   mocks.groups = {
@@ -43,7 +62,21 @@ function setLoaded(groups: any[], challenges: any[], groupState: Record<string, 
   return fetchNextPage;
 }
 
-afterEach(() => cleanup());
+/** The one unified suggestion list. */
+function suggestionList(container: HTMLElement): HTMLElement {
+  const section = container.querySelector('#today-suggested')?.closest('section');
+  const list = section?.querySelector('ul');
+  if (!list) throw new Error('the unified suggestion list is not rendered');
+  return list as HTMLElement;
+}
+
+afterEach(() => {
+  cleanup();
+  // Each case sets up its own discovery state; a leftover mock would leak the
+  // previous case's pagination flags into the next one.
+  mocks.groups = {};
+  mocks.challenges = {};
+});
 
 describe('Today suggested for you', () => {
   it('presents Groups and Challenges in one list with a clear next action each', () => {
@@ -56,7 +89,7 @@ describe('Today suggested for you', () => {
     expect(screen.getByRole('heading', { name: 'Suggested for you' })).toBeTruthy();
     expect(screen.getByText('Matched Group')).toBeTruthy();
     expect(screen.getByText('Matched Challenge')).toBeTruthy();
-    expect(screen.getAllByRole('button', { name: 'View Group' }).length).toBe(2);
+    expect(screen.getByRole('button', { name: 'View Group' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'View Challenge' })).toBeTruthy();
   });
 
@@ -67,7 +100,8 @@ describe('Today suggested for you', () => {
     expect(screen.getByText('Group')).toBeTruthy();
     expect(screen.getByText('Challenge')).toBeTruthy();
     expect(screen.getByText('Context Group tagline')).toBeTruthy();
-    expect(screen.getByText(/Hosted by Host Group/)).toBeTruthy();
+    // The hosting Group stays reachable from the context line.
+    expect(screen.getByRole('button', { name: 'Host Group' })).toBeTruthy();
   });
 
   it('explains the matching basis once for the section, not once per card', () => {
@@ -77,8 +111,11 @@ describe('Today suggested for you', () => {
     );
     render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
 
-    expect(screen.getAllByText(/Ordered by your interests and goals/).length).toBe(1);
+    expect(screen.getAllByText(/ranked by your interests and goals/).length).toBe(1);
     expect(screen.queryByText(/Suggested because/)).toBeNull();
+    // Cards carry label-level chips only.
+    expect(screen.getByText('Walking')).toBeTruthy();
+    expect(screen.getByText('Build strength')).toBeTruthy();
   });
 
   it('keeps Group admission and Challenge participation rules visible', () => {
@@ -87,6 +124,14 @@ describe('Today suggested for you', () => {
 
     expect(screen.getByText(/Request to join; the Group must approve/)).toBeTruthy();
     expect(screen.getByText(/approval is required before taking part/)).toBeTruthy();
+  });
+
+  it('never offers a Challenge join on the Today surface', () => {
+    setLoaded([], [challenge('No join here')]);
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.queryByRole('button', { name: /Join Challenge/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Join Group/ })).toBeNull();
   });
 
   it('preserves access to full Group and Challenge Discovery', () => {
@@ -102,6 +147,16 @@ describe('Today suggested for you', () => {
     render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
 
     expect(screen.getByText('Nothing to suggest right now')).toBeTruthy();
+  });
+
+  it('makes no matching claim while the suggestions are still loading', () => {
+    mocks.groups = { isLoading: true };
+    mocks.challenges = { isLoading: true };
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByRole('status').textContent).toContain('Finding suggestions');
+    expect(screen.queryByText(/match your interests/)).toBeNull();
+    expect(screen.queryByText(/None of these suggestions/)).toBeNull();
   });
 
   it('fetches later Group pages until three eligible suggestions are collected', async () => {
@@ -142,5 +197,225 @@ describe('Today suggested for you', () => {
 
     expect(screen.getByText(/no Groups or Challenges to suggest yet/)).toBeTruthy();
     expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('announces automatic later-page loading without starting a duplicate request', () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({ ...group(`Joined ${index}`), viewerRelationship: 'member' as const }));
+    const fetchNextPage = setLoaded(excluded, [], { hasNextPage: true, isFetchingNextPage: true });
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByRole('status').textContent).toContain('Finding more suggestions');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('stops a repeated cursor and reports a pagination error', () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({ ...group(`Joined ${index}`), viewerRelationship: 'member' as const }));
+    const fetchNextPage = setLoaded(excluded, [], {
+      data: { pages: [{ groups: excluded, nextCursor: 'cursor-1' }, { groups: excluded, nextCursor: 'cursor-1' }], pageParams: [undefined, 'cursor-1'] },
+      hasNextPage: true,
+    });
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByRole('alert').textContent).toContain('continue loading suggestions');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('keeps loaded cards and reports a failed later page', () => {
+    const excluded = Array.from({ length: 12 }, (_, index) => ({ ...group(`Joined ${index}`), viewerRelationship: 'member' as const }));
+    const fetchNextPage = setLoaded([group('Already eligible')], [], {
+      hasNextPage: true, isError: true, isFetchNextPageError: true,
+      data: { pages: [{ groups: [group('Already eligible')], nextCursor: 'cursor-1' }], pageParams: [undefined] },
+    });
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByText('Already eligible')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('Showing what is available now');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+    expect(excluded).toHaveLength(12);
+  });
+
+  it('reports a service error without claiming anything about matches', () => {
+    mocks.groups = { isLoading: true };
+    mocks.challenges = { isLoading: false, isError: true, isSuccess: false };
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByRole('alert').textContent).toContain('couldn’t load all suggestions');
+    expect(screen.queryByText(/None of these suggestions/)).toBeNull();
+  });
+
+  it('continues from an entirely closed first page to recommend an eligible second-page Challenge', async () => {
+    const firstPage = challengePage([closedChallenge('Closed first page')], 'cursor-1');
+    const fetchNextPage = setChallengePages([firstPage], { hasNextPage: true });
+    const view = render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+    const secondPage = challengePage([challenge('Eligible second page')]);
+    mocks.challenges = {
+      ...mocks.challenges,
+      data: { pages: [firstPage, secondPage], pageParams: [undefined, 'cursor-1'] },
+      hasNextPage: false,
+    };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(await screen.findByText('Eligible second page')).toBeTruthy();
+    expect(screen.queryByText('Closed first page')).toBeNull();
+  });
+
+  it('keeps paging past several closed pages until the API returns an eligible Challenge', async () => {
+    const first = challengePage([closedChallenge('Closed one')], 'cursor-1');
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true });
+    const view = render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+
+    const second = challengePage([closedChallenge('Closed two')], 'cursor-2');
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second], pageParams: [undefined, 'cursor-1'] }, hasNextPage: true };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(2));
+
+    const third = challengePage([closedChallenge('Closed three')], 'cursor-3');
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second, third], pageParams: [undefined, 'cursor-1', 'cursor-2'] }, hasNextPage: true };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(3));
+
+    const fourth = challengePage([challenge('Eligible fourth page')]);
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second, third, fourth], pageParams: [undefined, 'cursor-1', 'cursor-2', 'cursor-3'] }, hasNextPage: false };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(await screen.findByText('Eligible fourth page')).toBeTruthy();
+  });
+
+  it('ranks matched results across pages and keeps the unmatched fallback out once matches exist', async () => {
+    const unmatched = challenge('Unmatched early result');
+    const matchedOne = challenge('Matched first', 'active', { interests: ['Walking'], goals: [], domains: [] });
+    const first = challengePage([unmatched], 'cursor-1');
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true });
+    const view = render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+
+    const second = challengePage([matchedOne, challenge('Matched second', 'active', { interests: ['Cycling'], goals: [], domains: [] })], 'cursor-2');
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second], pageParams: [undefined, 'cursor-1'] }, hasNextPage: true };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(2));
+
+    const third = challengePage([challenge('Matched third', 'active', { interests: ['Yoga'], goals: [], domains: [] })]);
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second, third], pageParams: [undefined, 'cursor-1', 'cursor-2'] }, hasNextPage: false };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    const list = suggestionList(view.container);
+    expect(list.textContent).toContain('Matched first');
+    expect(list.textContent).toContain('Matched second');
+    expect(list.textContent).toContain('Matched third');
+    expect(list.textContent).not.toContain('Unmatched early result');
+    expect(list.textContent?.indexOf('Matched first')).toBeLessThan(list.textContent?.indexOf('Matched second') ?? -1);
+    expect(list.textContent).not.toContain('Suggested because');
+  });
+
+  it('keeps the eligible unmatched fallback across pages and stops after three recommendations', async () => {
+    const first = challengePage([closedChallenge('Closed first page')], 'cursor-1');
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true });
+    const view = render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+
+    const second = challengePage([challenge('Unmatched first'), challenge('Unmatched second')], 'cursor-2');
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second], pageParams: [undefined, 'cursor-1'] }, hasNextPage: true };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(2));
+
+    const third = challengePage([challenge('Unmatched third')], 'cursor-3');
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second, third], pageParams: [undefined, 'cursor-1', 'cursor-2'] }, hasNextPage: true };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    const list = suggestionList(view.container);
+    expect(list.querySelectorAll('li')).toHaveLength(3);
+    expect(list.textContent).toContain('Unmatched first');
+    expect(list.textContent).toContain('Unmatched second');
+    expect(list.textContent).toContain('Unmatched third');
+    expect(fetchNextPage).toHaveBeenCalledTimes(2);
+  });
+
+  it('deduplicates Challenge IDs across pages and keeps first-seen server order', async () => {
+    const first = challengePage([challenge('Duplicate original')], 'cursor-1');
+    const duplicateWithLaterTitle = { ...challenge('Duplicate later'), challengeId: 'Duplicate original' };
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true });
+    const view = render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+
+    const second = challengePage([duplicateWithLaterTitle, challenge('Second page result')], 'cursor-2');
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second], pageParams: [undefined, 'cursor-1'] }, hasNextPage: true };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(2));
+
+    const third = challengePage([challenge('Third page result')]);
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second, third], pageParams: [undefined, 'cursor-1', 'cursor-2'] }, hasNextPage: false };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    const list = suggestionList(view.container);
+    expect(list.textContent).toContain('Duplicate original');
+    expect(list.textContent).not.toContain('Duplicate later');
+    expect(list.textContent).toContain('Third page result');
+    expect(list.querySelectorAll('li')).toHaveLength(3);
+  });
+
+  it('stops repeated Challenge cursors and reports that pagination stalled', async () => {
+    const first = challengePage([closedChallenge('Closed before repeat')], 'cursor-1');
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true });
+    const view = render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+
+    const second = challengePage([closedChallenge('Closed repeat page')], 'cursor-1');
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second], pageParams: [undefined, 'cursor-1'] }, hasNextPage: true };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByRole('alert').textContent).toContain('continue loading suggestions');
+    expect(fetchNextPage).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/no Groups or Challenges to suggest yet/)).toBeNull();
+  });
+
+  it('announces Challenge page loading without issuing a duplicate request', () => {
+    const first = challengePage([closedChallenge('Closed first page')], 'cursor-1');
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true, isFetchingNextPage: true });
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByRole('status').textContent).toContain('Finding more suggestions');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('shows an empty state only after Challenge discovery is exhausted', () => {
+    const fetchNextPage = setChallengePages([challengePage([closedChallenge('No eligible result')])]);
+    setLoaded([], []);
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByText(/no Groups or Challenges to suggest yet/)).toBeTruthy();
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('preserves earlier eligible Challenge cards when a later page fails', () => {
+    const first = challengePage([challenge('Already available')], 'cursor-1');
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true, isError: true, isFetchNextPageError: true });
+    render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(screen.getByText('Already available')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('Showing what is available now');
+    expect(fetchNextPage).not.toHaveBeenCalled();
+  });
+
+  it('keeps pending Group membership restrictions visible on paged Challenge recommendations', async () => {
+    const pendingChallenge = {
+      ...challenge('Pending host Group'),
+      host: { groupId: 'g', groupName: 'Host Group', admissionMode: 'approval' as const, viewerRelationship: 'pending' as const },
+    };
+    const first = challengePage([closedChallenge('Closed first page')], 'cursor-1');
+    const fetchNextPage = setChallengePages([first], { hasNextPage: true });
+    const view = render(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+    await waitFor(() => expect(fetchNextPage).toHaveBeenCalledTimes(1));
+
+    const second = challengePage([pendingChallenge]);
+    mocks.challenges = { ...mocks.challenges, data: { pages: [first, second], pageParams: [undefined, 'cursor-1'] }, hasNextPage: false };
+    view.rerender(<MemoryRouter><V2TodaySuggestedForYou /></MemoryRouter>);
+
+    expect(await screen.findByText('Pending host Group')).toBeTruthy();
+    expect(screen.getByText(/Group request is awaiting approval/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'View Challenge' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Join Challenge/ })).toBeNull();
   });
 });

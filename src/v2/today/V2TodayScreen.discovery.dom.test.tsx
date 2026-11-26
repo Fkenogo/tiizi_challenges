@@ -59,8 +59,8 @@ function setScreen(activeChallengeCount: number, joined: V2TodayProjection['join
   h.preferences = { data: null };
   h.memberships = { data: { memberId: 'dada-member', memberships: [], pendingMemberships: [] } };
   h.ownChallenges = { data: { challenges: joined }, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() };
-  h.groups = { data: { pages: [{ groups: [discoverableGroup('Public walkers')] }] }, isLoading: false, isError: false, isSuccess: true };
-  h.challenges = { data: { pages: [{ challenges: [discoverableChallenge('Morning movement')] }] }, isLoading: false, isError: false, isSuccess: true };
+  h.groups = { data: { pages: [{ groups: [discoverableGroup('Public walkers')], ranking: { applied: true } }] }, isLoading: false, isError: false, isSuccess: true };
+  h.challenges = { data: { pages: [{ challenges: [discoverableChallenge('Morning movement')], ranking: { applied: true } }] }, isLoading: false, isError: false, isSuccess: true };
 }
 
 beforeEach(() => setScreen(0));
@@ -78,7 +78,7 @@ describe('Today new-member discovery rendering boundary', () => {
     expect(screen.getByText('Challenge')).toBeTruthy();
     // The detailed per-card matching sentence is gone; the basis is stated once.
     expect(screen.queryByText(/Suggested because/)).toBeNull();
-    expect(screen.getAllByText(/Ordered by your interests and goals|None of these suggestions match/).length).toBe(1);
+    expect(screen.getAllByText(/ranked by your interests and goals|None of these suggestions match/).length).toBe(1);
     const discovery = screen.getByRole('heading', { name: 'Suggested for you' });
     const zeroState = screen.getByText('Start with a Group');
     expect(discovery.compareDocumentPosition(zeroState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

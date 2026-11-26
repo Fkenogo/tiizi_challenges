@@ -31,7 +31,8 @@ import {
  * - Groups and Challenges share ONE list, so the member sees one coherent set
  *   of suggestions instead of two disconnected sections;
  * - a card carries a cover image when a persisted, authorized cover exists,
- *   the name, the entity type, concise context, and ONE clear next action;
+ *   the name, the entity type, concise context, and ONE clear next action
+ *   (the hosting Group stays reachable from the context line);
  * - the interest/goal matching basis is explained ONCE for the section; cards
  *   carry label-level badges, never a repeated per-card matching sentence;
  * - full Group and Challenge Discovery stays reachable from the section;
@@ -120,9 +121,15 @@ export function V2TodaySuggestedForYou() {
           <button type="button" onClick={() => navigate('/v2/challenges')} className="text-sm font-bold text-primary underline">Browse Challenges</button>
         </div>
       </div>
-      <p className="mt-1 text-sm text-slate-600">{caption.text}</p>
+      {/* The matching basis is stated only once the server has actually
+          ranked something; during loading or on error there is nothing honest
+          to claim, and the empty state speaks for itself. */}
+      {suggestions.length > 0 && <p className="mt-1 text-sm text-slate-600">{caption.text}</p>}
 
       {loading && <p role="status" className="mt-3 text-sm text-slate-500">Finding suggestions…</p>}
+      {(groups.isFetchingNextPage || challenges.isFetchingNextPage) && (
+        <p role="status" className="mt-3 text-sm text-slate-500">Finding more suggestions…</p>
+      )}
       {failed && (
         <p role="alert" className="mt-3 text-sm text-red-700">
           We couldn’t load all suggestions. You can browse Groups and Challenges now or try again later.
@@ -188,7 +195,10 @@ function MatchBadges({ suggestion }: { suggestion: TodaySuggestion }) {
   return (
     <p className="mt-1 flex flex-wrap gap-1.5 text-[11px] font-semibold text-emerald-800">
       {chips.map((chip) => (
-        <span key={chip.key} title={chip.title} className="rounded-full bg-emerald-50 px-2 py-0.5">{chip.label}</span>
+        <span key={chip.key} title={chip.title} className="rounded-full bg-emerald-50 px-2 py-0.5">
+          <span className="sr-only">{chip.title}. </span>
+          {chip.label}
+        </span>
       ))}
     </p>
   );
@@ -261,13 +271,17 @@ function ChallengeSuggestionCard({
           </span>
         </div>
         <p className="mt-1 font-bold text-slate-900">{challenge.title}</p>
-        <p className="mt-0.5 text-xs text-slate-600">Hosted by {groupName} · {formatDayRange(challenge.startDate, challenge.endDate)}</p>
+        <p className="mt-0.5 text-xs text-slate-600">
+          Hosted by{' '}
+          <button type="button" onClick={onOpenGroup} className="font-semibold text-primary underline">
+            {groupName}
+          </button>
+          {' · '}
+          {formatDayRange(challenge.startDate, challenge.endDate)}
+        </p>
         <MatchBadges suggestion={{ kind: 'challenge', challenge }} />
         <p className="mt-1 text-xs text-slate-500">{participation}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <V2Button onClick={onOpenChallenge}>View Challenge</V2Button>
-          <V2Button variant="secondary" onClick={onOpenGroup}>View Group</V2Button>
-        </div>
+        <V2Button className="mt-2" onClick={onOpenChallenge}>View Challenge</V2Button>
       </div>
     </article>
   );

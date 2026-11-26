@@ -62,9 +62,12 @@ describe('Today discovery selection', () => {
     );
     expect(suggestionCaption(matched, { groups: true, challenges: true })).toEqual({
       kind: 'matched',
-      text: 'Ordered by your interests and goals. You can browse everything at any time.',
+      text: 'Group and Challenge suggestions are ranked by your interests and goals. You can browse everything at any time.',
     });
     expect(suggestionCaption(matched, { groups: true, challenges: false }).kind).toBe('no-preferences');
+    // An unknown ranking state never becomes a "nothing matched" claim.
+    expect(suggestionCaption(matched, { groups: undefined, challenges: undefined }).kind).toBe('no-preferences');
+    expect(suggestionCaption(matched, {}).kind).toBe('no-preferences');
     expect(suggestionCaption(
       buildSuggestions([group('other', 'none')], [challenge('other', { interests: [], goals: [], domains: [] })]),
       { groups: true, challenges: true },

@@ -11,10 +11,11 @@ import { challengeCoverGradient, isChallengeCoverId } from './challengeCovers';
  *
  * TIIZI-V2-UX-008 — the persisted catalogue cover is rendered when no
  * authorized photo exists. `challenges.cover_id` is the governed, persisted
- * Challenge background catalogue (the same catalogue Group covers use), so
- * showing it is the governed default, not substituted photography. When no
- * catalogue cover is persisted either, the card falls back to the neutral
- * placeholder and never to invented imagery.
+ * Challenge background catalogue (`challenge-1`…`challenge-8`, the Challenge
+ * catalogue; Groups have their own `cover-1`…`cover-8` catalogue), so showing
+ * it is the governed default, not substituted photography. When no catalogue
+ * cover is persisted either, the card falls back to the neutral placeholder
+ * and never to invented imagery.
  */
 export function V2ChallengeCover({
   challengeId,

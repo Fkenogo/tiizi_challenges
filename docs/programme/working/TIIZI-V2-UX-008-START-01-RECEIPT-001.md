@@ -81,7 +81,7 @@ Challenge-participation rules, and the governed Group/Challenge cover authority.
 | --- | --- |
 | Routes in scope | `/v2/today`, `/v2/groups`, `/v2/groups/:groupId`, `/v2/challenges`, `/v2/challenges/discovery/:challengeId`, `/v2/challenges/:challengeId`, `/v2/sign-in` (`src/v2/routes.tsx:110-138`) |
 | API seams in scope | `api/src/today.ts`, `api/src/challengeDiscovery.ts`, `api/src/groupDiscovery.ts`, `api/src/challengeReads.ts`, `api/src/groupReads.ts`, `api/src/mediaService.ts`, `api/src/mediaRoutes.ts`, `api/src/r2ObjectStore.ts` |
-| Client seams in scope | `src/v2/today/*`, `src/v2/challenges/V2ChallengeCover.tsx`, `src/v2/groups/V2GroupCover.tsx`, `src/v2/media/V2SignedImage.tsx`, `src/api/todayApi.ts`, `src/api/groupsApi.ts`, `src/api/challengeDiscoveryApi.ts` |
+| Client seams in scope | `src/v2/today/*` (incl. `todayDiscovery.ts`, `V2TodayScreen.tsx`, `V2TodaySuggestedForYou.tsx`), `src/v2/challenges/V2ChallengeCover.tsx`, `src/v2/challenges/V2ChallengeCard.tsx`, `src/v2/challenges/V2ChallengeHero.tsx`, `src/v2/challenges/challengeCovers.ts` (read only), `src/v2/groups/V2GroupCover.tsx`, `src/v2/media/V2SignedImage.tsx`, `src/api/todayApi.ts`, `src/api/groupsApi.ts`, `src/api/challengeDiscoveryApi.ts` |
 | Build selection | Root `npm run build` (`tsc -b && vite build`) covers `src` + `api` + `functions` workspaces, each with its own `package.json` and `node_modules` |
 | V1 boundary | Product V1 stays excluded (`AGENTS.md` §1); nothing in this task touches V1 |
 

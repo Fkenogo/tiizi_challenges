@@ -86,7 +86,9 @@ export function suggestionCaption(
   suggestions: TodaySuggestion[],
   applied: { groups?: boolean; challenges?: boolean },
 ): TodaySuggestionCaption {
-  if (applied.groups === false || applied.challenges === false) {
+  // An unknown ranking state is treated as "no relevance claim", exactly as the
+  // established discovery caption does. It is never read as "nothing matched".
+  if (applied.groups !== true || applied.challenges !== true) {
     return {
       kind: 'no-preferences',
       text: 'Showing all suggestions in the default order. Choose your interests and goals to see the most relevant first.',
@@ -95,7 +97,7 @@ export function suggestionCaption(
   if (suggestions.some((suggestion) => hasRelevance(relevanceOf(suggestion)))) {
     return {
       kind: 'matched',
-      text: 'Ordered by your interests and goals. You can browse everything at any time.',
+      text: 'Group and Challenge suggestions are ranked by your interests and goals. You can browse everything at any time.',
     };
   }
   return {

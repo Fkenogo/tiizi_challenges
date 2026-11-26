@@ -3,6 +3,7 @@ import type { V2ChallengeSummary } from '../../api/v2ChallengeApi';
 import { challengeTypeLabel } from './challengeCreationDraft';
 import { V2ChallengeCover } from './V2ChallengeCover';
 import { getLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
+import { isChallengeCoverId } from './challengeCovers';
 
 type Surface = 'my' | 'find' | 'explore';
 
@@ -40,7 +41,8 @@ export function V2ChallengeCard({
   return (
     <li {...surfaceAttribute} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverId={challenge.coverId ?? null} coverImage={challenge.coverImage} heightClass="h-44 sm:h-48">
-        {!getLocalChallengeCoverPreview(challenge.challengeId) && challenge.coverImage?.status !== 'ready' && (
+        {!getLocalChallengeCoverPreview(challenge.challengeId) && challenge.coverImage?.status !== 'ready'
+          && !isChallengeCoverId(challenge.coverId) && (
           <div className="absolute left-3 top-11 sm:left-4 sm:top-12">
             <span className="rounded-full bg-slate-900/60 px-2.5 py-1 text-[10px] font-bold text-slate-200 shadow-sm backdrop-blur-sm">
               No cover photo
