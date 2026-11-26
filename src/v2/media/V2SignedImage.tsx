@@ -149,6 +149,7 @@ export function V2SignedImage({
           src={lastLoaded.src}
           alt={alt}
           className={className}
+          decoding="async"
         />
       ) : (
         loadingFallback ?? fallback
@@ -158,6 +159,10 @@ export function V2SignedImage({
         src={src}
         alt={alt}
         className={ready ? className : 'hidden'}
+        // TIIZI-V2-UX-008: decode off the main thread so a large cover never
+        // blocks the first paint of the card that carries it. The request
+        // itself, the signed URL and its lifetime are unchanged.
+        decoding="async"
         onLoad={() => {
           clearTimers();
           hasRefreshedRef.current = false;

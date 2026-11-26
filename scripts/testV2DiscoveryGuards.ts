@@ -73,7 +73,8 @@ check('public preview keeps Group viewing and Challenge joining as separate expl
 check('Group return navigation accepts only the internal selected-Challenge path', /returnToValue/.test(groupHome) && /\^\\\/v2\\\/challenges\\\/discovery\\\/\[\^\/\]\+\$/.test(groupHome));
 check('successful Group join/request returns to the selected Challenge preview with active membership state', /result\.status === 'active' \|\| result\.status === 'joined'/.test(groupHome) && /navigate\(returnTo, \{ state: \{ groupJoined: active \} \}\)/.test(groupHome));
 check('Group Home back link preserves the selected Challenge return route', /to=\{returnTo \?\? '\/v2\/groups'\}/.test(groupHome) && /Back to Challenge/.test(groupHome));
-check('Today Challenge recommendations preserve the selected preview when opening its hosting Group', /returnTo: `\/v2\/challenges\/discovery\/\$\{challenge\.challengeId\}`/.test(read('src/v2/today/V2TodayDiscoveryRecommendations.tsx')));
+const todaySuggested = read('src/v2/today/V2TodaySuggestedForYou.tsx');
+check('Today Challenge recommendations preserve the selected preview when opening its hosting Group', /returnTo: `\/v2\/challenges\/discovery\/\$\{suggestion\.challenge\.challengeId\}`/.test(todaySuggested));
 check('preview fallback uses existing authorized member detail only after outsider discovery is exhausted', /useChallengeDetailV2\(challengeId, discoveryComplete && !discoveredChallenge\)/.test(preview) && /useV2GroupDetail\(detail\.data\?\.groupId/.test(preview));
 check('Explore uses the existing Group join mutation', /useJoinGroup\(/.test(explore));
 check('Explore exposes Preview Challenge without removing its Group join action', /Preview Challenge/.test(explore) && /useJoinGroup\(/.test(explore));
@@ -173,6 +174,18 @@ console.log('F. join -> failed refetch -> Load more -> rejection -> recovery (re
   check('and a later refresh saying pending keeps it pending', view(again).fixed === 'pending');
   unsubscribe(); client.clear();
 }
+
+console.log('G. TIIZI-V2-UX-008: one coherent Today suggestion list, one matching explanation');
+const todayScreen = read('src/v2/today/V2TodayScreen.tsx');
+const todayDiscovery = read('src/v2/today/todayDiscovery.ts');
+check('the new-member Today experience is the unified "Suggested for you" section', /id="today-suggested"/.test(todaySuggested) && /Suggested for you/.test(todaySuggested) && /<V2TodaySuggestedForYou \/>/.test(todayScreen));
+check('Groups and Challenges share one list, bounded so Today is not a directory', /buildSuggestions/.test(todaySuggested) && /groupLimit = 3/.test(todayDiscovery) && /challengeLimit = 3/.test(todayDiscovery));
+check('the matching basis is stated once for the section, never as a per-card sentence', !/Suggested because/.test(todaySuggested) && /suggestionCaption/.test(todaySuggested) && /Ordered by your interests and goals/.test(todayDiscovery));
+check('cards carry the entity type, a concise context and one clear next action', /<MatchBadges/.test(todaySuggested) && /View Group/.test(todaySuggested) && /View Challenge/.test(todaySuggested) && /entity type/.test(todayDiscovery));
+check('full Group and Challenge Discovery stay reachable from the section', /\/v2\/groups/.test(todaySuggested) && /\/v2\/challenges/.test(todaySuggested));
+check('Today asks for the Challenge discovery media projection so a saved cover can be shown', /useV2ChallengeDiscovery\('relevance', true\)/.test(todaySuggested));
+check('a card renders a persisted cover and never substitutes photography', /coverImage=\{challenge\.coverImage\}/.test(todaySuggested) && /coverImage=\{group\.coverImage\}/.test(todaySuggested) && !/placeholder\.com|unsplash|picsum/i.test(todaySuggested));
+check('the discovery ranking authority is untouched: selection still uses the existing rules', /recommendedGroups/.test(todaySuggested) && /recommendedChallenges/.test(todaySuggested) && /recommendedGroups\(/.test(todayDiscovery));
 
 if (failures > 0) { console.error(`\nP2 discovery guards: ${failures} failing.`); process.exit(1); }
 console.log('\nP2 discovery guards: all passing.');

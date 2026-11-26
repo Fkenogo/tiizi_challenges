@@ -22,7 +22,7 @@ import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
 import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
 import { useDismissV2PreferenceReminder, useV2Preferences } from '../preferences/usePreferences';
-import { V2TodayDiscoveryRecommendations } from './V2TodayDiscoveryRecommendations';
+import { V2TodaySuggestedForYou } from './V2TodaySuggestedForYou';
 import { V2RecentActivityPreview } from '../member/V2RecentActivityScreen';
 import { showTodayDiscoveryRecommendations } from './todayDiscovery';
 import {
@@ -212,7 +212,7 @@ export function V2TodayScreen() {
 
       {/* Put new-member discovery before the large zero-state card so the
           recommendations are visible in the initial Today viewport. */}
-      {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodayDiscoveryRecommendations />}
+      {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodaySuggestedForYou />}
 
       {isTodayEmpty(projection) ? (
         <NoParticipationState kind={noParticipation} onNavigate={navigate} />
@@ -314,7 +314,7 @@ export function V2TodayScreen() {
                     onClick={() => navigate(item.detailPath)}
                     className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition-colors hover:bg-slate-50"
                   >
-                    <V2ChallengeCover challengeId={item.challengeId} title={item.title} coverImage={item.coverImage} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
+                    <V2ChallengeCover challengeId={item.challengeId} title={item.title} coverId={item.coverId ?? null} coverImage={item.coverImage} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
                     <span className="min-w-0 flex-1">
                       <span className="mb-1 flex flex-wrap items-center gap-1.5">
                         <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-900">{item.kind === 'starts' ? 'Upcoming' : 'Ending soon'}</span>
@@ -501,7 +501,7 @@ function RequiredTodayCard({
   return (
     <V2Card>
       <div className="flex items-start justify-between gap-3">
-        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverImage={challenge.coverImage} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
+        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverId={challenge.coverId ?? null} coverImage={challenge.coverImage} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{challengeTypeLabel(challenge.challengeType)}</p>
@@ -594,7 +594,7 @@ function ActiveChallengeCard({
   return (
     <V2Card>
       <div className="flex items-start justify-between gap-3">
-        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverImage={challenge.coverImage} heightClass="h-16" className="w-20 shrink-0 rounded-lg" overlay={false} />
+        <V2ChallengeCover challengeId={challenge.challengeId} title={challenge.title} coverId={challenge.coverId ?? null} coverImage={challenge.coverImage} heightClass="h-16" className="w-20 shrink-0 rounded-lg" overlay={false} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{challengeTypeLabel(challenge.challengeType)}</p>
@@ -699,7 +699,7 @@ function OpportunityCard({
   return (
     <V2Card>
       <div className="flex items-start gap-3">
-        <V2ChallengeCover challengeId={opportunity.challengeId} title={opportunity.title} coverImage={opportunity.coverImage} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
+        <V2ChallengeCover challengeId={opportunity.challengeId} title={opportunity.title} coverId={opportunity.coverId ?? null} coverImage={opportunity.coverImage} heightClass="h-14" className="w-20 shrink-0 rounded-lg" overlay={false} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{challengeTypeLabel(opportunity.challengeType)}</p>

@@ -73,6 +73,8 @@ export interface V2TodayRequiredChallenge {
   governingToday: string;
   timezone: string;
   detailPath: string;
+  /** TIIZI-V2-UX-008: the persisted catalogue cover, rendered when no photo exists. */
+  coverId?: string | null;
   coverImage?: V2MediaImageProjection | null;
   requirements: V2TodayRequirement[];
   streak: V2TodayStreakState;
@@ -119,6 +121,8 @@ interface V2TodayJoinedChallengeBase {
   startDate: string;
   endDate: string;
   detailPath: string;
+  /** TIIZI-V2-UX-008: the persisted catalogue cover, rendered when no photo exists. */
+  coverId?: string | null;
   coverImage?: V2MediaImageProjection | null;
 }
 
@@ -140,6 +144,8 @@ export interface V2TodayOpportunity {
   governingToday: string;
   activities: Array<{ domain?: string; name?: string }>;
   detailPath: string;
+  /** TIIZI-V2-UX-008: the persisted catalogue cover, rendered when no photo exists. */
+  coverId?: string | null;
   coverImage?: V2MediaImageProjection | null;
   /**
    * Always `'not_asserted'` under the current projection: the server does not
@@ -156,6 +162,8 @@ export interface V2TodayUpcoming {
   lifecycleDate: string;
   timezone: string;
   detailPath: string;
+  /** TIIZI-V2-UX-008: the persisted catalogue cover, rendered when no photo exists. */
+  coverId?: string | null;
   coverImage?: V2MediaImageProjection | null;
 }
 
