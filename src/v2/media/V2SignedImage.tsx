@@ -1,29 +1,42 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 const RETRY_DELAY_MS = 300;
+const DEFAULT_LOAD_TIMEOUT_MS = 10_000;
 
 /**
  * Renders an authenticated, short-lived signed image URL with bounded,
- * instance-local expiry recovery. A failed load shows the neutral fallback
- * while one authenticated refresh is requested; a same-URL refresh can retry
- * the load once, but a persistent failure never loops.
+ * instance-local expiry recovery.
+ *
+ * Lifecycle rules:
+ * - Same-asset URL rotation (`assetKey` unchanged, `src` changed): keeps the
+ *   previously loaded image visible while the fresh URL loads, avoiding flashes.
+ * - Persisted asset replacement (`assetKey` changed) or removal (`!src`):
+ *   clears the previous image immediately so an obsolete asset is not left
+ *   visible.
+ * - Pending requests that fail or never complete within `loadTimeoutMs`:
+ *   clears the previous image, triggers at most one `onExpired` refresh +
+ *   retry, and settles on `fallback`.
  */
 export function V2SignedImage({
   src,
   alt,
   className,
   refreshKey,
+  assetKey,
   onExpired,
   fallback = null,
   loadingFallback,
+  loadTimeoutMs = DEFAULT_LOAD_TIMEOUT_MS,
 }: {
-  src: string;
+  src: string | null | undefined;
   alt: string;
   className?: string;
   refreshKey: string;
+  assetKey?: string | null;
   onExpired?: () => void;
   fallback?: ReactNode;
   loadingFallback?: ReactNode;
+  loadTimeoutMs?: number;
 }) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const [lastLoadedSrc, setLastLoadedSrc] = useState<string | null>(null);
@@ -32,27 +45,42 @@ export function V2SignedImage({
   const [attempt, setAttempt] = useState(0);
   const hasRefreshedRef = useRef(false);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimers = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    if (loadTimerRef.current) {
+      clearTimeout(loadTimerRef.current);
+      loadTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     hasRefreshedRef.current = false;
     setLastLoadedSrc(null);
-  }, [refreshKey]);
+  }, [refreshKey, assetKey]);
 
   useEffect(() => {
+    clearTimers();
     setLoadedSrc(null);
     setFailedSrc(null);
     setRetrying(false);
+    if (!src) {
+      setLastLoadedSrc(null);
+      return;
+    }
     setAttempt((current) => current + 1);
-    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-    retryTimerRef.current = null;
-  }, [src]);
+  }, [src, clearTimers]);
 
-  useEffect(() => () => {
-    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-  }, []);
+  useEffect(() => clearTimers, [clearTimers]);
 
-  const handleError = () => {
+  const handleError = useCallback(() => {
+    clearTimers();
     setLastLoadedSrc(null);
+    if (!src) return;
     if (!hasRefreshedRef.current && onExpired) {
       hasRefreshedRef.current = true;
       setLoadedSrc(null);
@@ -67,7 +95,32 @@ export function V2SignedImage({
     }
     setRetrying(false);
     setFailedSrc(src);
-  };
+  }, [clearTimers, onExpired, src]);
+
+  useEffect(() => {
+    if (loadTimerRef.current) {
+      clearTimeout(loadTimerRef.current);
+      loadTimerRef.current = null;
+    }
+    if (!src || loadedSrc === src || failedSrc === src || retrying) {
+      return;
+    }
+    if (loadTimeoutMs <= 0) return;
+    loadTimerRef.current = setTimeout(() => {
+      loadTimerRef.current = null;
+      handleError();
+    }, loadTimeoutMs);
+    return () => {
+      if (loadTimerRef.current) {
+        clearTimeout(loadTimerRef.current);
+        loadTimerRef.current = null;
+      }
+    };
+  }, [src, attempt, loadedSrc, failedSrc, retrying, loadTimeoutMs, handleError]);
+
+  if (!src) {
+    return <>{fallback}</>;
+  }
 
   if (failedSrc === src) {
     return (
@@ -92,11 +145,12 @@ export function V2SignedImage({
         loadingFallback ?? fallback
       ))}
       <img
-        key={`${refreshKey}:${src}:${attempt}`}
+        key={`${refreshKey}:${assetKey ?? ''}:${src}:${attempt}`}
         src={src}
         alt={alt}
         className={ready ? className : 'hidden'}
         onLoad={() => {
+          clearTimers();
           hasRefreshedRef.current = false;
           setLoadedSrc(src);
           setLastLoadedSrc(src);

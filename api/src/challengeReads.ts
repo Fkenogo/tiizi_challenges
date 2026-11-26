@@ -736,6 +736,41 @@ export interface ChallengeReadDeps {
  * challenge in a group where the caller is CURRENTLY eligible under live
  * authority (joinable/visible scope — no broad discovery is invented).
  */
+/**
+ * Bounded concurrency for live Group membership-authority checks.
+ * Kept below `DEFAULT_DB_POOL_MAX` (5) in `db.ts` so a single member's
+ * challenge-list read cannot saturate the PostgreSQL connection pool.
+ */
+export const GROUP_AUTHORITY_CHECK_CONCURRENCY = 4;
+
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) return [];
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+  let aborted = false;
+
+  const workerCount = Math.min(Math.max(1, limit), items.length);
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (!aborted) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      try {
+        results[index] = await fn(items[index], index);
+      } catch (error) {
+        aborted = true;
+        throw error;
+      }
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+}
+
 export async function listVisibleChallenges(
   db: Db,
   memberId: string,
@@ -756,8 +791,10 @@ export async function listVisibleChallenges(
   const visible = new Set<string>(mine.rows.map((r) => String(r.challenge_id)));
 
   const groupIds = memberGroups.rows.map((row) => String(row.group_id));
-  const eligibilityFlags = await Promise.all(
-    groupIds.map((groupId) => liveEligibility(deps.groupMembershipAuthority, groupId, memberId)),
+  const eligibilityFlags = await mapWithConcurrency(
+    groupIds,
+    GROUP_AUTHORITY_CHECK_CONCURRENCY,
+    (groupId) => liveEligibility(deps.groupMembershipAuthority, groupId, memberId),
   );
   const eligibleGroups = groupIds.filter((_, index) => eligibilityFlags[index]);
   if (eligibleGroups.length > 0) {

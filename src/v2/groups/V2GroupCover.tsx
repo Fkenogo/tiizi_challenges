@@ -64,6 +64,7 @@ export function V2GroupCover({
           alt={`${title} cover photo`}
           className="absolute inset-0 h-full w-full object-cover"
           refreshKey={`group-cover-${groupId}`}
+          assetKey={coverImage?.status === 'ready' ? coverImage.assetId : null}
           onExpired={() => {
             if (queryClient) void invalidateV2GroupCoverReads(queryClient, undefined, groupId);
           }}

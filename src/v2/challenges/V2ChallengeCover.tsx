@@ -53,6 +53,7 @@ export function V2ChallengeCover({
           alt={`${title} cover photo`}
           className="absolute inset-0 h-full w-full object-cover"
           refreshKey={`challenge-cover-${challengeId}`}
+          assetKey={coverImage?.status === 'ready' ? coverImage.assetId : null}
           onExpired={() => {
             if (queryClient) void invalidateV2ChallengeCoverReads(queryClient, undefined, challengeId);
           }}

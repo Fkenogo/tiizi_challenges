@@ -27,6 +27,8 @@ import {
 } from '../src/challengeActivityApplication.js';
 import type { GroupMembershipAuthority } from '../src/groupMembershipAuthority.js';
 import {
+  ChallengeReadError,
+  GROUP_AUTHORITY_CHECK_CONCURRENCY,
   getChallengeDetail,
   getChallengeLeaderboard,
   listVisibleChallenges,
@@ -569,5 +571,148 @@ describe('read routes (HTTP)', () => {
     for (const body of bodies) {
       expect(body).not.toMatch(/workouts|wellnessLogs|challengeMembers|challengeActivitySummaries|groupActivityFeed/);
     }
+  });
+});
+
+describe('R2-01 bounded group membership-authority concurrency', () => {
+  async function seedGroupWithChallenge(
+    db: Db,
+    memberId: string,
+    label: string,
+    pins: Record<string, Pin>,
+  ): Promise<{ groupId: string; challengeId: string }> {
+    const groupId = await seedGroup(db, { name: `g-${label}` });
+    await seedMembership(db, groupId, memberId, { status: 'active' });
+    const { challenge } = await createChallenge(
+      db,
+      {
+        group_id: groupId,
+        created_by_member_id: memberId,
+        title: `Challenge ${label}`,
+        challenge_type: 'collective',
+        goal_value: 50,
+        goal_unit: 'reps',
+        start_date: '2026-06-01',
+        end_date: '2026-06-14',
+        activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 10, unit: 'reps' }],
+      },
+      creationResolvers(pins),
+    );
+    await activateChallenge(db, challenge.challenge_id);
+    return { groupId, challengeId: challenge.challenge_id };
+  }
+
+  it('handles zero Groups without invoking authority checks', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'r2-01-zero');
+    let checks = 0;
+    const authority: GroupMembershipAuthority = {
+      async resolveGroupMembershipAuthority() {
+        checks += 1;
+        return { status: 'active', eligible: true };
+      },
+    };
+
+    const result = await listVisibleChallenges(db, memberId, { groupMembershipAuthority: authority });
+    expect(result).toEqual([]);
+    expect(checks).toBe(0);
+  });
+
+  it('checks one Group and returns its visible Challenge', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'r2-01-one');
+    const pins = { 'push-up': await seedKnowledge(db, 'push-up') };
+    const { groupId, challengeId } = await seedGroupWithChallenge(db, memberId, 'one', pins);
+    const checked: string[] = [];
+    const authority: GroupMembershipAuthority = {
+      async resolveGroupMembershipAuthority(gid) {
+        checked.push(gid);
+        return { status: 'active', eligible: true };
+      },
+    };
+
+    const result = await listVisibleChallenges(db, memberId, { groupMembershipAuthority: authority });
+    expect(checked).toEqual([groupId]);
+    expect(result.map((c) => c.challengeId)).toEqual([challengeId]);
+  });
+
+  it('checks multiple Groups and many Groups with bounded simultaneous checks and equivalent results', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'r2-01-many');
+    const pins = { 'push-up': await seedKnowledge(db, 'push-up') };
+
+    const groupChallenges: Array<{ groupId: string; challengeId: string }> = [];
+    for (let i = 0; i < 12; i += 1) {
+      groupChallenges.push(await seedGroupWithChallenge(db, memberId, `many-${i}`, pins));
+    }
+
+    // Multiple Groups subset check (first 3 via direct authority denial on the rest).
+    const multiEligible = new Set(groupChallenges.slice(0, 3).map((g) => g.groupId));
+    const multiResult = await listVisibleChallenges(db, memberId, {
+      groupMembershipAuthority: stubAuthority(multiEligible),
+    });
+    expect(new Set(multiResult.map((c) => c.challengeId))).toEqual(
+      new Set(groupChallenges.slice(0, 3).map((g) => g.challengeId)),
+    );
+
+    // Many Groups (12) with async delay: verify bounded max simultaneous checks <= GROUP_AUTHORITY_CHECK_CONCURRENCY.
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const checkedGroups = new Set<string>();
+    const deniedGroupIds = new Set([groupChallenges[2].groupId, groupChallenges[7].groupId]);
+
+    const meteredAuthority: GroupMembershipAuthority = {
+      async resolveGroupMembershipAuthority(groupId) {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        checkedGroups.add(groupId);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        inFlight -= 1;
+        return deniedGroupIds.has(groupId)
+          ? { status: 'no_membership', eligible: false }
+          : { status: 'active', eligible: true };
+      },
+    };
+
+    const manyResult = await listVisibleChallenges(db, memberId, {
+      groupMembershipAuthority: meteredAuthority,
+    });
+
+    expect(checkedGroups).toEqual(new Set(groupChallenges.map((g) => g.groupId)));
+    expect(maxInFlight).toBeGreaterThan(1);
+    expect(maxInFlight).toBeLessThanOrEqual(GROUP_AUTHORITY_CHECK_CONCURRENCY);
+
+    const expectedChallengeIds = new Set(
+      groupChallenges.filter((g) => !deniedGroupIds.has(g.groupId)).map((g) => g.challengeId),
+    );
+    expect(new Set(manyResult.map((c) => c.challengeId))).toEqual(expectedChallengeIds);
+  });
+
+  it('fails closed with 503 when an authority check throws during bounded fanout', async () => {
+    const db = testDb();
+    const memberId = await seedMember(db, 'r2-01-fail');
+    const pins = { 'push-up': await seedKnowledge(db, 'push-up') };
+
+    const groups: string[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      const { groupId } = await seedGroupWithChallenge(db, memberId, `fail-${i}`, pins);
+      groups.push(groupId);
+    }
+
+    const failingAuthority: GroupMembershipAuthority = {
+      async resolveGroupMembershipAuthority(groupId) {
+        if (groupId === groups[3]) {
+          throw new Error('authority backend timeout');
+        }
+        return { status: 'active', eligible: true };
+      },
+    };
+
+    await expect(
+      listVisibleChallenges(db, memberId, { groupMembershipAuthority: failingAuthority }),
+    ).rejects.toMatchObject({
+      statusCode: 503,
+      code: 'group_authority_unavailable',
+    } satisfies Partial<ChallengeReadError>);
   });
 });

@@ -30,7 +30,8 @@ export interface R2Config {
 
 const DEFAULT_READ_URL_TTL_SECONDS = 60;
 const MIN_READ_URL_TTL_SECONDS = 15;
-const MAX_READ_URL_TTL_SECONDS = 300;
+/** PRIV-05 approved residual-access target: at most 60s signed URL lifetime. */
+const MAX_READ_URL_TTL_SECONDS = 60;
 const EMPTY_PAYLOAD_HASH = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 
 function sha256Hex(data: Buffer | string): string {
@@ -69,8 +70,14 @@ function signingKey(secretAccessKey: string, dateStamp: string): Buffer {
 
 export function resolveR2ReadUrlTtlSeconds(raw = process.env.MEDIA_READ_URL_TTL_SECONDS): number {
   if (!raw || !raw.trim()) return DEFAULT_READ_URL_TTL_SECONDS;
-  const parsed = Number.parseInt(raw.trim(), 10);
-  if (!Number.isFinite(parsed) || parsed < MIN_READ_URL_TTL_SECONDS || parsed > MAX_READ_URL_TTL_SECONDS) {
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    throw new Error(
+      `MEDIA_READ_URL_TTL_SECONDS must be an integer between ${MIN_READ_URL_TTL_SECONDS} and ${MAX_READ_URL_TTL_SECONDS}`,
+    );
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed) || parsed < MIN_READ_URL_TTL_SECONDS || parsed > MAX_READ_URL_TTL_SECONDS) {
     throw new Error(
       `MEDIA_READ_URL_TTL_SECONDS must be an integer between ${MIN_READ_URL_TTL_SECONDS} and ${MAX_READ_URL_TTL_SECONDS}`,
     );
