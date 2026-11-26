@@ -90,8 +90,8 @@ const routes = read('src/v2/routes.tsx');
 check('/v2/support is registered inside the authenticated member shell',
   routes.indexOf('<Route element={<V2MemberShell />}>') < routes.indexOf('path="support"') && routes.indexOf('path="support"') < routes.indexOf('path="operator"'));
 const profile = read('src/v2/profile/V2ProfileScreen.tsx');
-check('Profile shows the Support Tiizi card in its slot between Interests & Goals and My Tiizi Journey',
-  profile.indexOf('<ProfilePreferencesSection') < profile.indexOf('<V2SupportTiiziCard') && profile.indexOf('<V2SupportTiiziCard') < profile.indexOf('My Tiizi Journey'));
+check('Profile shows the Support Tiizi card in its slot between Interests & Goals and History',
+  profile.indexOf('<ProfilePreferencesSection') < profile.indexOf('<V2SupportTiiziCard') && profile.indexOf('<V2SupportTiiziCard') < profile.indexOf('View Activity History'));
 
 if (failures > 0) { console.error(`\nSupport Tiizi guards: ${failures} failure(s).`); process.exit(1); }
 console.log('\nSupport Tiizi guards: all passing.');
