@@ -39,11 +39,16 @@ export function V2SignedImage({
   loadTimeoutMs?: number;
 }) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
-  const [lastLoadedSrc, setLastLoadedSrc] = useState<string | null>(null);
+  const [lastLoaded, setLastLoaded] = useState<{
+    src: string;
+    assetKey: string | null | undefined;
+  } | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const hasRefreshedRef = useRef(false);
+  const onExpiredRef = useRef(onExpired);
+  onExpiredRef.current = onExpired;
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -60,7 +65,7 @@ export function V2SignedImage({
 
   useEffect(() => {
     hasRefreshedRef.current = false;
-    setLastLoadedSrc(null);
+    setLastLoaded(null);
   }, [refreshKey, assetKey]);
 
   useEffect(() => {
@@ -69,7 +74,7 @@ export function V2SignedImage({
     setFailedSrc(null);
     setRetrying(false);
     if (!src) {
-      setLastLoadedSrc(null);
+      setLastLoaded(null);
       return;
     }
     setAttempt((current) => current + 1);
@@ -79,13 +84,13 @@ export function V2SignedImage({
 
   const handleError = useCallback(() => {
     clearTimers();
-    setLastLoadedSrc(null);
+    setLastLoaded(null);
     if (!src) return;
-    if (!hasRefreshedRef.current && onExpired) {
+    if (!hasRefreshedRef.current && onExpiredRef.current) {
       hasRefreshedRef.current = true;
       setLoadedSrc(null);
       setRetrying(true);
-      onExpired();
+      onExpiredRef.current();
       retryTimerRef.current = setTimeout(() => {
         retryTimerRef.current = null;
         setRetrying(false);
@@ -95,7 +100,7 @@ export function V2SignedImage({
     }
     setRetrying(false);
     setFailedSrc(src);
-  }, [clearTimers, onExpired, src]);
+  }, [clearTimers, src]);
 
   useEffect(() => {
     if (loadTimerRef.current) {
@@ -132,12 +137,16 @@ export function V2SignedImage({
   }
 
   const ready = loadedSrc === src;
-  const keepPreviousVisible = !ready && lastLoadedSrc !== null && lastLoadedSrc !== src;
+  const keepPreviousVisible =
+    !ready &&
+    lastLoaded !== null &&
+    lastLoaded.src !== src &&
+    lastLoaded.assetKey === assetKey;
   return (
     <>
       {!ready && (keepPreviousVisible ? (
         <img
-          src={lastLoadedSrc}
+          src={lastLoaded.src}
           alt={alt}
           className={className}
         />
@@ -153,7 +162,7 @@ export function V2SignedImage({
           clearTimers();
           hasRefreshedRef.current = false;
           setLoadedSrc(src);
-          setLastLoadedSrc(src);
+          setLastLoaded({ src, assetKey });
         }}
         onError={handleError}
       />
