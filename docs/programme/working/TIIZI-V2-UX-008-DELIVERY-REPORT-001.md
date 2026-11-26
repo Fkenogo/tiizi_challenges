@@ -122,18 +122,29 @@ API/image entries).
 
 | Measurement | Baseline `0f23e3d` | After `feat/v2-ux-008` | Delta |
 | --- | --- | --- | --- |
-| Sign-in → first visible Today content (cold) | 1009 ms | 732 ms | **−277 ms (−27 %)** |
-| First visible **cover image** on Today | **never** (no cover was projected or rendered) | 1461 ms | missing → present |
-| Today: `DOMContentLoaded` | 356 ms | 356 ms | ±0 |
-| Today, warm reload → first heading | 199 ms | 191 ms | −8 ms (noise) |
-| Today, warm reload → first cover image | never | 209 ms | missing → present |
-| Group Discovery → first heading | 200 ms | 228 ms | +28 ms (run-to-run noise) |
-| Challenge Discovery → first heading | 187 ms | 198 ms | +11 ms (run-to-run noise) |
-| Group Detail → first heading | 201 ms | 264 ms | +63 ms (run-to-run noise; member-scoped read) |
-| Challenge Detail → first heading | 191 ms | 217 ms | +26 ms (run-to-run noise) |
-| Navigation back to a previously visited screen | 287 ms | 152 ms | **−135 ms (−47 %)** |
+| Sign-in → first visible Today content (cold) | 1009 ms | 547 ms | **−462 ms (−46 %)** |
+| First visible **cover image** on Today | **never** (no cover was projected or rendered) | 888 ms | missing → present |
+| Today: `DOMContentLoaded` | 356 ms | 296 ms | −60 ms |
+| Today → suggestion section rendered (cold) | n/a (no such section) | 823 ms | — |
+| Today, warm reload → first heading | 199 ms | 196 ms | −3 ms (noise) |
+| Today, warm reload → first cover image | never | 211 ms | missing → present |
+| Group Discovery → first heading | 200 ms | 247 ms | +47 ms (noise band) |
+| Challenge Discovery → first heading | 187 ms | 206 ms | +19 ms (noise band) |
+| Group Detail → first heading | 201 ms | 252 ms | +51 ms (noise band; member-scoped read) |
+| Challenge Detail → first heading | 191 ms | 208 ms | +17 ms (noise band) |
+| Navigation back to a previously visited screen | 287 ms | 161 ms | **−126 ms (−44 %)** |
 | Today → "Browse Challenges" discovery requests | 2 (Today used `includeMedia=0`, the screen `=1`) | **1** (shared React Query entry) | −1 request |
+| `/api/challenges/discover` cost | 38 ms **without** the media projection | 50 ms **with** it (URL minting for the saved covers) | +12 ms, paid once and shared |
 | Browser console errors / network failures | 0 / 0 | 0 / 0 | — |
+
+**Reading the deltas honestly.** The four sub-screen deltas (+17 ms to +51 ms) sit inside the
+run-to-run variance of this environment: the same screen measured 228 ms and 247 ms in two
+consecutive runs of the *same* branch, and the baseline run was a second preview instance on other
+ports. They are reported as measured, not as an improvement. The outcomes that are **structural and
+reproducible** are: the cover image exists at all on Today (baseline: never; after: 888 ms cold /
+211 ms warm), the Today → Browse Challenges path makes one discovery request instead of two, and
+navigation back to a visited screen is ~44 % faster. The one genuine cost is the media projection
+on the discovery endpoint (+12 ms locally) — which is what buys the cover image.
 
 **Cost separation** (the same environment, measured separately):
 
@@ -145,7 +156,7 @@ API/image entries).
 | API processing | resource-timing duration of the governed request (includes the DB work above) | 3–38 ms per endpoint; the largest are `/api/challenges/discover` 38 ms, `/api/memberships/me` 22 ms, `/api/me` 20–23 ms, `/api/today` 20 ms |
 | React Query | request count per screen | Today 9 requests cold, all answered; Today → Discovery now shares one entry |
 | R2 URL generation | inside the request duration above (URL minting is server-side, no separate round trip) | — |
-| Image download + decode | resource timing of the image request | cold 42 ms (Group cover) / 14 ms (Challenge cover); warm 1–2 ms (browser cache) |
+| Image download + decode | resource timing of the image request | cold 40 ms (Group cover) / 15 ms (Challenge cover); warm 0 ms (browser cache) |
 | Browser rendering | DOMContentLoaded vs first heading vs first cover image | DCL 356 ms → heading 732 ms → cover image 1461 ms; the gap is the Vite dev module graph (dev-mode artefact, see §9) |
 
 ## 6. Tests and E2E evidence
@@ -184,7 +195,7 @@ verification Group or Challenge was created):**
 | Missing cover | cards without a persisted cover render the neutral placeholder; **no substitute photograph** |
 | Navigation to Group / Challenge detail | reached from the suggestion cards (hosting Group from the context line) |
 | Privacy and joining restrictions | the fixture Group flipped to private + approval-required: it **disappeared from discovery** (`visibleAfterPrivate: false`) and a join attempt returned `status: "pending"` — the governed approval rule, not an instant join |
-| Signed URL expiry recovery | after the 60 s lifetime expired, a client-side navigation away and back re-rendered the cover from a **fresh** signature (`X-Amz-Date` 15:17:06 → 15:18:15), image loaded, 0 network failures |
+| Signed URL expiry recovery | dedicated expiry probe (`local-e2e/expiryProbe.mjs`): the cover loaded at `X-Amz-Date 15:17:06`; after the 60 s lifetime expired, a client-side navigation away and back re-rendered it from a **fresh** signature (`X-Amz-Date 15:18:15`), image loaded, **0 network failures**, probe exit code 0 (recovered) |
 | First and subsequent load performance | cold and warm numbers in §5 |
 
 Evidence: `local-e2e/evidence/` (after) and `local-e2e/evidence-baseline/` (before) — screenshots
