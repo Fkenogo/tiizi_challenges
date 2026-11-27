@@ -1,6 +1,6 @@
 # TIIZI-V2-ACTIVITY-001 — Unified Personal Recent Activity Contract
 
-- **Status:** Finalized Contract Proposal (`CONTRACT-CORR-001`) — STOP for Founder review & independent review
+- **Status:** Founder-approved Phase 1 contract (`CONTRACT-CORR-001`); independent Technical Lead and Code Reviewer APPROVE WITH LIMITATIONS. Documentation authorization only; runtime implementation requires separate slices.
 - **Repository:** `Fkenogo/tiizi_challenges`
 - **Baseline:** `8d489bcd3517ccb5d37bae731d403dd27598607b` (`origin/main`)
 - **Branch:** `docs/tiizi-v2-activity-001`
@@ -25,17 +25,17 @@
 
 ---
 
-## 2. Proposed Founder Dispositions (Pending Formal Sign-Off)
+## 2. Founder Dispositions — APPROVED (2026-11-27)
 
-The following Phase 1 decisions are **recommended for Founder sign-off** and are **NOT** formally approved until the Founder records disposition:
+Founder expressly approved D1–D5 on 2026-11-27 in the Tiizi project conversation after reviewing PR #196. This authorizes the Phase 1 product direction and contract merge, not production changes or migrations. Technical Lead and independent Reviewer approved the preceding exact head `3731082bc014c585bbda93a12b5328e1b82e44a2` **with documented limitations**: Group history is partial; concurrent source changes have no cross-request snapshot/duplicate-skip guarantee; inaccessible private entities receive only safe generic labels or are omitted. Those limitations remain binding.
 
 | ID | Proposed Decision | Status |
 | --- | --- | --- |
-| **D1** | Use a read-only union over existing authoritative PostgreSQL records for Phase 1. | **Proposed — Pending Founder Approval** |
-| **D2** | Integrate finalized Challenge outcomes (`challenge_finalized`) into the unified timeline and retire the separate Today `Recent results` section (`#today-results`) once the replacement is verified. | **Proposed — Pending Founder Approval** |
-| **D3** | Display up to three (`3`) latest meaningful events on Today (`/v2/today`). | **Proposed — Pending Founder Approval** |
-| **D4** | Never infer the creator of a historical Group where `groups.original_creator_member_id` is `NULL`. | **Proposed — Pending Founder Approval** |
-| **D5** | Defer append-only Group membership event recording (e.g., `group_membership_events`) to a separately authorized future slice. | **Proposed — Pending Founder Approval** |
+| **D1** | Use a read-only union over existing authoritative PostgreSQL records for Phase 1. | **APPROVED — Founder 2026-11-27** |
+| **D2** | Integrate finalized Challenge outcomes (`challenge_finalized`) into the unified timeline and retire the separate Today `Recent results` section (`#today-results`) once the replacement is verified. | **APPROVED — Founder 2026-11-27** |
+| **D3** | Display up to three (`3`) latest meaningful events on Today (`/v2/today`). | **APPROVED — Founder 2026-11-27** |
+| **D4** | Never infer the creator of a historical Group where `groups.original_creator_member_id` is `NULL`. | **APPROVED — Founder 2026-11-27** |
+| **D5** | Defer append-only Group membership event recording (e.g., `group_membership_events`) to a separately authorized future slice. | **APPROVED — Founder 2026-11-27** |
 
 ---
 
