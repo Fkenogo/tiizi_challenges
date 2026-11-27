@@ -191,6 +191,7 @@ check('Today discovery sections are bounded to at most two items per entity type
 check('Today discovery reuses canonical Challenge and Group cards instead of parallel recommendation markup',
   /<V2DiscoverChallengeRow/.test(todayDiscoverySections)
   && /<V2DiscoverGroupRow/.test(todayDiscoverySections)
+  && /showInterestsAndGoals=\{false\}/.test(groupPanel)
   && !/MatchBadges/.test(todayDiscoverySections)
   && !/Your interests:|Your goals:/.test(explore + groupPanel));
 check('full Group and Challenge Discovery stay reachable from Today discovery sections',

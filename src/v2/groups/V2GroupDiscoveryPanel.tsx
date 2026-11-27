@@ -55,6 +55,7 @@ export function V2DiscoverGroupRow({ group, onOpen }: { group: V2DiscoverableGro
     status={relationship}
     tags={group.focusTags}
     goals={group.goals}
+    showInterestsAndGoals={false}
     suggested={hasRelevance(group.relevance)}
     memberCount={group.memberCount}
     onOpen={() => onOpen(group.id)}

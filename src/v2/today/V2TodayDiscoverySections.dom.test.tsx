@@ -114,6 +114,8 @@ describe('V2TodayDiscoverySections', () => {
     expect(within(groupsList).getAllByRole('listitem')).toHaveLength(1);
     expect(within(groupsList).getByText('Relevant Group')).toBeTruthy();
     expect(within(groupsList).getByText('Suggested for you')).toBeTruthy();
+    expect(within(groupsList).queryByText('#Strength')).toBeNull();
+    expect(within(groupsList).queryByText('Build strength')).toBeNull();
 
     expect(screen.queryByText(/Your interests:|Your goals:|Matches your/)).toBeNull();
   });
