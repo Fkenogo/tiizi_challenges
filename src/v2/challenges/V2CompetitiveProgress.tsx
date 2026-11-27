@@ -101,7 +101,7 @@ export function V2CompetitiveProgress({ detail }: { detail: V2ChallengeDetail })
           <div className="mt-2">
             <V2ErrorState
               title="Standings are unavailable right now"
-              message="Your own progress above is still authoritative. Please try again."
+              message="Your progress is still shown above. Try again to update the standings."
               onRetry={() => void board.refetch()}
             />
           </div>
@@ -163,7 +163,7 @@ export function V2CompetitiveProgress({ detail }: { detail: V2ChallengeDetail })
           </div>
         )}
         <p className="mt-2 text-xs text-slate-500">
-          Live positions come from the Challenge server. Tied finishers share a position.
+          Participants who finish with the same result share a position.
         </p>
       </div>
     </V2Card>

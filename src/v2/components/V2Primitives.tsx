@@ -168,7 +168,7 @@ export function V2Button({
         : variant === 'dark'
           ? 'bg-slate-900 text-white hover:bg-slate-800'
           : variant === 'secondary'
-            ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+            ? 'border border-slate-400 bg-white text-slate-900 hover:border-slate-500 hover:bg-slate-50'
             : 'text-slate-600 hover:bg-slate-100';
   return (
     <button
@@ -176,7 +176,7 @@ export function V2Button({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={pressed}
-      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone} ${className}`}
+      className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55 ${tone} ${className}`}
     >
       {children}
     </button>

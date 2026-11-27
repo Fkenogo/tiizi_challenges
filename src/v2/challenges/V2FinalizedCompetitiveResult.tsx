@@ -77,7 +77,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
           <div className="mt-2">
             <V2ErrorState
               title="Final standings are unavailable right now"
-              message="Your own final result above is still authoritative. Please try again."
+              message="Your final result is still shown above. Try again to load the final standings."
               onRetry={() => void standings.refetch()}
             />
           </div>
@@ -139,7 +139,7 @@ export function V2FinalizedCompetitiveResult({ detail }: { detail: V2ChallengeDe
           </div>
         )}
         <p className="mt-2 text-xs text-slate-500">
-          Tied finishers share a position.
+          Participants who finish with the same result share a position.
         </p>
       </div>
 

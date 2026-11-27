@@ -26,7 +26,7 @@ export function V2ProfileChallengeHistoryScreen() {
         )}
         {profile.challenges.nextCursor && <V2Button variant="secondary" className="mt-3" disabled={isLoadingChallenges} onClick={() => void loadMoreChallenges()}>{isLoadingChallenges ? 'Loading…' : 'Load more history'}</V2Button>}
         {pageError?.section === 'challenges' && <p role="alert" className="mt-3 text-sm text-red-700">We couldn&apos;t load more history. Return to Profile and try again.</p>}
-        <p className="mt-3 text-xs leading-5 text-slate-500">Ended Challenges awaiting finalization remain in the server&apos;s active bucket. Open a listed Challenge to see its current governed end state.</p>
+        <p className="mt-3 text-xs leading-5 text-slate-500">Ended Challenges awaiting final results remain in your active list. Open a listed Challenge to see its current status.</p>
       </V2Card>
     </V2Page>
   );

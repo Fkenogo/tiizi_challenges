@@ -88,7 +88,7 @@ export function ActivitiesStep<TDraft extends ActivitiesStepState>({
     <div className="space-y-4">
       {pick ? (
         <p className="text-sm leading-6 text-slate-600">
-          Choose Activities from the governed catalogue. {multi
+          Choose Activities from the Activity Guide. {multi
             ? 'A Streak can include more than one daily activity.'
             : 'Together and Race work best with a single activity.'}
         </p>
