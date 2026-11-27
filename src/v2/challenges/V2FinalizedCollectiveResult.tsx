@@ -98,7 +98,7 @@ export function V2FinalizedCollectiveResult({ detail }: { detail: V2ChallengeDet
           <div className="mt-2">
             <V2ErrorState
               title="Contributors are unavailable right now"
-              message="The final group total above is still up to date. Please try again."
+              message="The final group total is still shown above. Try again to load contributors."
               onRetry={() => void contributors.refetch()}
             />
           </div>

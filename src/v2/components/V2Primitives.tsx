@@ -168,7 +168,7 @@ export function V2Button({
         : variant === 'dark'
           ? 'bg-slate-900 text-white hover:bg-slate-800'
           : variant === 'secondary'
-            ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+            ? 'border border-slate-400 bg-white text-slate-900 hover:border-slate-500 hover:bg-slate-50'
             : 'text-slate-600 hover:bg-slate-100';
   return (
     <button
