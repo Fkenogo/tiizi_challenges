@@ -151,19 +151,14 @@ All V2 domain authority resides in PostgreSQL (`AGENTS.md` §2). Archived Produc
 
 ## 7. Historical Consistency & Pagination Safeguards
 
-1. **Read-Committed Pagination:** Keyset pagination uses `(recorded_at, source_event_id, event_type_rank)` without cross-request snapshots. Existing immutable rows (`challenges`, `challenge_participations`, `challenge_participation_finals`) never shift keys.
-2. **Membership Change Between Pages:**
-   - Joining a new Group or Challenge inserts a new item at the top of page 1; already-fetched pages remain consistent.
-   - Because `group_memberships` updates in-place on Group rejoin, leaving and rejoining a Group *between* pages moves that single `group_joined` row to the new `joined_at` and removes `group_left`. Lost intermediate Group episodes are **never** fabricated.
-3. **Activity Corrected or Reversed Between Pages:**
-   - The recursive CTE collapses the correction chain onto the single `accepted.event_id`, updating `recordedAt` to `effective.recorded_at`. The item moves to the top of the timeline without creating a duplicate `activity_logged` row.
-4. **Challenge Finalized Between Pages:**
-   - `challenge_finalizations` / `challenge_participation_finals` inserts a new `challenge_finalized` item at `finalized_at` without altering `challenge_joined` or `activity_logged` items.
-5. **Member Exits and Rejoins:**
-   - **Challenges:** Distinct `participation_id` episodes preserve `challenge_joined` -> `challenge_exited` -> `challenge_joined` -> `challenge_finalized` with zero duplicates (`timelineEventId` uses `participation_id`).
-   - **Groups:** Only current `group_memberships` state is projected (no fabricated prior episodes).
-6. **Historic Entity Becomes Inaccessible:**
-   - If a member leaves a private Group (or is removed from a Challenge in a private Group), their personal timeline retains the historical event title/milestone, sets `navigation: { kind: 'none', path: null, accessible: false }`, and never exposes private Group/Challenge live state.
+1. **Read-Committed Pagination:** Keyset pagination uses `(recorded_at, source_id, event_type_rank)` and has no cross-request snapshot. For an unchanged set of source rows and unchanged filters, the deterministic total ordering and strict keyset predicate allow forward traversal without duplicates or omissions. This guarantee does not extend across source mutations between requests.
+2. **Concurrent Source Changes:** A Group/Challenge join or finalization committed between requests may appear before the current cursor and therefore not appear on later pages; clients may see it after refreshing from page one. Group membership rejoin can move the current `group_joined` key and remove `group_left`; an Activity correction/reversal can move the collapsed item to a new `effective.recorded_at`; a finalization adds a new immutable result row. These changes may cause items to be absent from a traversal or appear differently across requests. No snapshot consistency or duplicate/skip guarantee is made while source records or membership eligibility change. Lost Group episodes are **never** fabricated.
+3. **Activity Corrections:** The read model collapses a correction chain onto the accepted `event_id`; a correction or reversal changes the effective ordering timestamp and displayed revision state/value according to `memberRecentActivity.ts`. This does not create a second timeline item for that accepted activity, but the moved item can cross an already-issued cursor boundary.
+4. **Member Exits and Rejoins:**
+   - **Challenges:** Distinct immutable `participation_id` episodes preserve join/exit/final rows when present in the underlying records. Concurrent changes still receive no cross-request snapshot guarantee.
+   - **Groups:** Only the current `group_memberships` row is projected; its in-place updates do not preserve all historical episodes.
+5. **Historic Entity Becomes Inaccessible:**
+   - If access to a private Group or Challenge has ended, the personal timeline may show only a generic event label and event category/date (for example, “Joined a Group” or “Challenge result recorded”), plus the member’s own non-sensitive event type where applicable. It must not expose the private Group/Challenge name, title, description, activity or result details, participant information, or other current private state. Set `navigation: { kind: 'none', path: null, accessible: false }`; do not resolve or emit a deep link. If the safe generic event cannot be determined without leaking private details, omit the entity-derived event.
 
 ---
 
@@ -189,7 +184,7 @@ All V2 domain authority resides in PostgreSQL (`AGENTS.md` §2). Archived Produc
 9. **Challenge creation & participation episodes:** Creating a Challenge emits `challenge_created`; joining, withdrawing/removing, and rejoining emit distinct `challenge_joined`, `challenge_exited`, and second `challenge_joined` events.
 10. **Activity logging, correction, & reversal:** `activity_logged` orders by `effective.recorded_at`, preserves `performedAt` (`display.occurred_at`), collapses correction chains to one row per `accepted.event_id`, and preserves `updated` / `reversed` semantics.
 11. **Challenge finalization:** Finalizing emits `challenge_finalized` at `finalized_at` with frozen outcome fields per `participation_id`.
-12. **Inaccessible historic entity:** Leaving a private Group sets `navigation.accessible = false` on historical items for that private Group while keeping the personal milestone visible.
-13. **Cursor ordering, pagination, & validation:** Mixed events sort deterministically by `(recorded_at DESC, source_id DESC, event_type_rank DESC)` with zero duplicates/skips across pages; malformed, cross-account, or filter-mismatched cursors return `400 invalid_cursor`.
+12. **Inaccessible historic entity:** After access to a private Group or Challenge ends, any retained event uses only a generic label and category/date; it exposes no private entity title, description, result/activity details, participants, or current state and has `navigation.accessible = false` with no path. Omit the event if even a generic label would leak private information.
+13. **Cursor ordering, pagination, & validation:** With an unchanged source set and filters, mixed events sort deterministically by `(recorded_at DESC, source_id DESC, event_type_rank DESC)` and keyset traversal has no duplicates or omissions. Concurrent membership changes, Activity corrections/reversals, or finalizations have no snapshot guarantee and can make an item move, be absent from a traversal, or appear on refresh. Malformed, cross-account, or filter-mismatched cursors return `400 invalid_cursor`.
 14. **Privacy & Feed isolation:** `401` when unauthenticated; strict cross-account isolation; zero reads/writes to `group_feed_outbox`, `group_feed_projection`, or `challenge_feed_shares`.
 15. **Compatibility & Today consistency:** `GET /api/me/activity` retains `occurred_at DESC` Activity-only behavior for `V2LatestChallengeContribution`; Today's 3-item preview matches the top 3 items of `GET /api/me/timeline`.
