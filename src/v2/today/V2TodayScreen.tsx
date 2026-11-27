@@ -336,30 +336,6 @@ export function V2TodayScreen() {
             </section>
           )}
 
-          {/* 6. Finalized results — compact links to existing result surfaces. */}
-          {projection.finalizedResults.length > 0 && (
-            <section aria-labelledby="today-results">
-              <h2 id="today-results" className="mb-3 text-base font-black text-slate-900">
-                Recent results
-              </h2>
-              <div className="space-y-2">
-                {projection.finalizedResults.map((result) => (
-                  <button
-                    key={result.challengeId}
-                    type="button"
-                    onClick={() => navigate(result.detailPath)}
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:bg-slate-50"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-slate-900">{result.title}</span>
-                      <span className="mt-0.5 block text-xs font-medium text-slate-500">Final results</span>
-                    </span>
-                    <span className="shrink-0 text-xs font-bold text-primary">View</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
         </div>
       )}
       {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodayDiscoverySections />}

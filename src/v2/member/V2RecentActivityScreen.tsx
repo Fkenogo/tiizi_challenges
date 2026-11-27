@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { MemberRecentActivityItem } from '../../api/memberRecentActivityApi';
 import type { PersonalTimelineItem } from '../../api/memberTimelineApi';
 import {
   V2ActivityShareChoices,
   shareSourceFromTimelineItem,
+  type V2ActivityShareSource,
 } from '../components/V2ActivityShareChoices';
 import {
   V2Button,
@@ -14,19 +14,14 @@ import {
   V2Page,
   V2SectionHeader,
 } from '../components/V2Primitives';
-import { useV2PersonalTimelineHistory } from './personalTimelineQuery';
-import { useV2RecentActivityPreview } from './recentActivityQuery';
+import { useV2ActivityShareState } from '../challenges/challengeFeedQuery';
+import {
+  V2_PERSONAL_TIMELINE_PREVIEW_SIZE,
+  useV2PersonalTimelineHistory,
+  useV2PersonalTimelinePreview,
+} from './personalTimelineQuery';
 
-function formatActivityTime(value: string, timezone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: timezone,
-  }).format(new Date(value));
-}
+const MAX_EAGER_SHARE_STATE_CHECKS = 5;
 
 function formatTimelineTime(value: string, timezone: string | null): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -97,65 +92,94 @@ function timelineCardHeading(item: PersonalTimelineItem): string {
   return item.label;
 }
 
-function ActivityTimeline({
-  items,
+function TimelineShareControl({
+  source,
+  eagerCheck,
+  isOpen,
+  onOpen,
+  onClose,
 }: {
-  items: MemberRecentActivityItem[];
+  source: V2ActivityShareSource;
+  eagerCheck: boolean;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
 }) {
+  const shareState = useV2ActivityShareState(
+    source.challengeId,
+    source.activityId,
+    eagerCheck || isOpen,
+  );
+  const state = shareState.isSuccess ? shareState.data : null;
+  const shared = state !== null && state.visible;
+  const hiddenReason = state !== null && !state.visible ? state.hiddenReason : null;
+
+  if (hiddenReason === 'suppressed') {
+    return (
+      <p className="mt-2 text-xs text-slate-600">
+        This Share was removed and cannot be republished.
+      </p>
+    );
+  }
+  if (hiddenReason === 'expired') {
+    return (
+      <p className="mt-2 text-xs text-slate-600">
+        This Challenge Feed has expired.
+      </p>
+    );
+  }
+  if (hiddenReason === 'reversed') {
+    return null;
+  }
+
   return (
-    <ol className="space-y-3">
-      {items.map((item) => (
-        <li key={item.activityId}>
-          <article className="rounded-2xl border border-slate-200 bg-white p-3">
-            <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-              <p className="min-w-0 flex-1 break-words text-sm font-bold text-slate-900">
-                {item.revisionState === 'reversed' ? 'Reversed Activity' : 'Activity logged'}
-                {' · '}{item.activityName}{' · '}{new Intl.NumberFormat().format(item.value)}{' '}{item.unit}
-              </p>
-              {item.revisionState !== 'current' && (
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                  item.revisionState === 'updated' ? 'bg-amber-50 text-amber-900' : 'bg-slate-100 text-slate-700'
-                }`}>
-                  {item.revisionState === 'updated' ? 'Updated' : 'Reversed'}
-                </span>
-              )}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs leading-5 text-slate-600">
-              <span>
-                <span className="font-bold text-slate-700">Performed</span>{' '}
-                <time dateTime={item.occurredAt}>{formatActivityTime(item.occurredAt, item.displayTimezone)}</time>
-              </span>
-              <span>
-                <span className="font-bold text-slate-700">Recorded</span>{' '}
-                <time dateTime={item.recordedAt}>{formatActivityTime(item.recordedAt, item.displayTimezone)}</time>
-              </span>
-            </div>
-            <p className="mt-1 break-words text-[11px] text-slate-500">Times shown in {item.displayTimezone}</p>
-            <Link
-              to={`/v2/challenges/${encodeURIComponent(item.challenge.id)}`}
-              className="mt-2 inline-flex max-w-full break-words text-xs font-bold text-primary hover:underline"
-              aria-label={`View Challenge details: ${item.challenge.title}`}
-            >
-              Challenge: {item.challenge.title} · View details
-            </Link>
-          </article>
-        </li>
-      ))}
-    </ol>
+    <>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {shared && (
+          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
+            Shared
+          </span>
+        )}
+        <V2Button
+          variant="secondary"
+          onClick={onOpen}
+          aria-label={shared ? `Manage Share for ${source.activityName}` : undefined}
+          className="min-h-11 max-w-full break-words"
+        >
+          {shared ? 'Manage Share' : `Share ${source.activityName} activity`}
+        </V2Button>
+      </div>
+      {isOpen && (
+        <V2ActivityShareChoices
+          mode="later"
+          source={source}
+          onClose={onClose}
+        />
+      )}
+    </>
   );
 }
 
 function PersonalTimelineList({
   items,
+  allowShare = true,
+  compact = false,
 }: {
   items: PersonalTimelineItem[];
+  allowShare?: boolean;
+  compact?: boolean;
 }) {
   const [shareActivityId, setShareActivityId] = useState<string | null>(null);
+  let eligibleShareIndex = 0;
 
   return (
     <ol className="space-y-3">
       {items.map((item) => {
-        const shareSource = shareSourceFromTimelineItem(item);
+        const shareSource = allowShare ? shareSourceFromTimelineItem(item) : null;
+        const eagerShareCheck = shareSource !== null && eligibleShareIndex < MAX_EAGER_SHARE_STATE_CHECKS;
+        if (shareSource !== null) {
+          eligibleShareIndex += 1;
+        }
         const resultSummary = formatResultSummary(item);
         const revisionState = item.navigation.accessible ? item.activity?.revisionState : undefined;
         const canNavigate = Boolean(item.navigation.accessible && item.navigation.path);
@@ -172,7 +196,7 @@ function PersonalTimelineList({
 
         return (
           <li key={item.timelineEventId}>
-            <article className="rounded-2xl border border-slate-200 bg-white p-4">
+            <article className={`rounded-2xl border border-slate-200 bg-white ${compact ? 'p-3' : 'p-4'}`}>
               <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
                 <p className="min-w-0 flex-1 break-words text-sm font-bold text-slate-900">
                   {timelineCardHeading(item)}
@@ -224,24 +248,13 @@ function PersonalTimelineList({
               )}
 
               {shareSource && (
-                <>
-                  <div>
-                    <V2Button
-                      variant="secondary"
-                      onClick={() => setShareActivityId(shareSource.activityId)}
-                      className="mt-2 min-h-11 max-w-full break-words"
-                    >
-                      Share {shareSource.activityName} activity
-                    </V2Button>
-                  </div>
-                  {shareActivityId === shareSource.activityId && (
-                    <V2ActivityShareChoices
-                      mode="later"
-                      source={shareSource}
-                      onClose={() => setShareActivityId(null)}
-                    />
-                  )}
-                </>
+                <TimelineShareControl
+                  source={shareSource}
+                  eagerCheck={eagerShareCheck}
+                  isOpen={shareActivityId === shareSource.activityId}
+                  onOpen={() => setShareActivityId(shareSource.activityId)}
+                  onClose={() => setShareActivityId(null)}
+                />
               )}
             </article>
           </li>
@@ -251,34 +264,39 @@ function PersonalTimelineList({
   );
 }
 
-/** Compact private timeline entry point on Today, backed by accepted server records. */
+/** Compact private timeline entry point on Today (up to 3 latest events). */
 export function V2RecentActivityPreview() {
-  const recent = useV2RecentActivityPreview();
+  const recent = useV2PersonalTimelinePreview();
   const items = recent.data?.items ?? [];
-  const previewItems = items.length > 2 ? items.slice(0, 2) : items;
+  const previewItems = items.slice(0, V2_PERSONAL_TIMELINE_PREVIEW_SIZE);
 
   return (
     <section aria-labelledby="recent-activity-preview" className="mt-6">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 id="recent-activity-preview" className="text-base font-black text-slate-900">Recent Activity</h2>
-        <Link to="/v2/activity" className="text-sm font-bold text-primary hover:underline">View all activity</Link>
+        <Link
+          to="/v2/activity"
+          className="inline-flex min-h-11 items-center text-sm font-bold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          View all activity
+        </Link>
       </div>
       {recent.isLoading ? (
         <V2LoadingState label="Loading Recent Activity…" />
       ) : recent.isError ? (
         <V2ErrorState
           title="We couldn't load Recent Activity"
-          message="Your history is private to you. Please try again."
+          message="Please try again."
           onRetry={() => void recent.refetch()}
         />
-      ) : items.length === 0 ? (
+      ) : previewItems.length === 0 ? (
         <V2EmptyState
           compact
-          title="No Activity logged yet"
-          message="Accepted Activity logs will appear here. Your history is private to you."
+          title="No recent activity yet"
+          message="Your Groups, Challenges, Activity, and results will appear here."
         />
       ) : (
-        <ActivityTimeline items={previewItems} />
+        <PersonalTimelineList items={previewItems} allowShare={false} compact />
       )}
     </section>
   );

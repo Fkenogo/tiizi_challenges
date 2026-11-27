@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 
 export const V2_PERSONAL_TIMELINE_SCOPE = 'v2-member-personal-timeline';
+export const V2_PERSONAL_TIMELINE_PREVIEW_SIZE = 3;
 export const V2_PERSONAL_TIMELINE_PAGE_SIZE = 20;
 
 export function v2PersonalTimelineKey(uid: string | undefined, limit: number) {

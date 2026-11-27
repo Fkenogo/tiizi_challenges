@@ -29,6 +29,8 @@ vi.mock('../member/recentActivityQuery', () => ({
 }));
 vi.mock('../member/personalTimelineQuery', () => ({
   useV2PersonalTimelineHistory: () => h.activityHistory,
+  useV2PersonalTimelinePreview: () => h.activityPreview,
+  V2_PERSONAL_TIMELINE_PREVIEW_SIZE: 3,
 }));
 
 import { V2RecentActivityScreen } from '../member/V2RecentActivityScreen';

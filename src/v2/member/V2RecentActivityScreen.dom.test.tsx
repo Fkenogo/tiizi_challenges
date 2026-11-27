@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import type { MemberRecentActivityItem } from '../../api/memberRecentActivityApi';
 import type { PersonalTimelineItem } from '../../api/memberTimelineApi';
 
 interface MockHistoryState {
@@ -16,7 +15,7 @@ interface MockHistoryState {
 }
 
 interface MockPreviewState {
-  data?: { items: MemberRecentActivityItem[] };
+  data?: { items: PersonalTimelineItem[] };
   isLoading: boolean;
   isError: boolean;
   refetch: () => unknown;
@@ -25,62 +24,30 @@ interface MockPreviewState {
 const h = vi.hoisted(() => ({
   history: {} as MockHistoryState,
   preview: {} as MockPreviewState,
-  ownShare: { data: null, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() },
+  ownShare: { data: null as unknown, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() },
+  shareStateCalls: [] as Array<{ challengeId: string; activityId: string; enabled: boolean }>,
   publish: { mutate: vi.fn(), isPending: false, error: null },
   withdraw: { mutate: vi.fn(), isPending: false, error: null },
 }));
 
 vi.mock('./personalTimelineQuery', () => ({
   useV2PersonalTimelineHistory: () => h.history,
-}));
-vi.mock('./recentActivityQuery', () => ({
-  useV2RecentActivityPreview: () => h.preview,
+  useV2PersonalTimelinePreview: () => h.preview,
+  V2_PERSONAL_TIMELINE_PREVIEW_SIZE: 3,
 }));
 vi.mock('../profile/useV2MemberIdentity', () => ({
   useV2MemberIdentity: () => ({ displayName: 'Amara Test', isLoading: false }),
 }));
 vi.mock('../challenges/challengeFeedQuery', () => ({
-  useV2ActivityShareState: () => h.ownShare,
+  useV2ActivityShareState: (challengeId: string, activityId: string, enabled = true) => {
+    h.shareStateCalls.push({ challengeId, activityId, enabled });
+    return h.ownShare;
+  },
   useV2PublishActivityShare: () => h.publish,
   useV2WithdrawActivityShare: () => h.withdraw,
 }));
 
 import { V2RecentActivityPreview, V2RecentActivityScreen } from './V2RecentActivityScreen';
-
-const previewCurrent: MemberRecentActivityItem = {
-  activityId: '00000000-0000-4000-8000-000000000001',
-  activityName: 'Push-Up',
-  value: 25,
-  unit: 'reps',
-  occurredAt: '2026-06-10T12:00:00.000Z',
-  recordedAt: '2026-06-10T12:05:00.000Z',
-  acceptedAt: '2026-06-10T12:05:00.000Z',
-  displayTimezone: 'America/New_York',
-  revisionState: 'current',
-  challenge: { id: '00000000-0000-4000-8000-000000000002', title: 'Summer Challenge' },
-};
-
-const previewSecond: MemberRecentActivityItem = {
-  ...previewCurrent,
-  activityId: '00000000-0000-4000-8000-000000000004',
-  activityName: 'Walk',
-  value: 2,
-  unit: 'km',
-  occurredAt: '2026-06-09T12:00:00.000Z',
-  recordedAt: '2026-06-09T12:05:00.000Z',
-  acceptedAt: '2026-06-09T12:05:00.000Z',
-};
-
-const previewThird: MemberRecentActivityItem = {
-  ...previewCurrent,
-  activityId: '00000000-0000-4000-8000-000000000005',
-  activityName: 'Plank',
-  value: 60,
-  unit: 'seconds',
-  occurredAt: '2026-06-08T12:00:00.000Z',
-  recordedAt: '2026-06-08T12:05:00.000Z',
-  acceptedAt: '2026-06-08T12:05:00.000Z',
-};
 
 const activityLoggedCurrent: PersonalTimelineItem = {
   timelineEventId: 'activity_logged:00000000-0000-4000-8000-000000000001',
@@ -332,7 +299,9 @@ function setHistory(items: PersonalTimelineItem[] = [activityLoggedCurrent]) {
     fetchNextPage: vi.fn(),
     refetch: vi.fn(),
   };
-  h.preview = { data: { items: [previewCurrent] }, isLoading: false, isError: false, refetch: vi.fn() };
+  h.preview = { data: { items: [activityLoggedCurrent] }, isLoading: false, isError: false, refetch: vi.fn() };
+  h.ownShare = { data: null, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() };
+  h.shareStateCalls.length = 0;
 }
 
 beforeEach(() => setHistory([activityLoggedCurrent, activityLoggedReversed]));
@@ -435,8 +404,15 @@ describe('Personal Activity History (/v2/activity) and Today preview', () => {
     expect(h.history.fetchNextPage).toHaveBeenCalledTimes(1);
   });
 
-  it('preserves Today preview (Activity-only) with link to full History', () => {
-    h.preview = { ...h.preview, data: { items: [previewCurrent, previewSecond, previewThird] } };
+  it('renders up to three mixed unified timeline events on Today without Share buttons and navigates to full History', () => {
+    const fourEvents = [
+      activityLoggedCurrent,
+      groupJoinedEvent,
+      challengeJoinedEvent,
+      challengeFinalizedEvent,
+    ];
+    setHistory(fourEvents);
+    h.preview = { ...h.preview, data: { items: fourEvents } };
     const today = render(
       <MemoryRouter initialEntries={['/v2/today']}>
         <Routes>
@@ -447,15 +423,102 @@ describe('Personal Activity History (/v2/activity) and Today preview', () => {
     );
 
     const previewRows = today.container.querySelectorAll('ol > li');
-    expect(previewRows).toHaveLength(2);
-    expect(previewRows[0].textContent).toContain('Push-Up');
-    expect(previewRows[1].textContent).toContain('Walk');
-    expect(screen.queryByText(/Plank/)).toBeNull();
+    expect(previewRows).toHaveLength(3);
+    expect(previewRows[0].textContent).toContain('Logged activity · Push-Up · 25 reps');
+    expect(previewRows[1].textContent).toContain('Joined Group · Evening Walkers');
+    expect(previewRows[2].textContent).toContain('Joined Challenge · Daily Steps');
+    expect(screen.queryByText(/May Marathon/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Share Push-Up activity' })).toBeNull();
 
     fireEvent.click(screen.getByRole('link', { name: 'View all activity' }));
     expect(screen.getByRole('heading', { name: 'Recent Activity' })).toBeTruthy();
+    expect(today.container.querySelectorAll('ol > li')).toHaveLength(4);
+    expect(screen.getAllByText(/May Marathon/).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Load more' })).toBeTruthy();
+  });
+
+  it('renders Today preview loading, empty, error/retry, and privacy-safe inaccessible states', () => {
+    h.preview = { data: undefined, isLoading: true, isError: false, refetch: vi.fn() };
+    const loading = render(<MemoryRouter><V2RecentActivityPreview /></MemoryRouter>);
+    expect(screen.getByRole('status', { name: 'Loading Recent Activity…' })).toBeTruthy();
+    loading.unmount();
+
+    const refetch = vi.fn();
+    h.preview = { data: undefined, isLoading: false, isError: true, refetch };
+    const errored = render(<MemoryRouter><V2RecentActivityPreview /></MemoryRouter>);
+    expect(screen.getByRole('heading', { name: "We couldn't load Recent Activity" })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+    errored.unmount();
+
+    h.preview = { data: { items: [] }, isLoading: false, isError: false, refetch: vi.fn() };
+    const empty = render(<MemoryRouter><V2RecentActivityPreview /></MemoryRouter>);
+    expect(screen.getByRole('heading', { name: 'No recent activity yet' })).toBeTruthy();
+    empty.unmount();
+
+    h.preview = { data: { items: [inaccessiblePrivateGroupEvent] }, isLoading: false, isError: false, refetch: vi.fn() };
+    render(<MemoryRouter><V2RecentActivityPreview /></MemoryRouter>);
+    expect(screen.getByText('Joined a Group')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /View Group|View Challenge/ })).toBeNull();
+  });
+
+  it('shows Shared and Manage Share for already-shared Activity and hides Share when suppressed', () => {
+    setHistory([activityLoggedCurrent]);
+    h.ownShare = {
+      data: {
+        shareId: 'share-1',
+        activityEventId: activityLoggedCurrent.activity!.activityId,
+        visible: true,
+        hiddenReason: null,
+        shareGeneration: 1,
+        kudosCount: 2,
+      },
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      refetch: vi.fn(),
+    };
+    const sharedView = render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    expect(screen.getByText('Shared')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Manage Share' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share Push-Up activity' })).toBeNull();
+    sharedView.unmount();
+
+    setHistory([activityLoggedCurrent]);
+    h.ownShare = {
+      data: {
+        shareId: 'share-1',
+        activityEventId: activityLoggedCurrent.activity!.activityId,
+        visible: false,
+        hiddenReason: 'suppressed',
+        shareGeneration: 1,
+        kudosCount: 0,
+      },
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      refetch: vi.fn(),
+    };
+    render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    expect(screen.getByText('This Share was removed and cannot be republished.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Share|Manage Share/ })).toBeNull();
+  });
+
+  it('bounds eager per-row Share-state requests on long paginated History', () => {
+    const sevenActivities = Array.from({ length: 7 }, (_, index) => ({
+      ...activityLoggedCurrent,
+      timelineEventId: `activity_logged:00000000-0000-4000-8000-00000000010${index}`,
+      activity: {
+        ...activityLoggedCurrent.activity!,
+        activityId: `00000000-0000-4000-8000-00000000010${index}`,
+      },
+    }));
+    setHistory(sevenActivities);
+    render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+
+    expect(h.shareStateCalls).toHaveLength(7);
+    expect(h.shareStateCalls.filter((c) => c.enabled)).toHaveLength(5);
+    expect(h.shareStateCalls.slice(5).every((c) => !c.enabled)).toBe(true);
   });
 
   it('renders honest empty, refresh-error, loading, and initial error states', () => {
