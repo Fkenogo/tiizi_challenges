@@ -512,12 +512,14 @@ describe('GET /api/me/timeline — Unified Private Timeline API (ACTIVITY-002)',
     );
     const challengeId = privChallenge.challenge.challenge_id;
     await activateChallenge(db, challengeId);
-    await db.query(
+    const ep = await db.query<{ participation_id: string }>(
       `INSERT INTO challenge_participations (challenge_id, member_id, status, joined_at, joined_config_version)
-       VALUES ($1, $2, 'active', '2026-06-02T00:00:00Z', 1)`,
+       VALUES ($1, $2, 'active', '2026-06-02T00:00:00Z', 1)
+       RETURNING participation_id`,
       [challengeId, memberId],
     );
-    await applyChallengeActivity(
+    const participationId = String(ep.rows[0].participation_id);
+    const act = await applyChallengeActivity(
       db,
       memberId,
       challengeId,
@@ -531,38 +533,162 @@ describe('GET /api/me/timeline — Unified Private Timeline API (ACTIVITY-002)',
     // Member leaves the private group -> loses access to private group & its private challenge
     await leaveGovernedGroup(db, { memberId, firebaseUid: memberId }, privGroup.id);
 
+    // Also create an accessible public group so mixed accessible + redacted pagination is tested
+    const pubGroup = await createGovernedGroup(
+      db,
+      { memberId, firebaseUid: memberId },
+      { name: 'Public Runners', isPrivate: false },
+    );
+
     const app = buildTestApp({ [memberSub]: memberSub });
-    const res = await getTimeline(app, memberSub);
+    const res = await getTimeline(app, memberSub, { limit: 2 });
     expect(res.statusCode).toBe(200);
-    expect(res.body.items.length).toBeGreaterThanOrEqual(5);
+    expect(res.body.nextCursor).toBeTruthy();
 
-    const serialized = JSON.stringify(res.body.items);
-    expect(serialized).not.toContain('Secret Recovery Circle');
-    expect(serialized).not.toContain('Secret Push-Up Challenge');
-    expect(serialized).not.toContain(challengeId);
+    // Decode cursor and verify zero source UUID leakage in opaque cursor
+    const decodedCursor = Buffer.from(res.body.nextCursor!, 'base64url').toString('utf8');
+    expect(decodedCursor).not.toContain(privGroup.id);
+    expect(decodedCursor).not.toContain(challengeId);
+    expect(decodedCursor).not.toContain(participationId);
+    expect(decodedCursor).not.toContain(act.event.event_id);
+    expect(decodedCursor).not.toContain(pubGroup.id);
 
-    for (const item of res.body.items as PersonalTimelineItem[]) {
-      expect(item.navigation).toEqual({ kind: 'none', path: null, accessible: false });
-      if (item.group) {
-        expect(item.group.accessible).toBe(false);
-        expect(item.group.id).toBeNull();
-        expect(item.group.name).toBeNull();
-      }
-      if (item.challenge) {
-        expect(item.challenge.accessible).toBe(false);
-        expect(item.challenge.id).toBeNull();
-        expect(item.challenge.title).toBeNull();
-      }
-      if (item.activity) {
-        expect(item.activity.activityName).toBeNull();
-        expect(item.activity.value).toBeNull();
-        expect(item.activity.unit).toBeNull();
-      }
-      if (item.result) {
-        expect(item.result.completed).toBeNull();
-        expect(item.result.finalPosition).toBeNull();
-      }
+    // Traverse all pages and verify no duplicates or omissions with redacted items
+    const allItems: PersonalTimelineItem[] = [...res.body.items];
+    let cursor = res.body.nextCursor;
+    while (cursor) {
+      const nextPage = await getTimeline(app, memberSub, { limit: 2, cursor });
+      expect(nextPage.statusCode).toBe(200);
+      allItems.push(...nextPage.body.items);
+      cursor = nextPage.body.nextCursor;
     }
+
+    const full = await getTimeline(app, memberSub, { limit: 50 });
+    expect(allItems).toEqual(full.body.items);
+
+    const redactedItems = allItems.filter((i) => i.group?.id !== pubGroup.id);
+    expect(redactedItems.length).toBeGreaterThanOrEqual(5);
+
+    const serializedRedacted = JSON.stringify(redactedItems);
+    expect(serializedRedacted).not.toContain('Secret Recovery Circle');
+    expect(serializedRedacted).not.toContain('Secret Push-Up Challenge');
+    expect(serializedRedacted).not.toContain(privGroup.id);
+    expect(serializedRedacted).not.toContain(challengeId);
+    expect(serializedRedacted).not.toContain(participationId);
+    expect(serializedRedacted).not.toContain(act.event.event_id);
+    expect(serializedRedacted).not.toContain('America/New_York');
+    expect(serializedRedacted).not.toContain('Push-Up');
+    expect(serializedRedacted).not.toContain('isPrivate');
+
+    for (const item of redactedItems) {
+      expect(item.timelineEventId).toMatch(new RegExp(`^redacted:${item.eventType}:[A-Za-z0-9_-]{22}$`));
+      expect(item.performedAt).toBeNull();
+      expect(item.displayTimezone).toBeNull();
+      expect(item.navigation).toEqual({ kind: 'none', path: null, accessible: false });
+      expect(item.group).toBeUndefined();
+      expect(item.challenge).toBeUndefined();
+      expect(item.activity).toBeUndefined();
+      expect(item.exit).toBeUndefined();
+      expect(item.result).toBeUndefined();
+    }
+
+    // Accessible public group retains full details and navigation
+    const pubItem = allItems.find((i) => i.group?.id === pubGroup.id);
+    expect(pubItem).toBeDefined();
+    expect(pubItem?.group).toEqual({
+      id: pubGroup.id,
+      name: 'Public Runners',
+      isPrivate: false,
+      accessible: true,
+    });
+    expect(pubItem?.navigation).toEqual({
+      kind: 'group',
+      path: `/v2/groups/${pubGroup.id}`,
+      accessible: true,
+    });
+  });
+
+  it('rejects challengeId cursor-filter mismatches and supports removed participations and collective finalizations', async () => {
+    const db = testDb();
+    const stewardSub = next('col-steward');
+    const memberSub = next('col-member');
+    const stewardId = await seedMember(db, stewardSub);
+    const memberId = await seedMember(db, memberSub);
+    const group = await createGovernedGroup(
+      db,
+      { memberId: stewardId, firebaseUid: stewardSub },
+      { name: 'Collective Crew', isPrivate: false },
+    );
+    await joinGovernedGroup(db, { memberId, firebaseUid: memberId }, group.id);
+    const { creationResolvers, activityResolvers } = await seedKnowledgePin();
+
+    const collective = await createChallenge(
+      db,
+      {
+        group_id: group.id,
+        created_by_member_id: stewardId,
+        title: 'Team 50 Push-Ups',
+        start_date: '2026-06-01',
+        end_date: '2026-06-30',
+        challenge_type: 'collective',
+        goal_value: 50,
+        goal_unit: 'reps',
+        activities: [{ canonical_key: 'push-up', metric: 'repetitions', target_value: 10, unit: 'reps' }],
+      } as NewChallengeInput,
+      creationResolvers,
+    );
+    const challengeId = collective.challenge.challenge_id;
+    await activateChallenge(db, challengeId);
+
+    // Episode 1: removed by steward
+    const ep1 = await db.query<{ participation_id: string }>(
+      `INSERT INTO challenge_participations (challenge_id, member_id, status, joined_at, joined_config_version, exited_at, exit_reason, exited_by_member_id)
+       VALUES ($1, $2, 'removed', '2026-06-02T08:00:00Z', 1, '2026-06-03T08:00:00Z', 'removed', $3)
+       RETURNING participation_id`,
+      [challengeId, memberId, stewardId],
+    );
+    // Episode 2: active + logged 60 reps -> exceeds collective goal 50
+    await db.query(
+      `INSERT INTO challenge_participations (challenge_id, member_id, status, joined_at, joined_config_version)
+       VALUES ($1, $2, 'active', '2026-06-04T08:00:00Z', 1)`,
+      [challengeId, memberId],
+    );
+    await applyChallengeActivity(
+      db,
+      memberId,
+      challengeId,
+      logInput({ value: 60, occurred_at: instant('2026-06-05T10:00:00Z') }),
+      activityResolvers,
+      { now: instant('2026-06-05T11:00:00Z') },
+    );
+    await endChallenge(db, challengeId);
+    await finalizeChallenge(db, challengeId, instant('2026-07-01T00:00:00Z'));
+
+    const app = buildTestApp({ [memberSub]: memberSub });
+    const page1 = await getTimeline(app, memberSub, { limit: 1, challengeId });
+    expect(page1.statusCode).toBe(200);
+    expect(page1.body.nextCursor).toBeTruthy();
+
+    // challengeId cursor-filter mismatch -> 400 invalid_cursor
+    const mismatch = await getTimeline(app, memberSub, { limit: 1, cursor: page1.body.nextCursor! });
+    expect(mismatch.statusCode).toBe(400);
+    expect(mismatch.body.error?.code).toBe('invalid_cursor');
+
+    const full = await getTimeline(app, memberSub, { limit: 50, challengeId });
+    expect(full.statusCode).toBe(200);
+
+    const removed = full.body.items.find((i) => i.eventType === 'challenge_exited');
+    expect(removed?.label).toBe('Removed from Challenge');
+    expect(removed?.exit).toEqual({
+      participationId: String(ep1.rows[0].participation_id),
+      exitReason: 'removed',
+    });
+
+    const finalized = full.body.items.find((i) => i.eventType === 'challenge_finalized');
+    expect(finalized?.result?.goalValue).toBe(50);
+    expect(finalized?.result?.goalUnit).toBe('reps');
+    expect(finalized?.result?.collectiveTotal).toBe(60);
+    expect(finalized?.result?.collectiveGoalReached).toBe(true);
   });
 
   it('never writes to public Feed tables and leaves GET /api/me/activity occurredAt-DESC compatibility untouched', async () => {

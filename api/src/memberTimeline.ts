@@ -10,6 +10,7 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
 const MAX_CURSOR_LENGTH = 2048;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CURSOR_KEY_RE = /^[0-9a-f]{64}$/;
 const CURSOR_TIMESTAMP_RE = /^(?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 const CURSOR_VERSION = 1;
 
@@ -122,7 +123,7 @@ interface PersonalTimelineCursor {
   version: number;
   memberBinding: string;
   recordedAt: string;
-  sourceId: string;
+  cursorKey: string;
   eventTypeRank: number;
   typesFilter: string | null;
   challengeId: string | null;
@@ -132,6 +133,7 @@ interface TimelineRow {
   event_type: PersonalTimelineEventType;
   event_type_rank: number;
   source_id: string;
+  cursor_key: string;
   recorded_at: string | Date;
   recorded_at_cursor: string;
   performed_at: string | Date | null;
@@ -186,6 +188,10 @@ function memberBinding(memberId: string): string {
   return createHash('sha256').update(memberId).digest('base64url');
 }
 
+function opaqueEventToken(memberId: string, eventType: PersonalTimelineEventType, sourceId: string): string {
+  return createHash('sha256').update(`${memberId}:${eventType}:${sourceId}`).digest('base64url').slice(0, 22);
+}
+
 function parseTypesFilter(rawTypes: string | undefined): {
   types: PersonalTimelineEventType[] | null;
   canonical: string | null;
@@ -230,8 +236,8 @@ function decodeCursor(
       || typeof value.recordedAt !== 'string'
       || !CURSOR_TIMESTAMP_RE.test(value.recordedAt)
       || !Number.isFinite(Date.parse(value.recordedAt))
-      || typeof value.sourceId !== 'string'
-      || !UUID_RE.test(value.sourceId)
+      || typeof value.cursorKey !== 'string'
+      || !CURSOR_KEY_RE.test(value.cursorKey)
       || typeof value.eventTypeRank !== 'number'
       || !Number.isInteger(value.eventTypeRank)
       || !VALID_EVENT_RANKS.has(value.eventTypeRank)
@@ -246,7 +252,7 @@ function decodeCursor(
       version: CURSOR_VERSION,
       memberBinding: value.memberBinding,
       recordedAt: value.recordedAt,
-      sourceId: value.sourceId,
+      cursorKey: value.cursorKey,
       eventTypeRank: value.eventTypeRank,
       typesFilter: cursorTypesFilter,
       challengeId: cursorChallengeId,
@@ -266,7 +272,7 @@ function encodeCursor(
     version: CURSOR_VERSION,
     memberBinding: memberBinding(memberId),
     recordedAt: row.recorded_at_cursor,
-    sourceId: row.source_id,
+    cursorKey: row.cursor_key,
     eventTypeRank: Number(row.event_type_rank),
     typesFilter,
     challengeId,
@@ -314,10 +320,33 @@ function labelForEvent(row: TimelineRow): string {
   }
 }
 
-function mapTimelineRow(row: TimelineRow): PersonalTimelineItem {
+function mapTimelineRow(row: TimelineRow, memberId: string): PersonalTimelineItem {
   const accessible = Boolean(row.entity_accessible);
   const category = categoryForEventType(row.event_type);
   const recordedAt = toIsoTimestamp(row.recorded_at);
+
+  if (row.event_type === 'activity_logged' && Number(row.application_count) !== 1) {
+    throw new Error('Personal Timeline activity lineage has multiple accepted applications');
+  }
+
+  // Inaccessible historic private/inactive entities expose only contract-authorized
+  // generic metadata: non-reversible opaque timelineEventId, eventType, category,
+  // generic label, recordedAt, and disabled navigation. No source UUIDs, private
+  // names/titles, timezones, performedAt/acceptedAt, revisionState, exit reasons,
+  // activity values, or result outcomes are emitted.
+  if (!accessible) {
+    return {
+      timelineEventId: `redacted:${row.event_type}:${opaqueEventToken(memberId, row.event_type, row.source_id)}`,
+      eventType: row.event_type,
+      category,
+      label: labelForEvent(row),
+      recordedAt,
+      performedAt: null,
+      displayTimezone: null,
+      navigation: { kind: 'none', path: null, accessible: false },
+    };
+  }
+
   const performedAt = row.performed_at ? toIsoTimestamp(row.performed_at) : null;
   const displayTimezone = row.display_timezone ? assertValidTimezone(row.display_timezone) : null;
 
@@ -332,31 +361,22 @@ function mapTimelineRow(row: TimelineRow): PersonalTimelineItem {
     navigation: { kind: 'none', path: null, accessible: false },
   };
 
-  if (category === 'group') {
-    if (accessible && row.group_id) {
-      base.navigation = {
-        kind: 'group',
-        path: `/v2/groups/${row.group_id}`,
-        accessible: true,
-      };
-      base.group = {
-        id: row.group_id,
-        name: row.group_name,
-        isPrivate: Boolean(row.group_is_private),
-        accessible: true,
-      };
-    } else {
-      base.group = {
-        id: null,
-        name: null,
-        isPrivate: Boolean(row.group_is_private),
-        accessible: false,
-      };
-    }
+  if (category === 'group' && row.group_id) {
+    base.navigation = {
+      kind: 'group',
+      path: `/v2/groups/${row.group_id}`,
+      accessible: true,
+    };
+    base.group = {
+      id: row.group_id,
+      name: row.group_name,
+      isPrivate: Boolean(row.group_is_private),
+      accessible: true,
+    };
     return base;
   }
 
-  if (accessible && row.challenge_id) {
+  if (row.challenge_id) {
     base.navigation = {
       kind: 'challenge',
       path: `/v2/challenges/${row.challenge_id}`,
@@ -368,24 +388,14 @@ function mapTimelineRow(row: TimelineRow): PersonalTimelineItem {
       challengeType: row.challenge_type,
       accessible: true,
     };
-  } else {
-    base.challenge = {
-      id: null,
-      title: null,
-      challengeType: null,
-      accessible: false,
-    };
   }
 
   if (row.event_type === 'activity_logged') {
-    if (Number(row.application_count) !== 1) {
-      throw new Error('Personal Timeline activity lineage has multiple accepted applications');
-    }
     base.activity = {
       activityId: row.source_id,
-      activityName: accessible ? row.activity_name : null,
-      value: accessible && row.activity_value !== null ? Number(row.activity_value) : null,
-      unit: accessible ? row.activity_unit : null,
+      activityName: row.activity_name,
+      value: row.activity_value !== null ? Number(row.activity_value) : null,
+      unit: row.activity_unit,
       acceptedAt: toIsoTimestamp(row.accepted_at!),
       revisionState: row.revision_state!,
     };
@@ -395,33 +405,19 @@ function mapTimelineRow(row: TimelineRow): PersonalTimelineItem {
       exitReason: row.exit_reason!,
     };
   } else if (row.event_type === 'challenge_finalized') {
-    base.result = accessible
-      ? {
-          participationId: row.source_id,
-          completed: Boolean(row.result_completed),
-          completedAt: row.result_completed_at ? toIsoTimestamp(row.result_completed_at) : null,
-          finalPosition: row.result_final_position !== null ? Number(row.result_final_position) : null,
-          daysCompleted: row.result_days_completed !== null ? Number(row.result_days_completed) : null,
-          bestStreak: row.result_best_streak !== null ? Number(row.result_best_streak) : null,
-          finalStreak: row.result_final_streak !== null ? Number(row.result_final_streak) : null,
-          collectiveTotal: row.result_collective_total !== null ? Number(row.result_collective_total) : null,
-          collectiveGoalReached: row.result_collective_goal_reached,
-          goalValue: row.result_goal_value !== null ? Number(row.result_goal_value) : null,
-          goalUnit: row.result_goal_unit,
-        }
-      : {
-          participationId: row.source_id,
-          completed: null,
-          completedAt: null,
-          finalPosition: null,
-          daysCompleted: null,
-          bestStreak: null,
-          finalStreak: null,
-          collectiveTotal: null,
-          collectiveGoalReached: null,
-          goalValue: null,
-          goalUnit: null,
-        };
+    base.result = {
+      participationId: row.source_id,
+      completed: Boolean(row.result_completed),
+      completedAt: row.result_completed_at ? toIsoTimestamp(row.result_completed_at) : null,
+      finalPosition: row.result_final_position !== null ? Number(row.result_final_position) : null,
+      daysCompleted: row.result_days_completed !== null ? Number(row.result_days_completed) : null,
+      bestStreak: row.result_best_streak !== null ? Number(row.result_best_streak) : null,
+      finalStreak: row.result_final_streak !== null ? Number(row.result_final_streak) : null,
+      collectiveTotal: row.result_collective_total !== null ? Number(row.result_collective_total) : null,
+      collectiveGoalReached: row.result_collective_goal_reached,
+      goalValue: row.result_goal_value !== null ? Number(row.result_goal_value) : null,
+      goalUnit: row.result_goal_unit,
+    };
   }
 
   return base;
@@ -438,10 +434,13 @@ function mapTimelineRow(row: TimelineRow): PersonalTimelineItem {
  * `challenge_feed_shares`).
  *
  * Pagination uses read-committed keyset traversal over
- * `(recorded_at DESC, source_id DESC, event_type_rank DESC)`. While source
- * rows and filters are unchanged, traversal has no duplicates or omissions.
- * Concurrent mutations (rejoins, Activity corrections/reversals, or
- * finalizations) between requests are not snapshot-isolated across pages.
+ * `(recorded_at DESC, cursor_key DESC, event_type_rank DESC)`, where
+ * `cursor_key` is `sha256(member_id || ':' || source_id)` (non-reversible,
+ * preventing raw source UUID leakage in opaque base64url cursors while
+ * preserving deterministic total ordering). While source rows and filters are
+ * unchanged, traversal has no duplicates or omissions. Concurrent mutations
+ * (rejoins, Activity corrections/reversals, or finalizations) between requests
+ * are not snapshot-isolated across pages.
  */
 export async function listMemberTimeline(
   db: Db,
@@ -855,6 +854,7 @@ export async function listMemberTimeline(
      SELECT event_type,
             event_type_rank,
             source_id::text AS source_id,
+            cursor_key,
             recorded_at,
             to_char(recorded_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS recorded_at_cursor,
             performed_at,
@@ -883,18 +883,22 @@ export async function listMemberTimeline(
             result_collective_goal_reached,
             result_goal_value,
             result_goal_unit
-       FROM unified_events
+       FROM (
+         SELECT *,
+                encode(sha256(convert_to($1::text || ':' || source_id::text, 'UTF8')), 'hex') AS cursor_key
+           FROM unified_events
+       ) keyed_events
       WHERE ($2::timestamptz IS NULL OR
-             (recorded_at, source_id, event_type_rank) <
-             ($2::timestamptz, $3::uuid, $4::integer))
+             (recorded_at, cursor_key, event_type_rank) <
+             ($2::timestamptz, $3::text, $4::integer))
         AND ($5::uuid IS NULL OR challenge_id = $5::uuid)
         AND ($6::text[] IS NULL OR event_type = ANY($6::text[]))
-      ORDER BY recorded_at DESC, source_id DESC, event_type_rank DESC
+      ORDER BY recorded_at DESC, cursor_key DESC, event_type_rank DESC
       LIMIT $7`,
     [
       memberId,
       cursor?.recordedAt ?? null,
-      cursor?.sourceId ?? null,
+      cursor?.cursorKey ?? null,
       cursor?.eventTypeRank ?? null,
       challengeId,
       types,
@@ -904,7 +908,7 @@ export async function listMemberTimeline(
 
   const hasMore = result.rows.length > limit;
   const rows = hasMore ? result.rows.slice(0, limit) : result.rows;
-  const items = rows.map(mapTimelineRow);
+  const items = rows.map((row) => mapTimelineRow(row, memberId));
 
   return {
     items,
