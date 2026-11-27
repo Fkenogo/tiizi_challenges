@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { removeV2GroupFeed } from './groups/groupFeedQueryKeys';
 import { removeV2MemberIdentity } from './profile/memberIdentityQuery';
 import { removeV2RecentActivity } from './member/recentActivityQuery';
+import { removeV2PersonalTimeline } from './member/personalTimelineQueryKeys';
 import { clearLocalGroupCoverPreviews } from './groups/localGroupCoverPreviews';
 import { clearLocalChallengeCoverPreviews } from './challenges/localChallengeCoverPreviews';
 import { V2LocaleProvider } from './i18n/V2Locale';
@@ -69,6 +70,7 @@ function V2ProtectedScope() {
       void removeV2MemberPreferences(queryClient, priorUid);
       void removeV2GroupFeed(queryClient);
       void removeV2RecentActivity(queryClient, priorUid);
+      void removeV2PersonalTimeline(queryClient, priorUid);
       clearLocalGroupCoverPreviews();
       clearLocalChallengeCoverPreviews();
     }
