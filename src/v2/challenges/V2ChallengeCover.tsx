@@ -4,11 +4,23 @@ import type { V2MediaImageProjection } from '../../api/mediaApi';
 import { V2SignedImage } from '../media/V2SignedImage';
 import { getLocalChallengeCoverPreview } from './localChallengeCoverPreviews';
 import { invalidateV2ChallengeCoverReads } from './challengeQueryKeys';
+import { challengeCoverGradient, isChallengeCoverId } from './challengeCovers';
 
-/** Shared cover rendering for every active V2 Challenge surface. */
+/**
+ * Shared cover rendering for every active V2 Challenge surface.
+ *
+ * TIIZI-V2-UX-008 — the persisted catalogue cover is rendered when no
+ * authorized photo exists. `challenges.cover_id` is the governed, persisted
+ * Challenge background catalogue (`challenge-1`…`challenge-8`, the Challenge
+ * catalogue; Groups have their own `cover-1`…`cover-8` catalogue), so showing
+ * it is the governed default, not substituted photography. When no catalogue
+ * cover is persisted either, the card falls back to the neutral placeholder
+ * and never to invented imagery.
+ */
 export function V2ChallengeCover({
   challengeId,
   title,
+  coverId,
   coverImage,
   heightClass,
   children,
@@ -17,6 +29,7 @@ export function V2ChallengeCover({
 }: {
   challengeId: string;
   title: string;
+  coverId?: string | null;
   coverImage?: V2MediaImageProjection | null;
   heightClass: string;
   children?: ReactNode;
@@ -38,14 +51,22 @@ export function V2ChallengeCover({
   }, [challengeId, localCover]);
 
   const persistedUrl = coverImage?.status === 'ready' ? coverImage.url : null;
-  const fallbackNode = <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />;
+  const explicitCover = isChallengeCoverId(coverId) ? coverId : null;
+  const effectiveUrl = persistedUrl ?? photoUrl;
+  const bgClass = !effectiveUrl && explicitCover
+    ? `bg-gradient-to-br ${challengeCoverGradient(explicitCover)}`
+    : 'bg-slate-200';
+  const fallbackNode = !explicitCover
+    ? <div aria-label={`${title} has no cover photo`} className="absolute inset-0 bg-slate-200" />
+    : <div aria-hidden="true" className={`absolute inset-0 bg-gradient-to-br ${challengeCoverGradient(explicitCover)}`} />;
   const loadingNode = <div aria-hidden="true" className="absolute inset-0 animate-pulse bg-slate-200/80" />;
 
   return (
     <div
       data-challenge-cover-id={challengeId}
       data-local-cover={photoUrl && !persistedUrl ? 'true' : 'false'}
-      className={`relative isolate overflow-hidden bg-slate-200 ${heightClass} ${className}`}
+      data-catalogue-cover={explicitCover ?? ''}
+      className={`relative isolate overflow-hidden ${bgClass} ${heightClass} ${className}`}
     >
       {persistedUrl ? (
         <V2SignedImage

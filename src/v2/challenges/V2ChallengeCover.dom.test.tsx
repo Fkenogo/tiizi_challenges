@@ -60,6 +60,81 @@ describe('V2ChallengeCover', () => {
     expect(container.querySelector('[data-challenge-cover-id="challenge-shared"]')?.getAttribute('data-local-cover')).toBe('false');
   });
 
+  it('renders the persisted catalogue cover and makes no "no cover photo" claim', () => {
+    const { container } = render(
+      <V2ChallengeCover challengeId="challenge-catalogue" title="Catalogue Challenge" coverId="challenge-3" heightClass="h-20" />,
+    );
+
+    expect(container.querySelector('[data-challenge-cover-id="challenge-catalogue"]')?.getAttribute('data-catalogue-cover')).toBe('challenge-3');
+    // The governed catalogue background is a cover, so the surface must not
+    // claim that the Challenge has no cover.
+    expect(screen.queryByLabelText('Catalogue Challenge has no cover photo')).toBeNull();
+    expect(container.querySelector('[aria-hidden="true"].bg-gradient-to-br')).toBeTruthy();
+  });
+
+  it('keeps the neutral placeholder when no catalogue cover is persisted', () => {
+    const { container } = render(
+      <V2ChallengeCover challengeId="challenge-no-catalogue" title="No Catalogue" coverId={null} heightClass="h-20" />,
+    );
+
+    expect(container.querySelector('[data-challenge-cover-id="challenge-no-catalogue"]')?.getAttribute('data-catalogue-cover')).toBe('');
+    expect(screen.getByLabelText('No Catalogue has no cover photo')).toBeTruthy();
+  });
+
+  it('hides the "No cover photo" badge on V2ChallengeCard when a catalogue cover is persisted', () => {
+    render(
+      <ul>
+        <V2ChallengeCard
+          challenge={{
+            challengeId: 'challenge-catalogue-card',
+            groupId: 'group-1',
+            groupName: 'Morning Club',
+            title: 'Catalogue Cover Challenge',
+            description: 'Has a catalogue cover',
+            challengeType: 'collective',
+            status: 'active',
+            finalized: false,
+            startDate: '2026-11-24',
+            endDate: '2026-12-01',
+            timezone: 'UTC',
+            governingToday: '2026-11-24',
+            currentConfigVersion: 1,
+            activities: [],
+            goalValue: 10,
+            goalUnit: 'km',
+            collectiveTotal: 0,
+            collectiveGoalReached: false,
+            completionsCount: 0,
+            coverId: 'challenge-2',
+            coverImage: undefined,
+            myParticipation: null,
+          }}
+          surface="my"
+          statusLabel="Active"
+          statusTone="bg-emerald-100 text-emerald-950"
+          groupLine="Morning Club"
+          progress={<span>Progress</span>}
+          actions={<button type="button">Open</button>}
+        />
+      </ul>,
+    );
+
+    expect(screen.queryByText('No cover photo')).toBeNull();
+  });
+
+  it('decodes a persisted signed image off the main thread', () => {
+    const { container } = render(
+      <V2ChallengeCover
+        challengeId="challenge-decoding"
+        title="Decoded Challenge"
+        coverImage={{ status: 'ready', assetId: 'asset-2', url: 'https://r2.example.invalid/decoded.webp', contentType: 'image/webp', width: 100, height: 100 }}
+        heightClass="h-20"
+      />,
+    );
+
+    expect(container.querySelector('img')?.getAttribute('decoding')).toBe('async');
+  });
+
   it('hides the "No cover photo" badge on V2ChallengeCard when persisted R2 coverImage is ready', () => {
     render(
       <ul>

@@ -71,6 +71,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
       challengeId: row.challengeId, title: row.title, challengeType: row.challengeType,
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
       governingToday: row.governingToday, timezone: row.timezone, detailPath: detailPath(row.challengeId),
+      coverId: row.coverId,
       coverImage: row.coverImage,
       requirements,
       streak: {
@@ -89,6 +90,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
       governingToday: row.governingToday, timezone: row.timezone, startDate: row.startDate,
       endDate: row.endDate, detailPath: detailPath(row.challengeId),
+      coverId: row.coverId,
       coverImage: row.coverImage,
     };
     if (row.challengeType === 'collective') return { ...base, progress: {
@@ -117,6 +119,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
       group: { groupId: row.groupId, name: row.groupName }, lifecycleState: row.status,
       startDate: row.startDate, endDate: row.endDate, timezone: row.timezone,
       governingToday: row.governingToday, activities: row.activities, detailPath: detailPath(row.challengeId),
+      coverId: row.coverId,
       coverImage: row.coverImage,
       joinability: 'not_asserted' as const }));
   const upcoming = summaries.flatMap((row) => {
@@ -126,7 +129,7 @@ export async function getTodayProjection(db: Db, memberId: string, deps: TodayRo
     if (!kind || row.status === 'ended' || row.finalized
       || (row.myParticipation?.status !== 'active' && !opportunities.some((x) => x.challengeId === row.challengeId))) return [];
     return [{ challengeId: row.challengeId, title: row.title, kind, lifecycleDate: kind === 'starts' ? row.startDate : row.endDate,
-      timezone: row.timezone, detailPath: detailPath(row.challengeId), coverImage: row.coverImage }];
+      timezone: row.timezone, detailPath: detailPath(row.challengeId), coverId: row.coverId, coverImage: row.coverImage }];
   });
   const finalizedResults = joined.filter((row) => row.finalized).map((row) => ({
     challengeId: row.challengeId, title: row.title, finalized: true as const, detailPath: detailPath(row.challengeId),

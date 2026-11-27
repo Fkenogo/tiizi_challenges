@@ -59,8 +59,8 @@ function setScreen(activeChallengeCount: number, joined: V2TodayProjection['join
   h.preferences = { data: null };
   h.memberships = { data: { memberId: 'dada-member', memberships: [], pendingMemberships: [] } };
   h.ownChallenges = { data: { challenges: joined }, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() };
-  h.groups = { data: { pages: [{ groups: [discoverableGroup('Public walkers')] }] }, isLoading: false, isError: false, isSuccess: true };
-  h.challenges = { data: { pages: [{ challenges: [discoverableChallenge('Morning movement')] }] }, isLoading: false, isError: false, isSuccess: true };
+  h.groups = { data: { pages: [{ groups: [discoverableGroup('Public walkers')], ranking: { applied: true } }] }, isLoading: false, isError: false, isSuccess: true };
+  h.challenges = { data: { pages: [{ challenges: [discoverableChallenge('Morning movement')], ranking: { applied: true } }] }, isLoading: false, isError: false, isSuccess: true };
 }
 
 beforeEach(() => setScreen(0));
@@ -70,13 +70,16 @@ describe('Today new-member discovery rendering boundary', () => {
   it('renders authorized fallback cards for a new zero-active member with no preference matches', () => {
     render(<MemoryRouter><V2TodayScreen /></MemoryRouter>);
     expect(screen.getByText('0 active Challenges')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Discover what fits you' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Groups to explore' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Suggested for you' })).toBeTruthy();
     expect(screen.getByText('Public walkers')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Challenges to explore' })).toBeTruthy();
     expect(screen.getByText('Morning movement')).toBeTruthy();
+    // One coherent list: both entity types are labelled on their own card.
+    expect(screen.getByText('Group')).toBeTruthy();
+    expect(screen.getByText('Challenge')).toBeTruthy();
+    // The detailed per-card matching sentence is gone; the basis is stated once.
     expect(screen.queryByText(/Suggested because/)).toBeNull();
-    const discovery = screen.getByRole('heading', { name: 'Discover what fits you' });
+    expect(screen.getAllByText(/ranked by your interests and goals|None of these suggestions match/).length).toBe(1);
+    const discovery = screen.getByRole('heading', { name: 'Suggested for you' });
     const zeroState = screen.getByText('Start with a Group');
     expect(discovery.compareDocumentPosition(zeroState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -90,6 +93,6 @@ describe('Today new-member discovery rendering boundary', () => {
     render(<MemoryRouter><V2TodayScreen /></MemoryRouter>);
     expect(screen.getByText('1 active Challenge')).toBeTruthy();
     expect(screen.getByText('My active Challenge')).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Discover what fits you' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Suggested for you' })).toBeNull();
   });
 });
