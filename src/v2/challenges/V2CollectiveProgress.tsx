@@ -93,7 +93,7 @@ export function V2CollectiveProgress({ detail }: { detail: V2ChallengeDetail }) 
           <div className="mt-2">
             <V2ErrorState
               title="Contributors are unavailable right now"
-              message="Your shared total above is still authoritative. Please try again."
+              message="Your shared total above is still up to date. Please try again."
               onRetry={() => void contributors.refetch()}
             />
           </div>

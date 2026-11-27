@@ -176,7 +176,7 @@ export function V2Button({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={pressed}
-      className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${tone} ${className}`}
+      className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55 ${tone} ${className}`}
     >
       {children}
     </button>
