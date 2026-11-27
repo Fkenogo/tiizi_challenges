@@ -39,6 +39,7 @@ import {
   v2GroupDiscoveryKey,
   v2GroupPendingKey,
 } from './groupQueryKeys';
+import { invalidateV2PersonalTimeline } from '../member/personalTimelineQueryKeys';
 
 /**
  * TIIZI S4a — V2 Groups read/write hooks (evolved from the S2-G hooks).
@@ -173,10 +174,12 @@ export function useLeaveV2Group(groupId: string | null) {
 /** Governed Group establishment; refetches the reads on success. */
 export function useCreateGroup() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation<CreatedGroup, unknown, CreateGroupInput>({
     mutationFn: (input) => createGroup(input),
     onSuccess: async () => {
       await invalidateV2Memberships(queryClient);
+      await invalidateV2PersonalTimeline(queryClient, user?.uid);
     },
   });
 }

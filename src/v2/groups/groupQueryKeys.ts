@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { invalidateV2Memberships } from '../memberships/membershipQueryKeys';
+import { invalidateV2PersonalTimeline } from '../member/personalTimelineQueryKeys';
 
 /**
  * TIIZI S4a — canonical V2 Group read query-key contract.
@@ -93,6 +94,7 @@ export async function invalidateV2GroupReads(
     queryClient.invalidateQueries({ queryKey: [V2_GROUP_DISCOVERY_SCOPE] }),
     queryClient.invalidateQueries({ queryKey: [V2_GROUP_PENDING_SCOPE] }),
     invalidateV2Memberships(queryClient, uid),
+    invalidateV2PersonalTimeline(queryClient, uid),
   ]);
 }
 

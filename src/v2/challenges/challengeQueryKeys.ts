@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { V2_GROUP_CHALLENGES_SCOPE } from '../groups/groupQueryKeys';
 import { invalidateV2Today } from '../today/todayQueryKeys';
+import { invalidateV2PersonalTimeline } from '../member/personalTimelineQueryKeys';
 
 /**
  * S3a — canonical V2 Challenge query-key contract
@@ -160,6 +161,7 @@ export async function invalidateV2ChallengeReads(
     }),
     // S4a Group-hosted-Challenge family (same contract — no independent family).
     queryClient.invalidateQueries({ queryKey: [V2_GROUP_CHALLENGES_SCOPE] }),
+    invalidateV2PersonalTimeline(queryClient, uid),
   ];
   await Promise.all(tasks);
 }

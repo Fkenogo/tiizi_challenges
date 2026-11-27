@@ -11,6 +11,7 @@ import {
   type EstablishChallengeResponse,
 } from '../../api/challengeCreationApi';
 import { refreshAfterAcceptedLog } from './refreshAfterAcceptedLog';
+import { invalidateV2PersonalTimeline } from '../member/personalTimelineQueryKeys';
 import { fetchMyMemberships, type MyMembershipsResponse } from '../../api/membershipsApi';
 import { v2MembershipsKey } from '../memberships/membershipQueryKeys';
 import {
@@ -99,10 +100,12 @@ export function usePreviewDraft() {
 /** Governed establishment (the only creation path). */
 export function useEstablishChallenge() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation<EstablishChallengeResponse, Error, EstablishChallengeBody>({
     mutationFn: (body) => establishChallengeV2(body),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [V2_CHALLENGE_LIST_SCOPE] });
+      await invalidateV2PersonalTimeline(queryClient, user?.uid);
     },
   });
 }

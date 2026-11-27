@@ -4,6 +4,7 @@ import type {
   MemberRecentActivityItem,
   MemberRecentActivityRevisionState,
 } from '../../api/memberRecentActivityApi';
+import type { PersonalTimelineItem } from '../../api/memberTimelineApi';
 import { ApiError } from '../../api/apiClient';
 import { V2Button } from './V2Primitives';
 import { useV2MemberIdentity } from '../profile/useV2MemberIdentity';
@@ -54,6 +55,31 @@ export function shareSourceFromHistoryItem(item: MemberRecentActivityItem): V2Ac
     value: item.value,
     unit: item.unit,
     revisionState: item.revisionState,
+  };
+}
+
+/**
+ * Derives a Share source from a Personal Timeline `activity_logged` item only
+ * when the Challenge is accessible and the Activity is not reversed.
+ */
+export function shareSourceFromTimelineItem(item: PersonalTimelineItem): V2ActivityShareSource | null {
+  if (item.eventType !== 'activity_logged') return null;
+  if (!item.activity || item.activity.revisionState === 'reversed') return null;
+  if (!item.navigation.accessible || !item.challenge?.accessible || !item.challenge.id) return null;
+  if (
+    item.activity.activityName === null
+    || item.activity.value === null
+    || item.activity.unit === null
+  ) {
+    return null;
+  }
+  return {
+    activityId: item.activity.activityId,
+    challengeId: item.challenge.id,
+    activityName: item.activity.activityName,
+    value: item.activity.value,
+    unit: item.activity.unit,
+    revisionState: item.activity.revisionState,
   };
 }
 
