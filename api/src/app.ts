@@ -39,6 +39,7 @@ import { API_PREFIX } from './apiPrefix.js';
 import { isMemberBootstrapRequest, registerMemberBootstrapRoutes } from './memberBootstrap.js';
 import { registerMemberProfileRoutes } from './memberProfileRoutes.js';
 import { registerMemberRecentActivityRoutes } from './memberRecentActivity.js';
+import { registerMemberTimelineRoutes } from './memberTimeline.js';
 import { registerMemberPreferenceRoutes } from './memberPreferences.js';
 import { registerMediaRoutes, type MediaRouteDeps } from './mediaRoutes.js';
 import { createR2ObjectStoreFromEnv } from './r2ObjectStore.js';
@@ -130,6 +131,7 @@ export function buildApp(deps: AppDeps) {
 
   registerMemberBootstrapRoutes(app, deps.db, deps.verifier);
   registerMemberRecentActivityRoutes(app, deps.db);
+  registerMemberTimelineRoutes(app, deps.db);
   registerMemberProfileRoutes(app, deps.db, mediaDeps);
   registerMediaRoutes(app, deps.db, mediaDeps);
   registerMemberPreferenceRoutes(app, deps.db);
