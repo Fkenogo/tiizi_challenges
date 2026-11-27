@@ -143,7 +143,6 @@ function TimelineShareControl({
         <V2Button
           variant="secondary"
           onClick={onOpen}
-          aria-label={shared ? `Manage Share for ${source.activityName}` : undefined}
           className="min-h-11 max-w-full break-words"
         >
           {shared ? 'Manage Share' : `Share ${source.activityName} activity`}

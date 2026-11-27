@@ -499,9 +499,48 @@ describe('Personal Activity History (/v2/activity) and Today preview', () => {
       isSuccess: true,
       refetch: vi.fn(),
     };
-    render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    const suppressedView = render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
     expect(screen.getByText('This Share was removed and cannot be republished.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Share|Manage Share/ })).toBeNull();
+    suppressedView.unmount();
+
+    setHistory([activityLoggedCurrent]);
+    h.ownShare = {
+      data: {
+        shareId: 'share-1',
+        activityEventId: activityLoggedCurrent.activity!.activityId,
+        visible: false,
+        hiddenReason: 'expired',
+        shareGeneration: 1,
+        kudosCount: 0,
+      },
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      refetch: vi.fn(),
+    };
+    const expiredView = render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    expect(screen.getByText('This Challenge Feed has expired.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Share|Manage Share/ })).toBeNull();
+    expiredView.unmount();
+
+    setHistory([activityLoggedCurrent]);
+    h.ownShare = {
+      data: {
+        shareId: 'share-1',
+        activityEventId: activityLoggedCurrent.activity!.activityId,
+        visible: false,
+        hiddenReason: 'withdrawn',
+        shareGeneration: 2,
+        kudosCount: 0,
+      },
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      refetch: vi.fn(),
+    };
+    render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: 'Share Push-Up activity' })).toBeTruthy();
   });
 
   it('bounds eager per-row Share-state requests on long paginated History', () => {
