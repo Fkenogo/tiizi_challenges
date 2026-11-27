@@ -8,7 +8,7 @@ import { formatDayRange } from './challengeCreationDraft';
 import { endStateFor, statusLabelForEndState } from './challengeEndState';
 import { statusTone } from './challengePresentation';
 import { saveChallengeIntent } from './challengeIntent';
-import { effectiveRelationship, relevanceBadges } from './discoveryRelevance';
+import { effectiveRelationship, suggestedBadge } from './discoveryRelevance';
 import { FindChallengeProgress, V2ChallengeCard } from './V2ChallengeCard';
 
 /** Existing governed Group join action for cross-Group discovery results. */
@@ -31,7 +31,7 @@ export function V2DiscoverChallengeRow({
   const pending = relation === 'pending';
   const requiresApproval = challenge.host.admissionMode === 'approval';
   const endState = endStateFor(challenge);
-  const badges = relevanceBadges(challenge.relevance);
+  const badges = suggestedBadge(challenge.relevance);
   const error = join.isError && join.error instanceof ApiError && join.error.status === 503
     ? 'Tiizi is unavailable. Please try again.'
     : 'We could not send your request. Please try again.';

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ApiError } from '../../api/apiClient';
 import { V2Button, V2Chip, V2EmptyState, V2ErrorState, V2LoadingState } from '../components/V2Primitives';
 import { Link } from 'react-router-dom';
-import { discoveryCaption, relevanceBadges } from '../challenges/discoveryRelevance';
+import { discoveryCaption, hasRelevance } from '../challenges/discoveryRelevance';
 import { useJoinGroup, useV2GroupDiscovery } from './useV2Groups';
 import type { V2DiscoverableGroup } from '../../api/groupsApi';
 import { V2GroupInvitePanel } from './V2GroupInvitePanel';
@@ -33,12 +33,12 @@ export function V2GroupDiscoveryPanel({ onOpen }: { onOpen: (id: string) => void
     {discovery.isLoading && <V2LoadingState label="Finding Groups…" />}
     {discovery.isError && <V2ErrorState title="Discovery is unavailable" message="We could not load Groups. Please try again." onRetry={() => void discovery.refetch()} />}
     {discovery.isSuccess && groups.length === 0 && <V2EmptyState title="No Groups found" message="Try another search, or come back as more Groups become discoverable." />}
-    <ul aria-label="Discoverable Groups" className="space-y-2">{groups.map((group) => <DiscoverRow key={group.id} group={group} onOpen={onOpen} />)}</ul>
+    <ul aria-label="Discoverable Groups" className="space-y-2">{groups.map((group) => <V2DiscoverGroupRow key={group.id} group={group} onOpen={onOpen} />)}</ul>
     {discovery.hasNextPage && <div className="flex justify-center"><V2Button variant="secondary" disabled={discovery.isFetchingNextPage} onClick={() => void discovery.fetchNextPage()}>{discovery.isFetchingNextPage ? 'Loading…' : 'View more Groups'}</V2Button></div>}
   </section>;
 }
 
-function DiscoverRow({ group, onOpen }: { group: V2DiscoverableGroup; onOpen: (id: string) => void }) {
+export function V2DiscoverGroupRow({ group, onOpen }: { group: V2DiscoverableGroup; onOpen: (id: string) => void }) {
   const join = useJoinGroup(group.id);
   const relation = join.isSuccess ? join.data.status : group.viewerRelationship;
   const isMember = relation === 'active' || relation === 'member' || relation === 'steward';
@@ -55,7 +55,7 @@ function DiscoverRow({ group, onOpen }: { group: V2DiscoverableGroup; onOpen: (i
     status={relationship}
     tags={group.focusTags}
     goals={group.goals}
-    context={relevanceBadges(group.relevance)}
+    suggested={hasRelevance(group.relevance)}
     memberCount={group.memberCount}
     onOpen={() => onOpen(group.id)}
     actionError={join.isError ? error : null}

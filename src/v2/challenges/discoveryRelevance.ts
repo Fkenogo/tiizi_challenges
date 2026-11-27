@@ -40,16 +40,9 @@ export function discoveryCaption(
   return { kind: 'unmatched', text: `None of these ${noun} match your interests or goals yet, so they are in the default order.` };
 }
 
-/** Short, label-only badge text, e.g. "Your interests: Strength · Your goals: Build strength". */
-export function relevanceBadges(relevance: DiscoveryRelevance | undefined): string[] {
-  if (!relevance) return [];
-  const badges: string[] = [];
-  if (relevance.interests.length > 0) badges.push(`Your interests: ${relevance.interests.join(' · ')}`);
-  if (relevance.goals.length > 0) badges.push(`Your goals: ${relevance.goals.join(' · ')}`);
-  if ((relevance.domains?.length ?? 0) > 0 && badges.length === 0) {
-    badges.push(`Matches your ${relevance.domains!.map((d) => (d === 'wellness' ? 'Wellness' : 'Fitness')).join(' & ')} interests`);
-  }
-  return badges;
+/** Subtle tag shown only on items that qualify under the server relevance rules. */
+export function suggestedBadge(relevance: DiscoveryRelevance | undefined): string[] {
+  return hasRelevance(relevance) ? ['Suggested for you'] : [];
 }
 
 export type DiscoveryRelationship = 'steward' | 'member' | 'pending' | 'none';

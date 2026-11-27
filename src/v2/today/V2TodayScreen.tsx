@@ -22,7 +22,7 @@ import { V2LogActivityDialog } from '../challenges/V2LoggingSection';
 import { todayLoggingOpen } from './todayLogging';
 import { useV2Today } from './useV2Today';
 import { useDismissV2PreferenceReminder, useV2Preferences } from '../preferences/usePreferences';
-import { V2TodaySuggestedForYou } from './V2TodaySuggestedForYou';
+import { V2TodayDiscoverySections } from './V2TodayDiscoverySections';
 import { V2RecentActivityPreview } from '../member/V2RecentActivityScreen';
 import { showTodayDiscoveryRecommendations } from './todayDiscovery';
 import {
@@ -210,10 +210,6 @@ export function V2TodayScreen() {
         </div>
       )}
 
-      {/* Put new-member discovery before the large zero-state card so the
-          recommendations are visible in the initial Today viewport. */}
-      {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodaySuggestedForYou />}
-
       {isTodayEmpty(projection) ? (
         <NoParticipationState kind={noParticipation} onNavigate={navigate} />
       ) : (
@@ -366,6 +362,7 @@ export function V2TodayScreen() {
           )}
         </div>
       )}
+      {showTodayDiscoveryRecommendations(projection.todayContext.activeChallengeCount) && <V2TodayDiscoverySections />}
       <V2RecentActivityPreview />
       {loggingChallengeId && (
         <TodayLogActivity

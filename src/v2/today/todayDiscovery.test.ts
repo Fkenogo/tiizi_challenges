@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildSuggestions,
   recommendedChallenges,
   recommendedGroups,
   showTodayDiscoveryRecommendations,
-  suggestionCaption,
+  TODAY_DISCOVERY_LIMIT,
 } from './todayDiscovery';
 import type { V2DiscoverableChallenge } from '../../api/challengeDiscoveryApi';
 import type { V2DiscoverableGroup } from '../../api/groupsApi';
@@ -55,38 +54,8 @@ describe('Today discovery selection', () => {
       challenge('actionable-unmatched', unmatched),
     ]).map((x) => x.challengeId)).toEqual(['actionable-unmatched']);
   });
-  it('states the matching basis once for the section instead of once per card', () => {
-    const matched = buildSuggestions(
-      [group('match', 'none', { interests: ['Strength'], goals: [] })],
-      [challenge('match', { interests: [], goals: ['Build strength'], domains: [] })],
-    );
-    expect(suggestionCaption(matched, { groups: true, challenges: true })).toEqual({
-      kind: 'matched',
-      text: 'Group and Challenge suggestions are ranked by your interests and goals. You can browse everything at any time.',
-    });
-    expect(suggestionCaption(matched, { groups: true, challenges: false }).kind).toBe('no-preferences');
-    // An unknown ranking state never becomes a "nothing matched" claim.
-    expect(suggestionCaption(matched, { groups: undefined, challenges: undefined }).kind).toBe('no-preferences');
-    expect(suggestionCaption(matched, {}).kind).toBe('no-preferences');
-    expect(suggestionCaption(
-      buildSuggestions([group('other', 'none')], [challenge('other', { interests: [], goals: [], domains: [] })]),
-      { groups: true, challenges: true },
-    ).kind).toBe('unmatched');
-  });
-  it('combines Groups and Challenges into one list without changing either order', () => {
-    const suggestions = buildSuggestions(
-      [group('g1', 'none'), group('g2', 'none')],
-      [challenge('c1', { interests: [], goals: [], domains: [] }), challenge('c2', { interests: [], goals: [], domains: [] })],
-    );
-    expect(suggestions.map((suggestion) => suggestion.kind === 'group' ? suggestion.group.id : suggestion.challenge.challengeId))
-      .toEqual(['c1', 'g1', 'c2', 'g2']);
-  });
-  it('bounds the section so Today never becomes a directory', () => {
-    const suggestions = buildSuggestions(
-      Array.from({ length: 9 }, (_, index) => group(`g${index}`, 'none')),
-      Array.from({ length: 9 }, (_, index) => challenge(`c${index}`, { interests: [], goals: [], domains: [] })),
-    );
-    expect(suggestions).toHaveLength(6);
+  it('caps Today discovery sections at two items per entity type', () => {
+    expect(TODAY_DISCOVERY_LIMIT).toBe(2);
   });
   it('shows discovery only when the server reports no active Challenges', () => {
     expect(showTodayDiscoveryRecommendations(0)).toBe(true);

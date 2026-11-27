@@ -12,7 +12,7 @@ export function V2GroupPhotoCard({
   status,
   tags,
   goals,
-  context,
+  suggested = false,
   memberCount,
   activeChallengeCount,
   onOpen,
@@ -28,7 +28,7 @@ export function V2GroupPhotoCard({
   status: string;
   tags: string[];
   goals?: string[];
-  context?: string[];
+  suggested?: boolean;
   memberCount?: number | null;
   activeChallengeCount?: number;
   onOpen: () => void;
@@ -50,10 +50,10 @@ export function V2GroupPhotoCard({
         {description && <p className="line-clamp-2 text-sm leading-6 text-slate-600">{description}</p>}
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-primary">{status}</span>
+          {suggested && <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">Suggested for you</span>}
           {tags.slice(0, 4).map((tag) => <span key={tag} className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700">#{tag}</span>)}
           {goals?.slice(0, 2).map((goal) => <span key={goal} className="max-w-full truncate rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">{goal}</span>)}
         </div>
-        {context && context.length > 0 && <p className="text-xs font-bold text-emerald-800">{context.join(' · ')}</p>}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
             {typeof memberCount === 'number' && <span>{memberCount} {memberCount === 1 ? 'member' : 'members'}</span>}
