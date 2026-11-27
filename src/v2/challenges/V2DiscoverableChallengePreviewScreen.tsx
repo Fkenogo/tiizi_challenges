@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { V2Button, V2ErrorState, V2LoadingState, V2Page, V2Sheet } from '../components/V2Primitives';
 import { useV2GroupDetail } from '../groups/useV2Groups';
 import { useV2ChallengeDiscovery } from './useChallengeDiscovery';
-import { flattenDiscoveryPages, relevanceBadges } from './discoveryRelevance';
+import { flattenDiscoveryPages, hasRelevance } from './discoveryRelevance';
 import { challengeTypeLabel, formatDayRange } from './challengeCreationDraft';
 import { endStateFor, statusLabelForEndState } from './challengeEndState';
 import { statusTone } from './challengePresentation';
@@ -85,7 +85,7 @@ export function V2DiscoverableChallengePreviewScreen() {
     <p className="mt-3 text-sm text-slate-600">{formatDayRange(challenge.startDate, challenge.endDate)}</p>
     <h2 className="mt-5 font-bold text-slate-900">Activities</h2>
     <ul className="mt-2 list-inside list-disc text-sm text-slate-700">{challenge.activities.map((activity, index) => <li key={`${activity.name}-${index}`}>{activity.name} · {activity.domain === 'wellness' ? 'Wellness' : 'Fitness'}{activity.category ? ` · ${activity.category}` : ''}</li>)}</ul>
-    {relevanceBadges(challenge.relevance).map((badge) => <p key={badge} className="mt-2 text-xs text-emerald-800">{badge}</p>)}
+    {hasRelevance(challenge.relevance) && <p className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">Suggested for you</p>}
     {(challenge.host.viewerRelationship === 'none' || challenge.host.viewerRelationship === 'pending') && <p className="mt-5 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
       {challenge.host.viewerRelationship === 'pending'
         ? 'Your request to join the hosting Group is awaiting approval.'

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { InfiniteQueryObserver, QueryClient } from '@tanstack/react-query';
-import { createRefreshTracker, discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, hasRelevance, relevanceBadges } from '../src/v2/challenges/discoveryRelevance';
+import { createRefreshTracker, discoveryCaption, discoveryWindowNote, effectiveRelationship, flattenDiscoveryPages, hasRelevance, suggestedBadge } from '../src/v2/challenges/discoveryRelevance';
 import { clearChallengeIntent, parseChallengeIntent, readChallengeIntent, saveChallengeIntent } from '../src/v2/challenges/challengeIntent';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,9 +28,9 @@ check('general browsing is labelled as default order', discoveryCaption('general
 check('captions never promise eligibility', !/only|eligible|recommended for you/i.test(
   ['relevance', 'general'].flatMap((o) => [true, false].map((a) => discoveryCaption(o as 'relevance' | 'general', a, [match], 'Groups').text)).join(' '),
 ));
-check('badges list only matched labels', relevanceBadges({ interests: ['Strength'], goals: ['Build strength'] }).join('|') === 'Your interests: Strength|Your goals: Build strength');
-check('domain-only match gets a softer badge', relevanceBadges({ interests: [], goals: [], domains: ['wellness'] })[0] === 'Matches your Wellness interests');
-check('empty relevance has no badge', relevanceBadges({ interests: [], goals: [] }).length === 0 && !hasRelevance(undefined));
+check('qualifying relevance gets a single Suggested for you tag', suggestedBadge({ interests: ['Strength'], goals: ['Build strength'] }).join('|') === 'Suggested for you');
+check('domain-only match also qualifies for Suggested for you', suggestedBadge({ interests: [], goals: [], domains: ['wellness'] }).join('|') === 'Suggested for you');
+check('empty relevance has no badge', suggestedBadge({ interests: [], goals: [] }).length === 0 && !hasRelevance(undefined));
 
 console.log('B. return context is context only');
 const uuid = '11111111-1111-4111-8111-111111111111';
@@ -73,8 +73,8 @@ check('public preview keeps Group viewing and Challenge joining as separate expl
 check('Group return navigation accepts only the internal selected-Challenge path', /returnToValue/.test(groupHome) && /\^\\\/v2\\\/challenges\\\/discovery\\\/\[\^\/\]\+\$/.test(groupHome));
 check('successful Group join/request returns to the selected Challenge preview with active membership state', /result\.status === 'active' \|\| result\.status === 'joined'/.test(groupHome) && /navigate\(returnTo, \{ state: \{ groupJoined: active \} \}\)/.test(groupHome));
 check('Group Home back link preserves the selected Challenge return route', /to=\{returnTo \?\? '\/v2\/groups'\}/.test(groupHome) && /Back to Challenge/.test(groupHome));
-const todaySuggested = read('src/v2/today/V2TodaySuggestedForYou.tsx');
-check('Today Challenge recommendations preserve the selected preview when opening its hosting Group', /returnTo: `\/v2\/challenges\/discovery\/\$\{suggestion\.challenge\.challengeId\}`/.test(todaySuggested));
+const todayDiscoverySections = read('src/v2/today/V2TodayDiscoverySections.tsx');
+check('Today Challenge recommendations use the canonical V2DiscoverChallengeRow', /V2DiscoverChallengeRow/.test(todayDiscoverySections) && /returnTo: `\/v2\/challenges\/discovery\/\$\{challenge\.challengeId\}`/.test(explore));
 check('preview fallback uses existing authorized member detail only after outsider discovery is exhausted', /useChallengeDetailV2\(challengeId, discoveryComplete && !discoveredChallenge\)/.test(preview) && /useV2GroupDetail\(detail\.data\?\.groupId/.test(preview));
 check('Explore uses the existing Group join mutation', /useJoinGroup\(/.test(explore));
 check('Explore exposes Preview Challenge without removing its Group join action', /Preview Challenge/.test(explore) && /useJoinGroup\(/.test(explore));
@@ -175,47 +175,32 @@ console.log('F. join -> failed refetch -> Load more -> rejection -> recovery (re
   unsubscribe(); client.clear();
 }
 
-console.log('G. TIIZI-V2-UX-008: one coherent Today suggestion list, one matching explanation');
+console.log('G. TIIZI-V2-UX-008-VISUAL-CORR-001: canonical discovery sections on Today, no standalone Suggested for you layout');
 const todayScreen = read('src/v2/today/V2TodayScreen.tsx');
 const todayDiscovery = read('src/v2/today/todayDiscovery.ts');
-check('the new-member Today experience is the unified "Suggested for you" section',
-  /aria-labelledby="today-suggested"/.test(todaySuggested)
-  && /id="today-suggested"/.test(todaySuggested)
-  && /Suggested for you/.test(todaySuggested)
-  && /<V2TodaySuggestedForYou \/>/.test(todayScreen)
-  && !/V2TodayDiscoveryRecommendations/.test(todayScreen));
-check('Groups and Challenges share one list, bounded so Today is not a directory',
-  /buildSuggestions\(groupRows, challengeRows\)/.test(todaySuggested)
-  && /recommendedGroups\(.*\)\.slice\(0, 3\)/.test(todaySuggested)
-  && /recommendedChallenges\(.*\)\.slice\(0, 3\)/.test(todaySuggested)
-  && /groupLimit = 3/.test(todayDiscovery)
-  && /challengeLimit = 3/.test(todayDiscovery));
-check('the matching basis is stated once for the section, never as a per-card sentence',
-  !/Suggested because/.test(todaySuggested)
-  && !/recommendationReason\(/.test(todaySuggested)
-  && !/recommendationReason/.test(todayDiscovery)
-  && /suggestionCaption/.test(todaySuggested)
-  && /ranked by your interests and goals/.test(todayDiscovery)
-  && /suggestions\.length > 0 && <p className="mt-1 text-sm text-slate-600">/.test(todaySuggested));
-check('an unknown ranking state is never presented as "nothing matched"',
-  /applied\.groups !== true \|\| applied\.challenges !== true/.test(todayDiscovery));
-check('cards carry the entity type, a concise context and one clear next action',
-  /text-slate-700">Group</.test(todaySuggested)
-  && /text-primary">Challenge</.test(todaySuggested)
-  && /View Challenge<\/V2Button>/.test(todaySuggested)
-  && /View Group<\/V2Button>/.test(todaySuggested)
-  && /Hosted by/.test(todaySuggested));
-check('full Group and Challenge Discovery stay reachable from the section',
-  /Browse Groups/.test(todaySuggested) && /Browse Challenges/.test(todaySuggested)
-  && /\/v2\/groups/.test(todaySuggested) && /\/v2\/challenges/.test(todaySuggested));
+check('Today renders separate Discover Challenges and Discover Groups sections without a standalone Suggested for you section',
+  !/V2TodaySuggestedForYou/.test(todayScreen)
+  && /<V2TodayDiscoverySections \/>/.test(todayScreen)
+  && /Discover Challenges/.test(todayDiscoverySections)
+  && /Discover Groups/.test(todayDiscoverySections)
+  && !/Suggested for you/.test(todayDiscoverySections));
+check('Today discovery sections are bounded to at most two items per entity type',
+  /TODAY_DISCOVERY_LIMIT = 2/.test(todayDiscovery)
+  && /recommendedGroups\(.*\)\.slice\(0, TODAY_DISCOVERY_LIMIT\)/.test(todayDiscoverySections)
+  && /recommendedChallenges\(.*\)\.slice\(0, TODAY_DISCOVERY_LIMIT\)/.test(todayDiscoverySections));
+check('Today discovery reuses canonical Challenge and Group cards instead of parallel recommendation markup',
+  /<V2DiscoverChallengeRow/.test(todayDiscoverySections)
+  && /<V2DiscoverGroupRow/.test(todayDiscoverySections)
+  && /showInterestsAndGoals=\{false\}/.test(groupPanel)
+  && !/MatchBadges/.test(todayDiscoverySections)
+  && !/Your interests:|Your goals:/.test(explore + groupPanel));
+check('full Group and Challenge Discovery stay reachable from Today discovery sections',
+  /Browse Groups/.test(todayDiscoverySections) && /Browse Challenges/.test(todayDiscoverySections)
+  && /\/v2\/groups\?tab=discover/.test(todayDiscoverySections) && /\/v2\/challenges/.test(todayDiscoverySections));
 check('Today asks for the Challenge discovery media projection so a saved cover can be shown',
-  /useV2ChallengeDiscovery\('relevance', true\)/.test(todaySuggested));
-check('a card renders a persisted cover and never substitutes photography',
-  /coverImage=\{challenge\.coverImage\}/.test(todaySuggested)
-  && /coverImage=\{group\.coverImage\}/.test(todaySuggested)
-  && !/placeholder\.com|unsplash|picsum|loremflickr/i.test(todaySuggested));
+  /useV2ChallengeDiscovery\('relevance', true\)/.test(todayDiscoverySections));
 check('the discovery ranking authority is untouched: selection still uses the existing rules',
-  /recommendedGroups/.test(todaySuggested) && /recommendedChallenges/.test(todaySuggested)
+  /recommendedGroups/.test(todayDiscoverySections) && /recommendedChallenges/.test(todayDiscoverySections)
   && /recommendedGroups\(/.test(todayDiscovery) && /recommendedChallenges\(/.test(todayDiscovery)
   && /hasRelevance/.test(todayDiscovery));
 
