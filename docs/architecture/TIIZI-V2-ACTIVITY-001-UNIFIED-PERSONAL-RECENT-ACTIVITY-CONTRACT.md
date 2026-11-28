@@ -1,6 +1,6 @@
 # TIIZI-V2-ACTIVITY-001 — Unified Personal Recent Activity Contract
 
-- **Status:** Founder-approved Phase 1 contract (`CONTRACT-CORR-001`); independent Technical Lead and Code Reviewer APPROVE WITH LIMITATIONS. Documentation authorization only; runtime implementation requires separate slices.
+- **Status:** **COMPLETE / FOUNDER ACCEPTED / CLOSED** (`TIIZI-V2-ACTIVITY-005`, 2026-11-28). Phase 1 contract (`CONTRACT-CORR-001`, D1–D5 Founder-approved 2026-11-27, PR #196) and implementation slices `ACTIVITY-002` (PR #197), `ACTIVITY-003` (PR #198), and `ACTIVITY-004` (PR #199, head `07899184ee8a1a0fcceb667697a4ddc51e2cf81c`, merge `150435afd8b17bd12ca3b8c96a4e620529c19d0f`, post-merge CI `46120627797`) are Founder-accepted in browser walkthrough on 2026-11-28. See [`TIIZI-V2-ACTIVITY-005-FOUNDER-ACCEPTANCE-AND-CLOSURE-001.md`](../programme/TIIZI-V2-ACTIVITY-005-FOUNDER-ACCEPTANCE-AND-CLOSURE-001.md). Preserved limitations from §2 remain binding.
 - **Repository:** `Fkenogo/tiizi_challenges`
 - **Baseline:** `8d489bcd3517ccb5d37bae731d403dd27598607b` (`origin/main`)
 - **Branch:** `docs/tiizi-v2-activity-001`
