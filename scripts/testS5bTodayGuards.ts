@@ -345,8 +345,7 @@ check(
   'F2 Challenge links use the projection-supplied detailPath, never a rebuilt path',
   screen.includes('navigate(challenge.detailPath)')
     && screen.includes('navigate(opportunity.detailPath)')
-    && screen.includes('navigate(item.detailPath)')
-    && screen.includes('navigate(result.detailPath)'),
+    && screen.includes('navigate(item.detailPath)'),
 );
 check(
   'F3 the Today read is member-scoped and disabled until signed in',

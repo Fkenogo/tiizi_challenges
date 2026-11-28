@@ -79,7 +79,11 @@ export function useV2ChallengeFeedHistory(challengeId: string) {
  * server's dedicated state read. `null` means the server answered and there
  * is no Share; an error is surfaced so the UI can refuse to guess.
  */
-export function useV2ActivityShareState(challengeId: string, activityEventId: string) {
+export function useV2ActivityShareState(
+  challengeId: string,
+  activityEventId: string,
+  enabled = true,
+) {
   const { user } = useAuth();
   return useQuery({
     queryKey: v2ActivityShareStateKey(user?.uid, challengeId, activityEventId),
@@ -98,7 +102,7 @@ export function useV2ActivityShareState(challengeId: string, activityEventId: st
         throw error;
       }
     },
-    enabled: Boolean(user && challengeId && activityEventId),
+    enabled: Boolean(user && challengeId && activityEventId && enabled),
   });
 }
 
