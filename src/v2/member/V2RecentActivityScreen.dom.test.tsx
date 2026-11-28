@@ -25,6 +25,7 @@ const h = vi.hoisted(() => ({
   history: {} as MockHistoryState,
   preview: {} as MockPreviewState,
   ownShare: { data: null as unknown, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() },
+  ownShareByActivityId: new Map<string, { data: unknown; isLoading: boolean; isError: boolean; isSuccess: boolean; refetch: ReturnType<typeof vi.fn> }>(),
   shareStateCalls: [] as Array<{ challengeId: string; activityId: string; enabled: boolean }>,
   publish: { mutate: vi.fn(), isPending: false, error: null },
   withdraw: { mutate: vi.fn(), isPending: false, error: null },
@@ -41,7 +42,7 @@ vi.mock('../profile/useV2MemberIdentity', () => ({
 vi.mock('../challenges/challengeFeedQuery', () => ({
   useV2ActivityShareState: (challengeId: string, activityId: string, enabled = true) => {
     h.shareStateCalls.push({ challengeId, activityId, enabled });
-    return h.ownShare;
+    return h.ownShareByActivityId.get(activityId) ?? h.ownShare;
   },
   useV2PublishActivityShare: () => h.publish,
   useV2WithdrawActivityShare: () => h.withdraw,
@@ -301,6 +302,7 @@ function setHistory(items: PersonalTimelineItem[] = [activityLoggedCurrent]) {
   };
   h.preview = { data: { items: [activityLoggedCurrent] }, isLoading: false, isError: false, refetch: vi.fn() };
   h.ownShare = { data: null, isLoading: false, isError: false, isSuccess: true, refetch: vi.fn() };
+  h.ownShareByActivityId.clear();
   h.shareStateCalls.length = 0;
 }
 
@@ -543,7 +545,7 @@ describe('Personal Activity History (/v2/activity) and Today preview', () => {
     expect(screen.getByRole('button', { name: 'Share Push-Up activity' })).toBeTruthy();
   });
 
-  it('bounds eager per-row Share-state requests on long paginated History', () => {
+  it('bounds eager per-row Share-state requests, uses Sharing options for unknown 6th+ rows, and preserves cached Shared beyond limit', () => {
     const sevenActivities = Array.from({ length: 7 }, (_, index) => ({
       ...activityLoggedCurrent,
       timelineEventId: `activity_logged:00000000-0000-4000-8000-00000000010${index}`,
@@ -553,11 +555,57 @@ describe('Personal Activity History (/v2/activity) and Today preview', () => {
       },
     }));
     setHistory(sevenActivities);
+    // 6th item (index 5): unknown Share state (disabled, not cached) -> "Sharing options"
+    h.ownShareByActivityId.set('00000000-0000-4000-8000-000000000105', {
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      isSuccess: false,
+      refetch: vi.fn(),
+    });
+    // 7th item (index 6): already-shared in cache beyond eager limit -> "Shared" + "Manage Share"
+    h.ownShareByActivityId.set('00000000-0000-4000-8000-000000000106', {
+      data: {
+        shareId: 'share-7',
+        activityEventId: '00000000-0000-4000-8000-000000000106',
+        visible: true,
+        hiddenReason: null,
+        shareGeneration: 1,
+      },
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      refetch: vi.fn(),
+    });
     render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
 
     expect(h.shareStateCalls).toHaveLength(7);
     expect(h.shareStateCalls.filter((c) => c.enabled)).toHaveLength(5);
     expect(h.shareStateCalls.slice(5).every((c) => !c.enabled)).toBe(true);
+    expect(screen.getAllByRole('button', { name: 'Share Push-Up activity' })).toHaveLength(5);
+    expect(screen.getByRole('button', { name: 'Sharing options' })).toBeTruthy();
+    expect(screen.getByText('Shared')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Manage Share' })).toBeTruthy();
+  });
+
+  it('shows Checking Share… while eager Share-state is loading and Sharing options with Retry on Share-state error', () => {
+    setHistory([activityLoggedCurrent]);
+    h.ownShare = { data: undefined, isLoading: true, isError: false, isSuccess: false, refetch: vi.fn() };
+    const loadingView = render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: 'Checking Share…' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share Push-Up activity' })).toBeNull();
+    loadingView.unmount();
+
+    const refetch = vi.fn();
+    setHistory([activityLoggedCurrent]);
+    h.ownShare = { data: undefined, isLoading: false, isError: true, isSuccess: false, refetch };
+    render(<MemoryRouter><V2RecentActivityScreen /></MemoryRouter>);
+    const optionsBtn = screen.getByRole('button', { name: 'Sharing options' });
+    expect(screen.queryByRole('button', { name: 'Share Push-Up activity' })).toBeNull();
+    fireEvent.click(optionsBtn);
+    expect(screen.getByText(/Couldn't confirm your Share state/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 
   it('renders honest empty, refresh-error, loading, and initial error states', () => {

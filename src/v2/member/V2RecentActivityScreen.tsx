@@ -110,9 +110,12 @@ function TimelineShareControl({
     source.activityId,
     eagerCheck || isOpen,
   );
-  const state = shareState.isSuccess ? shareState.data : null;
+  const stateKnown = shareState.isSuccess;
+  const state = stateKnown ? shareState.data : null;
   const shared = state !== null && state.visible;
   const hiddenReason = state !== null && !state.visible ? state.hiddenReason : null;
+  const confirmedUnshared = stateKnown && !shared;
+  const isChecking = (eagerCheck || isOpen) && shareState.isLoading;
 
   if (hiddenReason === 'suppressed') {
     return (
@@ -132,6 +135,14 @@ function TimelineShareControl({
     return null;
   }
 
+  const buttonLabel = shared
+    ? 'Manage Share'
+    : confirmedUnshared
+      ? `Share ${source.activityName} activity`
+      : isChecking
+        ? 'Checking Share…'
+        : 'Sharing options';
+
   return (
     <>
       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -145,7 +156,7 @@ function TimelineShareControl({
           onClick={onOpen}
           className="min-h-11 max-w-full break-words"
         >
-          {shared ? 'Manage Share' : `Share ${source.activityName} activity`}
+          {buttonLabel}
         </V2Button>
       </div>
       {isOpen && (
